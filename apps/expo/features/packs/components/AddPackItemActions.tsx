@@ -8,12 +8,14 @@ import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import { useRecentlyUsedCatalogItems } from 'expo-app/features/catalog/hooks/useRecentlyUsedCatalogItems';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
+import { usePresentPaywall } from 'expo-app/features/purchases';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { router } from 'expo-router';
 import React from 'react';
 import { Alert, TouchableOpacity, View } from 'react-native';
+import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBulkAddCatalogItems, useImagePicker } from '../hooks';
 
@@ -32,8 +34,9 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
 
     const { addItemsToPack } = useBulkAddCatalogItems();
     const { trackRecentlyUsed } = useRecentlyUsedCatalogItems();
+    const { presentPaywallIfNeeded } = usePresentPaywall();
 
-    const handleAddFromPhoto = () => {
+    const handleAddFromPhoto = async () => {
       ref && !isFunction(ref) && ref.current?.close();
 
       if (!isAuthed.peek()) {
@@ -45,6 +48,12 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
           },
         });
       }
+
+      const paywallResult = await presentPaywallIfNeeded();
+      if (paywallResult === PAYWALL_RESULT.CANCELLED || paywallResult === PAYWALL_RESULT.ERROR) {
+        return;
+      }
+
       const options = ['Take Photo', 'Choose from Library', 'Cancel'];
       const cancelButtonIndex = 2;
 
@@ -91,7 +100,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
       );
     };
 
-    const handleAddFromCatalog = () => {
+    const handleAddFromCatalog = async () => {
       ref && !isFunction(ref) && ref.current?.close();
 
       if (!isAuthed.peek()) {
@@ -103,6 +112,12 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
           },
         });
       }
+
+      const paywallResult = await presentPaywallIfNeeded();
+      if (paywallResult === PAYWALL_RESULT.CANCELLED || paywallResult === PAYWALL_RESULT.ERROR) {
+        return;
+      }
+
       setIsCatalogModalVisible(true);
     };
 
