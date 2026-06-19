@@ -1,7 +1,8 @@
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
-import { Stack, useFocusEffect } from 'expo-router';
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { View } from 'react-native';
+import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { useEntitlement } from '../hooks/useEntitlement';
 import { usePresentPaywall } from '../hooks/usePresentPaywall';
 
@@ -16,19 +17,26 @@ interface ProGateProps {
 export function ProGate({ children, fallback }: ProGateProps) {
   const { isProMember, isLoading } = useEntitlement();
   const { presentPaywall } = usePresentPaywall();
+  const router = useRouter();
 
-  // Only fires for the currently focused screen — background tabs stay silent
-  // on app open. v6 useFocusEffect has no internal dep array so it re-runs on
-  // every render, which means loading-completion-while-focused is also handled.
   useFocusEffect(
     useCallback(() => {
       if (isLoading || isProMember || isPaywallPresenting) return;
 
       isPaywallPresenting = true;
-      presentPaywall().finally(() => {
-        isPaywallPresenting = false;
-      });
-    }, [isLoading, isProMember, presentPaywall]),
+      presentPaywall()
+        .then((result) => {
+          if (
+            (result === PAYWALL_RESULT.CANCELLED || result === PAYWALL_RESULT.ERROR) &&
+            router.canGoBack()
+          ) {
+            router.back();
+          }
+        })
+        .finally(() => {
+          isPaywallPresenting = false;
+        });
+    }, [isLoading, isProMember, presentPaywall, router]),
   );
 
   if (isLoading) {
@@ -43,10 +51,8 @@ export function ProGate({ children, fallback }: ProGateProps) {
     return <>{children}</>;
   }
 
-  // Render children invisibly so the screen's own <Stack.Screen> mounts and
-  // sets the correct header. The upgrade prompt sits on top as a fallback when
-  // the paywall sheet is dismissed. Search bar is stripped — it doesn't belong
-  // on a paywalled screen.
+  // Render children invisibly so Stack.Screen mounts and sets the correct header.
+  // No visible fallback — the paywall sheet is the only UI shown to non-pro users.
   return (
     <View style={{ flex: 1 }}>
       <View style={{ flex: 1, opacity: 0 }} pointerEvents="none">
@@ -57,25 +63,6 @@ export function ProGate({ children, fallback }: ProGateProps) {
           headerSearchBarOptions: null as unknown as undefined,
         }}
       />
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-        {fallback ?? <ProUpgradePrompt />}
-      </View>
-    </View>
-  );
-}
-
-function ProUpgradePrompt() {
-  const { presentPaywall } = usePresentPaywall();
-
-  return (
-    <View className="flex-1 items-center justify-center gap-4 px-6">
-      <Text className="text-center text-2xl font-bold">PackRat Pro</Text>
-      <Text className="text-center text-muted-foreground">
-        Unlock this feature and everything Pro has to offer.
-      </Text>
-      <Button onPress={presentPaywall}>
-        <Text>Upgrade to Pro</Text>
-      </Button>
     </View>
   );
 }
