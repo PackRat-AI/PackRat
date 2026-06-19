@@ -14,6 +14,7 @@ import { getPackTemplateItemDetailOptions } from 'expo-app/features/pack-templat
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { getPackDetailOptions } from 'expo-app/features/packs/utils/getPackDetailOptions';
 import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackItemDetailOptions';
+import { useRevenueCatUser } from 'expo-app/features/purchases';
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
@@ -33,6 +34,7 @@ export {
 export default function AppLayout() {
   const isLoading = useAuthInit();
   const isAuthedValue = use$(isAuthed);
+  useRevenueCatUser();
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const isLoadingGlobal = useAtomValue(isLoadingAtom);

@@ -11,6 +11,7 @@ import {
 import { FlashList } from '@shopify/flash-list';
 import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
+import { ProGate } from 'expo-app/features/purchases';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { BlurView } from 'expo-blur';
@@ -144,53 +145,55 @@ export default function ChatIos() {
     });
 
   return (
-    <>
-      <Stack.Screen options={SCREEN_OPTIONS} />
-      <GestureDetector gesture={pan}>
-        <KeyboardAvoidingView
-          style={[
-            ROOT_STYLE,
-            {
-              backgroundColor: isDarkColorScheme ? colors.background : colors.card,
-            },
-          ]}
-          behavior="padding"
-        >
-          <FlashList
-            ListFooterComponent={<View style={{ height: HEADER_HEIGHT + insets.top }} />}
-            ListHeaderComponent={<Animated.View style={toolbarHeightStyle} />}
-            keyboardDismissMode="on-drag"
-            keyboardShouldPersistTaps="handled"
-            scrollIndicatorInsets={{
-              bottom: HEADER_HEIGHT + 10,
-              top: insets.bottom + 2,
-            }}
-            data={messages}
-            renderItem={({ item, index }) => {
-              if (isString(item)) {
-                return <DateSeparator date={item} />;
-              }
+    <ProGate>
+      <>
+        <Stack.Screen options={SCREEN_OPTIONS} />
+        <GestureDetector gesture={pan}>
+          <KeyboardAvoidingView
+            style={[
+              ROOT_STYLE,
+              {
+                backgroundColor: isDarkColorScheme ? colors.background : colors.card,
+              },
+            ]}
+            behavior="padding"
+          >
+            <FlashList
+              ListFooterComponent={<View style={{ height: HEADER_HEIGHT + insets.top }} />}
+              ListHeaderComponent={<Animated.View style={toolbarHeightStyle} />}
+              keyboardDismissMode="on-drag"
+              keyboardShouldPersistTaps="handled"
+              scrollIndicatorInsets={{
+                bottom: HEADER_HEIGHT + 10,
+                top: insets.bottom + 2,
+              }}
+              data={messages}
+              renderItem={({ item, index }) => {
+                if (isString(item)) {
+                  return <DateSeparator date={item} />;
+                }
 
-              const nextMessage = messages[index - 1];
-              const isSameNextSender = !isString(nextMessage)
-                ? nextMessage?.sender === item.sender
-                : false;
+                const nextMessage = messages[index - 1];
+                const isSameNextSender = !isString(nextMessage)
+                  ? nextMessage?.sender === item.sender
+                  : false;
 
-              return (
-                <ChatBubble
-                  isSameNextSender={isSameNextSender}
-                  item={item}
-                  translateX={translateX}
-                />
-              );
-            }}
-          />
-        </KeyboardAvoidingView>
-      </GestureDetector>
-      <KeyboardStickyView offset={{ opened: insets.bottom }}>
-        <Composer textInputHeight={textInputHeight} setMessages={setMessages} />
-      </KeyboardStickyView>
-    </>
+                return (
+                  <ChatBubble
+                    isSameNextSender={isSameNextSender}
+                    item={item}
+                    translateX={translateX}
+                  />
+                );
+              }}
+            />
+          </KeyboardAvoidingView>
+        </GestureDetector>
+        <KeyboardStickyView offset={{ opened: insets.bottom }}>
+          <Composer textInputHeight={textInputHeight} setMessages={setMessages} />
+        </KeyboardStickyView>
+      </>
+    </ProGate>
   );
 }
 

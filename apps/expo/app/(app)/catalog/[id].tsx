@@ -1,5 +1,10 @@
 import { CatalogItemDetailScreen } from 'expo-app/features/catalog/screens/CatalogItemDetailScreen';
+import { ProGate } from 'expo-app/features/purchases';
 
 export default function CatalogItemDetailPage() {
-  return <CatalogItemDetailScreen />;
+  return (
+    <ProGate>
+      <CatalogItemDetailScreen />
+    </ProGate>
+  );
 }

@@ -3,6 +3,7 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
+import { ProGate } from 'expo-app/features/purchases';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -171,89 +172,93 @@ export default function ShoppingListScreen() {
   });
 
   return (
-    <SafeAreaView className="flex-1" edges={['bottom']}>
-      <Stack.Screen options={{ ...getAppBarOptions(), title: t('shopping.shoppingList') }} />
-      <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
-        <View className="p-4">
-          <View className="mb-4 flex-row items-center justify-between">
-            <Text variant="subhead" className="text-muted-foreground">
-              {t('shopping.itemsToPurchase', {
-                count: SHOPPING_LIST.filter((item) => !item.purchased).length,
-              })}
-            </Text>
-            <View className="flex-row overflow-hidden rounded-lg bg-card">
-              <Pressable
-                className={cn(
-                  'px-3 py-1.5',
-                  filter === 'pending' ? 'bg-primary' : 'bg-transparent',
-                )}
-                onPress={() => setFilter('pending')}
-              >
-                <Text
-                  variant="subhead"
-                  className={
-                    filter === 'pending' ? 'text-primary-foreground' : 'text-muted-foreground'
-                  }
+    <ProGate>
+      <SafeAreaView className="flex-1" edges={['bottom']}>
+        <Stack.Screen options={{ ...getAppBarOptions(), title: t('shopping.shoppingList') }} />
+        <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
+          <View className="p-4">
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text variant="subhead" className="text-muted-foreground">
+                {t('shopping.itemsToPurchase', {
+                  count: SHOPPING_LIST.filter((item) => !item.purchased).length,
+                })}
+              </Text>
+              <View className="flex-row overflow-hidden rounded-lg bg-card">
+                <Pressable
+                  className={cn(
+                    'px-3 py-1.5',
+                    filter === 'pending' ? 'bg-primary' : 'bg-transparent',
+                  )}
+                  onPress={() => setFilter('pending')}
                 >
-                  {t('shopping.toBuy')}
-                </Text>
-              </Pressable>
-              <Pressable
-                className={cn(
-                  'px-3 py-1.5',
-                  filter === 'purchased' ? 'bg-primary' : 'bg-transparent',
-                )}
-                onPress={() => setFilter('purchased')}
-              >
-                <Text
-                  variant="subhead"
-                  className={
-                    filter === 'purchased' ? 'text-primary-foreground' : 'text-muted-foreground'
-                  }
+                  <Text
+                    variant="subhead"
+                    className={
+                      filter === 'pending' ? 'text-primary-foreground' : 'text-muted-foreground'
+                    }
+                  >
+                    {t('shopping.toBuy')}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  className={cn(
+                    'px-3 py-1.5',
+                    filter === 'purchased' ? 'bg-primary' : 'bg-transparent',
+                  )}
+                  onPress={() => setFilter('purchased')}
                 >
-                  {t('shopping.purchased')}
-                </Text>
-              </Pressable>
-              <Pressable
-                className={cn('px-3 py-1.5', filter === 'all' ? 'bg-primary' : 'bg-transparent')}
-                onPress={() => setFilter('all')}
-              >
-                <Text
-                  variant="subhead"
-                  className={filter === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'}
+                  <Text
+                    variant="subhead"
+                    className={
+                      filter === 'purchased' ? 'text-primary-foreground' : 'text-muted-foreground'
+                    }
+                  >
+                    {t('shopping.purchased')}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  className={cn('px-3 py-1.5', filter === 'all' ? 'bg-primary' : 'bg-transparent')}
+                  onPress={() => setFilter('all')}
                 >
-                  {t('shopping.all')}
-                </Text>
-              </Pressable>
+                  <Text
+                    variant="subhead"
+                    className={
+                      filter === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'
+                    }
+                  >
+                    {t('shopping.all')}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
+            <View className="mb-4 rounded-lg bg-card">
+              <Text variant="heading" className="p-4 font-semibold">
+                Estimated Total: $225
+              </Text>
             </View>
           </View>
 
-          <View className="mb-4 rounded-lg bg-card">
-            <Text variant="heading" className="p-4 font-semibold">
-              Estimated Total: $225
-            </Text>
+          <View className="pb-4">
+            {filteredItems.map((item) => (
+              <ShoppingItemCard key={item.id} item={item} />
+            ))}
           </View>
-        </View>
 
-        <View className="pb-4">
-          {filteredItems.map((item) => (
-            <ShoppingItemCard key={item.id} item={item} />
-          ))}
-        </View>
-
-        <View className="mx-4 my-2 mb-6 rounded-lg bg-card p-4">
-          <Text variant="heading" className="mb-2 font-semibold">
-            Shopping Tips
-          </Text>
-          <Text variant="body" className="mb-2">
-            • Check for seasonal sales at REI, Backcountry, and other outdoor retailers
-          </Text>
-          <Text variant="body" className="mb-2">
-            • Consider used gear from r/ULgeartrade or Gear Trade for better deals
-          </Text>
-          <Text variant="body">• Compare prices across multiple retailers before purchasing</Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          <View className="mx-4 my-2 mb-6 rounded-lg bg-card p-4">
+            <Text variant="heading" className="mb-2 font-semibold">
+              Shopping Tips
+            </Text>
+            <Text variant="body" className="mb-2">
+              • Check for seasonal sales at REI, Backcountry, and other outdoor retailers
+            </Text>
+            <Text variant="body" className="mb-2">
+              • Consider used gear from r/ULgeartrade or Gear Trade for better deals
+            </Text>
+            <Text variant="body">• Compare prices across multiple retailers before purchasing</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </ProGate>
   );
 }

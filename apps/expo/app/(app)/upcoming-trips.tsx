@@ -1,6 +1,7 @@
 import { List, ListItem, Text } from '@packrat/ui/nativewindui';
 import { format } from 'date-fns';
 import { featureFlags } from 'expo-app/config';
+import { ProGate } from 'expo-app/features/purchases';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -158,79 +159,83 @@ function UpcomingTripsScreenInner() {
   const selectedPack = selectedTrip ? packs.find((p) => p.id === selectedTrip.packId) : undefined;
 
   return (
-    <ScrollView className="flex-1">
-      <View className="p-4">
-        <Text variant="subhead" className="mb-2 text-muted-foreground">
-          {t('trips.plannedAdventures')}
-        </Text>
-      </View>
-
-      {/* Trip List */}
-      <List
-        data={upcomingTrips.map((trip) => ({
-          id: trip.id,
-          trip,
-          title: trip.name,
-          subTitle: `${trip.location?.name ?? t('trips.unknown')} • ${formatDate(
-            trip.startDate,
-          )} to ${formatDate(trip.endDate)}`,
-        }))}
-        extraData={selectedTripId}
-        keyExtractor={(item) => item.id}
-        renderItem={(info) => {
-          const { trip } = info.item;
-          const { status, completion } = getTripStatus({ trip, t });
-
-          return (
-            <ListItem
-              {...info}
-              // leftView={<TripImage uri={trip.imageUrl} />}
-              rightView={
-                <View className="flex-row items-center pr-4">
-                  <PackStatus status={status} completion={completion} />
-                </View>
-              }
-              onPress={() => setSelectedTripId(trip.id)}
-              className={
-                selectedTripId === trip.id ? 'bg-muted/50 dark:bg-slate-950' : 'dark:bg-transparent'
-              }
-            />
-          );
-        }}
-      />
-
-      {/* Trip Summary */}
-      {selectedTrip && (
-        <View className="mx-4 my-4 rounded-lg bg-card">
-          <View className="border-border/25 dark:border-border/80 border-b p-4">
-            <Text variant="heading" className="font-semibold">
-              {selectedTrip.name}
-            </Text>
-            <Text variant="subhead" className="mt-1 text-muted-foreground">
-              {selectedTrip.location?.name ?? 'No location'}
-            </Text>
-          </View>
-
-          <View className="flex-row justify-between p-4">
-            <View className="flex-1">
-              <Text variant="footnote" className="text-muted-foreground">
-                DATES
-              </Text>
-              <Text variant="subhead" className="mt-1">
-                {formatDate(selectedTrip.startDate)} - {formatDate(selectedTrip.endDate)}
-              </Text>
-            </View>
-            <View className="flex-1">
-              <Text variant="footnote" className="text-muted-foreground">
-                PACK
-              </Text>
-              <Text variant="subhead" className="mt-1">
-                {selectedPack ? `${selectedPack.items.length} items` : 'No pack assigned'}
-              </Text>
-            </View>
-          </View>
+    <ProGate>
+      <ScrollView className="flex-1">
+        <View className="p-4">
+          <Text variant="subhead" className="mb-2 text-muted-foreground">
+            {t('trips.plannedAdventures')}
+          </Text>
         </View>
-      )}
-    </ScrollView>
+
+        {/* Trip List */}
+        <List
+          data={upcomingTrips.map((trip) => ({
+            id: trip.id,
+            trip,
+            title: trip.name,
+            subTitle: `${trip.location?.name ?? t('trips.unknown')} • ${formatDate(
+              trip.startDate,
+            )} to ${formatDate(trip.endDate)}`,
+          }))}
+          extraData={selectedTripId}
+          keyExtractor={(item) => item.id}
+          renderItem={(info) => {
+            const { trip } = info.item;
+            const { status, completion } = getTripStatus({ trip, t });
+
+            return (
+              <ListItem
+                {...info}
+                // leftView={<TripImage uri={trip.imageUrl} />}
+                rightView={
+                  <View className="flex-row items-center pr-4">
+                    <PackStatus status={status} completion={completion} />
+                  </View>
+                }
+                onPress={() => setSelectedTripId(trip.id)}
+                className={
+                  selectedTripId === trip.id
+                    ? 'bg-muted/50 dark:bg-slate-950'
+                    : 'dark:bg-transparent'
+                }
+              />
+            );
+          }}
+        />
+
+        {/* Trip Summary */}
+        {selectedTrip && (
+          <View className="mx-4 my-4 rounded-lg bg-card">
+            <View className="border-border/25 dark:border-border/80 border-b p-4">
+              <Text variant="heading" className="font-semibold">
+                {selectedTrip.name}
+              </Text>
+              <Text variant="subhead" className="mt-1 text-muted-foreground">
+                {selectedTrip.location?.name ?? 'No location'}
+              </Text>
+            </View>
+
+            <View className="flex-row justify-between p-4">
+              <View className="flex-1">
+                <Text variant="footnote" className="text-muted-foreground">
+                  DATES
+                </Text>
+                <Text variant="subhead" className="mt-1">
+                  {formatDate(selectedTrip.startDate)} - {formatDate(selectedTrip.endDate)}
+                </Text>
+              </View>
+              <View className="flex-1">
+                <Text variant="footnote" className="text-muted-foreground">
+                  PACK
+                </Text>
+                <Text variant="subhead" className="mt-1">
+                  {selectedPack ? `${selectedPack.items.length} items` : 'No pack assigned'}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </ProGate>
   );
 }

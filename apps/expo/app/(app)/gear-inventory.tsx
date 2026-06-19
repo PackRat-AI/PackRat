@@ -4,6 +4,7 @@ import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { useUserPackItems } from 'expo-app/features/packs/hooks/useUserPackItems';
 import type { PackItem } from 'expo-app/features/packs/types';
+import { ProGate } from 'expo-app/features/purchases';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useRouter } from 'expo-router';
@@ -65,66 +66,70 @@ export default function GearInventoryScreen() {
   const itemsByCategory = groupByCategory(items);
 
   return (
-    <SafeAreaView className="flex-1" edges={['bottom']}>
-      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.gearInventory') }} />
-      <ScrollView className="flex-1 px-4" contentInsetAdjustmentBehavior="automatic">
-        <View className="flex-row items-center justify-between p-4">
-          <Text variant="subhead" className="text-muted-foreground">
-            {t('packs.itemsInInventory', { count: items?.length })}
-          </Text>
-          <View className="flex-row rounded-lg bg-card">
-            <Pressable
-              className={cn(
-                'rounded-l-lg px-3 py-1.5',
-                viewMode === 'all' ? 'bg-primary' : 'bg-transparent',
-              )}
-              onPress={() => setViewMode('all')}
-            >
-              <Text
-                variant="subhead"
-                className={viewMode === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'}
+    <ProGate>
+      <SafeAreaView className="flex-1" edges={['bottom']}>
+        <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.gearInventory') }} />
+        <ScrollView className="flex-1 px-4" contentInsetAdjustmentBehavior="automatic">
+          <View className="flex-row items-center justify-between p-4">
+            <Text variant="subhead" className="text-muted-foreground">
+              {t('packs.itemsInInventory', { count: items?.length })}
+            </Text>
+            <View className="flex-row rounded-lg bg-card">
+              <Pressable
+                className={cn(
+                  'rounded-l-lg px-3 py-1.5',
+                  viewMode === 'all' ? 'bg-primary' : 'bg-transparent',
+                )}
+                onPress={() => setViewMode('all')}
               >
-                {t('packs.all')}
-              </Text>
-            </Pressable>
-            <Pressable
-              className={cn(
-                'rounded-r-lg px-3 py-1.5',
-                viewMode === 'category' ? 'bg-primary' : 'bg-transparent',
-              )}
-              onPress={() => setViewMode('category')}
-            >
-              <Text
-                variant="subhead"
-                className={
-                  viewMode === 'category' ? 'text-primary-foreground' : 'text-muted-foreground'
-                }
+                <Text
+                  variant="subhead"
+                  className={
+                    viewMode === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'
+                  }
+                >
+                  {t('packs.all')}
+                </Text>
+              </Pressable>
+              <Pressable
+                className={cn(
+                  'rounded-r-lg px-3 py-1.5',
+                  viewMode === 'category' ? 'bg-primary' : 'bg-transparent',
+                )}
+                onPress={() => setViewMode('category')}
               >
-                {t('packs.byCategory')}
-              </Text>
-            </Pressable>
+                <Text
+                  variant="subhead"
+                  className={
+                    viewMode === 'category' ? 'text-primary-foreground' : 'text-muted-foreground'
+                  }
+                >
+                  {t('packs.byCategory')}
+                </Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
 
-        {viewMode === 'all' ? (
-          <View className=" flex-1 pb-20">
-            {items.map((item) => (
-              <PackItemCard key={item.id} item={item} onPress={handleItemPress} />
-            ))}
-          </View>
-        ) : (
-          <View className="pb-4">
-            {Object.entries(itemsByCategory).map(([category, groupedItems]) => (
-              <CategorySection
-                key={category}
-                category={category}
-                items={groupedItems}
-                onItemPress={handleItemPress}
-              />
-            ))}
-          </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+          {viewMode === 'all' ? (
+            <View className=" flex-1 pb-20">
+              {items.map((item) => (
+                <PackItemCard key={item.id} item={item} onPress={handleItemPress} />
+              ))}
+            </View>
+          ) : (
+            <View className="pb-4">
+              {Object.entries(itemsByCategory).map(([category, groupedItems]) => (
+                <CategorySection
+                  key={category}
+                  category={category}
+                  items={groupedItems}
+                  onItemPress={handleItemPress}
+                />
+              ))}
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </ProGate>
   );
 }

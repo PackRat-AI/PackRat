@@ -10,6 +10,7 @@ import '../global.css';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { Alert, type AlertMethods } from '@packrat/ui/nativewindui';
 import * as Sentry from '@sentry/react-native';
+import { configureRevenueCat } from 'expo-app/features/purchases';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
@@ -19,6 +20,8 @@ import { LogBox } from 'react-native';
 if (__DEV__ && clientEnvs.EXPO_PUBLIC_DISABLE_LOGBOX === 'true') {
   LogBox.ignoreAllLogs(true);
 }
+
+configureRevenueCat();
 
 Sentry.init({
   dsn: clientEnvs.EXPO_PUBLIC_SENTRY_DSN,

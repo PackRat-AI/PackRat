@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { ProGate } from 'expo-app/features/purchases';
 import { useWeatherAlerts } from 'expo-app/features/weather/hooks/useWeatherAlert';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -134,54 +135,56 @@ export default function WeatherAlertsScreen() {
   const { alerts, loading, error, activeLocation } = useWeatherAlerts();
 
   return (
-    <SafeAreaView className="flex-1" edges={['bottom']}>
-      <Stack.Screen options={{ ...getAppBarOptions(), title: t('weather.weatherAlertsTitle') }} />
-      <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
-        <View className="flex-row items-center justify-between p-4">
-          <Text
-            variant="subhead"
-            className="flex-1 text-muted-foreground"
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {t('weather.currentWeatherAlerts')}
-          </Text>
-
-          <Pressable
-            onPress={() => router.push('/weather-alert-preferences')}
-            className="flex-row items-center gap-1 ml-2"
-          >
-            <MaterialCommunityIcons name="tune-vertical-variant" size={16} color="#3B82F6" />
-            <Text variant="footnote" className="text-primary">
-              {t('weather.manageAlerts')}
+    <ProGate>
+      <SafeAreaView className="flex-1" edges={['bottom']}>
+        <Stack.Screen options={{ ...getAppBarOptions(), title: t('weather.weatherAlertsTitle') }} />
+        <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
+          <View className="flex-row items-center justify-between p-4">
+            <Text
+              variant="subhead"
+              className="flex-1 text-muted-foreground"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {t('weather.currentWeatherAlerts')}
             </Text>
-          </Pressable>
-        </View>
 
-        <View className="pb-4">
-          {loading && <Text className="mx-4">Loading alerts...</Text>}
+            <Pressable
+              onPress={() => router.push('/weather-alert-preferences')}
+              className="flex-row items-center gap-1 ml-2"
+            >
+              <MaterialCommunityIcons name="tune-vertical-variant" size={16} color="#3B82F6" />
+              <Text variant="footnote" className="text-primary">
+                {t('weather.manageAlerts')}
+              </Text>
+            </Pressable>
+          </View>
 
-          {error && <Text className="mx-4 text-red-500">{error}</Text>}
+          <View className="pb-4">
+            {loading && <Text className="mx-4">Loading alerts...</Text>}
 
-          {!loading && alerts.length === 0 && (
-            <Text className="mx-4 text-muted-foreground">
-              No active alerts for {activeLocation?.name ?? 'this location'}
+            {error && <Text className="mx-4 text-red-500">{error}</Text>}
+
+            {!loading && alerts.length === 0 && (
+              <Text className="mx-4 text-muted-foreground">
+                No active alerts for {activeLocation?.name ?? 'this location'}
+              </Text>
+            )}
+
+            {alerts.map((alert) => (
+              <WeatherAlertCard key={alert.id} alert={alert} />
+            ))}
+          </View>
+
+          <View className="mx-4 my-2 rounded-lg bg-card p-4">
+            <Text variant="footnote" className="text-muted-foreground">
+              {t('weather.weatherDataLastUpdated', {
+                date: new Date().toLocaleTimeString(),
+              })}
             </Text>
-          )}
-
-          {alerts.map((alert) => (
-            <WeatherAlertCard key={alert.id} alert={alert} />
-          ))}
-        </View>
-
-        <View className="mx-4 my-2 rounded-lg bg-card p-4">
-          <Text variant="footnote" className="text-muted-foreground">
-            {t('weather.weatherDataLastUpdated', {
-              date: new Date().toLocaleTimeString(),
-            })}
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </ProGate>
   );
 }

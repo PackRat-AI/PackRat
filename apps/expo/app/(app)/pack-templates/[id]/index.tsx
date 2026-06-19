@@ -1,5 +1,10 @@
 import { PackTemplateDetailScreen } from 'expo-app/features/pack-templates/screens/PackTemplateDetailScreen';
+import { ProGate } from 'expo-app/features/purchases';
 
 export default function PackTemplateDetailScreenRoute() {
-  return <PackTemplateDetailScreen />;
+  return (
+    <ProGate>
+      <PackTemplateDetailScreen />
+    </ProGate>
+  );
 }

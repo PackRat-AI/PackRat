@@ -4,6 +4,7 @@ import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';
+import { ProGate } from 'expo-app/features/purchases';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -66,27 +67,29 @@ export default function PackCategoriesScreen() {
   const categories = computeCategorySummaries({ pack, preferredUnit: weightUnit });
 
   return (
-    <>
-      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.packCategories') }} />
-      {categories.length ? (
-        <ScrollView className="flex-1">
-          <View className="p-4">
-            <Text variant="subhead" className="mb-2 text-muted-foreground">
-              {t('packs.organizeGear')}
-            </Text>
-          </View>
+    <ProGate>
+      <>
+        <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.packCategories') }} />
+        {categories.length ? (
+          <ScrollView className="flex-1">
+            <View className="p-4">
+              <Text variant="subhead" className="mb-2 text-muted-foreground">
+                {t('packs.organizeGear')}
+              </Text>
+            </View>
 
-          <View className="pb-4">
-            {categories.map((category) => (
-              <CategoryCard key={category.name} category={category} weightUnit={weightUnit} />
-            ))}
+            <View className="pb-4">
+              {categories.map((category) => (
+                <CategoryCard key={category.name} category={category} weightUnit={weightUnit} />
+              ))}
+            </View>
+          </ScrollView>
+        ) : (
+          <View className="flex-1 items-center justify-center">
+            <Text className="text-center">{t('packs.noCategorizedItems')}</Text>
           </View>
-        </ScrollView>
-      ) : (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-center">{t('packs.noCategorizedItems')}</Text>
-        </View>
-      )}
-    </>
+        )}
+      </>
+    </ProGate>
   );
 }
