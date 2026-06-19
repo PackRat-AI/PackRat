@@ -11,10 +11,9 @@ let isPaywallPresenting = false;
 
 interface ProGateProps {
   children: React.ReactNode;
-  fallback?: React.ReactNode;
 }
 
-export function ProGate({ children, fallback }: ProGateProps) {
+export function ProGate({ children }: ProGateProps) {
   const { isProMember, isLoading } = useEntitlement();
   const { presentPaywall } = usePresentPaywall();
   const router = useRouter();
