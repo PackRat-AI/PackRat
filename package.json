@@ -86,6 +86,10 @@
     "expo-sqlite": "~56.0.4",
     "react": "19.2.3"
   },
+  "dependencies": {
+    "react-native-purchases": "^10.4.0",
+    "react-native-purchases-ui": "^10.4.0"
+  },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
     "@manypkg/cli": "^0.24.0",
@@ -206,9 +210,5 @@
   "patchedDependencies": {},
   "trustedDependencies": [
     "@sentry/cli"
-  ],
-  "dependencies": {
-    "react-native-purchases": "^10.4.0",
-    "react-native-purchases-ui": "^10.4.0"
-  }
+  ]
 }
