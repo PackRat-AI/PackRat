@@ -21,6 +21,11 @@ import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
+import {
+  presentCustomerCenter,
+  useEntitlement,
+  usePresentPaywall,
+} from 'expo-app/features/purchases';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -44,6 +49,9 @@ export default function SettingsScreen() {
   const { unit: weightUnit, setWeightUnit } = useWeightUnit();
   const { unit: temperatureUnit, setTemperatureUnit } = useTemperatureUnit();
   const { unit: speedUnit, setSpeedUnit } = useSpeedUnit();
+
+  const { isProMember } = useEntitlement();
+  const { presentPaywall } = usePresentPaywall();
 
   const isApple = isAppleIntelligenceAvailable();
   const isDownloading = modelStatus === 'downloading';
@@ -162,6 +170,46 @@ export default function SettingsScreen() {
                 />
               </View>
             </View>
+          </View>
+        </View>
+
+        <View>
+          <Text variant="subhead" className="mb-3">
+            Subscription
+          </Text>
+          <View className="rounded-xl border border-border bg-card">
+            <View className="flex-row items-center gap-3 p-4">
+              <View
+                className="h-10 w-10 items-center justify-center rounded-xl"
+                style={{ backgroundColor: isProMember ? '#f59e0b20' : '#6b728020' }}
+              >
+                <Icon
+                  name={isProMember ? 'crown' : 'crown-outline'}
+                  size={22}
+                  color={isProMember ? '#f59e0b' : colors.grey}
+                />
+              </View>
+              <View className="flex-1">
+                <Text className="font-semibold">{isProMember ? 'PackRat Pro' : 'Free Plan'}</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  {isProMember
+                    ? 'You have full access to all Pro features'
+                    : 'Upgrade to unlock all Pro features'}
+                </Text>
+              </View>
+            </View>
+            <View className="h-px bg-border mx-4" />
+            <TouchableOpacity
+              className="flex-row items-center gap-3 p-4"
+              onPress={isProMember ? presentCustomerCenter : presentPaywall}
+            >
+              <View className="flex-1">
+                <Text className="font-medium" style={{ color: colors.primary }}>
+                  {isProMember ? 'Manage Subscription' : 'Upgrade to Pro'}
+                </Text>
+              </View>
+              <Icon name="chevron-right" size={20} color={colors.grey} />
+            </TouchableOpacity>
           </View>
         </View>
 
