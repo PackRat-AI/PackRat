@@ -55,7 +55,6 @@ export default function SettingsScreen() {
   const { presentPaywall } = usePresentPaywall();
 
   const handleSubscriptionPress = async () => {
-    Burnt.toast({ title: isProMember ? 'Opening subscription management…' : 'Opening upgrade…' });
     try {
       if (isProMember) {
         await presentCustomerCenter();
