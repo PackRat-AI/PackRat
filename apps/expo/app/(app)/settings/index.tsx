@@ -34,7 +34,8 @@ import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAtomValue } from 'jotai';
-import { Platform, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Linking, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
+import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
 export default function SettingsScreen() {
   const { colorScheme, colors } = useColorScheme();
@@ -54,11 +55,19 @@ export default function SettingsScreen() {
   const { presentPaywall } = usePresentPaywall();
 
   const handleSubscriptionPress = async () => {
+    Burnt.toast({ title: isProMember ? 'Opening subscription management…' : 'Opening upgrade…' });
     try {
       if (isProMember) {
         await presentCustomerCenter();
       } else {
-        await presentPaywall();
+        const result = await presentPaywall();
+        if (result === PAYWALL_RESULT.NOT_PRESENTED) {
+          const url =
+            Platform.OS === 'ios'
+              ? 'https://apps.apple.com/account/subscriptions'
+              : 'https://play.google.com/store/account/subscriptions';
+          await Linking.openURL(url);
+        }
       }
     } catch {
       Burnt.toast({ title: 'Something went wrong. Please try again.', preset: 'error' });
