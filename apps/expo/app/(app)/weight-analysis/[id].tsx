@@ -4,7 +4,6 @@ import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeightAnalysis';
-import { ProGate } from 'expo-app/features/purchases';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -48,96 +47,94 @@ export default function WeightAnalysisScreen() {
   const { convertWeight } = useWeightUnit();
 
   return (
-    <ProGate>
-      <SafeAreaView className="flex-1" edges={['bottom']}>
-        <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.weightAnalysis') }} />
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingBottom: 32 }}
-          removeClippedSubviews={false}
-          contentInsetAdjustmentBehavior="automatic"
-        >
-          <View className="grid grid-cols-2 gap-3 p-4">
-            <WeightCard
-              title={t('packs.baseWeight')}
-              weight={`${data.baseWeight} ${preferredUnit}`}
-              className="col-span-1"
-            />
-            <WeightCard
-              title={t('packs.consumablesWeight')}
-              weight={`${data.consumableWeight} ${preferredUnit}`}
-              className="col-span-1"
-            />
-            <WeightCard
-              title={t('packs.wornWeight')}
-              weight={`${data.wornWeight} ${preferredUnit}`}
-              className="col-span-1"
-            />
-            <WeightCard
-              title={t('packs.totalWeight')}
-              weight={`${data.totalWeight} ${preferredUnit}`}
-              className="col-span-1"
-            />
-          </View>
+    <SafeAreaView className="flex-1" edges={['bottom']}>
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.weightAnalysis') }} />
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 32 }}
+        removeClippedSubviews={false}
+        contentInsetAdjustmentBehavior="automatic"
+      >
+        <View className="grid grid-cols-2 gap-3 p-4">
+          <WeightCard
+            title={t('packs.baseWeight')}
+            weight={`${data.baseWeight} ${preferredUnit}`}
+            className="col-span-1"
+          />
+          <WeightCard
+            title={t('packs.consumablesWeight')}
+            weight={`${data.consumableWeight} ${preferredUnit}`}
+            className="col-span-1"
+          />
+          <WeightCard
+            title={t('packs.wornWeight')}
+            weight={`${data.wornWeight} ${preferredUnit}`}
+            className="col-span-1"
+          />
+          <WeightCard
+            title={t('packs.totalWeight')}
+            weight={`${data.totalWeight} ${preferredUnit}`}
+            className="col-span-1"
+          />
+        </View>
 
-          <View className="mb-4 px-4">
-            <Text variant="heading" className="mb-2 font-semibold">
-              {t('packs.weightBreakdown')}
-            </Text>
-            <Text variant="subhead" className="mb-4 text-muted-foreground">
-              {t('packs.detailedAnalysis')}
-            </Text>
-          </View>
+        <View className="mb-4 px-4">
+          <Text variant="heading" className="mb-2 font-semibold">
+            {t('packs.weightBreakdown')}
+          </Text>
+          <Text variant="subhead" className="mb-4 text-muted-foreground">
+            {t('packs.detailedAnalysis')}
+          </Text>
+        </View>
 
-          {data.categories.map((category, _categoryIndex) => (
-            <View key={category.name} className="mx-4 mb-4 rounded-lg bg-card">
-              {/* Category Header */}
-              <View className="border-border/25 dark:border-border/80 flex-row items-center justify-between border-b p-4">
-                <View>
-                  <Text variant="heading" className="font-semibold">
-                    {category.name}
-                  </Text>
-                  <Text variant="subhead" className="text-muted-foreground">
-                    {category.weight} {preferredUnit}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Items */}
+        {data.categories.map((category, _categoryIndex) => (
+          <View key={category.name} className="mx-4 mb-4 rounded-lg bg-card">
+            {/* Category Header */}
+            <View className="border-border/25 dark:border-border/80 flex-row items-center justify-between border-b p-4">
               <View>
-                {items
-                  .filter((item) => item.category.trim() === category.name.trim())
-                  .map((item, itemIndex) => (
-                    <View
-                      key={`${category.name}-${item.id}`}
-                      className={cn(
-                        'flex-row items-center justify-between p-4',
-                        itemIndex > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',
-                      )}
-                    >
-                      <View>
-                        <Text>{item.name}</Text>
-                        {item.notes && (
-                          <Text variant="footnote" className="text-muted-foreground">
-                            {item.notes}
-                          </Text>
-                        )}
-                      </View>
-                      <Text variant="subhead" className="text-muted-foreground">
-                        {convertWeight({ weight: item.weight, fromUnit: item.weightUnit || 'g' })}{' '}
-                        {preferredUnit}
-                      </Text>
-                    </View>
-                  ))}
+                <Text variant="heading" className="font-semibold">
+                  {category.name}
+                </Text>
+                <Text variant="subhead" className="text-muted-foreground">
+                  {category.weight} {preferredUnit}
+                </Text>
               </View>
             </View>
-          ))}
 
-          {!data.categories.length && (
-            <Text className="px-8 text-center">{t('packs.addItemsForBreakdown')}</Text>
-          )}
-        </ScrollView>
-      </SafeAreaView>
-    </ProGate>
+            {/* Items */}
+            <View>
+              {items
+                .filter((item) => item.category.trim() === category.name.trim())
+                .map((item, itemIndex) => (
+                  <View
+                    key={`${category.name}-${item.id}`}
+                    className={cn(
+                      'flex-row items-center justify-between p-4',
+                      itemIndex > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',
+                    )}
+                  >
+                    <View>
+                      <Text>{item.name}</Text>
+                      {item.notes && (
+                        <Text variant="footnote" className="text-muted-foreground">
+                          {item.notes}
+                        </Text>
+                      )}
+                    </View>
+                    <Text variant="subhead" className="text-muted-foreground">
+                      {convertWeight({ weight: item.weight, fromUnit: item.weightUnit || 'g' })}{' '}
+                      {preferredUnit}
+                    </Text>
+                  </View>
+                ))}
+            </View>
+          </View>
+        ))}
+
+        {!data.categories.length && (
+          <Text className="px-8 text-center">{t('packs.addItemsForBreakdown')}</Text>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
