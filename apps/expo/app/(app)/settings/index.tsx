@@ -53,6 +53,18 @@ export default function SettingsScreen() {
   const { isProMember } = useEntitlement();
   const { presentPaywall } = usePresentPaywall();
 
+  const handleSubscriptionPress = async () => {
+    try {
+      if (isProMember) {
+        await presentCustomerCenter();
+      } else {
+        await presentPaywall();
+      }
+    } catch {
+      Burnt.toast({ title: 'Something went wrong. Please try again.', preset: 'error' });
+    }
+  };
+
   const isApple = isAppleIntelligenceAvailable();
   const isDownloading = modelStatus === 'downloading';
   const isPreparing = modelStatus === 'preparing' || modelStatus === 'checking';
@@ -201,7 +213,7 @@ export default function SettingsScreen() {
             <View className="h-px bg-border mx-4" />
             <TouchableOpacity
               className="flex-row items-center gap-3 p-4"
-              onPress={isProMember ? presentCustomerCenter : presentPaywall}
+              onPress={handleSubscriptionPress}
             >
               <View className="flex-1">
                 <Text className="font-medium" style={{ color: colors.primary }}>

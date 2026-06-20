@@ -14,6 +14,7 @@ export async function presentCustomerCenter() {
     Sentry.captureException(error, {
       tags: { feature: 'purchases', action: 'presentCustomerCenter' },
     });
+    throw error;
   }
 }
 
