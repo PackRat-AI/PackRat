@@ -124,6 +124,11 @@ export default function AppLayout() {
           options={getCatalogAddToPackItemDetailsOptions(t)}
         />
         <Stack.Screen name="ai-chat" />
+        <Stack.Screen name="paywall" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="customer-center"
+          options={{ title: 'Manage Subscription', presentation: 'card' }}
+        />
         <Stack.Screen name="catalog/[id]" options={getCatalogItemDetailOptions(t)} />
         <Stack.Screen
           name="weather/search"

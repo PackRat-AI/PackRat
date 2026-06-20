@@ -21,11 +21,7 @@ import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
-import {
-  presentCustomerCenter,
-  useEntitlement,
-  usePresentPaywall,
-} from 'expo-app/features/purchases';
+import { useEntitlement } from 'expo-app/features/purchases';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -34,8 +30,7 @@ import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAtomValue } from 'jotai';
-import { Linking, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
-import { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import { Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 
 export default function SettingsScreen() {
   const { colorScheme, colors } = useColorScheme();
@@ -52,25 +47,9 @@ export default function SettingsScreen() {
   const { unit: speedUnit, setSpeedUnit } = useSpeedUnit();
 
   const { isProMember } = useEntitlement();
-  const { presentPaywall } = usePresentPaywall();
 
-  const handleSubscriptionPress = async () => {
-    try {
-      if (isProMember) {
-        await presentCustomerCenter();
-      } else {
-        const result = await presentPaywall();
-        if (result === PAYWALL_RESULT.NOT_PRESENTED) {
-          const url =
-            Platform.OS === 'ios'
-              ? 'https://apps.apple.com/account/subscriptions'
-              : 'https://play.google.com/store/account/subscriptions';
-          await Linking.openURL(url);
-        }
-      }
-    } catch {
-      Burnt.toast({ title: 'Something went wrong. Please try again.', preset: 'error' });
-    }
+  const handleSubscriptionPress = () => {
+    router.push(isProMember ? '/customer-center' : '/paywall');
   };
 
   const isApple = isAppleIntelligenceAvailable();
