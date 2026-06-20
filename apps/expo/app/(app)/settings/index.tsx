@@ -22,9 +22,9 @@ import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureU
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import {
-  presentCustomerCenter,
   useEntitlement,
   usePresentPaywall,
+  useRestorePurchases,
 } from 'expo-app/features/purchases';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -34,7 +34,7 @@ import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAtomValue } from 'jotai';
-import { Platform, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Linking, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 
 export default function SettingsScreen() {
   const { colorScheme, colors } = useColorScheme();
@@ -52,17 +52,29 @@ export default function SettingsScreen() {
 
   const { isProMember } = useEntitlement();
   const { presentPaywall } = usePresentPaywall();
+  const { mutate: restorePurchases, isPending: isRestoring } = useRestorePurchases();
 
-  const handleSubscriptionPress = async () => {
-    try {
-      if (isProMember) {
-        await presentCustomerCenter();
-      } else {
-        await presentPaywall();
-      }
-    } catch {
-      Burnt.toast({ title: 'Something went wrong. Please try again.', preset: 'error' });
-    }
+  const handleManageSubscription = () => {
+    const url =
+      Platform.OS === 'ios'
+        ? 'https://apps.apple.com/account/subscriptions'
+        : 'https://play.google.com/store/account/subscriptions';
+    Linking.openURL(url);
+  };
+
+  const handleRestore = () => {
+    restorePurchases(undefined, {
+      onSuccess: (info) => {
+        const isPro = !!info.entitlements.active['PackRat Pro'];
+        Burnt.toast({
+          title: isPro ? 'Pro access restored!' : 'No purchases found',
+          preset: isPro ? 'done' : 'error',
+        });
+      },
+      onError: () => {
+        Burnt.toast({ title: 'Restore failed. Please try again.', preset: 'error' });
+      },
+    });
   };
 
   const isApple = isAppleIntelligenceAvailable();
@@ -190,6 +202,7 @@ export default function SettingsScreen() {
             Subscription
           </Text>
           <View className="rounded-xl border border-border bg-card">
+            {/* Plan status row */}
             <View className="flex-row items-center gap-3 p-4">
               <View
                 className="h-10 w-10 items-center justify-center rounded-xl"
@@ -205,22 +218,48 @@ export default function SettingsScreen() {
                 <Text className="font-semibold">{isProMember ? 'PackRat Pro' : 'Free Plan'}</Text>
                 <Text variant="footnote" className="mt-0.5 text-muted-foreground">
                   {isProMember
-                    ? 'You have full access to all Pro features'
-                    : 'Upgrade to unlock all Pro features'}
+                    ? 'Full access to all Pro features'
+                    : 'Upgrade to unlock Pro features'}
                 </Text>
               </View>
             </View>
+
             <View className="h-px bg-border mx-4" />
-            <TouchableOpacity
-              className="flex-row items-center gap-3 p-4"
-              onPress={handleSubscriptionPress}
-            >
-              <View className="flex-1">
+
+            {/* Primary action */}
+            {isProMember ? (
+              <TouchableOpacity
+                className="flex-row items-center justify-between p-4"
+                onPress={handleManageSubscription}
+              >
                 <Text className="font-medium" style={{ color: colors.primary }}>
-                  {isProMember ? 'Manage Subscription' : 'Upgrade to Pro'}
+                  Manage Subscription
                 </Text>
-              </View>
-              <Icon name="chevron-right" size={20} color={colors.grey} />
+                <Icon name="chevron-right" size={20} color={colors.grey} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                className="flex-row items-center justify-between p-4"
+                onPress={presentPaywall}
+              >
+                <Text className="font-medium" style={{ color: colors.primary }}>
+                  Upgrade to Pro
+                </Text>
+                <Icon name="chevron-right" size={20} color={colors.grey} />
+              </TouchableOpacity>
+            )}
+
+            <View className="h-px bg-border mx-4" />
+
+            {/* Restore purchases */}
+            <TouchableOpacity
+              className="flex-row items-center justify-between p-4"
+              onPress={handleRestore}
+              disabled={isRestoring}
+            >
+              <Text className="font-medium text-muted-foreground">
+                {isRestoring ? 'Restoring…' : 'Restore Purchases'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
