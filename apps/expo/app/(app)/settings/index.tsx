@@ -133,7 +133,7 @@ export default function SettingsScreen() {
   const iconName: MaterialIconName = isApple ? 'apple' : 'atom';
 
   return (
-    <ScrollView className="flex-1 px-4 py-6">
+    <ScrollView className="flex-1 px-4 py-6" contentInsetAdjustmentBehavior="automatic">
       <View className="gap-6">
         <StatusBar
           style={Platform.OS === 'ios' ? 'light' : colorScheme === 'dark' ? 'light' : 'dark'}

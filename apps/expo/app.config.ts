@@ -9,19 +9,19 @@ const IS_DEV = process.env.APP_VARIANT === 'development';
 const IS_PREVIEW = process.env.APP_VARIANT === 'preview';
 
 const getAppName = () => {
-  if (IS_DEV) return 'PackRat (Dev)';
+  if (IS_DEV) return 'PackRat (Dev) rc';
   if (IS_PREVIEW) return 'PackRat (Preview)';
   return 'PackRat';
 };
 
 const getBundleIdentifier = () => {
-  if (IS_DEV) return 'com.andrewbierman.packrat.dev';
+  if (IS_DEV) return 'com.andrewbierman.packrat.devrc';
   if (IS_PREVIEW) return 'com.andrewbierman.packrat.preview';
   return 'com.andrewbierman.packrat';
 };
 
 const getAndroidPackage = () => {
-  if (IS_DEV) return 'com.packratai.mobile.dev';
+  if (IS_DEV) return 'com.packratai.mobile.devrc';
   if (IS_PREVIEW) return 'com.packratai.mobile.preview';
   return 'com.packratai.mobile';
 };

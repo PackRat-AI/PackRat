@@ -206,5 +206,9 @@
   "patchedDependencies": {},
   "trustedDependencies": [
     "@sentry/cli"
-  ]
+  ],
+  "dependencies": {
+    "react-native-purchases": "^10.4.0",
+    "react-native-purchases-ui": "^10.4.0"
+  }
 }
