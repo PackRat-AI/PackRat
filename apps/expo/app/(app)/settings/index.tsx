@@ -21,7 +21,11 @@ import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
-import { useEntitlement } from 'expo-app/features/purchases';
+import {
+  presentCustomerCenter,
+  useEntitlement,
+  usePresentPaywall,
+} from 'expo-app/features/purchases';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -47,9 +51,18 @@ export default function SettingsScreen() {
   const { unit: speedUnit, setSpeedUnit } = useSpeedUnit();
 
   const { isProMember } = useEntitlement();
+  const { presentPaywall } = usePresentPaywall();
 
-  const handleSubscriptionPress = () => {
-    router.push(isProMember ? '/customer-center' : '/paywall');
+  const handleSubscriptionPress = async () => {
+    try {
+      if (isProMember) {
+        await presentCustomerCenter();
+      } else {
+        await presentPaywall();
+      }
+    } catch {
+      Burnt.toast({ title: 'Something went wrong. Please try again.', preset: 'error' });
+    }
   };
 
   const isApple = isAppleIntelligenceAvailable();

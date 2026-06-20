@@ -124,11 +124,6 @@ export default function AppLayout() {
           options={getCatalogAddToPackItemDetailsOptions(t)}
         />
         <Stack.Screen name="ai-chat" />
-        <Stack.Screen name="paywall" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="customer-center"
-          options={{ title: 'Manage Subscription', presentation: 'card' }}
-        />
         <Stack.Screen name="catalog/[id]" options={getCatalogItemDetailOptions(t)} />
         <Stack.Screen
           name="weather/search"
@@ -315,12 +310,10 @@ const TABS_OPTIONS = {
   headerShown: false,
 } as const;
 
-// MODALS - These functions accept translation function t
 const getSettingsOptions = (t: TranslationFunction) =>
   ({
-    presentation: 'modal',
-    animation: 'fade_from_bottom', // for android
     title: t('profile.settings'),
+    headerLargeTitle: true,
     headerRight: () => <ThemeToggle />,
   }) as const;
 
