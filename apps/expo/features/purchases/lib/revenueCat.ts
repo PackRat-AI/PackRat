@@ -1,15 +1,16 @@
+import { clientEnvs } from '@packrat/env/expo-client';
 import * as Sentry from '@sentry/react-native';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 
-// RevenueCat public API key — not a secret, safe to embed in the app bundle.
-const REVENUECAT_API_KEY = 'test_rmRjXKZMmykOaEhtvmoRYtqmVGA';
-
 export function configureRevenueCat() {
+  const apiKey = clientEnvs.EXPO_PUBLIC_REVENUECAT_API_KEY;
+  if (!apiKey) return;
+
   try {
     if (__DEV__) {
       Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
     }
-    Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+    Purchases.configure({ apiKey });
     Sentry.addBreadcrumb({
       category: 'purchases',
       message: 'RevenueCat configured',
