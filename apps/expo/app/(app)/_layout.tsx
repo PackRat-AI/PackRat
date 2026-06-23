@@ -249,7 +249,8 @@ export default function AppLayout() {
         <Stack.Screen
           name="pack-templates/index"
           options={{
-            headerShown: false,
+            ...getAppBarOptions(),
+            title: 'Pack Templates',
           }}
         />
         <Stack.Screen

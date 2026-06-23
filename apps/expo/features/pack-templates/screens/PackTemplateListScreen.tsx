@@ -169,14 +169,6 @@ export function PackTemplateListScreen() {
     return selectedTemplateTypeIndex === 0 ? (
       <View className="bg-background">
         <FeaturedPacksSection onTemplatePress={handleTemplatePress} />
-        <View className="px-4 pb-2">
-          <Text className="text-muted-foreground">
-            {filteredTemplates.length}{' '}
-            {filteredTemplates.length === 1
-              ? t('packTemplates.template')
-              : t('packTemplates.templates')}
-          </Text>
-        </View>
       </View>
     ) : undefined;
   };
@@ -220,8 +212,16 @@ export function PackTemplateListScreen() {
         data={filteredTemplates}
         keyExtractor={(item) => item.id}
         contentInsetAdjustmentBehavior="automatic"
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <View className="px-4 pt-4">
+            {index === 0 && (
+              <Text className="pb-2 text-muted-foreground">
+                {filteredTemplates.length}{' '}
+                {filteredTemplates.length === 1
+                  ? t('packTemplates.template')
+                  : t('packTemplates.templates')}
+              </Text>
+            )}
             <PackTemplateCard templateId={item.id} onPress={handleTemplatePress} />
           </View>
         )}
