@@ -211,10 +211,29 @@ export function PackListScreen() {
         )}
       </SearchOverlay>
 
+      <View className="bg-background">
+        {!isAuthenticated && <SyncBanner title={t('packs.syncBanner')} />}
+        {isAuthenticated && (
+          <View className="px-4">
+            <SegmentedControl
+              enabled={isAuthenticated}
+              values={['My Packs', 'All Packs']}
+              selectedIndex={selectedTypeIndex}
+              onIndexChange={(index) => {
+                setSelectedTypeIndex(index);
+              }}
+            />
+          </View>
+        )}
+        <View className="bg-background px-4 py-2">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-1">
+            {filterOptions.map(renderFilterChip)}
+          </ScrollView>
+        </View>
+      </View>
       <FlatList
         data={filteredPacks}
         keyExtractor={(pack) => pack.id}
-        stickyHeaderIndices={[0]}
         contentInsetAdjustmentBehavior="automatic"
         renderItem={({ item: pack, index }) => (
           <View className="px-4 pt-4">
@@ -239,28 +258,6 @@ export function PackListScreen() {
               tintColor={colors.primary}
             />
           ) : undefined
-        }
-        ListHeaderComponent={
-          <View className="bg-background">
-            {!isAuthenticated && <SyncBanner title={t('packs.syncBanner')} />}
-            {isAuthenticated && (
-              <View className="px-4">
-                <SegmentedControl
-                  enabled={isAuthenticated}
-                  values={['My Packs', 'All Packs']}
-                  selectedIndex={selectedTypeIndex}
-                  onIndexChange={(index) => {
-                    setSelectedTypeIndex(index);
-                  }}
-                />
-              </View>
-            )}
-            <View className="bg-background px-4 py-2">
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-1">
-                {filterOptions.map(renderFilterChip)}
-              </ScrollView>
-            </View>
-          </View>
         }
         ListEmptyComponent={
           selectedTypeIndex === ALL_PACKS_INDEX ? (
