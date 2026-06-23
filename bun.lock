@@ -796,9 +796,6 @@
   "trustedDependencies": [
     "@sentry/cli",
   ],
-  "patchedDependencies": {
-    "react-native-ios-utilities@5.2.0": "patches/react-native-ios-utilities@5.2.0.patch",
-  },
   "overrides": {
     "@packrat-ai/nativewindui": "2.2.1",
     "@sinclair/typebox": "^0.34.15",
