@@ -218,8 +218,13 @@ export function PackListScreen() {
           keyExtractor={(pack) => pack.id}
           stickyHeaderIndices={[0]}
           contentInsetAdjustmentBehavior="automatic"
-          renderItem={({ item: pack }) => (
+          renderItem={({ item: pack, index }) => (
             <View className="px-4 pt-4">
+              {index === 0 && selectedTypeIndex === USER_PACKS_INDEX && (
+                <Text className="pb-2 text-muted-foreground">
+                  {filteredPacks?.length || 0} {filteredPacks?.length === 1 ? 'pack' : 'packs'}
+                </Text>
+              )}
               <PackCard
                 // biome-ignore lint/suspicious/noExplicitAny: Treaty type divergence
                 pack={pack as any}
@@ -257,13 +262,6 @@ export function PackListScreen() {
                   {filterOptions.map(renderFilterChip)}
                 </ScrollView>
               </View>
-              {selectedTypeIndex === USER_PACKS_INDEX && (
-                <View className="px-6 py-2 bg-background">
-                  <Text className="text-muted-foreground">
-                    {filteredPacks?.length || 0} {filteredPacks?.length === 1 ? 'pack' : 'packs'}
-                  </Text>
-                </View>
-              )}
             </View>
           }
           ListEmptyComponent={
