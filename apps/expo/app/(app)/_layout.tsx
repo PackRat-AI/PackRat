@@ -153,6 +153,7 @@ export default function AppLayout() {
             animation: 'slide_from_bottom',
           }}
         />
+        <Stack.Screen name="upcoming-trips" />
         <Stack.Screen
           name="recent-packs"
           options={{
@@ -177,15 +178,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="pack-categories/[id]"
           options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
-          }}
-        />
-        <Stack.Screen
-          name="upcoming-trips"
-          options={{
-            headerShown: true,
-            headerTitle: '',
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
