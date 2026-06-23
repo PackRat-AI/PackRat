@@ -187,7 +187,6 @@ export function PackListScreen() {
       <Stack.Screen
         options={{
           ...getAppBarOptions(),
-          headerLargeTitle: false,
           title: t('navigation.packs'),
           headerBackVisible: false,
           headerRight: () => <CreatePackIconButton />,
