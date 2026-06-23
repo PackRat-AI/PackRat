@@ -23,7 +23,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAllPacks } from '../hooks/useAllPacks';
 import { usePacks } from '../hooks/usePacks';
 import type { Pack, PackCategory, PackInStore } from '../types';
@@ -67,6 +67,7 @@ export function PackListScreen() {
   const allPacksQuery = useAllPacks(selectedTypeIndex === ALL_PACKS_INDEX);
 
   const { colors } = useColorScheme();
+  const { top: topInset } = useSafeAreaInsets();
 
   const filterOptions: FilterOption[] = [
     { label: t('packs.all'), value: 'all' },
@@ -211,7 +212,7 @@ export function PackListScreen() {
         )}
       </SearchOverlay>
 
-      <View className="bg-background">
+      <View className="bg-background" style={{ paddingTop: topInset }}>
         {!isAuthenticated && <SyncBanner title={t('packs.syncBanner')} />}
         {isAuthenticated && (
           <View className="px-4">
@@ -234,7 +235,6 @@ export function PackListScreen() {
       <FlatList
         data={filteredPacks}
         keyExtractor={(pack) => pack.id}
-        contentInsetAdjustmentBehavior="automatic"
         renderItem={({ item: pack, index }) => (
           <View className="px-4 pt-4">
             {index === 0 && selectedTypeIndex === USER_PACKS_INDEX && (
