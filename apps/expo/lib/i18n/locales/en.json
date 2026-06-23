@@ -473,7 +473,13 @@
     "tripShared": "Trip shared successfully",
     "tripExported": "Trip exported successfully",
     "weatherForecast": "Weather Forecast",
-    "viewWeather": "View Weather"
+    "viewWeather": "View Weather",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "inDays_one": "In {{count}} day",
+    "inDays_other": "In {{count}} days",
+    "planATrip": "Plan a Trip",
+    "noUpcomingTripsDesc": "You have no trips scheduled. Plan your next adventure and it will appear here."
   },
   "catalog": {
     "itemsCatalog": "Items Catalog",
