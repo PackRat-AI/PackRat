@@ -10,6 +10,10 @@ type Props = {
   minimumDate?: Date;
   maximumDate?: Date;
   style?: unknown;
+  // RN's `testID` doesn't auto-flow into a plain <input> the way it does for
+  // react-native-web's <Text>/<View>. Forward it explicitly so Playwright's
+  // getByTestId can target the rendered date input.
+  testID?: string;
 };
 
 function toInputValue(date: Date, mode: Props['mode']): string {
@@ -25,6 +29,7 @@ export default function DateTimePicker({
   onChange,
   minimumDate,
   maximumDate,
+  testID,
 }: Props) {
   const inputType = mode === 'time' ? 'time' : mode === 'datetime' ? 'datetime-local' : 'date';
 
@@ -39,6 +44,7 @@ export default function DateTimePicker({
   return (
     <input
       type={inputType}
+      data-testid={testID}
       defaultValue={toInputValue(value, mode)}
       min={minimumDate ? toInputValue(minimumDate, mode) : undefined}
       max={maximumDate ? toInputValue(maximumDate, mode) : undefined}

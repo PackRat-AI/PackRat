@@ -14,7 +14,7 @@ import { createConnection } from '@packrat/api/db';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import * as schema from '@packrat/db';
 import { isObject } from '@packrat/guards';
-import { betterAuth } from 'better-auth';
+import { type BetterAuthPlugin, betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
 
 // ─── Per-isolate auth instance cache ─────────────────────────────────────────
@@ -68,7 +68,9 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
 
     advanced: {
       // All IDs are UUID-formatted text (matching the DB migration).
-      generateId: () => crypto.randomUUID(),
+      database: {
+        generateId: () => crypto.randomUUID(),
+      },
       // Trust the X-Forwarded-For header added by Cloudflare.
       ipAddress: {
         ipAddressHeaders: ['cf-connecting-ip', 'x-forwarded-for'],
@@ -197,7 +199,8 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       }),
 
       // Admin: role-based user management endpoints.
-      admin(),
+      // safe-cast: Better Auth 1.6.13's admin plugin return type is narrower than BetterAuthPlugin.
+      admin() as unknown as BetterAuthPlugin,
 
       // Expo: promotes the expo-origin header → Origin so the CSRF check
       // passes for requests from the native app (which can't send a browser

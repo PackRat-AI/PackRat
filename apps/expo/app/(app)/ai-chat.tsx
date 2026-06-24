@@ -237,7 +237,10 @@ export default function AIChat() {
           trigger,
           messageId,
         }) => {
-          const authToken = token ?? (await getStoredSessionToken());
+          // Pull the live web token at request time. useChat captures the
+          // transport at mount, so relying only on the hook token can go stale.
+          const { data } = await authClient.getSession();
+          const authToken = data?.session?.token ?? token ?? (await getStoredSessionToken());
           return {
             api,
             credentials: credentials ?? 'include',
@@ -264,7 +267,7 @@ export default function AIChat() {
       }),
       transportKey: 'remote',
     };
-  }, [aiMode, isLocalReady, modelStatus, token, tools, userId]);
+  }, [aiMode, isLocalReady, modelStatus, tools, userId]);
 
   // transportKey forces useChat to remount when the transport type switches,
   // since useChat captures the transport reference on mount and won't update it.
