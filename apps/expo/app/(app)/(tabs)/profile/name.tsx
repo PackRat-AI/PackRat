@@ -5,6 +5,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { router, Stack } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import * as React from 'react';
 import { Alert, Platform, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
@@ -12,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NameScreen() {
   const insets = useSafeAreaInsets();
+  const headerHeight = useHeaderHeight();
   const { t } = useTranslation();
   const user = useUser();
   const { updateProfile, isLoading } = useUpdateProfile();
@@ -77,8 +79,7 @@ export default function NameScreen() {
         bottomOffset={8}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingBottom: insets.bottom }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: insets.bottom }}
       >
         <Form className="gap-5 px-4 pt-8">
           <FormSection materialIconProps={{ name: 'account-outline' }}>
