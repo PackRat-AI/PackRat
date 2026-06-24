@@ -1,6 +1,6 @@
 import { ActivityIndicator, Button, SegmentedControl } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
-import { LargeTitleHeaderOverlapFixIOS } from '@packrat/ui/src/large-title-header-overlap-fix-ios';
+import { IosTransparentHeaderOverlapFix } from '@packrat/ui/src/ios-transparent-header-overlap-fix';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
@@ -212,7 +212,7 @@ export function PackListScreen() {
         )}
       </SearchOverlay>
 
-      <LargeTitleHeaderOverlapFixIOS>
+      <IosTransparentHeaderOverlapFix>
         <FlatList
           data={filteredPacks}
           keyExtractor={(pack) => pack.id}
@@ -294,7 +294,7 @@ export function PackListScreen() {
           ListFooterComponent={<AndroidTabBarInsetFix />}
           contentContainerStyle={{ flexGrow: 1 }}
         />
-      </LargeTitleHeaderOverlapFixIOS>
+      </IosTransparentHeaderOverlapFix>
     </SafeAreaView>
   );
 }

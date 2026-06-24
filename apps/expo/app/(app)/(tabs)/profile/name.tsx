@@ -1,4 +1,5 @@
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
+import { IosTransparentHeaderOverlapFix } from '@packrat/ui/src/ios-transparent-header-overlap-fix';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
 import { cn } from 'expo-app/lib/cn';
@@ -70,7 +71,7 @@ export default function NameScreen() {
         }}
       />
 
-      <View className="flex-1">
+      <IosTransparentHeaderOverlapFix>
         <Form className="gap-5 px-4 pt-8">
           <FormSection materialIconProps={{ name: 'account-outline' }}>
             <FormItem>
@@ -79,7 +80,10 @@ export default function NameScreen() {
                 testID={testIds.profile.firstNameInput}
                 autoFocus
                 autoComplete="name-given"
-                label={Platform.select({ ios: undefined, default: t('profile.firstNameLabel') })}
+                label={Platform.select({
+                  ios: undefined,
+                  default: t('profile.firstNameLabel'),
+                })}
                 leftView={Platform.select({
                   ios: <LeftLabel>{t('profile.firstNameLabel')}</LeftLabel>,
                 })}
@@ -95,7 +99,10 @@ export default function NameScreen() {
                 textContentType="familyName"
                 testID={testIds.profile.lastNameInput}
                 autoComplete="name-family"
-                label={Platform.select({ ios: undefined, default: t('profile.lastNameLabel') })}
+                label={Platform.select({
+                  ios: undefined,
+                  default: t('profile.lastNameLabel'),
+                })}
                 leftView={Platform.select({
                   ios: <LeftLabel>{t('profile.lastNameLabel')}</LeftLabel>,
                 })}
@@ -120,7 +127,7 @@ export default function NameScreen() {
             </View>
           )}
         </Form>
-      </View>
+      </IosTransparentHeaderOverlapFix>
     </>
   );
 }

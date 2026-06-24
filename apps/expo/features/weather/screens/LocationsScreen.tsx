@@ -1,6 +1,6 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
-import { LargeTitleHeaderOverlapFixIOS } from '@packrat/ui/src/large-title-header-overlap-fix-ios';
+import { IosTransparentHeaderOverlapFix } from '@packrat/ui/src/ios-transparent-header-overlap-fix';
 import { Icon } from 'expo-app/components/Icon';
 import { SearchInput } from 'expo-app/components/SearchInput';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
@@ -119,7 +119,7 @@ function LocationsScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeaderOverlapFixIOS>
+      <IosTransparentHeaderOverlapFix>
         <Stack.Screen
           options={{
             ...getAppBarOptions(),
@@ -250,7 +250,7 @@ function LocationsScreen() {
             )}
           </ScrollView>
         )}
-      </LargeTitleHeaderOverlapFixIOS>
+      </IosTransparentHeaderOverlapFix>
     </SafeAreaView>
   );
 }

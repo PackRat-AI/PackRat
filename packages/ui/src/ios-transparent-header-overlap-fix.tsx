@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Platform, SafeAreaView, View } from 'react-native';
 
-export function LargeTitleHeaderOverlapFixIOS({ children }: { children?: ReactNode }) {
+export function IosTransparentHeaderOverlapFix({ children }: { children?: ReactNode }) {
   if (Platform.OS === 'android') {
     if (!children) return null;
     return <>{children}</>;
