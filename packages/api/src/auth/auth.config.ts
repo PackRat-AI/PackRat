@@ -43,13 +43,16 @@ export const auth = betterAuth({
     },
   }),
 
+  // Keep in sync with auth/index.ts. No snake_case fieldName — the Drizzle adapter
+  // keys rows by camelCase property names, so a fieldName mismatch drops the field
+  // from every auth response.
   user: {
     additionalFields: {
       role: { type: 'string', defaultValue: 'USER' },
-      firstName: { type: 'string', fieldName: 'first_name' },
-      lastName: { type: 'string', fieldName: 'last_name' },
-      avatarUrl: { type: 'string', fieldName: 'avatar_url' },
-      passwordHash: { type: 'string', fieldName: 'password_hash' },
+      firstName: { type: 'string' },
+      lastName: { type: 'string' },
+      avatarUrl: { type: 'string' },
+      passwordHash: { type: 'string', input: false, returned: false },
     },
   },
 

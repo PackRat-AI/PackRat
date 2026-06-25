@@ -38,11 +38,15 @@ function redirect(route: string) {
 function mapToUser(raw: Record<string, unknown>): User {
   const name = asString(raw.name) ?? '';
   const spaceIdx = name.indexOf(' ');
+  // Prefer explicit firstName/lastName additionalFields from Better Auth over
+  // splitting the combined name field, which may be stale after a profile update.
+  const firstName = asString(raw.firstName) ?? (spaceIdx >= 0 ? name.slice(0, spaceIdx) : name);
+  const lastName = asString(raw.lastName) ?? (spaceIdx >= 0 ? name.slice(spaceIdx + 1) : '');
   return {
     id: asString(raw.id) ?? '',
     email: asString(raw.email) ?? '',
-    firstName: spaceIdx >= 0 ? name.slice(0, spaceIdx) : name,
-    lastName: spaceIdx >= 0 ? name.slice(spaceIdx + 1) : '',
+    firstName,
+    lastName,
     role: asString(raw.role) ?? 'USER',
     emailVerified: asBoolean(raw.emailVerified) ?? null,
     avatarUrl: asString(raw.avatarUrl) ?? asString(raw.image) ?? null,
