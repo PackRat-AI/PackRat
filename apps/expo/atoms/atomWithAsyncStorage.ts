@@ -1,5 +1,5 @@
 import { isFunction } from '@packrat/guards';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { atom } from 'jotai';
 
 export const atomWithAsyncStorage = <T>({
