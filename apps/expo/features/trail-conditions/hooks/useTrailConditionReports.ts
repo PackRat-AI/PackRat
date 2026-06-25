@@ -1,10 +1,10 @@
 import { useSelector } from '@legendapp/state/react';
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import { userStore } from 'expo-app/features/auth/store/user';
 import { apiClient } from 'expo-app/lib/api/packrat';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 import { useEffect, useRef, useState } from 'react';
 import { trailConditionReportsStore } from '../store/trailConditionReports';

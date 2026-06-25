@@ -1,6 +1,6 @@
 import { isFunction } from '@packrat/guards';
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
-import Storage from 'expo-sqlite/kv-store';
+import Storage from 'expo-app/lib/expoSqliteKvStore';
 import { atom } from 'jotai';
 
 export const atomWithKvStorage = <T>({ key, initialValue }: { key: string; initialValue: T }) => {

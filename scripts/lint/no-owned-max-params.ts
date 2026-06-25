@@ -57,6 +57,8 @@ const EXCLUDED_FILES = new Set([
   'apps/trails/scripts/generate-og-images.ts',
   // Web shim that must mirror expo-secure-store's positional (key, value) API.
   'apps/expo/lib/secureStore.web.ts',
+  // Web shim that must mirror expo-sqlite/kv-store's positional (key, value) API.
+  'apps/expo/lib/expoSqliteKvStore.web.ts',
   // Swift/Xcode helper scripts are shell-style adapters around positional CLIs.
   'apps/swift/scripts/capture-visual-screenshots.ts',
   'apps/swift/scripts/lib/app-store-assets.ts',

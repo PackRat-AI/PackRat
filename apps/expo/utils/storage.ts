@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { createJSONStorage } from 'jotai/utils';
 
 // Jotai storage adapter backed by AsyncStorage. `createJSONStorage` owns the

@@ -1,6 +1,6 @@
 import { isFunction } from '@packrat/guards';
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { atom } from 'jotai';
 
 export const atomWithAsyncStorage = <T>({
