@@ -69,7 +69,7 @@ const EXCLUDED_FILES = new Set([
   'packages/api/src/utils/auth.ts',
   'packages/api/src/utils/embeddingHelper.ts',
 ]);
-const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest', 'scheduled']);
+const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest', 'run', 'scheduled']);
 const EXTERNAL_CALLBACK_NAMES = new Set([
   'fetcher',
   'get', // Proxy get trap — (target, prop) is the runtime-mandated signature

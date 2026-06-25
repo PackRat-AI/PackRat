@@ -15,6 +15,7 @@ import {
   HardDeleteSuccessSchema,
   SuccessSchema,
 } from '@packrat/schemas/admin';
+import { first } from '@packrat/utils';
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
@@ -669,10 +670,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             ...(body.description !== undefined && { description: body.description }),
           })
           .where(eq(catalogItems.id, id))
-          .returning(); // lint:allow-unprojected-fat-table reason: admin update reads only first.id + first.name; could narrow to .returning({id, name}) but defer to pivot-migration cleanup pass
-        const first = updated[0];
-        if (!first) return status(404, { error: 'Catalog item not found' });
-        return { id: first.id, name: first.name };
+          .returning(); // lint:allow-unprojected-fat-table reason: admin update reads only first.id + first.name; Drizzle 0.45 update returning() overload rejects projection here
+        const firstUpdated = first(updated);
+        if (!firstUpdated) return status(404, { error: 'Catalog item not found' });
+        return { id: firstUpdated.id, name: firstUpdated.name };
       } catch (error) {
         console.error('Error updating catalog item:', error);
         return status(500, { error: 'Failed to update catalog item' });

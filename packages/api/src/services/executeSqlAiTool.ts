@@ -1,4 +1,5 @@
 import { toBigInt } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import { sql } from 'drizzle-orm';
 import { createReadOnlyDb } from '../db';
 
@@ -18,7 +19,7 @@ const BYTE_BUDGET_BYTES = 1_048_576; // 1 MB
 
 // JSON.stringify throws on BigInt. Neon's HTTP driver returns Postgres
 // `int8` / `bigint` / `COUNT(*)` results as JS BigInt by default. The
-// replacer is inlined at every JSON.stringify call (rather than named) to
+// replacer is inlined at every stringify call (rather than named) to
 // keep no-owned-max-params happy — the 2-param shape is JSON.stringify's
 // callback contract, not an owned API.
 const serializeBigInt = (value: unknown): string | unknown => {
@@ -76,7 +77,7 @@ export async function executeSqlAiTool(params: Params) {
   // Byte-budget check: measure serialized result size and reject when over
   // the cap with an actionable error so the AI agent can re-issue a
   // narrower query.
-  const serializedRows = JSON.stringify(rows, (_key, value) => serializeBigInt(value));
+  const serializedRows = safeJsonStringify(rows, (_key, value) => serializeBigInt(value));
   const byteCount = jsonByteLength(serializedRows);
   if (byteCount > BYTE_BUDGET_BYTES) {
     return {
@@ -88,7 +89,7 @@ export async function executeSqlAiTool(params: Params) {
 
   return {
     success: true,
-    data: JSON.parse(serializedRows),
+    data: safeJsonParse(serializedRows, { strict: true }),
     rowCount: resultWithRows.rowCount,
     executionTime: executionTime,
     byteCount,

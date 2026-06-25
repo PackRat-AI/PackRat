@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { isString } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 
 export type TestRef = {
   identifier: string;
@@ -51,7 +52,7 @@ type RawSummary = {
 export function parseSummaryJson(json: string): TestSummary {
   let raw: RawSummary;
   try {
-    raw = JSON.parse(json) as RawSummary; // safe-cast: parseSummaryJson's RawSummary uses all-optional fields and downstream code defends against missing/wrong-typed keys; runtime payload shape is checked by the per-field guards in the failingTests map() below.
+    raw = safeJsonParse<RawSummary>(json, { strict: true }); // RawSummary uses optional fields; downstream guards defend against missing/wrong-typed keys.
   } catch {
     throw new XcResultError('xcresulttool summary output was not valid JSON');
   }
