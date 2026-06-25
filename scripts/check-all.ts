@@ -80,6 +80,10 @@ const ALL_CHECKS: CheckDef[] = [
     script: join(ROOT, 'scripts', 'lint', 'no-duplicate-deps.ts'),
   },
   {
+    name: 'no-undocumented-overrides',
+    script: join(ROOT, 'scripts', 'lint', 'no-undocumented-overrides.ts'),
+  },
+  {
     name: 'no-duplicate-guards',
     script: join(ROOT, 'scripts', 'lint', 'no-duplicate-guards.ts'),
   },
