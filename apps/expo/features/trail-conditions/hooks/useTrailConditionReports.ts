@@ -1,6 +1,7 @@
 import { useSelector } from '@legendapp/state/react';
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import { userStore } from 'expo-app/features/auth/store/user';
 import { apiClient } from 'expo-app/lib/api/packrat';
@@ -59,7 +60,12 @@ export const fetchTrailConditionReports = async (
   });
   if (error) {
     console.error('Failed to fetch trail condition reports:', error.value);
-    throw new Error(`Failed to fetch trail condition reports: ${error.value}`);
+    const err = new Error(`Failed to fetch trail condition reports: ${String(error.value)}`);
+    Sentry.captureException(err, {
+      tags: { feature: 'trailConditions', action: 'fetchReports' },
+      extra: { trailName, apiError: error.value, httpStatus: error.status },
+    });
+    throw err;
   }
   // safe-cast: treaty response shape matches TrailConditionReport[] as validated by the API schema
   return (data ?? []) as unknown as TrailConditionReport[];

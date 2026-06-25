@@ -1,0 +1,25 @@
+diff --git a/ios/Sources/Extensions+Helpers/RCTView+Helpers.swift b/ios/Sources/Extensions+Helpers/RCTView+Helpers.swift
+index 09be306d5aa39337c5114c2ad6ba7513218e0751..de321cb3c6d2e45c05dfc6bf9786001b15576eab 100644
+--- a/ios/Sources/Extensions+Helpers/RCTView+Helpers.swift
++++ b/ios/Sources/Extensions+Helpers/RCTView+Helpers.swift
+@@ -25,13 +25,16 @@ public extension RCTView {
+     return rootView.recursivelyFindSubview(whereType: targetType);
+   };
+   
+-  var closestParentReactContentView: RCTRootContentView? {
+-    let targetType = RCTRootContentView.self;
+-  
++  // RCTRootContentView is not exported from the prebuilt React.framework in RN 0.85+.
++  // Use RCTView as the search target — it's the common ancestor and satisfies the
++  // reactTouchHandlers call-site downstream.
++  var closestParentReactContentView: RCTView? {
++    let targetType = RCTView.self;
++
+     if let match = self.recursivelyFindParentView(whereType: targetType) {
+       return match;
+     };
+-    
++
+     guard let rootView = self.rootViewForCurrentWindow else { return nil };
+     return rootView.recursivelyFindSubview(whereType: targetType);
+   };

@@ -1,9 +1,9 @@
-import { getContainer } from '@cloudflare/containers';
 import { createDb } from '@packrat/api/db';
 import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
 import { CatalogService } from '@packrat/api/services/catalogService';
 import { createGoogleAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { setQueryTag } from '@packrat/api/utils/queryMetrics';
 import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/db';
 import { assertDefined } from '@packrat/guards';
 import {
@@ -53,6 +53,10 @@ Focus on items that would realistically appear in an outdoor adventure packing l
 async function fetchTikTokPostData(
   url: string,
 ): Promise<{ imageUrls: string[]; videoUrl?: string; caption?: string; contentId?: string }> {
+  // Lazy-imported so `bun generate:openapi` can walk this route's schemas in plain
+  // Bun (outside the Workers runtime) without `@cloudflare/containers` trying to
+  // resolve the `cloudflare:workers` virtual module at module-load time.
+  const { getContainer } = await import('@cloudflare/containers');
   const { APP_CONTAINER } = getEnv();
   const container = getContainer(APP_CONTAINER);
 
@@ -114,6 +118,14 @@ function getYouTubeId(url: string): string | null {
 // ---------------------------------------------------------------------------
 
 export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
+  .model({
+    'packTemplates.AIPackAnalysis': AIPackAnalysisSchema,
+    'packTemplates.CreatePackTemplateItemRequest': CreatePackTemplateItemRequestSchema,
+    'packTemplates.CreatePackTemplateRequest': CreatePackTemplateRequestSchema,
+    'packTemplates.GenerateFromOnlineContentRequest': GenerateFromOnlineContentRequestSchema,
+    'packTemplates.UpdatePackTemplateItemRequest': UpdatePackTemplateItemRequestSchema,
+    'packTemplates.UpdatePackTemplateRequest': UpdatePackTemplateRequestSchema,
+  })
   .use(authPlugin)
   .use(adminAuthPlugin)
 
@@ -122,7 +134,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     '/',
     async ({ user }) => {
       const db = createDb();
-      const templates = await db.query.packTemplates.findMany({
+      const templates = await db.tag('packTemplates.list').query.packTemplates.findMany({
         where: or(eq(packTemplates.userId, user.userId), eq(packTemplates.isAppTemplate, true)),
         with: { items: true },
       });
@@ -148,6 +160,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       const isAppTemplate = user.role === 'ADMIN' ? data.isAppTemplate : false;
 
       const [newTemplate] = await db
+        .tag('packTemplates.create')
         .insert(packTemplates)
         .values({
           id: data.id,
@@ -165,15 +178,17 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
 
       assertDefined(newTemplate, 'Failed to create pack template');
 
-      const templateWithItems = await db.query.packTemplates.findFirst({
-        where: eq(packTemplates.id, newTemplate.id),
-        with: { items: true },
-      });
+      const templateWithItems = await db
+        .tag('packTemplates.getById')
+        .query.packTemplates.findFirst({
+          where: eq(packTemplates.id, newTemplate.id),
+          with: { items: true },
+        });
 
       return status(201, templateWithItems);
     },
     {
-      body: CreatePackTemplateRequestSchema,
+      body: 'packTemplates.CreatePackTemplateRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Pack Templates'],
@@ -252,6 +267,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
 
         const db = createDb();
         const existingTemplate = await db
+          .tag('packTemplates.checkDuplicate')
           .select()
           .from(packTemplates)
           .where(
@@ -320,6 +336,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
         const templateId = `pt_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 21)}`;
 
         const { newTemplate, insertedItems } = await db.transaction(async (tx) => {
+          setQueryTag('packTemplates.createFromContent');
           const [createdTemplate] = await tx
             .insert(packTemplates)
             .values({
@@ -363,6 +380,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
             };
           });
 
+          setQueryTag('packTemplates.createItem');
           const insertedItemsResult =
             itemRecords.length > 0
               ? await tx.insert(packTemplateItems).values(itemRecords).returning()
@@ -396,7 +414,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       }
     },
     {
-      body: GenerateFromOnlineContentRequestSchema,
+      body: 'packTemplates.GenerateFromOnlineContentRequest',
       isAdmin: true,
       detail: {
         tags: ['Pack Templates'],
@@ -414,7 +432,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       const itemId = params.itemId;
       const data = body;
 
-      const item = await db.query.packTemplateItems.findFirst({
+      const item = await db.tag('packTemplates.getItem').query.packTemplateItems.findFirst({
         where: eq(packTemplateItems.id, itemId),
         with: { template: true },
       });
@@ -438,6 +456,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       if ('deleted' in data) updateData.deleted = data.deleted;
 
       const [updatedItem] = await db
+        .tag('packTemplates.updateItem')
         .update(packTemplateItems)
         .set({ ...updateData, updatedAt: new Date() })
         .where(
@@ -451,7 +470,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     },
     {
       params: z.object({ itemId: z.string() }),
-      body: UpdatePackTemplateItemRequestSchema,
+      body: 'packTemplates.UpdatePackTemplateItemRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Pack Templates'],
@@ -468,7 +487,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       const db = createDb();
       const itemId = params.itemId;
 
-      const item = await db.query.packTemplateItems.findFirst({
+      const item = await db.tag('packTemplates.getItem').query.packTemplateItems.findFirst({
         where: eq(packTemplateItems.id, itemId),
         with: { template: true },
       });
@@ -482,8 +501,12 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
         (item.template.isAppTemplate && user.role === 'ADMIN') || item.userId === user.userId;
       if (!canDelete) return status(403, { error: 'Not allowed' });
 
-      await db.delete(packTemplateItems).where(eq(packTemplateItems.id, itemId));
       await db
+        .tag('packTemplates.deleteItem')
+        .delete(packTemplateItems)
+        .where(eq(packTemplateItems.id, itemId));
+      await db
+        .tag('packTemplates.update')
         .update(packTemplates)
         .set({ updatedAt: new Date() })
         .where(eq(packTemplates.id, item.packTemplateId));
@@ -508,7 +531,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       const db = createDb();
       const templateId = params.templateId;
 
-      const template = await db.query.packTemplates.findFirst({
+      const template = await db.tag('packTemplates.getById').query.packTemplates.findFirst({
         where: and(
           eq(packTemplates.id, templateId),
           or(eq(packTemplates.userId, user.userId), eq(packTemplates.isAppTemplate, true)),
@@ -552,6 +575,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
         updateData.localUpdatedAt = new Date(data.localUpdatedAt);
 
       await db
+        .tag('packTemplates.update')
         .update(packTemplates)
         .set(updateData)
         .where(
@@ -560,7 +584,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
             : and(eq(packTemplates.id, templateId), eq(packTemplates.userId, user.userId)),
         );
 
-      const updated = await db.query.packTemplates.findFirst({
+      const updated = await db.tag('packTemplates.getById').query.packTemplates.findFirst({
         where:
           data.isAppTemplate && user.role === 'ADMIN'
             ? eq(packTemplates.id, templateId)
@@ -573,7 +597,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     },
     {
       params: z.object({ templateId: z.string() }),
-      body: UpdatePackTemplateRequestSchema,
+      body: 'packTemplates.UpdatePackTemplateRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Pack Templates'],
@@ -590,7 +614,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       const db = createDb();
       const templateId = params.templateId;
 
-      const packTemplate = await db.query.packTemplates.findFirst({
+      const packTemplate = await db.tag('packTemplates.getById').query.packTemplates.findFirst({
         where: eq(packTemplates.id, templateId),
       });
 
@@ -600,6 +624,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       }
 
       await db
+        .tag('packTemplates.delete')
         .delete(packTemplates)
         .where(
           packTemplate.isAppTemplate && user.role === 'ADMIN'
@@ -627,7 +652,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       const db = createDb();
       const templateId = params.templateId;
 
-      const template = await db.query.packTemplates.findFirst({
+      const template = await db.tag('packTemplates.getById').query.packTemplates.findFirst({
         where: eq(packTemplates.id, templateId),
       });
 
@@ -637,6 +662,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       if (!hasAccess) return status(403, { error: 'Access denied to this template' });
 
       const items = await db
+        .tag('packTemplates.listItems')
         .select()
         .from(packTemplateItems)
         .where(eq(packTemplateItems.packTemplateId, templateId));
@@ -662,7 +688,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       const templateId = params.templateId;
       const data = body;
 
-      const packTemplate = await db.query.packTemplates.findFirst({
+      const packTemplate = await db.tag('packTemplates.getById').query.packTemplates.findFirst({
         where: eq(packTemplates.id, templateId),
       });
 
@@ -672,6 +698,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       }
 
       const [newItem] = await db
+        .tag('packTemplates.createItem')
         .insert(packTemplateItems)
         .values({
           id: data.id,
@@ -691,6 +718,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
         .returning();
 
       await db
+        .tag('packTemplates.update')
         .update(packTemplates)
         .set({ updatedAt: new Date() })
         .where(eq(packTemplates.id, templateId));
@@ -699,7 +727,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     },
     {
       params: z.object({ templateId: z.string() }),
-      body: CreatePackTemplateItemRequestSchema,
+      body: 'packTemplates.CreatePackTemplateItemRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Pack Templates'],

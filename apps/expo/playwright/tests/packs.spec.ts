@@ -11,6 +11,7 @@
  * tests can navigate directly to detail/edit routes without relying on
  * post-submit navigation behaviour.
  */
+import { testIds } from '../../lib/testIds';
 import { BASE_URL, expect, test } from './fixtures';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -24,8 +25,8 @@ async function createPackViaForm(
     page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
     (async () => {
       await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('pack-name-input').fill(packName);
-      await page.getByTestId('submit-pack-button').click();
+      await page.getByTestId(testIds.packs.nameInput).fill(packName);
+      await page.getByTestId(testIds.packs.submitBtn).click();
     })(),
   ]);
 
@@ -41,8 +42,8 @@ async function addItemViaForm(
 ): Promise<string> {
   const { packId, itemName, weight = '500' } = opts;
   await page.goto(`${BASE_URL}/item/new?packId=${packId}`);
-  await page.getByTestId('items:name-input').fill(itemName);
-  await page.getByTestId('items:weight-input').fill(weight);
+  await page.getByTestId(testIds.items.nameInput).fill(itemName);
+  await page.getByTestId(testIds.items.weightInput).fill(weight);
 
   const itemPostPromise = page.waitForResponse(
     (r) =>
@@ -52,7 +53,7 @@ async function addItemViaForm(
     { timeout: 20_000 },
   );
 
-  await page.getByTestId('items:submit').click();
+  await page.getByTestId(testIds.items.submitBtn).click();
   const response = await itemPostPromise;
   expect(response.ok()).toBeTruthy();
   const body = (await response.json()) as { id: string };
@@ -73,7 +74,6 @@ test.describe('Pack CRUD', () => {
   });
 
   test('edit pack name → updated name appears in detail', async ({ authedPage: page }) => {
-    test.setTimeout(60_000);
     const originalName = `E2E-Edit-${Date.now()}`;
     const updatedName = `${originalName}-UPDATED`;
 
@@ -83,9 +83,9 @@ test.describe('Pack CRUD', () => {
     // syncedCrud can flush the PUT before the page unloads.
     await page.goto(`${BASE_URL}/pack/${packId}`);
     await page.waitForLoadState('networkidle');
-    await page.getByTestId('packs:edit').click();
+    await page.getByTestId(testIds.packs.editBtn).click();
 
-    const nameInput = page.getByTestId('pack-name-input');
+    const nameInput = page.getByTestId(testIds.packs.nameInput);
     await nameInput.waitFor({ timeout: 10_000 });
     await nameInput.clear();
     await nameInput.fill(updatedName);
@@ -98,7 +98,7 @@ test.describe('Pack CRUD', () => {
       { timeout: 20_000 },
     );
 
-    await page.getByTestId('submit-pack-button').click();
+    await page.getByTestId(testIds.packs.submitBtn).click();
 
     // SPA router.back() keeps the JS context alive; await the PUT before navigating away
     await editPutPromise;
@@ -109,7 +109,6 @@ test.describe('Pack CRUD', () => {
   });
 
   test('delete pack → disappears from packs list', async ({ authedPage: page }) => {
-    test.setTimeout(60_000);
     const packName = `E2E-Delete-${Date.now()}`;
     const packId = await createPackViaForm(page, packName);
 
@@ -118,14 +117,13 @@ test.describe('Pack CRUD', () => {
     // Wait for the store to load and the owner check to resolve so header buttons appear
     await page.waitForLoadState('networkidle');
 
-    // Accept any browser-native confirm/alert dialogs before triggering delete
     page.on('dialog', (dialog) => dialog.accept());
 
-    const deleteButton = page.getByTestId('packs:delete');
+    const deleteButton = page.getByTestId(testIds.packs.deleteBtn);
     await deleteButton.waitFor({ timeout: 15_000 });
     await deleteButton.click();
 
-    // After deletion the app should navigate away; go to list and confirm pack is gone
+    // Pack deletion is a local soft-delete in the synced store; confirm the UI result.
     await page.goto(`${BASE_URL}/packs`);
     await expect(page.getByText(packName)).not.toBeVisible({ timeout: 10_000 });
   });
@@ -143,7 +141,6 @@ test.describe('Item CRUD within a pack', () => {
   });
 
   test('add item manually → appears in pack detail', async ({ authedPage: page }) => {
-    test.setTimeout(60_000);
     const itemName = `E2E-Item-${Date.now()}`;
 
     await addItemViaForm(page, { packId: sharedPackId, itemName, weight: '850' });
@@ -165,7 +162,7 @@ test.describe('Item CRUD within a pack', () => {
 
     // Navigate to the item edit form
     await page.goto(`${BASE_URL}/item/${itemId}/edit?packId=${sharedPackId}`);
-    const nameInput = page.getByTestId('items:name-input');
+    const nameInput = page.getByTestId(testIds.items.nameInput);
     await nameInput.waitFor({ timeout: 10_000 });
     await nameInput.clear();
     await nameInput.fill(updatedItemName);
@@ -178,7 +175,7 @@ test.describe('Item CRUD within a pack', () => {
       { timeout: 20_000 },
     );
 
-    await page.getByTestId('items:submit').click();
+    await page.getByTestId(testIds.items.submitBtn).click();
     await editPromise.catch(() => null);
 
     // Updated name should be visible in pack detail
@@ -196,24 +193,26 @@ test.describe('Item CRUD within a pack', () => {
 
     // Confirm item is in pack detail
     await page.goto(`${BASE_URL}/pack/${sharedPackId}`);
-    await expect(page.getByTestId(`items:card-${itemId}`)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId(testIds.items.card(itemId))).toBeVisible({ timeout: 15_000 });
 
     // Accept dialogs (web confirm) before triggering delete
     page.on('dialog', (dialog) => dialog.accept());
 
     // Open the more-actions menu for the item
-    const moreActionsButton = page.getByTestId(`items:more-actions-${itemId}`);
+    const moreActionsButton = page.getByTestId(testIds.items.moreActionsBtn(itemId));
     if (await moreActionsButton.isVisible()) {
       await moreActionsButton.click();
       const deleteOption = page
-        .getByText(/delete/i)
-        .or(page.getByRole('menuitem', { name: /delete/i }))
+        .getByRole('menuitem', { name: /^Delete$/ })
+        .or(page.getByRole('button', { name: /^Delete$/ }))
         .first();
       await deleteOption.waitFor({ timeout: 5_000 });
       await deleteOption.click();
 
       // Item card should be gone
-      await expect(page.getByTestId(`items:card-${itemId}`)).not.toBeVisible({ timeout: 10_000 });
+      await expect(page.getByTestId(testIds.items.card(itemId))).not.toBeVisible({
+        timeout: 10_000,
+      });
     } else {
       test.skip(true, 'items:more-actions button not accessible on web');
     }
@@ -228,7 +227,7 @@ test.describe('Validation', () => {
   test('empty pack name → form does not navigate on submit', async ({ authedPage: page }) => {
     await page.goto(`${BASE_URL}/pack/new`);
 
-    const submitButton = page.getByTestId('submit-pack-button');
+    const submitButton = page.getByTestId(testIds.packs.submitBtn);
     await submitButton.waitFor({ timeout: 10_000 });
 
     // Name field starts empty — clicking submit should either be blocked or stay on this page
@@ -247,10 +246,10 @@ test.describe('Validation', () => {
 
     await page.goto(`${BASE_URL}/item/new?packId=${packId}`);
 
-    const submitButton = page.getByTestId('items:submit');
+    const submitButton = page.getByTestId(testIds.items.submitBtn);
     await submitButton.waitFor({ timeout: 10_000 });
 
-    const nameInput = page.getByTestId('items:name-input');
+    const nameInput = page.getByTestId(testIds.items.nameInput);
     await nameInput.waitFor({ timeout: 10_000 });
     await nameInput.clear();
 

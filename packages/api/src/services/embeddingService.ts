@@ -5,6 +5,7 @@ import { embed, embedMany } from 'ai';
 
 // ── Embedding text normalization ──────────────────────────────────────
 const NEWLINE = /\n/g;
+const E2E_EMBEDDING_DIMENSIONS = 1536;
 
 type GenerateEmbeddingBaseParams = {
   openAiApiKey?: string;
@@ -19,6 +20,22 @@ type GenerateEmbeddingParams = GenerateEmbeddingBaseParams & {
   value: string;
 };
 
+const isE2EStubKey = (key?: string) => key?.startsWith('sk-e2e-stub-') === true;
+
+const deterministicEmbedding = (value: string): number[] => {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return Array.from({ length: E2E_EMBEDDING_DIMENSIONS }, (_, i) => {
+    hash ^= i;
+    hash = Math.imul(hash, 16777619);
+    return (hash >>> 0) / 0xffffffff;
+  });
+};
+
 export const generateEmbedding = async (
   params: GenerateEmbeddingParams,
 ): Promise<number[] | null> => {
@@ -29,10 +46,14 @@ export const generateEmbedding = async (
     return null;
   }
 
-  const aiProvider = createAIProvider(providerConfig);
-
   // OpenAI recommends replacing newlines with spaces for best results
   const input = value.replace(NEWLINE, ' ');
+
+  if (isE2EStubKey(providerConfig.openAiApiKey)) {
+    return deterministicEmbedding(input);
+  }
+
+  const aiProvider = createAIProvider(providerConfig);
 
   const { embedding } = await embed({
     model: aiProvider.embedding(DEFAULT_MODELS.OPENAI_EMBEDDING),
@@ -55,6 +76,10 @@ export const generateManyEmbeddings = async (
   const cleanValues = values.map((v) => v?.replace(NEWLINE, ' ').trim()).filter(Boolean);
   if (cleanValues.length === 0) {
     return [];
+  }
+
+  if (isE2EStubKey(providerConfig.openAiApiKey)) {
+    return cleanValues.map(deterministicEmbedding);
   }
 
   const aiProvider = createAIProvider(providerConfig);

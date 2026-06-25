@@ -1,5 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ScrollView, View } from 'react-native';
@@ -41,6 +43,8 @@ export function WeatherForecast({
   temperature,
 }: WeatherForecastProps) {
   const { t } = useTranslation();
+  const { displayTemperature } = useTemperatureUnit();
+  const { displayWindSpeed, displayVisibility } = useSpeedUnit();
 
   return (
     <>
@@ -57,7 +61,7 @@ export function WeatherForecast({
                   size={24}
                   className="my-2"
                 />
-                <Text className="text-white">{hour.temp}°</Text>
+                <Text className="text-white">{displayTemperature(hour.temp)}</Text>
               </View>
             ))
           ) : (
@@ -90,14 +94,18 @@ export function WeatherForecast({
                   <View
                     className="absolute h-1 bg-white"
                     style={{
-                      left: `${Math.max(0, ((day.low - 40) / (100 - 40)) * 100)}%`,
-                      right: `${Math.max(0, 100 - ((day.high - 40) / (100 - 40)) * 100)}%`,
+                      left: `${Math.max(0, ((day.low - 4) / (38 - 4)) * 100)}%`,
+                      right: `${Math.max(0, 100 - ((day.high - 4) / (38 - 4)) * 100)}%`,
                     }}
                   />
                 </View>
               </View>
-              <Text className="min-w-[30px] text-right text-white/90">{day.low}°</Text>
-              <Text className="min-w-[30px] text-right text-white">{day.high}°</Text>
+              <Text className="min-w-[30px] text-right text-white/90">
+                {displayTemperature(day.low)}
+              </Text>
+              <Text className="min-w-[30px] text-right text-white">
+                {displayTemperature(day.high)}
+              </Text>
             </View>
           ))
         ) : (
@@ -111,7 +119,13 @@ export function WeatherForecast({
         <View className="flex-row flex-wrap">
           <View className="w-1/2 p-2">
             <Text className="text-white/70">{t('weather.feelsLike')}</Text>
-            <Text className="text-xl text-white">{details?.feelsLike || temperature}°</Text>
+            <Text className="text-xl text-white">
+              {details?.feelsLike != null
+                ? displayTemperature(details.feelsLike)
+                : temperature != null
+                  ? displayTemperature(temperature)
+                  : '—'}
+            </Text>
           </View>
           <View className="w-1/2 p-2">
             <Text className="text-white/70">{t('weather.humidity')}</Text>
@@ -119,7 +133,9 @@ export function WeatherForecast({
           </View>
           <View className="w-1/2 p-2">
             <Text className="text-white/70">{t('weather.visibility')}</Text>
-            <Text className="text-xl text-white">{details?.visibility || '10'} mi</Text>
+            <Text className="text-xl text-white">
+              {details?.visibility != null ? displayVisibility(details.visibility) : '—'}
+            </Text>
           </View>
           <View className="w-1/2 p-2">
             <Text className="text-white/70">{t('weather.uvIndex')}</Text>
@@ -130,7 +146,9 @@ export function WeatherForecast({
           </View>
           <View className="w-1/2 p-2">
             <Text className="text-white/70">{t('weather.wind')}</Text>
-            <Text className="text-xl text-white">{details?.windSpeed || '5'} mph</Text>
+            <Text className="text-xl text-white">
+              {details?.windSpeed != null ? displayWindSpeed(details.windSpeed) : '—'}
+            </Text>
           </View>
         </View>
       </View>

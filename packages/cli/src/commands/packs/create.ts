@@ -1,4 +1,5 @@
 import { toRecord } from '@packrat/guards';
+import { PackCategorySchema } from '@packrat/schemas/constants';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getUserClient } from '../../api/client';
@@ -13,7 +14,7 @@ export default defineCommand({
       type: 'string',
       alias: 'c',
       description: 'Pack category (backpacking, camping, hiking, ...)',
-      default: 'general',
+      default: 'custom',
     },
     description: { type: 'string', alias: 'd', description: 'Optional description' },
     public: { type: 'boolean', description: 'Make pack public', default: false },
@@ -23,6 +24,7 @@ export default defineCommand({
     await requireAuth();
     const client = await getUserClient();
     const now = nowIso();
+    const category = PackCategorySchema.parse(args.category);
     const tags = args.tags
       ? args.tags
           .split(',')
@@ -34,7 +36,7 @@ export default defineCommand({
         id: shortId('p'),
         name: args.name,
         description: args.description,
-        category: args.category,
+        category,
         isPublic: args.public,
         tags,
         localCreatedAt: now,

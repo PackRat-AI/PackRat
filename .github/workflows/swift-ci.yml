@@ -1,0 +1,135 @@
+name: Swift CI
+
+on:
+  push:
+    branches: ["main", "development"]
+    paths:
+      - "apps/swift/**"
+      - "packages/api/**/openapi.yaml"
+      - ".github/workflows/swift-ci.yml"
+  pull_request:
+    branches: ["**"]
+    paths:
+      - "apps/swift/**"
+      - "packages/api/**/openapi.yaml"
+      - ".github/workflows/swift-ci.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ─── Unit + UI test bundles compile + run on macOS ────────────────────────────
+  build-and-smoke:
+    name: ${{ matrix.scheme }} (smoke)
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scheme: PackRat-iOS
+            destination: "platform=iOS Simulator,name=iPhone 17,OS=latest"
+            plan: iOS-Smoke
+          - scheme: PackRat-macOS
+            destination: "platform=macOS,arch=arm64"
+            plan: macOS-Smoke
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Select Xcode (use newest available — required by SwiftUI/Observation APIs the app uses)
+        run: |
+          sudo xcode-select -switch /Applications/Xcode.app
+          xcodebuild -version
+          xcrun --show-sdk-version
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Generate Xcode project
+        run: bun swift
+
+      - name: Boot iOS simulator
+        if: matrix.scheme == 'PackRat-iOS'
+        run: |
+          # Pick the newest available iPhone runtime and boot a matching device.
+          DEVICE_ID=$(xcrun simctl create CI-Test "iPhone 17" \
+            "$(xcrun simctl list runtimes -j | jq -r '.runtimes[] | select(.identifier | contains("iOS-")) | .identifier' | sort -V | tail -1)")
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID"
+
+      - name: Run ${{ matrix.plan }} test plan
+        env:
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+        run: |
+          cd apps/swift
+          # Use signing-bypass on macOS so CI can build/test without a Mac Development cert
+          # provisioned for the runner. iOS Simulator never needs signing.
+          if [ "${{ matrix.scheme }}" = "PackRat-macOS" ]; then
+            CODE_SIGN_ARGS=(CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_ALLOWED=NO)
+          else
+            CODE_SIGN_ARGS=()
+          fi
+
+          xcodebuild test \
+            -scheme "${{ matrix.scheme }}" \
+            -destination "${{ matrix.destination }}" \
+            -testPlan "${{ matrix.plan }}" \
+            -resultBundlePath "/tmp/${{ matrix.scheme }}-smoke.xcresult" \
+            -quiet \
+            "${CODE_SIGN_ARGS[@]}" \
+            | tee "/tmp/${{ matrix.scheme }}-smoke.log"
+
+      - name: Parse xcresult summary
+        if: always()
+        run: |
+          if [ -d "/tmp/${{ matrix.scheme }}-smoke.xcresult" ]; then
+            xcrun xcresulttool get test-results summary \
+              --path "/tmp/${{ matrix.scheme }}-smoke.xcresult" --compact \
+              | jq '{ result, totalTestCount, passedTests, failedTests, skippedTests, expectedFailures }' || true
+          fi
+
+      - name: Upload xcresult on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.scheme }}-smoke-xcresult
+          path: |
+            /tmp/${{ matrix.scheme }}-smoke.xcresult
+            /tmp/${{ matrix.scheme }}-smoke.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ─── Wrapper-script unit tests (vitest) — fast, runs on every PR ──────────────
+  swift-scripts:
+    name: Swift scripts (vitest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Run vitest
+        run: bun test:swift:scripts

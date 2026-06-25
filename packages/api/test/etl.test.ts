@@ -1,4 +1,5 @@
 import { createDbClient } from '@packrat/api/db';
+import { CatalogService } from '@packrat/api/services';
 import { processCatalogETL } from '@packrat/api/services/etl/processCatalogEtl';
 import { processValidItemsBatch } from '@packrat/api/services/etl/processValidItemsBatch';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
@@ -254,5 +255,102 @@ describe('processValidItemsBatch', () => {
         env: TEST_ENV,
       }),
     ).resolves.not.toThrow();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// U1 characterization — locks the shape of `upsertCatalogItems`' return value
+// so the U2 projection change (`.returning()` → `.returning({id, sku, name,
+// description, categories, brand})`) can prove it preserved the fields the
+// embedding-regen diff at catalogService.ts:378-409 actually reads.
+//
+// This is the highest single-fix ETL-time win per the plan: today `.returning()`
+// is untyped and ships full catalog rows (embedding + fat JSONB) back from
+// Postgres to the Worker on every 100-row batch insert.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('upsertCatalogItems return shape (U1 characterization)', () => {
+  it('post-U2: returns only {id, sku, name, description, categories, brand} (no embedding or fat JSONB)', async () => {
+    const service = new CatalogService({ explicitEnv: TEST_ENV as any, useHttpDriver: true });
+
+    const sku = `U1-SHAPE-${Date.now()}`;
+    const result = await service.upsertCatalogItems([
+      {
+        name: 'U1 upsert shape test item',
+        sku,
+        productUrl: 'https://example.com/u1-shape',
+        brand: 'TestBrand',
+        weight: 500,
+        weightUnit: 'g',
+        description: 'fixture for upsert-shape test',
+        categories: ['shelter'],
+      } as any,
+    ]);
+
+    expect(result.length).toBe(1);
+    const returned = result[0] as Record<string, unknown>;
+
+    // Post-U2: `.returning(...)` projects only the fields the regen diff and
+    // downstream callers actually read. Cost win: full catalog rows
+    // (~50-100KB each with fat JSONB + embedding) no longer ship from Postgres
+    // back to the Worker on every ETL batch insert.
+    expect(returned).toHaveProperty('id');
+    expect(returned).toHaveProperty('sku');
+    expect(returned).toHaveProperty('name');
+    expect(returned).toHaveProperty('description');
+    expect(returned).toHaveProperty('categories');
+    expect(returned).toHaveProperty('brand');
+    // The cost-bearing leak — these are gone post-U2:
+    expect(returned).not.toHaveProperty('embedding');
+    expect(returned).not.toHaveProperty('reviews');
+    expect(returned).not.toHaveProperty('qas');
+    expect(returned).not.toHaveProperty('faqs');
+    expect(returned).not.toHaveProperty('techs');
+    expect(returned).not.toHaveProperty('links');
+    expect(returned).not.toHaveProperty('variants');
+    expect(returned).not.toHaveProperty('images');
+  });
+
+  it('embedding regen trigger fires when input differs from existing on a watched field', async () => {
+    const service = new CatalogService({ explicitEnv: TEST_ENV as any, useHttpDriver: true });
+    const sku = `U1-EMBED-REGEN-${Date.now()}`;
+
+    // First upsert — fresh insert
+    await service.upsertCatalogItems([
+      {
+        name: 'Original Name',
+        sku,
+        productUrl: 'https://example.com/regen',
+        brand: 'OriginalBrand',
+        weight: 500,
+        weightUnit: 'g',
+        description: 'original description',
+        categories: ['shelter'],
+      } as any,
+    ]);
+
+    // Second upsert — changes a watched field (`name`). The regen path at
+    // catalogService.ts:378-409 should re-run embeddings. We don't directly
+    // assert on the embedding contents (test env may not have a real AI
+    // provider), but the upsert should succeed and the row should exist with
+    // the new name.
+    await service.upsertCatalogItems([
+      {
+        name: 'Updated Name',
+        sku,
+        productUrl: 'https://example.com/regen',
+        brand: 'OriginalBrand',
+        weight: 500,
+        weightUnit: 'g',
+        description: 'original description',
+        categories: ['shelter'],
+      } as any,
+    ]);
+
+    const db = createDbClient({} as any);
+    const [row] = await db
+      .select({ name: catalogItems.name, sku: catalogItems.sku })
+      .from(catalogItems)
+      .where(eq(catalogItems.sku, sku));
+    expect(row?.name).toBe('Updated Name');
   });
 });

@@ -258,12 +258,16 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     async () => {
       const db = createDb();
       try {
-        const [userCount] = await db.select({ count: count() }).from(users);
+        const [userCount] = await db.tag('admin.getStats').select({ count: count() }).from(users);
         const [packCount] = await db
+          .tag('admin.getStats')
           .select({ count: count() })
           .from(packs)
           .where(eq(packs.deleted, false));
-        const [itemCount] = await db.select({ count: count() }).from(catalogItems);
+        const [itemCount] = await db
+          .tag('admin.getStats')
+          .select({ count: count() })
+          .from(catalogItems);
 
         assertAllDefined({ values: [userCount, packCount, itemCount] });
 
@@ -302,6 +306,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
 
         const [usersList, [totalRow]] = await Promise.all([
           db
+            .tag('admin.getUsers')
             .select({
               id: users.id,
               email: users.email,
@@ -318,7 +323,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             .orderBy(desc(users.createdAt))
             .limit(limit)
             .offset(offset),
-          db.select({ count: count() }).from(users).where(searchFilter),
+          db.tag('admin.getUsersCount').select({ count: count() }).from(users).where(searchFilter),
         ]);
 
         return {
@@ -371,6 +376,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
 
         const [packsList, [totalRow]] = await Promise.all([
           db
+            .tag('admin.getPacks')
             .select({
               id: packs.id,
               name: packs.name,
@@ -391,6 +397,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             .limit(limit)
             .offset(offset),
           db
+            .tag('admin.getPacksCount')
             .select({ count: count() })
             .from(packs)
             .leftJoin(users, eq(packs.userId, users.id))
@@ -446,6 +453,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
 
         const [itemsList, [totalRow]] = await Promise.all([
           db
+            .tag('admin.getCatalogItems')
             .select({
               id: catalogItems.id,
               name: catalogItems.name,
@@ -477,7 +485,11 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             .orderBy(desc(catalogItems.id))
             .limit(limit)
             .offset(offset),
-          db.select({ count: count() }).from(catalogItems).where(whereClause),
+          db
+            .tag('admin.getCatalogItemsCount')
+            .select({ count: count() })
+            .from(catalogItems)
+            .where(whereClause),
         ]);
 
         return {
@@ -533,7 +545,11 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       try {
         // Cascading FKs handle deletion of all related user data.
         // Caller must supply a compliance reason for the audit log.
-        const deleted = await db.delete(users).where(eq(users.id, id)).returning();
+        const deleted = await db
+          .tag('admin.deleteUser')
+          .delete(users)
+          .where(eq(users.id, id))
+          .returning();
         if (!deleted.length) return status(404, { error: 'User not found' });
         console.info(`[COMPLIANCE] Hard-deleted user ${id}. Reason: ${body.reason}`);
         return { success: true as const, purged: true as const };
@@ -581,6 +597,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       const db = createDb();
       try {
         const updated = await db
+          .tag('admin.deletePack')
           .update(packs)
           .set({ deleted: true })
           .where(and(eq(packs.id, params.id), eq(packs.deleted, false)))
@@ -607,7 +624,11 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid catalog item id' });
       const db = createDb();
       try {
-        const deleted = await db.delete(catalogItems).where(eq(catalogItems.id, id)).returning();
+        const deleted = await db
+          .tag('admin.deleteCatalogItem')
+          .delete(catalogItems)
+          .where(eq(catalogItems.id, id))
+          .returning(); // lint:allow-unprojected-fat-table reason: admin delete only checks .length; could narrow to .returning({id}) but defer to pivot-migration cleanup pass
         if (!deleted.length) return status(404, { error: 'Catalog item not found' });
         return { success: true as const };
       } catch (error) {
@@ -634,6 +655,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       const db = createDb();
       try {
         const updated = await db
+          .tag('admin.updateCatalogItem')
           .update(catalogItems)
           .set({
             updatedAt: new Date(),
@@ -648,7 +670,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             ...(body.description !== undefined && { description: body.description }),
           })
           .where(eq(catalogItems.id, id))
-          .returning();
+          .returning(); // lint:allow-unprojected-fat-table reason: admin update reads only first.id + first.name; Drizzle 0.45 update returning() overload rejects projection here
         const firstUpdated = first(updated);
         if (!firstUpdated) return status(404, { error: 'Catalog item not found' });
         return { id: firstUpdated.id, name: firstUpdated.name };

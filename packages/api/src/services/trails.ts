@@ -32,7 +32,7 @@ export async function stitchRouteGeometry({
     sql`, `,
   );
 
-  const result = await db.execute(sql`
+  const result = await db.tag('trailService.stitchRouteGeometry').execute(sql`
     SELECT ST_AsGeoJSON(
       ST_LineMerge(
         ST_Collect(geometry ORDER BY ordinality)

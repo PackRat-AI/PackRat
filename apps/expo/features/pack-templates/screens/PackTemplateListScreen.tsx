@@ -1,15 +1,14 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import type { LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
-import { LargeTitleHeader, SegmentedControl } from '@packrat/ui/nativewindui';
+import { SegmentedControl } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { Icon } from 'expo-app/components/Icon';
-import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import type { PackCategory } from 'expo-app/features/packs/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
 import {
@@ -54,8 +53,6 @@ export function PackTemplateListScreen() {
   const [selectedTemplateTypeIndex, setSelectedTemplateTypeIndex] = useState(0);
   const { t } = useTranslation();
   const templateOptionsRef = useRef<BottomSheetModal>(null);
-
-  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
   // Filter options with translations
   const filterOptions: FilterOption[] = [
@@ -186,27 +183,25 @@ export function PackTemplateListScreen() {
 
   return (
     <SafeAreaView className="flex-1">
-      <LargeTitleHeader
-        title={t('packTemplates.packTemplates')}
-        searchBar={{
-          iosHideWhenScrolling: false,
-          ref: asNonNullableRef(searchBarRef),
-          onChangeText(text) {
-            setSearchValue(text);
-          },
-          placeholder: t('packTemplates.searchPlaceholder'),
-          content: (
-            <LargeTitleHeaderSearchContentContainer>
-              {renderSearchContent()}
-            </LargeTitleHeaderSearchContentContainer>
+      <Stack.Screen
+        options={{
+          ...getAppBarOptions(),
+          title: t('packTemplates.packTemplates'),
+          headerRight: () => (
+            <CreateTemplateIconButton onPress={() => templateOptionsRef.current?.present()} />
           ),
         }}
-        rightView={() => (
-          <View className="flex-row items-center">
-            <CreateTemplateIconButton onPress={() => templateOptionsRef.current?.present()} />
-          </View>
-        )}
       />
+      <SearchOverlay
+        placeholder={t('packTemplates.searchPlaceholder')}
+        value={searchValue}
+        onChangeText={setSearchValue}
+        androidHeaderRightActions={
+          <CreateTemplateIconButton onPress={() => templateOptionsRef.current?.present()} />
+        }
+      >
+        {renderSearchContent()}
+      </SearchOverlay>
 
       <View className="bg-background gap-2 px-4 pb-2">
         <SegmentedControl

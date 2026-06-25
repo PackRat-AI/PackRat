@@ -1,5 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import {
   formatWeatherData,
   getWeatherBackgroundColors,
@@ -7,15 +9,14 @@ import {
 } from 'expo-app/features/weather/lib/weatherService';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-// import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   ScrollView,
-  StatusBar,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -27,8 +28,9 @@ import type { WeatherLocation } from '../types';
 export default function LocationPreviewScreen() {
   const params = useLocalSearchParams();
   const { t } = useTranslation();
-  // const { colors, colorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
+  const { displayTemperature } = useTemperatureUnit();
+  const { displayWindSpeed, displayVisibility } = useSpeedUnit();
   const { addLocation } = useLocations();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -40,13 +42,9 @@ export default function LocationPreviewScreen() {
     '#192f6a',
   ]);
 
-  // Extract location data from params
   const _latitude = Number.parseFloat(params.lat as string);
   const _longitude = Number.parseFloat(params.lon as string);
   const locationId = Number.parseInt(String(params.id), 10);
-  // const locationName = params.name as string;
-  // const region = params.region as string;
-  // const country = params.country as string;
 
   const loadWeatherData = async () => {
     setIsLoading(true);
@@ -59,7 +57,6 @@ export default function LocationPreviewScreen() {
         // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
         setWeatherData(formattedData as unknown as WeatherLocation);
 
-        // Update gradient colors based on weather condition
         if (formattedData.details) {
           const weatherCode = formattedData.details.weatherCode || 1000;
           const isNight = formattedData.details.isDay === 0;
@@ -76,7 +73,6 @@ export default function LocationPreviewScreen() {
     }
   };
 
-  // Load weather data on initial render
   useEffect(() => {
     loadWeatherData();
   }, []);
@@ -111,50 +107,47 @@ export default function LocationPreviewScreen() {
     }
   };
 
-  // Determine if we should use light or dark status bar based on gradient colors
-  const _isDarkGradient =
-    gradientColors[0].toLowerCase().startsWith('#4') ||
-    gradientColors[0].toLowerCase().startsWith('#3') ||
-    gradientColors[0].toLowerCase().startsWith('#2') ||
-    gradientColors[0].toLowerCase().startsWith('#1');
-
   return (
-    <View className="flex-1">
-      <Stack.Screen options={{ headerShown: false }} />
-      {/* Status bar with matching style */}
-      <StatusBar barStyle="light-content" translucent={true} backgroundColor="transparent" />
+    <>
+      <Stack.Screen
+        options={{
+          title: '',
+          headerTransparent: true,
+          headerShadowVisible: false,
+          headerTintColor: 'white',
+          headerLeft:
+            Platform.OS === 'ios'
+              ? () => (
+                  <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+                    <Icon name="chevron-left" color="white" size={28} />
+                  </TouchableOpacity>
+                )
+              : undefined,
+          headerRight:
+            !isLoading && !error && weatherData
+              ? () => (
+                  <TouchableOpacity
+                    className="rounded-full px-4 py-2"
+                    onPress={handleSaveLocation}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <Text className="text-white text-base">{t('weather.saveLocation')}</Text>
+                    )}
+                  </TouchableOpacity>
+                )
+              : undefined,
+        }}
+      />
 
       <LinearGradient colors={gradientColors} style={{ flex: 1 }}>
-        {/* Fixed header buttons */}
-        <View
-          style={{ paddingTop: insets.top + 10 }}
-          className="absolute left-0 right-0 top-0 z-10 flex-row items-center justify-between px-4"
-        >
-          <TouchableOpacity onPress={() => router.back()}>
-            <View className="rounded-full bg-white/20 p-2">
-              <Icon name="arrow-left" color="white" size={20} />
-            </View>
-          </TouchableOpacity>
-
-          {!isLoading && !error && weatherData && (
-            <TouchableOpacity
-              className="rounded-full bg-white/20 px-4 py-2"
-              onPress={handleSaveLocation}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <Text className="text-white">{t('weather.saveLocation')}</Text>
-              )}
-            </TouchableOpacity>
-          )}
-        </View>
-
         <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={{
             paddingBottom: insets.bottom + 20,
-            paddingTop: insets.top + 50,
+            paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0,
           }}
           showsVerticalScrollIndicator={false}
         >
@@ -169,7 +162,7 @@ export default function LocationPreviewScreen() {
                 <Icon name="bell-outline" color="white" size={40} />
                 <Text className="mt-4 text-white">{error}</Text>
                 <TouchableOpacity
-                  className="mt-4 rounded-full bg-white/20 px-4 py-2"
+                  className="mt-4 rounded-full bg-black/25 px-4 py-2"
                   onPress={loadWeatherData}
                 >
                   <Text className="text-white">{t('weather.tryAgain')}</Text>
@@ -184,16 +177,17 @@ export default function LocationPreviewScreen() {
                   </View>
                   <Text className="text-lg text-white/80">{weatherData.time}</Text>
                   <Text className="mt-6 text-8xl font-light text-white">
-                    {weatherData.temperature}°
+                    {displayTemperature(weatherData.temperature)}
                   </Text>
                   <Text className="text-xl text-white">{weatherData.condition}</Text>
                   <Text className="mt-1 text-white/80">
-                    H:{weatherData.highTemp}° L:{weatherData.lowTemp}°
+                    H:{displayTemperature(weatherData.highTemp)} L:
+                    {displayTemperature(weatherData.lowTemp)}
                   </Text>
 
                   {/* Refresh button */}
                   <TouchableOpacity
-                    className="mt-2 flex-row items-center gap-2 rounded-full bg-white/20 px-4 py-2"
+                    className="mt-2 flex-row items-center gap-2 px-4 py-2"
                     onPress={loadWeatherData}
                     disabled={isLoading}
                   >
@@ -220,7 +214,7 @@ export default function LocationPreviewScreen() {
                             size={24}
                             className="my-2"
                           />
-                          <Text className="text-white">{hour.temp}°</Text>
+                          <Text className="text-white">{displayTemperature(hour.temp)}</Text>
                         </View>
                       ))
                     ) : (
@@ -237,7 +231,9 @@ export default function LocationPreviewScreen() {
                 <View className="mt-4 rounded-xl bg-white/10 p-4">
                   <Text className="mb-2 font-medium text-white">
                     {weatherData.dailyForecast
-                      ? t('weather.dayForecast', { count: weatherData.dailyForecast.length })
+                      ? t('weather.dayForecast', {
+                          count: weatherData.dailyForecast.length,
+                        })
                       : t('weather.dailyForecast')}
                   </Text>
                   {weatherData.dailyForecast ? (
@@ -257,14 +253,18 @@ export default function LocationPreviewScreen() {
                             <View
                               className="absolute h-1 bg-white"
                               style={{
-                                left: `${Math.max(0, ((day.low - 40) / (100 - 40)) * 100)}%`,
-                                right: `${Math.max(0, 100 - ((day.high - 40) / (100 - 40)) * 100)}%`,
+                                left: `${Math.max(0, ((day.low - 4) / (38 - 4)) * 100)}%`,
+                                right: `${Math.max(0, 100 - ((day.high - 4) / (38 - 4)) * 100)}%`,
                               }}
                             />
                           </View>
                         </View>
-                        <Text className="min-w-[30px] text-right text-white/90">{day.low}°</Text>
-                        <Text className="min-w-[30px] text-right text-white">{day.high}°</Text>
+                        <Text className="min-w-[30px] text-right text-white/90">
+                          {displayTemperature(day.low)}
+                        </Text>
+                        <Text className="min-w-[30px] text-right text-white">
+                          {displayTemperature(day.high)}
+                        </Text>
                       </View>
                     ))
                   ) : (
@@ -283,7 +283,9 @@ export default function LocationPreviewScreen() {
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">{t('weather.feelsLike')}</Text>
                       <Text className="text-xl text-white">
-                        {weatherData.details?.feelsLike || weatherData.temperature}°
+                        {displayTemperature(
+                          weatherData.details?.feelsLike ?? weatherData.temperature,
+                        )}
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
@@ -295,7 +297,9 @@ export default function LocationPreviewScreen() {
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">{t('weather.visibility')}</Text>
                       <Text className="text-xl text-white">
-                        {weatherData.details?.visibility || '10'} mi
+                        {weatherData.details?.visibility != null
+                          ? displayVisibility(weatherData.details.visibility)
+                          : '—'}
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
@@ -310,7 +314,9 @@ export default function LocationPreviewScreen() {
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">{t('weather.wind')}</Text>
                       <Text className="text-xl text-white">
-                        {weatherData.details?.windSpeed || '5'} mph
+                        {weatherData.details?.windSpeed != null
+                          ? displayWindSpeed(weatherData.details.windSpeed)
+                          : '—'}
                       </Text>
                     </View>
                   </View>
@@ -320,6 +326,6 @@ export default function LocationPreviewScreen() {
           </View>
         </ScrollView>
       </LinearGradient>
-    </View>
+    </>
   );
 }

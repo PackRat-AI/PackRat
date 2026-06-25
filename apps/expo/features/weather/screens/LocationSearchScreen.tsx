@@ -1,6 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { SearchInput } from 'expo-app/components/SearchInput';
 import { cn } from 'expo-app/lib/cn';
@@ -59,6 +60,9 @@ export default function LocationSearchScreen() {
         }
       } catch (err) {
         console.error('Error loading recent searches:', err);
+        Sentry.captureException(err, {
+          tags: { feature: 'weather', action: 'loadRecentSearches' },
+        });
       }
     };
 
@@ -87,6 +91,10 @@ export default function LocationSearchScreen() {
       await AsyncStorage.setItem(RECENT_SEARCHES_KEY, safeJsonStringify(updatedSearches));
     } catch (err) {
       console.error('Error saving recent search:', err);
+      Sentry.captureException(err, {
+        tags: { feature: 'weather', action: 'saveToRecentSearches' },
+        extra: { searchTerm },
+      });
     }
   };
 
@@ -136,6 +144,10 @@ export default function LocationSearchScreen() {
       }
     } catch (err) {
       console.error('Error adding location:', err);
+      Sentry.captureException(err, {
+        tags: { feature: 'weather', action: 'handleAddLocation' },
+        extra: { locationId: location.id, locationName: location.name },
+      });
       Alert.alert(t('common.error'), t('weather.unexpectedError'));
     } finally {
       setIsAdding(false);
@@ -394,7 +406,7 @@ export default function LocationSearchScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Search Input */}
-      <View className="px-4">
+      <View className="px-4 my-4">
         <SearchInput
           ref={searchInputRef}
           placeholder={t('weather.searchForCity')}

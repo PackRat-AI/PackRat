@@ -15,15 +15,26 @@ import { configure } from 'safe-stable-stringify';
  * raw `JSON.stringify` for normal data — it only differs by not throwing on
  * circular references or BigInt. Use this everywhere you'd reach for
  * `JSON.stringify`.
+ *
+ * Typed as `typeof JSON.stringify` (returns `string`) so it's a true drop-in —
+ * safe-stable-stringify's own type is `string | undefined`, which would break
+ * every `string`-typed call site (storage setters, headers, log lines). This
+ * mirrors the convenient `string` return TS already assigns to `JSON.stringify`.
  */
-export const safeJsonStringify = configure({ deterministic: false, bigint: true });
+export const safeJsonStringify = configure({
+  deterministic: false,
+  bigint: true,
+}) as typeof JSON.stringify;
 
 /**
  * Deterministic stringify: keys are sorted, circular- and BigInt-safe. Use for
  * cache keys, hashing, and structural equality — NOT where output key order
  * must mirror input order.
  */
-export const stableJsonStringify = configure({ deterministic: true, bigint: true });
+export const stableJsonStringify = configure({
+  deterministic: true,
+  bigint: true,
+}) as typeof JSON.stringify;
 
 /**
  * Escape hatch to build a custom stringifier (`maximumDepth`, `circularValue`,

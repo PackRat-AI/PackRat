@@ -17,6 +17,7 @@ export async function updateEtlJobProgress({
   const processed = params?.processed ?? 0;
 
   await db
+    .tag('etl.updateJobProgress')
     .update(etlJobs)
     .set({
       totalValid: sql`COALESCE(${etlJobs.totalValid}, 0) + ${valid}`,

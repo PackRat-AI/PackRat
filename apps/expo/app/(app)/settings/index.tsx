@@ -1,4 +1,4 @@
-import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, SegmentedControl, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
@@ -17,10 +17,16 @@ import {
 } from 'expo-app/features/ai/lib/localModelManager';
 import { DeleteAccountButton } from 'expo-app/features/auth/components/DeleteAccountButton';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
+import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAtomValue } from 'jotai';
 import { Platform, ScrollView, TouchableOpacity, View } from 'react-native';
@@ -32,6 +38,12 @@ export default function SettingsScreen() {
   const modelStatus = useAtomValue(localModelStatusAtom);
   const progress = useAtomValue(localModelProgressAtom);
   const isDownloaded = useAtomValue(localModelFileAvailableAtom);
+
+  const router = useRouter();
+  const { announcementSeen, setAnnouncementSeen, opened, setOpened } = useSeasonSuggestionsPrefs();
+  const { unit: weightUnit, setWeightUnit } = useWeightUnit();
+  const { unit: temperatureUnit, setTemperatureUnit } = useTemperatureUnit();
+  const { unit: speedUnit, setSpeedUnit } = useSpeedUnit();
 
   const isApple = isAppleIntelligenceAvailable();
   const isDownloading = modelStatus === 'downloading';
@@ -97,6 +109,64 @@ export default function SettingsScreen() {
 
         <View>
           <Text variant="subhead" className="mb-3">
+            {t('settings.displayUnits')}
+          </Text>
+          <View className="rounded-xl border border-border bg-card">
+            <View className="flex-row items-center justify-between p-4">
+              <View className="flex-1">
+                <Text className="font-medium">Weight</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  {t('settings.weightSubtitle')}
+                </Text>
+              </View>
+              <View className="w-28">
+                <SegmentedControl
+                  testID={testIds.settings.weightUnitControl}
+                  values={['kg', 'lb']}
+                  selectedIndex={weightUnit === 'kg' ? 0 : 1}
+                  onIndexChange={(index) => setWeightUnit(index === 0 ? 'kg' : 'lb')}
+                />
+              </View>
+            </View>
+            <View className="h-px bg-border mx-4" />
+            <View className="flex-row items-center justify-between p-4">
+              <View className="flex-1">
+                <Text className="font-medium">Temperature</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  {t('settings.temperatureSubtitle')}
+                </Text>
+              </View>
+              <View className="w-28">
+                <SegmentedControl
+                  testID={testIds.settings.temperatureUnitControl}
+                  values={['°C', '°F']}
+                  selectedIndex={temperatureUnit === 'C' ? 0 : 1}
+                  onIndexChange={(index) => setTemperatureUnit(index === 0 ? 'C' : 'F')}
+                />
+              </View>
+            </View>
+            <View className="h-px bg-border mx-4" />
+            <View className="flex-row items-center justify-between p-4">
+              <View className="flex-1">
+                <Text className="font-medium">Wind & Distance</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  {t('settings.windDistanceSubtitle')}
+                </Text>
+              </View>
+              <View className="w-36">
+                <SegmentedControl
+                  testID={testIds.settings.speedUnitControl}
+                  values={['km/h', 'mph']}
+                  selectedIndex={speedUnit === 'kmh' ? 0 : 1}
+                  onIndexChange={(index) => setSpeedUnit(index === 0 ? 'kmh' : 'mph')}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <View>
+          <Text variant="subhead" className="mb-3">
             {t('ai.modelManagement')}
           </Text>
           <View className="rounded-xl border border-border bg-card p-4">
@@ -143,7 +213,7 @@ export default function SettingsScreen() {
                         </View>
                       )}
                       {(!isDownloaded || isError) && !isDownloading && !isPreparing && (
-                        <TouchableOpacity onPress={downloadLocalModel}>
+                        <TouchableOpacity onPress={() => downloadLocalModel(isAuthenticated)}>
                           <Text
                             variant="footnote"
                             className="font-medium"
@@ -197,6 +267,26 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
                 <Icon name="chevron-right" size={20} color={colors.grey} />
+              </TouchableOpacity>
+              <View className="h-px bg-border mx-4" />
+              <TouchableOpacity
+                className="flex-row items-center gap-3 p-4"
+                onPress={() => {
+                  setAnnouncementSeen(false);
+                  setOpened(false);
+                  router.dismissAll();
+                  router.navigate('/');
+                }}
+              >
+                <View className="h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                  <Icon name="leaf" size={22} color={colors.primary} />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-medium">Reset Season Suggestions State</Text>
+                  <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                    {`seen: ${announcementSeen} · opened: ${opened}`}
+                  </Text>
+                </View>
               </TouchableOpacity>
             </View>
           </View>

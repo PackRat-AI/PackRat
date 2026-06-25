@@ -33,13 +33,9 @@ const DEFAULT_PEEK_BYTES = 64 * 1024; // 64 KiB
 export class ChunkBoundaryError extends Error {
   constructor({
     objectKey,
-    from,
-    to,
-  }: {
-    objectKey: string;
-    from: number;
-    to: number;
-  }) {
+    byteRange,
+  }: { objectKey: string; byteRange: { from: number; to: number } }) {
+    const { from, to } = byteRange;
     super(
       `No newline found in ${to - from} bytes ending at ${to} ` +
         `of ${objectKey} — row larger than the peek window or file is not line-oriented.`,
@@ -123,7 +119,7 @@ export async function chunkCsvForR2({
         const text = await obj.text();
         const lastNewlineIndex = text.lastIndexOf('\n');
         if (lastNewlineIndex === -1) {
-          throw new ChunkBoundaryError({ objectKey, from, to });
+          throw new ChunkBoundaryError({ objectKey, byteRange: { from, to } });
         }
         // TextEncoder gives byte length of the prefix — accurate for non-ASCII CSV
         // content where char index != byte offset (e.g. accented product names).
