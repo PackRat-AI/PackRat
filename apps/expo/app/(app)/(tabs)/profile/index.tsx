@@ -189,7 +189,7 @@ function ListHeaderComponent() {
     // R2-hosted avatars cache by their object key; absolute OAuth URLs aren't valid
     // cache filenames, so derive a stable key from the URL instead.
     const cacheKey = isRemoteUrl(avatarKey)
-      ? getRemoteImageCacheKey(avatarUri, 'oauth-avatar')
+      ? getRemoteImageCacheKey({ url: avatarUri, prefix: 'oauth-avatar' })
       : avatarKey;
     return (
       <CachedImage

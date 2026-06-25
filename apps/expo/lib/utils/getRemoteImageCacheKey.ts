@@ -18,7 +18,13 @@ function fnv1a(input: string): string {
   return hash.toString(36);
 }
 
-export function getRemoteImageCacheKey(url: string, prefix = 'remote-img'): string {
+export function getRemoteImageCacheKey({
+  url,
+  prefix = 'remote-img',
+}: {
+  url: string;
+  prefix?: string;
+}): string {
   const withoutQuery = url.split(QUERY_OR_HASH_RE)[0] ?? url;
   const lastSegment = withoutQuery.split('/').pop() ?? '';
   const match = lastSegment.match(EXTENSION_RE);
