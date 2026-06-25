@@ -20,6 +20,7 @@ ignores:
   # from a dynamic `property` arg and cannot be a static magic-regexp constant.
   - "**/packages/analytics/src/core/enrichment.ts"
   - "**/packages/api/src/routes/alltrails.ts"
+  - "**/apps/swift/scripts/fix-xcodeproj.ts"
 rule:
   any:
     - pattern: new RegExp($$$ARGS)

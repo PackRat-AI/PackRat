@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { safeJsonParse } from '@packrat/utils';
 
 const UDID_RE = /^[0-9A-F-]{36}$/;
 
@@ -33,7 +34,7 @@ function runSimctl(args: readonly string[]): string {
 function parseDeviceListJson(json: string): Device[] {
   let parsed: { devices?: DevicesByRuntime };
   try {
-    parsed = JSON.parse(json) as { devices?: DevicesByRuntime };
+    parsed = safeJsonParse<{ devices?: DevicesByRuntime }>(json, { strict: true });
   } catch {
     throw new SimctlError('xcrun simctl list devices -j returned malformed JSON');
   }

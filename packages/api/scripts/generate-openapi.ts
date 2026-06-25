@@ -16,6 +16,7 @@ import { cors } from '@elysiajs/cors';
 import { routes } from '@packrat/api/routes';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
 import { isNumber, isObject } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import { Elysia } from 'elysia';
 
 // Bare Elysia app — no CloudflareAdapter so handle() works in plain Bun/Node.
@@ -157,7 +158,7 @@ if (spec.paths) {
   }
 }
 
-const json = JSON.stringify(spec, null, 2);
+const json = safeJsonStringify(spec, null, 2);
 
 const repoRoot = new URL('../../..', import.meta.url).pathname;
 
