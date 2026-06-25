@@ -46,6 +46,10 @@ jobs:
         run: bun scripts/lint/no-circular-deps.ts
       - name: Check for duplicate/catalog dependencies
         run: bun scripts/lint/no-duplicate-deps.ts
+      - name: Check overrides are documented
+        run: bun scripts/lint/no-undocumented-overrides.ts
+      - name: Test override-registry lint
+        run: bun test:lint
       - name: Check fat-table queries are explicitly projected
         run: bun scripts/lint/no-unprojected-fat-table-queries.ts
       - name: Check package.json ordering
