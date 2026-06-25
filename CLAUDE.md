@@ -270,27 +270,24 @@ Defined in root `tsconfig.json`:
 
 ## Database
 
-- ORM: Drizzle (`packages/api/src/db/schema.ts`)
-- Migrations: Drizzle Kit (`drizzle-kit`)
+- ORM: Drizzle (`packages/db/src/schema/` after the schema extraction)
+- Migrations: **always** Drizzle Kit (`drizzle-kit generate`) — never hand-written SQL
 - Embeddings: pgvector with 1536 dimensions
 
-### Migration discipline (read before touching `packages/api/drizzle/`)
+### Migrations — HARD RULE
 
-1. **Always generate via drizzle-kit.** Edit `packages/api/src/db/schema.ts` (or `packages/db/src/schema.ts` for the shared workspace), then run from the API package:
+**Do not hand-write SQL migrations.** Always use Drizzle Kit:
 
-   ```bash
-   cd packages/api && bun run db:generate
-   ```
+1. Change the schema in `packages/api/src/db/schema.ts` or `packages/db/src/schema.ts` / `packages/db/src/schema/*.ts`, depending on where the table is owned.
+2. Run `bun run db:generate` from `packages/api/` or the matching package Drizzle command to emit the migration SQL.
+3. Keep the random migration filename that Drizzle Kit generates. Do not rename it.
+4. Review the generated SQL, snapshot, and journal entry for correctness.
+5. Commit both the schema change and the generated migration in the same PR.
+6. Run `bunx drizzle-kit check` from `packages/api/` before pushing when API migrations changed.
 
-   Drizzle-kit emits a random-name file like `0048_loud_squirrel_girl.sql`. That random name is fine — keep it. The naming convention here is "whatever drizzle-kit gives you."
+Hand-written migrations get out of sync with the schema, drift across environments, and break the Better Auth / drizzle-zod / inferred-TS-types unified pipeline (PR #2414). If `drizzle-kit generate` produces a migration you disagree with, **fix the schema or the generator config** — do not edit the SQL by hand.
 
-2. **Do not rename a generated migration file.** The `meta/_journal.json` `tag` field, the migration SQL filename, and the snapshot filename all encode the migration identity together. Renaming any one of them (even with corresponding journal edits) makes the migration look hand-authored and creates drift that future drizzle-kit operations can mis-handle.
-
-3. **Do not hand-edit `meta/_journal.json`, `meta/*_snapshot.json`, or the generated SQL.** If the generated migration is wrong, fix the schema, delete the bad migration + snapshot + journal entry, and regenerate. Do not patch around it.
-
-4. **Collapse additive changes into one migration when they ship together** — fewer snapshot files in the diff, easier to revert as a unit. Splitting only makes sense when migrations need to land in separate releases.
-
-5. **Verify after generating.** Run `bunx drizzle-kit check` from `packages/api/` — it validates the snapshot chain is internally consistent. Run before pushing.
+If you find a migration in the repo that was hand-written (no `drizzle-kit` provenance), flag it in your PR description and regenerate from schema as a follow-up commit.
 
 ## EAS Build Profiles
 

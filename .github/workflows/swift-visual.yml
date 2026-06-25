@@ -1,0 +1,120 @@
+name: Swift Visual Screenshots
+
+on:
+  schedule:
+    - cron: "21 10 * * *"
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Which visual suite to run"
+        required: true
+        default: both
+        type: choice
+        options:
+          - both
+          - ios
+          - ipad
+          - macos
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  SCREENSHOT_ARTIFACT_DIR: artifacts/swift-visual-screenshots
+
+jobs:
+  visual-gate:
+    name: Check visual test prerequisites
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        name: Verify E2E credentials are available
+        env:
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        run: |
+          if [ -n "$E2E_TEST_EMAIL" ] && [ -n "$E2E_TEST_PASSWORD" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Swift visual screenshots skipped because E2E_TEST_EMAIL/E2E_TEST_PASSWORD are not configured."
+          fi
+
+  swift-visual:
+    name: Swift visual suite
+    needs: visual-gate
+    if: needs.visual-gate.outputs.ready == 'true'
+    runs-on: macos-15
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -switch /Applications/Xcode.app
+          xcodebuild -version
+          xcrun --show-sdk-version
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Generate Xcode project
+        run: bun swift
+
+      - name: Boot iOS simulator
+        if: ${{ (github.event.inputs.platform || 'both') != 'macos' }}
+        run: |
+          DEVICE_ID=$(xcrun simctl create Swift-Visual "iPhone 17" \
+            "$(xcrun simctl list runtimes -j | jq -r '.runtimes[] | select(.identifier | contains("iOS-")) | .identifier' | sort -V | tail -1)")
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID"
+
+      - name: Boot iPad simulator
+        if: ${{ (github.event.inputs.platform || 'both') == 'ipad' || (github.event.inputs.platform || 'both') == 'both' }}
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available -j \
+            | jq -r '[.devices[][] | select(.isAvailable == true and (.name | contains("iPad")))] | .[0].udid')
+          xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID"
+
+      - name: Check macOS Automation Mode
+        if: ${{ (github.event.inputs.platform || 'both') == 'macos' || (github.event.inputs.platform || 'both') == 'both' }}
+        run: automationmodetool help
+
+      - name: Capture Swift visual screenshots
+        env:
+          E2E_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          PACKRAT_VISUAL_XCODEBUILD_TIMEOUT_MS: "3600000"
+        run: |
+          PLATFORM="${{ github.event.inputs.platform || 'both' }}"
+          bun swift:screenshots --platform "$PLATFORM" --out "$SCREENSHOT_ARTIFACT_DIR"
+
+      - name: Upload contact sheets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swift-visual-screenshots
+          path: |
+            ${{ env.SCREENSHOT_ARTIFACT_DIR }}
+            apps/swift/TestResults/visual-*.xcresult
+          if-no-files-found: ignore
+          retention-days: 14

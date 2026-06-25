@@ -5,6 +5,7 @@ import { Form, FormItem, FormSection, SegmentedControl, TextField } from '@packr
 import * as Sentry from '@sentry/react-native';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -47,6 +48,7 @@ export const CreatePackItemForm = ({
   const router = useRouter();
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
+  const { unit: preferredWeightUnit } = useWeightUnit();
   const createPackItem = useCreatePackItem();
   const updatePackItem = useUpdatePackItem();
   const insets = useSafeAreaInsets();
@@ -97,7 +99,7 @@ export const CreatePackItemForm = ({
           name: '',
           description: '',
           weight: 0,
-          weightUnit: 'g',
+          weightUnit: preferredWeightUnit,
           quantity: 1,
           category: '',
           consumable: false,

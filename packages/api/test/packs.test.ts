@@ -179,6 +179,45 @@ describe('Packs Routes', () => {
       expect(data.id).toBeDefined();
     });
 
+    it('defaults missing category to custom', async () => {
+      const newPack = {
+        id: `pack_test_no_category_${Date.now()}`,
+        name: 'Swift Created Pack',
+        isPublic: false,
+        localCreatedAt: new Date().toISOString(),
+        localUpdatedAt: new Date().toISOString(),
+      };
+
+      const res = await apiWithAuth('/packs', httpMethods.post(newPack));
+
+      expect([200, 201]).toContain(res.status);
+      const data = await expectJsonResponse(res, ['id', 'category']);
+      expect(data.id).toBe(newPack.id);
+      expect(data.category).toBe('custom');
+    });
+
+    it('normalizes nullable native-client fields', async () => {
+      const newPack = {
+        id: `pack_test_null_category_${Date.now()}`,
+        name: 'Swift Nullable Pack',
+        description: null,
+        category: null,
+        tags: null,
+        isPublic: false,
+        localCreatedAt: new Date().toISOString(),
+        localUpdatedAt: new Date().toISOString(),
+      };
+
+      const res = await apiWithAuth('/packs', httpMethods.post(newPack));
+
+      expect([200, 201]).toContain(res.status);
+      const data = await expectJsonResponse(res, ['id', 'category']);
+      expect(data.id).toBe(newPack.id);
+      expect(data.description).toBeNull();
+      expect(data.category).toBe('custom');
+      expect(data.tags).toBeNull();
+    });
+
     it('validates required fields', async () => {
       const res = await apiWithAuth('/packs', httpMethods.post({}));
       expectBadRequest(res);

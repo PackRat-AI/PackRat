@@ -14,7 +14,7 @@ import { createConnection } from '@packrat/api/db';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import * as schema from '@packrat/db';
 import { isObject } from '@packrat/guards';
-import { betterAuth } from 'better-auth';
+import { type BetterAuthPlugin, betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
 
 // ─── Per-isolate auth instance cache ─────────────────────────────────────────
@@ -32,7 +32,14 @@ function getTrustedOrigins(env: ValidatedEnv): string[] {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  return [env.BETTER_AUTH_URL, ...(configured ?? []), 'packrat://'];
+  return [
+    env.BETTER_AUTH_URL,
+    ...(configured ?? []),
+    'packrat://',
+    ...(env.BETTER_AUTH_URL.startsWith('http://localhost')
+      ? ['http://localhost:8787', 'http://localhost:8791']
+      : []),
+  ];
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth instance type is plugin-specific and can't be expressed at declaration time without duplicating the full config signature
@@ -61,7 +68,9 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
 
     advanced: {
       // All IDs are UUID-formatted text (matching the DB migration).
-      generateId: () => crypto.randomUUID(),
+      database: {
+        generateId: () => crypto.randomUUID(),
+      },
       // Trust the X-Forwarded-For header added by Cloudflare.
       ipAddress: {
         ipAddressHeaders: ['cf-connecting-ip', 'x-forwarded-for'],
@@ -99,14 +108,23 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       },
     }),
 
-    // Map Better Auth's model field names to our column names.
+    // Do NOT set a snake_case `fieldName` here. The Drizzle adapter returns rows
+    // keyed by the table's camelCase property names (firstName, lastName, …), and
+    // Better Auth's transformOutput looks each value up by `field.fieldName || key`.
+    // A `fieldName: 'first_name'` makes it read data['first_name'] — which Drizzle
+    // never produces — so the field silently drops out of every session/sign-in
+    // response (this is exactly why firstName/lastName/avatarUrl were missing).
+    // Omitting fieldName uses the field name, which already matches the Drizzle
+    // property; Drizzle owns the snake_case SQL column mapping.
     user: {
       additionalFields: {
         role: { type: 'string', defaultValue: 'USER' },
-        firstName: { type: 'string', fieldName: 'first_name' },
-        lastName: { type: 'string', fieldName: 'last_name' },
-        avatarUrl: { type: 'string', fieldName: 'avatar_url' },
-        passwordHash: { type: 'string', fieldName: 'password_hash' },
+        firstName: { type: 'string' },
+        lastName: { type: 'string' },
+        avatarUrl: { type: 'string' },
+        // Legacy column from pre-migration auth; Better Auth verifies against
+        // account.password, not this. Never accept from clients or echo it back.
+        passwordHash: { type: 'string', input: false, returned: false },
       },
     },
 
@@ -190,7 +208,8 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       }),
 
       // Admin: role-based user management endpoints.
-      admin(),
+      // safe-cast: Better Auth 1.6.13's admin plugin return type is narrower than BetterAuthPlugin.
+      admin() as unknown as BetterAuthPlugin,
 
       // Expo: promotes the expo-origin header → Origin so the CSRF check
       // passes for requests from the native app (which can't send a browser

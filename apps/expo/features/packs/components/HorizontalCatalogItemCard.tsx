@@ -1,5 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { parseWeightUnit } from '@packrat/units';
 import { Icon } from 'expo-app/components/Icon';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -33,11 +35,6 @@ type HorizontalCatalogItemCardProps = {
 const formatPrice = ({ price, currency }: { price?: number | null; currency?: string | null }) => {
   if (!price) return '';
   return `${currency || '$'}${price.toFixed(2)}`;
-};
-
-const formatWeight = ({ weight, unit }: { weight?: number | null; unit?: string | null }) => {
-  if (!weight) return '';
-  return `${weight}${unit || 'g'}`;
 };
 
 function ScalePress({
@@ -75,6 +72,7 @@ function ScalePress({
 
 export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCatalogItemCardProps) {
   const { colors } = useColorScheme();
+  const { unit: displayUnit, convertWeight } = useWeightUnit();
 
   const handleCardPress = () => {
     if ('onSelect' in restProps) {
@@ -105,7 +103,11 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
           <Text className="font-medium text-foreground" numberOfLines={1}>
             {item.name}
           </Text>
-          {item.brand && <Text className="text-sm text-muted-foreground">{item.brand}</Text>}
+          {item.brand && (
+            <Text className="text-sm text-muted-foreground" numberOfLines={1}>
+              {item.brand}
+            </Text>
+          )}
 
           <View className="mt-2 flex-row flex-wrap items-center gap-x-4 gap-y-1">
             {!!item.price && (
@@ -115,7 +117,11 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
             )}
             {!!item.weight && (
               <Text className="text-sm text-muted-foreground">
-                {formatWeight({ weight: item.weight, unit: item.weightUnit })}
+                {convertWeight({
+                  weight: item.weight,
+                  fromUnit: parseWeightUnit({ value: item.weightUnit }),
+                })}{' '}
+                {displayUnit}
               </Text>
             )}
             {!!item.ratingValue && (

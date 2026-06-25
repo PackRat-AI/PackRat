@@ -1,10 +1,9 @@
 import { clientEnvs } from '@packrat/env/expo-client';
-import { isString } from '@packrat/guards';
+import { isRemoteUrl, isString } from '@packrat/guards';
 import {
   ActivityIndicator,
   Avatar,
   AvatarFallback,
-  AvatarImage,
   Button,
   List,
   ListItem,
@@ -24,6 +23,7 @@ import {
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { uploadImage } from 'expo-app/features/packs/utils/uploadImage';
 import { ProfileAuthWall } from 'expo-app/features/profile/components';
@@ -35,6 +35,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
+import { getRemoteImageCacheKey } from 'expo-app/lib/utils/getRemoteImageCacheKey';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Link, router, Stack } from 'expo-router';
 import { useSetAtom } from 'jotai';
@@ -180,7 +181,24 @@ function ListHeaderComponent() {
   const username = user?.email || '';
 
   // Build the full avatar URL from the stored R2 key or an absolute URL
-  const avatarUri = user?.avatarUrl ? buildPackTemplateItemImageUrl(user.avatarUrl) : null;
+  const avatarKey = user?.avatarUrl ?? null;
+  const avatarUri = avatarKey ? buildPackTemplateItemImageUrl(avatarKey) : null;
+
+  function renderAvatarImage() {
+    if (!avatarKey || !avatarUri) return null;
+    // R2-hosted avatars cache by their object key; absolute OAuth URLs aren't valid
+    // cache filenames, so derive a stable key from the URL instead.
+    const cacheKey = isRemoteUrl(avatarKey)
+      ? getRemoteImageCacheKey({ url: avatarUri, prefix: 'oauth-avatar' })
+      : avatarKey;
+    return (
+      <CachedImage
+        imageObjectKey={cacheKey}
+        imageRemoteUrl={avatarUri}
+        className="aspect-square h-full w-full"
+      />
+    );
+  }
 
   async function handleAvatarPress() {
     try {
@@ -223,7 +241,7 @@ function ListHeaderComponent() {
     <SafeAreaView className="ios:pb-8 items-center pb-4 pt-8">
       <TouchableOpacity onPress={handleAvatarPress} disabled={isUploading}>
         <Avatar alt={`${displayName}'s Profile`} className="h-24 w-24">
-          {avatarUri ? <AvatarImage source={{ uri: avatarUri }} /> : null}
+          {renderAvatarImage()}
           <AvatarFallback>
             <Text
               variant="largeTitle"

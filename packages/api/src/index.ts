@@ -10,6 +10,11 @@ import type { MessageBatch, ScheduledController } from '@cloudflare/workers-type
 import { cors } from '@elysiajs/cors';
 import { neonConfig } from '@neondatabase/serverless';
 import { getAuth } from '@packrat/api/auth';
+import {
+  isLocalE2EAuthEnabled,
+  localE2EToken,
+  makeLocalE2EUser,
+} from '@packrat/api/auth/local-e2e';
 import { AppContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
 import { CatalogService } from '@packrat/api/services';
@@ -30,6 +35,8 @@ import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
+
+const bearerPrefixRegex = /^Bearer\s+/i;
 
 // Origins allowed to make cross-origin (credentialed) requests to the API.
 const ALLOWED_ORIGIN_PATTERNS = [
@@ -116,7 +123,10 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
   .all(
     '/api/auth/*',
     async ({ request }) => {
-      const auth = await getAuth(getEnv());
+      const validatedEnv = getEnv();
+      const localAuthResponse = await handleLocalE2EAuth(request, validatedEnv);
+      if (localAuthResponse) return localAuthResponse;
+      const auth = await getAuth(validatedEnv);
       return auth.handler(request);
     },
     { parse: 'none', detail: { hide: true } },
@@ -149,6 +159,41 @@ function enrichEnv(env: Env): Env {
   return env;
 }
 
+async function handleLocalE2EAuth(request: Request, env: Env): Promise<Response | undefined> {
+  if (!isLocalE2EAuthEnabled(env)) return undefined;
+
+  const url = new URL(request.url);
+  if (request.method === 'POST' && url.pathname === '/api/auth/sign-in/email') {
+    const body = (await request.json().catch(() => undefined)) as
+      | { email?: string; password?: string }
+      | undefined;
+    const email = body?.email?.toLowerCase();
+    if (email !== env.E2E_TEST_EMAIL?.toLowerCase() || body?.password !== env.E2E_TEST_PASSWORD) {
+      return Response.json({ error: 'Invalid email or password' }, { status: 401 });
+    }
+
+    const token = await localE2EToken(env);
+    return Response.json(
+      {
+        redirect: false,
+        token,
+        user: makeLocalE2EUser(env),
+      },
+      { headers: { 'set-auth-token': token } },
+    );
+  }
+
+  if (request.method === 'POST' && url.pathname === '/api/auth/sign-out') {
+    const expected = await localE2EToken(env);
+    const authorization = request.headers.get('Authorization') ?? '';
+    if (authorization.replace(bearerPrefixRegex, '') === expected) {
+      return Response.json({ success: true });
+    }
+  }
+
+  return undefined;
+}
+
 // Local-dev hook: route `@neondatabase/serverless` through Neon's official local
 // proxy (`ghcr.io/timowilhelm/local-neon-http-proxy`, see docker-compose.test.yml
 // and https://neon.com/guides/local-development-with-neon) when NEON_DATABASE_URL
@@ -157,12 +202,16 @@ function enrichEnv(env: Env): Env {
 // and prod share the exact same driver path — no node-postgres TCP sockets
 // (which workerd silently drops between requests).
 let neonLocalConfigured = false;
-function maybeConfigureLocalNeon(databaseUrl: string | undefined): void {
+function maybeConfigureLocalNeon(opts: {
+  databaseUrl: string | undefined;
+  proxyPortOverride: string | undefined;
+}): void {
+  const { databaseUrl, proxyPortOverride } = opts;
   if (neonLocalConfigured || !databaseUrl) return;
   try {
     const host = new URL(databaseUrl).hostname.toLowerCase();
     if (host !== 'db.localtest.me') return;
-    const proxyPort = '4444';
+    const proxyPort = proxyPortOverride ?? '4444';
     neonConfig.fetchEndpoint = (h) =>
       h === 'db.localtest.me' ? `http://${h}:${proxyPort}/sql` : `https://${h}/sql`;
     neonConfig.wsProxy = (h) => (h === 'db.localtest.me' ? `${h}:${proxyPort}/v2` : `${h}/v2`);
@@ -177,7 +226,10 @@ function maybeConfigureLocalNeon(databaseUrl: string | undefined): void {
 const handler: ExportedHandler<Env> = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
-    maybeConfigureLocalNeon(e.NEON_DATABASE_URL);
+    maybeConfigureLocalNeon({
+      databaseUrl: e.NEON_DATABASE_URL,
+      proxyPortOverride: e.NEON_LOCAL_PROXY_PORT,
+    });
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
 
     const metricsStore = initQueryMetricsStore(request);

@@ -1,6 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -28,6 +29,7 @@ export default function LocationDetailScreen() {
   ]);
   const { showActionSheetWithOptions } = useActionSheet();
   const { removeLocation } = useLocations();
+  const { displayTemperature } = useTemperatureUnit();
 
   const locationId = parseInt(String(id), 10);
   // Get the locations array safely
@@ -95,7 +97,7 @@ export default function LocationDetailScreen() {
         cancelButtonIndex,
         destructiveButtonIndex,
         title: location.name,
-        message: `${location.temperature}° - ${location.condition}`,
+        message: `${displayTemperature(location.temperature)} - ${location.condition}`,
         containerStyle: {
           backgroundColor: colorScheme === 'dark' ? colors.card : 'white',
           paddingBottom: insets.bottom,
@@ -232,11 +234,12 @@ export default function LocationDetailScreen() {
                   </View>
                   <Text className="text-lg text-white/80">{location.time}</Text>
                   <Text className="mt-6 text-8xl font-light text-white">
-                    {location.temperature}°
+                    {displayTemperature(location.temperature)}
                   </Text>
                   <Text className="text-xl text-white">{location.condition}</Text>
                   <Text className="mt-1 text-white/80">
-                    H:{location.highTemp}° L:{location.lowTemp}°
+                    H:{displayTemperature(location.highTemp)} L:
+                    {displayTemperature(location.lowTemp)}
                   </Text>
 
                   {!location.isActive && (

@@ -8,6 +8,9 @@ export const UserPreferencesSchema = z.object({
       opened: z.boolean().default(false),
     })
     .optional(),
+  weightUnit: z.enum(['kg', 'lb']).optional(),
+  temperatureUnit: z.enum(['C', 'F']).optional(),
+  speedUnit: z.enum(['kmh', 'mph']).optional(),
 });
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;

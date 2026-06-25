@@ -15,6 +15,12 @@ import { eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 
 export const userRoutes = new Elysia({ prefix: '/user' })
+  .model({
+    'user.ErrorResponse': ErrorResponseSchema,
+    'user.UpdateUserRequest': UpdateUserRequestSchema,
+    'user.UpdateUserResponse': UpdateUserResponseSchema,
+    'user.UserProfile': UserProfileSchema,
+  })
   .use(authPlugin)
 
   // Get profile
@@ -63,7 +69,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
       }
     },
     {
-      response: { 200: UserProfileSchema, 404: ErrorResponseSchema },
+      response: { 200: 'user.UserProfile', 404: 'user.ErrorResponse' },
       isAuthenticated: true,
       detail: { tags: ['Users'], summary: 'Get user profile', security: [{ bearerAuth: [] }] },
     },
@@ -95,6 +101,19 @@ export const userRoutes = new Elysia({ prefix: '/user' })
         };
         if (firstName !== undefined) updateData.firstName = firstName;
         if (lastName !== undefined) updateData.lastName = lastName;
+        // Keep Better Auth's combined name field in sync to prevent stale display
+        // when the sign-in response derives firstName/lastName from name.
+        if (firstName !== undefined || lastName !== undefined) {
+          const [existingUser] = await db
+            .tag('user.getNameForSync')
+            .select({ firstName: users.firstName, lastName: users.lastName })
+            .from(users)
+            .where(eq(users.id, user.userId))
+            .limit(1);
+          const newFirst = firstName ?? existingUser?.firstName ?? '';
+          const newLast = lastName ?? existingUser?.lastName ?? '';
+          updateData.name = `${newFirst} ${newLast}`.trim();
+        }
         if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
         if (email !== undefined) {
           updateData.email = email.toLowerCase();
@@ -142,7 +161,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
       }
     },
     {
-      body: UpdateUserRequestSchema,
+      body: 'user.UpdateUserRequest',
       isAuthenticated: true,
       detail: { tags: ['Users'], summary: 'Update user profile', security: [{ bearerAuth: [] }] },
     },

@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
-import { userStore } from 'expo-app/features/auth/store';
+import { parseWeightUnit } from '@packrat/units';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import type { PackItem } from 'expo-app/features/packs/types';
 import { type CategorySummary, computeCategorySummaries } from 'expo-app/features/packs/utils';
@@ -22,13 +23,14 @@ function WeightCard({
   weight: number;
   className?: string;
 }) {
+  const { unit, convertWeight } = useWeightUnit();
   return (
     <View className={cn('flex-1 rounded-lg bg-card p-4', className)}>
       <Text variant="subhead" className="text-muted-foreground">
         {title}
       </Text>
       <Text variant="title2" className="mt-1 font-semibold">
-        {weight} g
+        {convertWeight({ weight, fromUnit: 'g' })} {unit}
       </Text>
     </View>
   );
@@ -54,6 +56,7 @@ function CustomList<T>({
 function CategoryItem({ category, index }: { category: CategorySummary; index: number }) {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
+  const { unit: weightUnit } = useWeightUnit();
   const itemLabel = category.items === 1 ? t('packs.item') : t('packs.items');
 
   return (
@@ -66,8 +69,7 @@ function CategoryItem({ category, index }: { category: CategorySummary; index: n
       <View>
         <Text>{category.name}</Text>
         <Text variant="footnote" className="text-muted-foreground">
-          {category.weight} {userStore.preferredWeightUnit.peek() ?? 'g'} • {category.items}{' '}
-          {itemLabel}
+          {category.weight} {weightUnit} • {category.items} {itemLabel}
         </Text>
       </View>
       <View
@@ -84,6 +86,7 @@ function CategoryItem({ category, index }: { category: CategorySummary; index: n
 
 function ItemRow({ item, index }: { item: PackItem; index: number }) {
   const { t } = useTranslation();
+  const { unit, convertWeight } = useWeightUnit();
 
   return (
     <View
@@ -114,7 +117,11 @@ function ItemRow({ item, index }: { item: PackItem; index: number }) {
           </View>
         )}
         <Text variant="subhead" className="text-muted-foreground">
-          {item.weight} {item.weightUnit}
+          {convertWeight({
+            weight: item.weight,
+            fromUnit: parseWeightUnit({ value: item.weightUnit }),
+          })}{' '}
+          {unit}
         </Text>
       </View>
     </View>
@@ -126,7 +133,8 @@ export default function CurrentPackScreen() {
   const { t } = useTranslation();
 
   const pack = usePackDetailsFromStore(params.id as string);
-  const uniqueCategories = computeCategorySummaries(pack);
+  const { unit: weightUnit } = useWeightUnit();
+  const uniqueCategories = computeCategorySummaries({ pack, preferredUnit: weightUnit });
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>

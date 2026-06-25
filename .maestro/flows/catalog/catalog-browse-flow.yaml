@@ -20,10 +20,10 @@ appId: ${APP_ID}
         text: "All"
     commands:
       - assertVisible:
-          text: ".*items.*"
+          id: "catalog:item-.*"
       - scrollUntilVisible:
           element:
-            text: "Showing.*items"
+            id: "catalog:item-.*"
           direction: DOWN
           timeout: 10000
           speed: 20

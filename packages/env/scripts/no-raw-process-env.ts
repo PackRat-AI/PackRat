@@ -65,6 +65,10 @@ const ALLOWED: string[] = [
   'packages/api/src/utils/__tests__/',
   // Admin env shim — parses process.env once at module load
   'apps/admin/lib/env.ts',
+  // E2E test runners — read E2E_EMAIL/E2E_PASSWORD from .env.local and forward
+  // to xcodebuild. Not app code.
+  'apps/swift/scripts/run-e2e.ts',
+  'apps/swift/scripts/run-e2e-macos.ts',
   // Playwright web E2E test infrastructure — Node process, reads env for CI secrets
   'apps/expo/playwright/',
   // OSM import script — spawns subprocesses and must pass the full OS env (PATH, HOME, etc.)

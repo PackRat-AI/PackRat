@@ -67,8 +67,8 @@ describe('Catalog Routes', () => {
       expect(item).toBeDefined();
       expect(item).toMatchObject({
         id: seededItem.id,
-        weight: null,
-        weightUnit: null,
+        weight: 0,
+        weightUnit: 'g',
       });
     });
 
@@ -275,7 +275,7 @@ describe('Catalog Routes', () => {
   describe('POST /catalog/etl', () => {
     it('queues ETL job', async () => {
       const res = await apiWithApiKey(
-        '/catalog/etl',
+        '/catalog/etl?engine=queue',
         httpMethods.post({
           filename: 'test.csv',
           chunks: ['chunk1.csv'],

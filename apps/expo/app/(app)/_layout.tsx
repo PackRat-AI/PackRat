@@ -131,12 +131,7 @@ export default function AppLayout() {
             animation: 'slide_from_bottom',
           }}
         />
-        <Stack.Screen
-          name="weather/preview"
-          options={{
-            headerShown: false,
-          }}
-        />
+        <Stack.Screen name="weather/preview" />
         <Stack.Screen
           name="weather/[id]"
           options={{
@@ -158,6 +153,7 @@ export default function AppLayout() {
             animation: 'slide_from_bottom',
           }}
         />
+        <Stack.Screen name="upcoming-trips" />
         <Stack.Screen
           name="recent-packs"
           options={{
@@ -182,15 +178,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="pack-categories/[id]"
           options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
-          }}
-        />
-        <Stack.Screen
-          name="upcoming-trips"
-          options={{
-            headerShown: true,
-            headerTitle: '',
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -254,7 +241,8 @@ export default function AppLayout() {
         <Stack.Screen
           name="pack-templates/index"
           options={{
-            headerShown: false,
+            ...getAppBarOptions(),
+            title: 'Pack Templates',
           }}
         />
         <Stack.Screen

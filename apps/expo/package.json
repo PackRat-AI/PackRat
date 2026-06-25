@@ -30,6 +30,7 @@
     "format": "biome format --write",
     "ios": "APP_VARIANT=development expo run:ios",
     "lint": "biome check --write",
+    "screenshots:web": "bun run playwright/capture-web-screenshots.ts",
     "start": "APP_VARIANT=development EXPO_UNSTABLE_WEB_MODAL=1 expo start",
     "submit:android": "eas submit --platform android",
     "submit:ios": "eas submit --platform ios",

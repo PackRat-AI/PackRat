@@ -43,9 +43,12 @@ const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build', '.wrangler']);
 
 // Files explicitly allowed to use raw regex.
 // alltrails.ts: builds regex from a dynamic `property` argument — can't be a static constant.
+// fix-xcodeproj.ts: build-time XcodeGen workaround that substitutes a dynamic
+//   package name into a pbxproj patch regex.
 const EXCLUDED_FILES = new Set([
   'packages/analytics/src/core/enrichment.ts',
   'packages/api/src/routes/alltrails.ts',
+  'apps/swift/scripts/fix-xcodeproj.ts',
 ]);
 
 function isTargetFile(name: string): boolean {

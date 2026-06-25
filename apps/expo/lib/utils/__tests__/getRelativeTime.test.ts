@@ -117,6 +117,18 @@ describe('getRelativeTime', () => {
     expect(t).toHaveBeenCalledWith('common.timeAgo.justNow');
   });
 
+  it('returns "Just now" for null timestamps without translation', () => {
+    expect(getRelativeTime({ dateValue: null })).toBe('Just now');
+  });
+
+  it('calls translate with singular unit counts', () => {
+    vi.setSystemTime(new Date('2024-01-01T12:01:00Z'));
+    const t = vi.fn((key: string, opts?: Record<string, unknown>) => `${key}:${opts?.count}`);
+    const result = getRelativeTime({ dateValue: '2024-01-01T12:00:00Z', t: t as never });
+    expect(t).toHaveBeenCalledWith('common.timeAgo.minutes', { count: 1 });
+    expect(result).toBe('common.timeAgo.minutes:1');
+  });
+
   it('accepts a Date object input', () => {
     vi.setSystemTime(new Date('2024-01-01T12:05:00Z'));
     const result = getRelativeTime({ dateValue: new Date('2024-01-01T12:00:00Z') });

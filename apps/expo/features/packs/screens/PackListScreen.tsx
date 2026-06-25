@@ -1,6 +1,6 @@
 import { ActivityIndicator, Button, SegmentedControl } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
-import { LargeTitleHeaderOverlapFixIOS } from '@packrat/ui/src/large-title-header-overlap-fix-ios';
+import { IosTransparentHeaderOverlapFix } from '@packrat/ui/src/ios-transparent-header-overlap-fix';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
@@ -32,6 +32,12 @@ import type { Pack, PackCategory, PackInStore } from '../types';
 type FilterOption = {
   label: string;
   value: PackCategory | 'all';
+};
+
+type PackListRow = {
+  id: string;
+  name: string;
+  category: PackCategory | null;
 };
 
 function CreatePackIconButton() {
@@ -82,7 +88,7 @@ export function PackListScreen() {
 
   const packs = selectedTypeIndex === USER_PACKS_INDEX ? userPacks : allPacksQuery.data;
 
-  const filteredPacks = packs?.filter((pack) => {
+  const filteredPacks = packs?.filter((pack: PackListRow) => {
     const matchesSearch = pack.name.toLowerCase().includes(searchValue.toLowerCase());
     const matchesCategory = activeFilter === 'all' || pack.category === activeFilter;
     return matchesSearch && matchesCategory;
@@ -212,14 +218,19 @@ export function PackListScreen() {
         )}
       </SearchOverlay>
 
-      <LargeTitleHeaderOverlapFixIOS>
+      <IosTransparentHeaderOverlapFix>
         <FlatList
           data={filteredPacks}
           keyExtractor={(pack) => pack.id}
           stickyHeaderIndices={[0]}
           contentInsetAdjustmentBehavior="automatic"
-          renderItem={({ item: pack }) => (
+          renderItem={({ item: pack, index }) => (
             <View className="px-4 pt-4">
+              {index === 0 && selectedTypeIndex === USER_PACKS_INDEX && (
+                <Text className="pb-2 text-muted-foreground">
+                  {filteredPacks?.length || 0} {filteredPacks?.length === 1 ? 'pack' : 'packs'}
+                </Text>
+              )}
               <PackCard
                 // biome-ignore lint/suspicious/noExplicitAny: Treaty type divergence
                 pack={pack as any}
@@ -257,13 +268,6 @@ export function PackListScreen() {
                   {filterOptions.map(renderFilterChip)}
                 </ScrollView>
               </View>
-              {selectedTypeIndex === USER_PACKS_INDEX && (
-                <View className="px-6 py-2 bg-background">
-                  <Text className="text-muted-foreground">
-                    {filteredPacks?.length || 0} {filteredPacks?.length === 1 ? 'pack' : 'packs'}
-                  </Text>
-                </View>
-              )}
             </View>
           }
           ListEmptyComponent={
@@ -296,7 +300,7 @@ export function PackListScreen() {
           ListFooterComponent={<AndroidTabBarInsetFix />}
           contentContainerStyle={{ flexGrow: 1 }}
         />
-      </LargeTitleHeaderOverlapFixIOS>
+      </IosTransparentHeaderOverlapFix>
     </SafeAreaView>
   );
 }
