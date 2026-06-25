@@ -4,7 +4,7 @@
   "scripts": {
     "build": "next build",
     "check-types": "tsc --noEmit",
-    "dev": "next dev --port 3001",
+    "dev": "next dev --port ${PORT:-3001}",
     "doctor:react": "bunx react-doctor",
     "start": "next start",
     "type-check": "tsc --noEmit"

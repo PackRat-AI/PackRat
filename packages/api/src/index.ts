@@ -20,6 +20,7 @@ import { routes } from '@packrat/api/routes';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
+import { isAllowedOrigin } from '@packrat/api/utils/cors-origins';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
@@ -38,20 +39,6 @@ import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
 
 const bearerPrefixRegex = /^Bearer\s+/i;
-
-// Origins allowed to make cross-origin (credentialed) requests to the API.
-const ALLOWED_ORIGIN_PATTERNS = [
-  /^https:\/\/(www\.)?packrat\.world$/,
-  /^https:\/\/[\w-]+\.packrat\.world$/,
-  /^https:\/\/[\w-]+\.packratai\.com$/,
-  /^https?:\/\/[\w-]+\.workers\.dev$/,
-  /^http:\/\/localhost:\d+$/,
-  /^exp:\/\//,
-];
-
-function isAllowedOrigin(origin: string | null): origin is string {
-  return !!origin && ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
-}
 
 // Sentry options for both the Worker handlers and the workflow class.
 // Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate

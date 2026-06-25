@@ -1,13 +1,13 @@
 'use client';
-import { webEnv } from '@packrat/env/web';
 import { safeJsonStringify } from '@packrat/utils';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useState } from 'react';
 import { setTokens } from 'web-app/lib/auth';
+import { getApiBaseUrl } from 'web-app/lib/getApiBaseUrl';
 
-const API_BASE = webEnv.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787';
+const API_BASE = getApiBaseUrl();
 
 function useLoginMutation() {
   return useMutation({

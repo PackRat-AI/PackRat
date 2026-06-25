@@ -75,3 +75,6 @@ apps/swift/build/
 # Quicktype reference output — generated for inspection, not compiled into the app.
 apps/swift/Generated/
 .turbo/
+
+# portless (local-dev proxy; state lives in ~/.portless, this is defensive)
+.portless/

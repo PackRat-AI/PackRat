@@ -40,6 +40,9 @@ function getTrustedOrigins(env: ValidatedEnv): string[] {
     ...(env.BETTER_AUTH_URL.startsWith('http://localhost')
       ? ['http://localhost:8787', 'http://localhost:8791']
       : []),
+    ...(env.ENVIRONMENT === 'development'
+      ? ['http://localhost:*', 'https://*.localhost', 'https://*.localhost:*']
+      : []),
   ];
 }
 

@@ -32,7 +32,7 @@
     "db:seed:e2e-user": "bun run ./src/db/seed-e2e-user.ts",
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e=dev",
-    "dev": "wrangler dev -e=dev",
+    "dev": "wrangler dev -e=dev --port ${PORT:-8787}",
     "dev:e2e": "bun run scripts/e2e-local-start.ts",
     "dev:e2e:init": "bun run scripts/e2e-local-init.ts",
     "dev:e2e:node": "bun run scripts/e2e-node-server.ts",

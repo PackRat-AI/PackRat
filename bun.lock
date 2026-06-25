@@ -17,6 +17,7 @@
         "glob": "^11.0.3",
         "jscpd": "^4.2.4",
         "lefthook": "^1.11.14",
+        "portless": "^0.13.1",
         "quicktype-core": "^23.2.6",
         "semver": "catalog:",
         "sort-package-json": "^3.6.1",
@@ -4175,6 +4176,8 @@
     "pluralize": ["pluralize@8.0.0", "", {}, "sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA=="],
 
     "pngjs": ["pngjs@3.4.0", "", {}, "sha512-NCrCHhWmnQklfH4MtJMRjZ2a8c80qXeMlQMv2uVp9ISJMTt562SbGd6n2oq0PaPgKm7Z6pL9E2UlLIhC+SHL3w=="],
+
+    "portless": ["portless@0.13.1", "", { "os": [ "linux", "win32", "darwin", ], "bin": { "portless": "dist/cli.js" } }, "sha512-1B+8Xd4tB1gOIkRHOUEi/LCOp8PIxUsL3ACBX5G2UkKw25TSRNUqAlQcBGxweJgdXb9DPQFX5utKLRUzPFhMnA=="],
 
     "portscanner": ["portscanner@2.2.0", "", { "dependencies": { "async": "^2.6.0", "is-number-like": "^1.0.3" } }, "sha512-IFroCz/59Lqa2uBvzK3bKDbDDIEaAY8XJ1jFxcLWTqosrsc32//P4VuSB2vZXoHiHqOmx8B5L5hnKOxL/7FlPw=="],
 
