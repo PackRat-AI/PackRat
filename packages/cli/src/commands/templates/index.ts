@@ -1,4 +1,5 @@
 import { toRecordArray } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
 import { nowIso, shortId } from '../../api/ids';
@@ -16,7 +17,7 @@ const listCmd = defineCommand({
       action: 'list pack templates',
     });
     if (args.json) {
-      process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+      process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
       return;
     }
     printTable({
@@ -42,7 +43,7 @@ const getCmd = defineCommand({
       action: 'get pack template',
       resourceHint: `template ${args.id}`,
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 
@@ -74,7 +75,7 @@ const createCmd = defineCommand({
       }),
       action: 'create pack template',
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 

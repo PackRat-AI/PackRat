@@ -1,4 +1,5 @@
 import { isFunction } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import Storage from 'expo-app/lib/expoSqliteKvStore';
 import { atom } from 'jotai';
 
@@ -8,7 +9,7 @@ export const atomWithKvStorage = <T>({ key, initialValue }: { key: string; initi
   baseAtom.onMount = (setValue) => {
     (async () => {
       const item = await Storage.getItem(key);
-      setValue(item ? JSON.parse(item) : initialValue);
+      setValue(item ? safeJsonParse<T>(item) : initialValue);
     })();
   };
 
@@ -19,7 +20,7 @@ export const atomWithKvStorage = <T>({ key, initialValue }: { key: string; initi
 
       set(baseAtom, nextValue);
 
-      Storage.setItem(key, JSON.stringify(nextValue));
+      Storage.setItem(key, safeJsonStringify(nextValue));
     },
   );
 

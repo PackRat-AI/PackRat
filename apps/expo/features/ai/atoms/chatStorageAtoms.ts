@@ -1,5 +1,6 @@
 import type { UIMessage } from '@ai-sdk/react';
 import { isObject, isString } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import * as Sentry from '@sentry/react-native';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
 
@@ -65,7 +66,7 @@ export async function loadChatMessages(context: ChatContext): Promise<UIMessage[
     const stored = await AsyncStorage.getItem(key);
     if (!stored) return null;
 
-    const parsed = JSON.parse(stored);
+    const parsed = safeJsonParse(stored, { strict: true });
     if (!isValidMessageArray(parsed)) {
       console.warn('Invalid chat message format in storage, clearing');
       await AsyncStorage.removeItem(key);
@@ -95,7 +96,7 @@ export async function saveChatMessages({
 }): Promise<void> {
   try {
     const key = getChatStorageKey(context);
-    await AsyncStorage.setItem(key, JSON.stringify(messages));
+    await AsyncStorage.setItem(key, safeJsonStringify(messages));
   } catch (error) {
     console.error('Failed to save chat messages:', error);
     Sentry.captureException(error, {

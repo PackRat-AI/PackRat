@@ -30,6 +30,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isObject } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import { FetchingJSONSchemaStore, InputData, JSONSchemaInput, quicktype } from 'quicktype-core';
 import { parse as parseYaml } from 'yaml';
 import { ZodType } from 'zod';
@@ -81,7 +82,6 @@ console.log(`Input mode: ${inputMode}`);
 
 // Top-level regex literals (lint rule: useTopLevelRegex). Captured once at
 // module load so hot paths don't allocate a fresh RegExp on each invocation.
-const FOUNDATION_IMPORT_RE = /^import Foundation/;
 const INVALID_IDENT_ROOT_RE = /^[^A-Za-z_]/;
 const WHITESPACE_RE = /\s/;
 
@@ -128,7 +128,7 @@ if (inputMode === 'bundle') {
   };
   await schemaInput.addSource({
     name: 'PackRatComponents',
-    schema: JSON.stringify(wrapped),
+    schema: safeJsonStringify(wrapped),
   });
   console.log(`Bundle mode: ${Object.keys(components).length} schemas from openapi.yaml`);
 }
@@ -154,7 +154,7 @@ for (const [name, schema] of inputMode === 'per-schema' ? zodEntries : []) {
     // one-at-a-time so a single bad schema doesn't take the whole batch down.
     await schemaInput.addSource({
       name,
-      schema: JSON.stringify(jsonSchema),
+      schema: safeJsonStringify(jsonSchema),
     });
   } catch (err) {
     skipped.push({ name, reason: err instanceof Error ? err.message : String(err) });

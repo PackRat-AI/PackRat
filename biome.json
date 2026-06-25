@@ -54,7 +54,31 @@
         "useTopLevelRegex": "error"
       },
       "style": {
-        "noNonNullAssertion": "error"
+        "noNonNullAssertion": "error",
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "patterns": [
+              {
+                "group": [
+                  "radashi",
+                  "radashi/**",
+                  "radash",
+                  "radash/**",
+                  "es-toolkit",
+                  "es-toolkit/**",
+                  "lodash",
+                  "lodash/**",
+                  "remeda",
+                  "remeda/**",
+                  "destr",
+                  "safe-stable-stringify"
+                ],
+                "message": "Import utilities from @packrat/utils (or narrowing from @packrat/guards). These libs may only be imported inside packages/utils — the single curated utility surface. See docs/utils-policy.md."
+              }
+            ]
+          }
+        }
       },
       "suspicious": {
         "noUnknownAtRules": "off"
@@ -62,6 +86,16 @@
     }
   },
   "overrides": [
+    {
+      "includes": ["packages/utils/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": "off"
+          }
+        }
+      }
+    },
     {
       "includes": ["packages/ui/nativewindui/index.ts"],
       "assist": {

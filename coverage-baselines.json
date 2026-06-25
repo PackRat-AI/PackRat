@@ -54,5 +54,14 @@
     "functions": 100,
     "statements": 100,
     "recordedAt": "2026-05-19"
+  },
+  "packages/utils": {
+    "summaryPath": "packages/utils/coverage/coverage-summary.json",
+    "tier": "A",
+    "lines": 100,
+    "branches": 100,
+    "functions": 100,
+    "statements": 100,
+    "recordedAt": "2026-05-31"
   }
 }

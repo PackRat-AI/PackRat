@@ -1,6 +1,7 @@
 import type { NewCatalogItem } from '@packrat/db';
 import { isString } from '@packrat/guards';
 import { AvailabilitySchema, WeightUnitSchema } from '@packrat/schemas/constants';
+import { safeJsonParse } from '@packrat/utils';
 
 // ── CSV sanitization regex constants ──
 const NEWLINE_CHARS = /[\r\n]+/g;
@@ -57,7 +58,7 @@ export function mapCsvRowToItem({
     if (val) {
       try {
         item.categories = val.startsWith('[')
-          ? JSON.parse(val)
+          ? safeJsonParse<string[]>(val, { strict: true })
           : val
               .split(',')
               .map((v) => v.trim())
@@ -78,7 +79,7 @@ export function mapCsvRowToItem({
       const val = values[fieldMap.images]?.trim();
       if (val) {
         images = val.startsWith('[')
-          ? JSON.parse(val)
+          ? safeJsonParse<string[]>(val, { strict: true })
           : val
               .split(',')
               .map((v) => v.trim())
@@ -112,10 +113,13 @@ export function mapCsvRowToItem({
     const val = values[fieldMap.variants]?.trim();
     if (val) {
       try {
-        item.variants = JSON.parse(val);
+        item.variants = safeJsonParse<NewCatalogItem['variants']>(val, { strict: true });
       } catch {
         try {
-          item.variants = JSON.parse(val.replace(SINGLE_QUOTE_TO_DOUBLE, '"'));
+          item.variants = safeJsonParse<NewCatalogItem['variants']>(
+            val.replace(SINGLE_QUOTE_TO_DOUBLE, '"'),
+            { strict: true },
+          );
         } catch {
           item.variants = [];
         }
@@ -144,7 +148,7 @@ export function mapCsvRowToItem({
     const fieldIndex = fieldMap[field as string];
     if (fieldIndex !== undefined && values[fieldIndex]) {
       try {
-        item[field] = safeJsonParse(values[fieldIndex]);
+        item[field] = parseCatalogJson(values[fieldIndex]);
       } catch {
         item[field] = [];
       }
@@ -155,7 +159,7 @@ export function mapCsvRowToItem({
   const techsStr = fieldMap.techs !== undefined ? values[fieldMap.techs] : undefined;
   if (techsStr) {
     try {
-      const parsed = safeJsonParse<Record<string, string>>(techsStr);
+      const parsed = parseCatalogJson<Record<string, string>>(techsStr);
       item.techs = Array.isArray(parsed) ? {} : parsed;
 
       if (!item.weight && !Array.isArray(parsed)) {
@@ -276,13 +280,21 @@ export function normalizeJsonString(value: string): string {
   );
 }
 
-export function safeJsonParse<T = unknown>(value: string): T | [] {
+/**
+ * Parses a messy, catalog-sourced JSON string: normalizes Python-style values
+ * and smart quotes first, then parses strictly. Returns `[]` for empty/sentinel
+ * inputs or when parsing fails — the empty-array fallback every caller relies
+ * on. Uses the `@packrat/utils` `safeJsonParse` facade (strict mode) so the
+ * underlying parse stays prototype-pollution-safe while still throwing on
+ * invalid input, which this function catches.
+ */
+export function parseCatalogJson<T = unknown>(value: string): T | [] {
   if (!value || value === 'undefined' || value === 'null') return [];
 
   const normalized = normalizeJsonString(value);
 
   try {
-    return JSON.parse(normalized) as T; // safe-cast: caller-provided generic boundary — caller is responsible for type safety
+    return safeJsonParse<T>(normalized, { strict: true });
   } catch (err) {
     console.warn('❌ Failed to parse JSON:', {
       error: err,

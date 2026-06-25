@@ -1,4 +1,5 @@
 import { asBoolean, asString } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import * as Sentry from '@sentry/react-native';
 import { AuthClientError, toAuthError } from 'expo-app/features/auth/lib/authErrors';
 import { userStore } from 'expo-app/features/auth/store';
@@ -24,7 +25,7 @@ import {
 
 function redirect(route: string) {
   try {
-    const parsedRoute: Href = JSON.parse(route);
+    const parsedRoute = safeJsonParse<Href>(route, { strict: true });
     return router.replace(parsedRoute);
   } catch {
     router.replace(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here

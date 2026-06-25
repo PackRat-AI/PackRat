@@ -1,4 +1,5 @@
 import { isString, toRecord, toRecordArray } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
 import { requireAuth, runApi } from '../../api/run';
@@ -25,7 +26,7 @@ const searchCmd = defineCommand({
       action: 'search catalog',
     });
     if (args.json) {
-      process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+      process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
       return;
     }
     printTable({
@@ -58,7 +59,7 @@ const semanticCmd = defineCommand({
       action: 'semantic catalog search',
     });
     if (args.json) {
-      process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+      process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
       return;
     }
     printTable({
@@ -88,7 +89,7 @@ const getCmd = defineCommand({
       resourceHint: `item ${args.id}`,
     });
     if (args.json) {
-      process.stdout.write(`${JSON.stringify(item, null, 2)}\n`);
+      process.stdout.write(`${safeJsonStringify(item, null, 2)}\n`);
       return;
     }
     const r = toRecord(item);
@@ -117,7 +118,7 @@ const categoriesCmd = defineCommand({
       promise: client.catalog.categories.get({ query: { limit: 50 } }),
       action: 'list catalog categories',
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 

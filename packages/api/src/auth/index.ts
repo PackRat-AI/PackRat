@@ -14,6 +14,7 @@ import { createConnection } from '@packrat/api/db';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import * as schema from '@packrat/db';
 import { isObject } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import { type BetterAuthPlugin, betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
 
@@ -197,11 +198,7 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
             const keys: any[] = (await ctx.context.adapter.findMany({ model: 'jwks' })) ?? [];
             // biome-ignore lint/suspicious/noExplicitAny: jwks row type from Better Auth is not exported
             return keys.filter((key: any) => {
-              try {
-                return isObject(JSON.parse(key.privateKey));
-              } catch {
-                return false;
-              }
+              return isObject(safeJsonParse(key.privateKey, { strict: true }));
             });
           },
         },

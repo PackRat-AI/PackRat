@@ -3,6 +3,7 @@ import { createMetricsDb } from '@packrat/api/db/metricsDb';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { requestQueryMetricsD1 } from '@packrat/db/d1Schema';
 import type { CapturedQuery } from '@packrat/db/schema';
+import { configureJsonStringify, safeJsonStringify } from '@packrat/utils';
 
 export interface QueryMetricsStore {
   route: string;
@@ -18,6 +19,11 @@ export interface QueryMetricsStore {
 export const queryMetricsAls = new AsyncLocalStorage<QueryMetricsStore>();
 
 const SKIP_ROUTES = new Set(['/', '/health', '/openapi', '/openapi.json']);
+const stringifyForByteEstimate = configureJsonStringify({
+  circularValue: Error,
+  bigint: true,
+  deterministic: false,
+});
 
 export function createQueryMetricsStore({
   route,
@@ -79,7 +85,7 @@ export function hashQuery(query: string): string {
 
 export function estimateResultBytes(rows: unknown): number {
   try {
-    return new TextEncoder().encode(JSON.stringify(rows)).byteLength;
+    return new TextEncoder().encode(stringifyForByteEstimate(rows)).byteLength;
   } catch {
     return 0;
   }
@@ -114,7 +120,7 @@ export async function flushQueryMetrics({
       estimatedEgressBytes: store.estimatedEgressBytes,
       queryCount: store.queries.length,
       userId: store.userId ?? null,
-      queries: JSON.stringify(store.queries),
+      queries: safeJsonStringify(store.queries),
     });
   } catch {
     // Monitoring must never crash the app — swallow silently

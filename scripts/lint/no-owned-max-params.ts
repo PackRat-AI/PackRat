@@ -38,6 +38,9 @@ const EXCLUDED_PATH_PARTS = [
 ];
 const EXCLUDED_SUFFIXES = ['.test.ts', '.test.tsx', '.spec.ts', '.spec.tsx'];
 const EXCLUDED_FILES = new Set([
+  // safeJsonParse(value, options) is a deliberate drop-in for the native
+  // JSON.parse(text, reviver) / destr(value, options) signature.
+  'packages/utils/src/json.ts',
   // This service intentionally mirrors Cloudflare R2's positional API.
   'packages/api/src/services/r2-bucket.ts',
   // Existing platform/observability APIs intentionally mirror external
@@ -68,7 +71,7 @@ const EXCLUDED_FILES = new Set([
   'packages/api/src/utils/auth.ts',
   'packages/api/src/utils/embeddingHelper.ts',
 ]);
-const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest', 'scheduled']);
+const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest', 'run', 'scheduled']);
 const EXTERNAL_CALLBACK_NAMES = new Set([
   'fetcher',
   'get', // Proxy get trap — (target, prop) is the runtime-mandated signature

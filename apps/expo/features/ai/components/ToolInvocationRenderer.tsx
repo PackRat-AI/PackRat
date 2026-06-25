@@ -1,4 +1,5 @@
 import { isString } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import type { ToolUIPart } from 'ai';
 import type { CatalogItemsTool } from './CatalogItemsGenerativeUI';
 import { CatalogItemsGenerativeUI } from './CatalogItemsGenerativeUI';
@@ -22,7 +23,7 @@ export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendere
   // Normalize it here once so all GenUI components receive a plain object.
   const normalizedInvocation =
     toolInvocation.state === 'output-available' && isString(toolInvocation.output)
-      ? { ...toolInvocation, output: JSON.parse(toolInvocation.output) }
+      ? { ...toolInvocation, output: safeJsonParse(toolInvocation.output) }
       : toolInvocation;
 
   // safe-cast: each case branch narrows toolInvocation.type to the discriminant literal; the

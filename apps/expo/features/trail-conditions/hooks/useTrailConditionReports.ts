@@ -1,4 +1,5 @@
 import { useSelector } from '@legendapp/state/react';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import { userStore } from 'expo-app/features/auth/store/user';
@@ -27,7 +28,7 @@ async function writeCachedReports({
   try {
     await AsyncStorage.setItem(
       cacheKey({ userId: opts.userId, trailName: opts.trailName }),
-      JSON.stringify(reports),
+      safeJsonStringify(reports),
     );
   } catch {
     // Best-effort — swallow write errors silently
@@ -44,7 +45,7 @@ async function readCachedReports(opts: {
       cacheKey({ userId: opts.userId, trailName: opts.trailName }),
     );
     // safe-cast: JSON.parse returns unknown; data was written as TrailConditionReport[] earlier
-    if (raw) return JSON.parse(raw) as TrailConditionReport[];
+    if (raw) return safeJsonParse(raw, { strict: true }) as TrailConditionReport[];
   } catch {
     // Corrupt or missing cache — ignore
   }

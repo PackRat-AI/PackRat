@@ -1,0 +1,12 @@
+id: no-index-zero-tsx
+valid:
+  # Call-expression object inside JSX — not flagged.
+  - "const C = () => <A v={getThing()[0]} />"
+  # first() replacement inside JSX — not flagged.
+  - "const D = () => <A v={first(items)} />"
+invalid:
+  # Proves .tsx code (JSX present) is covered by the tsx-language twin,
+  # at index 0 and at other numeric literals.
+  - "const C = () => <A v={locations[0]} />"
+  - "const D = () => <A v={results[0]} />"
+  - "const E = () => <A v={items[2]} />"

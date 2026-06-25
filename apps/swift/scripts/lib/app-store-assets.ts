@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { fromZod } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import { z } from 'zod';
 
 export type ImageInfo = {
@@ -77,7 +78,9 @@ export function validateAppIconSet(
     return [{ file: contentsPath, message: 'App icon set is missing Contents.json.' }];
   }
 
-  const contents = parseAppIconContents(JSON.parse(readFileSync(contentsPath, 'utf8')));
+  const contents = parseAppIconContents(
+    safeJsonParse(readFileSync(contentsPath, 'utf8'), { strict: true }),
+  );
   if (!contents) {
     return [{ file: contentsPath, message: 'App icon Contents.json has an invalid shape.' }];
   }

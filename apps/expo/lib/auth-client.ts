@@ -1,5 +1,6 @@
 import { expoClient } from '@better-auth/expo/client';
 import { asString, fromZod } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import { createAuthClient } from 'better-auth/react';
 import { getApiBaseUrl } from 'expo-app/lib/api/getBaseUrl';
 import * as SecureStore from 'expo-app/lib/secureStore';
@@ -13,7 +14,7 @@ const CookieStoreSchema = z.record(z.object({ value: z.unknown().optional() }));
 export function parseSessionToken(cookieJson: string | null): string | null {
   if (!cookieJson) return null;
   try {
-    const cookies = fromZod(CookieStoreSchema)(JSON.parse(cookieJson));
+    const cookies = fromZod(CookieStoreSchema)(safeJsonParse(cookieJson, { strict: true }));
     if (!cookies) return null;
     const token =
       cookies['better-auth.session_token']?.value ??

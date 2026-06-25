@@ -16,6 +16,7 @@
 import { neon, neonConfig } from '@neondatabase/serverless';
 import * as schema from '@packrat/db/schema';
 import { nodeEnv } from '@packrat/env/node';
+import { safeJsonStringify } from '@packrat/utils';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
@@ -177,7 +178,7 @@ async function embedAll(opts: { values: string[]; openAiKey: string }): Promise<
         'Content-Type': 'application/json',
         Authorization: `Bearer ${openAiKey}`,
       },
-      body: JSON.stringify({ model: 'text-embedding-3-small', input: values }),
+      body: safeJsonStringify({ model: 'text-embedding-3-small', input: values }),
       signal: controller.signal,
     });
   } catch (error) {

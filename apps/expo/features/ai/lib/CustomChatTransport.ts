@@ -1,5 +1,6 @@
 import type { UIMessage } from '@ai-sdk/react';
 import { isString } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import {
   type ChatRequestOptions,
   type ChatTransport,
@@ -64,7 +65,7 @@ export class CustomChatTransport implements ChatTransport<UIMessage> {
         if (error instanceof Error) {
           return error.message;
         }
-        return JSON.stringify(error);
+        return safeJsonStringify(error);
       },
     });
   }

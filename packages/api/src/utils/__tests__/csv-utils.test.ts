@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   mapCsvRowToItem,
   normalizeJsonString,
+  parseCatalogJson,
   parseFaqs,
   parsePrice,
   parseWeight,
-  safeJsonParse,
 } from '../csv-utils';
 
 // ---------------------------------------------------------------------------
@@ -625,35 +625,35 @@ describe('csv-utils', () => {
     });
   });
 
-  describe('safeJsonParse', () => {
+  describe('parseCatalogJson', () => {
     it('parses valid JSON', () => {
-      const result = safeJsonParse('{"key": "value"}');
+      const result = parseCatalogJson('{"key": "value"}');
       expect(result).toEqual({ key: 'value' });
     });
 
     it('returns empty array for invalid JSON', () => {
-      const result = safeJsonParse('invalid json');
+      const result = parseCatalogJson('invalid json');
       expect(result).toEqual([]);
     });
 
     it('returns empty array for empty string', () => {
-      expect(safeJsonParse('')).toEqual([]);
-      expect(safeJsonParse('undefined')).toEqual([]);
-      expect(safeJsonParse('null')).toEqual([]);
+      expect(parseCatalogJson('')).toEqual([]);
+      expect(parseCatalogJson('undefined')).toEqual([]);
+      expect(parseCatalogJson('null')).toEqual([]);
     });
 
     it('normalizes and parses Python-style JSON', () => {
-      const result = safeJsonParse("{'key': True, 'other': None}");
+      const result = parseCatalogJson("{'key': True, 'other': None}");
       expect(result).toEqual({ key: true, other: null });
     });
 
     it('handles arrays', () => {
-      const result = safeJsonParse('["a", "b", "c"]');
+      const result = parseCatalogJson('["a", "b", "c"]');
       expect(result).toEqual(['a', 'b', 'c']);
     });
 
     it('returns empty array on parse error', () => {
-      const result = safeJsonParse('{invalid: json}');
+      const result = parseCatalogJson('{invalid: json}');
       expect(result).toEqual([]);
     });
   });

@@ -1,0 +1,28 @@
+id: no-raw-typeof-tsx
+# TSX variant of no-raw-typeof. The `typescript` language parser does NOT match
+# .tsx files, so .tsx app code (apps/expo, apps/guides, apps/landing) needs this
+# `tsx`-language twin. Same rule/constraints/ignores as no-raw-typeof.yml.
+language: tsx
+severity: error
+message: "Use a guard from @packrat/guards (isString/isNumber/isBoolean/…) instead of a raw `typeof` primitive check. Raw typeof is allowed only inside packages/guards and packages/utils, and for global availability checks (window/document/globalThis/Bun/navigator/process)."
+ignores:
+  - "**/packages/guards/**"
+  - "**/packages/utils/**"
+  - "scripts/**"
+  - ".github/**"
+  - "**/mocks/**"
+  - "**/__mocks__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+rule:
+  any:
+    - pattern: typeof $X === $T
+    - pattern: typeof $X !== $T
+constraints:
+  T:
+    regex: "^['\"](string|number|boolean|object|function|undefined|symbol|bigint)['\"]$"
+  X:
+    not:
+      regex: "^(window|document|globalThis|Bun|navigator|process)$"

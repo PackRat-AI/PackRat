@@ -1,0 +1,52 @@
+id: no-index-zero
+snapshots:
+  const a = arr[0];:
+    labels:
+    - source: arr[0]
+      style: primary
+      start: 10
+      end: 16
+    - source: arr
+      style: secondary
+      start: 10
+      end: 13
+  const b = results[0];:
+    labels:
+    - source: results[0]
+      style: primary
+      start: 10
+      end: 20
+    - source: results
+      style: secondary
+      start: 10
+      end: 17
+  const c = locations[0];:
+    labels:
+    - source: locations[0]
+      style: primary
+      start: 10
+      end: 22
+    - source: locations
+      style: secondary
+      start: 10
+      end: 19
+  const c = locations[1];:
+    labels:
+    - source: locations[1]
+      style: primary
+      start: 10
+      end: 22
+    - source: locations
+      style: secondary
+      start: 10
+      end: 19
+  const d = items[2];:
+    labels:
+    - source: items[2]
+      style: primary
+      start: 10
+      end: 18
+    - source: items
+      style: secondary
+      start: 10
+      end: 15

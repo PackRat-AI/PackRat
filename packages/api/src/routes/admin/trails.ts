@@ -10,6 +10,7 @@ import {
   TrailSearchResultSchema,
 } from '@packrat/schemas/admin';
 import { RouteSearchRowSchema } from '@packrat/schemas/trails';
+import { safeJsonParse } from '@packrat/utils';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -69,7 +70,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
             distance: row.distance,
             difficulty: row.difficulty,
             description: row.description,
-            bbox: row.bbox ? JSON.parse(row.bbox) : null,
+            bbox: row.bbox ? safeJsonParse(row.bbox, { strict: true }) : null,
           })),
           hasMore,
           offset,
@@ -144,7 +145,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
 
         let geometry: unknown = null;
         if (row.geojson) {
-          geometry = JSON.parse(row.geojson);
+          geometry = safeJsonParse(row.geojson, { strict: true });
         } else if (row.members && row.members.length > 0) {
           const { stitchRouteGeometry } = await import('@packrat/api/services/trails');
           geometry = await stitchRouteGeometry({ db, members: row.members });
@@ -216,7 +217,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
           distance: row.distance,
           difficulty: row.difficulty,
           description: row.description,
-          bbox: row.bbox ? JSON.parse(row.bbox) : null,
+          bbox: row.bbox ? safeJsonParse(row.bbox, { strict: true }) : null,
         };
       } catch (error) {
         if (error instanceof Error && error.message.includes('not configured')) {

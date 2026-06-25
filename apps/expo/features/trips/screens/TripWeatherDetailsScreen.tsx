@@ -1,4 +1,5 @@
 import type { WeatherAPIForecastResponse } from '@packrat/schemas/weather';
+import { first } from '@packrat/utils';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
@@ -52,9 +53,9 @@ export default function TripWeatherDetailsScreen() {
         data: { latitude, longitude },
       });
       const locations = await searchLocationsByCoordinates({ latitude, longitude });
-      const first = locations[0];
-      if (!first) throw new Error('No location found for these coordinates');
-      const weather = await getWeatherData(first.id);
+      const firstLocation = first(locations);
+      if (!firstLocation) throw new Error('No location found for these coordinates');
+      const weather = await getWeatherData(firstLocation.id);
 
       setWeather(weather);
       const weatherCode = weather.current?.condition?.code || 1000;

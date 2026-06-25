@@ -31,6 +31,7 @@ import {
 } from '@packrat/api/utils/queryMetrics';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
+import { safeJsonStringify } from '@packrat/utils';
 import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
@@ -93,18 +94,18 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
     }
 
     if (code === 'VALIDATION' || code === 'PARSE') {
-      return new Response(JSON.stringify({ error: 'Validation failed' }), {
+      return new Response(safeJsonStringify({ error: 'Validation failed' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
     if (code === 'NOT_FOUND') {
-      return new Response(JSON.stringify({ error: 'Not found' }), {
+      return new Response(safeJsonStringify({ error: 'Not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(safeJsonStringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

@@ -3,6 +3,7 @@ import { authPlugin } from '@packrat/api/middleware/auth';
 import { stitchRouteGeometry } from '@packrat/api/services/trails';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { RouteDetailRowSchema, RouteSearchRowSchema } from '@packrat/schemas/trails';
+import { safeJsonParse } from '@packrat/utils';
 import { sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -86,7 +87,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
             distance: row.distance,
             difficulty: row.difficulty,
             description: row.description,
-            bbox: row.bbox ? JSON.parse(row.bbox) : null,
+            bbox: row.bbox ? safeJsonParse(row.bbox, { strict: true }) : null,
           })),
           hasMore,
         };
@@ -162,7 +163,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         let geometry: unknown = null;
 
         if (row.geojson) {
-          geometry = JSON.parse(row.geojson);
+          geometry = safeJsonParse(row.geojson, { strict: true });
         } else if (row.members && row.members.length > 0) {
           geometry = await stitchRouteGeometry({ db, members: row.members });
         }
@@ -243,7 +244,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           distance: row.distance,
           difficulty: row.difficulty,
           description: row.description,
-          bbox: row.bbox ? JSON.parse(row.bbox) : null,
+          bbox: row.bbox ? safeJsonParse(row.bbox, { strict: true }) : null,
         };
       } catch (error) {
         if (error instanceof Error && error.message.includes('not configured')) {
