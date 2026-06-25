@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { obs } from 'expo-app/lib/store';
 import { nanoid } from 'nanoid';
@@ -162,6 +163,10 @@ export function useSubmitTrailConditionReport(): SubmitResult {
         return id;
       } catch (err) {
         const asError = err instanceof Error ? err : new Error(String(err));
+        Sentry.captureException(asError, {
+          tags: { feature: 'trailConditions', action: 'submitReport.syncDrain' },
+          extra: { reportId: id },
+        });
         if (mountedRef.current && !signal.cancelled) {
           setError(asError);
           setIsPending(false);

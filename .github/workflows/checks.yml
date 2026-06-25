@@ -46,6 +46,8 @@ jobs:
         run: bun scripts/lint/no-circular-deps.ts
       - name: Check for duplicate/catalog dependencies
         run: bun scripts/lint/no-duplicate-deps.ts
+      - name: Check fat-table queries are explicitly projected
+        run: bun scripts/lint/no-unprojected-fat-table-queries.ts
       - name: Check package.json ordering
         run: bun scripts/format/sort-package-json.ts --check
       - name: Custom lint rules (typeof guards, raw regex, process.env)

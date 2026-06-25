@@ -45,6 +45,14 @@ export const queryKeys = {
     conditions: (q?: string) => [...queryKeys.osm.all(), 'conditions', q] as const,
   },
 
+  queryMetrics: {
+    all: () => ['queryMetrics'] as const,
+    summary: (key?: string | number) => [...queryKeys.queryMetrics.all(), 'summary', key] as const,
+    recent: (limit?: number) => [...queryKeys.queryMetrics.all(), 'recent', limit] as const,
+    byCallSite: ({ key, limit }: { key?: string | number; limit?: number } = {}) =>
+      [...queryKeys.queryMetrics.all(), 'byCallSite', key, limit] as const,
+  },
+
   catalogAnalytics: {
     all: () => ['catalogAnalytics'] as const,
     overview: () => [...queryKeys.catalogAnalytics.all(), 'overview'] as const,

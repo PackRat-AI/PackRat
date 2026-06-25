@@ -8,6 +8,7 @@ import {
   Text,
 } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -24,6 +25,7 @@ type CatalogItemCardProps = {
 export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
+  const { unit, convertWeight } = useWeightUnit();
 
   return (
     <TouchableWithoutFeedback
@@ -68,7 +70,9 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
           <View className="flex-row items-center">
             <Icon name="dumbbell" size={14} color={colors.grey} />
             <Text className="ml-1 text-xs text-muted-foreground">
-              {item.weight} {item.weightUnit}
+              {item.weight != null
+                ? `${convertWeight({ weight: item.weight, fromUnit: item.weightUnit ?? 'g' })} ${unit}`
+                : ''}
             </Text>
           </View>
           {item.usageCount && item.usageCount > 0 && (

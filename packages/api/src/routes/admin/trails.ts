@@ -39,7 +39,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
 
         const whereClause = sql`WHERE ${conditions.reduce((acc, c) => sql`${acc} AND ${c}`)}`;
 
-        const result = await db.execute(sql`
+        const result = await db.tag('adminTrails.search').execute(sql`
           SELECT
             osm_id::text,
             name,
@@ -111,7 +111,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
 
       try {
         const db = createOsmDb();
-        const result = await db.execute(sql`
+        const result = await db.tag('adminTrails.getGeometry').execute(sql`
           SELECT
             osm_id::text,
             name,
@@ -192,7 +192,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
 
       try {
         const db = createOsmDb();
-        const result = await db.execute(sql`
+        const result = await db.tag('adminTrails.getById').execute(sql`
           SELECT
             osm_id::text,
             name,
@@ -262,6 +262,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
 
         const [reports, [totalRow]] = await Promise.all([
           db
+            .tag('adminTrails.listConditions')
             .select({
               id: trailConditionReports.id,
               trailName: trailConditionReports.trailName,
@@ -282,7 +283,11 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
             .orderBy(desc(trailConditionReports.createdAt))
             .limit(limit)
             .offset(offset),
-          db.select({ count: count() }).from(trailConditionReports).where(whereClause),
+          db
+            .tag('adminTrails.listConditionsCount')
+            .select({ count: count() })
+            .from(trailConditionReports)
+            .where(whereClause),
         ]);
 
         return {
@@ -322,6 +327,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
       const db = createDb();
       try {
         const updated = await db
+          .tag('adminTrails.deleteConditionReport')
           .update(trailConditionReports)
           .set({ deleted: true })
           .where(

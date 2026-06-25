@@ -7,6 +7,55 @@ import {
   expectUnauthorized,
 } from './utils/test-helpers';
 
+const condition = { text: 'Clear', icon: '//cdn.weatherapi.com/clear.png', code: 1000 };
+
+const current = {
+  last_updated: '2024-01-01 12:00',
+  temp_c: 20,
+  temp_f: 68,
+  condition,
+  wind_mph: 5,
+  wind_kph: 8,
+  wind_degree: 180,
+  wind_dir: 'S',
+  pressure_mb: 1015,
+  pressure_in: 29.97,
+  precip_mm: 0,
+  precip_in: 0,
+  humidity: 40,
+  cloud: 0,
+  feelslike_c: 20,
+  feelslike_f: 68,
+  vis_km: 10,
+  vis_miles: 6,
+  uv: 3,
+  is_day: 1,
+};
+
+const forecastDay = {
+  date: '2024-01-01',
+  date_epoch: 1704067200,
+  day: {
+    maxtemp_c: 25,
+    maxtemp_f: 77,
+    mintemp_c: 15,
+    mintemp_f: 59,
+    avgtemp_c: 20,
+    avgtemp_f: 68,
+    maxwind_mph: 10,
+    maxwind_kph: 16,
+    totalprecip_mm: 0,
+    totalprecip_in: 0,
+    totalsnow_cm: 0,
+    avghumidity: 40,
+    avgvis_km: 10,
+    avgvis_miles: 6,
+    uv: 3,
+    condition,
+  },
+  hour: [],
+};
+
 describe('Weather Routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -152,15 +201,17 @@ describe('Weather Routes', () => {
   describe('GET /weather/forecast (with location ID)', () => {
     it('returns forecast for location ID', async () => {
       const mockData = {
-        location: { id: 123, name: 'New York', country: 'US' },
-        current: { temp_c: 20, temp_f: 68 },
+        location: {
+          id: 123,
+          name: 'New York',
+          region: 'New York',
+          country: 'US',
+          lat: 40.7128,
+          lon: -74.006,
+        },
+        current,
         forecast: {
-          forecastday: [
-            {
-              date: '2024-01-01',
-              day: { maxtemp_c: 25, mintemp_c: 15 },
-            },
-          ],
+          forecastday: [forecastDay],
         },
         alerts: { alert: [] },
       };
@@ -198,14 +249,30 @@ describe('Weather Routes', () => {
 
     it('includes alerts in forecast response', async () => {
       const mockData = {
-        location: { id: 123, name: 'New York' },
-        current: { temp_c: 20 },
-        forecast: { forecastday: [] },
+        location: {
+          id: 123,
+          name: 'New York',
+          region: 'New York',
+          country: 'US',
+          lat: 40.7128,
+          lon: -74.006,
+        },
+        current,
+        forecast: { forecastday: [forecastDay] },
         alerts: {
           alert: [
             {
               headline: 'Winter Storm Warning',
+              msgtype: 'Alert',
               severity: 'Severe',
+              urgency: 'Expected',
+              areas: 'New York',
+              category: 'Met',
+              certainty: 'Likely',
+              event: 'Winter Storm Warning',
+              effective: '2024-01-01T00:00:00Z',
+              expires: '2024-01-02T00:00:00Z',
+              desc: 'Winter storm warning in effect.',
             },
           ],
         },

@@ -1,5 +1,5 @@
-import { useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Image, type ImageProps, View } from 'react-native';
 
 interface PackItemImageProps extends Omit<ImageProps, 'source'> {

@@ -1,11 +1,12 @@
 {
   "name": "packrat-monorepo",
-  "version": "2.0.27",
+  "version": "2.0.28",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
+    "_test:api-client:types__disabled": "Disabled after the development merge dropped rpc-probe.ts + vitest.config.ts; restore once the api-client type-probe is re-introduced.",
     "admin": "bun run --cwd apps/admin dev",
     "android": "cd apps/expo && bun android",
     "api": "bun run --cwd packages/api dev",
@@ -23,6 +24,7 @@
     "check:deps": "manypkg check",
     "check:duplication": "bun scripts/lint/check-duplication.ts",
     "check:magic-strings": "bun run --cwd packages/checks check:magic-strings",
+    "check:migration": "bun scripts/lint/nativewindui-migration.ts",
     "check:package-json": "bun scripts/format/sort-package-json.ts --check",
     "check:provenance:strict": "bun run --cwd packages/checks check:provenance:strict",
     "check:react-doctor": "bun scripts/lint/check-react-doctor.ts",
@@ -33,11 +35,19 @@
     "check-types-watch": "tsc --noEmit --watch",
     "clean": "bun run .github/scripts/clean.ts",
     "configure:deps": "bun run .github/scripts/configure-deps.ts",
+    "e2e:swift": "bun run apps/swift/scripts/run-e2e.ts",
+    "e2e:swift:ios": "bun run apps/swift/scripts/run-e2e.ts ios-ui",
+    "e2e:swift:ios-smoke": "bun run apps/swift/scripts/run-e2e.ts ios-smoke",
+    "e2e:swift:mac": "bun run apps/swift/scripts/run-e2e.ts mac-build",
+    "e2e:swift:mac-smoke": "bun run apps/swift/scripts/run-e2e.ts mac-smoke",
+    "e2e:swift:mac-ui": "bun run apps/swift/scripts/run-e2e.ts mac-ui",
+    "e2e:swift:macos": "bun run apps/swift/scripts/run-e2e-macos.ts",
     "env": "bun run .github/scripts/env.ts",
     "expo": "cd apps/expo && bun start",
     "fix:deps": "bun manypkg fix",
     "format": "biome format --write",
     "format:package-json": "bun scripts/format/sort-package-json.ts",
+    "generate:openapi": "cd packages/api && bun scripts/generate-openapi.ts",
     "preinstall": "bun run configure:deps",
     "postinstall": "bun run lefthook && bun run env",
     "ios": "cd apps/expo && bun ios",
@@ -49,6 +59,14 @@
     "lint-unsafe": "biome check --write --unsafe",
     "mcp": "bun run --cwd packages/mcp dev",
     "mcp:deploy": "bun run --cwd packages/mcp deploy",
+    "swift": "bun swift:config && cd apps/swift && xcodegen generate && bun scripts/fix-xcodeproj.ts",
+    "swift:codegen": "swift package --package-path apps/swift/PackRatAPIClient plugin --allow-writing-to-package-directory generate-code-from-openapi && cp apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/GeneratedSources/Client.swift apps/swift/Sources/PackRat/API/Client.swift && cp apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/GeneratedSources/Types.swift apps/swift/Sources/PackRat/API/Types.swift",
+    "swift:config": "bun run apps/swift/scripts/generate-swift-config.ts",
+    "swift:models": "bun run apps/swift/scripts/generate-swift-models.ts",
+    "swift:quicktype": "bun run apps/swift/scripts/generate-quicktype-models.ts",
+    "swift:screenshots": "bun run apps/swift/scripts/capture-visual-screenshots.ts",
+    "swift:validate-assets": "bun run apps/swift/scripts/validate-app-store-assets.ts",
+    "swift:watch-sync-smoke": "bun run apps/swift/scripts/watch-sync-smoke.ts",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
     "test:e2e:android": "bash .github/scripts/e2e.sh android",
     "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
@@ -58,15 +76,19 @@
     "test:landing": "vitest run --config apps/landing/vitest.config.ts",
     "test:mcp": "bun run --cwd packages/mcp test",
     "test:scripts": "vitest run --config scripts/vitest.config.ts",
+    "test:swift:runner": "bun test apps/swift/scripts/run-e2e.test.ts",
+    "test:swift:scripts": "vitest run --config apps/swift/vitest.config.ts",
+    "test:swift:unit": "bun run apps/swift/scripts/run-e2e.ts unit",
     "trails": "bun run --cwd apps/trails dev",
-    "web": "bun run --cwd apps/web dev"
+    "web": "bun run --cwd apps/web dev",
+    "web:screenshots": "bun run --cwd apps/expo screenshots:web"
   },
   "overrides": {
-    "@packrat-ai/nativewindui": "2.0.3-2",
+    "@packrat-ai/nativewindui": "2.2.1",
     "@sinclair/typebox": "^0.34.15",
     "elysia": "^1.4.0",
-    "expo-sqlite": "~55.0.15",
-    "react": "19.2.6"
+    "expo-sqlite": "~56.0.4",
+    "react": "19.2.3"
   },
   "devDependencies": {
     "@ast-grep/cli": "^0.43.0",
@@ -81,6 +103,7 @@
     "glob": "^11.0.3",
     "jscpd": "^4.2.4",
     "lefthook": "^1.11.14",
+    "quicktype-core": "^23.2.6",
     "semver": "catalog:",
     "sort-package-json": "^3.6.1",
     "ts-morph": "^28.0.0",
@@ -167,9 +190,9 @@
     "postcss": "^8.5.6",
     "postcss-import": "^16.1.1",
     "radash": "^12.1.1",
-    "react": "19.2.6",
+    "react": "19.2.3",
     "react-day-picker": "9.14.0",
-    "react-dom": "19.2.6",
+    "react-dom": "19.2.3",
     "react-hook-form": "^7.58.1",
     "react-leaflet": "^5.0.0",
     "react-resizable-panels": "^4.10.0",
@@ -187,6 +210,7 @@
     "ws": "^8.18.1",
     "zod": "^3.24.2"
   },
+  "patchedDependencies": {},
   "trustedDependencies": [
     "@sentry/cli"
   ]

@@ -24,6 +24,7 @@
       "!**/vite.config.ts.timestamp-*.mjs",
       "!**/src/codegen",
       "!**/.claude",
+      "!**/.worktrees",
       "!**/.expo"
     ]
   },
@@ -91,6 +92,16 @@
         "rules": {
           "style": {
             "noRestrictedImports": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/ui/nativewindui/index.ts"],
+      "assist": {
+        "actions": {
+          "source": {
+            "organizeImports": "off"
           }
         }
       }

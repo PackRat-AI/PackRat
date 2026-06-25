@@ -1,5 +1,6 @@
 import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
@@ -11,6 +12,7 @@ export function WeatherTile() {
   const { activeLocation } = useActiveLocation();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
+  const { displayTemperature } = useTemperatureUnit();
 
   const handlePress = () => {
     router.push('/weather');
@@ -38,7 +40,7 @@ export function WeatherTile() {
           <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
             {activeLocation && (
               <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
-                {activeLocation.temperature}° • {activeLocation.condition}
+                {displayTemperature(activeLocation.temperature)} • {activeLocation.condition}
               </Text>
             )}
             <Icon name="chevron-right" size={17} color={colors.grey} />

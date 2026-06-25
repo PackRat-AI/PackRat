@@ -45,10 +45,13 @@ export type RetentionOptions = {
  * that on first execution, the function returns `capped: true` and the
  * remainder is swept on subsequent runs.
  */
-export async function sweepInvalidItemLogs(
-  env: Env,
-  options: RetentionOptions = {},
-): Promise<RetentionResult> {
+export async function sweepInvalidItemLogs({
+  env,
+  options = {},
+}: {
+  env: Env;
+  options?: RetentionOptions;
+}): Promise<RetentionResult> {
   const retentionDays =
     options.retentionDays !== undefined && options.retentionDays > 0
       ? options.retentionDays
@@ -67,12 +70,14 @@ export async function sweepInvalidItemLogs(
     iterations++;
 
     const selectExpired = db
+      .tag('retention.selectExpiredLogs')
       .select({ id: invalidItemLogs.id })
       .from(invalidItemLogs)
       .where(lt(invalidItemLogs.createdAt, cutoff))
       .limit(batchSize);
 
     const removed = await db
+      .tag('retention.deleteInvalidLogs')
       .delete(invalidItemLogs)
       .where(inArray(invalidItemLogs.id, selectExpired))
       .returning();

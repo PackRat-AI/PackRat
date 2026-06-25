@@ -313,6 +313,7 @@ export async function processCatalogETL({
     // Isolated try-catch so a transient DB hiccup here doesn't cascade to status='failed'.
     try {
       await db
+        .tag('etl.markJobCompleted')
         .update(etlJobs)
         .set({ status: 'completed', completedAt: new Date() })
         .where(eq(etlJobs.id, jobId));
@@ -326,6 +327,7 @@ export async function processCatalogETL({
     console.log(`🔍 [TRACE] ✅ Done processing ${objectKey} - ${totalRows} rows processed`);
   } catch (error) {
     await db
+      .tag('etl.markJobFailed')
       .update(etlJobs)
       .set({ status: 'failed', completedAt: new Date() })
       .where(eq(etlJobs.id, jobId));

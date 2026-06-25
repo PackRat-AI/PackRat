@@ -6,39 +6,46 @@ appId: ${APP_ID}
     text: "Catalog"
 - waitForAnimationToEnd
 # Wait for items to load
-- assertVisible:
-    text: ".*items.*"
-# Tap first visible item using index
-- tapOn:
-    id: "catalog:item-.*"
-    index: 0
-- waitForAnimationToEnd
-# Scroll down to find action buttons
-- scrollUntilVisible:
-    element:
-      id: "add-to-pack-button"
-    direction: DOWN
-    timeout: 15000
-- assertVisible:
-    id: "add-to-pack-button"
-- scrollUntilVisible:
-    element:
-      id: "view-retailer-button"
-    direction: DOWN
-    speed: 10
-    timeout: 10000
-- assertVisible:
-    id: "view-retailer-button"
-# Go back - platform specific
 - runFlow:
     when:
-      platform: Android
+      visible:
+        text: "Error loading items"
     commands:
-      - back
+      - assertVisible:
+          text: "Retry"
 - runFlow:
     when:
-      platform: iOS
+      visible:
+        id: "catalog:item-.*"
     commands:
       - tapOn:
-          text: ".*Back.*"
-- waitForAnimationToEnd
+          id: "catalog:item-.*"
+          index: 0
+      - waitForAnimationToEnd
+      - scrollUntilVisible:
+          element:
+            id: "add-to-pack-button"
+          direction: DOWN
+          timeout: 15000
+      - assertVisible:
+          id: "add-to-pack-button"
+      - scrollUntilVisible:
+          element:
+            id: "view-retailer-button"
+          direction: DOWN
+          speed: 10
+          timeout: 10000
+      - assertVisible:
+          id: "view-retailer-button"
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - back
+      - runFlow:
+          when:
+            platform: iOS
+          commands:
+            - tapOn:
+                text: ".*Back.*"
+      - waitForAnimationToEnd

@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import type { User } from 'expo-app/features/profile/types';
@@ -18,6 +19,8 @@ type ReportedContentResponse = {
   }>;
 };
 
+export type ReportedContentItem = ReportedContentResponse['reportedItems'][number];
+
 type ReportedContentCount = {
   count: number;
   total: number;
@@ -25,7 +28,14 @@ type ReportedContentCount = {
 
 export const getReportedContent = async (): Promise<ReportedContentResponse> => {
   const { data, error } = await apiClient.chat.reports.get();
-  if (error) throw new Error(`Failed to fetch reported content: ${error.value}`);
+  if (error) {
+    const err = new Error(String(error.value ?? 'Failed to fetch reported content'));
+    Sentry.captureException(err, {
+      tags: { feature: 'ai', action: 'getReportedContent' },
+      extra: { apiError: error.value, httpStatus: error.status },
+    });
+    throw err;
+  }
   // safe-cast: treaty response shape matches ReportedContentResponse as validated by the API schema
   return data as unknown as ReportedContentResponse;
 };

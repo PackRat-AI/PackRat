@@ -1,13 +1,15 @@
-import { assertDefined, fromZod } from '@packrat/guards';
-import { WeightUnitSchema } from '@packrat/schemas/constants';
+import { assertDefined } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
+import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -39,6 +41,7 @@ export function AddCatalogItemDetailsScreen() {
   const pack = usePackDetailsFromStore(packId as string);
   const createItem = useCreatePackItem();
   const queryClient = useQueryClient();
+  const { unit: preferredWeightUnit, convertWeight } = useWeightUnit();
   const fadeAnim = useState(new Animated.Value(0))[0];
   const [isAdding, setIsAdding] = useState(false);
   const { t } = useTranslation();
@@ -82,8 +85,14 @@ export function AddCatalogItemDetailsScreen() {
       itemData: {
         name: catalogItem.name,
         description: catalogItem.description ?? undefined,
-        weight: catalogItem.weight || 0,
-        weightUnit: fromZod(WeightUnitSchema)(catalogItem.weightUnit) ?? 'g',
+        weight: displayWeight({
+          grams: normalize({
+            weight: catalogItem.weight || 0,
+            unit: parseWeightUnit({ value: catalogItem.weightUnit }),
+          }),
+          unit: preferredWeightUnit,
+        }),
+        weightUnit: preferredWeightUnit,
         quantity: Number.parseInt(quantity, 10) || 1,
         category,
         consumable: isConsumable,
@@ -158,7 +167,9 @@ export function AddCatalogItemDetailsScreen() {
                 <View className="mt-1 flex-row items-center">
                   <Icon name="dumbbell" size={14} color={colors.grey2} />
                   <Text variant="caption2" className="ml-1">
-                    {catalogItem.weight} {catalogItem.weightUnit}
+                    {catalogItem.weight != null
+                      ? `${convertWeight({ weight: catalogItem.weight, fromUnit: catalogItem.weightUnit ?? 'g' })} ${preferredWeightUnit}`
+                      : ''}
                   </Text>
                   {catalogItem.brand && (
                     <>
@@ -271,7 +282,11 @@ export function AddCatalogItemDetailsScreen() {
             </View>
 
             <View className="mb-2 mt-6">
-              <Button onPress={handleAddToPack} disabled={isAdding}>
+              <Button
+                testID={testIds.items.catalogConfirmAddBtn}
+                onPress={handleAddToPack}
+                disabled={isAdding}
+              >
                 {isAdding ? (
                   <ActivityIndicator color={colors.foreground} />
                 ) : (

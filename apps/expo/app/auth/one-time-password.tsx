@@ -1,12 +1,12 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text, TextField } from '@packrat/ui/nativewindui';
-import { useHeaderHeight } from '@react-navigation/elements';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import * as React from 'react';
 import {
   Alert,

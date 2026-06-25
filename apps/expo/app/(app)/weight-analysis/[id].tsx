@@ -1,11 +1,12 @@
 'use client';
 
-import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { userStore } from 'expo-app/features/auth/store';
+import { Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeightAnalysis';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -42,13 +43,12 @@ export default function WeightAnalysisScreen() {
   const packId = params.id;
   const { t } = useTranslation();
 
-  const { data, items } = usePackWeightAnalysis(packId as string);
-
-  const preferredWeightUnit = userStore.preferredWeightUnit.peek() ?? 'g';
+  const { data, items, preferredUnit } = usePackWeightAnalysis(packId as string);
+  const { convertWeight } = useWeightUnit();
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeader title={t('packs.weightAnalysis')} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.weightAnalysis') }} />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
@@ -58,22 +58,22 @@ export default function WeightAnalysisScreen() {
         <View className="grid grid-cols-2 gap-3 p-4">
           <WeightCard
             title={t('packs.baseWeight')}
-            weight={`${data.baseWeight} g`}
+            weight={`${data.baseWeight} ${preferredUnit}`}
             className="col-span-1"
           />
           <WeightCard
             title={t('packs.consumablesWeight')}
-            weight={`${data.consumableWeight} ${preferredWeightUnit}`}
+            weight={`${data.consumableWeight} ${preferredUnit}`}
             className="col-span-1"
           />
           <WeightCard
             title={t('packs.wornWeight')}
-            weight={`${data.wornWeight} ${preferredWeightUnit}`}
+            weight={`${data.wornWeight} ${preferredUnit}`}
             className="col-span-1"
           />
           <WeightCard
             title={t('packs.totalWeight')}
-            weight={`${data.totalWeight} ${preferredWeightUnit}`}
+            weight={`${data.totalWeight} ${preferredUnit}`}
             className="col-span-1"
           />
         </View>
@@ -96,7 +96,7 @@ export default function WeightAnalysisScreen() {
                   {category.name}
                 </Text>
                 <Text variant="subhead" className="text-muted-foreground">
-                  {category.weight} {preferredWeightUnit}
+                  {category.weight} {preferredUnit}
                 </Text>
               </View>
             </View>
@@ -122,7 +122,8 @@ export default function WeightAnalysisScreen() {
                       )}
                     </View>
                     <Text variant="subhead" className="text-muted-foreground">
-                      {item.weight} {item.weightUnit}
+                      {convertWeight({ weight: item.weight, fromUnit: item.weightUnit || 'g' })}{' '}
+                      {preferredUnit}
                     </Text>
                   </View>
                 ))}

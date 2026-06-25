@@ -74,6 +74,16 @@ describe('csv-utils', () => {
       });
     });
 
+    it('defaults unknown weight units to grams', () => {
+      const values = ['12 stones', 'stones'];
+      const fieldMap = { weight: 0, weightUnit: 1 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.weight).toBe(12);
+      expect(result?.weightUnit).toBe('g');
+    });
+
     it('parses price correctly', () => {
       const values = ['$49.99'];
       const fieldMap = { price: 0 };
@@ -96,6 +106,15 @@ describe('csv-utils', () => {
       });
     });
 
+    it('maps invalid ratings to null', () => {
+      const values = ['N/A'];
+      const fieldMap = { ratingValue: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.ratingValue).toBeNull();
+    });
+
     it('parses review count correctly', () => {
       const values = ['123'];
       const fieldMap = { reviewCount: 0 };
@@ -105,6 +124,15 @@ describe('csv-utils', () => {
       expect(result).toMatchObject({
         reviewCount: 123,
       });
+    });
+
+    it('normalizes non-numeric review counts to zero', () => {
+      const values = ['many'];
+      const fieldMap = { reviewCount: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.reviewCount).toBe(0);
     });
 
     it('handles categories as JSON array', () => {
@@ -195,6 +223,15 @@ describe('csv-utils', () => {
       });
     });
 
+    it('falls back to empty FAQs for malformed FAQ input', () => {
+      const values = ['{"question":'];
+      const fieldMap = { faqs: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.faqs).toEqual([]);
+    });
+
     it('parses techs JSON correctly', () => {
       const values = ['{"material": "nylon", "Claimed Weight": "100g"}'];
       const fieldMap = { techs: 0 };
@@ -221,6 +258,16 @@ describe('csv-utils', () => {
       });
     });
 
+    it('defaults unknown fallback weight units from techs to grams', () => {
+      const values = ['{"Claimed Weight": "12 stones"}'];
+      const fieldMap = { techs: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.weight).toBe(12);
+      expect(result?.weightUnit).toBe('g');
+    });
+
     it('parses JSON fields like links, reviews, qas', () => {
       const values = [
         '["link1", "link2"]',
@@ -236,6 +283,16 @@ describe('csv-utils', () => {
         reviews: [{ rating: 5, text: 'Great!' }],
         qas: [{ question: 'Q?', answer: 'A' }],
       });
+    });
+
+    it('falls back to empty arrays for malformed JSON fields', () => {
+      const values = ['{"broken":', '{"also":'];
+      const fieldMap = { links: 0, reviews: 1 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.links).toEqual([]);
+      expect(result?.reviews).toEqual([]);
     });
 
     it('handles availability enum', () => {

@@ -44,7 +44,7 @@ export {
   setHas,
 } from 'ts-extras';
 
-export * from './assertions';
-export * from './enum';
-export * from './narrow';
-export * from './parse';
+export * from './assertions.ts';
+export * from './enum.ts';
+export * from './narrow.ts';
+export * from './parse.ts';
