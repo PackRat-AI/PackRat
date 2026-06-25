@@ -1,5 +1,28 @@
 import { z } from 'zod';
 
+// User preferences schema — one canonical place for all user pref shapes
+export const UserPreferencesSchema = z.object({
+  seasonSuggestions: z
+    .object({
+      announcementSeen: z.boolean().default(false),
+      opened: z.boolean().default(false),
+    })
+    .optional(),
+  weightUnit: z.enum(['kg', 'lb']).optional(),
+  temperatureUnit: z.enum(['C', 'F']).optional(),
+  speedUnit: z.enum(['kmh', 'mph']).optional(),
+});
+
+export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
+
+export const GetPreferencesResponseSchema = z.object({
+  preferences: UserPreferencesSchema,
+});
+
+export const PatchPreferencesResponseSchema = z.object({
+  preferences: UserPreferencesSchema,
+});
+
 // Base user schema
 export const UserSchema = z.object({
   id: z.string(),

@@ -24,6 +24,7 @@
       "!**/vite.config.ts.timestamp-*.mjs",
       "!**/src/codegen",
       "!**/.claude",
+      "!**/.worktrees",
       "!**/.expo"
     ]
   },
@@ -61,6 +62,16 @@
     }
   },
   "overrides": [
+    {
+      "includes": ["packages/ui/nativewindui/index.ts"],
+      "assist": {
+        "actions": {
+          "source": {
+            "organizeImports": "off"
+          }
+        }
+      }
+    },
     {
       "includes": [
         "apps/expo/atoms/atomWith*.ts",

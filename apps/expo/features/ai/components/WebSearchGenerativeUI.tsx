@@ -3,6 +3,7 @@ import Fontisto from '@expo/vector-icons/Fontisto';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Card, CardContent, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -60,6 +61,10 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
       }
     } catch (error) {
       console.error('Error opening URL:', error);
+      Sentry.captureException(error, {
+        tags: { feature: 'ai.webSearch', action: 'openSource' },
+        extra: { url },
+      });
     }
   };
 

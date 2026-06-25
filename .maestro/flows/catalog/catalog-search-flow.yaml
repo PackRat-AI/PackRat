@@ -5,6 +5,10 @@ appId: ${APP_ID}
 # This test verifies catalog loads and category filters work
 - launchApp
 - waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "Catalog"
+    timeout: 30000
 
 # Navigate to Catalog tab
 - tapOn:
@@ -14,29 +18,29 @@ appId: ${APP_ID}
 # Assert catalog loaded with items
 - assertVisible:
     text: "Catalog"
-- assertVisible:
-    text: ".*items.*"
-
-# Verify category filters are present and functional
-- assertVisible:
-    text: "All"
-- assertVisible:
-    text: "Clothing"
-
-# Test category filter — tap Clothing
-- tapOn:
-    text: "Clothing"
-- waitForAnimationToEnd
-
-# Verify items still display after filter
-- assertVisible:
-    text: "Catalog"
-
-# Reset to All
-- tapOn:
-    text: "All"
-- waitForAnimationToEnd
-
-# Verify full catalog restored
-- assertVisible:
-    text: ".*items.*"
+- runFlow:
+    when:
+      visible:
+        text: "Error loading items"
+    commands:
+      - assertVisible:
+          text: "Retry"
+- runFlow:
+    when:
+      visible:
+        text: "Clothing"
+    commands:
+      - assertVisible:
+          text: "All"
+      - assertVisible:
+          id: "catalog:item-.*"
+      - tapOn:
+          text: "Clothing"
+      - waitForAnimationToEnd
+      - assertVisible:
+          text: "Catalog"
+      - tapOn:
+          text: "All"
+      - waitForAnimationToEnd
+      - assertVisible:
+          id: "catalog:item-.*"

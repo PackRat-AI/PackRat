@@ -1,3 +1,5 @@
+import { ActionSheetProvider } from '@expo/react-native-action-sheet';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { PortalHost } from '@rn-primitives/portal';
 import { ErrorBoundary } from 'expo-app/components/initial/ErrorBoundary';
 import type { ReactNode } from 'react';
@@ -8,12 +10,10 @@ import { JotaiProvider } from './JotaiProvider';
 import { TanstackProvider } from './TanstackProvider';
 
 /**
- * Web version of Providers.
- * Removes native-only providers:
- *   - KeyboardProvider (react-native-keyboard-controller — no web support)
- *   - BottomSheetModalProvider (@gorhom/bottom-sheet — native module dependency)
- *   - ActionSheetProvider (@expo/react-native-action-sheet uses React.Children.only which breaks on web)
- * Metro automatically picks this file over providers/index.tsx for web builds.
+ * Web Providers. Drops KeyboardProvider (no web support); keeps
+ * BottomSheetModalProvider for inline BottomSheetView and ActionSheetProvider
+ * for useActionSheet(). CustomActionSheet wraps its child in
+ * React.Children.only — keep the direct child a single element.
  */
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -22,8 +22,14 @@ export function Providers({ children }: { children: ReactNode }) {
         <TanstackProvider>
           <SafeAreaProvider>
             <GestureHandlerRootView style={{ flex: 1 }}>
-              {children}
-              <PortalHost />
+              <ActionSheetProvider useCustomActionSheet>
+                <BottomSheetModalProvider>
+                  <>
+                    {children}
+                    <PortalHost />
+                  </>
+                </BottomSheetModalProvider>
+              </ActionSheetProvider>
             </GestureHandlerRootView>
           </SafeAreaProvider>
         </TanstackProvider>

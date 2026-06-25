@@ -1,0 +1,29 @@
+appId: ${APP_ID}
+---
+# Local-only helper for Expo development client runs.
+# CI installs a standalone preview APK, so master flows intentionally do not use this.
+- launchApp
+- runFlow:
+    when:
+      visible:
+        text: ${DEV_SERVER_URL}
+    commands:
+      - tapOn:
+          text: ${DEV_SERVER_URL}
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible:
+        text: "Continue"
+    commands:
+      - tapOn:
+          text: "Continue"
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      visible:
+        text: "Runtime version:.*"
+    commands:
+      - tapOn: "Close"
+      - waitForAnimationToEnd
+- waitForAnimationToEnd

@@ -4,6 +4,7 @@ import {
   type AnyPgColumn,
   bigint,
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -35,6 +36,7 @@ export const users = pgTable('users', {
   lastName: text('last_name'),
   avatarUrl: text('avatar_url'),
   passwordHash: text('password_hash'),
+  preferences: jsonb('preferences').default({}).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -472,9 +474,42 @@ export const etlJobs = pgTable(
     totalValid: integer('total_valid'),
     totalInvalid: integer('total_invalid'),
     scraperRevision: text('scraper_revision').notNull(),
+    // Workflows-aware columns. workflowInstanceId links the row to its
+    // CatalogEtlWorkflow instance (null on legacy queue-path rows; set on
+    // workflow-path rows). totalEmbeddingFailures counts SKUs that were
+    // upserted without embeddings because generateManyEmbeddings threw —
+    // observable degradation signal for the embedding service.
+    workflowInstanceId: text('workflow_instance_id'),
+    totalEmbeddingFailures: integer('total_embedding_failures').default(0).notNull(),
+    // Post-ingestion row-count verification, written by the admin reconcile
+    // endpoint. verifiedRowCount is the logical CSV row count parsed from
+    // the R2 source; mismatches against totalProcessed indicate data drift.
+    verifiedAt: timestamp('verified_at'),
+    verifiedRowCount: integer('verified_row_count'),
+    // R2 source provenance captured at ingest time. Repair-from-scratch
+    // refuses to re-ingest when the live R2 etag no longer matches the
+    // stored value (unless overridden with ?force=true) so a scraper
+    // overwrite mid-flight can't be silently re-applied under the old
+    // (source, filename).
+    sourceEtag: text('source_etag'),
+    sourceLastModified: timestamp('source_last_modified'),
+    // Audit trail for repair-from-scratch / retry. supersededByJobId
+    // points at the ORIGINAL job (the new repair-job row carries the
+    // pointer); supersededAt is the time of supersession. CHECK
+    // constraint prevents self-reference.
+    supersededByJobId: text('superseded_by_job_id').references((): AnyPgColumn => etlJobs.id, {
+      onDelete: 'set null',
+    }),
+    supersededAt: timestamp('superseded_at'),
   },
   (table) => ({
     scraperRevisionIdx: index('etl_jobs_scraper_revision_idx').on(table.scraperRevision),
+    workflowInstanceIdIdx: index('etl_jobs_workflow_instance_id_idx').on(table.workflowInstanceId),
+    supersededByIdx: index('etl_jobs_superseded_by_idx').on(table.supersededByJobId),
+    noSelfSupersede: check(
+      'etl_jobs_no_self_supersede',
+      sql`${table.supersededByJobId} IS NULL OR ${table.supersededByJobId} <> ${table.id}`,
+    ),
   }),
 );
 
@@ -634,3 +669,14 @@ export type PostComment = InferSelectModel<typeof postComments>;
 export type NewPostComment = InferInsertModel<typeof postComments>;
 export type CommentLike = InferSelectModel<typeof commentLikes>;
 export type NewCommentLike = InferInsertModel<typeof commentLikes>;
+
+// CapturedQuery is the per-query record stored in D1 metrics (packages/api/src/db/metricsDb.ts).
+// Defined here so both the API (queryMetrics.ts) and the D1 schema (packages/db/src/d1Schema.ts)
+// share the same type without a circular dependency.
+export interface CapturedQuery {
+  hash: string;
+  preview: string;
+  callSite?: string;
+  durationMs: number;
+  resultBytes: number;
+}

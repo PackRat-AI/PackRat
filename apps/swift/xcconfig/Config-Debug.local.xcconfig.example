@@ -1,0 +1,3 @@
+// Copy to Config-Debug.local.xcconfig (gitignored) to override the debug environment.
+// Valid values: local, staging, production
+// PACKRAT_ENV = staging

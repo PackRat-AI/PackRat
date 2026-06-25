@@ -1,11 +1,12 @@
 import { assertDefined } from '@packrat/guards';
 import { Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { useUserPackItems } from 'expo-app/features/packs/hooks/useUserPackItems';
 import type { PackItem } from 'expo-app/features/packs/types';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -64,13 +65,9 @@ export default function GearInventoryScreen() {
   const itemsByCategory = groupByCategory(items);
 
   return (
-    <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-      <View className="px-4 pb-2 pt-4">
-        <Text variant="title1" className="font-bold">
-          {t('packs.gearInventory')}
-        </Text>
-      </View>
-      <ScrollView className="flex-1 px-4">
+    <SafeAreaView className="flex-1" edges={['bottom']}>
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.gearInventory') }} />
+      <ScrollView className="flex-1 px-4" contentInsetAdjustmentBehavior="automatic">
         <View className="flex-row items-center justify-between p-4">
           <Text variant="subhead" className="text-muted-foreground">
             {t('packs.itemsInInventory', { count: items?.length })}

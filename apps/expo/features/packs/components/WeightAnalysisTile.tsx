@@ -1,6 +1,7 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { Alert, ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { type Href, useRouter } from 'expo-router';
@@ -12,9 +13,10 @@ export function WeightAnalysisTile() {
   const { t } = useTranslation();
   const router = useRouter();
   const currentPack = useCurrentPack();
+  const { unit, convertWeight } = useWeightUnit();
   const alertRef = useRef<AlertMethods>(null);
 
-  const packWeight = currentPack?.totalWeight ?? 0;
+  const packWeight = convertWeight({ weight: currentPack?.totalWeight ?? 0, fromUnit: 'g' });
   const route: Href | null = currentPack ? `/weight-analysis/${currentPack.id}` : null;
 
   const handlePress = () => {
@@ -39,7 +41,7 @@ export function WeightAnalysisTile() {
         }
         rightView={
           <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-            <Text className="mr-2">{`Base: ${packWeight} g`}</Text>
+            <Text className="mr-2">{`Base: ${packWeight} ${unit}`}</Text>
             <ChevronRight />
           </View>
         }

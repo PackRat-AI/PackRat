@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
@@ -7,7 +8,14 @@ const getCategories = async (): Promise<string[]> => {
   // explicitly. Treaty also infers the response as `{}` when the route
   // returns a bare `string[]`, so cast through unknown.
   const { data, error } = await apiClient.catalog.categories.get({ query: { limit: 10 } });
-  if (error) throw new Error(`Failed to fetch catalog categories: ${error.value}`);
+  if (error) {
+    const err = new Error(String(error.value ?? 'Failed to fetch catalog categories'));
+    Sentry.captureException(err, {
+      tags: { feature: 'catalog', action: 'getCategories' },
+      extra: { apiError: error.value, httpStatus: error.status },
+    });
+    throw err;
+  }
   return (data as unknown as string[]) ?? [];
 };
 

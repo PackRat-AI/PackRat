@@ -1,4 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import { TextInput } from 'expo-app/components/TextInput';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useState } from 'react';
@@ -56,6 +57,12 @@ export function SubmitConditionReportForm({
       return;
     }
     try {
+      Sentry.addBreadcrumb({
+        category: 'trailConditions',
+        message: 'Submitting trail condition report',
+        level: 'info',
+        data: { trailName: trailName.trim() },
+      });
       await submitReport({
         trailName: trailName.trim(),
         trailRegion: trailRegion.trim() || null,
@@ -71,6 +78,10 @@ export function SubmitConditionReportForm({
       Alert.alert(t('common.success'), t('trailConditions.reportSubmitted'));
       onSuccess?.();
     } catch (err) {
+      Sentry.captureException(err, {
+        tags: { feature: 'trailConditions', action: 'submitReport' },
+        extra: { trailName: trailName.trim() },
+      });
       const message = err instanceof Error ? err.message : String(err);
       Alert.alert(t('common.error'), message);
     }

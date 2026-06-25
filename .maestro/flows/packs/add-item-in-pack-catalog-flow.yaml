@@ -4,15 +4,27 @@ appId: ${APP_ID}
 # Different from add-item-catalog-flow.yaml which uses the main Catalog tab
 - launchApp
 - waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "Packs"
+    timeout: 30000
 
 # Navigate to Packs tab
 - tapOn:
     text: "Packs"
 - waitForAnimationToEnd
 
-# Tap into Maestro Test Pack
+# Tap into the pack created earlier in this run
+- scrollUntilVisible:
+    element:
+      id: "packs:list-item-${PACK_NAME}"
+    direction: DOWN
+    timeout: 15000
+    speed: 40
+    visibilityPercentage: 50
+    waitToSettleTimeoutMs: 500
 - tapOn:
-    text: "Maestro Test Pack"
+    id: "packs:list-item-${PACK_NAME}"
 - waitForAnimationToEnd
 
 # Assert pack detail loaded
@@ -21,18 +33,18 @@ appId: ${APP_ID}
 
 # Tap Add Item
 - tapOn:
-    text: "Add Item"
+    id: "add-item-button"
 - waitForAnimationToEnd
 
 # Assert bottom sheet with options
 - assertVisible:
-    text: "Add Manually"
+    id: "add-manually-option"
 - assertVisible:
-    text: "Add from Catalog"
+    id: "add-from-catalog-option"
 
 # Select Add from Catalog (within pack context)
 - tapOn:
-    text: "Add from Catalog"
+    id: "add-from-catalog-option"
 - waitForAnimationToEnd
 
 # Wait for the in-pack catalog browser to load
@@ -42,17 +54,24 @@ appId: ${APP_ID}
     timeout: 10000
 
 # Verify catalog items are shown
-- assertVisible:
-    text: "All"
+- extendedWaitUntil:
+    visible:
+      text: "All"
+    timeout: 30000
+- extendedWaitUntil:
+    visible:
+      id: "catalog-item-card-.*"
+    timeout: 30000
 
 # Tap a catalog item to toggle it
 - scrollUntilVisible:
     element:
-      text: ".*Altra.*"
+      id: "catalog-item-card-.*"
     direction: DOWN
 
 - tapOn:
-    text: ".*Altra.*"
+    id: "catalog-item-card-.*"
+    index: 0
 - waitForAnimationToEnd
 
 # BUG-7: The item's icon changes (visual toggle) but doesn't persist

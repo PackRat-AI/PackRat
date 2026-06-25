@@ -20,6 +20,7 @@ import Storage from 'expo-sqlite/kv-store';
 import { useAtomValue, useSetAtom } from 'jotai';
 import {
   isLoadingAtom,
+  isSignOutRedirectingAtom,
   needsReauthAtom,
   redirectToAtom,
   suppressSignOutNavAtom,
@@ -28,23 +29,27 @@ import {
 function redirect(route: string) {
   try {
     const parsedRoute: Href = JSON.parse(route);
-    return router.dismissTo(parsedRoute);
+    return router.replace(parsedRoute);
   } catch {
-    router.dismissTo(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
+    router.replace(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
   }
 }
 
 function mapToUser(raw: Record<string, unknown>): User {
   const name = asString(raw.name) ?? '';
   const spaceIdx = name.indexOf(' ');
+  // Prefer explicit firstName/lastName additionalFields from Better Auth over
+  // splitting the combined name field, which may be stale after a profile update.
+  const firstName = asString(raw.firstName) ?? (spaceIdx >= 0 ? name.slice(0, spaceIdx) : name);
+  const lastName = asString(raw.lastName) ?? (spaceIdx >= 0 ? name.slice(spaceIdx + 1) : '');
   return {
     id: asString(raw.id) ?? '',
     email: asString(raw.email) ?? '',
-    firstName: spaceIdx >= 0 ? name.slice(0, spaceIdx) : name,
-    lastName: spaceIdx >= 0 ? name.slice(spaceIdx + 1) : '',
+    firstName,
+    lastName,
     role: asString(raw.role) ?? 'USER',
     emailVerified: asBoolean(raw.emailVerified) ?? null,
-    avatarUrl: asString(raw.image) ?? null,
+    avatarUrl: asString(raw.avatarUrl) ?? asString(raw.image) ?? null,
     createdAt: asString(raw.createdAt) ?? null,
     updatedAt: asString(raw.updatedAt) ?? null,
     preferredWeightUnit: (raw.preferredWeightUnit as User['preferredWeightUnit']) ?? 'g',
@@ -53,6 +58,7 @@ function mapToUser(raw: Record<string, unknown>): User {
 
 export function useAuthActions() {
   const setIsLoading = useSetAtom(isLoadingAtom);
+  const setIsSignOutRedirecting = useSetAtom(isSignOutRedirectingAtom);
   const redirectTo = useAtomValue(redirectToAtom);
   const setNeedsReauth = useSetAtom(needsReauthAtom);
   const setSuppressSignOutNav = useSetAtom(suppressSignOutNavAtom);
@@ -77,6 +83,7 @@ export function useAuthActions() {
     });
 
     setNeedsReauth(false);
+    setIsSignOutRedirecting(false);
     redirect(redirectTo);
   };
 
@@ -261,6 +268,7 @@ export function useAuthActions() {
     // Suppress AppLayout's auto-navigation to /auth so the profile screen can
     // show a post-sign-out prompt and handle navigation itself.
     setSuppressSignOutNav(true);
+    setIsSignOutRedirecting(true);
     setIsLoading(true);
     Sentry.addBreadcrumb({ category: 'auth', message: 'Sign out initiated', level: 'info' });
     try {

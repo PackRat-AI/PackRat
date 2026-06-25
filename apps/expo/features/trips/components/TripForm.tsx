@@ -1,6 +1,7 @@
 import { assertDefined, isString } from '@packrat/guards';
 import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as Sentry from '@sentry/react-native';
 import { useForm } from '@tanstack/react-form';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
@@ -121,12 +122,23 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
       };
       try {
         if (isEditingExistingTrip) {
+          Sentry.addBreadcrumb({
+            category: 'trips',
+            message: 'Updating trip',
+            level: 'info',
+            data: { tripId: trip?.id },
+          });
           await updateTrip({ ...trip, ...submitData });
           Burnt.toast({
             title: t('trips.tripUpdatedSuccess'),
             preset: 'done',
           });
         } else {
+          Sentry.addBreadcrumb({
+            category: 'trips',
+            message: 'Creating trip',
+            level: 'info',
+          });
           await createTrip(submitData);
           Burnt.toast({
             title: t('trips.tripCreatedSuccess'),
@@ -135,6 +147,10 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
         }
         router.back();
       } catch (_e) {
+        Sentry.captureException(_e, {
+          tags: { feature: 'trips', action: isEditingExistingTrip ? 'updateTrip' : 'createTrip' },
+          extra: { tripId: trip?.id },
+        });
         Burnt.toast({
           title: t('errors.tryAgain'),
           preset: 'error',
@@ -171,6 +187,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 <FormItem>
                   <TextField
                     testID={testIds.trips.nameInput}
+                    containerTestID={testIds.trips.nameInputContainer}
                     placeholder={t('trips.tripName')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
@@ -192,6 +209,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 <FormItem>
                   <TextField
                     testID={testIds.trips.descriptionInput}
+                    containerTestID={testIds.trips.descriptionInputContainer}
                     placeholder={t('trips.description')}
                     value={field.state.value}
                     onChangeText={field.handleChange}

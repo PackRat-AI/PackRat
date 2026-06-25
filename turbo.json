@@ -1,0 +1,44 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "globalEnv": ["NODE_ENV", "CI", "NEXT_PUBLIC_*", "EXPO_PUBLIC_*", "APP_VARIANT"],
+  "globalDependencies": [
+    "tsconfig.json",
+    "biome.json",
+    "bunfig.toml",
+    ".npmrc",
+    "packages/typescript-config/**"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.test.*", "!**/*.spec.*", "!**/__tests__/**"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "out/**"]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "src/**",
+        "test/**",
+        "__tests__/**",
+        "vitest*.config.ts",
+        "package.json",
+        "tsconfig.json"
+      ]
+    },
+    "lint": {
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "deploy": {
+      "dependsOn": ["^build", "build"],
+      "cache": false
+    }
+  }
+}

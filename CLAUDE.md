@@ -43,9 +43,13 @@ bun format            # Biome format --write
 bun check             # Biome check (no auto-fix, CI mode)
 bun check-types       # tsc --noEmit
 
-# Testing
-bun test:api:unit     # API unit tests (Vitest + Cloudflare pool)
-bun test:expo         # Expo tests (Vitest)
+# Testing — see docs/testing.md for the full policy
+bun test:api:unit       # API unit tests (Vitest, Node env, deps mocked)
+bun test:expo           # Expo pure-TS tests (Vitest)
+bun test:mcp            # MCP package tests
+bun test:scripts        # scripts/lint analyzer tests (ratchet + assertion lint)
+bun check:coverage      # Coverage ratchet — fails on regression vs coverage-baselines.json
+bun lint:weak-assertions # Catches assertion-free tests, bare .toBeDefined / .toHaveBeenCalled, oversized snapshots
 
 # Dependencies
 bun install           # Install all workspaces (takes 120s+, never cancel)
@@ -56,6 +60,10 @@ bun fix:deps          # manypkg auto-fix dependency issues
 bun bump              # Bump monorepo version
 ```
 
+## Testing Policy (summary)
+
+PackRat enforces coverage at two layers: each workspace's `vitest.config.ts` declares per-metric thresholds (mostly 95%+; `packages/units` 100%, `packages/{analytics,overpass}` 80%), and a **coverage ratchet** (`bun check:coverage` against `coverage-baselines.json`) blocks any PR that lowers a workspace's coverage. An **assertion-strength lint** (`bun lint:weak-assertions`) flags coverage-theater patterns (assertion-free tests, bare `.toBeDefined()`, bare `.toHaveBeenCalled()`, oversized snapshots). `packages/api` integration tests still run (`api-tests.yml`) but are not coverage-counted — V8 instrumentation is unsupported under the Cloudflare Workers pool. Full policy and patterns: **`docs/testing.md`**.
+
 ## Code Style
 
 Enforced by **Biome 2.0** via lefthook pre-commit hook:
@@ -64,6 +72,11 @@ Enforced by **Biome 2.0** via lefthook pre-commit hook:
 - Alphabetical imports (Biome auto-sorts)
 - No `any` — use proper TypeScript types or `unknown`
 - Strict null checks enabled, no unchecked indexed access
+
+### TypeScript conventions
+
+- **Never use `as unknown as T`** to bypass type errors. Widen the function signature with a generic constraint, extract a structural type, or fix the source type instead. Each `as unknown` site is a place where two types don't agree and TS is being silenced — over time these become load-bearing lies. The only legitimate use is documenting a known third-party type bug inline with a precise assertion and a comment naming the bug.
+- **Prefer `Object.freeze({...} as const)` over bare `as const`** for narrow-typed lookup tables, column whitelists, and config dictionaries. `as const` is type-only; `Object.freeze` adds runtime immutability so accidental mutations fail loudly rather than silently corrupting state. Keep the inner `as const` for literal-type narrowing.
 
 ## Conventions
 
@@ -76,6 +89,22 @@ Enforced by **Biome 2.0** via lefthook pre-commit hook:
 - Middleware in `src/middleware/` — use the `authPlugin` macro (`isAuthenticated: true`) for protected routes
 - Soft deletes for all user content
 - async/await everywhere (no raw promises)
+
+#### DB query projection discipline (cost-bearing)
+
+Neon compute + egress are metered. Every column a query SELECTs is bytes shipped from Postgres to the Worker. The `catalog_items` and `pack_items` tables carry a 1536-dim `vector(1536)` embedding column plus large JSONB content (`reviews`, `qas`, `faqs`, `techs`, `links`, `variants`) — a single unprojected row is ~50-100 KB. List endpoints, ETL `.returning()`, and embedding-backfill scans that don't project columns can ship multi-MB payloads per call.
+
+**Default to explicit projection at every Drizzle query touching `catalog_items` or `pack_items`:**
+
+- `db.select({ id: t.id, name: t.name, ... }).from(t)` — never `db.select().from(t)` for these tables
+- `db.query.X.findFirst/findMany({ columns: { id: true, ... } })` — never `with: { foo: true }` shortcut, never an unfiltered `findMany`
+- `.returning({ id: t.id, ... })` — never `.returning()` no-arg on insert/update/upsert against these tables
+- For exclude patterns (drop only embedding, keep everything else), use `getTableColumns(t)` destructure: `const { embedding: _, ...cols } = getTableColumns(catalogItems); db.select({ ...cols, similarity }).from(catalogItems)` — Drizzle docs document this as the official exclude shape
+- **Don't mix `true` and `false` in a `columns:` object** — Drizzle silently ignores the `false` entries when any `true` is present. Either all-whitelist or all-exclude.
+
+When a service or compute helper reads only a subset of columns, extract a projection type in `packages/db/src/projections.ts` (derive from the inferred schema via `Pick<>` so column renames propagate) and make the consumer generic over it. Lets callers narrow DB queries without `as unknown` casts at the boundary. Existing types there: `PackItemForWeights`, `PackForWeights`, `PackItemForBreakdown`, `PackForBreakdown`.
+
+**Lint:** `bun packages/api/scripts/lint/no-unprojected-fat-table-queries.ts` (runs in CI) fails the build on new `SELECT *` / no-`columns:` / no-arg `.returning()` against the fat tables. Use the inline opt-out `// lint:allow-unprojected-fat-table reason: <text>` only when the full row is genuinely needed (e.g., embedding regen text, detail endpoint).
 
 ### Mobile (apps/expo)
 
@@ -95,6 +124,7 @@ features/{name}/
 - **Forms**: TanStack React Form
 - **Feature flags**: `apps/expo/config.ts` — `featureFlags` object, default new flags to `false`
 - **Animations**: React Native Reanimated 4
+- **E2E selectors**: Prefer stable `testID` values from `apps/expo/lib/testIds.ts` for Maestro and Playwright selectors. Add or extend app-controlled test IDs for important user actions and assertions instead of matching visible text. Use text selectors only when the surface is external or not app-controlled, such as Expo dev-client UI, native permission dialogs, or unavoidable system copy.
 
 ### Web Apps (apps/guides, apps/landing, apps/trails)
 
@@ -240,9 +270,24 @@ Defined in root `tsconfig.json`:
 
 ## Database
 
-- ORM: Drizzle (`packages/api/src/db/schema.ts`)
-- Migrations: Drizzle Kit (`drizzle-kit`)
+- ORM: Drizzle (`packages/db/src/schema/` after the schema extraction)
+- Migrations: **always** Drizzle Kit (`drizzle-kit generate`) — never hand-written SQL
 - Embeddings: pgvector with 1536 dimensions
+
+### Migrations — HARD RULE
+
+**Do not hand-write SQL migrations.** Always use Drizzle Kit:
+
+1. Change the schema in `packages/api/src/db/schema.ts` or `packages/db/src/schema.ts` / `packages/db/src/schema/*.ts`, depending on where the table is owned.
+2. Run `bun run db:generate` from `packages/api/` or the matching package Drizzle command to emit the migration SQL.
+3. Keep the random migration filename that Drizzle Kit generates. Do not rename it.
+4. Review the generated SQL, snapshot, and journal entry for correctness.
+5. Commit both the schema change and the generated migration in the same PR.
+6. Run `bunx drizzle-kit check` from `packages/api/` before pushing when API migrations changed.
+
+Hand-written migrations get out of sync with the schema, drift across environments, and break the Better Auth / drizzle-zod / inferred-TS-types unified pipeline (PR #2414). If `drizzle-kit generate` produces a migration you disagree with, **fix the schema or the generator config** — do not edit the SQL by hand.
+
+If you find a migration in the repo that was hand-written (no `drizzle-kit` provenance), flag it in your PR description and regenerate from schema as a follow-up commit.
 
 ## EAS Build Profiles
 

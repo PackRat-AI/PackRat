@@ -1,15 +1,49 @@
 import { expoClient } from '@better-auth/expo/client';
+import { asString, fromZod } from '@packrat/guards';
 import { createAuthClient } from 'better-auth/react';
 import { getApiBaseUrl } from 'expo-app/lib/api/getBaseUrl';
 import * as SecureStore from 'expo-app/lib/secureStore';
+import { z } from 'zod';
+
+const COOKIE_STORE_KEY = 'packrat_cookie';
+const CookieStoreSchema = z.record(z.object({ value: z.unknown().optional() }));
+
+// expoClient stores cookies as JSON: { "better-auth.session_token": { value, expires } }
+// HTTPS servers (remote dev/prod) prefix the cookie name with __Secure-; HTTP (local) does not.
+export function parseSessionToken(cookieJson: string | null): string | null {
+  if (!cookieJson) return null;
+  try {
+    const cookies = fromZod(CookieStoreSchema)(JSON.parse(cookieJson));
+    if (!cookies) return null;
+    const token =
+      cookies['better-auth.session_token']?.value ??
+      cookies['__Secure-better-auth.session_token']?.value;
+    const sessionToken = asString(token);
+    return sessionToken && sessionToken.length > 0 ? sessionToken : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getStoredSessionToken(): Promise<string | null> {
+  return parseSessionToken(await SecureStore.getItemAsync(COOKIE_STORE_KEY));
+}
 
 export const authClient = createAuthClient({
   baseURL: getApiBaseUrl(),
-  // Send the Better Auth session cookie on cross-origin requests (the web app is
-  // served from a different origin than the API in dev/e2e). Without this,
-  // getSession() omits the cookie, returns null, and the app never becomes
-  // authenticated on web. Harmless on native (bearer token via expoClient).
-  fetchOptions: { credentials: 'include' },
+  // Send cookies for web/e2e and attach the stored Better Auth token when the
+  // expo plugin has one available.
+  fetchOptions: {
+    credentials: 'include',
+    timeout: 30000,
+    onRequest: async (context) => {
+      if (!context.headers.has('authorization')) {
+        const token = await getStoredSessionToken();
+        if (token) context.headers.set('authorization', `Bearer ${token}`);
+      }
+      return context;
+    },
+  },
   plugins: [
     expoClient({
       scheme: 'packrat',

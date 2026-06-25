@@ -1,7 +1,9 @@
 import { getAuth } from '@packrat/api/auth';
+import { getLocalE2EUserFromRequest } from '@packrat/api/auth/local-e2e';
 import { isValidApiKey } from '@packrat/api/utils/auth';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { setQueryMetricsUser } from '@packrat/api/utils/queryMetrics';
 import { apiAddBreadcrumb, captureApiException, setApiUser } from '@packrat/api/utils/sentry';
 import { Elysia, status } from 'elysia';
 
@@ -22,6 +24,18 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
   isAuthenticated: {
     resolve: async ({ request }: { request: Request }) => {
       const env = getEnv() as ValidatedEnv; // safe-cast: Worker env validated at startup; TS can't narrow the return type
+      const localUser = await getLocalE2EUserFromRequest(env, request);
+      if (localUser) {
+        const user = {
+          userId: localUser.id,
+          role: localUser.role,
+          email: localUser.email,
+          name: localUser.name,
+        };
+        setApiUser({ id: user.userId, email: user.email, role: user.role });
+        return { user };
+      }
+
       const auth = await getAuth(env);
 
       let session: Awaited<ReturnType<typeof auth.api.getSession>>;
@@ -57,6 +71,7 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
       // Attach user to the Sentry scope for this request so all subsequent
       // captures are automatically associated with the authenticated user.
       setApiUser({ id: user.userId, email: user.email, role: user.role });
+      setQueryMetricsUser(user.userId);
 
       return { user };
     },
@@ -66,10 +81,13 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
 /**
  * Macro that additionally enforces ADMIN role.
  */
-export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).use(authPlugin).macro({
+export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).macro({
   isAdmin: {
     resolve: async ({ request }: { request: Request }) => {
       const env = getEnv() as ValidatedEnv; // safe-cast: Worker env validated at startup; TS can't narrow the return type
+      const localUser = await getLocalE2EUserFromRequest(env, request);
+      if (localUser) return status(403, { error: 'Forbidden' });
+
       const auth = await getAuth(env);
 
       let session: Awaited<ReturnType<typeof auth.api.getSession>>;
@@ -99,6 +117,7 @@ export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).use(au
       }
 
       setApiUser({ id: session.user.id, email: session.user.email, role: 'ADMIN' });
+      setQueryMetricsUser(session.user.id);
 
       return {
         user: {

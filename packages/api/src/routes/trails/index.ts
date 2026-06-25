@@ -10,6 +10,10 @@ import { z } from 'zod';
 // ── Routes ─────────────────────────────────────────────────────────────────
 
 export const trailsRoutes = new Elysia({ prefix: '/trails' })
+  .model({
+    'trails.RouteDetailRow': RouteDetailRowSchema,
+    'trails.RouteSearchRow': RouteSearchRowSchema,
+  })
   .use(authPlugin)
 
   /**
@@ -51,7 +55,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
             ? sql`WHERE ${conditions.reduce((acc, c) => sql`${acc} AND ${c}`)}`
             : sql``;
 
-        const result = await db.execute(sql`
+        const result = await db.tag('trails.search').execute(sql`
           SELECT
             osm_id::text,
             name,
@@ -137,7 +141,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
 
       try {
         const db = createOsmDb();
-        const result = await db.execute(sql`
+        const result = await db.tag('trails.getGeometry').execute(sql`
           SELECT
             osm_id::text,
             name,
@@ -214,7 +218,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
 
       try {
         const db = createOsmDb();
-        const result = await db.execute(sql`
+        const result = await db.tag('trails.getById').execute(sql`
           SELECT
             osm_id::text,
             name,
