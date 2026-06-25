@@ -11,11 +11,11 @@
  * everything else imports from '@packrat/utils' (or '@packrat/guards' for
  * type narrowing). See docs/utils-policy.md.
  */
-export * from './array';
-export * from './async';
-export * from './fn';
-export * from './json';
-export * from './math';
-export * from './object';
-export * from './predicates';
-export * from './string';
+export * from './array.ts';
+export * from './async.ts';
+export * from './fn.ts';
+export * from './json.ts';
+export * from './math.ts';
+export * from './object.ts';
+export * from './predicates.ts';
+export * from './string.ts';
