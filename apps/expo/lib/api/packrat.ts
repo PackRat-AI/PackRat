@@ -1,38 +1,41 @@
 import { createApiClient } from '@packrat/api-client';
-import { fromZod } from '@packrat/guards';
 import { store } from 'expo-app/atoms/store';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { getApiBaseUrl } from 'expo-app/lib/api/getBaseUrl';
-import { authClient } from 'expo-app/lib/auth-client';
+import { authClient, parseSessionToken } from 'expo-app/lib/auth-client';
 import * as SecureStore from 'expo-app/lib/secureStore';
-import { z } from 'zod';
+import { Platform } from 'react-native';
 
-// The expoClient plugin serialises all cookies into SecureStore under this key.
-// Parsing it locally avoids a network round-trip on every API request.
 const COOKIE_STORE_KEY = 'packrat_cookie';
 
-const CookieStoreSchema = z.record(z.object({ value: z.string() }));
-
-// expoClient stores cookies as JSON: { "better-auth.session_token": { value, expires } }
-// HTTPS servers (remote dev/prod) prefix the cookie name with __Secure-; HTTP (local) does not.
-function parseSessionToken(cookieJson: string | null): string | null {
-  if (!cookieJson) return null;
-  const cookies = fromZod(CookieStoreSchema)(JSON.parse(cookieJson));
-  if (!cookies) return null;
-  return (
-    cookies['better-auth.session_token']?.value ??
-    cookies['__Secure-better-auth.session_token']?.value ??
-    null
-  );
-}
+// On web expoClient short-circuits and expo-secure-store is an empty stub, so
+// we fall back to authClient.getSession(). Cache the token for 30s to keep
+// apiClient's per-request token lookup from tripping Better Auth's prod
+// rate limit. Invalidated by onNeedsReauth.
+const WEB_TOKEN_CACHE_MS = 30_000;
+let cachedToken: string | null = null;
+let cachedTokenExpiresAt = 0;
+let pendingTokenRequest: Promise<string | null> | null = null;
 
 export const apiClient = createApiClient({
   baseUrl: getApiBaseUrl(),
   auth: {
-    // Read the token from secure storage — no network call on every API request.
-    // On web there is no bearer token (the session is an HttpOnly cookie sent via
-    // credentials:'include'); the secureStore web shim returns null here.
     getAccessToken: async () => {
+      if (Platform.OS === 'web') {
+        const now = Date.now();
+        if (cachedToken && now < cachedTokenExpiresAt) return cachedToken;
+        pendingTokenRequest ??= authClient
+          .getSession()
+          .then(({ data }) => {
+            cachedToken = data?.session?.token ?? null;
+            cachedTokenExpiresAt = Date.now() + WEB_TOKEN_CACHE_MS;
+            return cachedToken;
+          })
+          .finally(() => {
+            pendingTokenRequest = null;
+          });
+        return pendingTokenRequest;
+      }
       const cookieStr = await SecureStore.getItemAsync(COOKIE_STORE_KEY);
       return parseSessionToken(cookieStr);
     },
@@ -41,8 +44,11 @@ export const apiClient = createApiClient({
     getRefreshToken: () => null,
     onAccessTokenRefreshed: () => {},
     onNeedsReauth: async () => {
-      // A 401 can be transient (e.g. the server briefly returned an error).
-      // Verify the session is actually gone before alarming the user.
+      cachedToken = null;
+      cachedTokenExpiresAt = 0;
+      pendingTokenRequest = null;
+      // 401 can be transient; verify the session is really gone before
+      // bouncing the user.
       const { data } = await authClient.getSession();
       if (data?.session) return;
       store.set(needsReauthAtom, true);

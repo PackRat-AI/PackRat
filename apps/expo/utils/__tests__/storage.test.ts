@@ -11,7 +11,22 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
 
 // Mock createJSONStorage
 vi.mock('jotai/utils', () => ({
-  createJSONStorage: vi.fn((storageFunction) => storageFunction()),
+  createJSONStorage: vi.fn((storageFunction) => {
+    const storage = storageFunction();
+    return {
+      async getItem(key: string) {
+        const value = await storage.getItem(key);
+        if (!value) return null;
+        return JSON.parse(value);
+      },
+      async setItem(key: string, value: unknown) {
+        await storage.setItem(key, JSON.stringify(value));
+      },
+      async removeItem(key: string) {
+        await storage.removeItem(key);
+      },
+    };
+  }),
 }));
 
 import AsyncStorage from '@react-native-async-storage/async-storage';

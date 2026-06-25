@@ -1,5 +1,6 @@
 import type { createOsmDb } from '@packrat/api/db';
 import type { OsmMember } from '@packrat/schemas/trails';
+import { safeJsonParse } from '@packrat/utils';
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -31,7 +32,7 @@ export async function stitchRouteGeometry({
     sql`, `,
   );
 
-  const result = await db.execute(sql`
+  const result = await db.tag('trailService.stitchRouteGeometry').execute(sql`
     SELECT ST_AsGeoJSON(
       ST_LineMerge(
         ST_Collect(geometry ORDER BY ordinality)
@@ -52,7 +53,7 @@ export async function stitchRouteGeometry({
   if (!row?.geojson) return null;
 
   try {
-    return JSON.parse(row.geojson);
+    return safeJsonParse(row.geojson, { strict: true });
   } catch {
     return null;
   }

@@ -1,0 +1,291 @@
+name: Coverage
+
+on:
+  push:
+    branches: ["main", "development"]
+    paths:
+      - "package.json"
+      - "bun.lock"
+      - "apps/**"
+      - "packages/**"
+      - "scripts/lint/coverage-ratchet.ts"
+      - "scripts/lint/coverage-baseline-update.ts"
+      - "scripts/lint/no-weak-assertions.ts"
+      - "scripts/vitest.config.ts"
+      - "coverage-baselines.json"
+      - ".github/workflows/coverage.yml"
+  pull_request:
+    branches: ["**"]
+    paths:
+      - "package.json"
+      - "bun.lock"
+      - "apps/**"
+      - "packages/**"
+      - "scripts/lint/coverage-ratchet.ts"
+      - "scripts/lint/coverage-baseline-update.ts"
+      - "scripts/lint/no-weak-assertions.ts"
+      - "scripts/vitest.config.ts"
+      - "coverage-baselines.json"
+      - ".github/workflows/coverage.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write       # for baseline auto-commit on main
+  pull-requests: write  # for vitest-coverage-report-action comments
+
+jobs:
+  # One coverage run per tracked workspace. Uploads the coverage-summary.json
+  # as an artifact for the ratchet job to aggregate.
+  coverage:
+    name: Coverage (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # `summary_path` / `final_path` are repo-relative (used by artifact
+          # upload + ratchet restore). `summary_relative` / `final_relative`
+          # are relative to `working_directory` (used by the coverage report
+          # action, which joins them with working_directory internally).
+          - name: packages/api
+            artifact_slug: packages-api
+            test_command: bun run --cwd packages/api test:unit:coverage
+            summary_path: packages/api/coverage/unit/coverage-summary.json
+            final_path: packages/api/coverage/unit/coverage-final.json
+            summary_relative: ./coverage/unit/coverage-summary.json
+            final_relative: ./coverage/unit/coverage-final.json
+            vite_config_path: ./vitest.unit.config.ts
+            working_directory: ./packages/api
+          - name: apps/expo
+            artifact_slug: apps-expo
+            test_command: bun run --cwd apps/expo test:coverage
+            summary_path: apps/expo/coverage/unit/coverage-summary.json
+            final_path: apps/expo/coverage/unit/coverage-final.json
+            summary_relative: ./coverage/unit/coverage-summary.json
+            final_relative: ./coverage/unit/coverage-final.json
+            vite_config_path: ./vitest.config.ts
+            working_directory: ./apps/expo
+          - name: packages/mcp
+            artifact_slug: packages-mcp
+            test_command: bun run --cwd packages/mcp test --coverage
+            summary_path: packages/mcp/coverage/coverage-summary.json
+            final_path: packages/mcp/coverage/coverage-final.json
+            summary_relative: ./coverage/coverage-summary.json
+            final_relative: ./coverage/coverage-final.json
+            vite_config_path: ./vitest.config.ts
+            working_directory: ./packages/mcp
+          - name: packages/analytics
+            artifact_slug: packages-analytics
+            test_command: bun run --cwd packages/analytics test --coverage
+            summary_path: packages/analytics/coverage/coverage-summary.json
+            final_path: packages/analytics/coverage/coverage-final.json
+            summary_relative: ./coverage/coverage-summary.json
+            final_relative: ./coverage/coverage-final.json
+            vite_config_path: ./vitest.config.ts
+            working_directory: ./packages/analytics
+          - name: packages/overpass
+            artifact_slug: packages-overpass
+            test_command: bun run --cwd packages/overpass test --coverage
+            summary_path: packages/overpass/coverage/coverage-summary.json
+            final_path: packages/overpass/coverage/coverage-final.json
+            summary_relative: ./coverage/coverage-summary.json
+            final_relative: ./coverage/coverage-final.json
+            vite_config_path: ./vitest.config.ts
+            working_directory: ./packages/overpass
+          - name: packages/units
+            artifact_slug: packages-units
+            test_command: bun run --cwd packages/units test --coverage
+            summary_path: packages/units/coverage/coverage-summary.json
+            final_path: packages/units/coverage/coverage-final.json
+            summary_relative: ./coverage/coverage-summary.json
+            final_relative: ./coverage/coverage-final.json
+            vite_config_path: ./vitest.config.ts
+            working_directory: ./packages/units
+          - name: packages/utils
+            artifact_slug: packages-utils
+            test_command: bun run --cwd packages/utils test --coverage
+            summary_path: packages/utils/coverage/coverage-summary.json
+            final_path: packages/utils/coverage/coverage-final.json
+            summary_relative: ./coverage/coverage-summary.json
+            final_relative: ./coverage/coverage-final.json
+            vite_config_path: ./vitest.config.ts
+            working_directory: ./packages/utils
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Run coverage for ${{ matrix.name }}
+        run: ${{ matrix.test_command }}
+
+      - name: Report coverage on PR
+        if: always() && github.event_name == 'pull_request'
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: ${{ matrix.name }}
+          json-summary-path: ${{ matrix.summary_relative }}
+          json-final-path: ${{ matrix.final_relative }}
+          vite-config-path: ${{ matrix.vite_config_path }}
+          working-directory: ${{ matrix.working_directory }}
+
+      - name: Upload coverage summary artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-summary-${{ matrix.artifact_slug }}
+          path: ${{ matrix.summary_path }}
+          if-no-files-found: error
+          retention-days: 7
+
+  # Aggregate every workspace's coverage-summary.json and run the ratchet.
+  # Fails the workflow if any workspace dropped below its baseline.
+  ratchet:
+    name: Coverage Ratchet
+    runs-on: ubuntu-latest
+    needs: coverage
+    if: always()
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Download all coverage summaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-summary-*
+          path: artifacts
+
+      - name: Restore summaries to their workspace paths
+        run: |
+          set -euo pipefail
+          # Each artifact arrives as artifacts/coverage-summary-<slug>/<path-without-leading-dir>
+          # actions/download-artifact@v4 unzips a single-file artifact into a directory
+          # named after the artifact, preserving the source file's basename.
+          # Copy each back to its expected location so coverage-baselines.json's
+          # summaryPath entries resolve.
+          declare -A targets=(
+            [packages-api]=packages/api/coverage/unit/coverage-summary.json
+            [apps-expo]=apps/expo/coverage/unit/coverage-summary.json
+            [packages-mcp]=packages/mcp/coverage/coverage-summary.json
+            [packages-analytics]=packages/analytics/coverage/coverage-summary.json
+            [packages-overpass]=packages/overpass/coverage/coverage-summary.json
+            [packages-units]=packages/units/coverage/coverage-summary.json
+            [packages-utils]=packages/utils/coverage/coverage-summary.json
+          )
+          for slug in "${!targets[@]}"; do
+            target="${targets[$slug]}"
+            src_dir="artifacts/coverage-summary-${slug}"
+            if [ ! -d "$src_dir" ]; then
+              echo "::warning::missing artifact for $slug — coverage job may have failed"
+              continue
+            fi
+            mkdir -p "$(dirname "$target")"
+            # Find the single JSON file inside (path may be flat or preserved).
+            src_file=$(find "$src_dir" -name 'coverage-summary.json' | head -n1)
+            if [ -z "$src_file" ]; then
+              echo "::warning::no coverage-summary.json inside artifacts/coverage-summary-${slug}"
+              continue
+            fi
+            cp "$src_file" "$target"
+            echo "restored $slug → $target"
+          done
+
+      - name: Run coverage ratchet
+        run: bun check:coverage
+
+  # On a green push to main, auto-bump coverage-baselines.json upward.
+  # Never runs on PRs — PRs cannot edit the baseline file silently.
+  bump-baseline:
+    name: Bump Coverage Baselines
+    runs-on: ubuntu-latest
+    needs: ratchet
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Need full token to push the auto-commit back to main.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Download all coverage summaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-summary-*
+          path: artifacts
+
+      - name: Restore summaries to their workspace paths
+        run: |
+          set -euo pipefail
+          declare -A targets=(
+            [packages-api]=packages/api/coverage/unit/coverage-summary.json
+            [apps-expo]=apps/expo/coverage/unit/coverage-summary.json
+            [packages-mcp]=packages/mcp/coverage/coverage-summary.json
+            [packages-analytics]=packages/analytics/coverage/coverage-summary.json
+            [packages-overpass]=packages/overpass/coverage/coverage-summary.json
+            [packages-units]=packages/units/coverage/coverage-summary.json
+            [packages-utils]=packages/utils/coverage/coverage-summary.json
+          )
+          for slug in "${!targets[@]}"; do
+            target="${targets[$slug]}"
+            src_dir="artifacts/coverage-summary-${slug}"
+            if [ ! -d "$src_dir" ]; then
+              continue
+            fi
+            mkdir -p "$(dirname "$target")"
+            src_file=$(find "$src_dir" -name 'coverage-summary.json' | head -n1)
+            if [ -n "$src_file" ]; then
+              cp "$src_file" "$target"
+            fi
+          done
+
+      - name: Compute baseline updates
+        run: bun check:coverage:update
+
+      - name: Commit baseline updates
+        uses: stefanzweifel/git-auto-commit-action@v6
+        with:
+          commit_message: "chore(coverage): bump baselines after green main"
+          file_pattern: coverage-baselines.json
+
+  # The scripts test suite — verifies the ratchet and assertion-lint analyzers
+  # themselves on every PR that touches them or their tests.
+  scripts-tests:
+    name: Scripts Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+      - name: Run scripts test suite
+        run: bun test:scripts

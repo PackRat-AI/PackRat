@@ -14,6 +14,7 @@ import {
 } from '@aws-sdk/client-s3';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { isDate, isFunction, isNumber, isObject, isString } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 
 // ── ETag normalization ────────────────────────────────────────────────
 const STRIP_DOUBLE_QUOTES = /"/g;
@@ -334,7 +335,9 @@ export class R2BucketService {
         },
         json: async <T>() => {
           assertStreamNotConsumed();
-          return JSON.parse(new TextDecoder().decode(await consumeStream())) as T; // safe-cast: caller-provided generic boundary — R2ObjectBody.json<T>() mirrors the R2 platform API
+          return safeJsonParse(new TextDecoder().decode(await consumeStream()), {
+            strict: true,
+          }) as T; // safe-cast: caller-provided generic boundary — R2ObjectBody.json<T>() mirrors the R2 platform API
         },
         blob: async () => {
           assertStreamNotConsumed();
@@ -436,9 +439,9 @@ export class R2BucketService {
         CacheControl: httpMetadata?.cacheControl,
         Expires: httpMetadata?.cacheExpiry,
         Metadata: options?.customMetadata,
-        ContentMD5: typeof options?.md5 === 'string' ? options.md5 : undefined,
-        ChecksumSHA1: typeof options?.sha1 === 'string' ? options.sha1 : undefined,
-        ChecksumSHA256: typeof options?.sha256 === 'string' ? options.sha256 : undefined,
+        ContentMD5: isString(options?.md5) ? options.md5 : undefined,
+        ChecksumSHA1: isString(options?.sha1) ? options.sha1 : undefined,
+        ChecksumSHA256: isString(options?.sha256) ? options.sha256 : undefined,
       });
 
       const response = await this.s3Client.send(command);

@@ -12,12 +12,16 @@ import {
   WeatherLocationIdSchema,
   WeatherSearchQuerySchema,
 } from '@packrat/schemas/weather';
+import { first } from '@packrat/utils';
 import { Elysia, status } from 'elysia';
 import { ZodError } from 'zod';
 
 const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
 
 export const weatherRoutes = new Elysia({ prefix: '/weather' })
+  .model({
+    'weather.ForecastResponse': WeatherAPIForecastResponseSchema,
+  })
   .use(authPlugin)
   .get(
     '/search',
@@ -222,18 +226,18 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
         );
         if (!searchResponse.ok) throw new Error(`WeatherAPI HTTP ${searchResponse.status}`);
         const matches = (await searchResponse.json()) as WeatherAPISearchResponse; // safe-cast: WeatherAPI.com response shape matches this type
-        const first = Array.isArray(matches) ? matches[0] : null;
-        if (!first) {
+        const firstMatch = Array.isArray(matches) ? first(matches) : null;
+        if (!firstMatch) {
           return status(404, { error: `No weather location matched "${q}"` });
         }
         const forecastResponse = await fetch(
-          `${WEATHER_API_BASE_URL}/forecast.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(`id:${first.id}`)}&days=10&aqi=yes&alerts=yes`,
+          `${WEATHER_API_BASE_URL}/forecast.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(`id:${firstMatch.id}`)}&days=10&aqi=yes&alerts=yes`,
         );
         if (!forecastResponse.ok) throw new Error(`WeatherAPI HTTP ${forecastResponse.status}`);
         const data = (await forecastResponse.json()) as WeatherAPIForecastResponse; // safe-cast: WeatherAPI.com response shape matches this type
         return {
           ...data,
-          location: { ...data.location, id: Number(first.id) },
+          location: { ...data.location, id: Number(firstMatch.id) },
         };
       } catch (error) {
         captureApiException({

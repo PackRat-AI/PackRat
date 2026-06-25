@@ -1,4 +1,5 @@
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { isString } from '@packrat/guards';
 import * as bcrypt from 'bcryptjs';
 
 export async function hashPassword(password: string): Promise<string> {
@@ -20,7 +21,13 @@ export async function verifyPassword({
  * length-equalizing the two inputs so neither the match result nor the
  * length difference can be inferred from response timing.
  */
-export function timingSafeEqual({ a, b }: { a: string; b: string }): boolean {
+export function timingSafeEqual(args: { a: string; b: string }): boolean;
+export function timingSafeEqual(a: string, b: string): boolean;
+export function timingSafeEqual(
+  argsOrA: { a: string; b: string } | string,
+  maybeB?: string,
+): boolean {
+  const { a, b } = isString(argsOrA) ? { a: argsOrA, b: maybeB ?? '' } : argsOrA;
   const ab = new TextEncoder().encode(a);
   const bb = new TextEncoder().encode(b);
   const len = Math.max(ab.byteLength, bb.byteLength);

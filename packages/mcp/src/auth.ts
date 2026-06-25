@@ -14,6 +14,7 @@
  */
 
 import { isString } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import { createRegExp, exactly, global as globalFlag } from 'magic-regexp';
 import { z } from 'zod';
 import type { Env, Props } from './types';
@@ -175,7 +176,7 @@ async function handleAuthorize({
   }
 
   const stateKey = crypto.randomUUID();
-  await env.OAUTH_KV.put(oauthStateKey(stateKey), JSON.stringify(oauthReq), {
+  await env.OAUTH_KV.put(oauthStateKey(stateKey), safeJsonStringify(oauthReq), {
     expirationTtl: STATE_TTL,
   });
 
@@ -238,7 +239,7 @@ async function handleLoginPost({
     signInRes = await fetch(`${env.PACKRAT_API_URL}/api/auth/sign-in/email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: safeJsonStringify({ email, password }),
     });
   } catch {
     return new Response(loginPage({ state, error: 'Could not reach PackRat. Try again.' }), {
@@ -268,7 +269,7 @@ async function handleLoginPost({
     );
   }
 
-  await env.OAUTH_KV.put(sessionKey(state), JSON.stringify({ token: betterAuthToken, userId }), {
+  await env.OAUTH_KV.put(sessionKey(state), safeJsonStringify({ token: betterAuthToken, userId }), {
     expirationTtl: STATE_TTL,
   });
 
@@ -294,8 +295,8 @@ async function handleCallback({ request, env }: { request: Request; env: Env }):
     );
   }
 
-  const oauthReqResult = OAuthStateSchema.safeParse(JSON.parse(oauthReqStr));
-  const sessionResult = SessionKvSchema.safeParse(JSON.parse(sessionStr));
+  const oauthReqResult = OAuthStateSchema.safeParse(safeJsonParse(oauthReqStr));
+  const sessionResult = SessionKvSchema.safeParse(safeJsonParse(sessionStr));
 
   if (!oauthReqResult.success || !sessionResult.success) {
     return Response.json(

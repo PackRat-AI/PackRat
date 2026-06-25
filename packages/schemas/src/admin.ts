@@ -179,6 +179,10 @@ export const EtlJobSchema = z.object({
   totalValid: z.number().nullable(),
   totalInvalid: z.number().nullable(),
   successRate: z.number().nullable(),
+  failureRate: z.number().nullable(),
+  totalEmbeddingFailures: z.number(),
+  verifiedRowCount: z.number().nullable(),
+  verifiedAt: z.string().nullable(),
 });
 
 export const EtlResponseSchema = z.object({
@@ -230,6 +234,51 @@ export const EtlRetrySchema = z.object({
   success: z.literal(true),
   newJobId: z.string(),
   objectKey: z.string(),
+  workflowInstanceId: z.string().nullable(),
+});
+
+export const EtlReconcileSchema = z.object({
+  success: z.literal(true),
+  jobId: z.string(),
+  expectedRowCount: z.number().int(),
+  actualRowCount: z.number().int().nullable(),
+  delta: z.number().int().nullable(),
+});
+
+export const CatalogAuditSourceSchema = z.object({
+  source: z.string(),
+  totalItems: z.number().int(),
+  lastEtlId: z.string().nullable(),
+  lastEtlAt: z.string().nullable(),
+  daysStale: z.number().int().nullable(),
+  medianPrice: z.number().nullable(),
+  minPrice: z.number().nullable(),
+  maxPrice: z.number().nullable(),
+  nullRates: z.object({
+    price: z.number(),
+    brand: z.number(),
+    description: z.number(),
+    weight: z.number(),
+    images: z.number(),
+    availability: z.number(),
+  }),
+  suspiciousDecimalCount: z.number().int(),
+  suspiciousWeightCount: z.number().int(),
+  emptyNameCount: z.number().int(),
+  flags: z.array(z.string()),
+});
+
+export const CatalogAuditSchema = z.object({
+  generatedAt: z.string(),
+  thresholds: z.object({
+    decimalBugPriceThreshold: z.number(),
+    lowMedianPriceThreshold: z.number(),
+    minFillRate: z.number(),
+    staleDaysThreshold: z.number(),
+    weightTooLightGrams: z.number(),
+    weightTooHeavyGrams: z.number(),
+  }),
+  sources: z.array(CatalogAuditSourceSchema),
 });
 
 // ─── Trails ───────────────────────────────────────────────────────────────────
@@ -300,3 +349,80 @@ export type TrailSearchItem = z.infer<typeof TrailSearchItemSchema>;
 export type TrailSearchResult = z.infer<typeof TrailSearchResultSchema>;
 export type TrailGeometry = z.infer<typeof TrailGeometrySchema>;
 export type AdminTrailConditionReport = z.infer<typeof AdminTrailConditionReportSchema>;
+
+// ─── Query Metrics ────────────────────────────────────────────────────────────
+
+const QueryRouteStatSchema = z.object({
+  route: z.string(),
+  method: z.string(),
+  callCount: z.number(),
+  totalDurationMs: z.number(),
+  avgDurationMs: z.number(),
+  totalEgressBytes: z.number(),
+  avgEgressBytes: z.number(),
+});
+
+const QueryRecentRequestSchema = z.object({
+  id: z.string(),
+  capturedAt: z.string(),
+  route: z.string(),
+  method: z.string(),
+  statusCode: z.number().nullable(),
+  totalDurationMs: z.number(),
+  estimatedEgressBytes: z.number(),
+  queryCount: z.number(),
+});
+
+export const QueryMetricsSummarySchema = z.object({
+  periodStart: z.string(),
+  periodEnd: z.string().nullable(),
+  summary: z.object({
+    totalRequests: z.number(),
+    totalDurationMs: z.number(),
+    totalEgressBytes: z.number(),
+  }),
+  topByCompute: z.array(QueryRouteStatSchema),
+  topByEgress: z.array(QueryRouteStatSchema),
+});
+
+export const QueryMetricsRecentSchema = z.object({
+  requests: z.array(QueryRecentRequestSchema),
+});
+
+export const QueryCallSiteStatSchema = z.object({
+  callSite: z.string(),
+  queryCount: z.number(),
+  totalDurationMs: z.number(),
+  totalResultBytes: z.number(),
+  avgDurationMs: z.number(),
+  distinctRoutes: z.number(),
+  samplePreview: z.string(),
+});
+
+export const QueryMetricsByCallSiteSchema = z.object({
+  periodStart: z.string(),
+  periodEnd: z.string().nullable(),
+  callSites: z.array(QueryCallSiteStatSchema),
+});
+
+export const QueryMetricsByMonthItemSchema = z.object({
+  month: z.string(),
+  requestCount: z.number(),
+  totalDurationMs: z.number(),
+  totalEgressBytes: z.number(),
+  avgDurationMs: z.number(),
+  totalQueryCount: z.number(),
+});
+
+export const QueryMetricsByMonthSchema = z.object({
+  months: z.array(QueryMetricsByMonthItemSchema),
+});
+
+export type QueryRouteStat = z.infer<typeof QueryRouteStatSchema>;
+export type QueryRecentRequest = z.infer<typeof QueryRecentRequestSchema>;
+export type QueryCallSiteStat = z.infer<typeof QueryCallSiteStatSchema>;
+export type QueryMetricsByMonthItem = z.infer<typeof QueryMetricsByMonthItemSchema>;
+export type QueryMetricsSummary = z.infer<typeof QueryMetricsSummarySchema>;
+export type QueryMetricsRecent = z.infer<typeof QueryMetricsRecentSchema>;
+export type QueryMetricsByCallSite = z.infer<typeof QueryMetricsByCallSiteSchema>;
+export type QueryMetricsByMonth = z.infer<typeof QueryMetricsByMonthSchema>;

@@ -55,7 +55,9 @@ export function CatalogScreen() {
   // Client-side weight class filtering (since the API doesn't support it)
   const filteredItems = React.useMemo(() => {
     if (selectedWeightClass === 'all') return allItems;
-    return allItems.filter((item) => weightClass(item.weight) === selectedWeightClass);
+    return allItems.filter(
+      (item) => item.weight !== null && weightClass(item.weight) === selectedWeightClass,
+    );
   }, [allItems, selectedWeightClass]);
 
   const activeFilterCount = (selectedCategory ? 1 : 0) + (selectedWeightClass !== 'all' ? 1 : 0);
@@ -267,13 +269,15 @@ function CatalogCard({
   onAdd: () => void;
   onSave: () => void;
 }) {
-  const wc = weightClass(item.weight);
+  const wc = item.weight === null ? null : weightClass(item.weight);
   const wcStyles = {
     ultralight: 'bg-[#30d158]/15 text-[#30d158]',
     lightweight: 'bg-[#ff9f0a]/15 text-[#ff9f0a]',
     standard: 'bg-muted text-muted-foreground',
+    unknown: 'bg-muted text-muted-foreground',
   };
-  const wcLabels = { ultralight: 'UL', lightweight: 'LW', standard: 'STD' };
+  const wcLabels = { ultralight: 'UL', lightweight: 'LW', standard: 'STD', unknown: 'N/A' };
+  const weightClassKey = wc ?? 'unknown';
 
   return (
     <article className="rounded-2xl bg-card border border-border flex flex-col text-left hover:border-primary/30 transition-colors">
@@ -290,9 +294,12 @@ function CatalogCard({
             </span>
           )}
           <span
-            className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold uppercase', wcStyles[wc])}
+            className={cn(
+              'rounded-full px-2 py-0.5 text-[10px] font-bold uppercase',
+              wcStyles[weightClassKey],
+            )}
           >
-            {wcLabels[wc]}
+            {wcLabels[weightClassKey]}
           </span>
         </div>
 
@@ -309,7 +316,9 @@ function CatalogCard({
         {/* Weight + Rating + Price */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-base font-bold">{fw(item.weight)}</span>
+            <span className="text-base font-bold">
+              {item.weight === null ? 'Unknown' : fw(item.weight)}
+            </span>
             {item.ratingValue && (
               <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
                 <Star className="h-3 w-3 fill-[#ff9f0a] text-[#ff9f0a]" />
@@ -400,7 +409,9 @@ function GearDetailModal({
           <div className="flex items-center gap-3">
             <div className="flex-1 rounded-xl bg-card border border-border p-3 text-center">
               <p className="text-xs text-muted-foreground mb-0.5">Weight</p>
-              <p className="text-xl font-bold">{fw(item.weight)}</p>
+              <p className="text-xl font-bold">
+                {item.weight === null ? 'Unknown' : fw(item.weight)}
+              </p>
             </div>
             {item.price && (
               <div className="flex-1 rounded-xl bg-card border border-border p-3 text-center">

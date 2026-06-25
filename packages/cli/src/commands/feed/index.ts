@@ -1,3 +1,4 @@
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
 import { requireAuth, runApi } from '../../api/run';
@@ -17,7 +18,7 @@ const listCmd = defineCommand({
       }),
       action: 'list feed',
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 
@@ -40,7 +41,7 @@ const postCmd = defineCommand({
       promise: client.feed.post({ caption: args.caption, images }),
       action: 'create feed post',
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 
@@ -55,7 +56,7 @@ const likeCmd = defineCommand({
       action: 'toggle post like',
       resourceHint: `post ${args.id}`,
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 
@@ -77,7 +78,7 @@ const commentCmd = defineCommand({
       action: 'create feed comment',
       resourceHint: `post ${args.id}`,
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 

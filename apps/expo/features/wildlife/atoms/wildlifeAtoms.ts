@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { atomWithStorage, createJSONStorage, loadable } from 'jotai/utils';
 import type { WildlifeIdentification } from '../types';
 

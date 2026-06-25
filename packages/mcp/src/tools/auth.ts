@@ -12,6 +12,7 @@
  */
 
 import { isObject } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import { z } from 'zod';
 import { call, errMessage, ok } from '../client';
 import type { AgentContext } from '../types';
@@ -47,7 +48,7 @@ export function registerAuthTools(agent: AgentContext): void {
       if (result.error || !result.data) {
         const detail = isObject(result.error) ? (result.error.value ?? null) : null;
         return errMessage(
-          `Admin login failed (HTTP ${result.status})${detail ? `: ${JSON.stringify(detail)}` : ''}`,
+          `Admin login failed (HTTP ${result.status})${detail ? `: ${safeJsonStringify(detail)}` : ''}`,
         );
       }
       agent.setAdminToken(result.data.token);

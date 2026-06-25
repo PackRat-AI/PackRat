@@ -1,5 +1,6 @@
 import { openai } from '@ai-sdk/openai';
 import { arrayIncludes, objectEntries } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import { generateText } from 'ai';
 import chalk from 'chalk';
 import { format } from 'date-fns';
@@ -267,7 +268,9 @@ async function generateTopicIdeas({
   try {
     // Extract JSON from the text response which might contain markdown code blocks
     const jsonText = extractJsonFromText(text);
-    const ideas = JSON.parse(jsonText);
+    const ideas = safeJsonParse<
+      Array<{ title: string; description: string; categories: string[]; difficulty: string }>
+    >(jsonText, { strict: true });
 
     // Transform the data to match our internal format
     return ideas.map(

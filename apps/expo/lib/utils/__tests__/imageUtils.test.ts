@@ -157,6 +157,44 @@ describe('imageUtils', () => {
       });
     });
 
+    it('should accept partial-content range responses when ok is false', async () => {
+      const mockGetDomainExtension = getDomainSpecificExtension as MockedFunction<
+        typeof getDomainSpecificExtension
+      >;
+      mockGetDomainExtension.mockReturnValue(null);
+
+      const mockFetch = global.fetch as MockedFunction<typeof fetch>;
+      mockFetch.mockRejectedValueOnce(new Error('HEAD failed'));
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 206,
+        headers: {
+          get: vi.fn().mockReturnValue('image/webp'),
+        },
+      } as unknown as Response);
+
+      await expect(fetchImageExtension('https://example.com/image')).resolves.toBe('webp');
+    });
+
+    it('should return null for unrecognized range content-types', async () => {
+      const mockGetDomainExtension = getDomainSpecificExtension as MockedFunction<
+        typeof getDomainSpecificExtension
+      >;
+      mockGetDomainExtension.mockReturnValue(null);
+
+      const mockFetch = global.fetch as MockedFunction<typeof fetch>;
+      mockFetch.mockRejectedValueOnce(new Error('HEAD failed'));
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 206,
+        headers: {
+          get: vi.fn().mockReturnValue('application/octet-stream'),
+        },
+      } as unknown as Response);
+
+      await expect(fetchImageExtension('https://example.com/image')).resolves.toBe(null);
+    });
+
     it('should return null when both HEAD and Range GET fail', async () => {
       const mockGetDomainExtension = getDomainSpecificExtension as MockedFunction<
         typeof getDomainSpecificExtension

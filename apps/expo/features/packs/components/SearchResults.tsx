@@ -33,7 +33,7 @@ export function SearchResults({ results, searchValue, onResultPress }: SearchRes
       )}
     />
   ) : (
-    <View className="items-center justify-center p-4">
+    <View className="flex-1 items-center justify-center p-4">
       <Text className="text-muted-foreground">No packs found for "{searchValue}"</Text>
     </View>
   );

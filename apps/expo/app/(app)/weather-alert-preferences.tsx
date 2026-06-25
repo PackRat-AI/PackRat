@@ -1,14 +1,9 @@
-import {
-  Form,
-  FormItem,
-  FormSection,
-  LargeTitleHeader,
-  Text,
-  Toggle,
-} from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection, Text, Toggle } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Stack } from 'expo-router';
 import * as React from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -71,7 +66,9 @@ export default function WeatherAlertPreferencesScreen() {
 
   return (
     <>
-      <LargeTitleHeader title={t('weather.alertPreferencesTitle')} />
+      <Stack.Screen
+        options={{ ...getAppBarOptions(), title: t('weather.alertPreferencesTitle') }}
+      />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}

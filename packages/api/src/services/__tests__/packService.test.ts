@@ -10,6 +10,7 @@ import { PackService } from '../packService';
 // Mock the DB – we inject a mock that the service obtains via createDb(c)
 const mockFindFirst = vi.fn();
 const mockDb = {
+  tag: (_label: string) => mockDb,
   query: {
     packs: {
       findFirst: mockFindFirst,

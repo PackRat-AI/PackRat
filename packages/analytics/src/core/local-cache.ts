@@ -9,7 +9,7 @@ import { mkdirSync } from 'node:fs';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { DuckDBInstance } from '@duckdb/node-api';
 import { analyticsEnv as env } from '@packrat/env/analytics';
-import { tryit } from 'radash';
+import { tryit } from '@packrat/utils';
 import type {
   BrandAnalysis,
   CatalogRow,

@@ -1,0 +1,26 @@
+id: no-index-zero-tsx
+# TSX variant of no-index-zero. The `typescript` language parser does NOT match
+# .tsx files, so .tsx app code (apps/expo, apps/trails, apps/guides, apps/landing)
+# needs this `tsx`-language twin. Same rule/ignores as no-index-zero.yml.
+language: tsx
+severity: warning
+message: "Avoid raw numeric index access (`arr[0]`, `arr[1]`, …). Use `first(arr)` / `last(arr)` from @packrat/utils for ends, or native `arr.at(n)` for an arbitrary index (both `T | undefined` under noUncheckedIndexedAccess — same safety, clearer intent). Genuine tuple/fixed-shape access (e.g. a `[lat, lng]` tuple, a regex match group) is fine — annotate with `// allow-index:` and ignore this nudge."
+ignores:
+  - "**/packages/guards/**"
+  - "**/packages/utils/**"
+  - "scripts/**"
+  - ".github/**"
+  - "**/mocks/**"
+  - "**/__mocks__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+rule:
+  pattern: $ARR[$IDX]
+  has:
+    field: object
+    kind: identifier
+constraints:
+  IDX:
+    kind: number

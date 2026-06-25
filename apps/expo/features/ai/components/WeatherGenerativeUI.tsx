@@ -1,7 +1,9 @@
-import { Text, useColorScheme } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { getWeatherIconByCondition } from 'expo-app/features/weather/lib/weatherIcons';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useEffect } from 'react';
 import { View } from 'react-native';
@@ -18,8 +20,8 @@ type WeatherToolOutput =
         details: {
           humidity: number;
           windSpeed: number;
-          feelsLike: number;
-          isDay: number;
+          feelsLike?: number;
+          isDay?: number;
         };
       };
     }
@@ -43,6 +45,7 @@ interface WeatherGenerativeUIProps {
 export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps) {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
+  const { displayTemperature } = useTemperatureUnit();
 
   useEffect(() => {
     const { toolCallId } = toolInvocation;
@@ -128,7 +131,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
               <Icon name="map-marker-radius-outline" size={16} color={colors.primary} />
               <Text className="text-base font-semibold text-blue-800 dark:text-blue-200">
                 {t('ai.tools.weatherIn', {
-                  location: toolInvocation.output.data.name,
+                  location: toolInvocation.output.data.name || toolInvocation.input.location,
                 })}
               </Text>
             </View>
@@ -140,8 +143,8 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
               <View className="flex-row items-center">
                 <Icon
                   name={getWeatherIconByCondition({
-                    condition: toolInvocation.output.data.condition,
-                    isDay: toolInvocation.output.data.details.isDay,
+                    condition: toolInvocation.output.data.condition || '',
+                    isDay: toolInvocation.output.data.details?.isDay,
                   })}
                   size={48}
                   color="#3b82f6"
@@ -150,10 +153,10 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
                   <Text
                     className={`text-4xl font-light ${getTemperatureColor(toolInvocation.output.data.temperature)}`}
                   >
-                    {toolInvocation.output.data.temperature}°
+                    {displayTemperature(toolInvocation.output.data.temperature)}
                   </Text>
                   <Text className="mt-1 text-base text-gray-600 dark:text-gray-300">
-                    {toolInvocation.output.data.condition}
+                    {toolInvocation.output.data.condition || '—'}
                   </Text>
                 </View>
               </View>
@@ -170,7 +173,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
                     </Text>
                   </View>
                   <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {toolInvocation.output.data.details.humidity}%
+                    {toolInvocation.output.data.details?.humidity ?? '—'}%
                   </Text>
                 </View>
 
@@ -184,7 +187,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
                     </Text>
                   </View>
                   <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {toolInvocation.output.data.details.windSpeed} mph
+                    {toolInvocation.output.data.details?.windSpeed ?? '—'} mph
                   </Text>
                 </View>
               </View>
@@ -213,9 +216,10 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
   }
 }
 
-const getTemperatureColor = (temp: number) => {
-  if (temp >= 80) return 'text-red-600';
-  if (temp >= 60) return 'text-orange-500';
-  if (temp >= 40) return 'text-blue-500';
+// Thresholds in Celsius: hot ≥27°C, mild ≥15°C, cool ≥4°C
+const getTemperatureColor = (tempC: number) => {
+  if (tempC >= 27) return 'text-red-600';
+  if (tempC >= 15) return 'text-orange-500';
+  if (tempC >= 4) return 'text-blue-500';
   return 'text-blue-700';
 };

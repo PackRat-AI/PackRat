@@ -1,6 +1,7 @@
 import { assertNonNull } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -38,6 +39,7 @@ export function LocationPicker({
   const { locationsState } = useLocations();
   const { activeLocation } = useActiveLocation();
   const [selectedLocation, setSelectedLocation] = useState<WeatherLocation | null>(activeLocation);
+  const { displayTemperature } = useTemperatureUnit();
 
   // Use translations for default values
   const displayTitle = title ?? t('location.selectLocation');
@@ -101,7 +103,7 @@ export function LocationPicker({
                         <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
                       </>
                     )}
-                    <Text className="text-2xl">{location.temperature}°</Text>
+                    <Text className="text-2xl">{displayTemperature(location.temperature)}</Text>
                   </View>
                 </Pressable>
               ))}

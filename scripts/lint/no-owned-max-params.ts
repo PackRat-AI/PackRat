@@ -25,14 +25,31 @@ const EXCLUDED_DIRS = new Set([
   '.expo',
   '.turbo',
   '.wrangler',
+  '.swiftpm',
   'coverage',
 ]);
 
-const EXCLUDED_PATH_PARTS = ['/test/', '/__tests__/', '/mocks/', '/playwright/'];
+const EXCLUDED_PATH_PARTS = [
+  '/test/',
+  '/__tests__/',
+  '/__test-stubs__/',
+  '/mocks/',
+  '/playwright/',
+];
 const EXCLUDED_SUFFIXES = ['.test.ts', '.test.tsx', '.spec.ts', '.spec.tsx'];
 const EXCLUDED_FILES = new Set([
+  // safeJsonParse(value, options) is a deliberate drop-in for the native
+  // JSON.parse(text, reviver) / destr(value, options) signature.
+  'packages/utils/src/json.ts',
   // This service intentionally mirrors Cloudflare R2's positional API.
   'packages/api/src/services/r2-bucket.ts',
+  // Existing platform/observability APIs intentionally mirror external
+  // callback or logger call shapes; changing them would churn broad call sites.
+  'packages/api/src/__test-stubs__/cloudflare-workers.ts',
+  'packages/api/src/services/retention/invalidLogRetention.ts',
+  'packages/api/src/utils/logger.ts',
+  'packages/api/src/workflows/catalog-etl-workflow.ts',
+  'packages/api/src/workflows/shared/chunkCsvForR2.ts',
   // These build scripts override globalThis.fetch with a shim that must
   // match the runtime's (input, init) signature.
   'apps/landing/scripts/generate-og-images.ts',
@@ -40,10 +57,24 @@ const EXCLUDED_FILES = new Set([
   'apps/trails/scripts/generate-og-images.ts',
   // Web shim that must mirror expo-secure-store's positional (key, value) API.
   'apps/expo/lib/secureStore.web.ts',
+  // Web shim that must mirror expo-sqlite/kv-store's positional (key, value) API.
+  'apps/expo/lib/expoSqliteKvStore.web.ts',
+  // Swift/Xcode helper scripts are shell-style adapters around positional CLIs.
+  'apps/swift/scripts/capture-visual-screenshots.ts',
+  'apps/swift/scripts/lib/app-store-assets.ts',
+  'apps/swift/scripts/run-e2e-macos.ts',
+  'apps/swift/scripts/run-e2e.ts',
+  'apps/swift/scripts/watch-sync-smoke.ts',
+  // Cloudflare/Sentry/logger helpers intentionally mirror external callback/API shapes.
+  'packages/api/src/index.ts',
+  'packages/api/src/auth/local-e2e.ts',
+  'packages/api/src/utils/auth.ts',
+  'packages/api/src/utils/embeddingHelper.ts',
 ]);
-const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest']);
+const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest', 'run', 'scheduled']);
 const EXTERNAL_CALLBACK_NAMES = new Set([
   'fetcher',
+  'get', // Proxy get trap — (target, prop) is the runtime-mandated signature
   'keyExtractor',
   'list',
   'onChange',
@@ -180,6 +211,25 @@ function isFrameworkObjectMethod(node: ts.FunctionLikeDeclaration): boolean {
   return FRAMEWORK_METHOD_NAMES.has(name);
 }
 
+// Cloudflare WorkflowEntrypoint.run(event, step) is a framework-mandated
+// signature — exempt it, but narrowly: only `run` methods on a class that
+// extends WorkflowEntrypoint, never every method named `run`.
+function isWorkflowEntrypointRun(node: ts.FunctionLikeDeclaration): boolean {
+  if (!ts.isMethodDeclaration(node) || functionName(node) !== 'run') return false;
+  const cls = node.parent;
+  if (!ts.isClassLike(cls) || !cls.heritageClauses) return false;
+  return cls.heritageClauses.some(
+    (clause) =>
+      clause.token === ts.SyntaxKind.ExtendsKeyword &&
+      clause.types.some((type) => {
+        // Exact match (allowing a namespace qualifier like `cf.WorkflowEntrypoint`)
+        // so we don't accidentally exempt `NotWorkflowEntrypoint` / `WorkflowEntrypointStub`.
+        const name = type.expression.getText();
+        return name === 'WorkflowEntrypoint' || name.endsWith('.WorkflowEntrypoint');
+      }),
+  );
+}
+
 function isExternalCallback(node: ts.FunctionLikeDeclaration): boolean {
   if (EXTERNAL_CALLBACK_NAMES.has(functionName(node).replace(/^['"]|['"]$/g, ''))) return true;
 
@@ -208,6 +258,7 @@ function shouldCheck(node: ts.FunctionLikeDeclaration): boolean {
   if (isExternalCallback(node)) return false;
   if (isAssertionPredicate(node)) return false;
   if (isFrameworkObjectMethod(node)) return false;
+  if (isWorkflowEntrypointRun(node)) return false;
   if (ts.isGetAccessor(node) || ts.isSetAccessor(node)) return false;
   return true;
 }

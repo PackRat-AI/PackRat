@@ -1,0 +1,24 @@
+// Debug build defaults.
+// To override locally, create xcconfig/Config-Debug.local.xcconfig (gitignored).
+#include? "Config-Debug.local.xcconfig"
+
+// NOTE: xcconfig files treat // as a comment, so full URLs can't be stored here.
+// Use PACKRAT_ENV to select an environment; URLs live in APIClient.swift.
+//
+// Default = local because the deployed dev + production APIs at workers.dev are
+// currently missing the /api/auth/* user-auth routes (verified 2026-05-20 — only
+// /api/admin/login is mounted on either). The latest main source has them but
+// they have not shipped. Until that's resolved, e2e tests + Debug builds need a
+// wrangler dev running locally on :8787.
+//
+// To use the deployed dev API instead (e.g., after the auth routes deploy):
+//   echo "PACKRAT_ENV = dev" > xcconfig/Config-Debug.local.xcconfig
+// The .local.xcconfig file is gitignored and picked up via the #include? above.
+PACKRAT_ENV = dev-local
+
+// SENTRY_DSN flows xcconfig → Info.plist → runtime.
+// Drop the DSN into Config-Debug.local.xcconfig to enable Sentry on Debug
+// builds; leave blank to disable (the SDK silently no-ops on empty DSN).
+// SENTRY_DSN is provided as a build-setting (xcconfig) and not committed —
+// the value is gitignored via Config-Debug.local.xcconfig.
+SENTRY_DSN =

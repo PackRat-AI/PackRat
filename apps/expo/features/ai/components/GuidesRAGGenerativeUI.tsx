@@ -1,5 +1,7 @@
-import { Text, useColorScheme } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRef, useState } from 'react';
 import {
@@ -90,6 +92,10 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
       await Linking.openURL(url);
     } catch (error) {
       console.error('Failed to open URL:', error);
+      Sentry.captureException(error, {
+        tags: { feature: 'ai.guidesRAG', action: 'openGuide' },
+        extra: { url },
+      });
     }
   };
 

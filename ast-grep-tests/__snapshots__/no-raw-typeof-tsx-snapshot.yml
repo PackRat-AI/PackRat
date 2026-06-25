@@ -1,0 +1,14 @@
+id: no-raw-typeof-tsx
+snapshots:
+  'const C = () => (typeof x === ''string'' ? <A /> : <B />)':
+    labels:
+    - source: typeof x === 'string'
+      style: primary
+      start: 17
+      end: 38
+  'const D = () => (typeof n !== ''number'' ? <A /> : <B />)':
+    labels:
+    - source: typeof n !== 'number'
+      style: primary
+      start: 17
+      end: 38

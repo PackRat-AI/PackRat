@@ -1,4 +1,5 @@
 import { toRecordArray } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
 import { requireAuth, runApi } from '../../api/run';
@@ -23,7 +24,7 @@ export default defineCommand({
       action: 'list packs',
     });
     if (args.json) {
-      process.stdout.write(`${JSON.stringify(packs, null, 2)}\n`);
+      process.stdout.write(`${safeJsonStringify(packs, null, 2)}\n`);
       return;
     }
     printTable({

@@ -1,35 +1,41 @@
 import { clientEnvs } from '@packrat/env/expo-client';
-import { isString } from '@packrat/guards';
+import { isRemoteUrl, isString } from '@packrat/guards';
 import {
   ActivityIndicator,
   Avatar,
   AvatarFallback,
-  AvatarImage,
   Button,
-  LargeTitleHeader,
   List,
   ListItem,
   type ListRenderItemInfo,
   ListSectionHeader,
   Text,
 } from '@packrat/ui/nativewindui';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import * as Sentry from '@sentry/react-native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
-import { isLoadingAtom, suppressSignOutNavAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import {
+  isLoadingAtom,
+  isSignOutRedirectingAtom,
+  suppressSignOutNavAtom,
+} from 'expo-app/features/auth/atoms/authAtoms';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { uploadImage } from 'expo-app/features/packs/utils/uploadImage';
 import { ProfileAuthWall } from 'expo-app/features/profile/components';
 import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { cn } from 'expo-app/lib/cn';
 import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
+import { getRemoteImageCacheKey } from 'expo-app/lib/utils/getRemoteImageCacheKey';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Link, router, Stack } from 'expo-router';
 import { useSetAtom } from 'jotai';
@@ -76,8 +82,16 @@ function Profile() {
   const { t } = useTranslation();
 
   const SCREEN_OPTIONS = {
+    ...getAppBarOptions(),
     title: t('profile.profile'),
-    headerShown: false,
+    headerBackVisible: false,
+    headerRight: () => (
+      <View className="flex-row items-center gap-2 pr-2 pl-2">
+        <DemoIcon />
+
+        <SettingsIcon />
+      </View>
+    ),
   } as const;
 
   // Generate display data based on user information
@@ -108,18 +122,6 @@ function Profile() {
   return (
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
-
-      <LargeTitleHeader
-        title={t('profile.profile')}
-        backVisible={false}
-        rightView={() => (
-          <View className="flex-row items-center gap-2 pr-2 pl-2">
-            <DemoIcon />
-
-            <SettingsIcon />
-          </View>
-        )}
-      />
 
       <List
         contentContainerClassName="pt-8"
@@ -179,7 +181,24 @@ function ListHeaderComponent() {
   const username = user?.email || '';
 
   // Build the full avatar URL from the stored R2 key or an absolute URL
-  const avatarUri = user?.avatarUrl ? buildPackTemplateItemImageUrl(user.avatarUrl) : null;
+  const avatarKey = user?.avatarUrl ?? null;
+  const avatarUri = avatarKey ? buildPackTemplateItemImageUrl(avatarKey) : null;
+
+  function renderAvatarImage() {
+    if (!avatarKey || !avatarUri) return null;
+    // R2-hosted avatars cache by their object key; absolute OAuth URLs aren't valid
+    // cache filenames, so derive a stable key from the URL instead.
+    const cacheKey = isRemoteUrl(avatarKey)
+      ? getRemoteImageCacheKey({ url: avatarUri, prefix: 'oauth-avatar' })
+      : avatarKey;
+    return (
+      <CachedImage
+        imageObjectKey={cacheKey}
+        imageRemoteUrl={avatarUri}
+        className="aspect-square h-full w-full"
+      />
+    );
+  }
 
   async function handleAvatarPress() {
     try {
@@ -208,6 +227,9 @@ function ListHeaderComponent() {
           { text: t('permissions.openSettings'), onPress: () => Linking.openSettings() },
         ]);
       } else {
+        Sentry.captureException(err, {
+          tags: { feature: 'profile', action: 'handleAvatarPress' },
+        });
         Alert.alert(t('errors.somethingWentWrong'), t('errors.tryAgain'));
       }
     } finally {
@@ -219,7 +241,7 @@ function ListHeaderComponent() {
     <SafeAreaView className="ios:pb-8 items-center pb-4 pt-8">
       <TouchableOpacity onPress={handleAvatarPress} disabled={isUploading}>
         <Avatar alt={`${displayName}'s Profile`} className="h-24 w-24">
-          {avatarUri ? <AvatarImage source={{ uri: avatarUri }} /> : null}
+          {renderAvatarImage()}
           <AvatarFallback>
             <Text
               variant="largeTitle"
@@ -249,6 +271,7 @@ function ListFooterComponent() {
   const { signOut } = useAuth();
   const { t } = useTranslation();
   const setIsLoading = useSetAtom(isLoadingAtom);
+  const setIsSignOutRedirecting = useSetAtom(isSignOutRedirectingAtom);
   const setSuppressSignOutNav = useSetAtom(suppressSignOutNavAtom);
 
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -270,6 +293,7 @@ function ListFooterComponent() {
             // Clear spinner first so AppLayout doesn't show auth screen,
             // then release the suppress flag and navigate home as guest.
             setIsLoading(false);
+            setIsSignOutRedirecting(false);
             setSuppressSignOutNav(false);
             await AsyncStorage.setItem('skipped_login', 'true');
             router.replace('/');

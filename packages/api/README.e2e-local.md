@@ -54,7 +54,7 @@ maestro test .maestro/master-flow.yaml \
 Or with the full suite runner:
 
 ```bash
-bash .maestro/run-suite.sh
+bun run .maestro/run-suite.ts
 ```
 
 ## Stopping
@@ -72,9 +72,8 @@ bun run --filter @packrat/api dev:e2e:reset
 
 ## How vars are layered
 
-`e2e-local-start.sh` passes `--env-file .dev.vars.e2e` to `wrangler dev`.
-Wrangler merges the env file on top of any `.dev.vars` present, so e2e
-overrides win. The key overrides are:
+`e2e-local-start.ts` loads `.dev.vars.e2e` before launching the local API, so
+e2e overrides win. The key overrides are:
 
 | Var | Local value |
 |-----|-------------|
