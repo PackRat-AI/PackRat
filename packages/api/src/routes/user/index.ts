@@ -101,6 +101,19 @@ export const userRoutes = new Elysia({ prefix: '/user' })
         };
         if (firstName !== undefined) updateData.firstName = firstName;
         if (lastName !== undefined) updateData.lastName = lastName;
+        // Keep Better Auth's combined name field in sync to prevent stale display
+        // when the sign-in response derives firstName/lastName from name.
+        if (firstName !== undefined || lastName !== undefined) {
+          const [existingUser] = await db
+            .tag('user.getNameForSync')
+            .select({ firstName: users.firstName, lastName: users.lastName })
+            .from(users)
+            .where(eq(users.id, user.userId))
+            .limit(1);
+          const newFirst = firstName ?? existingUser?.firstName ?? '';
+          const newLast = lastName ?? existingUser?.lastName ?? '';
+          updateData.name = `${newFirst} ${newLast}`.trim();
+        }
         if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
         if (email !== undefined) {
           updateData.email = email.toLowerCase();
