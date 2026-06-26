@@ -109,6 +109,10 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       crossSubDomainCookies: { enabled: false },
     },
 
+    session: {
+      storeSessionInDatabase: true,
+    },
+
     // Use KV as a fast secondary store for session lookups.
     secondaryStorage: env.AUTH_KV
       ? {

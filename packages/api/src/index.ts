@@ -12,7 +12,7 @@ import {
 } from '@better-auth/oauth-provider';
 import type { MessageBatch, ScheduledController } from '@cloudflare/workers-types';
 import { neonConfig } from '@neondatabase/serverless';
-import { type App, appBase } from '@packrat/api/app';
+import { type App, addCorsHeaders, appBase, corsPreflightResponse } from '@packrat/api/app';
 import { getAuth } from '@packrat/api/auth';
 import { consentRoute } from '@packrat/api/auth/consent-route';
 import {
@@ -282,19 +282,30 @@ const workerHandler = {
       }
 
       if (url.pathname.startsWith('/api/auth')) {
+        const authPreflight = corsPreflightResponse(request);
+        if (authPreflight) {
+          flushFetchMetrics({ ctx, response: authPreflight });
+          return authPreflight;
+        }
+
         const validatedEnv = getEnv();
         const localAuthResponse = await handleLocalE2EAuth(request, validatedEnv);
         if (localAuthResponse) {
-          flushFetchMetrics({ ctx, response: localAuthResponse });
-          return localAuthResponse;
+          const annotated = addCorsHeaders({ request, response: localAuthResponse });
+          flushFetchMetrics({ ctx, response: annotated });
+          return annotated;
         }
         const auth = await getAuth(validatedEnv);
         const sanitizedRequest = await sanitizeOAuthConsentRequest(request, validatedEnv);
         if (sanitizedRequest instanceof Response) {
-          flushFetchMetrics({ ctx, response: sanitizedRequest });
-          return sanitizedRequest;
+          const annotated = addCorsHeaders({ request, response: sanitizedRequest });
+          flushFetchMetrics({ ctx, response: annotated });
+          return annotated;
         }
-        const response = await auth.handler(sanitizedRequest);
+        const response = addCorsHeaders({
+          request,
+          response: await auth.handler(sanitizedRequest),
+        });
         flushFetchMetrics({ ctx, response });
         return response;
       }
