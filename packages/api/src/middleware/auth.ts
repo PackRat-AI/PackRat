@@ -1,5 +1,6 @@
 import { getAuth } from '@packrat/api/auth';
 import { getLocalE2EUserFromRequest } from '@packrat/api/auth/local-e2e';
+import { resolveMcpBearerUser } from '@packrat/api/auth/mcp-token';
 import { isValidApiKey } from '@packrat/api/utils/auth';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
@@ -52,6 +53,12 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
       }
 
       if (!session) {
+        const mcpUser = await resolveMcpBearerUser({ env, request });
+        if (mcpUser) {
+          setApiUser({ id: mcpUser.userId, email: mcpUser.email, role: mcpUser.role });
+          setQueryMetricsUser(mcpUser.userId);
+          return { user: mcpUser };
+        }
         apiAddBreadcrumb({
           category: 'auth',
           message: 'Unauthenticated request rejected',
@@ -103,7 +110,15 @@ export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).macro(
         return status(500, { error: 'Authentication service unavailable' });
       }
 
-      if (!session) return status(401, { error: 'Unauthorized' });
+      if (!session) {
+        const mcpUser = await resolveMcpBearerUser({ env, request, requireAdminScope: true });
+        if (mcpUser) {
+          setApiUser({ id: mcpUser.userId, email: mcpUser.email, role: mcpUser.role });
+          setQueryMetricsUser(mcpUser.userId);
+          return { user: mcpUser };
+        }
+        return status(401, { error: 'Unauthorized' });
+      }
 
       const role = (session.user as unknown as { role?: string }).role;
       if (role !== 'ADMIN') {

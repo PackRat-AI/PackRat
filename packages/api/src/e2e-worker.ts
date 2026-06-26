@@ -1,5 +1,5 @@
 import type { MessageBatch } from '@cloudflare/workers-types';
-import { addCorsHeaders, app, corsPreflightResponse } from '@packrat/api/app';
+import { addCorsHeaders, appBase, corsPreflightResponse } from '@packrat/api/app';
 import { getAuth } from '@packrat/api/auth';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { setWorkerEnv } from '@packrat/api/utils/env-validation';
@@ -26,7 +26,7 @@ export default {
       return addCorsHeaders({ request, response: await auth.handler(request) });
     }
 
-    return Reflect.apply(app.fetch, app, [request, e, ctx]);
+    return Reflect.apply(appBase.fetch, appBase, [request, e, ctx]);
   },
 
   async queue(_batch: MessageBatch<unknown>): Promise<void> {

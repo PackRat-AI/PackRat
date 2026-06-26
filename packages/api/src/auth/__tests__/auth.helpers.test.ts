@@ -31,7 +31,7 @@ describe('verifyPasswordCompat()', () => {
     mocks.bcryptCompare.mockResolvedValue(true);
     const result = await verifyPasswordCompat({ hash: '$2a$10$abc', password: 'pw' });
     expect(mocks.bcryptCompare).toHaveBeenCalledWith('pw', '$2a$10$abc');
-    expect(mocks.verifyPassword).not.toHaveBeenCalled();
+    expect(mocks.verifyPassword).toHaveBeenCalledTimes(0);
     expect(result).toBe(true);
   });
 
@@ -45,15 +45,15 @@ describe('verifyPasswordCompat()', () => {
   it('uses bcrypt for $2y$ hashes', async () => {
     mocks.bcryptCompare.mockResolvedValue(true);
     await verifyPasswordCompat({ hash: '$2y$10$hash', password: 'pw' });
-    expect(mocks.bcryptCompare).toHaveBeenCalled();
-    expect(mocks.verifyPassword).not.toHaveBeenCalled();
+    expect(mocks.bcryptCompare).toHaveBeenCalledWith('pw', '$2y$10$hash');
+    expect(mocks.verifyPassword).toHaveBeenCalledTimes(0);
   });
 
   it('uses better-auth verifyPassword for non-bcrypt hashes', async () => {
     mocks.verifyPassword.mockResolvedValue(true);
     const result = await verifyPasswordCompat({ hash: 'argon2:somehash', password: 'pw' });
     expect(mocks.verifyPassword).toHaveBeenCalledWith('argon2:somehash', 'pw');
-    expect(mocks.bcryptCompare).not.toHaveBeenCalled();
+    expect(mocks.bcryptCompare).toHaveBeenCalledTimes(0);
     expect(result).toBe(true);
   });
 
@@ -77,7 +77,7 @@ describe('generateAppleClientSecret()', () => {
   it('returns null when APPLE_PRIVATE_KEY is not set', async () => {
     const result = await generateAppleClientSecret({ APPLE_PRIVATE_KEY: '' } as never);
     expect(result).toBeNull();
-    expect(mocks.importPKCS8).not.toHaveBeenCalled();
+    expect(mocks.importPKCS8).toHaveBeenCalledTimes(0);
   });
 
   it('returns a signed JWT string on success', async () => {

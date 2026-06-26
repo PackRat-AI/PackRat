@@ -1,19 +1,28 @@
 import { z } from 'zod';
 import { call, nowIso } from '../client';
 import { CrossingDifficulty, TrailCondition, TrailSurface } from '../enums';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerTrailConditionTools(agent: AgentContext): void {
   // ── List trail condition reports ──────────────────────────────────────────
 
-  agent.server.registerTool(
-    'get_trail_conditions',
+  tool<{ trail_name?: string; limit: number }>(
+    agent.server,
+    'packrat_get_trail_conditions',
     {
+      title: 'Get Trail Condition Reports',
       description:
         'Get user-submitted trail condition reports. Filter by trail name to find reports for a specific trail or area.',
       inputSchema: {
         trail_name: z.string().optional(),
         limit: z.number().int().min(1).max(100).default(20),
+      },
+      annotations: {
+        title: 'Get Trail Condition Reports',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ trail_name, limit }) =>
@@ -27,15 +36,23 @@ export function registerTrailConditionTools(agent: AgentContext): void {
 
   // ── List user's own trail reports ─────────────────────────────────────────
 
-  agent.server.registerTool(
-    'list_my_trail_reports',
+  tool<{ updated_since?: string }>(
+    agent.server,
+    'packrat_list_my_trail_reports',
     {
+      title: 'List My Trail Reports',
       description: 'List trail condition reports authored by the signed-in user.',
       inputSchema: {
         updated_since: z
           .string()
           .optional()
           .describe('Only include reports updated after this ISO timestamp'),
+      },
+      annotations: {
+        title: 'List My Trail Reports',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ updated_since }) =>
@@ -49,9 +66,22 @@ export function registerTrailConditionTools(agent: AgentContext): void {
 
   // ── Submit trail condition ────────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'submit_trail_condition',
+  tool<{
+    trail_name: string;
+    trail_region?: string;
+    surface: TrailSurface;
+    overall_condition: TrailCondition;
+    hazards?: string[];
+    water_crossings?: number;
+    water_crossing_difficulty?: CrossingDifficulty;
+    notes?: string;
+    photos?: string[];
+    trip_id?: string;
+  }>(
+    agent.server,
+    'packrat_submit_trail_condition',
     {
+      title: 'Submit Trail Condition Report',
       description:
         'Submit a trail condition report to help the community. Requires user authentication.',
       inputSchema: {
@@ -65,6 +95,13 @@ export function registerTrailConditionTools(agent: AgentContext): void {
         notes: z.string().optional(),
         photos: z.array(z.string()).optional(),
         trip_id: z.string().optional(),
+      },
+      annotations: {
+        title: 'Submit Trail Condition Report',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
       },
     },
     async ({
@@ -82,6 +119,7 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       const now = nowIso();
       return call({
         promise: agent.api.user['trail-conditions'].post({
+          id: crypto.randomUUID(),
           trailName: trail_name,
           trailRegion: trail_region ?? null,
           surface,
@@ -102,9 +140,22 @@ export function registerTrailConditionTools(agent: AgentContext): void {
 
   // ── Update trail report ───────────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'update_trail_condition',
+  tool<{
+    report_id: string;
+    trail_name?: string;
+    trail_region?: string | null;
+    surface?: TrailSurface;
+    overall_condition?: TrailCondition;
+    hazards?: string[];
+    water_crossings?: number;
+    water_crossing_difficulty?: CrossingDifficulty | null;
+    notes?: string | null;
+    photos?: string[];
+  }>(
+    agent.server,
+    'packrat_update_trail_condition',
     {
+      title: 'Update Trail Condition Report',
       description: 'Update one of your own trail condition reports.',
       inputSchema: {
         report_id: z.string(),
@@ -117,6 +168,13 @@ export function registerTrailConditionTools(agent: AgentContext): void {
         water_crossing_difficulty: z.nativeEnum(CrossingDifficulty).nullable().optional(),
         notes: z.string().nullable().optional(),
         photos: z.array(z.string()).optional(),
+      },
+      annotations: {
+        title: 'Update Trail Condition Report',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({
@@ -153,11 +211,20 @@ export function registerTrailConditionTools(agent: AgentContext): void {
 
   // ── Delete trail report ───────────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'delete_trail_condition',
+  tool<{ report_id: string }>(
+    agent.server,
+    'packrat_delete_trail_condition',
     {
+      title: 'Delete Trail Condition Report',
       description: 'Soft-delete one of your trail condition reports.',
       inputSchema: { report_id: z.string() },
+      annotations: {
+        title: 'Delete Trail Condition Report',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ report_id }) =>
       call({

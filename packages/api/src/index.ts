@@ -6,39 +6,43 @@
  * Elysia-native so Eden Treaty gets full end-to-end type safety.
  */
 
+import {
+  oauthProviderAuthServerMetadata,
+  oauthProviderOpenIdConfigMetadata,
+} from '@better-auth/oauth-provider';
 import type { MessageBatch, ScheduledController } from '@cloudflare/workers-types';
-import { cors } from '@elysiajs/cors';
 import { neonConfig } from '@neondatabase/serverless';
+import { type App, addCorsHeaders, appBase, corsPreflightResponse } from '@packrat/api/app';
 import { getAuth } from '@packrat/api/auth';
+import { consentRoute } from '@packrat/api/auth/consent-route';
 import {
   isLocalE2EAuthEnabled,
   localE2EToken,
   makeLocalE2EUser,
 } from '@packrat/api/auth/local-e2e';
 import { AppContainer } from '@packrat/api/containers';
-import { routes } from '@packrat/api/routes';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
-import { isAllowedOrigin } from '@packrat/api/utils/cors-origins';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
-import { packratOpenApi } from '@packrat/api/utils/openapi';
 import {
   createQueryMetricsStore,
   flushQueryMetrics,
   initQueryMetricsStore,
   queryMetricsAls,
 } from '@packrat/api/utils/queryMetrics';
-import { captureApiException } from '@packrat/api/utils/sentry';
+import { captureApiException, record } from '@packrat/api/utils/sentry';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
-import { safeJsonStringify } from '@packrat/utils';
 import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
-import { Elysia } from 'elysia';
-import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
 
+export type { App };
+
 const bearerPrefixRegex = /^Bearer\s+/i;
+const scopeSplitRegex = /\s+/;
+const OAUTH_CONSENT_PATH = '/api/auth/oauth2/consent';
+const WELL_KNOWN_ALLOWED_ORIGINS = new Set(['https://claude.ai', 'https://claude.com']);
 
 // Sentry options for both the Worker handlers and the workflow class.
 // Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate
@@ -53,82 +57,11 @@ function sentryOptions(env: Env) {
   };
 }
 
-export const app = new Elysia({ adapter: CloudflareAdapter })
-  .use(
-    cors({
-      // Better Auth uses cookies — credentials must be true and origins must
-      // be explicit (not wildcard) so the browser sends cookies cross-origin.
-      credentials: true,
-      origin: (request) => isAllowedOrigin(request.headers.get('Origin')),
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    }),
-  )
-  .use(packratOpenApi)
-  .onError(({ error, code, request }) => {
-    // Only report unexpected server errors — not user-input or routing errors.
-    if (code !== 'VALIDATION' && code !== 'PARSE' && code !== 'NOT_FOUND') {
-      captureApiException({
-        error: error,
-        operation: 'elysia.onError',
-        tags: {
-          error_code: String(code),
-          method: request?.method ?? 'UNKNOWN',
-          path: request ? new URL(request.url).pathname : 'UNKNOWN',
-        },
-        extra: { errorCode: String(code), httpStatus: 500 },
-      });
-    }
-
-    if (code === 'VALIDATION' || code === 'PARSE') {
-      return new Response(safeJsonStringify({ error: 'Validation failed' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    if (code === 'NOT_FOUND') {
-      return new Response(safeJsonStringify({ error: 'Not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    return new Response(safeJsonStringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  })
-  .get('/', () => 'PackRat API is running!', {
-    detail: { summary: 'Health check', tags: ['Meta'] },
-  })
-  .get('/health', () => ({ status: 'ok' as const }), {
-    detail: { summary: 'Health status', tags: ['Meta'] },
-  })
-  // Better Auth handles all /api/auth/** requests. Routing it through Elysia
-  // (rather than dispatching before Elysia) means the `cors` plugin above
-  // applies its credentialed-CORS policy and OPTIONS preflight to auth routes
-  // too. `auth` is resolved per-request because it depends on the Cloudflare
-  // env bindings, which are only available at request time.
-  .all(
-    '/api/auth/*',
-    async ({ request }) => {
-      const validatedEnv = getEnv();
-      const localAuthResponse = await handleLocalE2EAuth(request, validatedEnv);
-      if (localAuthResponse) return localAuthResponse;
-      const auth = await getAuth(validatedEnv);
-      return auth.handler(request);
-    },
-    { parse: 'none', detail: { hide: true } },
-  )
-  .use(routes)
-  .compile();
-
-export type App = typeof app;
+// Runtime instance: same routes as `App` plus the branded OAuth consent page.
+export const app = appBase.use(consentRoute).compile();
 
 export { AppContainer };
 
-// Wrap the workflow class with Sentry instrumentation so each step.do span
-// + any uncaught throw inside a step lands in Sentry with workflow/instance
-// context attached automatically.
 export const CatalogEtlWorkflow = instrumentWorkflowWithSentry(
   sentryOptions,
   RawCatalogEtlWorkflow,
@@ -182,6 +115,79 @@ async function handleLocalE2EAuth(request: Request, env: Env): Promise<Response 
   return undefined;
 }
 
+function applyWellKnownCors(request: Request, response: Response | null): Response | null {
+  const url = new URL(request.url);
+  if (
+    url.pathname !== '/.well-known/oauth-authorization-server' &&
+    url.pathname !== '/.well-known/openid-configuration'
+  ) {
+    return null;
+  }
+
+  const origin = request.headers.get('Origin');
+  if (!origin || !WELL_KNOWN_ALLOWED_ORIGINS.has(origin)) return null;
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': origin,
+        Vary: 'Origin',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '3600',
+      },
+    });
+  }
+
+  if (!response || request.method !== 'GET') return null;
+  const annotated = new Response(response.body, response);
+  annotated.headers.set('Access-Control-Allow-Origin', origin);
+  const existingVary = annotated.headers.get('Vary');
+  annotated.headers.set('Vary', existingVary ? `${existingVary}, Origin` : 'Origin');
+  return annotated;
+}
+
+async function sanitizeOAuthConsentRequest(
+  request: Request,
+  env: Env,
+): Promise<Request | Response> {
+  const url = new URL(request.url);
+  if (request.method !== 'POST' || url.pathname !== OAUTH_CONSENT_PATH) return request;
+
+  const auth = await getAuth(env);
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session?.user) return request;
+
+  const role = (session.user as unknown as { role?: string }).role ?? 'USER';
+  if (role === 'ADMIN') return request;
+
+  const form = new URLSearchParams(await request.text());
+  const postedScope = form.get('scope');
+  if (postedScope === null) {
+    return Response.json(
+      { error: 'invalid_scope', error_description: 'scope is required for consent' },
+      { status: 400 },
+    );
+  }
+
+  const reducedScope = postedScope
+    .split(scopeSplitRegex)
+    .filter((scope) => scope && scope !== 'mcp:admin')
+    .join(' ');
+  form.set('scope', reducedScope);
+
+  const headers = new Headers(request.headers);
+  headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+  headers.delete('content-length');
+  return new Request(request.url, {
+    method: request.method,
+    headers,
+    body: form,
+    redirect: request.redirect,
+  });
+}
+
 // Local-dev hook: route `@neondatabase/serverless` through Neon's official local
 // proxy (`ghcr.io/timowilhelm/local-neon-http-proxy`, see docker-compose.test.yml
 // and https://neon.com/guides/local-development-with-neon) when NEON_DATABASE_URL
@@ -205,13 +211,40 @@ function maybeConfigureLocalNeon(opts: {
     neonConfig.wsProxy = (h) => (h === 'db.localtest.me' ? `${h}:${proxyPort}/v2` : `${h}/v2`);
     neonConfig.useSecureWebSocket = false;
   } catch {
-    // not a valid URL — leave neon defaults in place
+    // not a valid URL - leave neon defaults in place
   } finally {
     neonLocalConfigured = true;
   }
 }
 
-const handler: ExportedHandler<Env> = {
+function flushFetchMetrics({ ctx, response }: { ctx: ExecutionContext; response: Response }): void {
+  const metricsStore = queryMetricsAls.getStore();
+  if (!metricsStore) return;
+
+  metricsStore.totalDurationMs = Date.now() - metricsStore.startTimeMs;
+  const contentLength = response.headers.get('content-length');
+  if (contentLength !== null) {
+    metricsStore.estimatedEgressBytes = Number(contentLength);
+    ctx.waitUntil(flushQueryMetrics({ store: metricsStore, statusCode: response.status }));
+    return;
+  }
+
+  const ct = response.headers.get('content-type') ?? '';
+  if (ct.startsWith('application/json') || ct.startsWith('text/')) {
+    const clone = response.clone();
+    ctx.waitUntil(
+      clone.arrayBuffer().then((buf) => {
+        metricsStore.estimatedEgressBytes = buf.byteLength;
+        return flushQueryMetrics({ store: metricsStore, statusCode: response.status });
+      }),
+    );
+    return;
+  }
+
+  ctx.waitUntil(flushQueryMetrics({ store: metricsStore, statusCode: response.status }));
+}
+
+const workerHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
     maybeConfigureLocalNeon({
@@ -222,29 +255,63 @@ const handler: ExportedHandler<Env> = {
 
     const metricsStore = initQueryMetricsStore(request);
     return queryMetricsAls.run(metricsStore, async () => {
-      const response = await (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
-      metricsStore.totalDurationMs = Date.now() - metricsStore.startTimeMs;
-      // Use Content-Length when available; fall back to cloning only for JSON/text
-      // responses. Skip body buffering for streaming or binary responses to avoid
-      // doubling memory usage.
-      const contentLength = response.headers.get('content-length');
-      if (contentLength !== null) {
-        metricsStore.estimatedEgressBytes = Number(contentLength);
-        ctx.waitUntil(flushQueryMetrics({ store: metricsStore, statusCode: response.status }));
-      } else {
-        const ct = response.headers.get('content-type') ?? '';
-        if (ct.startsWith('application/json') || ct.startsWith('text/')) {
-          const clone = response.clone();
-          ctx.waitUntil(
-            clone.arrayBuffer().then((buf) => {
-              metricsStore.estimatedEgressBytes = buf.byteLength;
-              return flushQueryMetrics({ store: metricsStore, statusCode: response.status });
-            }),
-          );
-        } else {
-          ctx.waitUntil(flushQueryMetrics({ store: metricsStore, statusCode: response.status }));
+      const url = new URL(request.url);
+
+      const corsPreflight = applyWellKnownCors(request, null);
+      if (corsPreflight) {
+        flushFetchMetrics({ ctx, response: corsPreflight });
+        return corsPreflight;
+      }
+
+      if (request.method === 'GET') {
+        if (
+          url.pathname === '/.well-known/oauth-authorization-server' ||
+          url.pathname === '/.well-known/openid-configuration'
+        ) {
+          const validatedEnv = getEnv();
+          const auth = await getAuth(validatedEnv);
+          const handler =
+            url.pathname === '/.well-known/openid-configuration'
+              ? oauthProviderOpenIdConfigMetadata(auth)
+              : oauthProviderAuthServerMetadata(auth);
+          const response = await handler(request);
+          const annotated = applyWellKnownCors(request, response) ?? response;
+          flushFetchMetrics({ ctx, response: annotated });
+          return annotated;
         }
       }
+
+      if (url.pathname.startsWith('/api/auth')) {
+        const authPreflight = corsPreflightResponse(request);
+        if (authPreflight) {
+          flushFetchMetrics({ ctx, response: authPreflight });
+          return authPreflight;
+        }
+
+        const validatedEnv = getEnv();
+        const localAuthResponse = await handleLocalE2EAuth(request, validatedEnv);
+        if (localAuthResponse) {
+          const annotated = addCorsHeaders({ request, response: localAuthResponse });
+          flushFetchMetrics({ ctx, response: annotated });
+          return annotated;
+        }
+        const auth = await getAuth(validatedEnv);
+        const sanitizedRequest = await sanitizeOAuthConsentRequest(request, validatedEnv);
+        if (sanitizedRequest instanceof Response) {
+          const annotated = addCorsHeaders({ request, response: sanitizedRequest });
+          flushFetchMetrics({ ctx, response: annotated });
+          return annotated;
+        }
+        const response = addCorsHeaders({
+          request,
+          response: await auth.handler(sanitizedRequest),
+        });
+        flushFetchMetrics({ ctx, response });
+        return response;
+      }
+
+      const response = await (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
+      flushFetchMetrics({ ctx, response });
       return response;
     });
   },
@@ -271,7 +338,7 @@ const handler: ExportedHandler<Env> = {
         }
       } catch (error) {
         captureApiException({
-          error: error,
+          error,
           operation: 'queue.handler',
           tags: { queue_name: batch.queue },
           extra: { messageCount: batch.messages.length },
@@ -294,7 +361,12 @@ const handler: ExportedHandler<Env> = {
     await queryMetricsAls.run(store, async () => {
       try {
         if (controller.cron === '0 9 * * *') {
-          const result = await sweepInvalidItemLogs({ env });
+          const result = await record({
+            operation: 'sweepInvalidItemLogs',
+            tags: { trigger: 'cron' },
+            extra: { cron: controller.cron },
+            fn: async () => sweepInvalidItemLogs({ env }),
+          });
           console.log(
             `[retention] invalid_item_logs sweep: deleted=${result.deleted} ` +
               `iterations=${result.iterations} capped=${result.capped} ` +
@@ -315,9 +387,15 @@ const handler: ExportedHandler<Env> = {
       }
     });
   },
-};
+} satisfies ExportedHandler<Env>;
 
-// withSentry wraps the fetch/queue/scheduled handlers to initialize Sentry
-// on first invocation and forward uncaught exceptions to Sentry. The
-// instrumented workflow class is exported separately above.
-export default withSentry(sentryOptions, handler);
+export default withSentry<Env>(
+  (env) => ({
+    dsn: env.SENTRY_DSN,
+    environment: env.ENVIRONMENT ?? 'production',
+    tracesSampleRate: env.ENVIRONMENT === 'production' ? 0.1 : 1.0,
+    sendDefaultPii: false,
+    release: env.SENTRY_RELEASE,
+  }),
+  workerHandler,
+);

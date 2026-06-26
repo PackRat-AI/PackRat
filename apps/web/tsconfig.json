@@ -1,6 +1,7 @@
 {
   "extends": "@packrat/typescript-config/nextjs.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "paths": {
       "web-app/*": ["./*"],
       "@packrat/api/*": ["../../packages/api/src/*"],

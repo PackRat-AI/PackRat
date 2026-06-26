@@ -1,6 +1,10 @@
 import { z } from 'zod';
-import { call, nowIso } from '../client';
+import { call, clampLimit, nowIso, ok, PAGINATION_LIMIT_MAX, withNextOffset } from '../client';
+import { GetTripOutputSchema, ListTripsOutputSchema } from '../output-schemas';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
+
+type TripLocation = { latitude: number; longitude: number; name?: string };
 
 const LocationInput = z.object({
   latitude: z.number().min(-90).max(90),
@@ -11,38 +15,95 @@ const LocationInput = z.object({
 export function registerTripTools(agent: AgentContext): void {
   // ── List trips ────────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'list_trips',
+  tool<{ limit?: number; offset: number }>(
+    agent.server,
+    'packrat_list_trips',
     {
+      title: 'List My Trips',
       description:
-        "List all of the user's planned trips. Returns trip summaries including name, destination, dates, and linked pack.",
-      inputSchema: {},
+        `List all of the user's planned trips. Returns trip summaries including name, destination, dates, and linked pack. ` +
+        `Paginated: results are capped at ${PAGINATION_LIMIT_MAX} per call; the response includes a \`nextOffset\` value (or \`null\` at the end) for continuation.`,
+      inputSchema: {
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .optional()
+          .describe(`Page size (clamped to ${PAGINATION_LIMIT_MAX} server-side).`),
+        offset: z
+          .number()
+          .int()
+          .min(0)
+          .default(0)
+          .describe('Pagination offset; use `nextOffset` from the previous response.'),
+      },
+      // U8: tier-1 structured output — list of Trip with nextOffset.
+      outputSchema: ListTripsOutputSchema.shape,
+      annotations: {
+        title: 'List My Trips',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
-    async () => call({ promise: agent.api.user.trips.get(), action: 'list trips' }),
+    async ({ limit, offset }) => {
+      const clamped = clampLimit({ value: limit });
+      const result = await agent.api.user.trips.get();
+      if (result.error || result.data == null) {
+        return call({ promise: Promise.resolve(result), action: 'list trips' });
+      }
+      const items = Array.isArray(result.data) ? result.data : [];
+      const page = items.slice(offset, offset + clamped);
+      return ok({
+        data: withNextOffset({ items: page, offset, limit: clamped }),
+        structured: true,
+      });
+    },
   );
 
   // ── Get trip ──────────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'get_trip',
+  tool<{ trip_id: string }>(
+    agent.server,
+    'packrat_get_trip',
     {
+      title: 'Get Trip',
       description:
         'Get full details for a single trip including location coordinates, dates, notes, and linked pack information.',
       inputSchema: { trip_id: z.string().describe('The unique trip ID (e.g. "t_abc123")') },
+      // U8: tier-1 structured output — Trip shape.
+      outputSchema: GetTripOutputSchema.shape,
+      annotations: {
+        title: 'Get Trip',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ trip_id }) =>
       call({
         promise: agent.api.user.trips({ tripId: trip_id }).get(),
         action: 'get trip',
         resourceHint: `trip ${trip_id}`,
+        structured: true,
       }),
   );
 
   // ── Create trip ───────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'create_trip',
+  tool<{
+    name: string;
+    description?: string;
+    location?: TripLocation;
+    start_date?: string;
+    end_date?: string;
+    notes?: string;
+    pack_id?: string;
+  }>(
+    agent.server,
+    'packrat_create_trip',
     {
+      title: 'Create Trip',
       description:
         'Create a new trip plan with destination, dates, and optional link to a pack. Returns the created trip with its ID.',
       inputSchema: {
@@ -54,11 +115,19 @@ export function registerTripTools(agent: AgentContext): void {
         notes: z.string().optional().describe('Planning notes, permits needed, logistics'),
         pack_id: z.string().optional().describe('Optionally link an existing pack to this trip'),
       },
+      annotations: {
+        title: 'Create Trip',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
     },
     async ({ name, description, location, start_date, end_date, notes, pack_id }) => {
       const now = nowIso();
       return call({
         promise: agent.api.user.trips.post({
+          id: crypto.randomUUID(),
           name,
           description,
           location: location ?? null,
@@ -76,9 +145,20 @@ export function registerTripTools(agent: AgentContext): void {
 
   // ── Update trip ───────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'update_trip',
+  tool<{
+    trip_id: string;
+    name?: string;
+    description?: string | null;
+    location?: TripLocation | null;
+    start_date?: string | null;
+    end_date?: string | null;
+    notes?: string | null;
+    pack_id?: string | null;
+  }>(
+    agent.server,
+    'packrat_update_trip',
     {
+      title: 'Update Trip',
       description: "Update an existing trip's details, dates, location, or linked pack.",
       inputSchema: {
         trip_id: z.string(),
@@ -89,6 +169,13 @@ export function registerTripTools(agent: AgentContext): void {
         end_date: z.string().nullable().optional(),
         notes: z.string().nullable().optional(),
         pack_id: z.string().nullable().optional(),
+      },
+      annotations: {
+        title: 'Update Trip',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ trip_id, name, description, location, start_date, end_date, notes, pack_id }) => {
@@ -110,11 +197,20 @@ export function registerTripTools(agent: AgentContext): void {
 
   // ── Delete trip ───────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'delete_trip',
+  tool<{ trip_id: string }>(
+    agent.server,
+    'packrat_delete_trip',
     {
+      title: 'Delete Trip',
       description: 'Delete a trip. The trip will no longer appear in listings.',
       inputSchema: { trip_id: z.string() },
+      annotations: {
+        title: 'Delete Trip',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ trip_id }) =>
       call({

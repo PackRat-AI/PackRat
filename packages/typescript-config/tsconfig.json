@@ -1,0 +1,7 @@
+{
+  "extends": "./base.json",
+  "compilerOptions": {
+    "types": ["@cloudflare/workers-types/2022-10-31"]
+  },
+  "include": ["*.d.ts"]
+}

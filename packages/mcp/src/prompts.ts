@@ -1,11 +1,20 @@
 import { z } from 'zod';
 import { ExperienceLevel, PackCategory, PackStyle, WeightPriority } from './enums';
+import { prompt } from './registerTool';
 import type { AgentContext } from './types';
 
 export function registerPrompts(agent: AgentContext): void {
   // ── Trip planning prompt ──────────────────────────────────────────────────
 
-  agent.server.registerPrompt(
+  prompt<{
+    destination: string;
+    duration_days: string;
+    activity: PackCategory;
+    season?: string;
+    experience_level: ExperienceLevel;
+    pack_style: PackStyle;
+  }>(
+    agent.server,
     'plan_trip',
     {
       description:
@@ -40,15 +49,15 @@ export function registerPrompts(agent: AgentContext): void {
 
 Please help me plan this trip by:
 
-1. **Weather Check**: Use \`get_weather\` to check current and forecasted conditions for ${destination}.
+1. **Weather Check**: Use \`packrat_get_weather\` to check current and forecasted conditions for ${destination}.
 
-2. **Destination Research**: Search \`search_outdoor_guides\` for guides and tips specific to ${destination} and ${activity}.
+2. **Destination Research**: Search \`packrat_search_outdoor_guides\` for guides and tips specific to ${destination} and ${activity}.
 
-3. **Trail Conditions**: Check \`get_trail_conditions\` for any recent reports from ${destination}.
+3. **Trail Conditions**: Check \`packrat_get_trail_conditions\` for any recent reports from ${destination}.
 
-4. **Gear Research**: Use \`semantic_gear_search\` to find ${pack_style} gear suitable for ${activity} in the expected conditions.
+4. **Gear Research**: Use \`packrat_semantic_gear_search\` to find ${pack_style} gear suitable for ${activity} in the expected conditions.
 
-5. **Pack Creation**: Create a new pack with \`create_pack\` and populate it with appropriate gear using \`add_pack_item\`. Focus on:
+5. **Pack Creation**: Create a new pack with \`packrat_create_pack\` and populate it with appropriate gear using \`packrat_add_pack_item\`. Focus on:
    - Shelter and sleep system
    - Clothing and layering system
    - Navigation tools
@@ -56,9 +65,9 @@ Please help me plan this trip by:
    - Food and water
    - Category-appropriate specialty gear
 
-6. **Weight Analysis**: After building the pack, run \`analyze_pack_weight\` and provide a summary.
+6. **Weight Analysis**: After building the pack, run \`packrat_analyze_pack_weight\` and provide a summary.
 
-7. **Gap Check**: Identify any essential gear missing for ${activity} using \`analyze_pack_gaps\`.
+7. **Gap Check**: Identify any essential gear missing for ${activity} using \`packrat_analyze_pack_gaps\`.
 
 At the end, provide:
 - A complete trip itinerary overview
@@ -74,7 +83,12 @@ At the end, provide:
 
   // ── Pack optimization prompt ──────────────────────────────────────────────
 
-  agent.server.registerPrompt(
+  prompt<{
+    pack_id: string;
+    target_weight_kg?: string;
+    budget_usd?: string;
+  }>(
+    agent.server,
     'optimize_pack_weight',
     {
       description:
@@ -102,10 +116,10 @@ At the end, provide:
               text: `Please analyze my pack (ID: ${pack_id}) and suggest weight optimizations${targetStr}${budgetStr}.
 
 Steps:
-1. Get the full pack details with \`get_pack\`
-2. Run \`analyze_pack_weight\` to see the weight breakdown by category
-3. For the 3-5 heaviest items, use \`semantic_gear_search\` to find lighter alternatives
-4. For each replacement candidate, retrieve full specs with \`get_catalog_item\`
+1. Get the full pack details with \`packrat_get_pack\`
+2. Run \`packrat_analyze_pack_weight\` to see the weight breakdown by category
+3. For the 3-5 heaviest items, use \`packrat_semantic_gear_search\` to find lighter alternatives
+4. For each replacement candidate, retrieve full specs with \`packrat_get_catalog_item\`
 5. Present a prioritized upgrade plan showing:
    - Current item weight vs. recommended replacement weight
    - Weight savings per swap
@@ -123,7 +137,14 @@ Prioritize the highest weight-savings-per-dollar swaps. Flag any items that are 
 
   // ── Gear recommendations prompt ───────────────────────────────────────────
 
-  agent.server.registerPrompt(
+  prompt<{
+    activity: string;
+    conditions?: string;
+    category?: string;
+    budget_usd?: string;
+    weight_priority: WeightPriority;
+  }>(
+    agent.server,
     'recommend_gear',
     {
       description:
@@ -160,10 +181,10 @@ Prioritize the highest weight-savings-per-dollar swaps. Flag any items that are 
               text: `I need gear recommendations for ${activity}${condStr}${catStr}. I prefer a ${weight_priority} approach.${budgetStr}
 
 Please:
-1. Search for relevant guides with \`search_outdoor_guides\` to understand what's needed for ${activity}
-2. Use \`semantic_gear_search\` to find top options — run multiple searches to cover different aspects
-3. Get full specs for the top 3-5 candidates with \`get_catalog_item\`
-4. Use \`compare_gear_items\` to create a side-by-side comparison
+1. Search for relevant guides with \`packrat_search_outdoor_guides\` to understand what's needed for ${activity}
+2. Use \`packrat_semantic_gear_search\` to find top options — run multiple searches to cover different aspects
+3. Get full specs for the top 3-5 candidates with \`packrat_get_catalog_item\`
+4. Use \`packrat_compare_gear_items\` to create a side-by-side comparison
 5. Provide ranked recommendations with pros/cons for each option
 
 Format the response as:
@@ -180,7 +201,11 @@ Format the response as:
 
   // ── Trail research prompt ─────────────────────────────────────────────────
 
-  agent.server.registerPrompt(
+  prompt<{
+    trail_name: string;
+    start_date?: string;
+  }>(
+    agent.server,
     'trail_research',
     {
       description:
@@ -203,10 +228,10 @@ Format the response as:
               text: `Help me research ${trail_name}${dateStr} for trip planning.
 
 Please gather:
-1. **Current Conditions**: Check \`get_trail_conditions\` for recent user reports
-2. **Weather**: Get forecast with \`get_weather\` for the trail area
-3. **Guide Information**: Search \`search_outdoor_guides\` for route details, difficulty, permits
-4. **Current News**: Use \`web_search\` for recent news about "${trail_name} conditions ${new Date().getFullYear()}"
+1. **Current Conditions**: Check \`packrat_get_trail_conditions\` for recent user reports
+2. **Weather**: Get forecast with \`packrat_get_weather\` for the trail area
+3. **Guide Information**: Search \`packrat_search_outdoor_guides\` for route details, difficulty, permits
+4. **Current News**: Use \`packrat_web_search\` for recent news about "${trail_name} conditions ${new Date().getFullYear()}"
 5. **Gear Needs**: Based on conditions and season, identify critical gear needs
 
 Summarize:

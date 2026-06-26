@@ -186,7 +186,9 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
   if (!item.weight && item.techs && isObject(item.techs)) {
     const techs = toStringRecord(item.techs);
     const claimedWeight = techs['Claimed Weight'] ?? techs.weight;
-    if (claimedWeight) {
+    // Mirror the explicit-weight path's `> 0` guard so a techs value like
+    // '0 g' is not persisted as weight: 0.
+    if (claimedWeight && parseFloat(claimedWeight) > 0) {
       const { weight, unit } = parseWeight({ weightStr: claimedWeight });
       item.weight = weight ?? undefined;
       const parsedUnit = WeightUnitSchema.safeParse(unit);

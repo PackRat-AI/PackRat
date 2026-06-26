@@ -1,16 +1,27 @@
 import { z } from 'zod';
-import { call } from '../client';
+import { call, clampLimit, PAGINATION_LIMIT_MAX } from '../client';
 import { CatalogSortField, SortOrder } from '../enums';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerCatalogTools(agent: AgentContext): void {
   // ── Text search ───────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'search_gear_catalog',
+  tool<{
+    query?: string;
+    category?: string;
+    limit: number;
+    page: number;
+    sort_by?: CatalogSortField;
+    sort_order: SortOrder;
+  }>(
+    agent.server,
+    'packrat_search_gear_catalog',
     {
+      title: 'Search Gear Catalog',
       description:
-        'Search the PackRat gear catalog containing thousands of real outdoor products with specs, weights, prices, and user reviews. Use this to find specific gear, compare products, or browse categories.',
+        `Search the PackRat gear catalog of outdoor products with specs, weights, prices, and user reviews. Use this to find specific gear, compare products, or browse categories. ` +
+        `Paginated via \`page\` (1-indexed); page size is capped at ${PAGINATION_LIMIT_MAX} server-side.`,
       inputSchema: {
         query: z
           .string()
@@ -22,10 +33,22 @@ export function registerCatalogTools(agent: AgentContext): void {
           .describe(
             'Filter by category (e.g. "sleeping bags", "tents", "backpacks", "footwear", "apparel")',
           ),
-        limit: z.number().int().min(1).max(50).default(10),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(50)
+          .default(10)
+          .describe(`Page size (clamped to ${PAGINATION_LIMIT_MAX} server-side).`),
         page: z.number().int().min(1).default(1),
         sort_by: z.nativeEnum(CatalogSortField).optional(),
         sort_order: z.nativeEnum(SortOrder).default(SortOrder.Asc),
+      },
+      annotations: {
+        title: 'Search Gear Catalog',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ query, category, limit, page, sort_by, sort_order }) =>
@@ -34,7 +57,7 @@ export function registerCatalogTools(agent: AgentContext): void {
           query: {
             q: query,
             category,
-            limit,
+            limit: clampLimit({ value: limit }),
             page,
             sort: sort_by ? { field: sort_by, order: sort_order } : undefined,
           },
@@ -45,14 +68,22 @@ export function registerCatalogTools(agent: AgentContext): void {
 
   // ── Semantic/vector search ────────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'semantic_gear_search',
+  tool<{ query: string; limit: number }>(
+    agent.server,
+    'packrat_semantic_gear_search',
     {
+      title: 'Semantic Gear Search',
       description:
-        'Search the gear catalog using AI-powered semantic/vector search. Great for natural-language queries like "warm but lightweight insulation layer for cold shoulder-season camping" or "minimalist trail running shoe for rocky terrain".',
+        'Search the gear catalog using vector/semantic search. Good for natural-language queries like "warm but lightweight insulation layer for cold shoulder-season camping" or "minimalist trail running shoe for rocky terrain".',
       inputSchema: {
         query: z.string().min(3),
         limit: z.number().int().min(1).max(30).default(8),
+      },
+      annotations: {
+        title: 'Semantic Gear Search',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ query, limit }) =>
@@ -64,13 +95,21 @@ export function registerCatalogTools(agent: AgentContext): void {
 
   // ── Get single item ───────────────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'get_catalog_item',
+  tool<{ item_id: number }>(
+    agent.server,
+    'packrat_get_catalog_item',
     {
+      title: 'Get Catalog Item',
       description:
-        'Retrieve full details for a specific gear catalog item by ID. Returns all specs, dimensions, weight, price, availability, user reviews, Q&A, and product URL.',
+        'Retrieve full details for a specific gear catalog item by ID. Returns specs, dimensions, weight, price, availability, user reviews, Q&A, and product URL.',
       inputSchema: {
         item_id: z.number().int().describe('The catalog item ID'),
+      },
+      annotations: {
+        title: 'Get Catalog Item',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ item_id }) =>
@@ -83,20 +122,31 @@ export function registerCatalogTools(agent: AgentContext): void {
 
   // ── Similar catalog items ─────────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'similar_catalog_items',
+  tool<{ item_id: number; limit: number; threshold?: number }>(
+    agent.server,
+    'packrat_similar_catalog_items',
     {
+      title: 'Find Similar Catalog Items',
       description: 'Find items similar to a given catalog item by embedding similarity.',
       inputSchema: {
         item_id: z.number().int(),
         limit: z.number().int().min(1).max(50).default(10),
         threshold: z.number().min(0).max(1).optional(),
       },
+      annotations: {
+        title: 'Find Similar Catalog Items',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ item_id, limit, threshold }) =>
       call({
         promise: agent.api.user.catalog({ id: String(item_id) }).similar.get({
-          query: { limit, ...(threshold !== undefined ? { threshold } : {}) },
+          query: {
+            limit: String(limit),
+            ...(threshold !== undefined ? { threshold: String(threshold) } : {}),
+          },
         }),
         action: 'find similar catalog items',
         resourceHint: `catalog item ${item_id}`,
@@ -105,12 +155,20 @@ export function registerCatalogTools(agent: AgentContext): void {
 
   // ── List categories ───────────────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'list_gear_categories',
+  tool<{ limit?: number }>(
+    agent.server,
+    'packrat_list_gear_categories',
     {
+      title: 'List Gear Categories',
       description:
         'List all available gear categories in the catalog with item counts. Use this to explore what gear types are available before searching.',
       inputSchema: { limit: z.number().int().min(1).max(200).optional() },
+      annotations: {
+        title: 'List Gear Categories',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ limit }) =>
       call({
@@ -121,9 +179,23 @@ export function registerCatalogTools(agent: AgentContext): void {
 
   // ── Create a catalog item (user-submitted) ────────────────────────────────
 
-  agent.server.registerTool(
-    'create_catalog_item',
+  tool<{
+    name: string;
+    description?: string;
+    brand?: string;
+    model?: string;
+    weight: number;
+    weight_unit: 'g' | 'oz' | 'kg' | 'lb';
+    sku: string;
+    categories?: string[];
+    images?: string[];
+    rating?: number;
+    product_url: string;
+  }>(
+    agent.server,
+    'packrat_create_catalog_item',
     {
+      title: 'Create Catalog Item',
       description:
         'Submit a new gear item to the catalog. The API will embed and dedupe automatically. Use this for custom items not yet in the catalog.',
       inputSchema: {
@@ -131,12 +203,23 @@ export function registerCatalogTools(agent: AgentContext): void {
         description: z.string().optional(),
         brand: z.string().optional(),
         model: z.string().optional(),
-        weight: z.number().min(0).optional(),
-        weight_unit: z.enum(['g', 'oz', 'kg', 'lb']).optional(),
+        // weight, weight_unit, product_url, sku are required by the catalog-create
+        // API schema (CreateCatalogItemRequestSchema): a catalog entry is a real
+        // product with a known weight, source URL, and stock-keeping unit.
+        weight: z.number().positive(),
+        weight_unit: z.enum(['g', 'oz', 'kg', 'lb']),
+        sku: z.string().describe('Stock-keeping unit / product identifier'),
         categories: z.array(z.string()).optional(),
         images: z.array(z.string()).optional(),
         rating: z.number().min(0).max(5).optional(),
-        product_url: z.string().url().optional(),
+        product_url: z.string().url(),
+      },
+      annotations: {
+        title: 'Create Catalog Item',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
       },
     },
     async ({
@@ -146,6 +229,7 @@ export function registerCatalogTools(agent: AgentContext): void {
       model,
       weight,
       weight_unit,
+      sku,
       categories,
       images,
       rating,
@@ -159,9 +243,10 @@ export function registerCatalogTools(agent: AgentContext): void {
           model,
           weight,
           weightUnit: weight_unit,
+          sku,
           categories,
           images,
-          rating,
+          ratingValue: rating,
           productUrl: product_url,
         }),
         action: 'create catalog item',
@@ -172,13 +257,21 @@ export function registerCatalogTools(agent: AgentContext): void {
   // NOTE: this duplicates work the API could do in a single `/catalog/compare`
   // endpoint that accepts an `ids[]` query. Tracked in the API thickening list.
 
-  agent.server.registerTool(
-    'compare_gear_items',
+  tool<{ item_ids: number[] }>(
+    agent.server,
+    'packrat_compare_gear_items',
     {
+      title: 'Compare Gear Items',
       description:
         'Compare multiple gear items side-by-side on weight, price, and rating. Provide 2–10 catalog item IDs.',
       inputSchema: {
         item_ids: z.array(z.number().int()).min(2).max(10),
+      },
+      annotations: {
+        title: 'Compare Gear Items',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ item_ids }) =>

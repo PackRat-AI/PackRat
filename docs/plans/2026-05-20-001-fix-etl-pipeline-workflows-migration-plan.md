@@ -296,8 +296,8 @@ Scheduled (CF Cron Trigger or scheduled workflow):
 
 **Files:**
 - Modify: `packages/db/src/schema.ts` (add columns to `etlJobs`; UNIQUE constraint on `catalogItemEtlJobs`)
-- Create: `packages/api/drizzle/0048_etl_workflow_columns.sql`
-- Create: `packages/api/drizzle/meta/0048_snapshot.json` (generated)
+- Create: a drizzle-kit-generated migration in `packages/api/drizzle/` (keep its random name; never rename the generated file)
+- Create: the matching snapshot in `packages/api/drizzle/meta/` (generated alongside the migration)
 - Modify: `packages/api/drizzle/meta/_journal.json` (generated)
 - Test: `packages/api/test/db-schema-etl.test.ts` (new — assert columns exist with expected defaults)
 
@@ -331,6 +331,7 @@ Scheduled (CF Cron Trigger or scheduled workflow):
 - Error path: Re-running the migration is a no-op (Drizzle's migration log handles this).
 
 **Verification:**
+- `cd packages/api && bunx drizzle-kit check` passes (validates the generated snapshot chain is internally consistent) — required before merge.
 - `bun run --cwd packages/api db:migrate` applies cleanly against a fresh Docker Postgres + against a Postgres seeded with current-prod-shape `etl_jobs` rows.
 - `bun lint:custom` passes.
 - `bun test:api:unit` includes the new schema test and it passes.
@@ -386,7 +387,7 @@ Scheduled (CF Cron Trigger or scheduled workflow):
 - `chunkCsvForR2`: producer-side row-boundary alignment with parallel 64KB peek reads (closes audit P1 #3/#4/#5 + the previously-flagged producer CPU budget concern). Returns `Array<{ chunkIndex, chunksTotal, byteStart, byteEnd }>` plus the captured `etag` + `lastModified`.
 - Producer endpoint writes `etl_jobs` row with `source_etag`, `source_last_modified`, `workflow_instance_id`; then `env.ETL_WORKFLOW.create({ id: \`${source}-${filename}\`, params: { jobId, objectKey, source, scraperRevision, chunks } })`. The deterministic instance ID prevents duplicate triggers for the same file (Workflows rejects duplicate IDs).
 - Producer's `?engine=queue` branch keeps the old `queueCatalogETL` flow for rollback. Removed in the Phase 1 cleanup PR after one week of bake.
-- Test uses Workflows' test harness (`@cloudflare/vitest-pool-workers`) or mocks the `step` object directly with an in-memory implementation that exercises memoization.
+- Test uses Workflows' test harness under the `@cloudflare/vitest-pool-workers` pool (required for all API unit tests per repo guidelines) with an implementation that exercises memoization.
 
 **Patterns to follow:**
 - Workflows quickstart: <https://developers.cloudflare.com/workflows/get-started/guide/>.

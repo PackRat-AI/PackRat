@@ -1,8 +1,11 @@
 import { cors } from '@elysiajs/cors';
+import { getAuth } from '@packrat/api/auth';
+import { resolveMcpBearerUser } from '@packrat/api/auth/mcp-token';
 import { createDb } from '@packrat/api/db';
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import { catalogItems, packs, users } from '@packrat/db';
 import { assertAllDefined, queryBoolean } from '@packrat/guards';
 import {
@@ -22,6 +25,13 @@ import { jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
 import { analyticsRoutes } from './analytics';
 import { adminTrailsRoutes } from './trails';
+
+/**
+ * Timeout for the Better Auth `getSession` fallback in `adminAuthGuard`.
+ * Keeps degraded Better Auth behaviour bounded: a slow session lookup fails
+ * closed in 5s rather than holding the request open.
+ */
+const BETTER_AUTH_GUARD_TIMEOUT_MS = 5000;
 
 const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 const ADMIN_JWT_ISSUER = 'packrat-api';
@@ -59,7 +69,7 @@ function basicAuthGuard(request: Request): { authorized: true } | { authorized: 
 
 async function issueAdminJwt(username: string): Promise<string> {
   const env = getEnv();
-  const secret = new TextEncoder().encode(env.BETTER_AUTH_SECRET);
+  const secret = new TextEncoder().encode(env.PACKRAT_AUTH_SECRET);
   return new SignJWT({ role: 'admin' })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(username)
@@ -73,7 +83,7 @@ async function issueAdminJwt(username: string): Promise<string> {
 async function verifyAdminJwt(token: string): Promise<boolean> {
   try {
     const env = getEnv();
-    const secret = new TextEncoder().encode(env.BETTER_AUTH_SECRET);
+    const secret = new TextEncoder().encode(env.PACKRAT_AUTH_SECRET);
     const { payload } = await jwtVerify(token, secret, {
       issuer: ADMIN_JWT_ISSUER,
       audience: ADMIN_JWT_AUDIENCE,
@@ -84,16 +94,105 @@ async function verifyAdminJwt(token: string): Promise<boolean> {
   }
 }
 
-// Protected routes: Bearer JWT is always accepted.
-// When CF Access is configured, CF JWT is also accepted directly (the CF edge
-// injects Cf-Access-Jwt-Assertion on every request, so the user has already
-// passed the CF Access gate).  Basic auth is accepted only in local dev.
+/**
+ * Verify a bearer as a Better Auth session whose `user.role === 'ADMIN'`.
+ *
+ * Wraps `auth.api.getSession({ headers })` in a 5s timeout so a degraded
+ * Better Auth fails closed (returns false) rather than hanging the
+ * request indefinitely. Any thrown error or timeout is treated as
+ * "not authorized" — the API can't safely escalate scope on a
+ * partial response.
+ *
+ * The Better Auth `bearer()` plugin extracts the token from the
+ * `Authorization: Bearer ...` header; we pass `request.headers` through
+ * unmodified rather than reconstructing them so the same code path
+ * works for any future cookie-bearing variant Better Auth adds.
+ */
+async function verifyBetterAuthAdmin(request: Request): Promise<boolean> {
+  const env = getEnv();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), BETTER_AUTH_GUARD_TIMEOUT_MS);
+  try {
+    const auth = await getAuth(env);
+    // Run the session lookup in a Promise.race against the timeout so a
+    // slow/hanging Neon-backed Better Auth doesn't block the guard.
+    // The AbortController is best-effort; Better Auth's internal HTTP
+    // client may or may not propagate the abort signal.
+    const session = await Promise.race([
+      auth.api.getSession({ headers: request.headers }),
+      new Promise<null>((resolve) => {
+        controller.signal.addEventListener('abort', () => resolve(null), { once: true });
+      }),
+    ]);
+    if (!session || !session.user) return false;
+    const role = (session.user as { role?: string }).role;
+    return role === 'ADMIN';
+  } catch (err) {
+    // Fail closed on any error path — DB outages, transport failures,
+    // malformed bearer, etc. The 401 from `adminAuthGuard` is the
+    // operationally correct response: the caller's bearer didn't
+    // resolve into an authorized session. Capture first so a real
+    // Better Auth/DB outage leaves a Sentry trail instead of looking
+    // identical to a bad bearer.
+    captureApiException({ error: err, operation: 'verifyBetterAuthAdmin' });
+    return false;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Protected-route auth guard.
+ *
+ * Per the U5 resolved D1 decision (per
+ * docs/plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md U5),
+ * this guard accepts TWO bearer formats, tried in order:
+ *
+ *   1. The legacy HS256 `packrat-admin` JWT (issued by `/admin/token` or
+ *      `/admin/login`). Kept for back-compat with `apps/admin`, which
+ *      uses the JWT path.
+ *
+ *   2. A Better Auth session bearer whose `user.role === 'ADMIN'`. This
+ *      is the path the MCP Worker uses — admin tools send the same
+ *      Better Auth bearer as user tools, and the API gates them by
+ *      role rather than a parallel token type.
+ *
+ * If both bearer paths fail, falls through to:
+ *
+ *   3. CF Access JWT (when CF Access is configured).
+ *   4. Basic auth (local dev only).
+ *
+ * All four paths returning false yields a 401 from the caller.
+ *
+ * SECURITY NOTE (U5):
+ *   Accepting Better Auth session bearers means a stolen Better Auth
+ *   session of an admin user is now ALSO a path to `/admin/*`. This is
+ *   intentional: Better Auth session theft of an admin has always been
+ *   catastrophic (it grants full PackRat-app admin access via the normal
+ *   user surface), and removing the parallel admin JWT mechanism — which
+ *   had its own minting + revocation surface to keep in sync — is the
+ *   simplification this trade-off buys. Revocation is now a single
+ *   problem: invalidate the Better Auth session. There is no second
+ *   token type to remember to rotate.
+ */
 async function adminAuthGuard(request: Request): Promise<boolean> {
   const env = getEnv();
   const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
   const header = request.headers.get('authorization') ?? '';
 
-  if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
+  if (header.startsWith('Bearer ')) {
+    // Try the HS256 admin JWT first — fast (in-memory verify) and the
+    // legacy `apps/admin` path. Falling back to Better Auth on failure
+    // means any other Bearer (Better Auth session token) gets the
+    // role check.
+    if (await verifyAdminJwt(header.slice(7))) return true;
+    // U5: bearer wasn't a valid admin JWT — try as Better Auth session.
+    if (await verifyBetterAuthAdmin(request)) return true;
+    // MCP OAuth access tokens are audience-bound to the MCP resource, not
+    // Better Auth sessions. Admin routes accept them only with mcp:admin and
+    // only when the resolved PackRat user is ADMIN.
+    if (await resolveMcpBearerUser({ env, request, requireAdminScope: true })) return true;
+  }
 
   // When CF Access is configured, verify the CF JWT injected by the CF edge.
   if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {

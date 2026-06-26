@@ -1,7 +1,16 @@
+/**
+ * The PackRat API as an Elysia app - the typed contract exported as `App` and
+ * consumed by `@packrat/api-client` (Eden Treaty).
+ *
+ * This module is deliberately JSX-free. The browser-facing OAuth consent page
+ * is mounted on the runtime worker in `index.ts`, not here, so it stays out of
+ * `App` and does not pull JSX types into every Eden consumer.
+ */
+
 import { cors } from '@elysiajs/cors';
 import { routes } from '@packrat/api/routes';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
-import { captureApiException } from '@packrat/api/utils/sentry';
+import { captureApiException, setRequestId } from '@packrat/api/utils/sentry';
 import { safeJsonStringify } from '@packrat/utils';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
@@ -13,6 +22,7 @@ const ALLOWED_ORIGINS = [
   /^https?:\/\/[\w-]+\.workers\.dev$/,
   /^http:\/\/localhost:\d+$/,
   /^http:\/\/127\.0\.0\.1:\d+$/,
+  /^https:\/\/[\w.-]+\.localhost(:\d+)?$/,
   /^exp:\/\//,
 ];
 
@@ -62,48 +72,58 @@ export function corsPreflightResponse(request: Request): Response | null {
   });
 }
 
-export const app = new Elysia({ adapter: CloudflareAdapter })
+export const appBase = new Elysia({ adapter: CloudflareAdapter })
   .use(
     cors({
       credentials: true,
-      origin: (request) => {
-        const origin = request.headers.get('Origin');
-        return isAllowedCorsOrigin(origin);
-      },
+      origin: (request) => isAllowedCorsOrigin(request.headers.get('Origin')),
       allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     }),
   )
   .use(packratOpenApi)
-  .onError(({ error, code, request }) => {
+  .derive(({ request, set }) => {
+    const requestId = request.headers.get('cf-ray') ?? crypto.randomUUID();
+    setRequestId(requestId);
+    set.headers['x-request-id'] = requestId;
+    return { requestId };
+  })
+  .onError(({ error, code, request, route, path }) => {
+    const requestId = request?.headers.get('cf-ray') ?? 'unknown';
     if (code !== 'VALIDATION' && code !== 'PARSE' && code !== 'NOT_FOUND') {
       captureApiException({
-        error: error,
-        operation: 'elysia.onError',
+        error,
+        operation: route ? `route ${request?.method ?? ''} ${route}`.trim() : 'elysia.onError',
         tags: {
           error_code: String(code),
           method: request?.method ?? 'UNKNOWN',
-          path: request ? new URL(request.url).pathname : 'UNKNOWN',
+          route: route ?? 'UNKNOWN',
+          request_id: requestId,
         },
-        extra: { errorCode: String(code), httpStatus: 500 },
+        extra: {
+          errorCode: String(code),
+          httpStatus: 500,
+          path: path ?? (request ? new URL(request.url).pathname : 'UNKNOWN'),
+        },
       });
     }
 
+    const headers = { 'Content-Type': 'application/json', 'X-Request-Id': requestId };
     if (code === 'VALIDATION' || code === 'PARSE') {
-      return new Response(safeJsonStringify({ error: 'Validation failed' }), {
+      return new Response(safeJsonStringify({ error: 'Validation failed', requestId }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
     if (code === 'NOT_FOUND') {
-      return new Response(safeJsonStringify({ error: 'Not found' }), {
+      return new Response(safeJsonStringify({ error: 'Not found', requestId }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
-    return new Response(safeJsonStringify({ error: 'Internal server error' }), {
+    return new Response(safeJsonStringify({ error: 'Internal server error', requestId }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   })
   .get('/', () => 'PackRat API is running!', {
@@ -115,4 +135,4 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
   .use(routes)
   .compile();
 
-export type App = typeof app;
+export type App = typeof appBase;

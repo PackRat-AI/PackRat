@@ -1,6 +1,7 @@
 {
   "extends": "@packrat/typescript-config/base.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "types": ["bun", "@cloudflare/workers-types/2022-10-31"],
     "baseUrl": ".",
     "paths": {

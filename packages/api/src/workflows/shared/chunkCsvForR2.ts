@@ -67,6 +67,16 @@ export async function chunkCsvForR2({
   chunkBytes?: number;
   peekBytes?: number;
 }): Promise<ChunkCsvResult> {
+  // Guard the sizing math: a non-positive chunkBytes makes Math.ceil(size /
+  // chunkBytes) blow up (Infinity / huge boundary counts), and a bad peekBytes
+  // produces nonsensical peek windows. Reject both loudly up front.
+  if (!Number.isInteger(chunkBytes) || chunkBytes <= 0) {
+    throw new RangeError(`chunkBytes must be a positive integer, received ${chunkBytes}`);
+  }
+  if (!Number.isInteger(peekBytes) || peekBytes <= 0) {
+    throw new RangeError(`peekBytes must be a positive integer, received ${peekBytes}`);
+  }
+
   const meta = await r2.head(objectKey);
   if (!meta) throw new Error(`R2 object not found: ${objectKey}`);
 

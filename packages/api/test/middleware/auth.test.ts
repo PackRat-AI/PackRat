@@ -1,4 +1,5 @@
 import { getAuth } from '@packrat/api/auth';
+import { resolveMcpBearerUser } from '@packrat/api/auth/mcp-token';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { Elysia } from 'elysia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,9 +7,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // getAuth is mocked globally by test/setup.ts. Override it here to control
 // what session is returned per-test.
 const mockGetSession = vi.fn();
+const mockResolveMcpBearerUser = vi.mocked(resolveMcpBearerUser);
+
+vi.mock('@packrat/api/auth/mcp-token', () => ({
+  resolveMcpBearerUser: vi.fn(),
+}));
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockResolveMcpBearerUser.mockResolvedValue(null);
 
   vi.mocked(getAuth).mockResolvedValue({
     api: { getSession: mockGetSession },
@@ -88,5 +95,27 @@ describe('authPlugin', () => {
     const body = await res.json();
     expect(res.status).toBe(200);
     expect(body.role).toBe('USER');
+  });
+
+  it('accepts a valid MCP OAuth bearer when Better Auth session lookup returns null', async () => {
+    mockGetSession.mockResolvedValue(null);
+    mockResolveMcpBearerUser.mockResolvedValue({
+      userId: 'mcp-user-1',
+      role: 'USER',
+      email: 'mcp@test.com',
+      name: 'MCP User',
+    });
+    const app = buildTestApp();
+    const res = await app.handle(
+      new Request('http://localhost/protected', {
+        headers: { authorization: 'Bearer mcp-oauth-jwt' },
+      }),
+    );
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.userId).toBe('mcp-user-1');
+    expect(mockResolveMcpBearerUser).toHaveBeenCalledWith(
+      expect.objectContaining({ requireAdminScope: undefined }),
+    );
   });
 });

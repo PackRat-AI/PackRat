@@ -50,7 +50,7 @@
     "format:package-json": "bun scripts/format/sort-package-json.ts",
     "generate:openapi": "cd packages/api && bun scripts/generate-openapi.ts",
     "preinstall": "bun run configure:deps",
-    "postinstall": "bun run lefthook && bun run env && bun run portless:check",
+    "postinstall": "bun run lefthook && bun run env && bun run portless:check && bun run --cwd packages/consent-ui build",
     "ios": "cd apps/expo && bun ios",
     "lefthook": "lefthook install",
     "lint": "biome check --write",

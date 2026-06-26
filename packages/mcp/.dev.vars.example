@@ -1,7 +1,34 @@
 # PackRat MCP Server — local development environment variables
 # Copy this file to .dev.vars (never commit .dev.vars)
 
-# Required: URL of the PackRat API
+# Post-refactor: this file contains only the JWKS-fetch target.
+# The MCP worker is a pure protected resource — it validates JWTs against
+# `${PACKRAT_API_URL}/api/auth/jwks` via `token-verify.ts`. No DCR / KV /
+# login state lives here anymore.
+
+# Required: base URL of the PackRat API (hosting the Better Auth OAuth
+# authorization server and the JWKS endpoint).
 # Local: http://localhost:8787
-# Production: https://packrat.world
+# Production: https://api.packrat.world
 PACKRAT_API_URL=http://localhost:8787
+
+# The deploy identifier surfaced by `/status` as `deployId` comes from the
+# `version_metadata` binding (CF_VERSION_METADATA) declared in wrangler.jsonc —
+# the Cloudflare runtime injects it, so there's nothing to set here or at
+# deploy time. Under `wrangler dev` / vitest the binding is absent and
+# `/status` returns the sentinel string 'unknown'. Public, not a secret.
+
+# ── Bindings (NOT secrets — declared in wrangler.jsonc) ──────────────────────
+# The following are wired up as Cloudflare bindings in wrangler.jsonc and
+# automatically present in the Worker's `env` at runtime. They do NOT belong
+# in .dev.vars. Listed here so an engineer onboarding the package can find
+# the canonical location:
+#
+#   MCP_TOOLS_RL   — Workers Rate Limiting binding. Keyed per-call for tool
+#                    dispatch (`${userId}:${toolName}`, where `userId` is the
+#                    JWT `sub` claim). Configured under the `rate_limiting`
+#                    block in wrangler.jsonc with a 60/60s budget; see
+#                    docs/mcp/runbook.md § "U14 rate limiting" for the
+#                    operator overview. In local `wrangler dev` and `vitest`
+#                    runs the binding may be absent — the call site falls
+#                    back to "allowed" so dev doesn't break.

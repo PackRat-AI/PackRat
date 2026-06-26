@@ -1,4 +1,16 @@
 {
   "extends": "@packrat/typescript-config/react-native.json",
-  "include": ["nativewindui/**/*.ts", "nativewindui/**/*.tsx", "src/**/*.ts", "src/**/*.tsx"]
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "expo-app/*": ["../../apps/expo/*"]
+    }
+  },
+  "include": [
+    "nativewindui/**/*.ts",
+    "nativewindui/**/*.tsx",
+    "nativewind-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ]
 }

@@ -6,7 +6,12 @@
  *     bun run packages/api/src/db/seed-e2e-user.ts
  *
  * Re-running is safe: if the user exists, the password hash and
- * `emailVerified=true` flag are refreshed; otherwise the user is created.
+ * `emailVerified=true` flag are refreshed via `db.update` (drizzle-seed
+ * has no UPDATE primitive); otherwise the user is created via the
+ * `drizzle-seed` `.refine()` API so this seeder shares the same tool
+ * surface as the other prod-config seeders. Every column is fixed via
+ * `f.default()` because drizzle-seed generates a random value for any
+ * column not listed in `.refine()`.
  */
 
 import { neon, neonConfig } from '@neondatabase/serverless';
@@ -15,6 +20,7 @@ import { nodeEnv } from '@packrat/env/node';
 import { eq } from 'drizzle-orm';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { seed } from 'drizzle-seed';
 import { Client } from 'pg';
 import WebSocket from 'ws';
 import { hashPassword } from '../utils/auth';
@@ -33,7 +39,7 @@ const isStandardPostgresUrl = (url: string) => {
   }
 };
 
-async function seedE2EUser() {
+async function seedE2EUser(): Promise<void> {
   const dbUrl = nodeEnv.NEON_DATABASE_URL;
   const email = nodeEnv.E2E_TEST_EMAIL;
   const password = nodeEnv.E2E_TEST_PASSWORD;
@@ -68,33 +74,47 @@ async function seedE2EUser() {
     let userId = existingUser?.id;
 
     if (existingUser) {
+      // drizzle-seed has no UPDATE primitive; use db.update for the
+      // password-refresh path. Insert path below uses drizzle-seed.
       await db
         .update(schema.users)
         .set({ passwordHash, emailVerified: true, updatedAt: new Date() })
         .where(eq(schema.users.id, existingUser.id));
       console.log(`E2E user refreshed: ${normalizedEmail} (id=${existingUser.id})`);
     } else {
-      const [inserted] = await db
-        .insert(schema.users)
-        .values({
-          id: crypto.randomUUID(),
-          name: 'E2E Automation',
-          email: normalizedEmail,
-          passwordHash,
-          emailVerified: true,
-          firstName: 'E2E',
-          lastName: 'Automation',
-          role: 'USER',
-        })
-        .returning();
-      userId = inserted?.id;
-      console.log(`E2E user created: ${normalizedEmail} (id=${inserted?.id})`);
+      userId = crypto.randomUUID();
+      const now = new Date();
+      await seed(db, { users: schema.users }).refine((f) => ({
+        users: {
+          count: 1,
+          columns: {
+            id: f.default({ defaultValue: userId }),
+            name: f.default({ defaultValue: 'E2E Automation' }),
+            email: f.default({ defaultValue: normalizedEmail }),
+            emailVerified: f.default({ defaultValue: true }),
+            image: f.default({ defaultValue: null }),
+            role: f.default({ defaultValue: 'USER' }),
+            banned: f.default({ defaultValue: false }),
+            banReason: f.default({ defaultValue: null }),
+            banExpires: f.default({ defaultValue: null }),
+            firstName: f.default({ defaultValue: 'E2E' }),
+            lastName: f.default({ defaultValue: 'Automation' }),
+            avatarUrl: f.default({ defaultValue: null }),
+            passwordHash: f.default({ defaultValue: passwordHash }),
+            createdAt: f.default({ defaultValue: now }),
+            updatedAt: f.default({ defaultValue: now }),
+          },
+        },
+      }));
+      console.log(`E2E user created: ${normalizedEmail} (id=${userId})`);
     }
 
     if (!userId) throw new Error(`Failed to resolve E2E user id for ${normalizedEmail}`);
 
     // Upsert the credential account row that better-auth looks up during sign-in.
     // better-auth sets accountId = user.id for the 'credential' provider.
+    // (drizzle-seed has no upsert; this requires onConflictDoUpdate so we use
+    // db.insert directly here rather than drizzle-seed's refine path.)
     await db
       .insert(schema.account)
       .values({

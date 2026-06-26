@@ -17,6 +17,12 @@ When analyzing images of items laid out for packing, identify each visible item 
 - Provide a brief description that includes key characteristics (material, type, color if relevant)
 - Estimate quantity if multiple identical items are visible
 
+For every item you MUST also emit these fields:
+- quantity: a positive integer count of how many identical units are visible (default to 1 when a single unit is shown)
+- consumable: a boolean — true if the item is used up over a trip (e.g. food, fuel, batteries), otherwise false
+- worn: a boolean — true if the item is typically worn on the body rather than packed (e.g. boots, jacket), otherwise false
+- notes: a short string with any extra context worth recording, or null if there is nothing to add
+
 Be thorough but focused on packable outdoor gear and equipment.`;
 
 const detectedItemSchema = z.object({

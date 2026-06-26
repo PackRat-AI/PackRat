@@ -37,6 +37,9 @@ export const nodeEnvSchema = z.object({
   // ── Neon / Postgres (packages/api/migrate.ts, seed.ts) ────────────
   NEON_DATABASE_URL: z.string().url().optional(),
   NEON_DATABASE_URL_READONLY: z.string().url().optional(),
+  // Opt-in override for the seed-dev destructive guard, for non-local targets
+  // like an ephemeral CI database (packages/api/src/db/seed-dev.ts).
+  ALLOW_DESTRUCTIVE_SEED: z.enum(['0', '1']).optional(),
   NEON_WS_PROXY: z.string().optional(),
   PACKRAT_PG_POOL_MAX: z.string().regex(/^\d+$/).optional(),
   PACKRAT_USE_NEON_WSPROXY: z.enum(['true', 'false']).optional(),
@@ -128,6 +131,7 @@ export const nodeEnv = nodeEnvSchema.parse({
   PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: process.env.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN,
   NEON_DATABASE_URL: process.env.NEON_DATABASE_URL,
   NEON_DATABASE_URL_READONLY: process.env.NEON_DATABASE_URL_READONLY,
+  ALLOW_DESTRUCTIVE_SEED: process.env.ALLOW_DESTRUCTIVE_SEED,
   NEON_WS_PROXY: process.env.NEON_WS_PROXY,
   PACKRAT_PG_POOL_MAX: process.env.PACKRAT_PG_POOL_MAX,
   PACKRAT_USE_NEON_WSPROXY: process.env.PACKRAT_USE_NEON_WSPROXY,

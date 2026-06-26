@@ -3,25 +3,27 @@ export enum PackCategory {
   Backpacking = 'backpacking',
   Camping = 'camping',
   Climbing = 'climbing',
-  Cycling = 'cycling',
+  Custom = 'custom',
+  Desert = 'desert',
   Hiking = 'hiking',
   Skiing = 'skiing',
-  Travel = 'travel',
-  General = 'general',
+  WaterSports = 'water sports',
+  Winter = 'winter',
 }
 
 /** Category for an individual item within a pack */
 export enum ItemCategory {
+  Clothing = 'clothing',
   Shelter = 'shelter',
   Sleep = 'sleep',
-  Clothing = 'clothing',
-  Footwear = 'footwear',
-  Navigation = 'navigation',
-  Safety = 'safety',
-  Food = 'food',
+  Kitchen = 'kitchen',
   Water = 'water',
-  Hygiene = 'hygiene',
+  Electronics = 'electronics',
+  FirstAid = 'first-aid',
+  Navigation = 'navigation',
   Tools = 'tools',
+  Consumables = 'consumables',
+  Miscellaneous = 'miscellaneous',
 }
 
 /** Trail surface type for condition reports */
