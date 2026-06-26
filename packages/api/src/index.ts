@@ -15,6 +15,11 @@ import { neonConfig } from '@neondatabase/serverless';
 import { type App, appBase } from '@packrat/api/app';
 import { getAuth } from '@packrat/api/auth';
 import { consentRoute } from '@packrat/api/auth/consent-route';
+import {
+  isLocalE2EAuthEnabled,
+  localE2EToken,
+  makeLocalE2EUser,
+} from '@packrat/api/auth/local-e2e';
 import { AppContainer } from '@packrat/api/containers';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
@@ -34,6 +39,15 @@ import type { CatalogETLMessage } from './services/etl/types';
 
 export type { App };
 
+const bearerPrefixRegex = /^Bearer\s+/i;
+const scopeSplitRegex = /\s+/;
+const OAUTH_CONSENT_PATH = '/api/auth/oauth2/consent';
+const WELL_KNOWN_ALLOWED_ORIGINS = new Set(['https://claude.ai', 'https://claude.com']);
+
+// Sentry options for both the Worker handlers and the workflow class.
+// Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate
+// defaults to 10% — observable enough for prod debugging without
+// overwhelming the Sentry quota.
 function sentryOptions(env: Env) {
   return {
     dsn: env.SENTRY_DSN,
@@ -66,13 +80,132 @@ function enrichEnv(env: Env): Env {
   return env;
 }
 
+async function handleLocalE2EAuth(request: Request, env: Env): Promise<Response | undefined> {
+  if (!isLocalE2EAuthEnabled(env)) return undefined;
+
+  const url = new URL(request.url);
+  if (request.method === 'POST' && url.pathname === '/api/auth/sign-in/email') {
+    const body = (await request.json().catch(() => undefined)) as
+      | { email?: string; password?: string }
+      | undefined;
+    const email = body?.email?.toLowerCase();
+    if (email !== env.E2E_TEST_EMAIL?.toLowerCase() || body?.password !== env.E2E_TEST_PASSWORD) {
+      return Response.json({ error: 'Invalid email or password' }, { status: 401 });
+    }
+
+    const token = await localE2EToken(env);
+    return Response.json(
+      {
+        redirect: false,
+        token,
+        user: makeLocalE2EUser(env),
+      },
+      { headers: { 'set-auth-token': token } },
+    );
+  }
+
+  if (request.method === 'POST' && url.pathname === '/api/auth/sign-out') {
+    const expected = await localE2EToken(env);
+    const authorization = request.headers.get('Authorization') ?? '';
+    if (authorization.replace(bearerPrefixRegex, '') === expected) {
+      return Response.json({ success: true });
+    }
+  }
+
+  return undefined;
+}
+
+function applyWellKnownCors(request: Request, response: Response | null): Response | null {
+  const url = new URL(request.url);
+  if (
+    url.pathname !== '/.well-known/oauth-authorization-server' &&
+    url.pathname !== '/.well-known/openid-configuration'
+  ) {
+    return null;
+  }
+
+  const origin = request.headers.get('Origin');
+  if (!origin || !WELL_KNOWN_ALLOWED_ORIGINS.has(origin)) return null;
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': origin,
+        Vary: 'Origin',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '3600',
+      },
+    });
+  }
+
+  if (!response || request.method !== 'GET') return null;
+  const annotated = new Response(response.body, response);
+  annotated.headers.set('Access-Control-Allow-Origin', origin);
+  const existingVary = annotated.headers.get('Vary');
+  annotated.headers.set('Vary', existingVary ? `${existingVary}, Origin` : 'Origin');
+  return annotated;
+}
+
+async function sanitizeOAuthConsentRequest(
+  request: Request,
+  env: Env,
+): Promise<Request | Response> {
+  const url = new URL(request.url);
+  if (request.method !== 'POST' || url.pathname !== OAUTH_CONSENT_PATH) return request;
+
+  const auth = await getAuth(env);
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session?.user) return request;
+
+  const role = (session.user as unknown as { role?: string }).role ?? 'USER';
+  if (role === 'ADMIN') return request;
+
+  const form = new URLSearchParams(await request.text());
+  const postedScope = form.get('scope');
+  if (postedScope === null) {
+    return Response.json(
+      { error: 'invalid_scope', error_description: 'scope is required for consent' },
+      { status: 400 },
+    );
+  }
+
+  const reducedScope = postedScope
+    .split(scopeSplitRegex)
+    .filter((scope) => scope && scope !== 'mcp:admin')
+    .join(' ');
+  form.set('scope', reducedScope);
+
+  const headers = new Headers(request.headers);
+  headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+  headers.delete('content-length');
+  return new Request(request.url, {
+    method: request.method,
+    headers,
+    body: form,
+    redirect: request.redirect,
+  });
+}
+
+// Local-dev hook: route `@neondatabase/serverless` through Neon's official local
+// proxy (`ghcr.io/timowilhelm/local-neon-http-proxy`, see docker-compose.test.yml
+// and https://neon.com/guides/local-development-with-neon) when NEON_DATABASE_URL
+// points at `db.localtest.me`. The proxy serves the HTTP /sql API (neon-http,
+// used by auth) and the WebSocket /v2 endpoint (neon-serverless Pool), so local
+// and prod share the exact same driver path — no node-postgres TCP sockets
+// (which workerd silently drops between requests).
 let neonLocalConfigured = false;
-function maybeConfigureLocalNeon(databaseUrl: string | undefined): void {
+function maybeConfigureLocalNeon(opts: {
+  databaseUrl: string | undefined;
+  proxyPortOverride: string | undefined;
+}): void {
+  const { databaseUrl, proxyPortOverride } = opts;
   if (neonLocalConfigured || !databaseUrl) return;
   try {
     const host = new URL(databaseUrl).hostname.toLowerCase();
     if (host !== 'db.localtest.me') return;
-    const proxyPort = '4444';
+    const proxyPort = proxyPortOverride ?? '4444';
     neonConfig.fetchEndpoint = (h) =>
       h === 'db.localtest.me' ? `http://${h}:${proxyPort}/sql` : `https://${h}/sql`;
     neonConfig.wsProxy = (h) => (h === 'db.localtest.me' ? `${h}:${proxyPort}/v2` : `${h}/v2`);
@@ -114,12 +247,21 @@ function flushFetchMetrics({ ctx, response }: { ctx: ExecutionContext; response:
 const workerHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
-    maybeConfigureLocalNeon(e.NEON_DATABASE_URL);
+    maybeConfigureLocalNeon({
+      databaseUrl: e.NEON_DATABASE_URL,
+      proxyPortOverride: e.NEON_LOCAL_PROXY_PORT,
+    });
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
 
     const metricsStore = initQueryMetricsStore(request);
     return queryMetricsAls.run(metricsStore, async () => {
       const url = new URL(request.url);
+
+      const corsPreflight = applyWellKnownCors(request, null);
+      if (corsPreflight) {
+        flushFetchMetrics({ ctx, response: corsPreflight });
+        return corsPreflight;
+      }
 
       if (request.method === 'GET') {
         if (
@@ -133,15 +275,26 @@ const workerHandler = {
               ? oauthProviderOpenIdConfigMetadata(auth)
               : oauthProviderAuthServerMetadata(auth);
           const response = await handler(request);
-          flushFetchMetrics({ ctx, response });
-          return response;
+          const annotated = applyWellKnownCors(request, response) ?? response;
+          flushFetchMetrics({ ctx, response: annotated });
+          return annotated;
         }
       }
 
       if (url.pathname.startsWith('/api/auth')) {
         const validatedEnv = getEnv();
+        const localAuthResponse = await handleLocalE2EAuth(request, validatedEnv);
+        if (localAuthResponse) {
+          flushFetchMetrics({ ctx, response: localAuthResponse });
+          return localAuthResponse;
+        }
         const auth = await getAuth(validatedEnv);
-        const response = await auth.handler(request);
+        const sanitizedRequest = await sanitizeOAuthConsentRequest(request, validatedEnv);
+        if (sanitizedRequest instanceof Response) {
+          flushFetchMetrics({ ctx, response: sanitizedRequest });
+          return sanitizedRequest;
+        }
+        const response = await auth.handler(sanitizedRequest);
         flushFetchMetrics({ ctx, response });
         return response;
       }

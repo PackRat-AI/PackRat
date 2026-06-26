@@ -105,6 +105,15 @@ jobs:
             final_relative: ./coverage/coverage-final.json
             vite_config_path: ./vitest.config.ts
             working_directory: ./packages/units
+          - name: packages/utils
+            artifact_slug: packages-utils
+            test_command: bun run --cwd packages/utils test --coverage
+            summary_path: packages/utils/coverage/coverage-summary.json
+            final_path: packages/utils/coverage/coverage-final.json
+            summary_relative: ./coverage/coverage-summary.json
+            final_relative: ./coverage/coverage-final.json
+            vite_config_path: ./vitest.config.ts
+            working_directory: ./packages/utils
     steps:
       - uses: actions/checkout@v6
 
@@ -179,6 +188,7 @@ jobs:
             [packages-analytics]=packages/analytics/coverage/coverage-summary.json
             [packages-overpass]=packages/overpass/coverage/coverage-summary.json
             [packages-units]=packages/units/coverage/coverage-summary.json
+            [packages-utils]=packages/utils/coverage/coverage-summary.json
           )
           for slug in "${!targets[@]}"; do
             target="${targets[$slug]}"
@@ -239,6 +249,7 @@ jobs:
             [packages-analytics]=packages/analytics/coverage/coverage-summary.json
             [packages-overpass]=packages/overpass/coverage/coverage-summary.json
             [packages-units]=packages/units/coverage/coverage-summary.json
+            [packages-utils]=packages/utils/coverage/coverage-summary.json
           )
           for slug in "${!targets[@]}"; do
             target="${targets[$slug]}"

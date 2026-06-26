@@ -28,6 +28,11 @@ const isE2EStubOpenAiKey = (openAiApiKey: string | undefined) =>
   openAiApiKey?.startsWith('sk-e2e-stub-') === true;
 
 export const chatRoutes = new Elysia({ prefix: '/chat' })
+  .model({
+    'chat.ChatRequest': ChatRequestSchema,
+    'chat.CreateReportRequest': CreateReportRequestSchema,
+    'chat.UpdateReportStatusRequest': UpdateReportStatusRequestSchema,
+  })
   .use(authPlugin)
 
   // Chat streaming
@@ -41,9 +46,22 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         packId?: string;
         location?: string;
         date: string;
+        weightUnit?: 'kg' | 'lb';
+        temperatureUnit?: 'C' | 'F';
+        speedUnit?: 'kmh' | 'mph';
       };
 
-      const { messages, contextType, itemId, packId, location, date } = typedBody;
+      const {
+        messages,
+        contextType,
+        itemId,
+        packId,
+        location,
+        date,
+        weightUnit,
+        temperatureUnit,
+        speedUnit,
+      } = typedBody;
 
       const tools = createTools(user.userId);
       const schemaInfo = await getSchemaInfo();
@@ -65,7 +83,10 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
 
       Context:
       - User id is ${user.userId}
-      - Current date is ${date}`;
+      - Current date is ${date}
+      - User's preferred weight unit is ${weightUnit ?? 'kg'} (always display weights in this unit)
+      - User's preferred temperature unit is °${temperatureUnit ?? 'C'} (always display temperatures in this unit)
+      - User's preferred wind/distance unit is ${speedUnit === 'mph' ? 'mph / miles' : 'km/h / km'} (always display wind speed and distances in this unit)`;
 
       if (contextType === 'pack' && packId) {
         systemPrompt += `\n- You are currently helping with a pack with ID: ${packId}. Use the getPackDetails tool to fetch its contents.`;
@@ -179,7 +200,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       return response;
     },
     {
-      body: ChatRequestSchema,
+      body: 'chat.ChatRequest',
       isAuthenticated: true,
       detail: { tags: ['Chat'], summary: 'Chat with AI assistant', security: [{ bearerAuth: [] }] },
     },
@@ -203,7 +224,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       return { success: true };
     },
     {
-      body: CreateReportRequestSchema,
+      body: 'chat.CreateReportRequest',
       isAuthenticated: true,
       detail: { tags: ['Chat'], summary: 'Report AI content', security: [{ bearerAuth: [] }] },
     },
@@ -269,7 +290,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
     },
     {
       params: z.object({ id: z.string() }),
-      body: UpdateReportStatusRequestSchema,
+      body: 'chat.UpdateReportStatusRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Chat'],

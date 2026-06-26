@@ -16,6 +16,8 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "target": "ESNext",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     // No "DOM" lib: it pulls the DOM `Element` type, which shadows
     // @kitajs/html's JSX Element and breaks the server-render types.
     "lib": ["ESNext"],

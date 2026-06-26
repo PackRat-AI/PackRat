@@ -53,6 +53,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { type ApiClient, createApiClient } from '@packrat/api-client';
 import { isNumber, isObject, isString } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 
 export type TokenProvider = () => string | null | undefined;
 
@@ -141,7 +142,7 @@ const TRUNCATION_MARKER = '\n[truncated: response exceeded 150k chars]';
  * report a spurious failure.
  */
 function truncateForResponse<T>(data: T): { json: string; truncated: boolean } {
-  const pretty = JSON.stringify(data, null, 2);
+  const pretty = safeJsonStringify(data, null, 2);
   if (pretty.length <= RESPONSE_SIZE_LIMIT_CHARS) {
     return { json: pretty, truncated: false };
   }
@@ -367,7 +368,7 @@ function extractErrorMessage(body: unknown): string | null {
     if (isString(obj.message)) return obj.message;
     if (isString(obj.error)) return obj.error;
     try {
-      return JSON.stringify(body);
+      return safeJsonStringify(body);
     } catch {
       return null;
     }

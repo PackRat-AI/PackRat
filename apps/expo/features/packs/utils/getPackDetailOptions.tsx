@@ -1,6 +1,7 @@
-import { Button, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
+import { Button, useSheetRef } from '@packrat/ui/nativewindui';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { t } from 'expo-app/lib/i18n';
 import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
@@ -22,14 +23,16 @@ export function getPackDetailOptions(id: string) {
 
       if (!isOwner) return null;
 
-      const confirmDelete = () => {
-        const deleteAndNavigate = () => {
-          deletePack(id);
-          if (router.canGoBack()) {
-            router.back();
-          }
-        };
+      const deleteAndNavigate = () => {
+        deletePack(id);
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/packs');
+        }
+      };
 
+      const confirmDelete = () => {
         if (Platform.OS === 'web') {
           if (globalThis.confirm(t('packs.deletePackConfirm'))) {
             deleteAndNavigate();

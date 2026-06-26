@@ -1,6 +1,6 @@
 // Covers the defensive fallback branches in mapJsonRowToItem that real
 // csv-utils helpers cannot trigger:
-//   - parseFaqs / safeJsonParse never throw, so the faqs `[]` / techs `{}`
+//   - parseFaqs / parseCatalogJson normally catch parse failures, so the faqs `[]` / techs `{}`
 //     catch branches need the helpers forced to throw.
 //   - parseWeight always yields a non-null weight + a schema-valid unit for a
 //     positive weightStr, so the `weight ?? undefined` (null) and
@@ -17,8 +17,8 @@ vi.mock('@packrat/api/utils/csv-utils', async (importActual) => {
     parseFaqs: vi.fn(() => {
       throw new Error('boom: parseFaqs');
     }),
-    safeJsonParse: vi.fn(() => {
-      throw new Error('boom: safeJsonParse');
+    parseCatalogJson: vi.fn(() => {
+      throw new Error('boom: parseCatalogJson');
     }),
     // Null weight + a unit the WeightUnitSchema rejects, so both the nullish
     // and the safeParse-failure branches run.
@@ -34,7 +34,7 @@ describe('mapJsonRowToItem — catch fallbacks', () => {
     expect(result?.faqs).toEqual([]);
   });
 
-  it('falls back to an empty techs record when safeJsonParse throws', () => {
+  it('falls back to an empty techs record when parseCatalogJson throws', () => {
     const result = mapJsonRowToItem({ name: 'X', techs: '{"Material":"Nylon"}' });
     expect(result?.techs).toEqual({});
   });

@@ -20,7 +20,7 @@
  */
 
 import { z } from 'zod';
-import { call, clampLimit, errResponse, PAGINATION_LIMIT_MAX } from '../client';
+import { call, clampLimit, errResponse, ok, PAGINATION_LIMIT_MAX } from '../client';
 import { type ConfirmReason, confirmAction } from '../elicit';
 import { audit, createLogger, type Logger } from '../observability';
 import {
@@ -699,12 +699,19 @@ export function registerAdminTools(agent: AgentContext): void {
       outputSchema: { items: AdminAnalyticsGrowthOutputSchema },
       annotations: { title: 'Admin: Analytics Growth', ...READ_ADMIN_ANNOTATIONS },
     },
-    async ({ period, range }) =>
-      call({
-        promise: agent.api.admin.admin.analytics.platform.growth.get({ query: { period, range } }),
-        action: 'admin analytics growth',
-        ...ADMIN,
-      }),
+    async ({ period, range }) => {
+      const result = await agent.api.admin.admin.analytics.platform.growth.get({
+        query: { period, range },
+      });
+      if (result.error || result.data == null) {
+        return call({
+          promise: Promise.resolve(result),
+          action: 'admin analytics growth',
+          ...ADMIN,
+        });
+      }
+      return ok({ data: { items: result.data }, structured: true });
+    },
   );
 
   tool<{ period?: 'day' | 'week' | 'month'; range?: number }>(
@@ -721,14 +728,19 @@ export function registerAdminTools(agent: AgentContext): void {
       outputSchema: { items: AdminAnalyticsActivityOutputSchema },
       annotations: { title: 'Admin: Analytics Activity', ...READ_ADMIN_ANNOTATIONS },
     },
-    async ({ period, range }) =>
-      call({
-        promise: agent.api.admin.admin.analytics.platform.activity.get({
-          query: { period, range },
-        }),
-        action: 'admin analytics activity',
-        ...ADMIN,
-      }),
+    async ({ period, range }) => {
+      const result = await agent.api.admin.admin.analytics.platform.activity.get({
+        query: { period, range },
+      });
+      if (result.error || result.data == null) {
+        return call({
+          promise: Promise.resolve(result),
+          action: 'admin analytics activity',
+          ...ADMIN,
+        });
+      }
+      return ok({ data: { items: result.data }, structured: true });
+    },
   );
 
   tool<Record<string, never>>(
@@ -762,12 +774,17 @@ export function registerAdminTools(agent: AgentContext): void {
       outputSchema: { items: AdminAnalyticsPackBreakdownOutputSchema },
       annotations: { title: 'Admin: Pack Breakdown', ...READ_ADMIN_ANNOTATIONS },
     },
-    async () =>
-      call({
-        promise: agent.api.admin.admin.analytics.platform.breakdown.get(),
-        action: 'admin analytics breakdown',
-        ...ADMIN,
-      }),
+    async () => {
+      const result = await agent.api.admin.admin.analytics.platform.breakdown.get();
+      if (result.error || result.data == null) {
+        return call({
+          promise: Promise.resolve(result),
+          action: 'admin analytics breakdown',
+          ...ADMIN,
+        });
+      }
+      return ok({ data: { items: result.data }, structured: true });
+    },
   );
 
   // ── Analytics: catalog ────────────────────────────────────────────────────

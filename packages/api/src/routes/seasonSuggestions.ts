@@ -23,6 +23,9 @@ function formatInventoryForAI(items: Omit<PackItem, 'embedding'>[]): string {
 }
 
 export const seasonSuggestionsRoutes = new Elysia({ prefix: '/season-suggestions' })
+  .model({
+    'seasonSuggestions.SeasonSuggestionsRequest': SeasonSuggestionsRequestSchema,
+  })
   .use(authPlugin)
   .post(
     '/',
@@ -127,7 +130,7 @@ ${inventoryFormatted}`;
       };
     },
     {
-      body: SeasonSuggestionsRequestSchema,
+      body: 'seasonSuggestions.SeasonSuggestionsRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Season Suggestions'],

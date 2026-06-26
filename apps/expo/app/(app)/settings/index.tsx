@@ -1,5 +1,4 @@
-import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ActivityIndicator, SegmentedControl, Text } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
@@ -17,9 +16,14 @@ import {
 } from 'expo-app/features/ai/lib/localModelManager';
 import { DeleteAccountButton } from 'expo-app/features/auth/components/DeleteAccountButton';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
@@ -37,6 +41,9 @@ export default function SettingsScreen() {
 
   const router = useRouter();
   const { announcementSeen, setAnnouncementSeen, opened, setOpened } = useSeasonSuggestionsPrefs();
+  const { unit: weightUnit, setWeightUnit } = useWeightUnit();
+  const { unit: temperatureUnit, setTemperatureUnit } = useTemperatureUnit();
+  const { unit: speedUnit, setSpeedUnit } = useSpeedUnit();
 
   const isApple = isAppleIntelligenceAvailable();
   const isDownloading = modelStatus === 'downloading';
@@ -99,6 +106,64 @@ export default function SettingsScreen() {
         <StatusBar
           style={Platform.OS === 'ios' ? 'light' : colorScheme === 'dark' ? 'light' : 'dark'}
         />
+
+        <View>
+          <Text variant="subhead" className="mb-3">
+            {t('settings.displayUnits')}
+          </Text>
+          <View className="rounded-xl border border-border bg-card">
+            <View className="flex-row items-center justify-between p-4">
+              <View className="flex-1">
+                <Text className="font-medium">Weight</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  {t('settings.weightSubtitle')}
+                </Text>
+              </View>
+              <View className="w-28">
+                <SegmentedControl
+                  testID={testIds.settings.weightUnitControl}
+                  values={['kg', 'lb']}
+                  selectedIndex={weightUnit === 'kg' ? 0 : 1}
+                  onIndexChange={(index) => setWeightUnit(index === 0 ? 'kg' : 'lb')}
+                />
+              </View>
+            </View>
+            <View className="h-px bg-border mx-4" />
+            <View className="flex-row items-center justify-between p-4">
+              <View className="flex-1">
+                <Text className="font-medium">Temperature</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  {t('settings.temperatureSubtitle')}
+                </Text>
+              </View>
+              <View className="w-28">
+                <SegmentedControl
+                  testID={testIds.settings.temperatureUnitControl}
+                  values={['°C', '°F']}
+                  selectedIndex={temperatureUnit === 'C' ? 0 : 1}
+                  onIndexChange={(index) => setTemperatureUnit(index === 0 ? 'C' : 'F')}
+                />
+              </View>
+            </View>
+            <View className="h-px bg-border mx-4" />
+            <View className="flex-row items-center justify-between p-4">
+              <View className="flex-1">
+                <Text className="font-medium">Wind & Distance</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  {t('settings.windDistanceSubtitle')}
+                </Text>
+              </View>
+              <View className="w-36">
+                <SegmentedControl
+                  testID={testIds.settings.speedUnitControl}
+                  values={['km/h', 'mph']}
+                  selectedIndex={speedUnit === 'kmh' ? 0 : 1}
+                  onIndexChange={(index) => setSpeedUnit(index === 0 ? 'kmh' : 'mph')}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
 
         <View>
           <Text variant="subhead" className="mb-3">

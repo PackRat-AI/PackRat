@@ -5,6 +5,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import { z } from 'zod';
 import { DBConfig } from './constants';
 
@@ -36,7 +37,7 @@ export function loadMetadata(cacheDir: string): CacheMetadataFile | null {
 
   let raw: unknown;
   try {
-    raw = JSON.parse(readFileSync(path, 'utf-8'));
+    raw = safeJsonParse(readFileSync(path, 'utf-8'), { strict: true });
   } catch {
     return null;
   }
@@ -52,7 +53,7 @@ export function saveMetadata({
   data: CacheMetadataFile;
 }): void {
   const validated = MetadataSchema.parse(data);
-  writeFileSync(metadataPath(cacheDir), JSON.stringify(validated, null, 2));
+  writeFileSync(metadataPath(cacheDir), safeJsonStringify(validated, null, 2));
 }
 
 export function needsUpdate(metadata: CacheMetadataFile | null): boolean {

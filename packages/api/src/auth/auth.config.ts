@@ -14,7 +14,7 @@ import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { oauthProvider } from '@better-auth/oauth-provider';
 import { neon } from '@neondatabase/serverless';
 import * as schema from '@packrat/db';
-import { betterAuth } from 'better-auth';
+import { type BetterAuthPlugin, betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
 import { drizzle } from 'drizzle-orm/neon-http';
 
@@ -25,7 +25,9 @@ export const auth = betterAuth({
   secret: 'cli-stub-secret',
 
   advanced: {
-    generateId: () => crypto.randomUUID(),
+    database: {
+      generateId: () => crypto.randomUUID(),
+    },
     ipAddress: {
       ipAddressHeaders: ['cf-connecting-ip', 'x-forwarded-for'],
     },
@@ -47,13 +49,16 @@ export const auth = betterAuth({
     },
   }),
 
+  // Keep in sync with auth/index.ts. No snake_case fieldName — the Drizzle adapter
+  // keys rows by camelCase property names, so a fieldName mismatch drops the field
+  // from every auth response.
   user: {
     additionalFields: {
       role: { type: 'string', defaultValue: 'USER' },
-      firstName: { type: 'string', fieldName: 'first_name' },
-      lastName: { type: 'string', fieldName: 'last_name' },
-      avatarUrl: { type: 'string', fieldName: 'avatar_url' },
-      passwordHash: { type: 'string', fieldName: 'password_hash' },
+      firstName: { type: 'string' },
+      lastName: { type: 'string' },
+      avatarUrl: { type: 'string' },
+      passwordHash: { type: 'string', input: false, returned: false },
     },
   },
 
@@ -78,7 +83,8 @@ export const auth = betterAuth({
   plugins: [
     bearer(),
     jwt({ jwks: { disablePrivateKeyEncryption: true } }),
-    admin(),
+    // safe-cast: Better Auth 1.6.13's admin plugin return type is narrower than BetterAuthPlugin.
+    admin() as unknown as BetterAuthPlugin,
     // OAuth 2.1 provider — schema-affecting; mirrors index.ts. See the
     // runtime config in src/auth/index.ts for the option rationale.
     oauthProvider({

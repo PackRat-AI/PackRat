@@ -1,6 +1,7 @@
 {
   "extends": "@packrat/typescript-config/react-native.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "paths": {
       "@packrat/api/*": ["../../packages/api/src/*"],
       "@packrat/api-client": ["../../packages/api-client/src/index.ts"]

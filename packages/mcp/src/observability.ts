@@ -56,6 +56,7 @@
  */
 
 import { isFunction, isObject } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 
 // ── Public types ─────────────────────────────────────────────────────────────
 
@@ -255,7 +256,7 @@ export function createLogger(opts: CreateLoggerOptions): Logger {
       service,
       ...scrubFields(fields),
     };
-    const line = JSON.stringify(payload);
+    const line = safeJsonStringify(payload);
     if (level === 'error') {
       console.error(line);
     } else if (level === 'warn') {

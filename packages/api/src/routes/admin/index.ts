@@ -1,5 +1,6 @@
 import { cors } from '@elysiajs/cors';
 import { getAuth } from '@packrat/api/auth';
+import { resolveMcpBearerUser } from '@packrat/api/auth/mcp-token';
 import { createDb } from '@packrat/api/db';
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
 import { timingSafeEqual } from '@packrat/api/utils/auth';
@@ -17,6 +18,7 @@ import {
   HardDeleteSuccessSchema,
   SuccessSchema,
 } from '@packrat/schemas/admin';
+import { first } from '@packrat/utils';
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
@@ -186,6 +188,10 @@ async function adminAuthGuard(request: Request): Promise<boolean> {
     if (await verifyAdminJwt(header.slice(7))) return true;
     // U5: bearer wasn't a valid admin JWT — try as Better Auth session.
     if (await verifyBetterAuthAdmin(request)) return true;
+    // MCP OAuth access tokens are audience-bound to the MCP resource, not
+    // Better Auth sessions. Admin routes accept them only with mcp:admin and
+    // only when the resolved PackRat user is ADMIN.
+    if (await resolveMcpBearerUser({ env, request, requireAdminScope: true })) return true;
   }
 
   // When CF Access is configured, verify the CF JWT injected by the CF edge.
@@ -763,10 +769,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             ...(body.description !== undefined && { description: body.description }),
           })
           .where(eq(catalogItems.id, id))
-          .returning(); // lint:allow-unprojected-fat-table reason: admin update reads only first.id + first.name; could narrow to .returning({id, name}) but defer to pivot-migration cleanup pass
-        const first = updated[0];
-        if (!first) return status(404, { error: 'Catalog item not found' });
-        return { id: first.id, name: first.name };
+          .returning(); // lint:allow-unprojected-fat-table reason: admin update reads only first.id + first.name; Drizzle 0.45 update returning() overload rejects projection here
+        const firstUpdated = first(updated);
+        if (!firstUpdated) return status(404, { error: 'Catalog item not found' });
+        return { id: firstUpdated.id, name: firstUpdated.name };
       } catch (error) {
         console.error('Error updating catalog item:', error);
         return status(500, { error: 'Failed to update catalog item' });

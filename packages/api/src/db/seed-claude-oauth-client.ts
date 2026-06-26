@@ -10,12 +10,13 @@
  *
  * Implementation note: uses `drizzle-seed` for the insert path so all four
  * PackRat seeders share one tool surface. drizzle-seed has no native upsert,
- * so an explicit existence check before `seed()` keeps re-runs idempotent
- * (drizzle-seed's `reset()` truncates and would break user packs that
- * reference Featured Pack templates — never the right option for prod
- * config rows). Every column gets an explicit `f.default()` because
- * drizzle-seed generates random values for any column not specified in
- * `.refine()` — for fixed config rows you want determinism, not generation.
+ * so an explicit existence check updates the deterministic config row on
+ * re-runs instead of inserting a duplicate (drizzle-seed's `reset()` truncates
+ * and would break user packs that reference Featured Pack templates — never
+ * the right option for prod config rows). Every column gets an explicit
+ * `f.default()` because drizzle-seed generates random values for any column
+ * not specified in `.refine()` — for fixed config rows you want determinism,
+ * not generation.
  *
  * Usage:
  *   NEON_DATABASE_URL=<url> bun run packages/api/src/db/seed-claude-oauth-client.ts
@@ -23,13 +24,15 @@
  * Or via the package script (also wired into CI's post-deploy step):
  *   cd packages/api && bun run db:seed:oauth-clients
  *
- * Operator runs this ONCE per environment (prod, dev) after deploying the API
- * with the oauthProvider plugin enabled. Re-runs are safe (no-op).
+ * Operator runs this once per environment (prod, dev) after deploying the API
+ * with the oauthProvider plugin enabled. Re-runs safely update the fixed
+ * Claude client config.
  */
 
 import { neon, neonConfig } from '@neondatabase/serverless';
 import * as schema from '@packrat/db/schema';
 import { nodeEnv } from '@packrat/env/node';
+import { safeJsonStringify } from '@packrat/utils';
 import { eq } from 'drizzle-orm';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -81,7 +84,15 @@ const CLAUDE_POLICY_URI = 'https://www.anthropic.com/legal/privacy';
 const CLAUDE_TOS_URI = 'https://www.anthropic.com/legal/consumer-terms';
 const CLAUDE_CLIENT_URI = 'https://claude.ai';
 
-const CLAUDE_SCOPES = ['openid', 'profile', 'email', 'offline_access', 'mcp:read', 'mcp:write'];
+const CLAUDE_SCOPES = [
+  'openid',
+  'profile',
+  'email',
+  'offline_access',
+  'mcp:read',
+  'mcp:write',
+  'mcp:admin',
+];
 
 // ── Script body ─────────────────────────────────────────────────────────────
 
@@ -104,22 +115,44 @@ async function seedClaudeOAuthClient(): Promise<void> {
   try {
     // Idempotency check: drizzle-seed has no native upsert, so we gate the
     // seed() call on an explicit existence query keyed on the deterministic
-    // `clientId`. Re-runs short-circuit cleanly without touching the DB.
+    // `clientId`. Re-runs update the existing config row in place.
     const existing = await db
       .select({ clientId: schema.oauthClient.clientId, name: schema.oauthClient.name })
       .from(schema.oauthClient)
       .where(eq(schema.oauthClient.clientId, CLAUDE_CLIENT_ID))
       .limit(1);
 
+    const now = new Date();
     if (existing.length > 0) {
+      await db
+        .update(schema.oauthClient)
+        .set({
+          name: CLAUDE_CLIENT_NAME,
+          icon: CLAUDE_LOGO_URI,
+          policy: CLAUDE_POLICY_URI,
+          tos: CLAUDE_TOS_URI,
+          uri: CLAUDE_CLIENT_URI,
+          redirectUris: CLAUDE_REDIRECT_URIS,
+          grantTypes: ['authorization_code', 'refresh_token'],
+          responseTypes: ['code'],
+          tokenEndpointAuthMethod: 'none',
+          scopes: CLAUDE_SCOPES,
+          type: 'web',
+          public: true,
+          requirePKCE: true,
+          disabled: false,
+          skipConsent: false,
+          updatedAt: now,
+        })
+        .where(eq(schema.oauthClient.clientId, CLAUDE_CLIENT_ID));
       console.log(
-        `[seed] OAuth client "${CLAUDE_CLIENT_ID}" already exists (name="${existing[0]?.name ?? ''}"). Skipping.`,
+        `[seed] Updated OAuth client "${CLAUDE_CLIENT_ID}" (name="${existing[0]?.name ?? ''}").`,
       );
+      console.log(`         scopes           = ${CLAUDE_SCOPES.join(' ')}`);
       return;
     }
 
     const id = crypto.randomUUID();
-    const now = new Date();
 
     // Every column is fixed via f.default() so drizzle-seed's per-column
     // random generator doesn't fire (the default behaviour for columns not
@@ -155,7 +188,7 @@ async function seedClaudeOAuthClient(): Promise<void> {
 
     console.log(`[seed] Registered OAuth client "${CLAUDE_CLIENT_ID}":`);
     console.log(`         name             = ${CLAUDE_CLIENT_NAME}`);
-    console.log(`         redirect_uris    = ${JSON.stringify(CLAUDE_REDIRECT_URIS)}`);
+    console.log(`         redirect_uris    = ${safeJsonStringify(CLAUDE_REDIRECT_URIS)}`);
     console.log(`         token_endpoint_auth_method = none (public client, PKCE required)`);
     console.log(`         scopes           = ${CLAUDE_SCOPES.join(' ')}`);
   } finally {

@@ -5,6 +5,7 @@ import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Modal, ScrollView, View } from 'react-native';
@@ -74,7 +75,7 @@ export function TripDetailScreen() {
           <Text className="mb-3 text-3xl font-bold text-foreground">{trip.name}</Text>
 
           {/* Dates */}
-          <View className="mb-6">
+          <View className="mb-6" testID={testIds.trips.datesSection}>
             <Text className="text-lg font-semibold text-foreground mb-2">{t('trips.dates')}</Text>
             <View className="rounded-xl bg-card border border-border">
               <View className="p-3 flex-row justify-between">

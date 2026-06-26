@@ -19,6 +19,10 @@ export const apiEnvObjectSchema = z.object({
   // Optional: trail routes return 503 when absent. For Cloudflare Workers,
   // set to env.OSM_HYPERDRIVE.connectionString (Hyperdrive binding).
   OSM_DATABASE_URL: z.string().url().optional(),
+  // Local-only override for the host port of the local-neon-http-proxy
+  // (docker-compose.test.yml). Worker entry routes the neon driver to this
+  // port when NEON_DATABASE_URL points at db.localtest.me. Defaults to 4444.
+  NEON_LOCAL_PROXY_PORT: z.string().regex(/^\d+$/).optional(),
 
   // Auth — TRANSITIONAL (2026-05-25 rename).
   //
@@ -38,6 +42,9 @@ export const apiEnvObjectSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
   BETTER_AUTH_TRUSTED_ORIGINS: z.string().optional(),
+  E2E_TEST_EMAIL: z.string().email().optional(),
+  E2E_TEST_PASSWORD: z.string().optional(),
+  E2E_TEST_USER_ID: z.string().uuid().optional(),
   // Google OAuth (Better Auth social provider)
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),

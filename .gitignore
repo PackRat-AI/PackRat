@@ -4,6 +4,7 @@ node_modules
 # output
 out
 dist
+artifacts/
 *.tgz
 
 # code coverage
@@ -21,6 +22,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .env.test.local
 .env.production.local
 .env.local
+.env*.bak.*
 .envrc
 
 # caches
@@ -41,6 +43,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .claude/worktrees/
 .claude/scheduled_tasks.lock
 .dev.vars
+.dev.vars.e2e
+.dev.vars*.bak.*
 
 # Generated OG images (produced at build time by scripts/generate-og-images.ts)
 apps/landing/public/og-image.png
@@ -51,9 +55,29 @@ apps/guides/public/og/
 .lighthouseci/
 
 # Git worktrees
-.worktrees/
 .worktrees
+.worktrees/
 
 # Cloudflare wrangler local state (dev/test artifacts)
 .wrangler/
+
+# Xcode (apps/swift)
+apps/swift/xcconfig/*.local.xcconfig
+apps/swift/PackRat.xcodeproj/
+apps/swift/*.xcworkspace/xcuserdata/
+apps/swift/DerivedData*/
+apps/swift/.build/
+apps/swift/.swiftpm/
+apps/swift/Package.resolved
+apps/swift/PackRatAPIClient/.build/
+apps/swift/PackRatAPIClient/.swiftpm/
+apps/swift/TestResults/
+
+apps/swift/build/
+
+# Quicktype reference output — generated for inspection, not compiled into the app.
+apps/swift/Generated/
 .turbo/
+
+# portless (local-dev proxy; state lives in ~/.portless, this is defensive)
+.portless/

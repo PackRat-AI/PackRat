@@ -279,10 +279,9 @@ describe('call()', () => {
     expect(nth(result.content, 0).text).toContain('12345');
   });
 
-  it('omits the detail when the error body object cannot be serialized (circular ref)', async () => {
-    // No string `message`/`error`, and `JSON.stringify` throws on the circular
-    // reference — the catch returns null so the formatted message carries no
-    // ` — <detail>` suffix rather than crashing the tool dispatch.
+  it('serializes circular error body objects safely', async () => {
+    // No string `message`/`error`, and the body contains a circular reference.
+    // safeJsonStringify preserves useful detail without crashing dispatch.
     const circular: Record<string, unknown> = { code: 1 };
     circular.self = circular;
     const mockPromise = Promise.resolve({
@@ -293,9 +292,9 @@ describe('call()', () => {
     const result = await call({ promise: mockPromise, action: 'fetch data' });
     expect(result.isError).toBe(true);
     const text = nth(result.content, 0).text;
-    // The HTTP status surfaces, but no serialized-body detail suffix appears.
     expect(text).toContain('500');
-    expect(text).not.toContain(' — ');
+    expect(text).toContain('"code":1');
+    expect(text).toContain('"self":"[Circular]"');
   });
 });
 

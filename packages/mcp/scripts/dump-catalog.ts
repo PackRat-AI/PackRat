@@ -40,6 +40,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { isBoolean } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import { classifyTool, type ToolClassification } from '../src/scopes';
 import { registerAdminTools } from '../src/tools/admin';
 import { registerAiTools } from '../src/tools/ai';
@@ -318,7 +319,7 @@ function main(): void {
   const repoRoot = resolve(import.meta.dir, '..', '..', '..');
   const out = resolve(repoRoot, 'apps/landing/data/mcp-catalog.json');
   mkdirSync(dirname(out), { recursive: true });
-  writeFileSync(out, `${JSON.stringify(catalog, null, 2)}\n`);
+  writeFileSync(out, `${safeJsonStringify(catalog, null, 2)}\n`);
 
   // eslint-disable-next-line no-console
   console.log(

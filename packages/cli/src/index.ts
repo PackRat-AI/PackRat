@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nodeEnv } from '@packrat/env/node';
+import { safeJsonParse } from '@packrat/utils';
 import { defineCommand, runMain } from 'citty';
 import consola from 'consola';
 import { z } from 'zod';
@@ -21,7 +22,9 @@ function getCliVersion(): string {
   try {
     const currentDir = dirname(fileURLToPath(import.meta.url));
     const packageJsonPath = resolve(currentDir, '../package.json');
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as unknown;
+    const packageJson = safeJsonParse(readFileSync(packageJsonPath, 'utf-8'), {
+      strict: true,
+    }) as unknown;
     const parsed = packageVersionSchema.safeParse(packageJson);
     if (!parsed.success) {
       consola.warn('package.json is missing a valid string "version" field.');

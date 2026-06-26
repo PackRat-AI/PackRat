@@ -205,16 +205,13 @@ describe('scrubFields', () => {
     expect(out.actor).toEqual({ userId: 'u1' });
   });
 
-  it('does not recurse into a null-prototype object (treated as non-plain)', () => {
-    // radash `isObject` returns false for `Object.create(null)`, so the
-    // `isPlainObject` guard rejects it at the `!isObject` check and the value
-    // passes through verbatim. This is also why the `proto === null` arm of
-    // `isPlainObject` is unreachable: nothing with a null proto ever reaches
-    // the prototype comparison (see report note).
+  it('recurses into a null-prototype object under an allowlisted parent', () => {
     const nullProto = Object.create(null) as Record<string, unknown>;
     nullProto.userId = 'u1';
     nullProto.secret = 'leak';
-    expect(scrubFields({ actor: nullProto })).toEqual({ actor: nullProto });
+    expect(scrubFields({ actor: nullProto })).toEqual({
+      actor: { userId: 'u1', secret: '[redacted]' },
+    });
   });
 
   it('redacts a free-form bag of unknown keys', () => {

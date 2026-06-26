@@ -18,6 +18,7 @@
  * connector-readiness plan).
  */
 
+import { safeJsonStringify } from '@packrat/utils';
 import { ServiceMeta } from './constants';
 import type { Env } from './types';
 
@@ -120,7 +121,7 @@ export function unauthorizedResponse({
   env: Env;
   message?: string;
 }): Response {
-  return new Response(JSON.stringify({ error: 'invalid_token', error_description: message }), {
+  return new Response(safeJsonStringify({ error: 'invalid_token', error_description: message }), {
     status: 401,
     headers: {
       'Content-Type': 'application/json',

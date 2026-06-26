@@ -18,6 +18,7 @@ import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetai
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import 'expo-app/lib/devClient';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { type Href, router, Stack } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import { useEffect, useRef } from 'react';
@@ -122,7 +123,6 @@ export default function AppLayout() {
         />
         <Stack.Screen name="ai-chat" />
         <Stack.Screen name="catalog/[id]" options={getCatalogItemDetailOptions(t)} />
-        <Stack.Screen name="weather/index" options={{ headerShown: false }} />
         <Stack.Screen
           name="weather/search"
           options={{
@@ -131,12 +131,7 @@ export default function AppLayout() {
             animation: 'slide_from_bottom',
           }}
         />
-        <Stack.Screen
-          name="weather/preview"
-          options={{
-            headerShown: false,
-          }}
-        />
+        <Stack.Screen name="weather/preview" />
         <Stack.Screen
           name="weather/[id]"
           options={{
@@ -158,10 +153,10 @@ export default function AppLayout() {
             animation: 'slide_from_bottom',
           }}
         />
+        <Stack.Screen name="upcoming-trips" />
         <Stack.Screen
           name="recent-packs"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -176,7 +171,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="weight-analysis/[id]"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -184,16 +178,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="pack-categories/[id]"
           options={{
-            headerShown: false,
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
-          }}
-        />
-        <Stack.Screen
-          name="upcoming-trips"
-          options={{
-            headerShown: true,
-            headerTitle: '',
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -201,7 +185,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="weather-alerts"
           options={{
-            headerShown: false,
             presentation: 'card',
             animation: 'default',
           }}
@@ -209,7 +192,7 @@ export default function AppLayout() {
         <Stack.Screen
           name="weather-alert-preferences"
           options={{
-            headerLargeTitle: true,
+            ...getAppBarOptions(),
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -217,7 +200,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="trail-conditions"
           options={{
-            headerShown: false,
             presentation: 'card',
             animation: 'slide_from_bottom',
           }}
@@ -225,7 +207,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="gear-inventory"
           options={{
-            headerShown: false,
             presentation: 'card',
             animation: 'slide_from_bottom',
           }}
@@ -233,7 +214,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="shopping-list"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -241,7 +221,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="shared-packs"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -249,8 +228,8 @@ export default function AppLayout() {
         <Stack.Screen
           name="guides/index"
           options={{
+            ...getAppBarOptions(),
             title: 'Guides',
-            headerLargeTitle: true,
           }}
         />
         <Stack.Screen
@@ -262,7 +241,8 @@ export default function AppLayout() {
         <Stack.Screen
           name="pack-templates/index"
           options={{
-            headerShown: false,
+            ...getAppBarOptions(),
+            title: 'Pack Templates',
           }}
         />
         <Stack.Screen

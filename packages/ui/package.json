@@ -6,6 +6,6 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@packrat-ai/nativewindui": "2.0.6"
+    "@packrat-ai/nativewindui": "2.2.1"
   }
 }

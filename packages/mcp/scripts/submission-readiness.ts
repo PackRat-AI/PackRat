@@ -71,6 +71,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isBoolean, isObject, isString, toRecord } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 
 // Local helper: format an unknown thrown value's message without an `as Error` cast.
 // Node convention — many of our error handlers only need the message string.
@@ -442,7 +443,7 @@ export function checkProtectedResourceMetadata(input: ProtectedResourceMetadataI
   }
   let body: unknown;
   try {
-    body = JSON.parse(res.bodyText);
+    body = safeJsonParse(res.bodyText, { strict: true });
   } catch (err) {
     return { name, label, status: 'fail', details: `invalid JSON: ${errMessage(err)}` };
   }
@@ -488,7 +489,7 @@ export function checkProtectedResourceMetadata(input: ProtectedResourceMetadataI
       name,
       label,
       status: 'fail',
-      details: `authorization_servers ${JSON.stringify(asEntries)} does not include ${asUrl} or ${canonicalAs}`,
+      details: `authorization_servers ${safeJsonStringify(asEntries)} does not include ${asUrl} or ${canonicalAs}`,
     };
   }
   // scopes_supported — array containing all four PackRat scopes.
@@ -521,7 +522,7 @@ export function checkProtectedResourceMetadata(input: ProtectedResourceMetadataI
     name,
     label,
     status: 'pass',
-    details: `resource=${meta.resource}, AS=${JSON.stringify(asEntries)}, scopes_supported has all 4 PackRat scopes`,
+    details: `resource=${meta.resource}, AS=${safeJsonStringify(asEntries)}, scopes_supported has all 4 PackRat scopes`,
   };
 }
 
@@ -544,7 +545,7 @@ export function checkAuthorizationServerMetadata(res: ProbeResponse): CheckResul
   }
   let body: unknown;
   try {
-    body = JSON.parse(res.bodyText);
+    body = safeJsonParse(res.bodyText, { strict: true });
   } catch (err) {
     return { name, label, status: 'fail', details: `invalid JSON: ${errMessage(err)}` };
   }
@@ -820,7 +821,7 @@ export function checkHealthStatus(res: ProbeResponse): {
   }
   let body: unknown;
   try {
-    body = JSON.parse(res.bodyText);
+    body = safeJsonParse(res.bodyText, { strict: true });
   } catch (err) {
     return {
       result: { name, label, status: 'fail', details: `invalid JSON: ${errMessage(err)}` },
@@ -835,7 +836,7 @@ export function checkHealthStatus(res: ProbeResponse): {
   }
   const obj = toRecord(body);
   if (obj.status !== 'ok') {
-    const probes = isObject(obj.probes) ? JSON.stringify(obj.probes) : '<no probes field>';
+    const probes = isObject(obj.probes) ? safeJsonStringify(obj.probes) : '<no probes field>';
     return {
       result: {
         name,
@@ -867,7 +868,7 @@ export function checkStatusEndpoint(res: ProbeResponse): CheckResult {
   }
   let body: unknown;
   try {
-    body = JSON.parse(res.bodyText);
+    body = safeJsonParse(res.bodyText, { strict: true });
   } catch (err) {
     return { name, label, status: 'fail', details: `invalid JSON: ${errMessage(err)}` };
   }
@@ -1007,8 +1008,9 @@ export async function loadCatalog(
   for (const path of candidates) {
     try {
       const text = await readFile(path, 'utf8');
-      const parsed = JSON.parse(text);
-      if (parsed && Array.isArray(parsed.tools)) {
+      const parsed = safeJsonParse(text, { strict: true });
+      const parsedRecord = isObject(parsed) ? toRecord(parsed) : null;
+      if (parsedRecord && Array.isArray(parsedRecord.tools)) {
         // safe-cast: shape is asserted above (tools is an array); the Catalog interface's
         // tool fields are all `unknown`, so downstream checks (checkToolAnnotations etc.)
         // validate each field with @packrat/guards before use.
@@ -1173,7 +1175,7 @@ export function formatReport(report: ReadinessReport): string {
 }
 
 export function formatJsonReport(report: ReadinessReport): string {
-  return JSON.stringify(
+  return safeJsonStringify(
     {
       rsUrl: report.rsUrl,
       asUrl: report.asUrl,

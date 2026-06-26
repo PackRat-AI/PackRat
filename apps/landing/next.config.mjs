@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
+  // Linting is handled by Biome (repo standard) — never run ESLint during builds.
   eslint: {
     ignoreDuringBuilds: true,
   },

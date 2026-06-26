@@ -237,6 +237,22 @@ describe('packrat_admin_hard_delete_user (U10 elicitation)', () => {
   });
 });
 
+describe('admin analytics structured output', () => {
+  it.each([
+    'packrat_admin_analytics_growth',
+    'packrat_admin_analytics_activity',
+    'packrat_admin_analytics_pack_breakdown',
+  ])('%s wraps upstream arrays in structuredContent.items', async (toolName) => {
+    const { agent, server } = hMakeAgent();
+    registerAdminTools(agent);
+    const handler = hGetToolHandler(server, toolName);
+    const result = await handler({}, hMakeExtra());
+    expect(result.isError).toBeUndefined();
+    expect(result.structuredContent).toEqual({ items: { success: true } });
+    expect(hFirstText(result)).toContain('"items"');
+  });
+});
+
 // ── packrat_admin_delete_pack ────────────────────────────────────────────────
 
 describe('packrat_admin_delete_pack (U10 elicitation)', () => {

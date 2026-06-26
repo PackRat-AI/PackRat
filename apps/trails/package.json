@@ -9,7 +9,6 @@
     "dev": "next dev",
     "doctor:react": "bunx react-doctor",
     "generate-og-images": "bun run scripts/generate-og-images.ts",
-    "lint": "next lint",
     "start": "next start",
     "test": "vitest run --config vitest.config.ts",
     "test:og-meta": "vitest run --config vitest.config.ts __tests__/og-meta.test.ts"
@@ -19,6 +18,7 @@
     "@packrat/app": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/overpass": "workspace:*",
+    "@packrat/utils": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-dialog": "catalog:",
     "@radix-ui/react-label": "catalog:",

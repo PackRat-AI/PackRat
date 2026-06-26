@@ -85,7 +85,7 @@ function QuickAccessSection({
         contentContainerStyle={{ gap: 8 }}
       >
         {items.map((item) => (
-          <View key={item.id} style={{ width: 288 }}>
+          <View key={item.id} style={{ width: 320 }}>
             <HorizontalCatalogItemCard
               item={item}
               selected={selectedItems.has(item.id)}

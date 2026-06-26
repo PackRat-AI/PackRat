@@ -11,6 +11,7 @@ import { cors } from '@elysiajs/cors';
 import { routes } from '@packrat/api/routes';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
 import { captureApiException, setRequestId } from '@packrat/api/utils/sentry';
+import { safeJsonStringify } from '@packrat/utils';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 
@@ -21,6 +22,7 @@ const ALLOWED_ORIGINS = [
   /^https?:\/\/[\w-]+\.workers\.dev$/,
   /^http:\/\/localhost:\d+$/,
   /^http:\/\/127\.0\.0\.1:\d+$/,
+  /^https:\/\/[\w.-]+\.localhost(:\d+)?$/,
   /^exp:\/\//,
 ];
 
@@ -108,18 +110,18 @@ export const appBase = new Elysia({ adapter: CloudflareAdapter })
 
     const headers = { 'Content-Type': 'application/json', 'X-Request-Id': requestId };
     if (code === 'VALIDATION' || code === 'PARSE') {
-      return new Response(JSON.stringify({ error: 'Validation failed', requestId }), {
+      return new Response(safeJsonStringify({ error: 'Validation failed', requestId }), {
         status: 400,
         headers,
       });
     }
     if (code === 'NOT_FOUND') {
-      return new Response(JSON.stringify({ error: 'Not found', requestId }), {
+      return new Response(safeJsonStringify({ error: 'Not found', requestId }), {
         status: 404,
         headers,
       });
     }
-    return new Response(JSON.stringify({ error: 'Internal server error', requestId }), {
+    return new Response(safeJsonStringify({ error: 'Internal server error', requestId }), {
       status: 500,
       headers,
     });

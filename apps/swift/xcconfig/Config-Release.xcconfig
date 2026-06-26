@@ -1,0 +1,6 @@
+PACKRAT_ENV = production
+
+// SENTRY_DSN flows xcconfig → Info.plist → runtime. Set this in the build
+// environment (CI secret, Release-build script, or Config-Release.local.xcconfig
+// — gitignored) for production crash reporting. Empty value disables Sentry.
+SENTRY_DSN =

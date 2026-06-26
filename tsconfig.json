@@ -10,6 +10,7 @@
     "moduleResolution": "bundler",
     "noEmit": true,
     "noUncheckedIndexedAccess": true,
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
@@ -86,6 +87,7 @@
     // React/React-Native root program.
     "packages/consent-ui",
     "packages/mcp",
+    "apps/swift/scripts",
     "packages/osm-db",
     "packages/osm-import",
     "packages/overpass"

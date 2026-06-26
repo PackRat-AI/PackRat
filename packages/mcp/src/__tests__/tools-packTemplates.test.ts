@@ -83,7 +83,7 @@ describe('registerPackTemplateTools — handler invocation', () => {
     const { agent, server, calls } = makeAgent();
     registerPackTemplateTools(agent);
     const result = await getToolHandler(server, 'packrat_update_pack_template')(
-      { template_id: 'tpl-1', name: 'Renamed', category: PackCategory.Travel },
+      { template_id: 'tpl-1', name: 'Renamed', category: PackCategory.Custom },
       makeExtra(),
     );
 

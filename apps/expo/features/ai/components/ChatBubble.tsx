@@ -1,12 +1,13 @@
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { keyIn } from '@packrat/guards';
-import { Sheet, Text, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
+import { Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import * as Sentry from '@sentry/react-native';
 import type { ToolUIPart, UIMessage } from 'ai';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { Markdown } from 'expo-app/components/Markdown';
 import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import * as Clipboard from 'expo-clipboard';

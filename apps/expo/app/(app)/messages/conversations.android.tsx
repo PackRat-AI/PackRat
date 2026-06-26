@@ -1,6 +1,5 @@
 import { assertDefined } from '@packrat/guards';
 import {
-  AdaptiveSearchHeader,
   Avatar,
   AvatarFallback,
   Button,
@@ -20,7 +19,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { Dimensions, Platform, Pressable, ScrollView, View, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -59,16 +58,18 @@ export default function ConversationsAndroidScreen() {
 
   return (
     <>
-      <AdaptiveSearchHeader
-        iosTitle="Messages"
-        leftView={leftView}
-        rightView={rightView}
-        backgroundColor={Platform.select({
-          ios: isDarkColorScheme ? colors.background : colors.card,
-          default: colors.background,
-        })}
-        searchBar={SEARCH_BAR}
+      <Stack.Screen
+        options={{
+          title: 'Messages',
+          headerLargeTitle: true,
+          headerLeft: leftView,
+          headerRight: rightView,
+          headerSearchBarOptions: {
+            hideWhenScrolling: false,
+          },
+        }}
       />
+      <SearchBarContent />
       <List
         data={ITEMS}
         extraData={[selectedMessages, isDarkColorScheme]}
@@ -166,10 +167,6 @@ function RightView() {
     </Button>
   );
 }
-
-const SEARCH_BAR = {
-  content: <SearchBarContent />,
-};
 
 function SearchBarContent() {
   const { colors } = useColorScheme();

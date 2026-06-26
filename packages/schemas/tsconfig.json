@@ -1,6 +1,7 @@
 {
   "extends": "@packrat/typescript-config/base.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "noUncheckedIndexedAccess": true,
     "paths": {
       "@packrat/db": ["../db/src/index.ts"],

@@ -1,7 +1,9 @@
-import { Text, useColorScheme } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { getWeatherIconByCondition } from 'expo-app/features/weather/lib/weatherIcons';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useEffect } from 'react';
 import { View } from 'react-native';
@@ -43,6 +45,7 @@ interface WeatherGenerativeUIProps {
 export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps) {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
+  const { displayTemperature } = useTemperatureUnit();
 
   useEffect(() => {
     const { toolCallId } = toolInvocation;
@@ -150,7 +153,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
                   <Text
                     className={`text-4xl font-light ${getTemperatureColor(toolInvocation.output.data.temperature)}`}
                   >
-                    {toolInvocation.output.data.temperature}°
+                    {displayTemperature(toolInvocation.output.data.temperature)}
                   </Text>
                   <Text className="mt-1 text-base text-gray-600 dark:text-gray-300">
                     {toolInvocation.output.data.condition || '—'}
@@ -213,9 +216,10 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
   }
 }
 
-const getTemperatureColor = (temp: number) => {
-  if (temp >= 80) return 'text-red-600';
-  if (temp >= 60) return 'text-orange-500';
-  if (temp >= 40) return 'text-blue-500';
+// Thresholds in Celsius: hot ≥27°C, mild ≥15°C, cool ≥4°C
+const getTemperatureColor = (tempC: number) => {
+  if (tempC >= 27) return 'text-red-600';
+  if (tempC >= 15) return 'text-orange-500';
+  if (tempC >= 4) return 'text-blue-500';
   return 'text-blue-700';
 };

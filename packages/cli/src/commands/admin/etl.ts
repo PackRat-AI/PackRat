@@ -1,3 +1,4 @@
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getAdminClient } from '../../api/client';
@@ -16,7 +17,7 @@ const listCmd = defineCommand({
       action: 'admin list ETL jobs',
       requiresAdmin: true,
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 
@@ -33,7 +34,7 @@ const failureSummaryCmd = defineCommand({
       action: 'admin ETL failure summary',
       requiresAdmin: true,
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 
@@ -54,7 +55,7 @@ const jobFailuresCmd = defineCommand({
       resourceHint: `job ${args.id}`,
       requiresAdmin: true,
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 
@@ -68,7 +69,7 @@ const resetStuckCmd = defineCommand({
       action: 'admin reset stuck ETL',
       requiresAdmin: true,
     });
-    consola.success(`Done: ${JSON.stringify(data)}`);
+    consola.success(`Done: ${safeJsonStringify(data)}`);
   },
 });
 
@@ -84,7 +85,7 @@ const retryCmd = defineCommand({
       resourceHint: `job ${args.id}`,
       requiresAdmin: true,
     });
-    consola.success(`Retried: ${JSON.stringify(data)}`);
+    consola.success(`Retried: ${safeJsonStringify(data)}`);
   },
 });
 

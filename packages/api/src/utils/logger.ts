@@ -22,7 +22,17 @@
 // forwards to Sentry.
 
 import { isNumber, isString } from '@packrat/guards';
+import { configureJsonStringify, safeJsonStringify } from '@packrat/utils';
 import { addBreadcrumb, captureException, captureMessage, isInitialized } from '@sentry/cloudflare';
+
+// Stringifier that THROWS on circular structures (like raw JSON.stringify), so
+// the emit() fallback below can detect un-serializable ctx and emit a
+// serializationError line instead of silently writing a `[Circular]` placeholder.
+const stringifyOrThrow = configureJsonStringify({
+  circularValue: Error,
+  bigint: true,
+  deterministic: false,
+});
 
 export type LogContext = Record<string, unknown> & { err?: unknown };
 
@@ -101,9 +111,9 @@ function emit({ level, event, ctx }: EmitArgs): void {
   }
   let out: string;
   try {
-    out = JSON.stringify(line);
+    out = stringifyOrThrow(line);
   } catch {
-    out = JSON.stringify({ level, event, ts: line.ts, serializationError: true });
+    out = safeJsonStringify({ level, event, ts: line.ts, serializationError: true });
   }
   if (level === 'ERROR') {
     console.error(out);

@@ -1,0 +1,14 @@
+id: no-primitive-cast-tsx
+snapshots:
+  const C = () => <A id={id as string} />:
+    labels:
+    - source: id as string
+      style: primary
+      start: 23
+      end: 35
+  const D = () => <A n={count as number} />:
+    labels:
+    - source: count as number
+      style: primary
+      start: 22
+      end: 37

@@ -1,22 +1,19 @@
 import { asBoolean, asString } from '@packrat/guards';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  GoogleSignin,
-  isErrorWithCode,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
+import { safeJsonParse } from '@packrat/utils';
 import * as Sentry from '@sentry/react-native';
 import { AuthClientError, toAuthError } from 'expo-app/features/auth/lib/authErrors';
 import { userStore } from 'expo-app/features/auth/store';
 import type { User } from 'expo-app/features/profile/types';
 import * as AppleAuthentication from 'expo-app/lib/appleAuthentication';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { authClient } from 'expo-app/lib/auth-client';
+import Storage from 'expo-app/lib/expoSqliteKvStore';
+import { GoogleSignin, isErrorWithCode, statusCodes } from 'expo-app/lib/googleSignin';
 import { t } from 'expo-app/lib/i18n';
 import * as Updates from 'expo-app/lib/updates';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { queryClient } from 'expo-app/providers/TanstackProvider';
 import { type Href, router } from 'expo-router';
-import Storage from 'expo-sqlite/kv-store';
 import { useAtomValue, useSetAtom } from 'jotai';
 import {
   isLoadingAtom,
@@ -28,7 +25,7 @@ import {
 
 function redirect(route: string) {
   try {
-    const parsedRoute: Href = JSON.parse(route);
+    const parsedRoute = safeJsonParse<Href>(route, { strict: true });
     return router.replace(parsedRoute);
   } catch {
     router.replace(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
@@ -38,11 +35,15 @@ function redirect(route: string) {
 function mapToUser(raw: Record<string, unknown>): User {
   const name = asString(raw.name) ?? '';
   const spaceIdx = name.indexOf(' ');
+  // Prefer explicit firstName/lastName additionalFields from Better Auth over
+  // splitting the combined name field, which may be stale after a profile update.
+  const firstName = asString(raw.firstName) ?? (spaceIdx >= 0 ? name.slice(0, spaceIdx) : name);
+  const lastName = asString(raw.lastName) ?? (spaceIdx >= 0 ? name.slice(spaceIdx + 1) : '');
   return {
     id: asString(raw.id) ?? '',
     email: asString(raw.email) ?? '',
-    firstName: spaceIdx >= 0 ? name.slice(0, spaceIdx) : name,
-    lastName: spaceIdx >= 0 ? name.slice(spaceIdx + 1) : '',
+    firstName,
+    lastName,
     role: asString(raw.role) ?? 'USER',
     emailVerified: asBoolean(raw.emailVerified) ?? null,
     avatarUrl: asString(raw.avatarUrl) ?? asString(raw.image) ?? null,

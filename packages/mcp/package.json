@@ -7,7 +7,8 @@
     "check-types": "tsc --noEmit",
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e dev",
-    "dev": "wrangler dev -e dev",
+    "dev": "wrangler dev -e dev --port ${PORT:-8787}",
+    "disabled-check-types": "tsc --noEmit",
     "test": "vitest run",
     "test:integration": "vitest run --project mcp-integration",
     "test:unit": "vitest run --project mcp-unit",
@@ -18,8 +19,10 @@
     "@packrat/api-client": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/schemas": "workspace:*",
+    "@packrat/utils": "workspace:*",
     "agents": "^0.13.2",
     "jose": "^6.0.0",
+    "magic-regexp": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

@@ -190,14 +190,65 @@ describe('extractSpecsFromRow', () => {
 });
 
 describe('SpecParser DB queries', () => {
-  const makeParser = (columns: string[], rows: unknown[][]) => {
-    const runAndReadAll = vi.fn().mockResolvedValue({
+  function makeResult(columns: string[], rows: unknown[][]) {
+    return {
       columnNames: () => columns,
       getRows: () => rows,
-    });
+    };
+  }
+
+  const makeParser = (columns: string[], rows: unknown[][]) => {
+    const runAndReadAll = vi.fn().mockResolvedValue(makeResult(columns, rows));
     const conn = { runAndReadAll } as unknown as DuckDBConnection;
     return { parser: new SpecParser({ conn }), runAndReadAll };
   };
+
+  it('builds parsed specs with a mocked DuckDB connection', async () => {
+    const run = vi.fn();
+    const runAndReadAll = vi.fn().mockResolvedValue(
+      makeResult(
+        ['site', 'name', 'brand', 'category', 'price', 'product_url', 'description', 'tags'],
+        [
+          [
+            'rei',
+            'Women 30F Sleeping Bag',
+            'REI',
+            'sleeping bags',
+            199,
+            'https://example.com/bag',
+            '1 lb 2 oz and 650 fill',
+            '3-season women',
+          ],
+          [
+            'rei',
+            'Camp Chair',
+            'REI',
+            'furniture',
+            49,
+            'https://example.com/chair',
+            'folding chair',
+            '',
+          ],
+        ],
+      ),
+    );
+
+    const parser = new SpecParser({
+      conn: { run, runAndReadAll } as unknown as DuckDBConnection,
+      sourceTable: 'gear_source',
+    });
+
+    await expect(parser.build(1)).resolves.toEqual({ total: 2, parsed: 1 });
+    expect(runAndReadAll).toHaveBeenCalledWith(
+      'SELECT site, name, brand, category, price, product_url, description, tags FROM gear_source',
+    );
+    expect(run).toHaveBeenCalledWith('DROP TABLE IF EXISTS parsed_specs');
+    expect(run).toHaveBeenCalledWith(expect.stringContaining('CREATE TABLE parsed_specs'));
+    expect(run).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO parsed_specs VALUES'));
+    expect(run).toHaveBeenCalledWith(
+      'CREATE INDEX IF NOT EXISTS idx_specs_name ON parsed_specs(name)',
+    );
+  });
 
   it('getProductSpecs maps result rows to objects by column name', async () => {
     const { parser } = makeParser(
@@ -231,6 +282,11 @@ describe('SpecParser DB queries', () => {
     const sql = String(runAndReadAll.mock.calls[0]?.[0]);
     expect(sql).toContain('WHERE');
     expect(sql).toContain('weight_grams IS NOT NULL');
+    expect(sql).toContain('temp_rating_f IS NOT NULL AND temp_rating_f <= 30');
+    expect(sql).toContain('price <= 600');
+    expect(sql).toContain('price >= 50');
+    expect(sql).toContain("gender = 'women''s'");
+    expect(sql).toContain("seasons = '3-season'");
     expect(sql).toContain('ORDER BY price');
   });
 

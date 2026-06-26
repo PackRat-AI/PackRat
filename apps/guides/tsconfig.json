@@ -1,6 +1,7 @@
 {
   "extends": "@packrat/typescript-config/nextjs.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "paths": {
       "guides-app/*": ["./*"],
       "@packrat/guards": ["../../packages/guards/src"],

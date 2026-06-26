@@ -36,7 +36,8 @@
 
 import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
-import { isObject, isString, toRecord } from '@packrat/guards';
+import { isNumber, isObject, isString, toRecord } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import { GLOSSARY_MARKDOWN } from './glossary';
 import type { AgentContext } from './types';
 
@@ -126,7 +127,7 @@ async function readJsonResource({
       {
         uri,
         mimeType: 'application/json',
-        text: JSON.stringify(result.data, null, 2),
+        text: safeJsonStringify(result.data, null, 2),
       },
     ],
   };
@@ -295,8 +296,7 @@ export function registerResources(agent: AgentContext): void {
               .filter(
                 (c): c is { id: string | number; name?: string; brand?: string } =>
                   isObject(c) &&
-                  (isString((c as { id?: unknown }).id) ||
-                    typeof (c as { id?: unknown }).id === 'number'),
+                  (isString((c as { id?: unknown }).id) || isNumber((c as { id?: unknown }).id)),
               )
               .map((c, idx) => ({
                 uri: `packrat://catalog/${String(c.id)}`,

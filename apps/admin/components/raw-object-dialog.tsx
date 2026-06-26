@@ -1,5 +1,6 @@
 'use client';
 
+import { safeJsonStringify } from '@packrat/utils';
 import { Button } from '@packrat/web-ui/components/button';
 import {
   Dialog,
@@ -36,7 +37,7 @@ export function RawObjectDialog({ label, data }: RawObjectDialogProps) {
         </DialogHeader>
         <div className="max-h-[60vh] overflow-auto rounded-md bg-muted p-4">
           <pre className="text-xs leading-relaxed text-foreground whitespace-pre-wrap break-all">
-            {JSON.stringify(data, null, 2)}
+            {safeJsonStringify(data, null, 2)}
           </pre>
         </div>
       </DialogContent>

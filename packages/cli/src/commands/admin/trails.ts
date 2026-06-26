@@ -1,4 +1,5 @@
 import { toRecord, toRecordArray } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getAdminClient } from '../../api/client';
@@ -64,7 +65,7 @@ const reportsCmd = defineCommand({
       requiresAdmin: true,
     });
     if (args.json) {
-      process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+      process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
       return;
     }
     // Endpoint returns { data: [...], total, limit, offset }

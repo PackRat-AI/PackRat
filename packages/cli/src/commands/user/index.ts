@@ -1,4 +1,5 @@
 import { toRecord } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
 import { requireAuth, runApi } from '../../api/run';
@@ -41,7 +42,7 @@ const updateCmd = defineCommand({
     if (args.email) body.email = args.email;
     if (args.avatar) body.avatarUrl = args.avatar;
     const data = await runApi({ promise: client.user.profile.put(body), action: 'update profile' });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 

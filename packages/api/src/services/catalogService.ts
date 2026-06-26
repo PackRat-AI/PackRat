@@ -26,6 +26,24 @@ import {
 } from 'drizzle-orm';
 import { getEmbeddingText } from '../utils/embeddingHelper';
 
+function normalizeCatalogItem<T extends Record<string, unknown>>(
+  item: T,
+): T & {
+  weight: number;
+  weightUnit: NonNullable<CatalogItem['weightUnit']>;
+} {
+  const catalogItem = item as T & {
+    weight?: number | null;
+    weightUnit?: CatalogItem['weightUnit'] | null;
+  };
+
+  return {
+    ...item,
+    weight: catalogItem.weight ?? 0,
+    weightUnit: catalogItem.weightUnit ?? 'g',
+  };
+}
+
 export class CatalogService {
   private db;
   private env: Env;
@@ -193,7 +211,7 @@ export class CatalogService {
         .orderBy(...orderBy);
 
       return {
-        items: items.map(({ pack_item_count, ...item }) => item),
+        items: items.map(({ pack_item_count, ...item }) => normalizeCatalogItem(item)),
         limit: items.length,
         total: items.length,
         offset: 0,
@@ -259,10 +277,10 @@ export class CatalogService {
     ]);
     const totalCount = totalCountResult[0]?.totalCount ?? 0;
 
-    const items = itemsWithCounts.map(({ pack_item_count, ...item }) => item);
+    const items = itemsWithCounts.map(({ pack_item_count, ...item }) => normalizeCatalogItem(item));
 
     return {
-      items,
+      items: items.map(normalizeCatalogItem),
       total: Number(totalCount),
       limit,
       offset,
