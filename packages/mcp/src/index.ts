@@ -212,7 +212,9 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
 
 const BEARER_REGEX = /^Bearer\s+(\S+)/i;
 
-const mcpDoHandler = PackRatMCP.serve('/mcp');
+// The Agents SDK's serve() defaults to a DO binding named `MCP_OBJECT`; our
+// wrangler config names the binding `PackRatMCP`, so point serve() at it.
+const mcpDoHandler = PackRatMCP.serve('/mcp', { binding: 'PackRatMCP' });
 
 // ── Props schema (OAuthProvider injects this at runtime via ctx) ──────────────
 

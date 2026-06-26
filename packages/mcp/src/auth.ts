@@ -33,6 +33,11 @@ const OAuthStateSchema = z.object({
   redirectUri: z.string(),
   scope: z.array(z.string()),
   state: z.string(),
+  // PKCE fields must survive the KV round-trip so completeAuthorization mints a
+  // code bound to the challenge; otherwise the client's code_verifier at /token
+  // is rejected with "code_verifier provided for a flow that did not use PKCE".
+  codeChallenge: z.string().optional(),
+  codeChallengeMethod: z.string().optional(),
 });
 
 const SessionKvSchema = z.object({
@@ -40,7 +45,11 @@ const SessionKvSchema = z.object({
   userId: z.string(),
 });
 
+// Better Auth's `/sign-in/email` (with the bearer() plugin) returns the session
+// token at the top level: `{ token, user }`. Older/other flows nest it under
+// `session.token`, so accept both shapes for robustness.
 const SignInResponseSchema = z.object({
+  token: z.string().optional(),
   session: z.object({ token: z.string() }).optional(),
   user: z.object({ id: z.string() }).optional(),
 });
@@ -256,7 +265,9 @@ async function handleLoginPost({
   }
 
   const signInResult = SignInResponseSchema.safeParse(await signInRes.json().catch(() => null));
-  const betterAuthToken = signInResult.success ? signInResult.data.session?.token : undefined;
+  const betterAuthToken = signInResult.success
+    ? (signInResult.data.token ?? signInResult.data.session?.token)
+    : undefined;
   const userId = signInResult.success ? signInResult.data.user?.id : undefined;
 
   if (!betterAuthToken || !userId) {
