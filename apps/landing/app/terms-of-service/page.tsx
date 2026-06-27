@@ -191,14 +191,11 @@ export default function TermsOfServicePage() {
 
         <section className="space-y-4">
           <h2 className="text-2xl font-semibold tracking-tight">Governing Law</h2>
-          {/* TODO(operator): set jurisdiction — replace this paragraph with the chosen US state's
-              choice-of-law and venue clause once legal review is complete. The placeholder below
-              defaults to the State of Delaware and the federal/state courts located there. */}
           <p>
-            These Terms are governed by the laws of the United States and the State of Delaware,
-            without regard to its conflict-of-laws rules. Any dispute that cannot be resolved
-            informally will be brought exclusively in the state or federal courts located in
-            Delaware, and you and PackRat each consent to that venue.
+            These Terms are governed by the laws of the United States and the Commonwealth of
+            Virginia, without regard to its conflict-of-laws rules. Any dispute that cannot be
+            resolved informally will be brought exclusively in the state or federal courts located
+            in Virginia, and you and PackRat each consent to that venue.
           </p>
         </section>
 
