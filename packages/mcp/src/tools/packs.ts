@@ -625,10 +625,9 @@ export function registerPackTools(agent: AgentContext): void {
       },
       annotations: {
         title: 'Analyze Pack Image',
-        readOnlyHint: false,
-        destructiveHint: false,
+        readOnlyHint: true,
         idempotentHint: false,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     },
     async ({ image_key, match_limit }) =>

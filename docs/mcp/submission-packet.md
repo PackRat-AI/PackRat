@@ -53,7 +53,7 @@ the public site).
        .toFile(\`apps/landing/public/mcp-logo-\${size}.png\`).then(i=>console.log(size,i.size));
    "
    ```
-5. Sign in to <https://clau.de/mcp-directory-submission> with the
+5. Sign in to <https://claude.ai/admin-settings/directory/submissions/new> with the
    `hello@packratai.com` Google account (or whichever account owns the
    listing).
 6. Paste each field verbatim from § 2 below. Attach the PNG logo,
@@ -65,7 +65,7 @@ the public site).
 
 ## 1. Submission form
 
-- **Form URL:** <https://clau.de/mcp-directory-submission> (Anthropic's
+- **Form URL:** <https://claude.ai/admin-settings/directory/submissions/new> (Anthropic's
   Claude Connector Store submission form; same URL the plan's U18
   references).
   - If the form 404s, check Anthropic's [Submitting to the Connectors
@@ -90,7 +90,7 @@ changes the form. Each row is the value the operator pastes verbatim.
 | Form field | Value | Source / notes |
 | --- | --- | --- |
 | Connector name | `PackRat` | Single brand string; matches the `serverInfo.name` emitted by the Worker. |
-| Tagline (≤ 80 chars) | `Plan trips, build packs, check weather — from any MCP client.` | Public docs page hero (`apps/landing/app/mcp/page.tsx`). |
+| Tagline (≤ 55 chars) | `Plan trips, build packs, check weather.` | Public docs page hero (`apps/landing/app/mcp/page.tsx`). 40 chars — within the 55-char form limit. |
 | Short description (≤ 150 chars) | `PackRat is a free outdoor adventure planner — packs, trips, trails, gear, weather — connected to Claude via MCP.` | 141 chars. |
 | Long description (≤ 500 chars) | See "Description draft" below. | ≈ 470 chars; trim further if the form caps lower. |
 | Category (primary) | `Productivity` | Anthropic's published category taxonomy as of plan-drafting; PackRat is a planning/productivity tool first and an outdoor tool second. **TODO (operator):** confirm the exact category strings against the live form before submitting. |
