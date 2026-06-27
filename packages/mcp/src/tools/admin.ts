@@ -35,7 +35,7 @@ import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 /**
- * U10: map a `confirmAction` failure reason into the canonical structured-
+ * Maps a `confirmAction` failure reason into the canonical structured-
  * error envelope. Kept here (not in `elicit.ts`) so the helper module
  * stays free of `errResponse` coupling and remains usable from tests
  * that don't want the `McpToolResult` shape.
@@ -246,7 +246,7 @@ export function registerAdminTools(agent: AgentContext): void {
       title: 'Admin: Hard-Delete User',
       description:
         'GDPR-style hard-delete of a user. Irrevocable. Requires a non-empty `reason` for the audit log. ' +
-        'U10: prompts the user to retype the target user_id before proceeding.',
+        'Prompts the user to retype the target user_id before proceeding.',
       inputSchema: { user_id: z.string(), reason: z.string().min(1) },
       annotations: {
         title: 'Admin: Hard-Delete User',
@@ -259,7 +259,7 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ user_id, reason }, extra) => {
       const { logger, actor } = auditCtxFor(agent);
       const target = { type: 'user', id: user_id };
-      // U10: confirm before the irreversible side-effect. We require the
+      // Confirm before the irreversible side-effect. We require the
       // operator to retype the user_id verbatim. The admin API has no
       // GET-by-id endpoint to enrich the prompt with the username/email
       // pre-deletion (see `packages/api/src/routes/admin/index.ts` — only
@@ -345,7 +345,7 @@ export function registerAdminTools(agent: AgentContext): void {
       title: 'Admin: Delete Pack',
       description:
         'Soft-delete a pack as admin (bypasses ownership). ' +
-        'U10: prompts the user to type DELETE before proceeding.',
+        'Prompts the user to type DELETE before proceeding.',
       inputSchema: { pack_id: z.string() },
       annotations: {
         title: 'Admin: Delete Pack',
@@ -476,7 +476,7 @@ export function registerAdminTools(agent: AgentContext): void {
     {
       title: 'Admin: Delete Catalog Item',
       description:
-        'Delete a catalog item as admin. U10: prompts the user to type DELETE before proceeding.',
+        'Delete a catalog item as admin. Prompts the user to type DELETE before proceeding.',
       inputSchema: { item_id: z.union([z.string(), z.number()]) },
       annotations: {
         title: 'Admin: Delete Catalog Item',
@@ -630,7 +630,7 @@ export function registerAdminTools(agent: AgentContext): void {
       title: 'Admin: Delete Trail Condition Report',
       description:
         'Soft-delete a trail condition report as admin. ' +
-        'U10: prompts the user to type DELETE before proceeding.',
+        'Prompts the user to type DELETE before proceeding.',
       inputSchema: { report_id: z.string() },
       annotations: {
         title: 'Admin: Delete Trail Condition Report',

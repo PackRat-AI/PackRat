@@ -91,7 +91,7 @@ export default function PrivacyPolicyPage() {
           </p>
         </section>
 
-        <section className="space-y-4">
+        <section id="mcp" className="space-y-4">
           <h2 className="text-2xl font-semibold tracking-tight">
             MCP Connector & Third-Party Clients
           </h2>

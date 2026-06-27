@@ -187,7 +187,7 @@ export async function confirmAction({
     result = await agent.elicitInput(
       {
         message: opts.message,
-        // U10: a single-field schema. The `enum`-style "type the exact
+        // Single-field schema. The `enum`-style "type the exact
         // word" pattern is not expressible in JSON Schema without a
         // const+pattern combo that some clients render poorly, so we
         // accept any string at the protocol level and validate the

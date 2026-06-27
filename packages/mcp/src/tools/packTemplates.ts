@@ -27,7 +27,7 @@ import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 /**
- * U10: structured error envelope for elicitation failures on the two
+ * Structured error envelope for elicitation failures on the two
  * destructive/high-blast-radius template tools. Mirrors the helper of the
  * same name in `tools/admin.ts`; duplicated rather than centralised to
  * keep both files independently grep-able and avoid a circular-import
