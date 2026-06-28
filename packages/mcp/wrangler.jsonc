@@ -38,7 +38,7 @@
   "account_id": "a0e238a64b4bb8d9ca35c30149c26893",
   "main": "src/index.ts",
   "compatibility_date": "2025-04-01",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "keep_vars": true,
   "logpush": true,
   // Runtime-injected deploy metadata ({ id, tag, timestamp }); surfaced on
