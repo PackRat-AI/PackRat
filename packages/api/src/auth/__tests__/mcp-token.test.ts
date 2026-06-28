@@ -114,9 +114,9 @@ describe('resolveMcpBearerUser', () => {
       'abc',
       { jwks: true },
       {
-        issuer: 'https://api.packrat.world',
+        issuer: 'https://api.packrat.world/api/auth',
         audience: 'https://mcp.packratai.com/mcp',
-        algorithms: ['ES256', 'RS256'],
+        algorithms: ['EdDSA', 'ES256', 'RS256'],
       },
     );
   });

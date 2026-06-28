@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
   const compiledApp = { fetch: vi.fn(async () => new Response('ok')) };
-  const appBase = {
-    use: vi.fn(() => ({
-      compile: vi.fn(() => compiledApp),
-    })),
-  };
+  // `use` must be chainable: appBase.use(a).use(b).compile() mirrors Elysia's
+  // fluent API. The mock returns the same builder object on every .use() call.
+  const builder = { use: vi.fn(), compile: vi.fn(() => compiledApp) };
+  builder.use.mockReturnValue(builder);
+  const appBase = builder;
 
   return {
     appBase,
@@ -51,6 +51,7 @@ vi.mock('@packrat/api/auth', () => ({
 
 vi.mock('@packrat/api/auth/consent-route', () => ({
   consentRoute: {},
+  signInRoute: {},
 }));
 
 vi.mock('@packrat/api/auth/local-e2e', () => ({
