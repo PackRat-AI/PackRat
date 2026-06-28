@@ -87,6 +87,7 @@ describe('buildResourceMetadata', () => {
     expect(meta.scopes_supported).toEqual([...SCOPES_SUPPORTED]);
     expect(meta.bearer_methods_supported).toEqual(['header']);
     expect(meta.resource_name).toBe('PackRat MCP');
+    expect(meta.logo_uri).toBe('https://packratai.com/mcp-logo-256.png');
   });
 
   it('uses the local resource URL in local dev (MCP_PUBLIC_URL set)', () => {
@@ -104,8 +105,8 @@ describe('buildWwwAuthenticateHeader', () => {
     );
   });
 
-  it('defaults the scope hint to "mcp:read"', () => {
-    expect(buildWwwAuthenticateHeader({ env })).toContain('scope="mcp:read"');
+  it('defaults the scope hint to "mcp:write" so Claude requests write access', () => {
+    expect(buildWwwAuthenticateHeader({ env })).toContain('scope="mcp:write"');
   });
 
   it('passes through a specific requested scope when provided', () => {
