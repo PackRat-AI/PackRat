@@ -25,7 +25,7 @@
 import { getAuth } from '@packrat/api/auth';
 import { createDb } from '@packrat/api/db';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { type OAuthClientRecord, renderConsentPage } from '@packrat/consent-ui';
+import { type OAuthClientRecord, renderConsentPage, renderSignInPage } from '@packrat/consent-ui';
 import * as dbSchema from '@packrat/db';
 import { isString, toRecord, toString as toStr } from '@packrat/guards';
 import { eq } from 'drizzle-orm';
@@ -34,6 +34,26 @@ import { createRegExp, oneOrMore, whitespace } from 'magic-regexp';
 
 // Matches RFC 6749 §3.3 (space-separated scopes).
 const SCOPE_SEPARATOR_RE = createRegExp(oneOrMore(whitespace));
+
+/**
+ * GET /api/auth/sign-in — sign-in page for the OAuth consent flow.
+ *
+ * `@better-auth/oauth-provider` redirects here when the user isn't
+ * authenticated mid-OAuth-flow (configured via `loginPage` in auth/index.ts).
+ * Better Auth passes the raw OAuth params on the query string rather than a
+ * `callbackURL`; the inline JS in the rendered page reconstructs the authorize
+ * URL from those params after a successful sign-in.
+ */
+export const signInRoute = new Elysia().get('/api/auth/sign-in', ({ query, set }) => {
+  // The callbackURL may or may not be present. The inline JS in the page
+  // handles both cases — if absent it reconstructs from window.location.search.
+  const callbackURL = isString(query.callbackURL) ? query.callbackURL : '';
+  set.headers['content-type'] = 'text/html; charset=utf-8';
+  set.headers['cache-control'] = 'no-store';
+  set.headers['x-content-type-options'] = 'nosniff';
+  set.headers['x-frame-options'] = 'DENY';
+  return renderSignInPage({ callbackURL });
+});
 
 export const consentRoute = new Elysia().get('/oauth/consent', async ({ request, query, set }) => {
   const clientId = isString(query.client_id) ? query.client_id : '';

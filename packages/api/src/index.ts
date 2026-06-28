@@ -14,13 +14,14 @@ import type { MessageBatch, ScheduledController } from '@cloudflare/workers-type
 import { neonConfig } from '@neondatabase/serverless';
 import { type App, addCorsHeaders, appBase, corsPreflightResponse } from '@packrat/api/app';
 import { getAuth } from '@packrat/api/auth';
-import { consentRoute } from '@packrat/api/auth/consent-route';
+import { consentRoute, signInRoute } from '@packrat/api/auth/consent-route';
 import {
   isLocalE2EAuthEnabled,
   localE2EToken,
   makeLocalE2EUser,
 } from '@packrat/api/auth/local-e2e';
 import { AppContainer } from '@packrat/api/containers';
+import { createDb } from '@packrat/api/db';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
@@ -34,7 +35,12 @@ import {
 } from '@packrat/api/utils/queryMetrics';
 import { captureApiException, record } from '@packrat/api/utils/sentry';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
+import { renderConsentPage, renderSignInPage } from '@packrat/consent-ui';
+import * as dbSchema from '@packrat/db';
+import { isString, toRecord, toString as toStr } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
+import { eq } from 'drizzle-orm';
 import type { CatalogETLMessage } from './services/etl/types';
 
 export type { App };
@@ -42,7 +48,10 @@ export type { App };
 const bearerPrefixRegex = /^Bearer\s+/i;
 const scopeSplitRegex = /\s+/;
 const OAUTH_CONSENT_PATH = '/api/auth/oauth2/consent';
+const OAUTH_AUTHORIZE_PATH = '/api/auth/oauth2/authorize';
 const WELL_KNOWN_ALLOWED_ORIGINS = new Set(['https://claude.ai', 'https://claude.com']);
+/** localhost origins get CORS on the well-known endpoints so MCP Inspector can drive OAuth discovery. */
+const LOCALHOST_WELL_KNOWN_ORIGIN = /^http:\/\/localhost:\d+$/;
 
 // Sentry options for both the Worker handlers and the workflow class.
 // Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate
@@ -58,7 +67,7 @@ function sentryOptions(env: Env) {
 }
 
 // Runtime instance: same routes as `App` plus the branded OAuth consent page.
-export const app = appBase.use(consentRoute).compile();
+export const app = appBase.use(signInRoute).use(consentRoute).compile();
 
 export { AppContainer };
 
@@ -125,7 +134,11 @@ function applyWellKnownCors(request: Request, response: Response | null): Respon
   }
 
   const origin = request.headers.get('Origin');
-  if (!origin || !WELL_KNOWN_ALLOWED_ORIGINS.has(origin)) return null;
+  if (
+    !origin ||
+    (!WELL_KNOWN_ALLOWED_ORIGINS.has(origin) && !LOCALHOST_WELL_KNOWN_ORIGIN.test(origin))
+  )
+    return null;
 
   if (request.method === 'OPTIONS') {
     return new Response(null, {
@@ -162,8 +175,21 @@ async function sanitizeOAuthConsentRequest(
   const role = (session.user as unknown as { role?: string }).role ?? 'USER';
   if (role === 'ADMIN') return request;
 
-  const form = new URLSearchParams(await request.text());
-  const postedScope = form.get('scope');
+  // Consent body is now JSON (the consent page switched from form-urlencoded to
+  // fetch+JSON so Better Auth's /oauth2/consent endpoint accepts it). Parse,
+  // strip mcp:admin for non-admins, and rewrite the body.
+  const text = await request.text();
+  let body: { accept?: unknown; scope?: unknown; oauth_query?: unknown };
+  try {
+    body = safeJsonParse(text) as typeof body;
+  } catch {
+    return Response.json(
+      { error: 'invalid_request', error_description: 'Consent body must be JSON' },
+      { status: 400 },
+    );
+  }
+
+  const postedScope = isString(body.scope) ? body.scope : null;
   if (postedScope === null) {
     return Response.json(
       { error: 'invalid_scope', error_description: 'scope is required for consent' },
@@ -175,15 +201,46 @@ async function sanitizeOAuthConsentRequest(
     .split(scopeSplitRegex)
     .filter((scope) => scope && scope !== 'mcp:admin')
     .join(' ');
-  form.set('scope', reducedScope);
 
+  const sanitized = safeJsonStringify({ ...body, scope: reducedScope });
   const headers = new Headers(request.headers);
-  headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+  headers.set('content-type', 'application/json');
   headers.delete('content-length');
   return new Request(request.url, {
     method: request.method,
     headers,
-    body: form,
+    body: sanitized,
+    redirect: request.redirect,
+  });
+}
+
+// Strip `mcp:admin` from the authorize request scope for non-admin users so
+// the already-stored consent (which never includes mcp:admin for non-admins)
+// covers the entire requested set and the consent page isn't shown on every
+// reconnect. Admin users pass through unchanged — their consent records DO
+// include mcp:admin since it's never filtered on their path.
+async function sanitizeAuthorizeRequest(request: Request, env: Env): Promise<Request> {
+  const url = new URL(request.url);
+  if (request.method !== 'GET' || url.pathname !== OAUTH_AUTHORIZE_PATH) return request;
+  const scope = url.searchParams.get('scope');
+  if (!scope?.includes('mcp:admin')) return request;
+
+  const auth = await getAuth(env);
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session?.user) return request;
+
+  const role = (session.user as unknown as { role?: string }).role ?? 'USER';
+  if (role === 'ADMIN') return request;
+
+  const reducedScope = scope
+    .split(scopeSplitRegex)
+    .filter((s) => s && s !== 'mcp:admin')
+    .join(' ');
+  const newUrl = new URL(request.url);
+  newUrl.searchParams.set('scope', reducedScope);
+  return new Request(newUrl.toString(), {
+    method: request.method,
+    headers: request.headers,
     redirect: request.redirect,
   });
 }
@@ -281,6 +338,106 @@ const workerHandler = {
         }
       }
 
+      // Sign-in and consent pages for the OAuth flow — intercepted before any
+      // other handler so neither Better Auth nor Elysia routing interferes.
+      if (request.method === 'GET' && url.pathname === '/api/auth/sign-in') {
+        const callbackURL = url.searchParams.get('callbackURL') ?? '';
+        const html = renderSignInPage({ callbackURL });
+        const response = new Response(html, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-store',
+            'X-Content-Type-Options': 'nosniff',
+            'X-Frame-Options': 'DENY',
+          },
+        });
+        flushFetchMetrics({ ctx, response });
+        return response;
+      }
+
+      if (request.method === 'GET' && url.pathname === '/oauth/consent') {
+        const validatedEnv = getEnv();
+        const auth = await getAuth(validatedEnv);
+        const session = await auth.api.getSession({ headers: request.headers });
+        if (!session?.user) {
+          const signInUrl = new URL('/api/auth/sign-in', url.origin);
+          signInUrl.searchParams.set('callbackURL', url.toString());
+          const response = new Response(null, {
+            status: 302,
+            headers: { Location: signInUrl.toString(), 'Cache-Control': 'no-store' },
+          });
+          flushFetchMetrics({ ctx, response });
+          return response;
+        }
+
+        const clientId = url.searchParams.get('client_id') ?? '';
+        if (!clientId) {
+          const response = new Response('Missing client_id', { status: 400 });
+          flushFetchMetrics({ ctx, response });
+          return response;
+        }
+
+        const db = createDb();
+        const clientRows = await db
+          .select()
+          .from(dbSchema.oauthClient)
+          .where(eq(dbSchema.oauthClient.clientId, clientId))
+          .limit(1);
+        const clientRow = clientRows[0] as
+          | {
+              clientId: string;
+              name: string;
+              icon?: string | null;
+              tos?: string | null;
+              policy?: string | null;
+              uri?: string | null;
+            }
+          | undefined;
+
+        if (!clientRow) {
+          const response = new Response(`Unknown OAuth client: ${clientId}`, { status: 404 });
+          flushFetchMetrics({ ctx, response });
+          return response;
+        }
+
+        const userRole = toStr(toRecord(session.user).role) ?? 'USER';
+        const isAdmin = userRole === 'ADMIN';
+        const requestedScopes = (url.searchParams.get('scope') ?? '')
+          .split(scopeSplitRegex)
+          .filter(Boolean);
+        const approvableScopes = requestedScopes.filter((s) => isAdmin || s !== 'mcp:admin');
+        const oauthQuery = url.search.startsWith('?') ? url.search.slice(1) : url.search;
+
+        const html = renderConsentPage({
+          user: { name: session.user.name, email: session.user.email },
+          isAdmin,
+          client: {
+            clientId: clientRow.clientId,
+            name: clientRow.name,
+            icon: clientRow.icon ?? undefined,
+            tos: clientRow.tos ?? undefined,
+            policy: clientRow.policy ?? undefined,
+            uri: clientRow.uri ?? undefined,
+          },
+          requestedScopes,
+          approvableScopes,
+          oauthQuery,
+        });
+
+        const response = new Response(html, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-store',
+            'X-Content-Type-Options': 'nosniff',
+            'X-Frame-Options': 'DENY',
+          },
+        });
+        flushFetchMetrics({ ctx, response });
+        return response;
+      }
+
       if (url.pathname.startsWith('/api/auth')) {
         const authPreflight = corsPreflightResponse(request);
         if (authPreflight) {
@@ -296,7 +453,8 @@ const workerHandler = {
           return annotated;
         }
         const auth = await getAuth(validatedEnv);
-        const sanitizedRequest = await sanitizeOAuthConsentRequest(request, validatedEnv);
+        const authorizeRequest = await sanitizeAuthorizeRequest(request, validatedEnv);
+        const sanitizedRequest = await sanitizeOAuthConsentRequest(authorizeRequest, validatedEnv);
         if (sanitizedRequest instanceof Response) {
           const annotated = addCorsHeaders({ request, response: sanitizedRequest });
           flushFetchMetrics({ ctx, response: annotated });

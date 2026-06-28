@@ -106,6 +106,14 @@ export interface Env {
   /** Comma-separated feature flags enabled at boot (e.g. "wildlife_id,season_suggestions"). */
   MCP_FEATURE_FLAGS?: string;
   /**
+   * Public base URL of this worker (e.g. "http://localhost:8788" in local dev,
+   * absent in production where the canonical URL is hardcoded). Used by
+   * `buildWwwAuthenticateHeader` so the `resource_metadata` pointer in 401
+   * responses points at the local well-known endpoint instead of the production
+   * domain, letting MCP Inspector discover the local AS during dev.
+   */
+  MCP_PUBLIC_URL?: string;
+  /**
    * Workers Rate Limiting binding (U14). Configured under the
    * `rate_limiting` block in `packages/mcp/wrangler.jsonc` with a 60/60s
    * budget. Keyed `${props.userId}:${toolName}` per-call so per-user/

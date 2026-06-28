@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyCorsHeaders, WELL_KNOWN_ALLOWED_ORIGINS } from '../cors';
+import { applyCorsHeaders, applyLocalhostCors, WELL_KNOWN_ALLOWED_ORIGINS } from '../cors';
 
 const ALLOWED = 'https://claude.ai';
 const WELL_KNOWN = 'https://mcp.test/.well-known/oauth-protected-resource';
@@ -14,6 +14,29 @@ describe('applyCorsHeaders', () => {
       'https://claude.ai',
       'https://claude.com',
     ]);
+  });
+
+  it('allows any localhost origin (MCP Inspector dev flow)', () => {
+    const localOrigins = [
+      'http://localhost:6274',
+      'http://localhost:3000',
+      'http://localhost:8080',
+    ];
+    for (const origin of localOrigins) {
+      const result = applyCorsHeaders({
+        request: req(WELL_KNOWN, { method: 'GET', headers: { Origin: origin } }),
+        existing: new Response('{}'),
+      });
+      expect(result?.headers.get('Access-Control-Allow-Origin')).toBe(origin);
+    }
+  });
+
+  it('blocks non-localhost http origins', () => {
+    const result = applyCorsHeaders({
+      request: req(WELL_KNOWN, { headers: { Origin: 'http://evil.example' } }),
+      existing: null,
+    });
+    expect(result).toBeNull();
   });
 
   it('returns null for non-well-known paths', () => {
@@ -76,5 +99,64 @@ describe('applyCorsHeaders', () => {
       existing: null,
     });
     expect(result).toBeNull();
+  });
+});
+
+describe('applyLocalhostCors', () => {
+  const MCP_URL = 'http://localhost:8788/mcp';
+
+  it('annotates a response from a localhost origin with ACAO and Expose-Headers', () => {
+    const existing = new Response('{"error":"invalid_token"}', {
+      status: 401,
+      headers: { 'WWW-Authenticate': 'Bearer realm="test"', 'Content-Type': 'application/json' },
+    });
+    const result = applyLocalhostCors({
+      request: req(MCP_URL, { headers: { Origin: 'http://localhost:6274' } }),
+      existing,
+    });
+    expect(result).not.toBeNull();
+    expect(result?.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:6274');
+    expect(result?.headers.get('Access-Control-Expose-Headers')).toContain('WWW-Authenticate');
+    expect(result?.status).toBe(401);
+  });
+
+  it('returns null for non-localhost origins', () => {
+    const result = applyLocalhostCors({
+      request: req(MCP_URL, { headers: { Origin: 'https://evil.example' } }),
+      existing: new Response(null),
+    });
+    expect(result).toBeNull();
+  });
+
+  it('returns null when there is no Origin header', () => {
+    const result = applyLocalhostCors({
+      request: req(MCP_URL),
+      existing: new Response(null),
+    });
+    expect(result).toBeNull();
+  });
+
+  it('answers an OPTIONS preflight from localhost with a 204 covering /mcp', () => {
+    const result = applyLocalhostCors({
+      request: req(MCP_URL, {
+        method: 'OPTIONS',
+        headers: { Origin: 'http://localhost:6274' },
+      }),
+      existing: new Response(null),
+    });
+    expect(result?.status).toBe(204);
+    expect(result?.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:6274');
+    expect(result?.headers.get('Access-Control-Allow-Methods')).toContain('POST');
+    expect(result?.headers.get('Access-Control-Allow-Headers')).toContain('Authorization');
+    expect(result?.headers.get('Access-Control-Expose-Headers')).toContain('WWW-Authenticate');
+  });
+
+  it('appends to a pre-existing Vary header', () => {
+    const existing = new Response(null, { headers: { Vary: 'Accept-Encoding' } });
+    const result = applyLocalhostCors({
+      request: req(MCP_URL, { headers: { Origin: 'http://localhost:3000' } }),
+      existing,
+    });
+    expect(result?.headers.get('Vary')).toBe('Accept-Encoding, Origin');
   });
 });

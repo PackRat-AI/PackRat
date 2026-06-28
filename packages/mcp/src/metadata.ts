@@ -53,16 +53,25 @@ export function buildResourceMetadata(env: Env) {
 }
 
 /**
- * The canonical `resource` URL advertised in protected-resource metadata.
+ * The canonical `resource` URL advertised in protected-resource metadata AND
+ * used as the JWT `aud` claim by `verifyMcpToken`. The two must stay in sync:
+ * the AS mints tokens with `aud` equal to the `resource` value the client
+ * sends in its token request, which it reads from the metadata document here.
  *
- * Currently hard-pinned to production. If we later need a per-env
- * identifier (e.g. an env-specific staging hostname), thread an env var
- * (e.g. `MCP_PUBLIC_URL`) through and read it here. Don't fall back to the
- * request origin — Claude-side audience verification breaks the moment
- * the metadata's `resource` value diverges from the value bound into
- * issued access tokens.
+ * In local dev (`MCP_PUBLIC_URL` is set in `.dev.vars`), we derive the
+ * resource from the local base URL so MCP Inspector's resource-match
+ * validation passes and the locally-issued JWT audience matches the verifier.
+ *
+ * In production (`MCP_PUBLIC_URL` absent), hard-pin to the canonical custom
+ * domain. Do NOT fall back to the request origin — if the Workers.dev hostname
+ * ever appears here it will diverge from every token already issued against
+ * the custom domain.
  */
-export function canonicalResourceUrl(_env: Env): string {
+export function canonicalResourceUrl(env: Env): string {
+  if (env.MCP_PUBLIC_URL) {
+    const base = env.MCP_PUBLIC_URL.replace(TRAILING_SLASH, '');
+    return `${base}/mcp`;
+  }
   return 'https://mcp.packratai.com/mcp';
 }
 
@@ -98,13 +107,14 @@ export function authorizationServerUrl(env: Env): string {
  * and proceeds with the authorization-code flow against the API worker.
  */
 export function buildWwwAuthenticateHeader({
-  env: _env,
+  env,
   scope = 'mcp:read',
 }: {
   env: Env;
   scope?: Scope;
 }): string {
-  const metadataUrl = 'https://mcp.packratai.com/.well-known/oauth-protected-resource';
+  const base = (env.MCP_PUBLIC_URL ?? 'https://mcp.packratai.com').replace(TRAILING_SLASH, '');
+  const metadataUrl = `${base}/.well-known/oauth-protected-resource`;
   return `Bearer resource_metadata="${metadataUrl}", scope="${scope}"`;
 }
 
