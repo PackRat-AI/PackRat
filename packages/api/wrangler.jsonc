@@ -10,7 +10,7 @@
   // nodejs_compat is kept because other dependencies (bcryptjs, pg) rely on it.
   // nodejs_als is required by @sentry/cloudflare for AsyncLocalStorage-based
   // request/workflow context propagation across awaits.
-  "compatibility_flags": ["nodejs_compat", "nodejs_als"],
+  "compatibility_flags": ["nodejs_compat", "nodejs_als", "global_fetch_strictly_public"],
   "keep_vars": true,
   "logpush": true,
   // Generate + upload source maps to Cloudflare so Workers logs show
