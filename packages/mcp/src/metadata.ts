@@ -49,6 +49,7 @@ export function buildResourceMetadata(env: Env) {
     scopes_supported: [...SCOPES_SUPPORTED],
     bearer_methods_supported: ['header'] as const,
     resource_name: 'PackRat MCP',
+    logo_uri: 'https://packratai.com/mcp-logo-256.png',
   };
 }
 
@@ -108,7 +109,7 @@ export function authorizationServerUrl(env: Env): string {
  */
 export function buildWwwAuthenticateHeader({
   env,
-  scope = 'mcp:read',
+  scope = 'mcp:write',
 }: {
   env: Env;
   scope?: Scope;

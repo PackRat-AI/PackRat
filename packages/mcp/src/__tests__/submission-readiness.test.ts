@@ -183,7 +183,7 @@ describe('checkStreamableHttpAuth', () => {
       status: 401,
       headers: new Headers({
         'WWW-Authenticate':
-          'Bearer resource_metadata="https://mcp.packratai.com/.well-known/oauth-protected-resource", scope="mcp:read"',
+          'Bearer resource_metadata="https://mcp.packratai.com/.well-known/oauth-protected-resource", scope="mcp:write"',
       }),
     });
     expect(checkStreamableHttpAuth(res).status).toBe('pass');
