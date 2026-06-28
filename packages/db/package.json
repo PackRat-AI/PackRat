@@ -1,6 +1,6 @@
 {
   "name": "@packrat/db",
-  "version": "2.0.28",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "exports": {
