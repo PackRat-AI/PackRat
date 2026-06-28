@@ -10,6 +10,8 @@
  *   - Inline JS for the async sign-in fetch so `<noscript>` shows a fallback
  */
 
+// biome-ignore lint/correctness/noUnusedImports: @kitajs/html classic JSX runtime requires Html in scope for the JSX transform (Html.createElement)
+import { Html } from '@kitajs/html';
 import { isString } from '@packrat/guards';
 
 const TERMS_URL = 'https://packratai.com/terms-of-service';
