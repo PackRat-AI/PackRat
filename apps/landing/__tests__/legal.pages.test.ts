@@ -69,11 +69,8 @@ describe('Terms of Service page (/terms-of-service)', () => {
     expect(source).toContain('hello@packratai.com');
   });
 
-  it('leaves the operator-jurisdiction TODO marker in place', () => {
-    // U12 deliberately ships with a placeholder jurisdiction (Delaware) and a
-    // TODO so the operator can replace it after legal review. The check
-    // prevents the TODO from being silently lost in a future edit.
-    expect(source).toMatch(/TODO\(operator\): set jurisdiction/);
+  it('governing law references Virginia', () => {
+    expect(source).toMatch(/Commonwealth of\s+Virginia/);
   });
 });
 

@@ -201,6 +201,18 @@ Rerun the script after any tool change (new tool, rename, annotation tweak, scop
 
 ---
 
+## Privacy Policy
+
+The PackRat MCP connector does not collect or store conversation data. Tool calls access only the data explicitly requested (your packs, trips, trail reports, etc.) on behalf of the authenticated user. No chat history, Claude memory, or user files are read by the server.
+
+- **Data controller:** PackRat AI
+- **Privacy policy:** [packratai.com/privacy-policy](https://packratai.com/privacy-policy) — includes the "MCP Connector & Third-Party Clients" addendum
+- **Data retention:** OAuth tokens follow the session TTL configured in the PackRat API; no MCP-layer data is retained independently
+- **Third-party sharing:** Weather forecasts are fetched from a third-party provider; no personally-identifying information is forwarded
+- **Contact:** hello@packratai.com
+
+---
+
 ## License
 
 GNU GPL v3 — see the [root LICENSE](../../LICENSE).

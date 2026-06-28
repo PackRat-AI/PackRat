@@ -216,7 +216,7 @@ export default function McpDocsPage() {
         <header className="space-y-4">
           <p className="text-sm font-medium text-muted-foreground">PackRat MCP Connector</p>
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-            Plan trips, build packs, check weather — from any MCP client.
+            Plan trips, build packs, check weather.
           </h1>
           <p className="text-lg text-muted-foreground">
             PackRat runs a Model Context Protocol server at{' '}

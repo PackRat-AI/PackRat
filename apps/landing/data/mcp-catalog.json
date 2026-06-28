@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-23T06:02:06.502Z",
+  "generatedAt": "2026-06-27T21:18:15.733Z",
   "totalTools": 103,
   "counts": {
     "byClassification": {
@@ -214,7 +214,7 @@
     {
       "name": "packrat_admin_delete_catalog_item",
       "title": "Admin: Delete Catalog Item",
-      "description": "Delete a catalog item as admin. U10: prompts the user to type DELETE before proceeding.",
+      "description": "Delete a catalog item as admin. Prompts the user to type DELETE before proceeding.",
       "domain": "Gear & Catalog",
       "classification": "admin",
       "annotations": {
@@ -227,7 +227,7 @@
     {
       "name": "packrat_admin_delete_pack",
       "title": "Admin: Delete Pack",
-      "description": "Soft-delete a pack as admin (bypasses ownership). U10: prompts the user to type DELETE before proceeding.",
+      "description": "Soft-delete a pack as admin (bypasses ownership). Prompts the user to type DELETE before proceeding.",
       "domain": "Packs",
       "classification": "admin",
       "annotations": {
@@ -240,7 +240,7 @@
     {
       "name": "packrat_admin_delete_trail_condition_report",
       "title": "Admin: Delete Trail Condition Report",
-      "description": "Soft-delete a trail condition report as admin. U10: prompts the user to type DELETE before proceeding.",
+      "description": "Soft-delete a trail condition report as admin. Prompts the user to type DELETE before proceeding.",
       "domain": "Trail Conditions",
       "classification": "admin",
       "annotations": {
@@ -305,7 +305,7 @@
     {
       "name": "packrat_admin_hard_delete_user",
       "title": "Admin: Hard-Delete User",
-      "description": "GDPR-style hard-delete of a user. Irrevocable. Requires a non-empty `reason` for the audit log. U10: prompts the user to retype the target user_id before proceeding.",
+      "description": "GDPR-style hard-delete of a user. Irrevocable. Requires a non-empty `reason` for the audit log. Prompts the user to retype the target user_id before proceeding.",
       "domain": "Admin & Analytics",
       "classification": "admin",
       "annotations": {
@@ -426,10 +426,10 @@
       "domain": "Gear & Catalog",
       "classification": "write",
       "annotations": {
-        "readOnlyHint": false,
-        "destructiveHint": false,
+        "readOnlyHint": true,
+        "destructiveHint": null,
         "idempotentHint": false,
-        "openWorldHint": false
+        "openWorldHint": true
       }
     },
     {
@@ -461,7 +461,7 @@
     {
       "name": "packrat_create_app_pack_template",
       "title": "Create App Pack Template (Admin)",
-      "description": "Create a curated app-level pack template visible to all users. Admin-only — also requires the mcp:admin OAuth scope. For personal templates use packrat_create_pack_template. U10: prompts the admin to type PUBLISH before the template is created (visible to every PackRat user, not easily unpublished).",
+      "description": "Create a curated app-level pack template visible to all users. Admin-only — requires the mcp:admin OAuth scope. Prompts for confirmation before creating (visible to every PackRat user). For personal templates use packrat_create_pack_template.",
       "domain": "Pack Templates",
       "classification": "admin",
       "annotations": {
@@ -669,7 +669,7 @@
     {
       "name": "packrat_generate_pack_template_from_url",
       "title": "Generate Pack Template From URL (Admin)",
-      "description": "Generate a pack template from a TikTok or YouTube link. Admin-only — the server gates this on `user.role === \"ADMIN\"` on the OAuth-authenticated user, and MCP hides it from non-admin sessions. The `mcp:admin` scope is granted at OAuth callback time when the Better Auth role resolves to ADMIN. U10: prompts the admin to type GENERATE before the LLM call fires (fetched content is processed and a template is created).",
+      "description": "Generate a pack template from a TikTok or YouTube link. Admin-only — requires the mcp:admin OAuth scope; the server also gates this on the authenticated user having role ADMIN. Prompts for confirmation before fetching and processing the URL content.",
       "domain": "Pack Templates",
       "classification": "admin",
       "annotations": {
@@ -870,7 +870,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": null,
-        "idempotentHint": false,
+        "idempotentHint": true,
         "openWorldHint": true
       }
     },
@@ -883,7 +883,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": null,
-        "idempotentHint": false,
+        "idempotentHint": true,
         "openWorldHint": true
       }
     },
@@ -894,10 +894,10 @@
       "domain": "Wildlife",
       "classification": "write",
       "annotations": {
-        "readOnlyHint": false,
-        "destructiveHint": false,
+        "readOnlyHint": true,
+        "destructiveHint": null,
         "idempotentHint": false,
-        "openWorldHint": false
+        "openWorldHint": true
       }
     },
     {

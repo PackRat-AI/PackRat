@@ -14,10 +14,9 @@ export function registerWildlifeTools(agent: AgentContext): void {
       inputSchema: { image_key: z.string() },
       annotations: {
         title: 'Identify Wildlife From Image',
-        readOnlyHint: false,
-        destructiveHint: false,
+        readOnlyHint: true,
         idempotentHint: false,
-        openWorldHint: false,
+        openWorldHint: true,
       },
     },
     async ({ image_key }) =>

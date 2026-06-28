@@ -59,7 +59,7 @@ export interface AgentContext {
   /** Best-effort PackRat user ID (from JWT `sub` claim, surfaced via Props). */
   userId?: string;
   /**
-   * U10: MCP elicitation surface. Present on the live `PackRatMCP` agent
+   * MCP elicitation surface. Present on the live `PackRatMCP` agent
    * (which extends `McpAgent` and inherits `elicitInput` from agents@0.13);
    * optional here so unit tests can construct an `AgentContext` without
    * standing up the full Durable Object. Tools that need to prompt the

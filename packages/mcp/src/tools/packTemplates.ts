@@ -27,7 +27,7 @@ import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 /**
- * U10: structured error envelope for elicitation failures on the two
+ * Structured error envelope for elicitation failures on the two
  * destructive/high-blast-radius template tools. Mirrors the helper of the
  * same name in `tools/admin.ts`; duplicated rather than centralised to
  * keep both files independently grep-able and avoid a circular-import
@@ -226,8 +226,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
     {
       title: 'Create App Pack Template (Admin)',
       description:
-        'Create a curated app-level pack template visible to all users. Admin-only — also requires the mcp:admin OAuth scope. For personal templates use packrat_create_pack_template. ' +
-        'U10: prompts the admin to type PUBLISH before the template is created (visible to every PackRat user, not easily unpublished).',
+        'Create a curated app-level pack template visible to all users. Admin-only — requires the mcp:admin OAuth scope. Prompts for confirmation before creating (visible to every PackRat user). For personal templates use packrat_create_pack_template.',
       inputSchema: {
         name: z.string().min(1),
         description: z.string().optional(),
@@ -552,8 +551,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
     {
       title: 'Generate Pack Template From URL (Admin)',
       description:
-        'Generate a pack template from a TikTok or YouTube link. Admin-only — the server gates this on `user.role === "ADMIN"` on the OAuth-authenticated user, and MCP hides it from non-admin sessions. The `mcp:admin` scope is granted at OAuth callback time when the Better Auth role resolves to ADMIN. ' +
-        'U10: prompts the admin to type GENERATE before the LLM call fires (fetched content is processed and a template is created).',
+        'Generate a pack template from a TikTok or YouTube link. Admin-only — requires the mcp:admin OAuth scope; the server also gates this on the authenticated user having role ADMIN. Prompts for confirmation before fetching and processing the URL content.',
       inputSchema: {
         content_url: z.string().url(),
         is_app_template: z.boolean().default(false),
