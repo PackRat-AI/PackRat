@@ -45,7 +45,7 @@ import { McpAgent } from 'agents/mcp';
 import { handleHealth, handleStatus } from './auth';
 import { createMcpClients, errResponse, type McpClients, type McpToolResult } from './client';
 import { ServiceMeta } from './constants';
-import { applyCorsHeaders } from './cors';
+import { applyCorsHeaders, applyLocalhostCors } from './cors';
 import { faviconResponse } from './favicon';
 import { buildResourceMetadata, unauthorizedResponse } from './metadata';
 import { attachCorrelationId, correlationIdFrom } from './observability';
@@ -356,7 +356,7 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const mcpDoHandler = PackRatMCP.serve('/mcp');
+const mcpDoHandler = PackRatMCP.serve('/mcp', { binding: 'PackRatMCP' });
 
 /**
  * Worker entrypoint (U3+U4 cutover).
@@ -409,12 +409,15 @@ export default {
 
     const url = new URL(request.url);
 
-    // ── 1. CORS preflight short-circuit for Claude origins ───────────────────
-    // OPTIONS preflights from allowlisted origins on `/.well-known/*` get a
-    // 204 directly here so we never touch the dispatcher logic below.
+    // ── 1. CORS preflight short-circuit ─────────────────────────────────────
+    // OPTIONS from allowlisted Claude origins on `/.well-known/*` get a 204
+    // directly. OPTIONS from localhost (MCP Inspector direct mode) also get a
+    // 204 covering the /mcp endpoint so the browser can read 401 headers.
     if (request.method === 'OPTIONS') {
       const cors = applyCorsHeaders({ request, existing: null });
       if (cors) return withCorrelationHeader({ response: cors, correlationId });
+      const localCors = applyLocalhostCors({ request, existing: new Response(null) });
+      if (localCors) return withCorrelationHeader({ response: localCors, correlationId });
     }
 
     // ── 2. Public metadata + ops endpoints (no auth required) ────────────────
@@ -441,12 +444,16 @@ export default {
     if (url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) {
       const bearer = extractBearer(request.headers.get('Authorization'));
       if (!bearer) {
-        return withCorrelationHeader({ response: unauthorizedResponse({ env }), correlationId });
+        const unauth = unauthorizedResponse({ env });
+        const cors = applyLocalhostCors({ request, existing: unauth }) ?? unauth;
+        return withCorrelationHeader({ response: cors, correlationId });
       }
 
       const verified = await verifyMcpToken({ token: bearer, env, ctx });
       if (!verified) {
-        return withCorrelationHeader({ response: unauthorizedResponse({ env }), correlationId });
+        const unauth = unauthorizedResponse({ env });
+        const cors = applyLocalhostCors({ request, existing: unauth }) ?? unauth;
+        return withCorrelationHeader({ response: cors, correlationId });
       }
 
       // Inject the verified-claim Props into ctx.props for the DO handler.
@@ -466,8 +473,21 @@ export default {
       // apiHandler used to populate it.
       (ctx as unknown as { props: Props }).props = props;
 
-      const response = await mcpDoHandler.fetch(request, env, ctx);
-      return withCorrelationHeader({ response, correlationId });
+      // The DO may hibernate briefly between requests (e.g., after WebSocket
+      // close following the initialize response). In that window, the stub RPC
+      // throws rather than returning a response. Retry once after a short wait
+      // so the DO has time to finish its wake-up cycle.
+      let doResponse: Response;
+      try {
+        doResponse = await mcpDoHandler.fetch(request, env, ctx);
+      } catch {
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, 300);
+        });
+        doResponse = await mcpDoHandler.fetch(request, env, ctx);
+      }
+      const cors = applyLocalhostCors({ request, existing: doResponse }) ?? doResponse;
+      return withCorrelationHeader({ response: cors, correlationId });
     }
 
     // ── 4. Anything else: 404 ────────────────────────────────────────────────

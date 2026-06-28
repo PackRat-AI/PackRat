@@ -39,6 +39,11 @@ const MCP_OAUTH_SCOPES = [
 // `resource` parameter results in `invalid_request` (400) from the plugin's
 // `checkResource` (validAudiences enforcement).
 const MCP_AUDIENCE = 'https://mcp.packratai.com/mcp';
+// In local dev the MCP worker's `/.well-known/oauth-protected-resource` advertises
+// `resource: "http://localhost:8788/mcp"` (via MCP_PUBLIC_URL). Inspector sends that
+// back as the `resource` param in the authorize request, so we must accept it here too.
+const MCP_AUDIENCE_LOCAL_DEV = 'http://localhost:8788/mcp';
+const TRAILING_SLASH_RE = /\/$/;
 
 // ─── Per-isolate auth instance cache ─────────────────────────────────────────
 // Stores the in-flight Promise so concurrent requests that arrive before the
@@ -285,7 +290,14 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       //    spec. Verified in U9 dev verification.
       oauthProvider({
         scopes: [...MCP_OAUTH_SCOPES],
-        validAudiences: [MCP_AUDIENCE],
+        validAudiences: (() => {
+          const audiences = [MCP_AUDIENCE];
+          if (env.PACKRAT_API_URL.startsWith('http://localhost'))
+            audiences.push(MCP_AUDIENCE_LOCAL_DEV);
+          if (env.PACKRAT_MCP_URL)
+            audiences.push(`${env.PACKRAT_MCP_URL.replace(TRAILING_SLASH_RE, '')}/mcp`);
+          return audiences;
+        })(),
         allowDynamicClientRegistration: false,
         allowUnauthenticatedClientRegistration: false,
         consentPage: '/oauth/consent',

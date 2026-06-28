@@ -81,17 +81,20 @@ export interface VerifiedToken {
  */
 const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
-function getJwks(issuerUrl: string): ReturnType<typeof createRemoteJWKSet> {
-  const cached = jwksCache.get(issuerUrl);
+// JWKS URL is at <apiBaseUrl>/api/auth/jwks (Better Auth endpoint path).
+// Keyed by apiBaseUrl so the cache survives issuer-string changes and
+// avoids constructing the URL on every request.
+function getJwks(apiBaseUrl: string): ReturnType<typeof createRemoteJWKSet> {
+  const cached = jwksCache.get(apiBaseUrl);
   if (cached) return cached;
 
   // 60s TTL per SEC-005. `cooldownDuration` default (30s) is fine — it's
   // the minimum time between unforced fetches and bounds DDoS pressure on
   // /api/auth/jwks if an attacker spams unknown-`kid` tokens.
-  const jwks = createRemoteJWKSet(new URL(`${issuerUrl}/api/auth/jwks`), {
+  const jwks = createRemoteJWKSet(new URL(`${apiBaseUrl}/api/auth/jwks`), {
     cacheMaxAge: 60_000,
   });
-  jwksCache.set(issuerUrl, jwks);
+  jwksCache.set(apiBaseUrl, jwks);
   return jwks;
 }
 
@@ -103,20 +106,14 @@ export function __resetJwksCacheForTests(): void {
 /**
  * Resolve the OAuth issuer URL the AS metadata advertises.
  *
- * Sourced from `env.PACKRAT_API_URL` to match U1's `auth/index.ts`
- * config: `betterAuth({ baseURL: env.PACKRAT_API_URL })`. Both workers
- * read the same env var name (post-2026-05-25 rename — the API used to
- * call this BETTER_AUTH_URL; both names point at the api worker —
- * `https://api.packrat.world` in prod,
- * `http://localhost:8787` in dev). Better Auth's `oauthProvider` plugin
- * defaults the `issuer` claim and AS metadata `issuer` field to
- * `ctx.context.baseURL`, so deriving from `PACKRAT_API_URL` keeps the
- * two workers in lockstep without adding another env var.
+ * Better Auth sets `ctx.context.baseURL = baseURL + '/api/auth'`, and
+ * uses that as the JWT `iss` claim and the AS metadata `issuer` field.
+ * So the issuer is `env.PACKRAT_API_URL + '/api/auth'`, not the bare
+ * `PACKRAT_API_URL`. Verified against the AS metadata at
+ * `/.well-known/oauth-authorization-server` and decoded JWT payloads.
  */
 function getIssuerUrl(env: Env): string {
-  // Strip a trailing slash so the issuer is canonical — JWT `iss` is
-  // string-compared verbatim, and Better Auth doesn't append one.
-  return env.PACKRAT_API_URL.replace(TRAILING_SLASH, '');
+  return `${env.PACKRAT_API_URL.replace(TRAILING_SLASH, '')}/api/auth`;
 }
 
 /**
@@ -150,9 +147,10 @@ export async function verifyMcpToken({
   // try/catch + retry below is wasted work for an empty string.
   if (!token || !isString(token)) return null;
 
-  const issuer = getIssuerUrl(env);
-  const audience = canonicalResourceUrl(env); // 'https://mcp.packratai.com/mcp'
-  const jwks = getJwks(issuer);
+  const apiBaseUrl = env.PACKRAT_API_URL.replace(TRAILING_SLASH, '');
+  const issuer = getIssuerUrl(env); // apiBaseUrl + '/api/auth'
+  const audience = canonicalResourceUrl(env); // 'https://mcp.packratai.com/mcp' or local equiv
+  const jwks = getJwks(apiBaseUrl); // JWKS at apiBaseUrl + '/api/auth/jwks'
   const verifyArgs = { jwks, issuer, audience };
 
   try {
@@ -204,10 +202,9 @@ async function verifyOnce({
     audience: verifyArgs.audience,
     // Algorithm allowlist — defends against `alg: none` and HS256-with-
     // public-key confusion attacks. Better Auth's `jwt()` plugin signs
-    // with ES256 by default; RS256 is supported as a future migration
-    // path. Anything else (HS*, EdDSA, PS*) is rejected here even if a
-    // JWKS key happens to advertise that alg.
-    algorithms: ['ES256', 'RS256'],
+    // with EdDSA (Ed25519) by default; ES256 and RS256 are supported as
+    // migration paths. HS* and PS* are rejected regardless.
+    algorithms: ['EdDSA', 'ES256', 'RS256'],
   });
 
   const sub = isString(payload.sub) ? payload.sub : '';

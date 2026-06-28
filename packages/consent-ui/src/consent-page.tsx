@@ -214,17 +214,48 @@ footer .sep { margin: 0 8px; opacity: .5; }
 // `script-src` CSP is ever added, this inline script will need a matching
 // nonce. @kitajs/html renders `<script>` children raw (no escaping), so the
 // string is emitted verbatim.
+// Better Auth's /oauth2/consent requires application/json, not form-urlencoded.
+// We intercept the submit, POST JSON, then navigate to the final redirect URL
+// that Better Auth returns (it redirects to redirect_uri?code=...).
+// `fetch` with redirect:'follow' resolves to the final URL even across origins;
+// `res.url` is always readable regardless of CORS on the destination.
 const CONSENT_FORM_SCRIPT = `
 (function () {
   var form = document.getElementById('consent-form');
   if (!form) return;
-  var scopeInput = document.getElementById('consent-scope');
-  if (!scopeInput) return;
-  form.addEventListener('submit', function () {
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var submitter = e.submitter;
+    var accept = submitter ? submitter.value === 'true' : true;
     var boxes = form.querySelectorAll('input[name="scope_option"]:checked');
     var scopes = [];
     for (var i = 0; i < boxes.length; i++) scopes.push(boxes[i].value);
-    scopeInput.value = scopes.join(' ');
+    var oauthQueryEl = form.querySelector('input[name="oauth_query"]');
+    var oauthQuery = oauthQueryEl ? oauthQueryEl.value : '';
+
+    try {
+      var res = await fetch('/api/auth/oauth2/consent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        redirect: 'follow',
+        body: JSON.stringify({ accept: accept, scope: scopes.join(' '), oauth_query: oauthQuery })
+      });
+      // Better Auth's consent endpoint returns JSON { redirect: true, url: "..." }
+      // rather than an HTTP 302. Parse the body and navigate to data.url.
+      var data = null;
+      try { data = await res.json(); } catch (_e) {}
+      if (data && data.url) {
+        window.location.href = data.url;
+      } else if (res.redirected && res.url && res.url !== window.location.href) {
+        window.location.href = res.url;
+      }
+    } catch (err) {
+      // Network failure; fall back to native form submit (will fail on content-type
+      // but at least gives the user visible feedback rather than silently hanging)
+      form.submit();
+    }
   });
 })();
 `;

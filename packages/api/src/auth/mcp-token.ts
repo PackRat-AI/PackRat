@@ -9,19 +9,28 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 const TRAILING_SLASH = /\/$/;
 const BEARER_PREFIX = /^Bearer\s+/i;
 const SCOPE_SPLIT = /\s+/;
-const MCP_AUDIENCE = 'https://mcp.packratai.com/mcp';
+const MCP_AUDIENCE_PROD = 'https://mcp.packratai.com/mcp';
 const JWKS_CACHE = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
+// Better Auth sets iss = baseURL + '/api/auth', matching the JWT plugin behaviour
+// verified in packages/mcp/src/token-verify.ts getIssuerUrl.
 function issuerFromEnv(env: ValidatedEnv): string {
-  return env.PACKRAT_API_URL.replace(TRAILING_SLASH, '');
+  return `${env.PACKRAT_API_URL.replace(TRAILING_SLASH, '')}/api/auth`;
 }
 
-function jwksFor(issuer: string): ReturnType<typeof createRemoteJWKSet> {
-  const cached = JWKS_CACHE.get(issuer);
+// JWKS lives at the bare API base URL (not the issuer URL) to avoid the
+// double-path bug: <base>/api/auth/jwks, not <base>/api/auth/api/auth/jwks.
+function jwksFor(apiBaseUrl: string): ReturnType<typeof createRemoteJWKSet> {
+  const cached = JWKS_CACHE.get(apiBaseUrl);
   if (cached) return cached;
-  const jwks = createRemoteJWKSet(new URL(`${issuer}/api/auth/jwks`), { cacheMaxAge: 60_000 });
-  JWKS_CACHE.set(issuer, jwks);
+  const jwks = createRemoteJWKSet(new URL(`${apiBaseUrl}/api/auth/jwks`), { cacheMaxAge: 60_000 });
+  JWKS_CACHE.set(apiBaseUrl, jwks);
   return jwks;
+}
+
+function audienceFromEnv(env: ValidatedEnv): string {
+  if (env.PACKRAT_MCP_URL) return `${env.PACKRAT_MCP_URL.replace(TRAILING_SLASH, '')}/mcp`;
+  return MCP_AUDIENCE_PROD;
 }
 
 function bearerFrom(request: Request): string | null {
@@ -51,11 +60,13 @@ export async function resolveMcpBearerUser({
   let sub = '';
   let scopes: string[] = [];
   try {
+    const apiBaseUrl = env.PACKRAT_API_URL.replace(TRAILING_SLASH, '');
     const issuer = issuerFromEnv(env);
-    const { payload } = await jwtVerify(token, jwksFor(issuer), {
+    const audience = audienceFromEnv(env);
+    const { payload } = await jwtVerify(token, jwksFor(apiBaseUrl), {
       issuer,
-      audience: MCP_AUDIENCE,
-      algorithms: ['ES256', 'RS256'],
+      audience,
+      algorithms: ['EdDSA', 'ES256', 'RS256'],
     });
     sub = isString(payload.sub) ? payload.sub : '';
     scopes = parseScopes(payload.scope);

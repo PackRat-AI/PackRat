@@ -39,6 +39,7 @@ export const apiEnvObjectSchema = z.object({
   // name to the legacy fallback so consumer code only reads the new name.
   PACKRAT_AUTH_SECRET: z.string().min(32).optional(),
   PACKRAT_API_URL: z.string().url().optional(),
+  PACKRAT_MCP_URL: z.string().url().optional(),
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
   BETTER_AUTH_TRUSTED_ORIGINS: z.string().optional(),

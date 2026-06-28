@@ -26,12 +26,18 @@ describe('SCOPES_SUPPORTED', () => {
 });
 
 describe('canonicalResourceUrl', () => {
-  it('pins to the production MCP custom domain regardless of env', () => {
-    // Pinning is intentional — Claude verifies token audience against this
-    // exact string; falling back to the request origin (the OAuth provider's
-    // default) silently breaks discovery when the dev *.workers.dev hostname
-    // differs from the issued-token audience.
+  it('pins to the production MCP custom domain when MCP_PUBLIC_URL is unset', () => {
     expect(canonicalResourceUrl(env)).toBe('https://mcp.packratai.com/mcp');
+  });
+
+  it('uses MCP_PUBLIC_URL/mcp in local dev so the Inspector resource-match check passes', () => {
+    const localEnv = { ...env, MCP_PUBLIC_URL: 'http://localhost:8788' } as Env;
+    expect(canonicalResourceUrl(localEnv)).toBe('http://localhost:8788/mcp');
+  });
+
+  it('strips a trailing slash from MCP_PUBLIC_URL before appending /mcp', () => {
+    const slashed = { ...env, MCP_PUBLIC_URL: 'http://localhost:8788/' } as Env;
+    expect(canonicalResourceUrl(slashed)).toBe('http://localhost:8788/mcp');
   });
 });
 
@@ -74,13 +80,19 @@ describe('authorizationServerUrl', () => {
 });
 
 describe('buildResourceMetadata', () => {
-  it('returns a complete RFC 9728 metadata object', () => {
+  it('returns a complete RFC 9728 metadata object (production env)', () => {
     const meta = buildResourceMetadata(env);
     expect(meta.resource).toBe('https://mcp.packratai.com/mcp');
     expect(meta.authorization_servers).toEqual(['https://api.packrat.world']);
     expect(meta.scopes_supported).toEqual([...SCOPES_SUPPORTED]);
     expect(meta.bearer_methods_supported).toEqual(['header']);
     expect(meta.resource_name).toBe('PackRat MCP');
+  });
+
+  it('uses the local resource URL in local dev (MCP_PUBLIC_URL set)', () => {
+    const localEnv = { ...env, MCP_PUBLIC_URL: 'http://localhost:8788' } as Env;
+    const meta = buildResourceMetadata(localEnv);
+    expect(meta.resource).toBe('http://localhost:8788/mcp');
   });
 });
 
@@ -102,6 +114,20 @@ describe('buildWwwAuthenticateHeader', () => {
 
   it('uses the Bearer auth scheme', () => {
     expect(buildWwwAuthenticateHeader({ env }).startsWith('Bearer ')).toBe(true);
+  });
+
+  it('uses MCP_PUBLIC_URL when set (local dev) instead of the prod domain', () => {
+    const localEnv = { ...env, MCP_PUBLIC_URL: 'http://localhost:8788' } as Env;
+    expect(buildWwwAuthenticateHeader({ env: localEnv })).toContain(
+      'resource_metadata="http://localhost:8788/.well-known/oauth-protected-resource"',
+    );
+  });
+
+  it('strips a trailing slash from MCP_PUBLIC_URL before building the metadata URL', () => {
+    const slashed = { ...env, MCP_PUBLIC_URL: 'http://localhost:8788/' } as Env;
+    expect(buildWwwAuthenticateHeader({ env: slashed })).toContain(
+      'resource_metadata="http://localhost:8788/.well-known/oauth-protected-resource"',
+    );
   });
 });
 

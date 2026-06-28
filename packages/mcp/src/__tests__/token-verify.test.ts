@@ -16,14 +16,20 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 import { __resetJwksCacheForTests, verifyMcpToken } from '../token-verify';
 import type { Env } from '../types';
 
-const ISSUER = 'https://api.test.packratai.com';
+// Better Auth sets iss = PACKRAT_API_URL + '/api/auth' (not the bare URL).
+// These two constants mirror that split: API_BASE is the env var, ISSUER is
+// the value that appears in the JWT `iss` claim and in verifyMcpToken's
+// issuer check.
+const API_BASE = 'https://api.test.packratai.com';
+const ISSUER = `${API_BASE}/api/auth`;
 const AUDIENCE = 'https://mcp.packratai.com/mcp';
-const JWKS_URL = `${ISSUER}/api/auth/jwks`;
+// JWKS is served at the bare base URL path, not the issuer path.
+const JWKS_URL = `${API_BASE}/api/auth/jwks`;
 
 // Minimal Env stub — the verifier only touches PACKRAT_API_URL. The rest of
 // the bindings (Durable Object, KV, rate limit) are irrelevant for this
 // unit and casting through `unknown` keeps the structural typing happy.
-const env = { PACKRAT_API_URL: ISSUER } as unknown as Env;
+const env = { PACKRAT_API_URL: API_BASE } as unknown as Env;
 
 // Stub ExecutionContext — `waitUntil` is a no-op for verifier tests.
 const ctx = {

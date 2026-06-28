@@ -28,6 +28,51 @@ export const WELL_KNOWN_ALLOWED_ORIGINS = new Set<string>([
   'https://claude.com',
 ]);
 
+/**
+ * localhost origins get CORS on /.well-known/* AND /mcp so MCP Inspector's
+ * "Direct" connection mode can see the 401 WWW-Authenticate header, drive
+ * OAuth discovery, and make authenticated tool calls — all without the proxy.
+ */
+const LOCALHOST_ORIGIN = /^http:\/\/localhost:\d+$/;
+
+/**
+ * Apply CORS headers to any response for localhost origins.
+ * Used by the outer fetch handler to cover /mcp 401 responses and
+ * authenticated DO responses in MCP Inspector direct-connection mode.
+ */
+export function applyLocalhostCors({
+  request,
+  existing,
+}: {
+  request: Request;
+  existing: Response;
+}): Response | null {
+  const origin = request.headers.get('Origin');
+  if (!origin || !LOCALHOST_ORIGIN.test(origin)) return null;
+
+  // OPTIONS preflight
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': origin,
+        Vary: 'Origin',
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type, mcp-session-id',
+        'Access-Control-Expose-Headers': 'WWW-Authenticate, mcp-session-id',
+        'Access-Control-Max-Age': '3600',
+      },
+    });
+  }
+
+  const annotated = new Response(existing.body, existing);
+  annotated.headers.set('Access-Control-Allow-Origin', origin);
+  annotated.headers.set('Access-Control-Expose-Headers', 'WWW-Authenticate, mcp-session-id');
+  const existingVary = annotated.headers.get('Vary');
+  annotated.headers.set('Vary', existingVary ? `${existingVary}, Origin` : 'Origin');
+  return annotated;
+}
+
 const WELL_KNOWN_PREFIX = '/.well-known/';
 
 /**
@@ -52,7 +97,8 @@ export function applyCorsHeaders({
   if (!url.pathname.startsWith(WELL_KNOWN_PREFIX)) return null;
 
   const origin = request.headers.get('Origin');
-  if (!origin || !WELL_KNOWN_ALLOWED_ORIGINS.has(origin)) return null;
+  if (!origin || (!WELL_KNOWN_ALLOWED_ORIGINS.has(origin) && !LOCALHOST_ORIGIN.test(origin)))
+    return null;
 
   // Preflight: respond directly so the well-known handler never sees the
   // OPTIONS request (it only knows GET).
