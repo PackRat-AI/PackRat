@@ -75,7 +75,7 @@
     "@react-native-segmented-control/segmented-control": "2.5.7",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/drawer": "^7.9.4",
-    "@react-navigation/elements": "^2.3.1",
+    "@react-navigation/elements": "^2.9.26",
     "@react-navigation/native": "^7.0.14",
     "@rn-primitives/alert-dialog": "^1.1.0",
     "@rn-primitives/avatar": "^1.1.0",
