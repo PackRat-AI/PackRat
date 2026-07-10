@@ -15,7 +15,9 @@ export function useCustomerInfo() {
       queryClient.setQueryData(CUSTOMER_INFO_QUERY_KEY, info);
     };
     Purchases.addCustomerInfoUpdateListener(handler);
-    return () => Purchases.removeCustomerInfoUpdateListener(handler);
+    return () => {
+      Purchases.removeCustomerInfoUpdateListener(handler);
+    };
   }, [queryClient]);
 
   return useQuery({

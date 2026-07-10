@@ -21,11 +21,7 @@ import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
-import {
-  useEntitlement,
-  usePresentPaywall,
-  useRestorePurchases,
-} from 'expo-app/features/purchases';
+import { useEntitlement, useRestorePurchases } from 'expo-app/features/purchases';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -51,7 +47,6 @@ export default function SettingsScreen() {
   const { unit: speedUnit, setSpeedUnit } = useSpeedUnit();
 
   const { isProMember } = useEntitlement();
-  const { presentPaywall } = usePresentPaywall();
   const { mutate: restorePurchases, isPending: isRestoring } = useRestorePurchases();
 
   const handleManageSubscription = () => {
@@ -240,7 +235,7 @@ export default function SettingsScreen() {
             ) : (
               <TouchableOpacity
                 className="flex-row items-center justify-between p-4"
-                onPress={presentPaywall}
+                onPress={() => router.push('/paywall')}
               >
                 <Text className="font-medium" style={{ color: colors.primary }}>
                   Upgrade to Pro

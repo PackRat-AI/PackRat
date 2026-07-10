@@ -289,6 +289,14 @@ export default function AppLayout() {
             getPackTemplateItemDetailOptions((route.params as { id: string })?.id)
           }
         />
+        <Stack.Screen
+          name="paywall"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
       </Stack>
     </>
   );

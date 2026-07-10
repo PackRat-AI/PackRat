@@ -2,6 +2,10 @@ import { clientEnvs } from '@packrat/env/expo-client';
 import * as Sentry from '@sentry/react-native';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 
+export function isRevenueCatConfigured(): boolean {
+  return !!clientEnvs.EXPO_PUBLIC_REVENUECAT_API_KEY;
+}
+
 export function configureRevenueCat() {
   const apiKey = clientEnvs.EXPO_PUBLIC_REVENUECAT_API_KEY;
   if (!apiKey) return;

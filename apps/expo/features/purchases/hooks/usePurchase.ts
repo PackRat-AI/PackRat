@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Package } from 'react-native-purchases';
+import type { PurchasesPackage as Package } from 'react-native-purchases';
 import Purchases from 'react-native-purchases';
 import { CUSTOMER_INFO_QUERY_KEY } from './useCustomerInfo';
 
