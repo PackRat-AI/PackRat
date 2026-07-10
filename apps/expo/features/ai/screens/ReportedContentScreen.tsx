@@ -9,7 +9,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, TouchableOpacity, View } from 'react-native';
-import { useReportedContent } from '../hooks/useReportedContent';
+import { type ReportedContentItem, useReportedContent } from '../hooks/useReportedContent';
 import { useUpdateReportStatus } from '../hooks/useUpdateReportStatus';
 import { reportReasonTranslationKeys } from '../lib/reportReasons';
 
@@ -23,7 +23,7 @@ export default function ReportedContentScreen() {
   const { data, isLoading, error } = useReportedContent();
   const updateMutation = useUpdateReportStatus();
 
-  const filteredData = data?.filter((item) => {
+  const filteredData = data?.filter((item: ReportedContentItem) => {
     if (selectedFilter === 'all') return true;
     return item.status === selectedFilter;
   });

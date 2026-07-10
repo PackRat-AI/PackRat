@@ -52,7 +52,10 @@ const apiFileContent = envFileContent
   .split('\n')
   .map((line) => {
     if (line.startsWith('ENVIRONMENT=')) {
-      return 'ENVIRONMENT=dev';
+      // apiEnvSchema enforces z.enum(['development', 'production']) and
+      // throws on parse failure — keep the canonical 'development' value
+      // rather than the short 'dev' the script previously hardcoded.
+      return 'ENVIRONMENT=development';
     }
     return line;
   })

@@ -23,14 +23,16 @@ export function getPackDetailOptions(id: string) {
 
       if (!isOwner) return null;
 
-      const confirmDelete = () => {
-        const deleteAndNavigate = () => {
-          deletePack(id);
-          if (router.canGoBack()) {
-            router.back();
-          }
-        };
+      const deleteAndNavigate = () => {
+        deletePack(id);
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/packs');
+        }
+      };
 
+      const confirmDelete = () => {
         if (Platform.OS === 'web') {
           if (globalThis.confirm(t('packs.deletePackConfirm'))) {
             deleteAndNavigate();

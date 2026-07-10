@@ -67,9 +67,15 @@ export default function PackCategoriesScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.packCategories') }} />
+      <Stack.Screen
+        options={{
+          ...getAppBarOptions(),
+          headerLargeTitle: false,
+          title: t('packs.packCategories'),
+        }}
+      />
       {categories.length ? (
-        <ScrollView className="flex-1">
+        <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
           <View className="p-4">
             <Text variant="subhead" className="mb-2 text-muted-foreground">
               {t('packs.organizeGear')}

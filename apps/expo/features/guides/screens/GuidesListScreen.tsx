@@ -1,6 +1,6 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
-import { LargeTitleHeaderOverlapFixIOS } from '@packrat/ui/src/large-title-header-overlap-fix-ios';
+import { IosTransparentHeaderOverlapFix } from '@packrat/ui/src/ios-transparent-header-overlap-fix';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -182,7 +182,7 @@ export const GuidesListScreen = () => {
 
     return (
       <>
-        <LargeTitleHeaderOverlapFixIOS />
+        <IosTransparentHeaderOverlapFix />
         <CategoriesFilter
           data={categories}
           onFilter={handleCategoryChange}

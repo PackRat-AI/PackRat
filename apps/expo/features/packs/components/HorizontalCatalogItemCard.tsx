@@ -103,7 +103,11 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
           <Text className="font-medium text-foreground" numberOfLines={1}>
             {item.name}
           </Text>
-          {item.brand && <Text className="text-sm text-muted-foreground">{item.brand}</Text>}
+          {item.brand && (
+            <Text className="text-sm text-muted-foreground" numberOfLines={1}>
+              {item.brand}
+            </Text>
+          )}
 
           <View className="mt-2 flex-row flex-wrap items-center gap-x-4 gap-y-1">
             {!!item.price && (

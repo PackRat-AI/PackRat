@@ -81,6 +81,9 @@ export const nodeEnvSchema = z.object({
   E2E_PASSWORD: z.string().min(1).optional(),
   E2E_TEST_EMAIL: z.string().email().optional(),
   E2E_TEST_PASSWORD: z.string().min(1).optional(),
+
+  // ── OpenAI (packages/api/src/db/seed-e2e-catalog.ts) ──────────────
+  OPENAI_API_KEY: z.string().min(1).optional(),
   E2E_API_URL: z.string().url().optional(),
   E2E_DB_URL: z.string().url().optional(),
   E2E_DB_PORT: z.string().regex(/^\d+$/, 'E2E_DB_PORT must be a numeric string').optional(),
@@ -151,6 +154,7 @@ export const nodeEnv = nodeEnvSchema.parse({
   E2E_PASSWORD: process.env.E2E_PASSWORD,
   E2E_TEST_EMAIL: process.env.E2E_TEST_EMAIL,
   E2E_TEST_PASSWORD: process.env.E2E_TEST_PASSWORD,
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   E2E_API_URL: process.env.E2E_API_URL,
   E2E_DB_URL: process.env.E2E_DB_URL,
   E2E_DB_PORT: process.env.E2E_DB_PORT,

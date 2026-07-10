@@ -463,6 +463,7 @@
     "viewDetails": "View Details",
     "deleteTrip": "Delete trip?",
     "deleteTripConfirmation": "Are you sure you want to delete this trip? This action cannot be undone.",
+    "deleteTripFailed": "Could not delete this trip. Please try again.",
     "noTripsYetTitle": "No Trips Yet",
     "createTripsToSee": "Create trips to start seeing your upcoming adventures!",
     "gotIt": "Got it",
@@ -473,7 +474,13 @@
     "tripShared": "Trip shared successfully",
     "tripExported": "Trip exported successfully",
     "weatherForecast": "Weather Forecast",
-    "viewWeather": "View Weather"
+    "viewWeather": "View Weather",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "inDays_one": "In {{count}} day",
+    "inDays_other": "In {{count}} days",
+    "planATrip": "Plan a Trip",
+    "noUpcomingTripsDesc": "You have no trips scheduled. Plan your next adventure and it will appear here."
   },
   "catalog": {
     "itemsCatalog": "Items Catalog",
