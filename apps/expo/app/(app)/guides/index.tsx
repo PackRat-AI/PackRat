@@ -1,10 +1,10 @@
 import { GuidesListScreen } from 'expo-app/features/guides/screens/GuidesListScreen';
-import { ProGate } from 'expo-app/features/purchases';
+import { EarlyAccessGate } from 'expo-app/features/purchases';
 
 export default function GuidesRoute() {
   return (
-    <ProGate>
+    <EarlyAccessGate featureKey="guides">
       <GuidesListScreen />
-    </ProGate>
+    </EarlyAccessGate>
   );
 }

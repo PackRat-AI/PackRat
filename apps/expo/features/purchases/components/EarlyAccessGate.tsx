@@ -50,7 +50,7 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
 
       const slots: Record<string, ReturnType<typeof CustomVariableValue.string>> = {};
       for (let i = 0; i < MAX_FEATURE_SLOTS; i++) {
-        slots[`feature_${i + 1}`] = CustomVariableValue.string(otherFeatures[i]?.label ?? '');
+        slots[`feature_${i + 1}`] = CustomVariableValue.string(otherFeatures[i]?.label ?? 'null');
       }
 
       isPaywallPresenting = true;
