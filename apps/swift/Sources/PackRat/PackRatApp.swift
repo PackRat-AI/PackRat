@@ -12,18 +12,16 @@ struct PackRatApp: App {
     #endif
 
     init() {
+        // Telemetry has to start before any view is mounted so launch-time
+        // errors are captured. A missing DSN silently disables the SDK.
+        SentryConfig.start()
+
         #if os(macOS)
         if ProcessInfo.processInfo.arguments.contains("--reset-auth") {
             UserDefaults.standard.set(true, forKey: "ApplePersistenceIgnoreState")
             UserDefaults.standard.set(false, forKey: "NSQuitAlwaysKeepsWindows")
         }
         #endif
-    }
-
-    init() {
-        // Telemetry has to start before any view is mounted so launch-time
-        // errors are captured. A missing DSN silently disables the SDK.
-        SentryConfig.start()
     }
 
     var body: some Scene {
