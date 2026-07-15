@@ -71,6 +71,7 @@ jobs:
             "$(xcrun simctl list runtimes -j | jq -r '.runtimes[] | select(.identifier | contains("iOS-")) | .identifier' | sort -V | tail -1)")
           xcrun simctl boot "$DEVICE_ID"
           xcrun simctl bootstatus "$DEVICE_ID"
+          echo "IOS_SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
 
       - name: Run ${{ matrix.plan }} test plan
         timeout-minutes: 20
@@ -86,10 +87,15 @@ jobs:
           else
             CODE_SIGN_ARGS=()
           fi
+          DESTINATION="${{ matrix.destination }}"
+          if [ "${{ matrix.scheme }}" = "PackRat-iOS" ]; then
+            DESTINATION="platform=iOS Simulator,id=${IOS_SIMULATOR_ID}"
+          fi
+          echo "Testing ${{ matrix.scheme }} on ${DESTINATION}"
 
           xcodebuild test \
             -scheme "${{ matrix.scheme }}" \
-            -destination "${{ matrix.destination }}" \
+            -destination "${DESTINATION}" \
             -testPlan "${{ matrix.plan }}" \
             -resultBundlePath "/tmp/${{ matrix.scheme }}-smoke.xcresult" \
             -quiet \
