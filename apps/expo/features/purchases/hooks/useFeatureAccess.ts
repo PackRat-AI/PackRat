@@ -9,6 +9,7 @@ export const FEATURE_ACCESS_QUERY_KEY = ['featureAccess', 'config'] as const;
 interface FeatureAccessConfigItem extends FeatureAccessLike {
   key: string;
   label: string;
+  description: string | null;
 }
 
 /**
@@ -52,6 +53,8 @@ export interface FeatureAccessResult {
   earlyAccessUntil: Date | null;
   /** Human-readable feature name, when configured. */
   label?: string;
+  /** Paywall description copy for this feature, when configured. */
+  description?: string | null;
 }
 
 /**
@@ -73,5 +76,6 @@ export function useFeatureAccess(key: string): FeatureAccessResult {
     isInEarlyAccess: isInEarlyAccess(feature),
     earlyAccessUntil: until,
     label: feature?.label,
+    description: feature?.description,
   };
 }

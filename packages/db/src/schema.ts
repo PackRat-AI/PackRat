@@ -673,6 +673,7 @@ export type NewCommentLike = InferInsertModel<typeof commentLikes>;
 export const featureAccess = pgTable('feature_access', {
   key: text('key').primaryKey(),
   label: text('label').notNull(),
+  description: text('description'),
   earlyAccessUntil: timestamp('early_access_until'),
   releasedAt: timestamp('released_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -681,6 +682,19 @@ export const featureAccess = pgTable('feature_access', {
 
 export type FeatureAccess = InferSelectModel<typeof featureAccess>;
 export type NewFeatureAccess = InferInsertModel<typeof featureAccess>;
+
+// Stores only overrides — a missing key falls back to the coded default in
+// packages/config's FeatureFlag map. See packages/api's featureFlagsService.
+export const featureFlags = pgTable('feature_flags', {
+  key: text('key').primaryKey(),
+  enabled: boolean('enabled').notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export type FeatureFlagRow = InferSelectModel<typeof featureFlags>;
+export type NewFeatureFlagRow = InferInsertModel<typeof featureFlags>;
 
 // CapturedQuery is the per-query record stored in D1 metrics (packages/api/src/db/metricsDb.ts).
 // Defined here so both the API (queryMetrics.ts) and the D1 schema (packages/db/src/d1Schema.ts)

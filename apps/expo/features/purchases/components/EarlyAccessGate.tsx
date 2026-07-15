@@ -12,6 +12,19 @@ import { isRevenueCatConfigured } from '../lib/revenueCat';
 let isPaywallPresenting = false;
 
 const MAX_FEATURE_SLOTS = 4;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** How many days from now until the feature graduates to free for everyone. */
+function daysUntilGraduation(earlyAccessUntil: Date | null): number {
+  if (!earlyAccessUntil) return 0;
+  return Math.max(1, Math.ceil((earlyAccessUntil.getTime() - Date.now()) / DAY_MS));
+}
+
+// RevenueCat paywall text templates have no pluralization support, so the
+// full "N day(s)" phrase is computed here rather than just the count.
+function formatAccessWindow(days: number): string {
+  return `${days} day${days === 1 ? '' : 's'}`;
+}
 
 interface EarlyAccessGateProps {
   /** Feature key matching a FeatureFlag / feature_access row. */
@@ -28,7 +41,7 @@ interface EarlyAccessGateProps {
  * users on its graduation date.
  */
 export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) {
-  const { allowed, isLoading, label } = useFeatureAccess(featureKey);
+  const { allowed, isLoading, label, description, earlyAccessUntil } = useFeatureAccess(featureKey);
   const { data: allFeatures } = useFeatureAccessConfig();
   const { presentEarlyAccessPaywall } = usePresentPaywall();
   const router = useRouter();
@@ -53,9 +66,16 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
         slots[`feature_${i + 1}`] = CustomVariableValue.string(otherFeatures[i]?.label ?? 'null');
       }
 
+      const featureName = label ?? featureKey;
       isPaywallPresenting = true;
       presentEarlyAccessPaywall({
-        feature_name: CustomVariableValue.string(label ?? featureKey),
+        feature_name: CustomVariableValue.string(featureName),
+        feature_description: CustomVariableValue.string(
+          description ?? `Get early access to ${featureName} today.`,
+        ),
+        access_window_days: CustomVariableValue.string(
+          formatAccessWindow(daysUntilGraduation(earlyAccessUntil)),
+        ),
         ...slots,
       })
         .then((result) => {
@@ -78,6 +98,8 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
       allFeatures,
       featureKey,
       label,
+      description,
+      earlyAccessUntil,
     ]),
   );
 

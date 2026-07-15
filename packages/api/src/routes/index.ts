@@ -5,6 +5,7 @@ import { alltrailsRoutes } from './alltrails';
 import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
 import { featureAccessRoutes } from './featureAccess';
+import { featureFlagsRoutes } from './featureFlags';
 import { feedRoutes } from './feed';
 import { guidesRoutes } from './guides';
 import { knowledgeBaseRoutes } from './knowledgeBase';
@@ -45,4 +46,5 @@ export const routes = new Elysia({ prefix: '/api' })
   .use(wildlifeRoutes)
   .use(knowledgeBaseRoutes)
   .use(alltrailsRoutes)
-  .use(featureAccessRoutes);
+  .use(featureAccessRoutes)
+  .use(featureFlagsRoutes);

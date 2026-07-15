@@ -102,6 +102,56 @@ export const AdminPacksListSchema = paginated(AdminPackItemSchema);
 export const AdminCatalogListSchema = paginated(AdminCatalogItemSchema);
 export type AdminCatalogItem = z.infer<typeof AdminCatalogItemSchema>;
 
+// ─── Feature Flags ────────────────────────────────────────────────────────────
+// Dynamic replacement for the old build-time `featureFlags` config
+// (packages/config). Rows only exist for keys an admin has overridden — a
+// missing row means the key is still using its coded default.
+
+export const AdminFeatureFlagItemSchema = z.object({
+  key: z.string(),
+  defaultValue: z.boolean(),
+  override: z.boolean().nullable(),
+  effective: z.boolean(),
+  description: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type AdminFeatureFlagItem = z.infer<typeof AdminFeatureFlagItemSchema>;
+export const AdminFeatureFlagListSchema = z.array(AdminFeatureFlagItemSchema);
+
+export const FeatureFlagUpsertBodySchema = z.object({
+  enabled: z.boolean(),
+  description: z.string().nullable().optional(),
+});
+
+// ─── Feature Access ───────────────────────────────────────────────────────────
+// The RevenueCat early-access paywall config. A row's `earlyAccessUntil` is
+// Pro-gated for non-members until it passes; null means free for everyone.
+
+export const AdminFeatureAccessItemSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  description: z.string().nullable(),
+  earlyAccessUntil: z.string().nullable(),
+  releasedAt: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type AdminFeatureAccessItem = z.infer<typeof AdminFeatureAccessItemSchema>;
+export const AdminFeatureAccessListSchema = z.array(AdminFeatureAccessItemSchema);
+
+export const FeatureAccessCreateBodySchema = z.object({
+  key: z.string().min(1),
+  label: z.string().min(1),
+  description: z.string().min(1).nullable().optional(),
+  earlyAccessUntil: z.string().datetime().nullable().optional(),
+});
+
+export const FeatureAccessUpdateBodySchema = z.object({
+  label: z.string().min(1).optional(),
+  description: z.string().min(1).nullable().optional(),
+  earlyAccessUntil: z.string().datetime().nullable().optional(),
+});
+
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
 export const SuccessSchema = z.object({ success: z.literal(true) });

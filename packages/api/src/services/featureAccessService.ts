@@ -1,7 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { hasFeatureAccess } from '@packrat/config';
-import { featureAccess } from '@packrat/db';
+import { type FeatureAccess, featureAccess } from '@packrat/db';
 import { eq } from 'drizzle-orm';
 
 /**
@@ -11,6 +11,7 @@ import { eq } from 'drizzle-orm';
 export interface FeatureAccessConfig {
   key: string;
   label: string;
+  description: string | null;
   earlyAccessUntil: Date | null;
 }
 
@@ -24,13 +25,117 @@ export async function listFeatureAccess(): Promise<FeatureAccessConfig[]> {
   const db = createDb();
   try {
     return await db.tag('featureAccess.list').query.featureAccess.findMany({
-      columns: { key: true, label: true, earlyAccessUntil: true },
+      columns: { key: true, label: true, description: true, earlyAccessUntil: true },
     });
   } catch (error) {
     captureApiException({
       error,
       operation: 'featureAccess.list',
       tags: { feature: 'featureAccess' },
+    });
+    throw error;
+  }
+}
+
+/** Full rows (incl. bookkeeping columns) for the admin CRUD UI. */
+export async function listFeatureAccessForAdmin(): Promise<FeatureAccess[]> {
+  const db = createDb();
+  try {
+    return await db.tag('featureAccess.listAdmin').query.featureAccess.findMany();
+  } catch (error) {
+    captureApiException({
+      error,
+      operation: 'featureAccess.listAdmin',
+      tags: { feature: 'featureAccess' },
+    });
+    throw error;
+  }
+}
+
+export async function createFeatureAccess({
+  key,
+  label,
+  description,
+  earlyAccessUntil,
+}: {
+  key: string;
+  label: string;
+  description?: string | null;
+  earlyAccessUntil?: Date | null;
+}): Promise<FeatureAccess> {
+  const db = createDb();
+  try {
+    const [row] = await db
+      .tag('featureAccess.create')
+      .insert(featureAccess)
+      .values({
+        key,
+        label,
+        description: description ?? null,
+        earlyAccessUntil: earlyAccessUntil ?? null,
+      })
+      .returning();
+    if (!row) throw new Error('Failed to create feature-access row');
+    return row;
+  } catch (error) {
+    captureApiException({
+      error,
+      operation: 'featureAccess.create',
+      tags: { feature: 'featureAccess' },
+      extra: { key },
+    });
+    throw error;
+  }
+}
+
+/** Returns null if no row exists for `key`. */
+export async function updateFeatureAccess(
+  key: string,
+  updates: { label?: string; description?: string | null; earlyAccessUntil?: Date | null },
+): Promise<FeatureAccess | null> {
+  const db = createDb();
+  try {
+    const [row] = await db
+      .tag('featureAccess.update')
+      .update(featureAccess)
+      .set({
+        updatedAt: new Date(),
+        ...(updates.label !== undefined && { label: updates.label }),
+        ...(updates.description !== undefined && { description: updates.description }),
+        ...(updates.earlyAccessUntil !== undefined && {
+          earlyAccessUntil: updates.earlyAccessUntil,
+        }),
+      })
+      .where(eq(featureAccess.key, key))
+      .returning();
+    return row ?? null;
+  } catch (error) {
+    captureApiException({
+      error,
+      operation: 'featureAccess.update',
+      tags: { feature: 'featureAccess' },
+      extra: { key },
+    });
+    throw error;
+  }
+}
+
+/** Removes the row — the feature becomes fully ungated (resolver fails open). */
+export async function deleteFeatureAccess(key: string): Promise<boolean> {
+  const db = createDb();
+  try {
+    const deleted = await db
+      .tag('featureAccess.delete')
+      .delete(featureAccess)
+      .where(eq(featureAccess.key, key))
+      .returning();
+    return deleted.length > 0;
+  } catch (error) {
+    captureApiException({
+      error,
+      operation: 'featureAccess.delete',
+      tags: { feature: 'featureAccess' },
+      extra: { key },
     });
     throw error;
   }

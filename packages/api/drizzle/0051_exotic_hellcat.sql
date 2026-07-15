@@ -1,0 +1,1 @@
+ALTER TABLE "feature_access" ADD COLUMN "description" text;

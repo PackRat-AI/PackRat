@@ -351,6 +351,27 @@
       "when": 1780945594870,
       "tag": "0048_sturdy_felicia_hardy",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1781241903101,
+      "tag": "0049_faulty_arclight",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1783864611294,
+      "tag": "0050_green_thundra",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1784041460849,
+      "tag": "0051_exotic_hellcat",
+      "breakpoints": true
     }
   ]
 }
