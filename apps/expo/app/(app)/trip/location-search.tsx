@@ -1,7 +1,6 @@
 import { clientEnvs } from '@packrat/env/expo-client';
 import { ActivityIndicator, Button } from '@packrat/ui/nativewindui';
 import { SearchInput } from 'expo-app/components/SearchInput';
-import { ProGate } from 'expo-app/features/purchases';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
@@ -90,56 +89,54 @@ export default function LocationSearchScreen() {
   };
 
   return (
-    <ProGate>
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="p-4 border-b border-border bg-background flex-row items-center space-x-2">
-          <View className="flex-1">
-            <SearchInput
-              placeholder={t('location.searchForPlace')}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={handleSearch}
-            />
-          </View>
-          <Button onPress={handleSearch} variant="secondary" size="sm">
-            <Text className="text-foreground font-medium">{t('location.searchButton')}</Text>
-          </Button>
-        </View>
-
+    <SafeAreaView className="flex-1 bg-background">
+      <View className="p-4 border-b border-border bg-background flex-row items-center space-x-2">
         <View className="flex-1">
-          <MapView
-            ref={mapRef}
-            style={{ flex: 1 }}
-            initialRegion={{
-              latitude: 20.5937,
-              longitude: 78.9629,
-              latitudeDelta: 10,
-              longitudeDelta: 10,
-            }}
-          >
-            {selectedLocation && (
-              <Marker
-                coordinate={{
-                  latitude: selectedLocation.latitude,
-                  longitude: selectedLocation.longitude,
-                }}
-                title={selectedLocation.name}
-              />
-            )}
-          </MapView>
+          <SearchInput
+            placeholder={t('location.searchForPlace')}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+          />
         </View>
+        <Button onPress={handleSearch} variant="secondary" size="sm">
+          <Text className="text-foreground font-medium">{t('location.searchButton')}</Text>
+        </Button>
+      </View>
 
-        <View className="p-4 space-y-2">
-          {isLoading && <ActivityIndicator />}
+      <View className="flex-1">
+        <MapView
+          ref={mapRef}
+          style={{ flex: 1 }}
+          initialRegion={{
+            latitude: 20.5937,
+            longitude: 78.9629,
+            latitudeDelta: 10,
+            longitudeDelta: 10,
+          }}
+        >
           {selectedLocation && (
-            <Button onPress={handleConfirm}>
-              <Text className="text-primary-foreground font-semibold">
-                {t('location.confirmLocation')}
-              </Text>
-            </Button>
+            <Marker
+              coordinate={{
+                latitude: selectedLocation.latitude,
+                longitude: selectedLocation.longitude,
+              }}
+              title={selectedLocation.name}
+            />
           )}
-        </View>
-      </SafeAreaView>
-    </ProGate>
+        </MapView>
+      </View>
+
+      <View className="p-4 space-y-2">
+        {isLoading && <ActivityIndicator />}
+        {selectedLocation && (
+          <Button onPress={handleConfirm}>
+            <Text className="text-primary-foreground font-semibold">
+              {t('location.confirmLocation')}
+            </Text>
+          </Button>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }

@@ -16,7 +16,6 @@ import {
 } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
-import { ProGate } from 'expo-app/features/purchases';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
@@ -79,33 +78,31 @@ export default function ConversationsIosScreen() {
   }
 
   return (
-    <ProGate>
-      <>
-        <Stack.Screen
-          options={{
-            ...getAppBarOptions(),
-            title: 'Messages',
-            headerLeft: () => (
-              <LeftView isSelecting={isSelecting} setIsSelecting={onIsSelectingChange} />
-            ),
-            headerRight: rightView,
-            headerSearchBarOptions: {
-              hideWhenScrolling: true,
-            },
-          }}
-        />
-        <SearchBarContent />
-        <List
-          data={ITEMS}
-          extraData={[isSelecting, selectedMessages]}
-          contentInsetAdjustmentBehavior="automatic"
-          ListFooterComponent={isSelecting ? <View className="h-[46px]" /> : undefined}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-        />
-        {isSelecting && <SelectingToolbar hasSelectedAMessage={selectedMessages.length > 0} />}
-      </>
-    </ProGate>
+    <>
+      <Stack.Screen
+        options={{
+          ...getAppBarOptions(),
+          title: 'Messages',
+          headerLeft: () => (
+            <LeftView isSelecting={isSelecting} setIsSelecting={onIsSelectingChange} />
+          ),
+          headerRight: rightView,
+          headerSearchBarOptions: {
+            hideWhenScrolling: true,
+          },
+        }}
+      />
+      <SearchBarContent />
+      <List
+        data={ITEMS}
+        extraData={[isSelecting, selectedMessages]}
+        contentInsetAdjustmentBehavior="automatic"
+        ListFooterComponent={isSelecting ? <View className="h-[46px]" /> : undefined}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+      />
+      {isSelecting && <SelectingToolbar hasSelectedAMessage={selectedMessages.length > 0} />}
+    </>
   );
 }
 

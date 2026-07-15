@@ -11,7 +11,6 @@ import { fetch as expoFetch } from 'expo/fetch';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
-import { featureFlags } from 'expo-app/config';
 import { aiModeAtom, localModelStatusAtom } from 'expo-app/features/ai/atoms/aiModeAtoms';
 import {
   clearChatMessages,
@@ -34,9 +33,9 @@ import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureU
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
 import { packsStore } from 'expo-app/features/packs/store/packs';
-import { ProGate } from 'expo-app/features/purchases';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { authClient, getStoredSessionToken } from 'expo-app/lib/auth-client';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -92,6 +91,7 @@ export default function AIChat() {
 
   const aiMode = useAtomValue(aiModeAtom);
   const modelStatus = useAtomValue(localModelStatusAtom);
+  const enableLocalAI = useFeatureFlag('enableLocalAI');
 
   const context = React.useMemo(
     () => ({
@@ -133,7 +133,7 @@ export default function AIChat() {
   // properly invalidated — prevents "Timed out waiting for modules to be
   // invalidated" crashes on hot reload and app restart.
   React.useEffect(() => {
-    if (!featureFlags.enableLocalAI) return;
+    if (!enableLocalAI) return;
 
     initLocalModel(isAuthenticated);
 
@@ -160,7 +160,7 @@ export default function AIChat() {
   // Re-initialize the Apple provider when auth state changes so that the
   // set of available tools stays in sync with the user's authentication status.
   React.useEffect(() => {
-    if (!featureFlags.enableLocalAI || !isAppleIntelligenceAvailable()) return;
+    if (!enableLocalAI || !isAppleIntelligenceAvailable()) return;
     releaseLocalModel().then(() => initLocalModel(isAuthenticated));
   }, [isAuthenticated]);
 
@@ -186,7 +186,7 @@ export default function AIChat() {
   const tools = React.useMemo(() => createLocalTools(isAuthenticated), [isAuthenticated]);
 
   const { transport, transportKey } = React.useMemo(() => {
-    if (featureFlags.enableLocalAI && aiMode === 'local' && isLocalReady) {
+    if (enableLocalAI && aiMode === 'local' && isLocalReady) {
       const model = getLocalModel();
       if (model) {
         let systemPrompt = `You are PackRat AI, a helpful assistant for hikers and outdoor enthusiasts.
@@ -373,7 +373,7 @@ export default function AIChat() {
     const messageText = text || input;
 
     // Guard: local mode but model not ready
-    if (featureFlags.enableLocalAI && aiMode === 'local' && modelStatus !== 'ready') {
+    if (enableLocalAI && aiMode === 'local' && modelStatus !== 'ready') {
       const toastTitle =
         modelStatus === 'downloading'
           ? t('ai.modelStillDownloading')
@@ -438,131 +438,127 @@ export default function AIChat() {
   };
 
   return (
-    <ProGate>
-      <>
-        <Stack.Screen
-          options={{
-            header: () => <AiChatHeader onClear={handleClear} />,
+    <>
+      <Stack.Screen
+        options={{
+          header: () => <AiChatHeader onClear={handleClear} />,
+        }}
+      />
+      <KeyboardAvoidingView
+        style={[
+          ROOT_STYLE,
+          {
+            backgroundColor: isDarkColorScheme ? colors.background : colors.card,
+          },
+        ]}
+        behavior="padding"
+      >
+        <ScrollView
+          ref={scrollViewRef}
+          onLayout={onLayout}
+          onScroll={onScroll}
+          onContentSizeChange={onContentSizeChange}
+          scrollIndicatorInsets={{
+            bottom: HEADER_HEIGHT + 10,
+            top: insets.bottom + 2,
           }}
-        />
-        <KeyboardAvoidingView
-          style={[
-            ROOT_STYLE,
-            {
-              backgroundColor: isDarkColorScheme ? colors.background : colors.card,
-            },
-          ]}
-          behavior="padding"
         >
-          <ScrollView
-            ref={scrollViewRef}
-            onLayout={onLayout}
-            onScroll={onScroll}
-            onContentSizeChange={onContentSizeChange}
-            scrollIndicatorInsets={{
-              bottom: HEADER_HEIGHT + 10,
-              top: insets.bottom + 2,
-            }}
-          >
-            <View>
-              <View
-                style={{
-                  height: Platform.OS === 'ios' ? insets.top + 52 : HEADER_HEIGHT + insets.top,
-                }}
-              />
-              <LocationContext location={location} onSetLocation={setLocation} />
-              <DateSeparator
-                date={new Date().toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  day: '2-digit',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              />
-            </View>
+          <View>
+            <View
+              style={{
+                height: Platform.OS === 'ios' ? insets.top + 52 : HEADER_HEIGHT + insets.top,
+              }}
+            />
+            <LocationContext location={location} onSetLocation={setLocation} />
+            <DateSeparator
+              date={new Date().toLocaleDateString('en-US', {
+                weekday: 'short',
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              })}
+            />
+          </View>
 
-            {messages.map((item, index) => {
-              let userQuery: TextUIPart['text'] | undefined;
-              if (item.role === 'assistant' && index > 1) {
-                const userMessage = messages[index - 1];
-                userQuery = userMessage?.parts.find((p) => p.type === 'text')?.text;
-              }
-
-              return (
-                <ChatBubble
-                  key={item.id}
-                  item={item}
-                  userQuery={userQuery}
-                  isLast={index === messages.length - 1}
-                  status={status}
-                  testID={
-                    item.role === 'assistant' ? testIds.aiChat.assistantMessage(item.id) : undefined
-                  }
-                />
-              );
-            })}
-
-            {status === 'submitted' && (
-              <ActivityIndicator
-                size="small"
-                color={colors.primary}
-                className="self-start ml-4 mb-8"
-              />
-            )}
-            {status === 'error' && (
-              <ErrorState error={error} onRetry={() => handleRetry()} onClear={handleClear} />
-            )}
-            {messages.length < 2 && (
-              <View className="pl-4 pr-16">
-                <Text className="mb-2 text-xs text-muted-foreground mt-0">
-                  {t('ai.suggestions')}
-                </Text>
-                <View className="flex-row flex-wrap gap-2">
-                  {getContextualSuggestions({ context, isAuthenticated }).map((suggestion) => (
-                    <TouchableOpacity
-                      key={suggestion}
-                      onPress={() => handleSubmit(suggestion)}
-                      className="mb-2 rounded-3xl border border-border bg-card px-3 py-2"
-                    >
-                      <Text className="text-sm text-foreground">{suggestion}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
-            <Animated.View style={[toolbarHeightStyle, { marginBottom: 20 }]} />
-          </ScrollView>
-        </KeyboardAvoidingView>
-
-        <KeyboardStickyView offset={{ opened: insets.bottom }}>
-          <Composer
-            textInputHeight={textInputHeight}
-            input={input}
-            handleInputChange={setInput}
-            handleSubmit={() => {
-              handleSubmit();
-            }}
-            stop={stop}
-            isLoading={isLoading}
-            placeholder={
-              context.contextType === 'general'
-                ? t('ai.askAnythingOutdoors')
-                : context.contextType === 'item'
-                  ? t('ai.askAboutItem')
-                  : t('ai.askAboutPack')
+          {messages.map((item, index) => {
+            let userQuery: TextUIPart['text'] | undefined;
+            if (item.role === 'assistant' && index > 1) {
+              const userMessage = messages[index - 1];
+              userQuery = userMessage?.parts.find((p) => p.type === 'text')?.text;
             }
-          />
-        </KeyboardStickyView>
-        {isArrowButtonVisible && status === 'ready' && (
-          <TouchableOpacity
-            onPress={scrollToBottom}
-            className="absolute bottom-20 right-4 rounded-full bg-gray-200 p-3 mb-5 shadow-lg"
-          >
-            <Icon name="arrow-down" size={20} color="black" />
-          </TouchableOpacity>
-        )}
-      </>
-    </ProGate>
+
+            return (
+              <ChatBubble
+                key={item.id}
+                item={item}
+                userQuery={userQuery}
+                isLast={index === messages.length - 1}
+                status={status}
+                testID={
+                  item.role === 'assistant' ? testIds.aiChat.assistantMessage(item.id) : undefined
+                }
+              />
+            );
+          })}
+
+          {status === 'submitted' && (
+            <ActivityIndicator
+              size="small"
+              color={colors.primary}
+              className="self-start ml-4 mb-8"
+            />
+          )}
+          {status === 'error' && (
+            <ErrorState error={error} onRetry={() => handleRetry()} onClear={handleClear} />
+          )}
+          {messages.length < 2 && (
+            <View className="pl-4 pr-16">
+              <Text className="mb-2 text-xs text-muted-foreground mt-0">{t('ai.suggestions')}</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {getContextualSuggestions({ context, isAuthenticated }).map((suggestion) => (
+                  <TouchableOpacity
+                    key={suggestion}
+                    onPress={() => handleSubmit(suggestion)}
+                    className="mb-2 rounded-3xl border border-border bg-card px-3 py-2"
+                  >
+                    <Text className="text-sm text-foreground">{suggestion}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+          <Animated.View style={[toolbarHeightStyle, { marginBottom: 20 }]} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <KeyboardStickyView offset={{ opened: insets.bottom }}>
+        <Composer
+          textInputHeight={textInputHeight}
+          input={input}
+          handleInputChange={setInput}
+          handleSubmit={() => {
+            handleSubmit();
+          }}
+          stop={stop}
+          isLoading={isLoading}
+          placeholder={
+            context.contextType === 'general'
+              ? t('ai.askAnythingOutdoors')
+              : context.contextType === 'item'
+                ? t('ai.askAboutItem')
+                : t('ai.askAboutPack')
+          }
+        />
+      </KeyboardStickyView>
+      {isArrowButtonVisible && status === 'ready' && (
+        <TouchableOpacity
+          onPress={scrollToBottom}
+          className="absolute bottom-20 right-4 rounded-full bg-gray-200 p-3 mb-5 shadow-lg"
+        >
+          <Icon name="arrow-down" size={20} color="black" />
+        </TouchableOpacity>
+      )}
+    </>
   );
 }
 

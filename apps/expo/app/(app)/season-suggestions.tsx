@@ -6,7 +6,6 @@ import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { LocationSearchSheet } from 'expo-app/features/packs/components/LocationSearchSheet';
 import { LocationSourceSheet } from 'expo-app/features/packs/components/LocationSourceSheet';
-import { ProGate } from 'expo-app/features/purchases';
 import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import * as Location from 'expo-location';
@@ -113,54 +112,52 @@ export default function SeasonSuggestionsScreen() {
   };
 
   return (
-    <ProGate>
-      <>
-        <Stack.Screen options={{ ...getAppBarOptions(), title: t('seasons.seasonSuggestions') }} />
+    <>
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('seasons.seasonSuggestions') }} />
 
-        <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
-          <View className="py-6">
-            <View className="mb-6">
-              <Text variant="body" className="text-muted-foreground">
-                {t('seasons.personalizedRecommendations')}
-              </Text>
-            </View>
-
-            <Button onPress={handleGeneratePress} disabled={isGettingLocation} className="w-full">
-              {isGettingLocation ? (
-                <View className="flex-row items-center">
-                  <ActivityIndicator size="small" color="white" />
-                  <Text className="ml-2 text-white">{t('weather.gettingLocation')}</Text>
-                </View>
-              ) : (
-                <View className="flex-row items-center">
-                  <Icon
-                    namingScheme="sfSymbol"
-                    name="sparkles"
-                    materialIcon={{ type: 'MaterialIcons', name: 'auto-awesome' }}
-                    size={18}
-                    color="white"
-                  />
-                  <Text className="ml-2 text-white">{t('seasons.generateSuggestions')}</Text>
-                </View>
-              )}
-            </Button>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
+        <View className="py-6">
+          <View className="mb-6">
+            <Text variant="body" className="text-muted-foreground">
+              {t('seasons.personalizedRecommendations')}
+            </Text>
           </View>
-        </ScrollView>
 
-        <LocationSourceSheet
-          ref={locationSourceSheetRef}
-          onSearchPress={handleSourceSearchPress}
-          onCurrentLocationPress={handleSourceCurrentLocationPress}
-          onDismiss={handleSourceDismiss}
-        />
+          <Button onPress={handleGeneratePress} disabled={isGettingLocation} className="w-full">
+            {isGettingLocation ? (
+              <View className="flex-row items-center">
+                <ActivityIndicator size="small" color="white" />
+                <Text className="ml-2 text-white">{t('weather.gettingLocation')}</Text>
+              </View>
+            ) : (
+              <View className="flex-row items-center">
+                <Icon
+                  namingScheme="sfSymbol"
+                  name="sparkles"
+                  materialIcon={{ type: 'MaterialIcons', name: 'auto-awesome' }}
+                  size={18}
+                  color="white"
+                />
+                <Text className="ml-2 text-white">{t('seasons.generateSuggestions')}</Text>
+              </View>
+            )}
+          </Button>
+        </View>
+      </ScrollView>
 
-        <LocationSearchSheet
-          ref={locationSearchSheetRef}
-          onBack={handleSearchBack}
-          onLocationSelected={handleLocationSelected}
-          onDismiss={handleSearchDismiss}
-        />
-      </>
-    </ProGate>
+      <LocationSourceSheet
+        ref={locationSourceSheetRef}
+        onSearchPress={handleSourceSearchPress}
+        onCurrentLocationPress={handleSourceCurrentLocationPress}
+        onDismiss={handleSourceDismiss}
+      />
+
+      <LocationSearchSheet
+        ref={locationSearchSheetRef}
+        onBack={handleSearchBack}
+        onLocationSelected={handleLocationSelected}
+        onDismiss={handleSearchDismiss}
+      />
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import { ActivityIndicator, SegmentedControl, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useQueryClient } from '@tanstack/react-query';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
@@ -22,6 +23,8 @@ import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureU
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { useEntitlement, useRestorePurchases } from 'expo-app/features/purchases';
+import { FEATURE_ACCESS_QUERY_KEY } from 'expo-app/features/purchases/hooks/useFeatureAccess';
+import { FEATURE_FLAGS_QUERY_KEY } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -41,6 +44,7 @@ export default function SettingsScreen() {
   const isDownloaded = useAtomValue(localModelFileAvailableAtom);
 
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { announcementSeen, setAnnouncementSeen, opened, setOpened } = useSeasonSuggestionsPrefs();
   const { unit: weightUnit, setWeightUnit } = useWeightUnit();
   const { unit: temperatureUnit, setTemperatureUnit } = useTemperatureUnit();
@@ -77,6 +81,20 @@ export default function SettingsScreen() {
   const isPreparing = modelStatus === 'preparing' || modelStatus === 'checking';
   const isReady = modelStatus === 'ready';
   const isError = modelStatus === 'error';
+
+  // Dev-only: bypasses the 5-min staleTime on both queries so an admin-panel
+  // toggle shows up immediately instead of waiting for the next natural refetch.
+  const handleRefreshFeatureFlags = async () => {
+    try {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: FEATURE_FLAGS_QUERY_KEY }),
+        queryClient.refetchQueries({ queryKey: FEATURE_ACCESS_QUERY_KEY }),
+      ]);
+      Burnt.toast({ title: 'Feature flags & entitlements refreshed', preset: 'done' });
+    } catch {
+      Burnt.toast({ title: 'Refresh failed', preset: 'error' });
+    }
+  };
 
   const handleClearAppData = () => {
     appAlert.current?.alert({
@@ -379,6 +397,21 @@ export default function SettingsScreen() {
                   <Text className="font-medium">Reset Season Suggestions State</Text>
                   <Text variant="footnote" className="mt-0.5 text-muted-foreground">
                     {`seen: ${announcementSeen} · opened: ${opened}`}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              <View className="h-px bg-border mx-4" />
+              <TouchableOpacity
+                className="flex-row items-center gap-3 p-4"
+                onPress={handleRefreshFeatureFlags}
+              >
+                <View className="h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
+                  <Icon name="refresh" size={22} color="#3b82f6" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-medium">Refresh Feature Flags</Text>
+                  <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                    Fetches flags & entitlements now, bypassing the 5-min cache
                   </Text>
                 </View>
               </TouchableOpacity>

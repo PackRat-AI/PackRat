@@ -9,7 +9,6 @@ import {
   SeasonSuggestionsError,
   useSeasonSuggestions,
 } from 'expo-app/features/packs/hooks/useSeasonSuggestions';
-import { ProGate } from 'expo-app/features/purchases';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -378,148 +377,146 @@ export default function SeasonSuggestionsResultsScreen() {
   };
 
   return (
-    <ProGate>
-      <>
-        <Stack.Screen options={{ ...getAppBarOptions(), title: t('seasons.seasonSuggestions') }} />
+    <>
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('seasons.seasonSuggestions') }} />
 
-        <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
-          <View className="pt-6">
-            {__DEV__ && <DevErrorPanel active={devForcedError} onSelect={setDevForcedError} />}
+      <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
+        <View className="pt-6">
+          {__DEV__ && <DevErrorPanel active={devForcedError} onSelect={setDevForcedError} />}
 
-            {!displayError && !data && <SuggestionSkeleton />}
+          {!displayError && !data && <SuggestionSkeleton />}
 
-            {displayError && (
-              <ErrorCard
-                error={displayError}
-                onRetry={devForcedError ? handleDevRetry : handleRetry}
-                onGoBack={() => router.back()}
-                onGoToInventory={() => router.push('/(app)/(tabs)/(home)')}
-                onSignIn={() => router.replace('/auth')}
-              />
-            )}
+          {displayError && (
+            <ErrorCard
+              error={displayError}
+              onRetry={devForcedError ? handleDevRetry : handleRetry}
+              onGoBack={() => router.back()}
+              onGoToInventory={() => router.push('/(app)/(tabs)/(home)')}
+              onSignIn={() => router.replace('/auth')}
+            />
+          )}
 
-            {data && !displayError && (
-              <View>
-                <View className="flex-row items-center gap-2 mb-4">
-                  <View className="flex-row items-center gap-1">
-                    <Icon
-                      namingScheme="sfSymbol"
-                      name="leaf"
-                      materialIcon={{ type: 'MaterialIcons', name: 'eco' }}
-                      size={16}
-                      color={colors.grey}
-                    />
-                    <Text className="text-base text-muted-foreground">{data.season}</Text>
-                  </View>
-                  <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
-                  <View className="flex-row items-center gap-1">
-                    <Icon
-                      namingScheme="sfSymbol"
-                      name="location"
-                      materialIcon={{
-                        type: 'MaterialIcons',
-                        name: 'location-on',
-                      }}
-                      size={16}
-                      color={colors.grey}
-                    />
-                    <Text className="text-base text-muted-foreground">{data.location}</Text>
-                  </View>
+          {data && !displayError && (
+            <View>
+              <View className="flex-row items-center gap-2 mb-4">
+                <View className="flex-row items-center gap-1">
+                  <Icon
+                    namingScheme="sfSymbol"
+                    name="leaf"
+                    materialIcon={{ type: 'MaterialIcons', name: 'eco' }}
+                    size={16}
+                    color={colors.grey}
+                  />
+                  <Text className="text-base text-muted-foreground">{data.season}</Text>
                 </View>
-
-                <View className="gap-10">
-                  {data.suggestions.map((suggestion, index) => (
-                    <View key={suggestion.name}>
-                      <View className="flex-row items-center justify-between mb-1">
-                        <View className="flex-row items-center gap-1.5 flex-1 mr-3">
-                          <Text variant="heading" numberOfLines={1} className="flex-shrink">
-                            {suggestion.name}
-                          </Text>
-                          <Icon
-                            namingScheme="sfSymbol"
-                            name="sparkles"
-                            materialIcon={{
-                              type: 'MaterialIcons',
-                              name: 'auto-awesome',
-                            }}
-                            size={15}
-                            color={colors.primary}
-                          />
-                        </View>
-                        <TouchableOpacity
-                          onPress={() =>
-                            createdPacks[index]
-                              ? router.push(`/pack/${createdPacks[index]}`)
-                              : handleCreatePack({ suggestion, index })
-                          }
-                        >
-                          {createdPacks[index] ? (
-                            <Text className="text-muted-foreground font-medium">
-                              {t('common.view')}
-                            </Text>
-                          ) : (
-                            <Text className="text-primary font-medium">{t('common.create')}</Text>
-                          )}
-                        </TouchableOpacity>
-                      </View>
-
-                      <Text variant="caption1" className="text-primary font-medium mb-1">
-                        {suggestion.category}
-                      </Text>
-                      <Text variant="body" className="text-muted-foreground mb-3">
-                        {suggestion.description}
-                      </Text>
-
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        className="-mx-4"
-                        contentContainerStyle={{
-                          paddingHorizontal: 16,
-                          gap: 12,
-                        }}
-                      >
-                        {suggestion.items.map((item) => (
-                          <View key={item.name} className="w-20 items-center">
-                            <PackItemImage
-                              item={{
-                                id: item.id,
-                                name: item.name,
-                                weight: item.weight,
-                                weightUnit: item.weightUnit,
-                                quantity: item.quantity,
-                                category: item.category ?? '',
-                                consumable: item.consumable,
-                                worn: item.worn,
-                                image: item.image,
-                                description: item.description ?? undefined,
-                                notes: item.notes,
-                                catalogItemId: item.catalogItemId,
-                                packId: '',
-                                deleted: false,
-                                isAIGenerated: false,
-                              }}
-                              className="w-20 h-20 rounded-xl mb-1.5"
-                              resizeMode="cover"
-                            />
-                            <Text
-                              variant="caption1"
-                              className="text-center text-muted-foreground"
-                              numberOfLines={2}
-                            >
-                              {item.name}
-                            </Text>
-                          </View>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  ))}
+                <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
+                <View className="flex-row items-center gap-1">
+                  <Icon
+                    namingScheme="sfSymbol"
+                    name="location"
+                    materialIcon={{
+                      type: 'MaterialIcons',
+                      name: 'location-on',
+                    }}
+                    size={16}
+                    color={colors.grey}
+                  />
+                  <Text className="text-base text-muted-foreground">{data.location}</Text>
                 </View>
               </View>
-            )}
-          </View>
-        </ScrollView>
-      </>
-    </ProGate>
+
+              <View className="gap-10">
+                {data.suggestions.map((suggestion, index) => (
+                  <View key={suggestion.name}>
+                    <View className="flex-row items-center justify-between mb-1">
+                      <View className="flex-row items-center gap-1.5 flex-1 mr-3">
+                        <Text variant="heading" numberOfLines={1} className="flex-shrink">
+                          {suggestion.name}
+                        </Text>
+                        <Icon
+                          namingScheme="sfSymbol"
+                          name="sparkles"
+                          materialIcon={{
+                            type: 'MaterialIcons',
+                            name: 'auto-awesome',
+                          }}
+                          size={15}
+                          color={colors.primary}
+                        />
+                      </View>
+                      <TouchableOpacity
+                        onPress={() =>
+                          createdPacks[index]
+                            ? router.push(`/pack/${createdPacks[index]}`)
+                            : handleCreatePack({ suggestion, index })
+                        }
+                      >
+                        {createdPacks[index] ? (
+                          <Text className="text-muted-foreground font-medium">
+                            {t('common.view')}
+                          </Text>
+                        ) : (
+                          <Text className="text-primary font-medium">{t('common.create')}</Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+
+                    <Text variant="caption1" className="text-primary font-medium mb-1">
+                      {suggestion.category}
+                    </Text>
+                    <Text variant="body" className="text-muted-foreground mb-3">
+                      {suggestion.description}
+                    </Text>
+
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      className="-mx-4"
+                      contentContainerStyle={{
+                        paddingHorizontal: 16,
+                        gap: 12,
+                      }}
+                    >
+                      {suggestion.items.map((item) => (
+                        <View key={item.name} className="w-20 items-center">
+                          <PackItemImage
+                            item={{
+                              id: item.id,
+                              name: item.name,
+                              weight: item.weight,
+                              weightUnit: item.weightUnit,
+                              quantity: item.quantity,
+                              category: item.category ?? '',
+                              consumable: item.consumable,
+                              worn: item.worn,
+                              image: item.image,
+                              description: item.description ?? undefined,
+                              notes: item.notes,
+                              catalogItemId: item.catalogItemId,
+                              packId: '',
+                              deleted: false,
+                              isAIGenerated: false,
+                            }}
+                            className="w-20 h-20 rounded-xl mb-1.5"
+                            resizeMode="cover"
+                          />
+                          <Text
+                            variant="caption1"
+                            className="text-center text-muted-foreground"
+                            numberOfLines={2}
+                          >
+                            {item.name}
+                          </Text>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </>
   );
 }

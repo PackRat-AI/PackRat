@@ -16,7 +16,6 @@ import {
 } from '@packrat/ui/nativewindui';
 import { Portal } from '@rn-primitives/portal';
 import { Icon } from 'expo-app/components/Icon';
-import { ProGate } from 'expo-app/features/purchases';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
@@ -58,51 +57,49 @@ export default function ConversationsAndroidScreen() {
   }
 
   return (
-    <ProGate>
-      <>
-        <Stack.Screen
-          options={{
-            title: 'Messages',
-            headerLargeTitle: true,
-            headerLeft: leftView,
-            headerRight: rightView,
-            headerSearchBarOptions: {
-              hideWhenScrolling: false,
-            },
-          }}
-        />
-        <SearchBarContent />
-        <List
-          data={ITEMS}
-          extraData={[selectedMessages, isDarkColorScheme]}
-          contentInsetAdjustmentBehavior="automatic"
-          ItemSeparatorComponent={renderItemSeparator}
-          contentContainerClassName="ios:pt-4 pt-2"
-          ListFooterComponent={<View className="h-16" />} // Prevent last message from being blocked by the FAB/Toolbar
-          renderItem={renderItem}
-        />
-        {Platform.OS === 'ios' ? (
-          <Animated.View
-            entering={FadeIn.duration(500)}
-            className="bg-card/70 dark:bg-background/70 absolute bottom-0 left-0 right-0"
-          >
-            <Toolbar
-              leftView={<View className="flex-1" />}
-              rightView={<ToolbarCTA className="h-8 w-8" icon={{ name: 'square.and.pencil' }} />}
-              iosBlurIntensity={30}
-            />
-          </Animated.View>
-        ) : (
-          <StartChatButton />
-        )}
-        {selectedMessages.length > 0 && (
-          <SelectMessagesHeader
-            numberOfSelectedMessages={selectedMessages.length}
-            clearSelectedMessages={clearSelectedMessages}
+    <>
+      <Stack.Screen
+        options={{
+          title: 'Messages',
+          headerLargeTitle: true,
+          headerLeft: leftView,
+          headerRight: rightView,
+          headerSearchBarOptions: {
+            hideWhenScrolling: false,
+          },
+        }}
+      />
+      <SearchBarContent />
+      <List
+        data={ITEMS}
+        extraData={[selectedMessages, isDarkColorScheme]}
+        contentInsetAdjustmentBehavior="automatic"
+        ItemSeparatorComponent={renderItemSeparator}
+        contentContainerClassName="ios:pt-4 pt-2"
+        ListFooterComponent={<View className="h-16" />} // Prevent last message from being blocked by the FAB/Toolbar
+        renderItem={renderItem}
+      />
+      {Platform.OS === 'ios' ? (
+        <Animated.View
+          entering={FadeIn.duration(500)}
+          className="bg-card/70 dark:bg-background/70 absolute bottom-0 left-0 right-0"
+        >
+          <Toolbar
+            leftView={<View className="flex-1" />}
+            rightView={<ToolbarCTA className="h-8 w-8" icon={{ name: 'square.and.pencil' }} />}
+            iosBlurIntensity={30}
           />
-        )}
-      </>
-    </ProGate>
+        </Animated.View>
+      ) : (
+        <StartChatButton />
+      )}
+      {selectedMessages.length > 0 && (
+        <SelectMessagesHeader
+          numberOfSelectedMessages={selectedMessages.length}
+          clearSelectedMessages={clearSelectedMessages}
+        />
+      )}
+    </>
   );
 }
 

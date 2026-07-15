@@ -12,7 +12,6 @@ import { Portal } from '@rn-primitives/portal';
 import { FlashList } from '@shopify/flash-list';
 import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
-import { ProGate } from 'expo-app/features/purchases';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router, Stack } from 'expo-router';
@@ -77,69 +76,67 @@ export default function ChatAndroid() {
   }
 
   return (
-    <ProGate>
-      <>
-        <Stack.Screen options={SCREEN_OPTIONS} />
+    <>
+      <Stack.Screen options={SCREEN_OPTIONS} />
 
-        <KeyboardAvoidingView
-          style={[
-            ROOT_STYLE,
-            {
-              backgroundColor: isDarkColorScheme ? colors.background : colors.card,
-            },
-          ]}
-          behavior="padding"
-        >
-          <FlashList
-            extraData={selectedMessages}
-            ListFooterComponent={<View style={{ height: HEADER_HEIGHT + insets.top }} />}
-            ListHeaderComponent={<Animated.View style={toolbarHeightStyle} />}
-            keyboardDismissMode="on-drag"
-            keyboardShouldPersistTaps="handled"
-            scrollIndicatorInsets={{
-              bottom: HEADER_HEIGHT + 10,
-              top: insets.bottom + 2,
-            }}
-            data={messages}
-            renderItem={({ item, index }) => {
-              if (isString(item)) {
-                return <DateSeparator date={item} />;
-              }
+      <KeyboardAvoidingView
+        style={[
+          ROOT_STYLE,
+          {
+            backgroundColor: isDarkColorScheme ? colors.background : colors.card,
+          },
+        ]}
+        behavior="padding"
+      >
+        <FlashList
+          extraData={selectedMessages}
+          ListFooterComponent={<View style={{ height: HEADER_HEIGHT + insets.top }} />}
+          ListHeaderComponent={<Animated.View style={toolbarHeightStyle} />}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+          scrollIndicatorInsets={{
+            bottom: HEADER_HEIGHT + 10,
+            top: insets.bottom + 2,
+          }}
+          data={messages}
+          renderItem={({ item, index }) => {
+            if (isString(item)) {
+              return <DateSeparator date={item} />;
+            }
 
-              const nextMessage = messages[index - 1];
-              const isSameNextSender = !isString(nextMessage)
-                ? nextMessage?.sender === item.sender
-                : false;
+            const nextMessage = messages[index - 1];
+            const isSameNextSender = !isString(nextMessage)
+              ? nextMessage?.sender === item.sender
+              : false;
 
-              const previousMessage = messages[index + 1];
-              const isSamePreviousSender = !isString(previousMessage)
-                ? previousMessage?.sender === item.sender
-                : false;
+            const previousMessage = messages[index + 1];
+            const isSamePreviousSender = !isString(previousMessage)
+              ? previousMessage?.sender === item.sender
+              : false;
 
-              return (
-                <ChatBubble
-                  isSameNextSender={isSameNextSender}
-                  isSamePreviousSender={isSamePreviousSender}
-                  item={item}
-                  selectedMessages={selectedMessages}
-                  setSelectedMessages={setSelectedMessages}
-                />
-              );
-            }}
-          />
-        </KeyboardAvoidingView>
+            return (
+              <ChatBubble
+                isSameNextSender={isSameNextSender}
+                isSamePreviousSender={isSamePreviousSender}
+                item={item}
+                selectedMessages={selectedMessages}
+                setSelectedMessages={setSelectedMessages}
+              />
+            );
+          }}
+        />
+      </KeyboardAvoidingView>
 
-        <KeyboardStickyView offset={{ opened: insets.bottom }}>
-          <Composer textInputHeight={textInputHeight} setMessages={setMessages} />
-        </KeyboardStickyView>
-        {selectedMessages.length > 0 && (
-          <SelectMessagesHeader
-            numberOfSelectedMessages={selectedMessages.length}
-            clearSelectedMessages={clearSelectedMessages}
-          />
-        )}
-      </>
-    </ProGate>
+      <KeyboardStickyView offset={{ opened: insets.bottom }}>
+        <Composer textInputHeight={textInputHeight} setMessages={setMessages} />
+      </KeyboardStickyView>
+      {selectedMessages.length > 0 && (
+        <SelectMessagesHeader
+          numberOfSelectedMessages={selectedMessages.length}
+          clearSelectedMessages={clearSelectedMessages}
+        />
+      )}
+    </>
   );
 }
 

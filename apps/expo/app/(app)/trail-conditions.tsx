@@ -1,11 +1,10 @@
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
-import { featureFlags } from 'expo-app/config';
-import { ProGate } from 'expo-app/features/purchases';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { TrailConditionReportCard } from 'expo-app/features/trail-conditions/components/TrailConditionReportCard';
 import { useTrailConditionReports } from 'expo-app/features/trail-conditions/hooks/useTrailConditionReports';
 import type { TrailConditionReport, TrailSurface } from 'expo-app/features/trail-conditions/types';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -63,7 +62,8 @@ export default function TrailConditionsScreen() {
     return reports.filter((r: TrailConditionReport) => r.surface === selectedSurface);
   }, [reports, selectedSurface]);
 
-  if (!featureFlags.enableTrailConditions) return null;
+  const enableTrailConditions = useFeatureFlag('enableTrailConditions');
+  if (!enableTrailConditions) return null;
 
   const filterBar = (
     <ScrollView
@@ -162,63 +162,61 @@ export default function TrailConditionsScreen() {
   );
 
   return (
-    <ProGate>
-      <SafeAreaView className="flex-1" edges={['bottom']}>
-        <Stack.Screen
-          options={{
-            ...getAppBarOptions(),
-            title: t('trailConditions.title'),
-            headerRight: () => (
-              <Pressable
-                onPress={() => setShowSubmitForm(true)}
-                className="mr-2 rounded-full bg-primary px-3 py-1.5"
-                accessibilityLabel={t('trailConditions.reportConditionsTitle')}
-                accessibilityRole="button"
-              >
-                <Text variant="footnote" className="font-semibold text-primary-foreground">
-                  {t('trailConditions.reportButton')}
-                </Text>
-              </Pressable>
-            ),
-          }}
-        />
-
-        <FlatList<TrailConditionReport>
-          className="flex-1"
-          data={filteredReports}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          ListHeaderComponent={listHeader}
-          ListFooterComponent={listFooter}
-          ListEmptyComponent={listEmptyComponent}
-          contentContainerClassName="pb-4"
-          contentInsetAdjustmentBehavior="automatic"
-        />
-
-        {/* Submit Report Modal */}
-        <Modal
-          visible={showSubmitForm}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setShowSubmitForm(false)}
-        >
-          <View className="flex-1 bg-background">
-            <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
-              <Text variant="heading" className="font-semibold">
-                {t('trailConditions.reportConditionsTitle')}
+    <SafeAreaView className="flex-1" edges={['bottom']}>
+      <Stack.Screen
+        options={{
+          ...getAppBarOptions(),
+          title: t('trailConditions.title'),
+          headerRight: () => (
+            <Pressable
+              onPress={() => setShowSubmitForm(true)}
+              className="mr-2 rounded-full bg-primary px-3 py-1.5"
+              accessibilityLabel={t('trailConditions.reportConditionsTitle')}
+              accessibilityRole="button"
+            >
+              <Text variant="footnote" className="font-semibold text-primary-foreground">
+                {t('trailConditions.reportButton')}
               </Text>
-              <Pressable
-                onPress={() => setShowSubmitForm(false)}
-                accessibilityLabel={t('common.cancel')}
-                accessibilityRole="button"
-              >
-                <Text className="font-semibold text-primary">{t('common.cancel')}</Text>
-              </Pressable>
-            </View>
-            <SubmitConditionReportForm onSuccess={() => setShowSubmitForm(false)} />
+            </Pressable>
+          ),
+        }}
+      />
+
+      <FlatList<TrailConditionReport>
+        className="flex-1"
+        data={filteredReports}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={listFooter}
+        ListEmptyComponent={listEmptyComponent}
+        contentContainerClassName="pb-4"
+        contentInsetAdjustmentBehavior="automatic"
+      />
+
+      {/* Submit Report Modal */}
+      <Modal
+        visible={showSubmitForm}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSubmitForm(false)}
+      >
+        <View className="flex-1 bg-background">
+          <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
+            <Text variant="heading" className="font-semibold">
+              {t('trailConditions.reportConditionsTitle')}
+            </Text>
+            <Pressable
+              onPress={() => setShowSubmitForm(false)}
+              accessibilityLabel={t('common.cancel')}
+              accessibilityRole="button"
+            >
+              <Text className="font-semibold text-primary">{t('common.cancel')}</Text>
+            </Pressable>
           </View>
-        </Modal>
-      </SafeAreaView>
-    </ProGate>
+          <SubmitConditionReportForm onSuccess={() => setShowSubmitForm(false)} />
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }

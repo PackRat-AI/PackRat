@@ -1,7 +1,6 @@
 import { Form, FormItem, FormSection, Text, Toggle } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
-import { ProGate } from 'expo-app/features/purchases';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack } from 'expo-router';
@@ -66,98 +65,96 @@ export default function WeatherAlertPreferencesScreen() {
   const alertTypesDisabled = !preferences.weatherNotifications;
 
   return (
-    <ProGate>
-      <>
-        <Stack.Screen
-          options={{ ...getAppBarOptions(), title: t('weather.alertPreferencesTitle') }}
-        />
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
-        >
-          <Form className="gap-5 px-4 pt-4">
-            <FormSection
-              materialIconProps={{ name: 'bell-outline' }}
-              footnote={t('weather.alertPreferencesDesc')}
-            >
-              <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row items-center justify-between px-2 pb-4">
-                <View className="flex-1 flex-row items-center gap-3">
-                  <View className="h-8 w-8 items-center justify-center rounded-lg bg-amber-500">
-                    <Icon name="bell-outline" size={18} color="white" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="font-medium">{t('weather.weatherNotifications')}</Text>
-                    <Text variant="caption1" className="text-muted-foreground">
-                      {t('weather.weatherNotificationsDesc')}
-                    </Text>
-                  </View>
+    <>
+      <Stack.Screen
+        options={{ ...getAppBarOptions(), title: t('weather.alertPreferencesTitle') }}
+      />
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+      >
+        <Form className="gap-5 px-4 pt-4">
+          <FormSection
+            materialIconProps={{ name: 'bell-outline' }}
+            footnote={t('weather.alertPreferencesDesc')}
+          >
+            <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row items-center justify-between px-2 pb-4">
+              <View className="flex-1 flex-row items-center gap-3">
+                <View className="h-8 w-8 items-center justify-center rounded-lg bg-amber-500">
+                  <Icon name="bell-outline" size={18} color="white" />
                 </View>
-                <Toggle
-                  value={preferences.weatherNotifications}
-                  onValueChange={onToggle('weatherNotifications')}
-                />
-              </FormItem>
-              <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row items-center justify-between px-2 pb-4">
-                <View className="flex-1 flex-row items-center gap-3">
-                  <View className="h-8 w-8 items-center justify-center rounded-lg bg-blue-500">
-                    <Icon name="map-marker-radius-outline" size={18} color="white" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="font-medium">{t('weather.locationMonitoring')}</Text>
-                    <Text variant="caption1" className="text-muted-foreground">
-                      {t('weather.locationMonitoringDesc')}
-                    </Text>
-                  </View>
+                <View className="flex-1">
+                  <Text className="font-medium">{t('weather.weatherNotifications')}</Text>
+                  <Text variant="caption1" className="text-muted-foreground">
+                    {t('weather.weatherNotificationsDesc')}
+                  </Text>
                 </View>
-                <Toggle
-                  value={preferences.locationMonitoring}
-                  onValueChange={onToggle('locationMonitoring')}
-                />
-              </FormItem>
-            </FormSection>
+              </View>
+              <Toggle
+                value={preferences.weatherNotifications}
+                onValueChange={onToggle('weatherNotifications')}
+              />
+            </FormItem>
+            <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row items-center justify-between px-2 pb-4">
+              <View className="flex-1 flex-row items-center gap-3">
+                <View className="h-8 w-8 items-center justify-center rounded-lg bg-blue-500">
+                  <Icon name="map-marker-radius-outline" size={18} color="white" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-medium">{t('weather.locationMonitoring')}</Text>
+                  <Text variant="caption1" className="text-muted-foreground">
+                    {t('weather.locationMonitoringDesc')}
+                  </Text>
+                </View>
+              </View>
+              <Toggle
+                value={preferences.locationMonitoring}
+                onValueChange={onToggle('locationMonitoring')}
+              />
+            </FormItem>
+          </FormSection>
 
-            <FormSection
-              ios={{ title: t('weather.alertTypes') }}
-              materialIconProps={{ name: 'alert-outline' }}
-              footnote={alertTypesDisabled ? t('weather.weatherNotificationsDesc') : undefined}
-            >
-              {ALERT_TYPE_CONFIGS.map(({ key, iconName, iconColor }) => (
-                <View
-                  key={key}
-                  style={{ opacity: alertTypesDisabled ? 0.5 : 1 }}
-                  pointerEvents={alertTypesDisabled ? 'none' : 'auto'}
-                >
-                  <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row items-center justify-between px-2 pb-4">
-                    <View className="flex-1 flex-row items-center gap-3">
-                      <View
-                        className="h-8 w-8 items-center justify-center rounded-lg"
-                        style={{
-                          backgroundColor: alertTypesDisabled ? colors.grey3 : iconColor,
-                        }}
-                      >
-                        <Icon name={iconName as never} size={18} color="white" />
-                      </View>
-                      <View className="flex-1">
-                        <Text
-                          className={
-                            alertTypesDisabled ? 'font-medium text-muted-foreground' : 'font-medium'
-                          }
-                        >
-                          {t(`weather.${key}` as never)}
-                        </Text>
-                        <Text variant="caption1" className="text-muted-foreground">
-                          {t(`weather.${key}Desc` as never)}
-                        </Text>
-                      </View>
+          <FormSection
+            ios={{ title: t('weather.alertTypes') }}
+            materialIconProps={{ name: 'alert-outline' }}
+            footnote={alertTypesDisabled ? t('weather.weatherNotificationsDesc') : undefined}
+          >
+            {ALERT_TYPE_CONFIGS.map(({ key, iconName, iconColor }) => (
+              <View
+                key={key}
+                style={{ opacity: alertTypesDisabled ? 0.5 : 1 }}
+                pointerEvents={alertTypesDisabled ? 'none' : 'auto'}
+              >
+                <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row items-center justify-between px-2 pb-4">
+                  <View className="flex-1 flex-row items-center gap-3">
+                    <View
+                      className="h-8 w-8 items-center justify-center rounded-lg"
+                      style={{
+                        backgroundColor: alertTypesDisabled ? colors.grey3 : iconColor,
+                      }}
+                    >
+                      <Icon name={iconName as never} size={18} color="white" />
                     </View>
-                    <Toggle value={preferences[key]} onValueChange={onToggle(key)} />
-                  </FormItem>
-                </View>
-              ))}
-            </FormSection>
-          </Form>
-        </ScrollView>
-      </>
-    </ProGate>
+                    <View className="flex-1">
+                      <Text
+                        className={
+                          alertTypesDisabled ? 'font-medium text-muted-foreground' : 'font-medium'
+                        }
+                      >
+                        {t(`weather.${key}` as never)}
+                      </Text>
+                      <Text variant="caption1" className="text-muted-foreground">
+                        {t(`weather.${key}Desc` as never)}
+                      </Text>
+                    </View>
+                  </View>
+                  <Toggle value={preferences[key]} onValueChange={onToggle(key)} />
+                </FormItem>
+              </View>
+            ))}
+          </FormSection>
+        </Form>
+      </ScrollView>
+    </>
   );
 }
