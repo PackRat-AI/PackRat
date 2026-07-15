@@ -99,8 +99,16 @@ final class HomeTileTests: AppUITestCase {
 
     private func destinationExists(_ title: String, timeout: TimeInterval) -> Bool {
         #if os(macOS)
-        return app.staticTexts[title].waitForExistence(timeout: timeout)
-            || app.navigationBars[title].waitForExistence(timeout: 1)
+        let staticText = app.staticTexts[title]
+        let navigationBar = app.navigationBars[title]
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if staticText.exists || navigationBar.exists {
+                return true
+            }
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+        return staticText.exists || navigationBar.exists
         #else
         return app.navigationBars[title].waitForExistence(timeout: timeout)
         #endif

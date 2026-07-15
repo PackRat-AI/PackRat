@@ -37,6 +37,20 @@ describe('parseArgs', () => {
     });
   });
 
+  it('preserves an explicit plan before a unit positional mode', () => {
+    expect(parseArgs(['--plan', 'smoke', 'unit'])).toEqual({
+      plan: 'iOS-Smoke',
+      passthrough: ['-only-testing:PackRatTests'],
+    });
+  });
+
+  it('preserves an explicit plan after a unit positional mode', () => {
+    expect(parseArgs(['ios-unit', '--plan=full'])).toEqual({
+      plan: 'iOS-Full',
+      passthrough: ['-only-testing:PackRatTests'],
+    });
+  });
+
   it('case-insensitive alias matching', () => {
     expect(parseArgs(['--plan', 'SMOKE']).plan).toBe('iOS-Smoke');
     expect(parseArgs(['--plan', 'FULL']).plan).toBe('iOS-Full');

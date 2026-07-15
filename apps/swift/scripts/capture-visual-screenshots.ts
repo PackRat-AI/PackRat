@@ -789,11 +789,13 @@ function pickAvailableIOSDestination({
     timeout: 10_000,
     maxBuffer: 10 * 1024 * 1024,
   });
+  let inventorySucceeded = false;
   if (result.status === 0) {
     try {
       const parsed = safeJsonParse<{
         devices?: Record<string, Array<{ name?: string; udid?: string; isAvailable?: boolean }>>;
       }>(result.stdout, { strict: true });
+      inventorySucceeded = true;
       const availableDevices = Object.values(parsed.devices ?? {}).flat();
       for (const preferredName of preferredNames) {
         const preferred = availableDevices.find(
@@ -809,7 +811,7 @@ function pickAvailableIOSDestination({
       }
     } catch {}
   }
-  if (createIfMissing) {
+  if (createIfMissing && inventorySucceeded) {
     const createdDeviceId = createIOSSimulator(createIfMissing);
     if (createdDeviceId) return `platform=iOS Simulator,id=${createdDeviceId}`;
   }
@@ -1682,8 +1684,9 @@ async function renderWithSystemChrome({
     const startedAt = Date.now();
     while (Date.now() - startedAt < CONTACT_SHEET_RENDER_TIMEOUT_MS) {
       if (fileIsNonEmpty(outputPath)) {
-        await sleep(250);
-        await stopProcessGroup({ pid: child.pid, exitPromise });
+        const exitResult = await Promise.race([exitPromise, sleep(1_000).then(() => null)]);
+        if (exitResult?.code === 0) return;
+        await stopProcessGroup({ pid: child.pid, exitPromise, signal: 'SIGKILL' });
         return;
       }
 

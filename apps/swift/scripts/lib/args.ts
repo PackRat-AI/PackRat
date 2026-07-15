@@ -68,7 +68,7 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
     }
     const positionalMode = POSITIONAL_MODES[a.toLowerCase()];
     if (positionalMode) {
-      plan = positionalMode.plan;
+      if (positionalMode.plan) plan = positionalMode.plan;
       passthrough.push(...positionalMode.passthrough);
       continue;
     }

@@ -582,20 +582,24 @@ final class VisualScreenshotTests: XCTestCase {
         let baselineName = name.hasPrefix("home-before-") ? name : "home-before-\(name)"
         openHomeForActionBaseline(name: baselineName)
 
-        let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
-        if prefersHomeSearch(for: title) {
-            openHomeActionUsingSearch(title: title, identifier: identifier)
+        let verifyAndCapture = {
             if let destinationIdentifier {
-                let destination = app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
+                let destination = self.app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
                 XCTAssertTrue(
                     destination.waitForExistence(timeout: 5),
                     "Expected Home action '\(title)' to open '\(destinationIdentifier)' for screenshot \(name)"
                 )
             }
-            capture(name)
+            self.capture(name)
             if dismissAfterCapture {
-                dismissPhoneDestination()
+                self.dismissPhoneDestination()
             }
+        }
+
+        let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
+        if prefersHomeSearch(for: title) {
+            openHomeActionUsingSearch(title: title, identifier: identifier)
+            verifyAndCapture()
             return
         }
 
@@ -608,17 +612,7 @@ final class VisualScreenshotTests: XCTestCase {
             }
             if action.exists, action.isHittable, actionIsClearOfBottomBar(action) {
                 activate(action)
-                if let destinationIdentifier {
-                    let destination = app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
-                    XCTAssertTrue(
-                        destination.waitForExistence(timeout: 5),
-                        "Expected Home action '\(title)' to open '\(destinationIdentifier)' for screenshot \(name)"
-                    )
-                }
-                capture(name)
-                if dismissAfterCapture {
-                    dismissPhoneDestination()
-                }
+                verifyAndCapture()
                 return
             }
             if action.exists, action.frame.minY < 140 {
@@ -629,32 +623,12 @@ final class VisualScreenshotTests: XCTestCase {
         }
         if let visibleCandidate, visibleCandidate.exists, visibleCandidate.isHittable {
             activate(visibleCandidate)
-            if let destinationIdentifier {
-                let destination = app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
-                XCTAssertTrue(
-                    destination.waitForExistence(timeout: 5),
-                    "Expected Home action '\(title)' to open '\(destinationIdentifier)' for screenshot \(name)"
-                )
-            }
-            capture(name)
-            if dismissAfterCapture {
-                dismissPhoneDestination()
-            }
+            verifyAndCapture()
             return
         }
 
         openHomeActionUsingSearch(title: title, identifier: identifier)
-        if let destinationIdentifier {
-            let destination = app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
-            XCTAssertTrue(
-                destination.waitForExistence(timeout: 5),
-                "Expected Home action '\(title)' to open '\(destinationIdentifier)' for screenshot \(name)"
-            )
-        }
-        capture(name)
-        if dismissAfterCapture {
-            dismissPhoneDestination()
-        }
+        verifyAndCapture()
     }
 
     private func prefersHomeSearch(for title: String) -> Bool {
@@ -1365,8 +1339,9 @@ final class VisualScreenshotTests: XCTestCase {
     @discardableResult
     private func dismissInterruption(in container: XCUIElement) -> Bool {
         #if os(macOS)
+        let allButtons = container.buttons.allElementsBoundByIndex
         for label in ["Remind Me Later", "Not Now", "Continue", "OK", "Allow", "Dismiss", "Close"] {
-            let matchingButtons = container.buttons.allElementsBoundByIndex
+            let matchingButtons = allButtons
                 .filter { $0.label == label || $0.identifier == label }
             if let button = matchingButtons.first(where: { $0.exists && $0.isHittable }) ?? matchingButtons.first(where: { $0.exists }) {
                 button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
