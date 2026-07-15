@@ -372,6 +372,13 @@
       "when": 1784041460849,
       "tag": "0051_exotic_hellcat",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1784135000196,
+      "tag": "0052_condemned_shocker",
+      "breakpoints": true
     }
   ]
 }
