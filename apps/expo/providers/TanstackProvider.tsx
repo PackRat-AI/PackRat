@@ -1,5 +1,9 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
-import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { FEATURE_ACCESS_QUERY_KEY } from 'expo-app/features/purchases/hooks/useFeatureAccess';
 import type React from 'react';
 
 // 401 = handled by auth refresh cycle; 429 = transient rate-limit; 404 = intentional not-found.
@@ -15,8 +19,27 @@ function getHttpMeta(error: unknown): {
   return { capture: true, httpStatus, errorCode: e?.errorCode ?? e?.code };
 }
 
+// Queries that must survive an app restart / offline cold start. Kept to an
+// explicit allowlist so we persist small, safe config — not large or sensitive
+// payloads. `feature-access` config powers the early-access gate: persisting it
+// lets the gate resolve which features are gated without a network round-trip.
+const PERSISTED_QUERY_KEYS: readonly (readonly unknown[])[] = [FEATURE_ACCESS_QUERY_KEY];
+
+function isPersistedQuery(queryKey: readonly unknown[]): boolean {
+  return PERSISTED_QUERY_KEYS.some(
+    (key) => key.length <= queryKey.length && key.every((part, i) => part === queryKey[i]),
+  );
+}
+
 // Create a client
 export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Persisted queries must not be garbage-collected before restore, so keep
+      // cached data for 24h. Non-persisted queries are unaffected at runtime.
+      gcTime: 1000 * 60 * 60 * 24,
+    },
+  },
   queryCache: new QueryCache({
     onError(error, query) {
       const { capture, httpStatus, errorCode } = getHttpMeta(error);
@@ -39,6 +62,24 @@ export const queryClient = new QueryClient({
   }),
 });
 
+const persister = createAsyncStoragePersister({
+  storage: AsyncStorage,
+  key: 'packrat.reactQueryCache.v1',
+});
+
 export function TanstackProvider({ children }: { children: React.ReactNode }) {
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: 1000 * 60 * 60 * 24 * 7, // discard restored cache older than 7 days
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) => isPersistedQuery(query.queryKey),
+        },
+      }}
+    >
+      {children}
+    </PersistQueryClientProvider>
+  );
 }
