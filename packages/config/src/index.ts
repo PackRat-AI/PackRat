@@ -4,4 +4,5 @@ export {
   type FeatureAccessLike,
   hasFeatureAccess,
   isInEarlyAccess,
+  PACKRAT_PRO_ENTITLEMENT,
 } from './featureAccess';

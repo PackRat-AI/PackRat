@@ -12,6 +12,7 @@ import { knowledgeBaseRoutes } from './knowledgeBase';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
 import { passwordResetRoutes } from './passwordReset';
+import { revenuecatWebhookRoutes } from './revenuecatWebhook';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
 import { trailConditionsRoutes } from './trailConditions';
 import { trailsRoutes } from './trails';
@@ -47,4 +48,5 @@ export const routes = new Elysia({ prefix: '/api' })
   .use(knowledgeBaseRoutes)
   .use(alltrailsRoutes)
   .use(featureAccessRoutes)
-  .use(featureFlagsRoutes);
+  .use(featureFlagsRoutes)
+  .use(revenuecatWebhookRoutes);

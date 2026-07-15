@@ -21,6 +21,14 @@
 /** Default early-access window applied to a new feature, in weeks. */
 export const DEFAULT_EARLY_ACCESS_WEEKS = 6;
 
+/**
+ * The RevenueCat entitlement identifier that grants Pro access. Shared so the
+ * mobile app (reading `customerInfo.entitlements.active`) and the API (reading
+ * the entitlements table populated by the RevenueCat webhook) agree on exactly
+ * which entitlement means "Pro".
+ */
+export const PACKRAT_PRO_ENTITLEMENT = 'PackRat Pro';
+
 /** Minimal shape the resolver reads — a row from the `feature_access` table. */
 export interface FeatureAccessLike {
   // `Date` from a direct DB read, `string` when serialized over the API.

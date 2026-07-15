@@ -41,6 +41,12 @@ export const apiEnvObjectSchema = z.object({
   ADMIN_PASSWORD: z.string(),
   PACKRAT_API_KEY: z.string(),
 
+  // Shared secret RevenueCat sends in the Authorization header of webhook
+  // requests (configured on the webhook in the RevenueCat dashboard). Optional
+  // so non-webhook deploys/tests validate; the webhook route rejects requests
+  // when it is unset or mismatched. Store via `wrangler secret put`.
+  REVENUECAT_WEBHOOK_AUTH: z.string().optional(),
+
   // Cloudflare Zero Trust / Access (optional — enables CF Access JWT verification for admin routes)
   CF_ACCESS_TEAM_DOMAIN: z.string().optional(), // e.g. "packrat.cloudflareaccess.com"
   CF_ACCESS_AUD: z.string().optional(), // CF Access policy Application Audience tag
