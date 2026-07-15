@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
-import { ProGate } from 'expo-app/features/purchases';
+import { EarlyAccessGate } from 'expo-app/features/purchases';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack } from 'expo-router';
@@ -175,41 +175,47 @@ function SharedPackCard({ pack }: { pack: (typeof SHARED_PACKS)[0] }) {
 }
 
 export default function SharedPacksScreen() {
+  return (
+    <EarlyAccessGate featureKey="shared-packs">
+      <SharedPacksScreenContent />
+    </EarlyAccessGate>
+  );
+}
+
+function SharedPacksScreenContent() {
   const { t } = useTranslation();
   return (
-    <ProGate>
-      <SafeAreaView className="flex-1" edges={['bottom']}>
-        <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.sharedPacks') }} />
-        <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
-          <View className="p-4">
-            <Text variant="subhead" className="mb-2 text-muted-foreground">
-              {t('packs.collaborateOnPacks')}
-            </Text>
-          </View>
+    <SafeAreaView className="flex-1" edges={['bottom']}>
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.sharedPacks') }} />
+      <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
+        <View className="p-4">
+          <Text variant="subhead" className="mb-2 text-muted-foreground">
+            {t('packs.collaborateOnPacks')}
+          </Text>
+        </View>
 
-          <View className="pb-4">
-            {SHARED_PACKS.map((pack) => (
-              <SharedPackCard key={pack.id} pack={pack} />
-            ))}
-          </View>
+        <View className="pb-4">
+          {SHARED_PACKS.map((pack) => (
+            <SharedPackCard key={pack.id} pack={pack} />
+          ))}
+        </View>
 
-          <View className="mx-4 my-2 mb-6 rounded-lg bg-card p-4">
-            <Text variant="heading" className="mb-2 font-semibold">
-              {t('packs.sharingBenefits')}
-            </Text>
-            <Text variant="body" className="mb-2">
-              {t('packs.distributeGroupGear')}
-            </Text>
-            <Text variant="body" className="mb-2">
-              {t('packs.sharingBenefit1')}
-            </Text>
-            <Text variant="body" className="mb-2">
-              {t('packs.sharingBenefit2')}
-            </Text>
-            <Text variant="body">{t('packs.sharingBenefit3')}</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </ProGate>
+        <View className="mx-4 my-2 mb-6 rounded-lg bg-card p-4">
+          <Text variant="heading" className="mb-2 font-semibold">
+            {t('packs.sharingBenefits')}
+          </Text>
+          <Text variant="body" className="mb-2">
+            {t('packs.distributeGroupGear')}
+          </Text>
+          <Text variant="body" className="mb-2">
+            {t('packs.sharingBenefit1')}
+          </Text>
+          <Text variant="body" className="mb-2">
+            {t('packs.sharingBenefit2')}
+          </Text>
+          <Text variant="body">{t('packs.sharingBenefit3')}</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
