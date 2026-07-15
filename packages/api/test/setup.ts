@@ -26,9 +26,11 @@ const testEnv = {
   NEON_DATABASE_URL: 'postgres://test_user:test_password@localhost:5432/packrat_test',
   NEON_DATABASE_URL_READONLY: 'postgres://test_user:test_password@localhost:5432/packrat_test',
 
-  // Better Auth (replaces JWT_SECRET)
-  BETTER_AUTH_SECRET: 'test-better-auth-secret-32-chars-long!!',
-  BETTER_AUTH_URL: 'http://localhost:8787',
+  // Auth (canonical names — see packages/api/src/utils/env-validation.ts).
+  // The transitional rename (2026-05-25) accepts BETTER_AUTH_* as legacy
+  // fallbacks at the schema level, but tests use the new names directly.
+  PACKRAT_AUTH_SECRET: 'test-better-auth-secret-32-chars-long!!',
+  PACKRAT_API_URL: 'http://localhost:8787',
   GOOGLE_CLIENT_ID: 'test-client-id',
   GOOGLE_CLIENT_SECRET: 'test-client-secret',
 

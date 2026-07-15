@@ -1,29 +1,24 @@
 /**
  * Regression tests for CF Workflows instanceId construction.
  *
- * CF Workflows only allows [a-zA-Z0-9_-] in instance IDs (max 64 chars).
- * A prior bug let the raw filename (including its ".csv" extension) flow
- * directly into the instanceId, producing dots that CF rejected with a 500.
+ * CF Workflows constrains instance IDs to `^[a-zA-Z0-9_][a-zA-Z0-9-_]*$`
+ * (max 64 chars enforced by CF; we cap at 100). A prior bug let the raw
+ * filename (including its ".csv" extension, spaces, and punctuation) flow
+ * directly into the instanceId, producing chars that CF rejected with a 500.
  *
- * The fix (packages/api/src/routes/catalog/index.ts):
- *   const FILE_EXT_RE = /\.[^.]*$/;
- *   const instanceId = `${source}-${filename.replace(FILE_EXT_RE, '')}`.slice(0, 64);
+ * The fix (packages/api/src/utils/buildInstanceId.ts): the exported
+ * `buildInstanceId` helper strips the extension, replaces disallowed chars
+ * with `-`, collapses/trims `-`, and guarantees a valid leading char.
  */
+import { buildInstanceId } from '@packrat/api/utils/buildInstanceId';
 import { describe, expect, it } from 'vitest';
 
-// Mirror the exact logic from the route so this test breaks if the
-// implementation drifts.
-const FILE_EXT_RE = /\.[^.]*$/;
-
-function buildInstanceId(source: string, filename: string): string {
-  return `${source}-${filename.replace(FILE_EXT_RE, '')}`.slice(0, 64);
-}
-
-const CF_INSTANCE_ID_RE = /^[a-zA-Z0-9_-]{1,64}$/;
+// CF Workflows instance-id constraint.
+const CF_INSTANCE_ID_RE = /^[a-zA-Z0-9_][a-zA-Z0-9-_]*$/;
 
 describe('catalog ETL instanceId', () => {
   it('basic: strips .csv extension and produces a valid CF instance ID', () => {
-    const id = buildInstanceId('cotopaxi', 'cotopaxi_2026-05-14T16-54-05.csv');
+    const id = buildInstanceId('cotopaxi-cotopaxi_2026-05-14T16-54-05.csv');
 
     expect(id).toMatch(CF_INSTANCE_ID_RE);
     expect(id).not.toContain('.');
@@ -31,32 +26,66 @@ describe('catalog ETL instanceId', () => {
   });
 
   it('no extension in input: still produces a valid CF instance ID', () => {
-    const id = buildInstanceId('foo', 'foo_2026-01-01T00-00-00');
+    const id = buildInstanceId('foo-foo_2026-01-01T00-00-00');
 
     expect(id).toMatch(CF_INSTANCE_ID_RE);
     expect(id).not.toContain('.');
     expect(id).toBe('foo-foo_2026-01-01T00-00-00');
   });
 
-  it('long name truncation: result is capped at 64 chars', () => {
-    // 20-char source + '-' + 60-char filename (no ext) = 81 chars before slice
-    const source = 'a'.repeat(20);
-    const filename = `${'b'.repeat(60)}.csv`;
+  it('long name truncation: result is capped at 100 chars', () => {
+    const id = buildInstanceId(`${'b'.repeat(150)}.csv`);
 
-    const id = buildInstanceId(source, filename);
-
-    expect(id.length).toBe(64);
+    expect(id.length).toBe(100);
     expect(id).toMatch(CF_INSTANCE_ID_RE);
   });
 
   it('timestamp format: underscores and hyphens pass through as valid chars', () => {
-    // Typical scraper filename pattern uses underscores and ISO-8601 hyphens
-    const id = buildInstanceId('rei', 'rei_catalog_2026-05-14T16-54-05.csv');
+    const id = buildInstanceId('rei-rei_catalog_2026-05-14T16-54-05.csv');
 
     expect(id).toMatch(CF_INSTANCE_ID_RE);
     expect(id).not.toContain('.');
-    // Both _ and - must survive the strip
     expect(id).toContain('_');
     expect(id).toContain('-');
+  });
+
+  it('spaces and punctuation: replaced with hyphens and collapsed', () => {
+    const id = buildInstanceId('rei - cool catalog (final).csv');
+
+    expect(id).toMatch(CF_INSTANCE_ID_RE);
+    expect(id).not.toContain(' ');
+    expect(id).not.toContain('(');
+    expect(id).not.toContain(')');
+    // No doubled hyphens from collapsing runs of disallowed chars.
+    expect(id).not.toContain('--');
+    expect(id).toBe('rei-cool-catalog-final');
+  });
+
+  it('leading dot / hidden file: result starts with a valid char', () => {
+    const id = buildInstanceId('.hidden.csv');
+
+    expect(id).toMatch(CF_INSTANCE_ID_RE);
+    expect(id[0]).toMatch(/[A-Za-z0-9_]/);
+  });
+
+  it('leading non-alphanumeric: prefixed so first char is valid', () => {
+    const id = buildInstanceId('-_-weird-name.csv');
+
+    expect(id).toMatch(CF_INSTANCE_ID_RE);
+    expect(id[0]).toMatch(/[A-Za-z0-9_]/);
+  });
+
+  it('all-punctuation input: still yields a non-empty valid ID', () => {
+    const id = buildInstanceId('!!!.csv');
+
+    expect(id.length).toBeGreaterThan(0);
+    expect(id).toMatch(CF_INSTANCE_ID_RE);
+  });
+
+  it('over-long with punctuation: sanitized then capped at 100 chars', () => {
+    const id = buildInstanceId(`${'a b!'.repeat(60)}.csv`);
+
+    expect(id.length).toBeLessThanOrEqual(100);
+    expect(id).toMatch(CF_INSTANCE_ID_RE);
   });
 });

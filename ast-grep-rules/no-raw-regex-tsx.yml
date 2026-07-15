@@ -1,0 +1,34 @@
+id: no-raw-regex-tsx
+# TSX variant of no-raw-regex (the `typescript` parser does not match .tsx).
+language: tsx
+severity: error
+message: "Prefer magic-regexp over a raw regex literal or `new RegExp(...)`. Raw regex is error-prone (missing escapes, unintended capture groups, poor readability); magic-regexp gives a typed, composable builder. See packages/analytics/src/core/enrichment.ts for a reference. Biome's performance/useTopLevelRegex covers the stricter top-level check."
+ignores:
+  - "scripts/**"
+  - ".github/**"
+  - "**/packages/guards/**"
+  - "**/packages/utils/**"
+  - "**/mocks/**"
+  - "**/__mocks__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  - "**/packages/analytics/src/core/enrichment.ts"
+  - "**/packages/api/src/routes/alltrails.ts"
+rule:
+  any:
+    - pattern: new RegExp($$$ARGS)
+    - all:
+        - any:
+            - { pattern: $OBJ.replace($$$) }
+            - { pattern: $OBJ.replaceAll($$$) }
+            - { pattern: $OBJ.match($$$) }
+            - { pattern: $OBJ.matchAll($$$) }
+            - { pattern: $OBJ.test($$$) }
+            - { pattern: $OBJ.split($$$) }
+            - { pattern: $OBJ.search($$$) }
+        - has:
+            field: arguments
+            has:
+              kind: regex

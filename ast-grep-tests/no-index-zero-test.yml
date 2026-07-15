@@ -1,0 +1,20 @@
+id: no-index-zero
+valid:
+  # Object is a call_expression, not an identifier — not flagged.
+  - "const a = getThing()[0];"
+  # Object is a member_expression (property chain) — not flagged.
+  - "const b = obj.a.b[0];"
+  # Regex match result is a call_expression object — not flagged.
+  - "const c = re.match(s)[0];"
+  - "const d = Object.entries(x)[0];"
+  # Computed / variable indices are not numeric literals — not flagged.
+  - "const e = arr[i];"
+  - "const f = arr[k + 1];"
+  # The recommended replacement itself, never a raw index.
+  - "const g = first(arr);"
+invalid:
+  # Bare identifier indexed at a numeric literal — the style-nudge target.
+  - "const a = arr[0];"
+  - "const b = results[0];"
+  - "const c = locations[1];"
+  - "const d = items[2];"

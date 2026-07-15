@@ -185,6 +185,10 @@ appId: ${APP_ID}
           when:
             platform: Android
           commands:
+            - extendedWaitUntil:
+                visible:
+                  id: "email-input"
+                timeout: 15000
             - tapOn:
                 id: "email-input"
             - inputText: "${TEST_EMAIL}"
@@ -201,6 +205,10 @@ appId: ${APP_ID}
           when:
             platform: Android
           commands:
+            - extendedWaitUntil:
+                visible:
+                  id: "password-input"
+                timeout: 15000
             - tapOn:
                 id: "password-input"
             - inputText: ${TEST_PASSWORD}

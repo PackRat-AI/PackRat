@@ -3,6 +3,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { nodeEnv } from '@packrat/env/node';
+import { safeJsonParse, sleep } from '@packrat/utils';
 
 type PairDevice = {
   name: string;
@@ -54,10 +55,6 @@ function output(command: string, args: string[]): string {
 function outputOrNull(command: string, args: string[]): string | null {
   const result = run(command, args, { allowFailure: true });
   return result.status === 0 ? result.stdout.trim() : null;
-}
-
-function sleep(ms: number) {
-  return new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
 }
 
 function isAppInstalled(deviceId: string, bundleId: string): boolean {
@@ -130,9 +127,9 @@ async function launchWithRetry(
 }
 
 function activePair(): SimulatorPair {
-  const parsed = JSON.parse(output('xcrun', ['simctl', 'list', 'pairs', '-j'])) as {
+  const parsed = safeJsonParse<{
     pairs: Record<string, SimulatorPair>;
-  };
+  }>(output('xcrun', ['simctl', 'list', 'pairs', '-j']), { strict: true });
   const pairs = Object.values(parsed.pairs);
   const pair =
     pairs.find(
@@ -170,12 +167,12 @@ function appPath(scheme: string, destination: string): string {
 }
 
 function assertSnapshot(payload: string) {
-  const snapshot = JSON.parse(payload) as {
+  const snapshot = safeJsonParse<{
     pack?: { name?: string; checklist?: unknown[]; totalItemCount?: number };
     trip?: { name?: string };
     weather?: { temperatureText?: string };
     trail?: { title?: string };
-  };
+  }>(payload, { strict: true });
 
   if (!snapshot.pack || snapshot.pack.name === 'No Pack Synced') {
     throw new Error(`Watch snapshot did not sync pack data: ${payload}`);

@@ -1,6 +1,5 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   isLoadingAtom,
   needsReauthAtom,
@@ -8,6 +7,7 @@ import {
 } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, useLocalSearchParams } from 'expo-router';

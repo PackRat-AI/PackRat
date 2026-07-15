@@ -16,6 +16,7 @@
     "@packrat/api-client": "workspace:*",
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
+    "@packrat/utils": "workspace:*",
     "chalk": "catalog:",
     "citty": "^0.2.1",
     "cli-table3": "^0.6.5",

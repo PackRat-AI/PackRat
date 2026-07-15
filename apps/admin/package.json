@@ -6,7 +6,7 @@
     "build": "next build",
     "check-types": "tsc --noEmit",
     "clean": "bunx rimraf node_modules .next out",
-    "dev": "next dev --port 3002",
+    "dev": "next dev --port ${PORT:-3002}",
     "doctor:react": "bunx react-doctor",
     "start": "next start"
   },
@@ -16,6 +16,7 @@
     "@packrat/app": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/schemas": "workspace:*",
+    "@packrat/utils": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-alert-dialog": "catalog:",
     "@radix-ui/react-avatar": "catalog:",

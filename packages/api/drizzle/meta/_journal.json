@@ -356,28 +356,14 @@
       "idx": 49,
       "version": "7",
       "when": 1781241903101,
-      "tag": "0049_faulty_arclight",
+      "tag": "0049_even_lizard",
       "breakpoints": true
     },
     {
       "idx": 50,
       "version": "7",
-      "when": 1783864611294,
-      "tag": "0050_green_thundra",
-      "breakpoints": true
-    },
-    {
-      "idx": 51,
-      "version": "7",
-      "when": 1784041460849,
-      "tag": "0051_exotic_hellcat",
-      "breakpoints": true
-    },
-    {
-      "idx": 52,
-      "version": "7",
-      "when": 1784135000196,
-      "tag": "0052_condemned_shocker",
+      "when": 1784140912607,
+      "tag": "0050_oval_wind_dancer",
       "breakpoints": true
     }
   ]

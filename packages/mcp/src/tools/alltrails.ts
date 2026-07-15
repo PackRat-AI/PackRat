@@ -1,14 +1,23 @@
 import { z } from 'zod';
 import { call } from '../client';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerAlltrailsTools(agent: AgentContext): void {
-  agent.server.registerTool(
-    'preview_alltrails_url',
+  tool<{ url: string }>(
+    agent.server,
+    'packrat_preview_alltrails_url',
     {
+      title: 'Preview AllTrails URL',
       description:
         'Fetch trail metadata (title, description, image) from an AllTrails URL using OpenGraph tags.',
       inputSchema: { url: z.string().url() },
+      annotations: {
+        title: 'Preview AllTrails URL',
+        readOnlyHint: true,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
     },
     async ({ url }) =>
       call({

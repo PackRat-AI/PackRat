@@ -1,6 +1,7 @@
 {
   "extends": "@packrat/typescript-config/react-library.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "baseUrl": ".",
     "paths": {
       "@packrat/web-ui": ["./src"],

@@ -88,6 +88,36 @@ describe('CatalogItemValidator', () => {
       const ok2 = v.validateItem({ ...baseItem, productUrl: 'http://172.32.0.1/x' });
       expect(ok2.isValid).toBe(true);
     });
+
+    it('rejects IPv4-mapped IPv6 pointing at private/loopback IPv4', () => {
+      // URL.hostname normalizes the dotted tail to hex (e.g. ::ffff:7f00:1),
+      // so the guard must re-derive the embedded IPv4 and re-test it.
+      for (const url of [
+        'http://[::ffff:127.0.0.1]/x', // dotted loopback
+        'http://[::ffff:7f00:1]/x', // hex loopback (the normalized form)
+        'http://[::ffff:10.0.0.1]/x', // dotted RFC-1918
+        'http://[::ffff:a00:1]/x', // hex RFC-1918
+        'http://[::ffff:192.168.1.1]/x', // dotted RFC-1918
+        'http://[::ffff:169.254.169.254]/x', // dotted link-local (cloud metadata)
+        'http://[::ffff:0:127.0.0.1]/x', // ::ffff:0: variant
+      ]) {
+        const result = v.validateItem({ ...baseItem, productUrl: url });
+        expect(result.isValid, url).toBe(false);
+        expect(reasonsFor('productUrl', result.errors).join(' '), url).toMatch(
+          /private|loopback|link-local/i,
+        );
+      }
+    });
+
+    it('allows IPv4-mapped IPv6 pointing at a public IPv4', () => {
+      const ok = v.validateItem({ ...baseItem, productUrl: 'http://[::ffff:8.8.8.8]/x' });
+      expect(ok.isValid).toBe(true);
+    });
+
+    it('allows a normal public URL', () => {
+      const ok = v.validateItem({ ...baseItem, productUrl: 'https://example.com/product/1' });
+      expect(ok.isValid).toBe(true);
+    });
   });
 
   describe('URL length cap', () => {

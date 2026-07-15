@@ -1,3 +1,4 @@
+import { safeJsonStringify } from '@packrat/utils';
 import chalk from 'chalk';
 import { defineCommand } from 'citty';
 import consola from 'consola';
@@ -35,7 +36,7 @@ export default defineCommand({
     const response = await fetch(`${baseUrl}/api/auth/sign-in/email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: safeJsonStringify({ email, password }),
     });
 
     if (!response.ok) {

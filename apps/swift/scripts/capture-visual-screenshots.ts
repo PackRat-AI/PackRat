@@ -14,6 +14,7 @@ import { pathToFileURL } from 'node:url';
 import { APP_CONFIG } from '@packrat/config/config';
 import { nodeEnv } from '@packrat/env/node';
 import { fromZod } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify, sleep } from '@packrat/utils';
 import {
   anyOf,
   caseInsensitive,
@@ -712,7 +713,7 @@ function writeCoverageManifest({
   };
   writeFileSync(
     resolve(screenshotDir, 'coverage-manifest.json'),
-    `${JSON.stringify(manifest, null, 2)}\n`,
+    `${safeJsonStringify(manifest, null, 2)}\n`,
   );
 }
 
@@ -768,9 +769,9 @@ function pickAvailableIOSDestination({
   });
   if (result.status === 0) {
     try {
-      const parsed = JSON.parse(result.stdout) as {
+      const parsed = safeJsonParse<{
         devices?: Record<string, Array<{ name?: string; udid?: string; isAvailable?: boolean }>>;
-      };
+      }>(result.stdout, { strict: true });
       const availableDevices = Object.values(parsed.devices ?? {}).flat();
       for (const preferredName of preferredNames) {
         const preferred = availableDevices.find(
@@ -993,7 +994,7 @@ async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestR
 
 function watchSyncedSnapshotBase64(): string {
   return Buffer.from(
-    JSON.stringify({
+    safeJsonStringify({
       updatedAt: new Date('2026-05-29T16:00:00.000Z').toISOString(),
       pack: {
         name: 'Alpine Weekend',
@@ -1057,9 +1058,9 @@ function pickAvailableWatchDestination(): { deviceId: string; name: string } {
     throw new Error(`Unable to list watch simulators: ${result.stderr || result.stdout}`);
   }
 
-  const parsed = JSON.parse(result.stdout) as {
+  const parsed = safeJsonParse<{
     devices?: Record<string, Array<{ name?: string; udid?: string; isAvailable?: boolean }>>;
-  };
+  }>(result.stdout, { strict: true });
   for (const devices of Object.values(parsed.devices ?? {})) {
     const watch = devices.find(
       (device) => device.isAvailable && device.udid && device.name?.includes('Apple Watch'),
@@ -1096,9 +1097,11 @@ function resolveWatchAppPath(deviceId: string): string {
     throw new Error(`Unable to resolve Watch app path: ${result.stderr || result.stdout}`);
   }
 
-  const settings = JSON.parse(result.stdout) as Array<{
-    buildSettings?: { BUILT_PRODUCTS_DIR?: string; WRAPPER_NAME?: string };
-  }>;
+  const settings = safeJsonParse<
+    Array<{
+      buildSettings?: { BUILT_PRODUCTS_DIR?: string; WRAPPER_NAME?: string };
+    }>
+  >(result.stdout, { strict: true });
   const buildSettings = settings.find(
     (entry) => entry.buildSettings?.BUILT_PRODUCTS_DIR,
   )?.buildSettings;
@@ -1170,10 +1173,6 @@ async function launchWatchRouteWithRetry(options: {
   throw new Error(`Unable to launch PackRat Watch for screenshot capture: ${lastOutput}`);
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
-}
-
 function allocateWritableScreenshotDir(platform: Platform): string {
   const stamp = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
   const dir = resolve('/tmp', `packrat-${platform}-visual-${stamp}`);
@@ -1212,7 +1211,9 @@ function exportScreenshotsFromResultBundle(resultBundle: string, toDir: string):
   const manifestPath = resolve(exportDir, 'manifest.json');
   if (!existsSync(manifestPath)) return;
 
-  const manifest = parseAttachmentManifest(JSON.parse(readFileSync(manifestPath, 'utf8')));
+  const manifest = parseAttachmentManifest(
+    safeJsonParse(readFileSync(manifestPath, 'utf8'), { strict: true }),
+  );
   if (!manifest) {
     console.warn(`Warning: ${manifestPath} had an invalid attachment manifest shape.`);
     return;
@@ -1695,7 +1696,7 @@ async function main() {
   const runSummaryPath = resolve(options.outDir, 'run-summary.json');
   writeFileSync(
     runSummaryPath,
-    `${JSON.stringify(
+    `${safeJsonStringify(
       {
         generatedAt: new Date().toISOString(),
         skipTests: options.skipTests,

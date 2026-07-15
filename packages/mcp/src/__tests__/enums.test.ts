@@ -17,35 +17,37 @@ describe('PackCategory', () => {
     expect(PackCategory.Backpacking).toBe('backpacking');
     expect(PackCategory.Camping).toBe('camping');
     expect(PackCategory.Climbing).toBe('climbing');
-    expect(PackCategory.Cycling).toBe('cycling');
+    expect(PackCategory.Custom).toBe('custom');
+    expect(PackCategory.Desert).toBe('desert');
     expect(PackCategory.Hiking).toBe('hiking');
     expect(PackCategory.Skiing).toBe('skiing');
-    expect(PackCategory.Travel).toBe('travel');
-    expect(PackCategory.General).toBe('general');
+    expect(PackCategory.WaterSports).toBe('water sports');
+    expect(PackCategory.Winter).toBe('winter');
   });
 
-  it('has 8 members', () => {
+  it('has 9 members', () => {
     const values = Object.values(PackCategory);
-    expect(values).toHaveLength(8);
+    expect(values).toHaveLength(9);
   });
 });
 
 describe('ItemCategory', () => {
   it('maps all expected item categories to their string values', () => {
+    expect(ItemCategory.Clothing).toBe('clothing');
     expect(ItemCategory.Shelter).toBe('shelter');
     expect(ItemCategory.Sleep).toBe('sleep');
-    expect(ItemCategory.Clothing).toBe('clothing');
-    expect(ItemCategory.Footwear).toBe('footwear');
-    expect(ItemCategory.Navigation).toBe('navigation');
-    expect(ItemCategory.Safety).toBe('safety');
-    expect(ItemCategory.Food).toBe('food');
+    expect(ItemCategory.Kitchen).toBe('kitchen');
     expect(ItemCategory.Water).toBe('water');
-    expect(ItemCategory.Hygiene).toBe('hygiene');
+    expect(ItemCategory.Electronics).toBe('electronics');
+    expect(ItemCategory.FirstAid).toBe('first-aid');
+    expect(ItemCategory.Navigation).toBe('navigation');
     expect(ItemCategory.Tools).toBe('tools');
+    expect(ItemCategory.Consumables).toBe('consumables');
+    expect(ItemCategory.Miscellaneous).toBe('miscellaneous');
   });
 
-  it('has 10 members', () => {
-    expect(Object.values(ItemCategory)).toHaveLength(10);
+  it('has 11 members', () => {
+    expect(Object.values(ItemCategory)).toHaveLength(11);
   });
 });
 

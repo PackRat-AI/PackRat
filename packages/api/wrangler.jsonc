@@ -1,13 +1,16 @@
 {
   "$schema": "https://developers.cloudflare.com/schemas/wrangler.json",
   "name": "packrat-api",
+  // Pinned so `wrangler dev` (remote mode, forced by containers/DO bindings) selects
+  // the right account in non-interactive agent shells. Account IDs are not secrets.
+  "account_id": "a0e238a64b4bb8d9ca35c30149c26893",
   "main": "src/index.ts",
   // Elysia 1.4+ CloudflareAdapter requires compatibility_date >= 2025-06-01.
   "compatibility_date": "2025-06-01",
   // nodejs_compat is kept because other dependencies (bcryptjs, pg) rely on it.
   // nodejs_als is required by @sentry/cloudflare for AsyncLocalStorage-based
   // request/workflow context propagation across awaits.
-  "compatibility_flags": ["nodejs_compat", "nodejs_als"],
+  "compatibility_flags": ["nodejs_compat", "nodejs_als", "global_fetch_strictly_public"],
   "keep_vars": true,
   "logpush": true,
   // Generate + upload source maps to Cloudflare so Workers logs show

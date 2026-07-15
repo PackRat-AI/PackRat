@@ -1,0 +1,8 @@
+id: no-primitive-cast-tsx
+valid:
+  - "const C = () => (cond ? <A /> : <B v={x as const} />)"
+  - "const D = () => <A id={toString(x)} />"
+invalid:
+  # Proves .tsx code (JSX present) is covered by the tsx-language twin.
+  - "const C = () => <A id={id as string} />"
+  - "const D = () => <A n={count as number} />"

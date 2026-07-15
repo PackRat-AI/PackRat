@@ -1,5 +1,4 @@
 import { ActivityIndicator, SegmentedControl, Text } from '@packrat/ui/nativewindui';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
@@ -25,6 +24,7 @@ import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonS
 import { useEntitlement, useRestorePurchases } from 'expo-app/features/purchases';
 import { FEATURE_ACCESS_QUERY_KEY } from 'expo-app/features/purchases/hooks/useFeatureAccess';
 import { FEATURE_FLAGS_QUERY_KEY } from 'expo-app/hooks/useFeatureFlags';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';

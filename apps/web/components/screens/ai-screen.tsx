@@ -1,10 +1,10 @@
 'use client';
 import { type UIMessage, useChat } from '@ai-sdk/react';
-import { webEnv } from '@packrat/env/web';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import Cookies from 'js-cookie';
 import { Bot, Send, User } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { getApiBaseUrl } from 'web-app/lib/getApiBaseUrl';
 import { cn } from 'web-app/lib/utils';
 import { useWeight } from 'web-app/lib/weight-context';
 
@@ -15,7 +15,7 @@ const STARTER_PROMPTS = [
   'Best ultralight tarp vs tent options?',
 ];
 
-const API_BASE = webEnv.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787';
+const API_BASE = getApiBaseUrl();
 
 function getTextContent(msg: UIMessage): string {
   return msg.parts

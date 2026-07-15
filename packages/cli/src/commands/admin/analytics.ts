@@ -1,9 +1,10 @@
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import { getAdminClient } from '../../api/client';
 import { requireAdmin, runApi } from '../../api/run';
 
 function dump(value: unknown): void {
-  process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
+  process.stdout.write(`${safeJsonStringify(value, null, 2)}\n`);
 }
 
 const growthCmd = defineCommand({

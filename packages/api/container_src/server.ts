@@ -1,5 +1,6 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { GoogleGenAI } from '@google/genai';
+import { safeJsonStringify } from '@packrat/utils';
 import Tiktok from '@tobyg74/tiktok-api-dl';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -337,7 +338,7 @@ async function fetchTikTokPostData(
       console.error('Response debug:', {
         status: result.status,
         url,
-        result: JSON.stringify(result, null, 2),
+        result: safeJsonStringify(result, null, 2),
       });
       throw new Error(`TikTok API failed: ${result.status}`);
     }

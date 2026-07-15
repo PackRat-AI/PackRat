@@ -1,4 +1,5 @@
 import 'react-native-get-random-values';
+import { isString } from '@packrat/guards';
 import structuredClone from '@ungap/structured-clone';
 import { BackHandler, Platform } from 'react-native';
 
@@ -17,7 +18,7 @@ if (Platform.OS === 'web') {
   if (__DEV__) {
     const _origError = console.error.bind(console);
     console.error = (...args: unknown[]) => {
-      if (typeof args[0] === 'string' && args[0].includes('Unexpected text node')) return;
+      if (isString(args[0]) && args[0].includes('Unexpected text node')) return;
       _origError(...args);
     };
   }

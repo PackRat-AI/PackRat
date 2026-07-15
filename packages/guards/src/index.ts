@@ -2,12 +2,12 @@
  * @packrat/guards — runtime type guards and narrowing helpers.
  *
  * Single import path for all type narrowing in the monorepo.
- * Composes radash primitives, ts-extras utilities, and custom
- * project-specific helpers. Never use `as SomeType` casts — use
- * a guard or parser from this package instead.
+ * Composes generic predicates (via @packrat/utils, the sole lib importer),
+ * ts-extras utilities, and custom project-specific helpers. Never use
+ * `as SomeType` casts — use a guard or parser from this package instead.
  */
 
-// --- radash primitives ---
+// --- generic predicates (sourced through @packrat/utils) ---
 export {
   isArray,
   isDate,
@@ -22,7 +22,7 @@ export {
   isPromise,
   isString,
   isSymbol,
-} from 'radash';
+} from '@packrat/utils';
 // --- ts-extras: nullish guards ---
 // --- ts-extras: assertion helpers ---
 // --- ts-extras: type-safe object/array utilities ---

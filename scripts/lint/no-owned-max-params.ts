@@ -38,6 +38,9 @@ const EXCLUDED_PATH_PARTS = [
 ];
 const EXCLUDED_SUFFIXES = ['.test.ts', '.test.tsx', '.spec.ts', '.spec.tsx'];
 const EXCLUDED_FILES = new Set([
+  // safeJsonParse(value, options) is a deliberate drop-in for the native
+  // JSON.parse(text, reviver) / destr(value, options) signature.
+  'packages/utils/src/json.ts',
   // This service intentionally mirrors Cloudflare R2's positional API.
   'packages/api/src/services/r2-bucket.ts',
   // Existing platform/observability APIs intentionally mirror external
@@ -52,8 +55,20 @@ const EXCLUDED_FILES = new Set([
   'apps/landing/scripts/generate-og-images.ts',
   'apps/guides/scripts/generate-og-images.ts',
   'apps/trails/scripts/generate-og-images.ts',
+  // CLI dev script: its two 2-param functions are a JS `Proxy` `get` trap
+  // (signature fixed by the language) and an inline `AgentContext.registerFlaggedTool`
+  // implementation (signature fixed by that interface) — neither is an owned API.
+  'packages/mcp/scripts/dump-catalog.ts',
+  // The `tool()` / `prompt()` wrappers deliberately mirror the MCP SDK's
+  // positional `registerTool(name, config, handler)` / `registerPrompt(...)`
+  // signatures 1:1 (the `server` receiver is the only added positional), so
+  // the ~100 call sites read like the SDK call they replace. An object param
+  // would force every site to diverge from the SDK shape for no real gain.
+  'packages/mcp/src/registerTool.ts',
   // Web shim that must mirror expo-secure-store's positional (key, value) API.
   'apps/expo/lib/secureStore.web.ts',
+  // Web shim that must mirror expo-sqlite/kv-store's positional (key, value) API.
+  'apps/expo/lib/expoSqliteKvStore.web.ts',
   // Swift/Xcode helper scripts are shell-style adapters around positional CLIs.
   'apps/swift/scripts/capture-visual-screenshots.ts',
   'apps/swift/scripts/lib/app-store-assets.ts',
@@ -66,7 +81,7 @@ const EXCLUDED_FILES = new Set([
   'packages/api/src/utils/auth.ts',
   'packages/api/src/utils/embeddingHelper.ts',
 ]);
-const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest', 'scheduled']);
+const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest', 'run', 'scheduled']);
 const EXTERNAL_CALLBACK_NAMES = new Set([
   'fetcher',
   'get', // Proxy get trap — (target, prop) is the runtime-mandated signature
