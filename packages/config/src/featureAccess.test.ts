@@ -32,7 +32,7 @@ describe('isInEarlyAccess', () => {
     expect(isInEarlyAccess({ earlyAccessUntil: FUTURE.toISOString() }, NOW)).toBe(true);
   });
 
-  it('treats an unparseable date as not in early access (fail open)', () => {
+  it('treats an unreadable date as no active window (not early access)', () => {
     expect(isInEarlyAccess({ earlyAccessUntil: 'not-a-date' }, NOW)).toBe(false);
   });
 
@@ -55,8 +55,15 @@ describe('hasFeatureAccess', () => {
     expect(hasFeatureAccess({ earlyAccessUntil: FUTURE }, { hasPro: true, now: NOW })).toBe(true);
   });
 
-  it('fails open for an unconfigured feature', () => {
+  it('allows an unconfigured feature (never placed under early access = GA)', () => {
     expect(hasFeatureAccess(undefined, { hasPro: false, now: NOW })).toBe(true);
+    expect(hasFeatureAccess(null, { hasPro: false, now: NOW })).toBe(true);
+  });
+
+  it('gates an in-window feature for a non-Pro viewer regardless of doubt', () => {
+    // The resolver never fails open on the in-window path: a resolved
+    // not-Pro viewer is gated. Uncertainty is handled by callers, not here.
+    expect(hasFeatureAccess({ earlyAccessUntil: FUTURE }, { hasPro: false, now: NOW })).toBe(false);
   });
 
   it('defaults `now` to the current time when omitted', () => {

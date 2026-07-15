@@ -11,6 +11,12 @@
 // same row starts resolving as free for everyone with no flip or migration.
 // Nothing is ever taken away from a user — a feature only ever moves from
 // "Pro-first" to "free for all".
+//
+// This resolver is a pure decision over *resolved* signals. It deliberately
+// does not fail open on uncertainty: an in-window feature stays Pro-gated for
+// non-Pro viewers, full stop. Resolving the signals reliably — including
+// offline — is the caller's job (persisted config + the RevenueCat entitlement
+// cache), so "we couldn't check" never silently unlocks a gated feature.
 
 /** Default early-access window applied to a new feature, in weeks. */
 export const DEFAULT_EARLY_ACCESS_WEEKS = 6;
@@ -40,14 +46,24 @@ export function isInEarlyAccess(
 }
 
 /**
- * Whether the viewer may use the feature right now.
+ * Whether the viewer may use the feature right now, given *resolved* signals.
  *
- * Fails open (returns `true`) for unknown features or unparseable dates: the
- * model never takes access away, so missing/bad config defaults to free rather
- * than wrongly locking anyone out.
+ * This function is a pure decision over inputs it trusts to be already
+ * resolved — it does not model uncertainty. Callers are responsible for
+ * resolving both signals (offline-first, from persisted config and the
+ * RevenueCat entitlement cache) before calling; a gated feature is never
+ * shown to a non-Pro viewer just because a signal was slow to arrive. See the
+ * mobile gate and the server enforcement path for how "not yet resolved" is
+ * handled upstream (block/deny), rather than being fudged to `true` here.
+ *
+ * The only inputs that yield free-for-all are genuine general availability:
+ *   - a feature with no config row (never placed under early access), or
+ *   - a feature whose `earlyAccessUntil` has passed (graduated), or is unset.
+ * These are real GA states, not a fail-open for missing data.
  *
  * @param feature  The `feature_access` row, or null/undefined if not configured.
- * @param viewer   `hasPro`: whether the viewer holds the active Pro entitlement;
+ * @param viewer   `hasPro`: whether the viewer holds the active Pro entitlement
+ *                 (resolved from live or persisted customerInfo);
  *                 `now`: clock override for deterministic tests.
  */
 export function hasFeatureAccess(
