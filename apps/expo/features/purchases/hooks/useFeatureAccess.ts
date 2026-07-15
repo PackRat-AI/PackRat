@@ -64,19 +64,41 @@ export interface FeatureAccessResult {
  * something that isn't in an active early-access window.
  */
 export function useFeatureAccess(key: string): FeatureAccessResult {
-  const { data: config, isLoading: configLoading, isError: configError } = useFeatureAccessConfig();
-  const { isProMember, isLoading: entitlementLoading } = useEntitlement();
+  const {
+    data: config,
+    isPending: configPending,
+    isError: configError,
+    fetchStatus: configFetchStatus,
+  } = useFeatureAccessConfig();
+  const {
+    isProMember,
+    isPending: entitlementPending,
+    fetchStatus: entitlementFetchStatus,
+  } = useEntitlement();
 
   const feature = config?.find((f) => f.key === key);
   const until = feature?.earlyAccessUntil ? new Date(feature.earlyAccessUntil) : null;
 
-  // When the config query has failed we can't tell whether this feature is in an
-  // active early-access window, so fail open only for Pro members (they'd clear
-  // any gate anyway). Non-Pro users are treated as gated so a failed fetch can't
-  // hand paid features out for free. A *successfully loaded* config that simply
-  // omits this feature is the graduated/unconfigured case and still fails open
-  // for everyone via hasFeatureAccess below.
-  const allowed = configError ? isProMember : hasFeatureAccess(feature, { hasPro: isProMember });
+  // A query with no cached data is `pending`, but React Query's default
+  // `networkMode: 'online'` also parks it in `fetchStatus: 'paused'` when the
+  // device is offline — it never runs, never errors, and stays `pending`
+  // forever. Treating that as "loading" leaves the gate spinning indefinitely
+  // with no connection. So we only wait while a query is *actively* fetching;
+  // a pending-but-paused query is treated as settled (resolved below).
+  const configLoading = configPending && configFetchStatus !== 'paused';
+  const entitlementLoading = entitlementPending && entitlementFetchStatus !== 'paused';
+
+  // When the config query has failed or is paused offline we can't tell whether
+  // this feature is in an active early-access window, so fail open only for Pro
+  // members (they'd clear any gate anyway). Non-Pro users are treated as gated
+  // so a failed/offline fetch can't hand paid features out for free. A
+  // *successfully loaded* config that simply omits this feature is the
+  // graduated/unconfigured case and still fails open for everyone via
+  // hasFeatureAccess below.
+  const configUnavailable = configError || configFetchStatus === 'paused';
+  const allowed = configUnavailable
+    ? isProMember
+    : hasFeatureAccess(feature, { hasPro: isProMember });
 
   return {
     allowed,
