@@ -27,6 +27,7 @@ jobs:
   build-and-smoke:
     name: ${{ matrix.scheme }} (smoke)
     runs-on: macos-15
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -72,6 +73,7 @@ jobs:
           xcrun simctl bootstatus "$DEVICE_ID"
 
       - name: Run ${{ matrix.plan }} test plan
+        timeout-minutes: 20
         env:
           E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
