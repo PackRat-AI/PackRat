@@ -47,6 +47,13 @@ export interface FeatureAccessResult {
   allowed: boolean;
   /** Config or entitlement still loading — gate should wait, not paywall. */
   isLoading: boolean;
+  /**
+   * Whether both signals (early-access config and the Pro entitlement) are
+   * resolved from some source — live or persisted. `false` only on a true cold
+   * start with nothing cached: the gate must then show an offline/verify
+   * message rather than either granting access or flashing the paywall.
+   */
+  resolved: boolean;
   /** Feature is in its early-access window (Pro-gated for non-members). */
   isInEarlyAccess: boolean;
   /** When the feature graduates to free for everyone (null = already free). */
@@ -64,15 +71,27 @@ export interface FeatureAccessResult {
  * something that isn't in an active early-access window.
  */
 export function useFeatureAccess(key: string): FeatureAccessResult {
-  const { data: config, isLoading: configLoading } = useFeatureAccessConfig();
-  const { isProMember, isLoading: entitlementLoading } = useEntitlement();
+  const {
+    data: config,
+    isLoading: configLoading,
+    isSuccess: configResolved,
+  } = useFeatureAccessConfig();
+  const {
+    isProMember,
+    isLoading: entitlementLoading,
+    resolved: entitlementResolved,
+  } = useEntitlement();
 
   const feature = config?.find((f) => f.key === key);
   const until = feature?.earlyAccessUntil ? new Date(feature.earlyAccessUntil) : null;
 
+  // With the AsyncStorage persister, `configResolved` (isSuccess) is true as
+  // soon as the persisted config is restored, so an offline launch resolves the
+  // config without a network round-trip.
   return {
     allowed: hasFeatureAccess(feature, { hasPro: isProMember }),
     isLoading: configLoading || entitlementLoading,
+    resolved: configResolved && entitlementResolved,
     isInEarlyAccess: isInEarlyAccess(feature),
     earlyAccessUntil: until,
     label: feature?.label,

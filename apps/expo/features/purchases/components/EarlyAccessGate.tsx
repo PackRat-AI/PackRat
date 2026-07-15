@@ -1,9 +1,11 @@
 import { isInEarlyAccess } from '@packrat/config';
-import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { View } from 'react-native';
 import { CustomVariableValue, PAYWALL_RESULT } from 'react-native-purchases-ui';
+import { useConnectivity } from '../hooks/useConnectivity';
+import { useEntitlement } from '../hooks/useEntitlement';
 import { useFeatureAccess, useFeatureAccessConfig } from '../hooks/useFeatureAccess';
 import { usePresentPaywall } from '../hooks/usePresentPaywall';
 import { isRevenueCatConfigured } from '../lib/revenueCat';
@@ -41,19 +43,31 @@ interface EarlyAccessGateProps {
  * users on its graduation date.
  */
 export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) {
-  const { allowed, isLoading, label, description, earlyAccessUntil } = useFeatureAccess(featureKey);
+  const { allowed, isLoading, resolved, label, description, earlyAccessUntil } =
+    useFeatureAccess(featureKey);
   const { data: allFeatures } = useFeatureAccessConfig();
+  const { refetch: refetchEntitlement } = useEntitlement();
   const { presentEarlyAccessPaywall } = usePresentPaywall();
+  const connectivity = useConnectivity();
   const router = useRouter();
 
-  // When RevenueCat isn't configured we can neither verify Pro nor present a
-  // paywall, so fail open and render the feature — consistent with the
-  // resolver's principle of never wrongly locking a user out.
+  // In production RevenueCat is always configured; the only reason it wouldn't
+  // be is a local dev build without keys, where we let the feature through so
+  // development isn't blocked. In prod this is always true.
   const rcConfigured = isRevenueCatConfigured();
+  const devBypass = __DEV__ && !rcConfigured;
+
+  // True cold start with nothing cached (no persisted config or entitlement) and
+  // the device is offline: we cannot verify Pro, so we must not present the
+  // paywall (which would wrongly gate a subscriber) nor grant access (which
+  // would leak a gated feature). Show a "connect to verify" message instead.
+  const coldStartOffline = !resolved && connectivity === 'offline';
 
   useFocusEffect(
     useCallback(() => {
-      if (isLoading || allowed || isPaywallPresenting || !rcConfigured) return;
+      // Wait until signals are resolved before deciding — never paywall on an
+      // unresolved cold start. `isLoading` covers the online block-on-first-fetch.
+      if (isLoading || !resolved || allowed || isPaywallPresenting || devBypass) return;
 
       // Other features currently in early access (excluding this one), up to 4 slots.
       // Paywall V2 has no loop construct so we pass each as a named variable.
@@ -91,10 +105,11 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
         });
     }, [
       isLoading,
+      resolved,
       allowed,
       presentEarlyAccessPaywall,
       router,
-      rcConfigured,
+      devBypass,
       allFeatures,
       featureKey,
       label,
@@ -103,16 +118,48 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
     ]),
   );
 
-  if (isLoading) {
+  // Dev build without RevenueCat keys — don't block local development.
+  if (devBypass || allowed) {
+    return <>{children}</>;
+  }
+
+  // Cold start, offline, nothing cached: we genuinely can't verify access.
+  // Tell the user rather than guessing — a subscriber gets a clear next step,
+  // and a gated feature is never leaked to a free user.
+  if (coldStartOffline) {
+    return (
+      <View className="flex-1 items-center justify-center gap-4 p-6">
+        <Text variant="title3" className="text-center">
+          You&apos;re offline
+        </Text>
+        <Text variant="body" color="secondary" className="text-center">
+          We couldn&apos;t verify your access. If you&apos;re subscribed, connect to the internet
+          and try again to unlock {label ?? 'this feature'}.
+        </Text>
+        <Button
+          onPress={() => {
+            void refetchEntitlement();
+          }}
+        >
+          <Text>Try again</Text>
+        </Button>
+        {router.canGoBack() && (
+          <Button variant="plain" onPress={() => router.back()}>
+            <Text>Go back</Text>
+          </Button>
+        )}
+      </View>
+    );
+  }
+
+  // Signals not yet resolved (online cold start / block-on-first-fetch) or a
+  // paywall is about to present — show a spinner, never a wrong decision.
+  if (isLoading || !resolved) {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator size="large" />
       </View>
     );
-  }
-
-  if (allowed || !rcConfigured) {
-    return <>{children}</>;
   }
 
   // Render children invisibly so Stack.Screen mounts and sets the correct header.

@@ -1,18 +1,45 @@
 import * as Sentry from '@sentry/react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Purchases, { type CustomerInfo } from 'react-native-purchases';
+import { persistCustomerInfo, readPersistedCustomerInfo } from '../lib/customerInfoCache';
 
 export const CUSTOMER_INFO_QUERY_KEY = ['purchases', 'customerInfo'] as const;
 
 export function useCustomerInfo() {
   const queryClient = useQueryClient();
 
-  // Keep React Query cache in sync when RevenueCat emits updates (e.g. after
-  // a successful purchase, subscription renewal, or restore from another device).
+  // Whether a persisted customerInfo has been loaded from disk yet. Until this
+  // resolves we don't know if the user has a last-known Pro signal, so the gate
+  // must wait rather than treat them as not-Pro (see `resolved` below).
+  const [persistedLoaded, setPersistedLoaded] = useState(false);
+  const [hadPersisted, setHadPersisted] = useState(false);
+
+  // Seed the query cache synchronously-ish from the last-known customerInfo so
+  // an offline cold start resolves a Pro signal instead of a transient
+  // `undefined`. The live `getCustomerInfo()` (which itself reads the SDK's
+  // native cache offline) refreshes it moments later.
+  useEffect(() => {
+    let cancelled = false;
+    readPersistedCustomerInfo().then((info) => {
+      if (cancelled) return;
+      if (info && !queryClient.getQueryData(CUSTOMER_INFO_QUERY_KEY)) {
+        queryClient.setQueryData(CUSTOMER_INFO_QUERY_KEY, info);
+      }
+      setHadPersisted(!!info);
+      setPersistedLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient]);
+
+  // Keep React Query cache and the on-disk copy in sync when RevenueCat emits
+  // updates (after a purchase, renewal, or restore from another device).
   useEffect(() => {
     const handler = (info: CustomerInfo) => {
       queryClient.setQueryData(CUSTOMER_INFO_QUERY_KEY, info);
+      void persistCustomerInfo(info);
     };
     Purchases.addCustomerInfoUpdateListener(handler);
     return () => {
@@ -20,7 +47,7 @@ export function useCustomerInfo() {
     };
   }, [queryClient]);
 
-  return useQuery({
+  const query = useQuery({
     queryKey: CUSTOMER_INFO_QUERY_KEY,
     queryFn: async () => {
       Sentry.addBreadcrumb({
@@ -29,7 +56,9 @@ export function useCustomerInfo() {
         level: 'info',
       });
       try {
-        return await Purchases.getCustomerInfo();
+        const info = await Purchases.getCustomerInfo();
+        void persistCustomerInfo(info);
+        return info;
       } catch (error) {
         Sentry.captureException(error, {
           tags: { feature: 'purchases', action: 'getCustomerInfo' },
@@ -39,4 +68,13 @@ export function useCustomerInfo() {
     },
     staleTime: 1000 * 60 * 5,
   });
+
+  // A Pro signal is "resolved" once we have customerInfo from any source (live
+  // fetch or persisted cache), OR once we've confirmed there is no persisted
+  // copy and the live fetch has settled. Only a true cold start — no persisted
+  // copy and the first fetch still in flight — is unresolved.
+  const hasData = query.data !== undefined;
+  const resolved = hasData || (persistedLoaded && !hadPersisted && !query.isLoading);
+
+  return { ...query, resolved, hadPersisted, persistedLoaded };
 }
