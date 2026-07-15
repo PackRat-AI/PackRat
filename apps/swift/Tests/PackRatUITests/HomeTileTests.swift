@@ -22,19 +22,19 @@ final class HomeTileTests: AppUITestCase {
 
     func testEveryHomeNavigationTileOpensDestination() {
         for tile in navigationTiles {
-            goToTab("Home")
+            goHome()
             tapHomeTile(tile.id)
 
             guard let destinationTitle = tile.destinationTitle else { continue }
             XCTAssertTrue(
-                app.navigationBars[destinationTitle].waitForExistence(timeout: 8),
+                destinationExists(destinationTitle, timeout: 8),
                 "\(tile.id) must open \(destinationTitle)"
             )
         }
     }
 
     func testSeasonSuggestionsTileOpensAndDismissesSheet() {
-        goToTab("Home")
+        goHome()
         tapHomeTile("home_tile_season_suggestions")
 
         XCTAssertTrue(
@@ -46,7 +46,7 @@ final class HomeTileTests: AppUITestCase {
     }
 
     func testShoppingListTileSupportsAddToggleClearAndDone() {
-        goToTab("Home")
+        goHome()
         tapHomeTile("home_tile_shopping_list")
 
         XCTAssertTrue(
@@ -86,7 +86,24 @@ final class HomeTileTests: AppUITestCase {
         )
 
         waitFor(app.buttons["shopping_done"], timeout: 5).tap()
-        XCTAssertTrue(app.navigationBars["Home"].waitForExistence(timeout: 5))
+        XCTAssertTrue(destinationExists("Home", timeout: 5))
+    }
+
+    private func goHome() {
+        #if os(macOS)
+        goToSidebar("Home")
+        #else
+        goToTab("Home")
+        #endif
+    }
+
+    private func destinationExists(_ title: String, timeout: TimeInterval) -> Bool {
+        #if os(macOS)
+        return app.staticTexts[title].waitForExistence(timeout: timeout)
+            || app.navigationBars[title].waitForExistence(timeout: 1)
+        #else
+        return app.navigationBars[title].waitForExistence(timeout: timeout)
+        #endif
     }
 
     private func tapHomeTile(_ id: String) {

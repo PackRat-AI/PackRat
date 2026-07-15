@@ -4,11 +4,14 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
+  mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { APP_CONFIG } from '@packrat/config/config';
@@ -741,9 +744,26 @@ function loadEnvFile(envFile: string): void {
 function pickIOSDestination(platform: Extract<Platform, 'ios' | 'ipad'>): string {
   if (platform === 'ipad') {
     return pickAvailableIOSDestination({
-      preferredNames: ['iPad Pro 13-inch (M5)', 'iPad Pro 11-inch (M5)', 'iPad Air 13-inch (M4)'],
+      preferredNames: [
+        'PackRat E2E iPad',
+        'iPad Pro 13-inch (M5)',
+        'iPad Pro 11-inch (M5)',
+        'iPad Air 13-inch (M4)',
+        'iPad Air 13-inch (M2)',
+        'iPad Pro (12.9-inch) (6th generation)',
+      ],
       fallbackName: 'iPad Pro 13-inch (M5)',
       nameIncludes: 'iPad',
+      createIfMissing: {
+        name: 'PackRat E2E iPad',
+        preferredDeviceTypes: [
+          'iPad Pro 13-inch (M5)',
+          'iPad Pro 11-inch (M5)',
+          'iPad Air 13-inch (M4)',
+          'iPad Air 13-inch (M2)',
+          'iPad Pro (12.9-inch) (6th generation)',
+        ],
+      },
     });
   }
   return pickAvailableIOSDestination({
@@ -757,10 +777,12 @@ function pickAvailableIOSDestination({
   preferredNames,
   fallbackName,
   nameIncludes,
+  createIfMissing,
 }: {
   preferredNames: string[];
   fallbackName: string;
   nameIncludes: string;
+  createIfMissing?: { name: string; preferredDeviceTypes: string[] };
 }): string {
   const result = spawnSync('xcrun', ['simctl', 'list', 'devices', 'available', '-j'], {
     encoding: 'utf8',
@@ -787,7 +809,89 @@ function pickAvailableIOSDestination({
       }
     } catch {}
   }
+  if (createIfMissing) {
+    const createdDeviceId = createIOSSimulator(createIfMissing);
+    if (createdDeviceId) return `platform=iOS Simulator,id=${createdDeviceId}`;
+  }
   return `platform=iOS Simulator,name=${fallbackName}`;
+}
+
+function createIOSSimulator({
+  name,
+  preferredDeviceTypes,
+}: {
+  name: string;
+  preferredDeviceTypes: string[];
+}): string | null {
+  const deviceTypeId = pickDeviceTypeId(preferredDeviceTypes);
+  const runtimeId = pickLatestIOSRuntimeId();
+  if (!deviceTypeId || !runtimeId) return null;
+  const result = spawnSync('xcrun', ['simctl', 'create', name, deviceTypeId, runtimeId], {
+    encoding: 'utf8',
+    timeout: 30_000,
+  });
+  if (result.status !== 0) return null;
+  const deviceId = result.stdout.trim();
+  return deviceId || null;
+}
+
+function pickDeviceTypeId(preferredNames: string[]): string | null {
+  const result = spawnSync('xcrun', ['simctl', 'list', 'devicetypes', '-j'], {
+    encoding: 'utf8',
+    timeout: 10_000,
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  if (result.status !== 0) return null;
+  try {
+    const parsed = safeJsonParse<{
+      devicetypes?: Array<{ name?: string; identifier?: string }>;
+    }>(result.stdout, { strict: true });
+    for (const preferredName of preferredNames) {
+      const deviceType = parsed.devicetypes?.find((candidate) => candidate.name === preferredName);
+      if (deviceType?.identifier) return deviceType.identifier;
+    }
+  } catch {}
+  return null;
+}
+
+function pickLatestIOSRuntimeId(): string | null {
+  const result = spawnSync('xcrun', ['simctl', 'list', 'runtimes', '-j'], {
+    encoding: 'utf8',
+    timeout: 10_000,
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  if (result.status !== 0) return null;
+  try {
+    const parsed = safeJsonParse<{
+      runtimes?: Array<{
+        identifier?: string;
+        isAvailable?: boolean;
+        platform?: string;
+        version?: string;
+      }>;
+    }>(result.stdout, { strict: true });
+    const runtimes = (parsed.runtimes ?? [])
+      .filter(
+        (runtime) =>
+          runtime.isAvailable &&
+          runtime.identifier &&
+          (runtime.platform === 'iOS' || runtime.identifier.includes('iOS')),
+      )
+      .sort((a, b) => compareVersions(b.version ?? '', a.version ?? ''));
+    return runtimes[0]?.identifier ?? null;
+  } catch {}
+  return null;
+}
+
+function compareVersions(left: string, right: string): number {
+  const leftParts = left.split('.').map(Number);
+  const rightParts = right.split('.').map(Number);
+  const count = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < count; index += 1) {
+    const diff = (leftParts[index] || 0) - (rightParts[index] || 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
 }
 
 function allocateResultBundle(platform: Platform): string {
@@ -843,7 +947,10 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
   console.log(`→ XCTest write dir: ${writableScreenshotDir}`);
   console.log(`→ Result bundle: ${resultBundle}`);
 
-  if (platform === 'macos') assertAutomationModeAvailable();
+  if (platform === 'macos') {
+    assertAutomationModeAvailable();
+    clearMacNotificationBanners();
+  }
 
   return new Promise((resolvePromise, reject) => {
     let timedOut = false;
@@ -1490,11 +1597,8 @@ async function screenshotHtml({
   outputPath: string;
   platform: Platform;
 }): Promise<void> {
-  const chrome = CHROME_CANDIDATES.find((candidate) => existsSync(candidate));
-  if (chrome) {
-    renderWithSystemChrome({ chrome, htmlPath, images, outputPath, platform });
-    return;
-  }
+  if (platform === 'macos') clearMacNotificationBanners();
+  rmSync(outputPath, { force: true });
 
   try {
     const { chromium } = await import('@playwright/test');
@@ -1511,13 +1615,17 @@ async function screenshotHtml({
       await browser.close();
     }
   } catch (err) {
-    throw new Error(
-      `No contact sheet renderer found. System Chrome is unavailable and Playwright failed: ${formatError(err)}`,
-    );
+    const chrome = CHROME_CANDIDATES.find((candidate) => existsSync(candidate));
+    if (chrome) {
+      await renderWithSystemChrome({ chrome, htmlPath, images, outputPath, platform });
+      return;
+    }
+
+    throw new Error(`No contact sheet renderer found. Playwright failed: ${formatError(err)}`);
   }
 }
 
-function renderWithSystemChrome({
+async function renderWithSystemChrome({
   chrome,
   htmlPath,
   images,
@@ -1529,27 +1637,134 @@ function renderWithSystemChrome({
   images: string[];
   outputPath: string;
   platform: Platform;
-}): void {
+}): Promise<void> {
   const width = platform === 'ios' ? 1600 : 1800;
   const height = estimateContactSheetHeight({ images, platform, width });
-  const result = spawnSync(
+  const userDataDir = mkdtempSync(resolve(tmpdir(), 'packrat-contact-sheet-chrome-'));
+  const child = spawn(
     chrome,
     [
       '--headless=new',
       '--disable-gpu',
+      '--disable-background-networking',
+      '--disable-breakpad',
+      '--disable-crash-reporter',
+      '--disable-extensions',
+      '--disable-notifications',
+      '--deny-permission-prompts',
       '--hide-scrollbars',
+      '--no-default-browser-check',
+      '--no-first-run',
+      `--user-data-dir=${userDataDir}`,
       `--window-size=${width},${height}`,
       `--screenshot=${outputPath}`,
       pathToFileURL(htmlPath).href,
     ],
-    { encoding: 'utf8', timeout: CONTACT_SHEET_RENDER_TIMEOUT_MS },
+    { detached: true, stdio: ['ignore', 'pipe', 'pipe'] },
+  );
+  let stdout = '';
+  let stderr = '';
+  child.stdout?.on('data', (chunk) => {
+    stdout += chunk.toString();
+  });
+  child.stderr?.on('data', (chunk) => {
+    stderr += chunk.toString();
+  });
+
+  const exitPromise = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(
+    (resolveExit, rejectExit) => {
+      child.once('error', rejectExit);
+      child.once('exit', (code, signal) => resolveExit({ code, signal }));
+    },
   );
 
-  if (result.status !== 0) {
-    throw new Error(
-      `Chrome screenshot failed: ${result.stderr || result.stdout || `exit ${result.status}`}`,
-    );
+  try {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < CONTACT_SHEET_RENDER_TIMEOUT_MS) {
+      if (fileIsNonEmpty(outputPath)) {
+        await sleep(250);
+        await stopProcessGroup({ pid: child.pid, exitPromise });
+        return;
+      }
+
+      const exitResult = await Promise.race([exitPromise, sleep(250).then(() => null)]);
+      if (exitResult) {
+        if (exitResult.code === 0 && fileIsNonEmpty(outputPath)) return;
+        throw new Error(
+          `Chrome screenshot failed: ${stderr || stdout || `exit ${exitResult.code ?? exitResult.signal}`}`,
+        );
+      }
+    }
+
+    await stopProcessGroup({ pid: child.pid, exitPromise, signal: 'SIGKILL' });
+    throw new Error(`Chrome screenshot timed out after ${CONTACT_SHEET_RENDER_TIMEOUT_MS}ms`);
+  } finally {
+    rmSync(userDataDir, { recursive: true, force: true });
   }
+}
+
+function fileIsNonEmpty(filePath: string): boolean {
+  try {
+    return statSync(filePath).size > 0;
+  } catch {
+    return false;
+  }
+}
+
+async function stopProcessGroup({
+  pid,
+  exitPromise,
+  signal = 'SIGTERM',
+}: {
+  pid: number | undefined;
+  exitPromise: Promise<unknown>;
+  signal?: NodeJS.Signals;
+}): Promise<void> {
+  if (!pid) return;
+
+  try {
+    process.kill(-pid, signal);
+  } catch {
+    try {
+      process.kill(pid, signal);
+    } catch {
+      return;
+    }
+  }
+
+  await Promise.race([
+    exitPromise.catch(() => undefined),
+    sleep(signal === 'SIGKILL' ? 500 : 1_000),
+  ]);
+}
+
+function clearMacNotificationBanners(): void {
+  if (process.platform !== 'darwin') return;
+  spawnSync(
+    'osascript',
+    [
+      '-e',
+      `tell application "System Events"
+  tell process "NotificationCenter"
+    repeat with notificationWindow in windows
+      repeat with candidate in entire contents of notificationWindow
+        try
+          if subrole of candidate is "AXNotificationCenterAlert" then
+            repeat with candidateAction in actions of candidate
+              try
+                if name of candidateAction is "Close" then perform candidateAction
+              end try
+            end repeat
+          end if
+        end try
+      end repeat
+    end repeat
+  end tell
+end tell`,
+    ],
+    { encoding: 'utf8', timeout: 5_000 },
+  );
+  spawnSync('killall', ['NotificationCenter'], { encoding: 'utf8', timeout: 5_000 });
 }
 
 function estimateContactSheetHeight({
@@ -1563,21 +1778,24 @@ function estimateContactSheetHeight({
 }): number {
   const horizontalPadding = 64;
   const gridGap = 18;
-  const cardWidth = platform === 'watch' ? 220 : platform === 'ios' ? 300 : 520;
+  const cardWidth = platform === 'watch' ? 220 : platform === 'macos' ? 520 : 300;
   const columns = Math.max(
     1,
     Math.floor((width - horizontalPadding + gridGap) / (cardWidth + gridGap)),
   );
+  const renderedCardWidth = Math.floor(
+    (width - horizontalPadding - gridGap * (columns - 1)) / columns,
+  );
   const cardHeights = images.map((image) => {
     const size = readImageSize(image);
     if (!size) return platform === 'watch' ? 280 : platform === 'ios' ? 720 : 420;
-    return Math.ceil((size.height / size.width) * cardWidth) + 42;
+    return Math.ceil((size.height / size.width) * renderedCardWidth) + 64;
   });
   const rows: number[] = [];
   for (let index = 0; index < cardHeights.length; index += columns) {
     rows.push(Math.max(...cardHeights.slice(index, index + columns)));
   }
-  return Math.max(1200, 116 + rows.reduce((sum, row) => sum + row, 0) + gridGap * rows.length);
+  return Math.max(1200, 160 + rows.reduce((sum, row) => sum + row, 0) + gridGap * rows.length);
 }
 
 function readImageSize(image: string): { width: number; height: number } | null {

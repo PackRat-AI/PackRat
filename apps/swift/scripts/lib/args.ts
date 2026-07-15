@@ -10,8 +10,14 @@ const KNOWN_PLANS: TestPlanName[] = ['iOS-Full', 'iOS-Smoke'];
 const ALIASES: Record<string, TestPlanName> = {
   full: 'iOS-Full',
   smoke: 'iOS-Smoke',
+  'ios-ui': 'iOS-Full',
   'ios-full': 'iOS-Full',
   'ios-smoke': 'iOS-Smoke',
+};
+
+const POSITIONAL_MODES: Record<string, ParsedArgs> = {
+  unit: { passthrough: ['-only-testing:PackRatTests'] },
+  'ios-unit': { passthrough: ['-only-testing:PackRatTests'] },
 };
 
 export class ArgsError extends Error {
@@ -53,6 +59,17 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
     }
     if (a.startsWith('--plan=')) {
       plan = resolvePlan(a.slice('--plan='.length));
+      continue;
+    }
+    const positionalPlan = ALIASES[a.toLowerCase()];
+    if (positionalPlan) {
+      plan = positionalPlan;
+      continue;
+    }
+    const positionalMode = POSITIONAL_MODES[a.toLowerCase()];
+    if (positionalMode) {
+      plan = positionalMode.plan;
+      passthrough.push(...positionalMode.passthrough);
       continue;
     }
     passthrough.push(a);

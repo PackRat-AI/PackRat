@@ -23,6 +23,20 @@ describe('parseArgs', () => {
     expect(parseArgs(['--plan=smoke']).plan).toBe('iOS-Smoke');
   });
 
+  it('accepts legacy positional iOS mode aliases used by package scripts', () => {
+    expect(parseArgs(['ios-ui'])).toEqual({ plan: 'iOS-Full', passthrough: [] });
+    expect(parseArgs(['ios-smoke'])).toEqual({ plan: 'iOS-Smoke', passthrough: [] });
+  });
+
+  it('maps unit mode to the iOS unit test target instead of an xcodebuild action', () => {
+    expect(parseArgs(['unit'])).toEqual({
+      passthrough: ['-only-testing:PackRatTests'],
+    });
+    expect(parseArgs(['ios-unit'])).toEqual({
+      passthrough: ['-only-testing:PackRatTests'],
+    });
+  });
+
   it('case-insensitive alias matching', () => {
     expect(parseArgs(['--plan', 'SMOKE']).plan).toBe('iOS-Smoke');
     expect(parseArgs(['--plan', 'FULL']).plan).toBe('iOS-Full');

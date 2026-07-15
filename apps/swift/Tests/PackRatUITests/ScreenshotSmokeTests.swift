@@ -9,11 +9,11 @@ final class ScreenshotSmokeTests: AppUITestCase {
     func testCaptureCoreScreens() throws {
         capture("02-home")
 
-        goToTab("Packs")
+        goToDestination("Packs")
         XCTAssertTrue(app.navigationBars["Packs"].waitForExistence(timeout: 8))
         capture("03-packs")
 
-        goToTab("Weather")
+        goToDestination("Weather")
         XCTAssertTrue(app.navigationBars["Weather"].waitForExistence(timeout: 8))
         let searchField = app.textFields["Search locations..."].exists
             ? app.textFields["Search locations..."]
@@ -39,5 +39,13 @@ final class ScreenshotSmokeTests: AppUITestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    private func goToDestination(_ label: String) {
+        #if os(macOS)
+        goToSidebar(label)
+        #else
+        goToTab(label)
+        #endif
     }
 }

@@ -583,10 +583,26 @@ final class VisualScreenshotTests: XCTestCase {
         openHomeForActionBaseline(name: baselineName)
 
         let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
+        if prefersHomeSearch(for: title) {
+            openHomeActionUsingSearch(title: title, identifier: identifier)
+            if let destinationIdentifier {
+                let destination = app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
+                XCTAssertTrue(
+                    destination.waitForExistence(timeout: 5),
+                    "Expected Home action '\(title)' to open '\(destinationIdentifier)' for screenshot \(name)"
+                )
+            }
+            capture(name)
+            if dismissAfterCapture {
+                dismissPhoneDestination()
+            }
+            return
+        }
+
         let action = app.buttons[identifier]
         var visibleCandidate: XCUIElement?
 
-        for _ in 0..<30 {
+        for _ in 0..<8 {
             if action.exists {
                 visibleCandidate = action
             }
@@ -639,6 +655,17 @@ final class VisualScreenshotTests: XCTestCase {
         if dismissAfterCapture {
             dismissPhoneDestination()
         }
+    }
+
+    private func prefersHomeSearch(for title: String) -> Bool {
+        [
+            "AI Packs",
+            "Community Feed",
+            "Gear Inventory",
+            "Pack Templates",
+            "Trail Conditions",
+            "Wildlife ID",
+        ].contains(title)
     }
 
     private func openHomeActionUsingSearch(title: String, identifier: String) {
@@ -1039,6 +1066,7 @@ final class VisualScreenshotTests: XCTestCase {
     ) {
         let element = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
         XCTAssertTrue(element.waitForExistence(timeout: 5), "Expected element identifier '\(identifier)' for screenshot \(name)")
+        XCTAssertTrue(element.isHittable, "Expected element identifier '\(identifier)' to be hittable for screenshot \(name)")
         activate(element)
         capture(name)
         if dismissAfterCapture {
@@ -1048,7 +1076,7 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func scrollToElement(identifier: String, maxSwipes: Int = 5) {
         let element = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
-        for _ in 0..<maxSwipes where !element.exists {
+        for _ in 0..<maxSwipes where !element.exists || !element.isHittable {
             app.swipeUp()
         }
     }
@@ -1060,7 +1088,7 @@ final class VisualScreenshotTests: XCTestCase {
         }
         activate(button)
         capture(name)
-        dismissPresentedSurface()
+        dismissTransientOverlay()
     }
 
     private func openContextMenuAndCapture(identifier: String, name: String) {
@@ -1072,15 +1100,15 @@ final class VisualScreenshotTests: XCTestCase {
         element.press(forDuration: 1)
         #endif
         capture(name)
-        dismissPresentedSurface()
+        dismissTransientOverlay()
     }
 
     private func tapAndCapture(identifier: String, name: String) {
-        guard let button = findButton(identifier: identifier, timeout: 3) else {
-            XCTFail("Expected button identifier '\(identifier)' for screenshot \(name)")
+        guard let element = findElement(identifier: identifier, timeout: 3) else {
+            XCTFail("Expected tappable element identifier '\(identifier)' for screenshot \(name)")
             return
         }
-        activate(button)
+        activate(element)
         capture(name)
         dismissPresentedSurface()
     }
@@ -1091,12 +1119,12 @@ final class VisualScreenshotTests: XCTestCase {
         name: String,
         dismissAfterCapture: Bool = true
     ) {
-        let button = findButton(identifier: identifier, timeout: 1) ?? findButton(label: label, timeout: 3)
-        guard let button else {
-            XCTFail("Expected button identifier '\(identifier)' or label '\(label)' for screenshot \(name)")
+        let element = findElement(identifier: identifier, timeout: 1) ?? findButton(label: label, timeout: 3)
+        guard let element else {
+            XCTFail("Expected tappable element identifier '\(identifier)' or button label '\(label)' for screenshot \(name)")
             return
         }
-        activate(button)
+        activate(element)
         capture(name)
         if dismissAfterCapture {
             dismissPresentedSurface()
@@ -1117,6 +1145,11 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func findButton(identifier: String, timeout: TimeInterval) -> XCUIElement? {
         let query = app.buttons.matching(identifier: identifier)
+        return findConcreteElement(in: query, timeout: timeout)
+    }
+
+    private func findElement(identifier: String, timeout: TimeInterval) -> XCUIElement? {
+        let query = app.descendants(matching: .any).matching(identifier: identifier)
         return findConcreteElement(in: query, timeout: timeout)
     }
 
@@ -1163,6 +1196,14 @@ final class VisualScreenshotTests: XCTestCase {
         if app.navigationBars.buttons.firstMatch.exists {
             app.navigationBars.buttons.firstMatch.tap()
         }
+        #endif
+    }
+
+    private func dismissTransientOverlay() {
+        #if os(macOS)
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
+        #else
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.22)).tap()
         #endif
     }
 
@@ -1325,13 +1366,10 @@ final class VisualScreenshotTests: XCTestCase {
     private func dismissInterruption(in container: XCUIElement) -> Bool {
         #if os(macOS)
         for label in ["Remind Me Later", "Not Now", "Continue", "OK", "Allow", "Dismiss", "Close"] {
-            let button = container.buttons[label]
-            if button.exists {
-                if button.isHittable {
-                    button.click()
-                } else {
-                    button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
-                }
+            let matchingButtons = container.buttons.allElementsBoundByIndex
+                .filter { $0.label == label || $0.identifier == label }
+            if let button = matchingButtons.first(where: { $0.exists && $0.isHittable }) ?? matchingButtons.first(where: { $0.exists }) {
+                button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
                 return true
             }
         }
