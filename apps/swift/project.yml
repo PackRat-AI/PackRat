@@ -125,7 +125,7 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 7WV9JYCW55
-        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat
+        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift
         PRODUCT_MODULE_NAME: PackRat
         TARGETED_DEVICE_FAMILY: "1,2"
 
@@ -143,7 +143,7 @@ targets:
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "1"
         WKApplication: true
-        WKCompanionAppBundleIdentifier: com.andrewbierman.packrat
+        WKCompanionAppBundleIdentifier: com.andrewbierman.packrat.swift
         ITSAppUsesNonExemptEncryption: false
     settings:
       base:
@@ -152,7 +152,7 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 7WV9JYCW55
-        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.watchkitapp
+        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift.watchkitapp
         PRODUCT_MODULE_NAME: PackRatWatch
 
   PackRat-macOS:
