@@ -70,11 +70,16 @@ export function useCustomerInfo() {
   });
 
   // A Pro signal is "resolved" once we have customerInfo from any source (live
-  // fetch or persisted cache), OR once we've confirmed there is no persisted
-  // copy and the live fetch has settled. Only a true cold start — no persisted
-  // copy and the first fetch still in flight — is unresolved.
+  // fetch or persisted cache), OR once the live fetch has *succeeded* and there
+  // is no persisted copy (confirmed: this user has no entitlement).
+  //
+  // A *failed* fetch with no persisted copy is deliberately NOT resolved: that
+  // is "we couldn't check", not "confirmed not-Pro". Resolving it would let a
+  // subscriber who is merely offline on a cold start be shown the paywall. The
+  // gate treats unresolved-offline as "connect to verify" instead.
   const hasData = query.data !== undefined;
-  const resolved = hasData || (persistedLoaded && !hadPersisted && !query.isLoading);
+  const fetchSucceededEmpty = query.isSuccess && persistedLoaded && !hadPersisted;
+  const resolved = hasData || fetchSucceededEmpty;
 
   return { ...query, resolved, hadPersisted, persistedLoaded };
 }

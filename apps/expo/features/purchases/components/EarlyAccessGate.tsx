@@ -43,9 +43,16 @@ interface EarlyAccessGateProps {
  * users on its graduation date.
  */
 export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) {
-  const { allowed, isLoading, resolved, label, description, earlyAccessUntil } =
-    useFeatureAccess(featureKey);
-  const { data: allFeatures } = useFeatureAccessConfig();
+  const {
+    allowed,
+    isLoading,
+    resolved,
+    unresolvedDueToError,
+    label,
+    description,
+    earlyAccessUntil,
+  } = useFeatureAccess(featureKey);
+  const { data: allFeatures, refetch: refetchConfig } = useFeatureAccessConfig();
   const { refetch: refetchEntitlement } = useEntitlement();
   const { presentEarlyAccessPaywall } = usePresentPaywall();
   const connectivity = useConnectivity();
@@ -58,10 +65,15 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
   const devBypass = __DEV__ && !rcConfigured;
 
   // True cold start with nothing cached (no persisted config or entitlement) and
-  // the device is offline: we cannot verify Pro, so we must not present the
-  // paywall (which would wrongly gate a subscriber) nor grant access (which
-  // would leak a gated feature). Show a "connect to verify" message instead.
-  const coldStartOffline = !resolved && connectivity === 'offline';
+  // we can't verify Pro: we must not present the paywall (which would wrongly
+  // gate a subscriber) nor grant access (which would leak a gated feature).
+  // Show a "connect to verify" message instead.
+  //
+  // Trigger on either signal, whichever lands first: the connectivity probe
+  // reporting `offline`, OR a required fetch having actually failed (which
+  // resolves before the probe when the device is offline). Waiting only on the
+  // probe would leave the user on a spinner until it settled.
+  const cannotVerify = !resolved && (connectivity === 'offline' || unresolvedDueToError);
 
   useFocusEffect(
     useCallback(() => {
@@ -123,22 +135,23 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
     return <>{children}</>;
   }
 
-  // Cold start, offline, nothing cached: we genuinely can't verify access.
-  // Tell the user rather than guessing — a subscriber gets a clear next step,
+  // Cold start, can't verify access (offline / fetch failed, nothing cached):
+  // tell the user rather than guessing — a subscriber gets a clear next step,
   // and a gated feature is never leaked to a free user.
-  if (coldStartOffline) {
+  if (cannotVerify) {
     return (
       <View className="flex-1 items-center justify-center gap-4 p-6">
         <Text variant="title3" className="text-center">
-          You&apos;re offline
+          Can&apos;t verify your access
         </Text>
         <Text variant="body" color="secondary" className="text-center">
-          We couldn&apos;t verify your access. If you&apos;re subscribed, connect to the internet
-          and try again to unlock {label ?? 'this feature'}.
+          We couldn&apos;t reach our servers. If you&apos;re subscribed, connect to the internet and
+          try again to unlock {label ?? 'this feature'}.
         </Text>
         <Button
           onPress={() => {
             void refetchEntitlement();
+            void refetchConfig();
           }}
         >
           <Text>Try again</Text>

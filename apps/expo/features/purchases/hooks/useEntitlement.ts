@@ -2,13 +2,14 @@ import { PACKRAT_PRO_ENTITLEMENT } from '../types';
 import { useCustomerInfo } from './useCustomerInfo';
 
 export function useEntitlement() {
-  const { data: customerInfo, isLoading, error, refetch, resolved } = useCustomerInfo();
+  const { data: customerInfo, isLoading, isError, error, refetch, resolved } = useCustomerInfo();
 
   const isProMember = !!customerInfo?.entitlements.active[PACKRAT_PRO_ENTITLEMENT];
 
   return {
     isProMember,
     isLoading,
+    isError,
     error,
     refetch,
     // Whether we have a definite Pro signal (live or persisted). False only on a
