@@ -68,6 +68,11 @@ apps/swift/*.xcworkspace/xcuserdata/
 apps/swift/DerivedData*/
 apps/swift/build/
 apps/swift/build.log
+apps/swift/upload.log
+# Signing material — never commit private keys / certs (fastlane cert output)
+apps/swift/*.p12
+apps/swift/*.cer
+apps/swift/*.certSigningRequest
 apps/swift/.build/
 apps/swift/.swiftpm/
 apps/swift/Package.resolved

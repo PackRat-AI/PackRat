@@ -65,6 +65,9 @@ run('xcodebuild', [
   'generic/platform=iOS',
   '-archivePath',
   archivePath,
+  // Lets Xcode register the App IDs and generate provisioning profiles for
+  // the (new) bundle ids on the fly, using the signed-in account.
+  '-allowProvisioningUpdates',
   `CURRENT_PROJECT_VERSION=${buildNumber}`,
   `DEVELOPMENT_TEAM=${teamId}`,
 ]);
@@ -95,9 +98,14 @@ run('xcodebuild', [
   exportDir,
   '-exportOptionsPlist',
   exportOptions,
+  // Export also needs to generate the App Store distribution profiles for the
+  // new bundle ids on the fly.
+  '-allowProvisioningUpdates',
 ]);
 
 // 3. Upload to TestFlight via altool (app-specific-password auth).
+// `--asc-provider` (team short name) is required when the Apple ID belongs to
+// more than one team, so altool knows which one to deliver to.
 const ipa = join(exportDir, 'PackRat-iOS.ipa');
 run('xcrun', [
   'altool',
@@ -106,12 +114,12 @@ run('xcrun', [
   'ios',
   '--file',
   ipa,
-  '--apple-id',
+  '--username',
   appleId,
   '--password',
   appPassword,
-  '--bundle-id',
-  BUNDLE_ID,
+  '--asc-provider',
+  teamId,
 ]);
 
 console.log(`\n✓ Uploaded build ${buildNumber} to TestFlight (${BUNDLE_ID}).`);
