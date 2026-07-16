@@ -84,4 +84,32 @@ describe('validateAppIconSet', () => {
       'AppIcon-iOS-1024.png has an alpha channel; App Store app icons must be flattened.',
     ]);
   });
+
+  it('accepts fractional Apple icon point sizes', () => {
+    const dir = createIconSet([
+      { filename: 'AppIcon-iPad-83.5@2x.png', idiom: 'ipad', scale: '2x', size: '83.5x83.5' },
+      {
+        filename: 'AppIcon-watch-notification-27.5@2x.png',
+        idiom: 'watch',
+        scale: '2x',
+        size: '27.5x27.5',
+      },
+    ]);
+    writePlaceholder(dir, 'AppIcon-iPad-83.5@2x.png');
+    writePlaceholder(dir, 'AppIcon-watch-notification-27.5@2x.png');
+
+    expect(
+      validateAppIconSet(
+        dir,
+        inspector({
+          'AppIcon-iPad-83.5@2x.png': { width: 167, height: 167, hasAlpha: false },
+          'AppIcon-watch-notification-27.5@2x.png': {
+            width: 55,
+            height: 55,
+            hasAlpha: false,
+          },
+        }),
+      ),
+    ).toEqual([]);
+  });
 });

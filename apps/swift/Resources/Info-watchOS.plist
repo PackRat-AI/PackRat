@@ -8,6 +8,26 @@
 	<string>PackRat Swift</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIconFiles</key>
+	<array>
+		<string>AppIcon-watch-notification-24@2x.png</string>
+		<string>AppIcon-watch-notification-27.5@2x.png</string>
+		<string>AppIcon-watch-settings-29@2x.png</string>
+		<string>AppIcon-watch-settings-29@3x.png</string>
+		<string>AppIcon-watch-launcher-40@2x.png</string>
+		<string>AppIcon-watch-launcher-44@2x.png</string>
+		<string>AppIcon-watch-launcher-50@2x.png</string>
+		<string>AppIcon-watch-quicklook-44@2x.png</string>
+		<string>AppIcon-watch-quicklook-50@2x.png</string>
+		<string>AppIcon-watch-quicklook-86@2x.png</string>
+		<string>AppIcon-watch-quicklook-98@2x.png</string>
+		<string>AppIcon-watch-quicklook-108@2x.png</string>
+		<string>AppIcon-watch-longlook-44x44@2x.png</string>
+		<string>AppIcon-watch-longlook-50x50@2x.png</string>
+		<string>AppIcon-watch-marketing-1024.png</string>
+	</array>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -17,7 +37,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.0.28</string>
+	<string>2.0.29</string>
 	<key>CFBundleVersion</key>
 	<string>2026071601</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
