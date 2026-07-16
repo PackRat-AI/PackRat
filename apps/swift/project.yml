@@ -77,6 +77,15 @@ targets:
           UIApplicationSupportsMultipleScenes: true
         NSLocationWhenInUseUsageDescription: "This app needs access to your location while you are using it."
         ITSAppUsesNonExemptEncryption: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         PACKRAT_ENV: $(PACKRAT_ENV)
         SENTRY_DSN: $(SENTRY_DSN)
         GOOGLE_IOS_CLIENT_ID: 993694750638-97t0vhfml04u2avrlbve22jbs9qcinbc.apps.googleusercontent.com
@@ -124,7 +133,7 @@ targets:
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: 7WV9JYCW55
+        DEVELOPMENT_TEAM: 666HGMV2LU
         PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat
         PRODUCT_MODULE_NAME: PackRat
         TARGETED_DEVICE_FAMILY: "1,2"
@@ -151,7 +160,7 @@ targets:
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: 7WV9JYCW55
+        DEVELOPMENT_TEAM: 666HGMV2LU
         PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.watchkitapp
         PRODUCT_MODULE_NAME: PackRatWatch
 
