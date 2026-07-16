@@ -415,6 +415,22 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
               </TouchableOpacity>
+              <View className="h-px bg-border mx-4" />
+              <TouchableOpacity
+                className="flex-row items-center gap-3 p-4"
+                onPress={() => router.navigate('/dev/paywall-state')}
+              >
+                <View className="h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10">
+                  <Icon name="information-outline" size={22} color="#a855f7" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-medium">Paywall State</Text>
+                  <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                    Inspect customerInfo & feature-access config live
+                  </Text>
+                </View>
+                <Icon name="chevron-right" size={20} color={colors.grey} />
+              </TouchableOpacity>
             </View>
           </View>
         )}
