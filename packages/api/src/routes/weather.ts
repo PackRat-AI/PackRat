@@ -17,6 +17,142 @@ import { Elysia, status } from 'elysia';
 import { ZodError } from 'zod';
 
 const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
+const COORDINATE_QUERY_REGEX = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
+
+const isE2EWeatherStubKey = (key?: string) => key?.startsWith('weather-e2e-stub-') === true;
+
+const stubCondition = {
+  text: 'Partly cloudy',
+  icon: '//cdn.weatherapi.com/weather/64x64/day/116.png',
+  code: 1003,
+};
+
+const buildStubCurrent = (tempF = 72): WeatherAPIForecastResponse['current'] => ({
+  last_updated: '2026-07-16 12:00',
+  temp_c: Math.round(((tempF - 32) * 5) / 9),
+  temp_f: tempF,
+  condition: stubCondition,
+  wind_mph: 7,
+  wind_kph: 11,
+  wind_degree: 240,
+  wind_dir: 'WSW',
+  pressure_mb: 1016,
+  pressure_in: 30.0,
+  precip_mm: 0,
+  precip_in: 0,
+  humidity: 32,
+  cloud: 25,
+  feelslike_c: Math.round(((tempF - 32) * 5) / 9),
+  feelslike_f: tempF,
+  vis_km: 16,
+  vis_miles: 10,
+  uv: 5,
+  is_day: 1,
+  gust_mph: 14,
+  gust_kph: 22,
+});
+
+const buildStubForecastDay = (
+  dayOffset: number,
+): WeatherAPIForecastResponse['forecast']['forecastday'][number] => {
+  const date = new Date(Date.UTC(2026, 6, 16 + dayOffset));
+  const highF = 78 + (dayOffset % 3);
+  const lowF = 55 + (dayOffset % 2);
+  return {
+    date: date.toISOString().slice(0, 10),
+    date_epoch: Math.floor(date.getTime() / 1000),
+    day: {
+      maxtemp_c: Math.round(((highF - 32) * 5) / 9),
+      maxtemp_f: highF,
+      mintemp_c: Math.round(((lowF - 32) * 5) / 9),
+      mintemp_f: lowF,
+      avgtemp_c: Math.round((((highF + lowF) / 2 - 32) * 5) / 9),
+      avgtemp_f: (highF + lowF) / 2,
+      maxwind_mph: 18,
+      maxwind_kph: 29,
+      totalprecip_mm: dayOffset === 2 ? 1.2 : 0,
+      totalprecip_in: dayOffset === 2 ? 0.05 : 0,
+      totalsnow_cm: 0,
+      avghumidity: 35,
+      avgvis_km: 16,
+      avgvis_miles: 10,
+      uv: 5,
+      condition: stubCondition,
+      daily_chance_of_rain: dayOffset === 2 ? 30 : 5,
+      daily_chance_of_snow: 0,
+    },
+    astro: {
+      sunrise: '05:48 AM',
+      sunset: '08:27 PM',
+      moonrise: '10:15 PM',
+      moonset: '07:12 AM',
+      moon_phase: 'Waxing Crescent',
+      moon_illumination: 18,
+    },
+    hour: [],
+  };
+};
+
+type StubWeatherLocation = WeatherAPISearchResponse[number];
+
+const defaultStubLocation: StubWeatherLocation = {
+  id: 5419384,
+  name: 'Denver',
+  region: 'Colorado',
+  country: 'United States',
+  lat: 39.74,
+  lon: -104.98,
+  url: 'denver-colorado-united-states-of-america',
+};
+
+const stubLocations: [StubWeatherLocation, ...StubWeatherLocation[]] = [
+  defaultStubLocation,
+  {
+    id: 5400000,
+    name: 'Yosemite Valley',
+    region: 'California',
+    country: 'United States',
+    lat: 37.75,
+    lon: -119.59,
+    url: 'yosemite-valley-california-united-states-of-america',
+  },
+] satisfies [StubWeatherLocation, ...StubWeatherLocation[]];
+
+const getStubLocation = (id?: number) =>
+  stubLocations.find((location) => location.id === id) ?? defaultStubLocation;
+
+const buildStubForecast = (id?: number): WeatherAPIForecastResponse => {
+  const location = getStubLocation(id);
+  return {
+    location: {
+      id: location.id,
+      name: location.name,
+      region: location.region,
+      country: location.country,
+      lat: location.lat,
+      lon: location.lon,
+      tz_id: location.name === 'Denver' ? 'America/Denver' : 'America/Los_Angeles',
+      localtime_epoch: 1784246400,
+      localtime: '2026-07-16 12:00',
+    },
+    current: buildStubCurrent(location.name === 'Denver' ? 72 : 68),
+    forecast: {
+      forecastday: Array.from({ length: 10 }, (_, index) => buildStubForecastDay(index)),
+    },
+    alerts: { alert: [] },
+  };
+};
+
+const searchStubLocations = (query: string) => {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return [];
+  if (COORDINATE_QUERY_REGEX.test(normalizedQuery)) return [defaultStubLocation];
+  return stubLocations.filter((location) =>
+    `${location.name} ${location.region} ${location.country}`
+      .toLowerCase()
+      .includes(normalizedQuery),
+  );
+};
 
 export const weatherRoutes = new Elysia({ prefix: '/weather' })
   .model({
@@ -31,6 +167,17 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
 
       if (!q) {
         return status(400, { error: 'Query parameter is required' });
+      }
+
+      if (isE2EWeatherStubKey(WEATHER_API_KEY)) {
+        return searchStubLocations(q).map((item) => ({
+          id: item.id,
+          name: item.name,
+          region: item.region,
+          country: item.country,
+          lat: item.lat,
+          lon: item.lon,
+        }));
       }
 
       try {
@@ -81,6 +228,19 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
         return status(400, {
           error: 'Valid latitude and longitude parameters are required',
         });
+      }
+
+      if (isE2EWeatherStubKey(WEATHER_API_KEY)) {
+        return [
+          {
+            id: defaultStubLocation.id,
+            name: defaultStubLocation.name,
+            region: defaultStubLocation.region,
+            country: defaultStubLocation.country,
+            lat: defaultStubLocation.lat,
+            lon: defaultStubLocation.lon,
+          },
+        ];
       }
 
       try {
@@ -156,6 +316,10 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
         return status(400, { error: 'Valid location ID is required' });
       }
 
+      if (isE2EWeatherStubKey(WEATHER_API_KEY)) {
+        return WeatherAPIForecastResponseSchema.parse(buildStubForecast(id));
+      }
+
       try {
         const q = `id:${id}`;
         const response = await fetch(
@@ -220,6 +384,15 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
       // Schema enforces z.string().min(2); Elysia rejects shorter values
       // before the handler runs.
       const q = query.q;
+
+      if (isE2EWeatherStubKey(WEATHER_API_KEY)) {
+        const firstMatch = first(searchStubLocations(q));
+        if (!firstMatch) {
+          return status(404, { error: `No weather location matched "${q}"` });
+        }
+        return WeatherAPIForecastResponseSchema.parse(buildStubForecast(firstMatch.id));
+      }
+
       try {
         const searchResponse = await fetch(
           `${WEATHER_API_BASE_URL}/search.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(q)}`,

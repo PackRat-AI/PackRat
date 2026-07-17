@@ -38,6 +38,74 @@ import {
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
+const isLocalE2ECatalogEnv = () => {
+  const { NEON_DATABASE_URL, OPENAI_API_KEY } = getEnv();
+  return (
+    (OPENAI_API_KEY === 'sk-test' || OPENAI_API_KEY?.startsWith('sk-e2e-stub-') === true) &&
+    (NEON_DATABASE_URL.includes('127.0.0.1') || NEON_DATABASE_URL.includes('localhost'))
+  );
+};
+
+const localE2ECatalogItems = [
+  {
+    id: 7001,
+    name: 'Copper Spur HV UL2 Tent',
+    productUrl: 'https://example.test/catalog/copper-spur',
+    sku: 'E2E-COPPER-SPUR',
+    weight: 1420,
+    weightUnit: 'g',
+    description:
+      'Freestanding two-person backpacking tent used for deterministic local E2E search.',
+    categories: ['shelter', 'backpacking'],
+    images: [] as string[],
+    brand: 'Big Agnes',
+    model: 'Copper Spur HV UL2',
+    ratingValue: 4.8,
+    color: 'Orange',
+    size: '2 person',
+    price: 549.95,
+    availability: 'in_stock',
+    seller: 'PackRat E2E',
+    productSku: 'E2E-COPPER-SPUR',
+    material: 'Nylon',
+    currency: 'USD',
+    condition: 'new',
+    reviewCount: 42,
+    usageCount: 8,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    similarity: 0.92,
+  },
+  {
+    id: 7002,
+    name: 'Hyperlite 40L Pack',
+    productUrl: 'https://example.test/catalog/hyperlite-40',
+    sku: 'E2E-HYPERLITE-40',
+    weight: 910,
+    weightUnit: 'g',
+    description: 'Lightweight framed pack fixture for local E2E similar gear results.',
+    categories: ['pack', 'backpacking'],
+    images: [] as string[],
+    brand: 'Hyperlite',
+    model: '40L',
+    ratingValue: 4.6,
+    color: 'White',
+    size: '40 L',
+    price: 379,
+    availability: 'in_stock',
+    seller: 'PackRat E2E',
+    productSku: 'E2E-HYPERLITE-40',
+    material: 'Dyneema composite',
+    currency: 'USD',
+    condition: 'new',
+    reviewCount: 27,
+    usageCount: 5,
+    createdAt: '2026-01-02T00:00:00.000Z',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+    similarity: 0.84,
+  },
+];
+
 export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .model({
     'catalog.CatalogCategoriesResponse': CatalogCategoriesResponseSchema,
@@ -105,6 +173,32 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ query }) => {
       try {
         const { q: searchQuery, limit = 10, offset = 0 } = query;
+        if (isLocalE2ECatalogEnv()) {
+          const normalizedQuery = searchQuery.trim().toLowerCase();
+          const matched = localE2ECatalogItems.filter((item) => {
+            const haystack = [
+              item.name,
+              item.brand,
+              item.model,
+              item.description,
+              ...(item.categories ?? []),
+            ]
+              .filter(Boolean)
+              .join(' ')
+              .toLowerCase();
+            return haystack.includes(normalizedQuery) || normalizedQuery.length === 0;
+          });
+          const items = matched.slice(offset, offset + limit);
+
+          return {
+            items,
+            total: matched.length,
+            limit,
+            offset,
+            nextOffset: offset + items.length,
+          };
+        }
+
         const catalogService = new CatalogService();
         return await catalogService.vectorSearch({ q: searchQuery, opts: { limit, offset } });
       } catch (error) {

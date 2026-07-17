@@ -25,7 +25,7 @@ import { DEFAULT_MODELS } from '../utils/ai/models';
 import { getSchemaInfo } from '../utils/DbUtils';
 
 const isE2EStubOpenAiKey = (openAiApiKey: string | undefined) =>
-  openAiApiKey?.startsWith('sk-e2e-stub-') === true;
+  openAiApiKey === 'sk-test' || openAiApiKey?.startsWith('sk-e2e-stub-') === true;
 
 export const chatRoutes = new Elysia({ prefix: '/chat' })
   .model({

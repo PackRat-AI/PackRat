@@ -49,6 +49,9 @@ const bearerPrefixRegex = /^Bearer\s+/i;
 const scopeSplitRegex = /\s+/;
 const OAUTH_CONSENT_PATH = '/api/auth/oauth2/consent';
 const OAUTH_AUTHORIZE_PATH = '/api/auth/oauth2/authorize';
+const WELL_KNOWN_AUTH_SERVER_PATH = '/.well-known/oauth-authorization-server';
+const WELL_KNOWN_OPENID_CONFIG_PATH = '/.well-known/openid-configuration';
+const WELL_KNOWN_AUTH_BASE_PATH = '/api/auth';
 const WELL_KNOWN_ALLOWED_ORIGINS = new Set(['https://claude.ai', 'https://claude.com']);
 /** localhost origins get CORS on the well-known endpoints so MCP Inspector can drive OAuth discovery. */
 const LOCALHOST_WELL_KNOWN_ORIGIN = /^http:\/\/localhost:\d+$/;
@@ -126,12 +129,7 @@ async function handleLocalE2EAuth(request: Request, env: Env): Promise<Response 
 
 function applyWellKnownCors(request: Request, response: Response | null): Response | null {
   const url = new URL(request.url);
-  if (
-    url.pathname !== '/.well-known/oauth-authorization-server' &&
-    url.pathname !== '/.well-known/openid-configuration'
-  ) {
-    return null;
-  }
+  if (!isWellKnownMetadataPath(url.pathname)) return null;
 
   const origin = request.headers.get('Origin');
   if (
@@ -159,6 +157,31 @@ function applyWellKnownCors(request: Request, response: Response | null): Respon
   const existingVary = annotated.headers.get('Vary');
   annotated.headers.set('Vary', existingVary ? `${existingVary}, Origin` : 'Origin');
   return annotated;
+}
+
+function isWellKnownMetadataPath(pathname: string): boolean {
+  return (
+    pathname === WELL_KNOWN_AUTH_SERVER_PATH ||
+    pathname === `${WELL_KNOWN_AUTH_SERVER_PATH}${WELL_KNOWN_AUTH_BASE_PATH}` ||
+    pathname === WELL_KNOWN_OPENID_CONFIG_PATH ||
+    pathname === `${WELL_KNOWN_OPENID_CONFIG_PATH}${WELL_KNOWN_AUTH_BASE_PATH}`
+  );
+}
+
+function wellKnownMetadataKind(pathname: string): 'openid' | 'authorization-server' | null {
+  if (
+    pathname === WELL_KNOWN_OPENID_CONFIG_PATH ||
+    pathname === `${WELL_KNOWN_OPENID_CONFIG_PATH}${WELL_KNOWN_AUTH_BASE_PATH}`
+  ) {
+    return 'openid';
+  }
+  if (
+    pathname === WELL_KNOWN_AUTH_SERVER_PATH ||
+    pathname === `${WELL_KNOWN_AUTH_SERVER_PATH}${WELL_KNOWN_AUTH_BASE_PATH}`
+  ) {
+    return 'authorization-server';
+  }
+  return null;
 }
 
 async function sanitizeOAuthConsentRequest(
@@ -321,14 +344,12 @@ const workerHandler = {
       }
 
       if (request.method === 'GET') {
-        if (
-          url.pathname === '/.well-known/oauth-authorization-server' ||
-          url.pathname === '/.well-known/openid-configuration'
-        ) {
+        const metadataKind = wellKnownMetadataKind(url.pathname);
+        if (metadataKind) {
           const validatedEnv = getEnv();
           const auth = await getAuth(validatedEnv);
           const handler =
-            url.pathname === '/.well-known/openid-configuration'
+            metadataKind === 'openid'
               ? oauthProviderOpenIdConfigMetadata(auth)
               : oauthProviderAuthServerMetadata(auth);
           const response = await handler(request);

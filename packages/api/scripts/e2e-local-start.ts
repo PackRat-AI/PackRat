@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nodeEnv } from '@packrat/env/node';
@@ -18,16 +18,29 @@ const composeEnv = {
   E2E_DB_PORT: e2eDbPort,
 };
 
-async function run(opts: { command: string[]; cwd?: string; env?: NodeJS.ProcessEnv }) {
+async function run(opts: {
+  command: string[];
+  cwd?: string;
+  env?: NodeJS.ProcessEnv;
+  captureOutput?: boolean;
+}) {
   const { command } = opts;
   const child = Bun.spawn(command, {
     cwd: opts.cwd,
     env: opts.env ?? composeEnv,
-    stdout: 'inherit',
-    stderr: 'inherit',
+    stdout: opts.captureOutput ? 'pipe' : 'inherit',
+    stderr: opts.captureOutput ? 'pipe' : 'inherit',
   });
+  const [stdout, stderr] = opts.captureOutput
+    ? await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text()])
+    : ['', ''];
   const exitCode = await child.exited;
   if (exitCode !== 0) throw new Error(`${command.join(' ')} exited with ${exitCode}`);
+  if (opts.captureOutput) {
+    if (stdout) process.stdout.write(stdout);
+    if (stderr) process.stderr.write(stderr);
+  }
+  return `${stdout}${stderr}`;
 }
 
 async function succeeds(command: string[]) {
@@ -57,6 +70,19 @@ function parseEnvFile(text: string) {
     vars[key] = value;
   }
   return vars;
+}
+
+function upsertEnvFileValue(input: { path: string; key: string; value: string }) {
+  const { path, key, value } = input;
+  const lines = readFileSync(path, 'utf8').replaceAll('\r\n', '\n').split('\n');
+  let updated = false;
+  const nextLines = lines.map((line) => {
+    if (!line.trim().startsWith(`${key}=`)) return line;
+    updated = true;
+    return `${key}=${value}`;
+  });
+  if (!updated) nextLines.push(`${key}=${value}`);
+  writeFileSync(path, nextLines.join('\n'));
 }
 
 if (!(await succeeds(['docker', '--version']))) {
@@ -119,7 +145,7 @@ const e2eEmail = nodeEnv.E2E_TEST_EMAIL ?? envFileVars.E2E_TEST_EMAIL ?? 'e2e@pa
 const e2ePass = nodeEnv.E2E_TEST_PASSWORD ?? envFileVars.E2E_TEST_PASSWORD ?? 'E2eTestPass123!';
 
 console.log(`Seeding E2E test user (${e2eEmail})...`);
-await run({
+const seedOutput = await run({
   command: ['bun', 'run', 'db:seed:e2e-user'],
   cwd: apiDir,
   env: {
@@ -128,7 +154,13 @@ await run({
     E2E_TEST_EMAIL: e2eEmail,
     E2E_TEST_PASSWORD: e2ePass,
   },
+  captureOutput: true,
 });
+const seededUserId = seedOutput.match(/\(id=([^)]+)\)/)?.[1];
+if (!seededUserId) {
+  throw new Error('Unable to resolve seeded E2E user id from db:seed:e2e-user output.');
+}
+upsertEnvFileValue({ path: e2eVars, key: 'E2E_TEST_USER_ID', value: seededUserId });
 
 console.log('');
 console.log(`Starting local E2E API on http://localhost:${apiPort} ...`);
@@ -143,7 +175,15 @@ const apiEnv = {
   NODE_ENV: 'test',
   NEON_DATABASE_URL: e2eDbUrl,
   NEON_DATABASE_URL_READONLY: e2eDbUrl,
+  E2E_TEST_EMAIL: e2eEmail,
+  E2E_TEST_PASSWORD: e2ePass,
+  E2E_TEST_USER_ID: seededUserId,
   BETTER_AUTH_URL: `http://127.0.0.1:${apiPort}`,
+  OPENAI_API_KEY:
+    nodeEnv.OPENAI_API_KEY ??
+    (envFileVars.OPENAI_API_KEY === 'sk-test' ? 'sk-e2e-stub-local' : envFileVars.OPENAI_API_KEY),
+  WEATHER_API_KEY: nodeEnv.WEATHER_API_KEY ?? 'weather-e2e-stub-local',
+  APPLE_PRIVATE_KEY: nodeEnv.APPLE_PRIVATE_KEY ?? '',
   PACKRAT_PG_POOL_MAX: nodeEnv.PACKRAT_PG_POOL_MAX ?? envFileVars.PACKRAT_PG_POOL_MAX ?? '50',
 };
 

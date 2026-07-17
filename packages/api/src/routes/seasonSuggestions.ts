@@ -10,6 +10,13 @@ import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 import { DEFAULT_MODELS } from '../utils/ai/models';
 
+const isE2EStubOpenAiKey = (openAiApiKey: string | undefined) =>
+  openAiApiKey?.startsWith('sk-e2e-stub-') === true;
+
+const isLocalE2ESeasonSuggestionEnv = (openAiApiKey: string | undefined, databaseUrl: string) =>
+  (isE2EStubOpenAiKey(openAiApiKey) || openAiApiKey === 'sk-test') &&
+  (databaseUrl.includes('127.0.0.1') || databaseUrl.includes('localhost'));
+
 /**
  * Formats user inventory items for AI processing
  */
@@ -31,8 +38,79 @@ export const seasonSuggestionsRoutes = new Elysia({ prefix: '/season-suggestions
     '/',
     async ({ body, user }) => {
       const { location, date } = body;
-      const db = createDb();
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+        NEON_DATABASE_URL,
+      } = getEnv();
 
+      if (isLocalE2ESeasonSuggestionEnv(OPENAI_API_KEY, NEON_DATABASE_URL)) {
+        const suggestionItems = [
+          {
+            id: 'e2e-season-rain-shell',
+            name: 'Rain shell',
+            description: 'Waterproof layer for shoulder-season weather.',
+            weight: 210,
+            weightUnit: 'g',
+            quantity: 1,
+            category: 'clothing',
+            consumable: false,
+            worn: false,
+            image: null,
+            notes: 'Keep this accessible for changing weather.',
+            catalogItemId: null,
+          },
+          {
+            id: 'e2e-season-headlamp',
+            name: 'Headlamp',
+            description: 'Reliable lighting for short autumn daylight.',
+            weight: 85,
+            weightUnit: 'g',
+            quantity: 1,
+            category: 'lighting',
+            consumable: false,
+            worn: false,
+            image: null,
+            notes: 'Pack fresh batteries before leaving.',
+            catalogItemId: null,
+          },
+          {
+            id: 'e2e-season-warm-layer',
+            name: 'Warm layer',
+            description: 'Insulating layer for cool evenings and exposed breaks.',
+            weight: 320,
+            weightUnit: 'g',
+            quantity: 1,
+            category: 'clothing',
+            consumable: false,
+            worn: true,
+            image: null,
+            notes: 'Wear or keep near the top of the pack.',
+            catalogItemId: null,
+          },
+        ];
+
+        return {
+          suggestions: [
+            {
+              name: 'Shoulder Season Overnight',
+              description: `Balanced kit for ${location} with warmth, rain protection, and reliable camp basics.`,
+              category: 'backpacking',
+              tags: ['e2e', 'shoulder season', 'overnight'],
+              items: suggestionItems,
+            },
+          ],
+          totalInventoryItems: suggestionItems.length,
+          location,
+          season: 'fall',
+        };
+      }
+
+      const db = createDb();
       const items = await db.tag('seasonSuggestions.getUserInventory').query.packItems.findMany({
         where: and(eq(packItems.userId, user.userId), eq(packItems.deleted, false)),
         columns: { embedding: false },
@@ -56,14 +134,6 @@ Date: ${date}
 Available Inventory Items:
 ${inventoryFormatted}`;
 
-      const {
-        OPENAI_API_KEY,
-        AI_PROVIDER,
-        CLOUDFLARE_ACCOUNT_ID,
-        CLOUDFLARE_AI_GATEWAY_ID,
-        CLOUDFLARE_API_TOKEN,
-        AI,
-      } = getEnv();
       const aiProvider = createAIProvider({
         openAiApiKey: OPENAI_API_KEY,
         provider: AI_PROVIDER,
