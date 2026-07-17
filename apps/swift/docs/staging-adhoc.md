@@ -37,9 +37,9 @@ provisioning profile can install the build.
 |---|---|
 | `IOS_DIST_CERT_P12` | base64 of an Apple **Distribution** certificate exported as `.p12` |
 | `IOS_DIST_CERT_PASSWORD` | the password you set when exporting the `.p12` |
-| `IOS_ADHOC_PROVISIONING_PROFILE` | base64 of an **ad-hoc** `.mobileprovision` for `com.andrewbierman.packrat`, listing QA device UDIDs |
+| `IOS_ADHOC_PROVISIONING_PROFILE` | base64 of an **ad-hoc** `.mobileprovision` for `com.andrewbierman.packrat.swift`, listing QA device UDIDs |
 
-Team ID `7WV9JYCW55` and bundle id `com.andrewbierman.packrat` are hard-coded in
+Team ID `666HGMV2LU` and bundle id `com.andrewbierman.packrat.swift` are hard-coded in
 the workflow's export options — update them there if they change.
 
 ### Generating the secrets
@@ -53,7 +53,7 @@ base64 -i dist.p12 | pbcopy   # → IOS_DIST_CERT_P12
 ```
 
 **Ad-hoc provisioning profile** (Apple Developer → Profiles → new **Ad Hoc**
-profile for the `com.andrewbierman.packrat` App ID, select the Distribution cert,
+profile for the `com.andrewbierman.packrat.swift` App ID, select the Distribution cert,
 check every QA device):
 
 ```sh
