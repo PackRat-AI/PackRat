@@ -35,6 +35,25 @@ on:
         required: false
         type: boolean
         default: false
+      api_environment:
+        description: "API target for manual runs"
+        required: false
+        type: choice
+        default: configured-secret
+        options:
+          - configured-secret
+          - local
+          - dev
+          - production
+      feature_flag_profile:
+        description: "Temporary Swift feature flag profile"
+        required: false
+        type: choice
+        default: default
+        options:
+          - default
+          - all-on
+          - all-off
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -79,13 +98,40 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Resolve Swift E2E target
+        run: |
+          target="${{ inputs.api_environment || 'configured-secret' }}"
+          case "$target" in
+            configured-secret)
+              echo "PACKRAT_ENV=dev" >> "$GITHUB_ENV"
+              ;;
+            local)
+              echo "PACKRAT_ENV=local" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=" >> "$GITHUB_ENV"
+              ;;
+            dev)
+              echo "PACKRAT_ENV=dev" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=https://packrat-api-dev.orange-frost-d665.workers.dev" >> "$GITHUB_ENV"
+              ;;
+            production)
+              echo "PACKRAT_ENV=production" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=https://packrat-api.orange-frost-d665.workers.dev" >> "$GITHUB_ENV"
+              ;;
+          esac
+          echo "PACKRAT_SWIFT_FEATURE_FLAG_PROFILE=${{ inputs.feature_flag_profile || 'default' }}" >> "$GITHUB_ENV"
+
       - name: Verify Swift E2E secrets
         run: |
+          target="${{ inputs.api_environment || 'configured-secret' }}"
           missing=()
           [ -z "${E2E_EMAIL:-}" ] && missing+=("E2E_TEST_EMAIL")
           [ -z "${E2E_PASSWORD:-}" ] && missing+=("E2E_TEST_PASSWORD")
-          [ -z "${E2E_API_BASE_URL:-}" ] && missing+=("SWIFT_E2E_API_BASE_URL")
-          [ -z "${NEON_DATABASE_URL:-}" ] && missing+=("NEON_DEV_DATABASE_URL")
+          if [ "$target" = "configured-secret" ] && [ -z "${E2E_API_BASE_URL:-}" ]; then
+            missing+=("SWIFT_E2E_API_BASE_URL")
+          fi
+          if [ "$target" != "local" ] && [ "$target" != "production" ] && [ -z "${NEON_DATABASE_URL:-}" ]; then
+            missing+=("NEON_DEV_DATABASE_URL")
+          fi
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::Required Swift E2E secrets missing: ${missing[*]}"
             exit 1
@@ -101,6 +147,7 @@ jobs:
         run: bun run swift
 
       - name: Seed E2E test user
+        if: ${{ (inputs.api_environment || 'configured-secret') != 'local' && (inputs.api_environment || 'configured-secret') != 'production' }}
         run: bun run --filter @packrat/api db:seed:e2e-user
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
@@ -179,13 +226,40 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Resolve Swift E2E target
+        run: |
+          target="${{ inputs.api_environment || 'configured-secret' }}"
+          case "$target" in
+            configured-secret)
+              echo "PACKRAT_ENV=dev" >> "$GITHUB_ENV"
+              ;;
+            local)
+              echo "PACKRAT_ENV=local" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=" >> "$GITHUB_ENV"
+              ;;
+            dev)
+              echo "PACKRAT_ENV=dev" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=https://packrat-api-dev.orange-frost-d665.workers.dev" >> "$GITHUB_ENV"
+              ;;
+            production)
+              echo "PACKRAT_ENV=production" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=https://packrat-api.orange-frost-d665.workers.dev" >> "$GITHUB_ENV"
+              ;;
+          esac
+          echo "PACKRAT_SWIFT_FEATURE_FLAG_PROFILE=${{ inputs.feature_flag_profile || 'default' }}" >> "$GITHUB_ENV"
+
       - name: Verify Swift E2E secrets
         run: |
+          target="${{ inputs.api_environment || 'configured-secret' }}"
           missing=()
           [ -z "${E2E_EMAIL:-}" ] && missing+=("E2E_TEST_EMAIL")
           [ -z "${E2E_PASSWORD:-}" ] && missing+=("E2E_TEST_PASSWORD")
-          [ -z "${E2E_API_BASE_URL:-}" ] && missing+=("SWIFT_E2E_API_BASE_URL")
-          [ -z "${NEON_DATABASE_URL:-}" ] && missing+=("NEON_DEV_DATABASE_URL")
+          if [ "$target" = "configured-secret" ] && [ -z "${E2E_API_BASE_URL:-}" ]; then
+            missing+=("SWIFT_E2E_API_BASE_URL")
+          fi
+          if [ "$target" != "local" ] && [ "$target" != "production" ] && [ -z "${NEON_DATABASE_URL:-}" ]; then
+            missing+=("NEON_DEV_DATABASE_URL")
+          fi
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::Required Swift E2E secrets missing: ${missing[*]}"
             exit 1
@@ -197,6 +271,7 @@ jobs:
         run: bun run swift
 
       - name: Seed E2E test user
+        if: ${{ (inputs.api_environment || 'configured-secret') != 'local' && (inputs.api_environment || 'configured-secret') != 'production' }}
         run: bun run --filter @packrat/api db:seed:e2e-user
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}

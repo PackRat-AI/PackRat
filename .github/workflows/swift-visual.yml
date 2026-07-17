@@ -8,13 +8,33 @@ on:
       platform:
         description: "Which visual suite to run"
         required: true
-        default: both
+        default: all
         type: choice
         options:
+          - all
           - both
           - ios
           - ipad
           - macos
+          - watch
+      api_environment:
+        description: "API target for screenshot capture"
+        required: false
+        type: choice
+        default: local
+        options:
+          - local
+          - dev
+          - production
+      feature_flag_profile:
+        description: "Temporary Swift feature flag profile"
+        required: false
+        type: choice
+        default: default
+        options:
+          - default
+          - all-on
+          - all-off
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -74,11 +94,30 @@ jobs:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install --frozen-lockfile
 
+      - name: Resolve Swift visual target
+        run: |
+          target="${{ inputs.api_environment || 'local' }}"
+          case "$target" in
+            local)
+              echo "PACKRAT_ENV=local" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=" >> "$GITHUB_ENV"
+              ;;
+            dev)
+              echo "PACKRAT_ENV=dev" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=https://packrat-api-dev.orange-frost-d665.workers.dev" >> "$GITHUB_ENV"
+              ;;
+            production)
+              echo "PACKRAT_ENV=production" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=https://packrat-api.orange-frost-d665.workers.dev" >> "$GITHUB_ENV"
+              ;;
+          esac
+          echo "PACKRAT_SWIFT_FEATURE_FLAG_PROFILE=${{ inputs.feature_flag_profile || 'default' }}" >> "$GITHUB_ENV"
+
       - name: Generate Xcode project
         run: bun swift
 
       - name: Boot iOS simulator
-        if: ${{ (github.event.inputs.platform || 'both') != 'macos' }}
+        if: ${{ (github.event.inputs.platform || 'all') != 'macos' }}
         run: |
           DEVICE_ID=$(xcrun simctl create Swift-Visual "iPhone 17" \
             "$(xcrun simctl list runtimes -j | jq -r '.runtimes[] | select(.identifier | contains("iOS-")) | .identifier' | sort -V | tail -1)")
@@ -86,7 +125,7 @@ jobs:
           xcrun simctl bootstatus "$DEVICE_ID"
 
       - name: Boot iPad simulator
-        if: ${{ (github.event.inputs.platform || 'both') == 'ipad' || (github.event.inputs.platform || 'both') == 'both' }}
+        if: ${{ (github.event.inputs.platform || 'all') == 'ipad' || (github.event.inputs.platform || 'all') == 'all' || (github.event.inputs.platform || 'all') == 'both' }}
         run: |
           DEVICE_ID=$(xcrun simctl list devices available -j \
             | jq -r '[.devices[][] | select(.isAvailable == true and (.name | contains("iPad")))] | .[0].udid')
@@ -94,7 +133,7 @@ jobs:
           xcrun simctl bootstatus "$DEVICE_ID"
 
       - name: Check macOS Automation Mode
-        if: ${{ (github.event.inputs.platform || 'both') == 'macos' || (github.event.inputs.platform || 'both') == 'both' }}
+        if: ${{ (github.event.inputs.platform || 'all') == 'macos' || (github.event.inputs.platform || 'all') == 'all' || (github.event.inputs.platform || 'all') == 'both' }}
         run: automationmodetool help
 
       - name: Capture Swift visual screenshots
@@ -105,7 +144,7 @@ jobs:
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           PACKRAT_VISUAL_XCODEBUILD_TIMEOUT_MS: "3600000"
         run: |
-          PLATFORM="${{ github.event.inputs.platform || 'both' }}"
+          PLATFORM="${{ github.event.inputs.platform || 'all' }}"
           bun swift:screenshots --platform "$PLATFORM" --out "$SCREENSHOT_ARTIFACT_DIR"
 
       - name: Upload contact sheets
