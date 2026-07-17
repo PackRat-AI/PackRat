@@ -73,6 +73,20 @@ final class AuthTests: AppUITestCase {
         XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
         XCTAssertFalse(app.buttons["Try Again"].exists)
         XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
+
+        app.buttons["Done"].tapIfExists()
+        goToHomeAction("Catalog")
+        XCTAssertTrue(app.staticTexts["Catalog Requires an Account"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
+        XCTAssertFalse(app.buttons["Try Again"].exists)
+        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
+
+        app.buttons["Done"].tapIfExists()
+        goToHomeAction("Weather")
+        XCTAssertTrue(app.staticTexts["Weather Requires an Account"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
+        XCTAssertFalse(app.buttons["Try Again"].exists)
+        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
     }
 
     func testGuestSeesNativeSignInStateForAITools() {

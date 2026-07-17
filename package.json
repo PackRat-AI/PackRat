@@ -82,7 +82,7 @@
     "test:lint": "bun test scripts/lint/",
     "test:mcp": "bun run --cwd packages/mcp test",
     "test:scripts": "vitest run --config scripts/vitest.config.ts",
-    "test:swift:runner": "bun test apps/swift/scripts/run-e2e.test.ts",
+    "test:swift:runner": "vitest run --config apps/swift/vitest.config.ts apps/swift/scripts/__tests__/args.test.ts apps/swift/scripts/__tests__/macos-args.test.ts",
     "test:swift:scripts": "vitest run --config apps/swift/vitest.config.ts",
     "test:swift:unit": "bun run apps/swift/scripts/run-e2e.ts unit",
     "trails": "bun run --cwd apps/trails dev",

@@ -9,6 +9,9 @@ struct PackRatWatchApp: App {
             WatchRootView()
                 .environment(connectivity)
                 .task {
+                    guard ProcessInfo.processInfo.environment["PACKRAT_WATCH_DISABLE_CONNECTIVITY"] != "1" else {
+                        return
+                    }
                     connectivity.activate()
                 }
         }
@@ -20,6 +23,8 @@ private struct WatchRootView: View {
 
     var body: some View {
         switch ProcessInfo.processInfo.environment["PACKRAT_WATCH_SCREENSHOT_ROUTE"] {
+        case "dashboard":
+            TrailReadyView(snapshot: connectivity.snapshot, isPhoneReachable: connectivity.isPhoneReachable)
         case "checklist":
             WatchChecklistView(pack: connectivity.snapshot.pack)
         case "weather":
@@ -74,6 +79,7 @@ private struct TrailReadyView: View {
                             Text(tripSubtitle)
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
+                                .lineLimit(2)
                                 .fixedSize(horizontal: false, vertical: true)
 
                             Divider()
@@ -84,11 +90,7 @@ private struct TrailReadyView: View {
                                 value: "\(snapshot.pack.packedItemCount)/\(snapshot.pack.totalItemCount)",
                                 symbol: "backpack"
                             )
-                            WatchMetricRow(
-                                title: "Weather",
-                                value: "\(snapshot.weather.temperatureText) \(snapshot.weather.conditionText)",
-                                symbol: snapshot.weather.symbolName
-                            )
+                            WatchMetricRow(title: "Weather", value: snapshot.weather.temperatureText, symbol: snapshot.weather.symbolName)
                         }
                     }
                 } else {
@@ -115,7 +117,7 @@ private struct TrailReadyView: View {
         guard let trip = snapshot.trip else {
             return "Quick wrist access for the next pack, weather, and trail notes."
         }
-        return [trip.name, trip.locationName, trip.dateText]
+        return [trip.locationName, trip.dateText]
             .compactMap { $0 }
             .joined(separator: " - ")
     }

@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   cpSync,
   existsSync,
@@ -29,6 +30,7 @@ import {
   oneOrMore,
 } from 'magic-regexp';
 import { z } from 'zod';
+import { ensureLocalE2EAPI } from './lib/e2e-api';
 import { formatSummaryLine, readSummary, type TestSummary, XcResultError } from './lib/xcresult';
 
 type Platform = 'ios' | 'ipad' | 'macos' | 'watch';
@@ -59,6 +61,7 @@ type VisualTestResult = {
 type PlatformRunSummary = {
   platform: Platform;
   screenshotDir: string;
+  screenshotCount: number;
   coverageManifest: string;
   contactSheet: string;
   groupedContactSheets: string[];
@@ -70,6 +73,14 @@ const REPO_ROOT = resolve(import.meta.dir, '../../..');
 const SWIFT_DIR = resolve(REPO_ROOT, 'apps/swift');
 const RESULTS_DIR = resolve(SWIFT_DIR, 'TestResults');
 const DEFAULT_OUT_DIR = resolve(REPO_ROOT, 'artifacts/screenshots');
+const IOS_SCHEME_PATH = resolve(
+  SWIFT_DIR,
+  'PackRat.xcodeproj/xcshareddata/xcschemes/PackRat-iOS.xcscheme',
+);
+const MACOS_SCHEME_PATH = resolve(
+  SWIFT_DIR,
+  'PackRat.xcodeproj/xcshareddata/xcschemes/PackRat-macOS.xcscheme',
+);
 const EMAIL_RE = createRegExp(
   oneOrMore(charIn('A-Z0-9._%+-')),
   '@',
@@ -101,6 +112,7 @@ const CHROME_CANDIDATES = [
   '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
 ];
 const FEATURE_FLAGS = APP_CONFIG.featureFlags;
+const API_E2E_ENV_PATH = resolve(REPO_ROOT, 'packages/api/.dev.vars.e2e');
 const IOS_SURFACES = [
   'packs',
   'trips',
@@ -249,7 +261,7 @@ Captures guest and authenticated visual surfaces through VisualScreenshotTests a
 }
 
 function parseArgs(argv: readonly string[]): Options {
-  let platforms: Platform[] = ['ios', 'ipad', 'macos'];
+  let platforms: Platform[] = ['ios', 'ipad', 'macos', 'watch'];
   let outDir = DEFAULT_OUT_DIR;
   let skipTests = false;
 
@@ -263,7 +275,7 @@ function parseArgs(argv: readonly string[]): Options {
     }
     if (arg === '--platform') {
       const value = argv[++i];
-      if (!value) throw new Error('--platform requires ios, ipad, macos, or both');
+      if (!value) throw new Error('--platform requires ios, ipad, macos, watch, both, or all');
       platforms = parsePlatforms(value);
       continue;
     }
@@ -289,7 +301,7 @@ function parseArgs(argv: readonly string[]): Options {
 
 function parsePlatforms(value: string): Platform[] {
   const normalized = value.toLowerCase();
-  if (normalized === 'both') return ['ios', 'ipad', 'macos'];
+  if (normalized === 'both') return ['ios', 'ipad', 'macos', 'watch'];
   if (normalized === 'all') return ['ios', 'ipad', 'macos', 'watch'];
   if (normalized === 'ios') return ['ios'];
   if (normalized === 'ipad') return ['ipad'];
@@ -912,6 +924,11 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
   const resultBundle = allocateResultBundle(platform);
   const writableScreenshotDir = allocateWritableScreenshotDir(platform);
   const credentials = e2eBuildSettings();
+  injectVisualSchemeEnvironment(platform, {
+    PACKRAT_SCREENSHOT_DIR: writableScreenshotDir,
+    PACKRAT_VISUAL_PLATFORM: platform,
+    ...buildSettingsToEnv(credentials),
+  });
   const commonArgs = [
     'test',
     '-resultBundlePath',
@@ -1019,6 +1036,78 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
   });
 }
 
+function injectVisualSchemeEnvironment(platform: Platform, env: Record<string, string>): void {
+  const schemePath = platform === 'macos' ? MACOS_SCHEME_PATH : IOS_SCHEME_PATH;
+  if (!existsSync(schemePath)) return;
+
+  let content = readFileSync(schemePath, 'utf8');
+  content = removeEnvironmentVariablesBlock(content);
+  content = content.replace(
+    'shouldUseLaunchSchemeArgsEnv = "YES"',
+    'shouldUseLaunchSchemeArgsEnv = "NO"',
+  );
+
+  const variables = Object.entries(env)
+    .filter(([, value]) => value.length > 0)
+    .map(([key, value]) => environmentVariableXml(key, value));
+  if (variables.length === 0) {
+    writeFileSync(schemePath, content);
+    return;
+  }
+
+  const block = [
+    '      <EnvironmentVariables>',
+    ...variables,
+    '      </EnvironmentVariables>',
+    '',
+  ].join('\n');
+  writeFileSync(schemePath, content.replace('   </TestAction>', `${block}   </TestAction>`));
+}
+
+function buildSettingsToEnv(settings: string[]): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const setting of settings) {
+    const equals = setting.indexOf('=');
+    if (equals <= 0) continue;
+    env[setting.slice(0, equals)] = setting.slice(equals + 1);
+  }
+  return env;
+}
+
+function environmentVariableXml(key: string, value: string): string {
+  return [
+    '         <EnvironmentVariable',
+    `            key = "${escapeXml(key)}"`,
+    `            value = "${escapeXml(value)}"`,
+    '            isEnabled = "YES">',
+    '         </EnvironmentVariable>',
+  ].join('\n');
+}
+
+function removeEnvironmentVariablesBlock(content: string): string {
+  let output = content;
+  while (true) {
+    const start = output.indexOf('<EnvironmentVariables>');
+    if (start === -1) return output;
+    const end = output.indexOf('</EnvironmentVariables>', start);
+    if (end === -1) return output;
+    const removalStart = output.lastIndexOf('\n', start);
+    const removalEnd = end + '</EnvironmentVariables>'.length;
+    output = `${output.slice(0, removalStart === -1 ? start : removalStart)}${output.slice(removalEnd)}`;
+  }
+}
+
+function escapeXml(s: string): string {
+  return Array.from(s, (char) => {
+    if (char === '&') return '&amp;';
+    if (char === '<') return '&lt;';
+    if (char === '>') return '&gt;';
+    if (char === '"') return '&quot;';
+    if (char === "'") return '&apos;';
+    return char;
+  }).join('');
+}
+
 async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestResult> {
   const destination = pickAvailableWatchDestination();
   const deviceId = destination.deviceId;
@@ -1061,11 +1150,11 @@ async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestR
   mkdirSync(screenshotDir, { recursive: true });
   const syncedSnapshot = watchSyncedSnapshotBase64();
   for (const route of [
-    { name: '00-watch-dashboard.png', value: '', snapshot: 'reset' },
+    { name: '00-watch-dashboard.png', value: 'dashboard', snapshot: 'reset' },
     { name: '01-watch-checklist.png', value: 'checklist', snapshot: 'reset' },
     { name: '02-watch-weather.png', value: 'weather', snapshot: 'reset' },
     { name: '03-watch-trail-report.png', value: 'trail-report', snapshot: 'reset' },
-    { name: '10-watch-synced-dashboard.png', value: '', snapshot: 'synced' },
+    { name: '10-watch-synced-dashboard.png', value: 'dashboard', snapshot: 'synced' },
     { name: '11-watch-synced-checklist.png', value: 'checklist', snapshot: 'synced' },
     { name: '12-watch-synced-weather.png', value: 'weather', snapshot: 'synced' },
     { name: '13-watch-synced-trail-report.png', value: 'trail-report', snapshot: 'synced' },
@@ -1077,6 +1166,7 @@ async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestR
     },
   ] as const) {
     const env = {
+      SIMCTL_CHILD_PACKRAT_WATCH_DISABLE_CONNECTIVITY: '1',
       ...(route.value ? { SIMCTL_CHILD_PACKRAT_WATCH_SCREENSHOT_ROUTE: route.value } : {}),
       ...(route.snapshot === 'reset'
         ? { SIMCTL_CHILD_PACKRAT_WATCH_RESET_SNAPSHOT: '1' }
@@ -1087,7 +1177,7 @@ async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestR
     };
     await launchWatchRouteWithRetry({ deviceId, appPath, env });
 
-    await sleep(1_500);
+    await sleep(4_000);
     const tmpScreenshot = resolve('/tmp', `packrat-watch-${Date.now()}-${route.name}`);
     runChecked({
       command: 'xcrun',
@@ -1359,15 +1449,61 @@ const AttachmentManifestEntrySchema = z
 const parseAttachmentManifest = fromZod(z.array(AttachmentManifestEntrySchema));
 
 function e2eBuildSettings(): string[] {
-  const email = Bun.env.E2E_TEST_EMAIL ?? Bun.env.E2E_EMAIL;
-  const password = Bun.env.E2E_TEST_PASSWORD ?? Bun.env.E2E_PASSWORD;
+  const apiE2EEnv = readSimpleEnvFile(API_E2E_ENV_PATH);
+  const email = Bun.env.E2E_TEST_EMAIL ?? Bun.env.E2E_EMAIL ?? apiE2EEnv.E2E_TEST_EMAIL;
+  const password = Bun.env.E2E_TEST_PASSWORD ?? Bun.env.E2E_PASSWORD ?? apiE2EEnv.E2E_TEST_PASSWORD;
   if (!email || !password) {
     console.warn(
       'Warning: E2E_EMAIL/E2E_PASSWORD are not set; authenticated screenshot test will be skipped.',
     );
     return [];
   }
-  return [`PACKRAT_E2E_EMAIL=${email}`, `PACKRAT_E2E_PASSWORD=${password}`];
+
+  const userId = Bun.env.E2E_TEST_USER_ID ?? apiE2EEnv.E2E_TEST_USER_ID;
+  const sessionToken =
+    Bun.env.PACKRAT_E2E_SESSION_TOKEN ??
+    (userId
+      ? localE2ESessionToken({
+          secret:
+            Bun.env.BETTER_AUTH_SECRET ??
+            apiE2EEnv.BETTER_AUTH_SECRET ??
+            'e2e-better-auth-secret-at-least-32-chars',
+          email,
+          userId,
+        })
+      : undefined);
+
+  return [
+    `PACKRAT_E2E_EMAIL=${email}`,
+    `PACKRAT_E2E_PASSWORD=${password}`,
+    ...(userId ? [`PACKRAT_E2E_USER_ID=${userId}`] : []),
+    ...(sessionToken ? [`PACKRAT_E2E_SESSION_TOKEN=${sessionToken}`] : []),
+  ];
+}
+
+function localE2ESessionToken(input: { secret: string; email: string; userId: string }): string {
+  const material = `${input.secret}:${input.email.toLowerCase()}:${input.userId}`;
+  return `e2e-local.${createHash('sha256').update(material).digest('hex')}`;
+}
+
+function readSimpleEnvFile(path: string): Record<string, string> {
+  if (!existsSync(path)) return {};
+  const vars: Record<string, string> = {};
+  for (const rawLine of readFileSync(path, 'utf8').replaceAll('\r\n', '\n').split('\n')) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#') || !line.includes('=')) continue;
+    const index = line.indexOf('=');
+    const key = line.slice(0, index).trim();
+    let value = line.slice(index + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    vars[key] = value;
+  }
+  return vars;
 }
 
 function assertAutomationModeAvailable(): void {
@@ -1879,55 +2015,153 @@ async function main() {
   loadDotEnv();
   const options = parseArgs(process.argv.slice(2));
   mkdirSync(options.outDir, { recursive: true });
-  const runSummary: PlatformRunSummary[] = [];
+  const runSummaryPath = resolve(options.outDir, 'run-summary.json');
+  const runSummaryByPlatform = readExistingRunSummary(runSummaryPath);
+  addExistingArtifactSummaries(options.outDir, runSummaryByPlatform);
+  const shouldEnsureAPI =
+    !options.skipTests && options.platforms.some((platform) => platform !== 'watch');
+  const apiHandle = shouldEnsureAPI
+    ? await ensureLocalE2EAPI({
+        packratEnv: Bun.env.PACKRAT_ENV ?? nodeEnv.PACKRAT_ENV ?? 'local',
+        env: Bun.env as NodeJS.ProcessEnv,
+      })
+    : null;
 
-  for (const platform of options.platforms) {
-    const dir = screenshotDirFor(options.outDir, platform);
-    let testResult: VisualTestResult | null = null;
-    mkdirSync(dir, { recursive: true });
-    if (!options.skipTests) {
-      rmSync(dir, { recursive: true, force: true });
+  try {
+    for (const platform of options.platforms) {
+      const dir = screenshotDirFor(options.outDir, platform);
+      let testResult: VisualTestResult | null = null;
       mkdirSync(dir, { recursive: true });
-      testResult = await runXcodeVisualTest(platform, dir);
+      if (!options.skipTests) {
+        rmSync(dir, { recursive: true, force: true });
+        mkdirSync(dir, { recursive: true });
+        testResult = await runXcodeVisualTest(platform, dir);
+      }
+      validateScreenshotMatrix(platform, dir);
+      const contactSheet = await renderContactSheet(platform, options.outDir);
+      const groupedContactSheets = await renderGroupedContactSheets(platform, options.outDir);
+      const coverageManifest = resolve(dir, 'coverage-manifest.json');
+      const screenshotCount = countCapturedScreenshots(dir);
+      const existingSummary = runSummaryByPlatform.get(platform);
+      runSummaryByPlatform.set(platform, {
+        platform,
+        screenshotDir: dir,
+        screenshotCount,
+        coverageManifest,
+        contactSheet,
+        groupedContactSheets,
+        ...(testResult
+          ? {
+              resultBundle: testResult.resultBundle,
+              ...(testResult.summary ? { testSummary: testResult.summary } : {}),
+            }
+          : {
+              ...(existingSummary?.resultBundle
+                ? { resultBundle: existingSummary.resultBundle }
+                : {}),
+              ...(existingSummary?.testSummary ? { testSummary: existingSummary.testSummary } : {}),
+            }),
+      });
+      console.log(`✓ ${platform} contact sheet: ${contactSheet}`);
+      for (const groupedContactSheet of groupedContactSheets) {
+        console.log(`✓ ${platform} grouped contact sheet: ${groupedContactSheet}`);
+      }
+      console.log(`✓ ${platform} coverage manifest: ${coverageManifest}`);
     }
-    validateScreenshotMatrix(platform, dir);
-    const contactSheet = await renderContactSheet(platform, options.outDir);
-    const groupedContactSheets = await renderGroupedContactSheets(platform, options.outDir);
-    const coverageManifest = resolve(dir, 'coverage-manifest.json');
-    runSummary.push({
-      platform,
-      screenshotDir: dir,
-      coverageManifest,
-      contactSheet,
-      groupedContactSheets,
-      ...(testResult
-        ? {
-            resultBundle: testResult.resultBundle,
-            ...(testResult.summary ? { testSummary: testResult.summary } : {}),
-          }
-        : {}),
-    });
-    console.log(`✓ ${platform} contact sheet: ${contactSheet}`);
-    for (const groupedContactSheet of groupedContactSheets) {
-      console.log(`✓ ${platform} grouped contact sheet: ${groupedContactSheet}`);
-    }
-    console.log(`✓ ${platform} coverage manifest: ${coverageManifest}`);
+  } finally {
+    await apiHandle?.stop();
   }
 
-  const runSummaryPath = resolve(options.outDir, 'run-summary.json');
   writeFileSync(
     runSummaryPath,
     `${safeJsonStringify(
       {
         generatedAt: new Date().toISOString(),
         skipTests: options.skipTests,
-        platforms: runSummary,
+        platforms: [...runSummaryByPlatform.values()],
       },
       null,
       2,
     )}\n`,
   );
   console.log(`✓ screenshot run summary: ${runSummaryPath}`);
+}
+
+function readExistingRunSummary(path: string): Map<Platform, PlatformRunSummary> {
+  const summaries = new Map<Platform, PlatformRunSummary>();
+  if (!existsSync(path)) return summaries;
+  try {
+    const parsed = safeJsonParse<{ platforms?: unknown[] }>(readFileSync(path, 'utf8'), {
+      strict: true,
+    });
+    for (const candidate of parsed.platforms ?? []) {
+      const summary = parsePlatformRunSummary(candidate);
+      if (summary) summaries.set(summary.platform, summary);
+    }
+  } catch {}
+  return summaries;
+}
+
+function addExistingArtifactSummaries(
+  outDir: string,
+  summaries: Map<Platform, PlatformRunSummary>,
+): void {
+  for (const platform of ['ios', 'ipad', 'macos', 'watch'] satisfies Platform[]) {
+    if (summaries.has(platform)) continue;
+    const screenshotDir = screenshotDirFor(outDir, platform);
+    const coverageManifest = resolve(screenshotDir, 'coverage-manifest.json');
+    const contactSheet = resolve(outDir, `${platform}-contact-sheet.png`);
+    if (!existsSync(coverageManifest) || !existsSync(contactSheet)) continue;
+    const groupedContactSheets = CONTACT_SHEET_GROUPS.map((group) =>
+      resolve(outDir, `${platform}-contact-sheet-${group.suffix}.png`),
+    ).filter((path) => existsSync(path));
+    summaries.set(platform, {
+      platform,
+      screenshotDir,
+      screenshotCount: countCapturedScreenshots(screenshotDir),
+      coverageManifest,
+      contactSheet,
+      groupedContactSheets,
+    });
+  }
+}
+
+function parsePlatformRunSummary(value: unknown): PlatformRunSummary | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Record<string, unknown>;
+  if (!isPlatform(candidate.platform)) return null;
+  if (
+    typeof candidate.screenshotDir !== 'string' ||
+    typeof candidate.coverageManifest !== 'string' ||
+    typeof candidate.contactSheet !== 'string' ||
+    !Array.isArray(candidate.groupedContactSheets) ||
+    !candidate.groupedContactSheets.every((entry) => typeof entry === 'string')
+  ) {
+    return null;
+  }
+
+  return {
+    platform: candidate.platform,
+    screenshotDir: candidate.screenshotDir,
+    screenshotCount:
+      typeof candidate.screenshotCount === 'number' && Number.isFinite(candidate.screenshotCount)
+        ? candidate.screenshotCount
+        : countCapturedScreenshots(candidate.screenshotDir),
+    coverageManifest: candidate.coverageManifest,
+    contactSheet: candidate.contactSheet,
+    groupedContactSheets: candidate.groupedContactSheets,
+    ...(typeof candidate.resultBundle === 'string' ? { resultBundle: candidate.resultBundle } : {}),
+    ...(candidate.testSummary ? { testSummary: candidate.testSummary as TestSummary } : {}),
+  };
+}
+
+function isPlatform(value: unknown): value is Platform {
+  return value === 'ios' || value === 'ipad' || value === 'macos' || value === 'watch';
+}
+
+function countCapturedScreenshots(screenshotDir: string): number {
+  if (!existsSync(screenshotDir)) return 0;
+  return readdirSync(screenshotDir).filter((fileName) => fileName.endsWith('.png')).length;
 }
 
 main()

@@ -1,3 +1,4 @@
+import CryptoKit
 import XCTest
 
 final class VisualScreenshotTests: XCTestCase {
@@ -112,6 +113,20 @@ final class VisualScreenshotTests: XCTestCase {
         capturePhoneModalConnectedSurface(mode: .guest)
     }
     #endif
+
+    func testGuestAccountLimitVisualSurface() throws {
+        enterGuestMode()
+
+        #if os(iOS)
+        if isPadVisualRun {
+            captureSidebarGuestAccountLimits()
+        } else {
+            capturePhoneGuestAccountLimits()
+        }
+        #elseif os(macOS)
+        captureSidebarGuestAccountLimits()
+        #endif
+    }
 
     func testAuthenticatedVisualSurface() throws {
         launchAuthenticated()
@@ -404,7 +419,14 @@ final class VisualScreenshotTests: XCTestCase {
         let prefix = mode.prefix
         let suffix = mode.suffix
         for action in actions {
-            captureHomeAction(action.title, name: "\(prefix)-\(action.slug)\(suffix)")
+            let name = "\(prefix)-\(action.slug)\(suffix)"
+            if mode == .sampleData, action.title == "Season Suggestions" {
+                captureHomeAction(action.title, name: name, dismissAfterCapture: false)
+                captureSeasonSuggestionsResult(name: "\(prefix)-season-suggestions-results\(suffix)")
+                dismissPhoneDestination()
+            } else {
+                captureHomeAction(action.title, name: name)
+            }
         }
     }
 
@@ -766,6 +788,25 @@ final class VisualScreenshotTests: XCTestCase {
         dismissPhoneDestination()
     }
 
+    private func captureGuestLimitedTab(_ label: String, name: String) {
+        captureTab(label, name: name)
+        assertExpectedAccountRequiredState(for: name)
+    }
+
+    private func capturePhoneGuestAccountLimits() {
+        captureGuestLimitedTab("Assistant", name: "50-guest-limit-assistant")
+        captureGuestLimitedHomeAction("AI Packs", name: "50-guest-limit-ai-packs")
+        captureGuestLimitedHomeAction("Catalog", name: "50-guest-limit-catalog")
+        captureGuestLimitedHomeAction("Weather", name: "50-guest-limit-weather")
+
+        if UITestFeatureFlags.enableFeed {
+            captureGuestLimitedHomeAction("Community Feed", name: "50-guest-limit-feed")
+        }
+        if UITestFeatureFlags.enableWildlifeIdentification {
+            captureGuestLimitedHomeAction("Wildlife ID", name: "50-guest-limit-wildlife")
+        }
+    }
+
     private func dismissPhoneDestination() {
         if app.buttons["Done"].exists {
             app.buttons["Done"].tap()
@@ -816,7 +857,14 @@ final class VisualScreenshotTests: XCTestCase {
         }
 
         if scope != .primary {
-            captureMacHomeAction("Season Suggestions", name: "\(prefix)-season-suggestions\(suffix)")
+            let name = "\(prefix)-season-suggestions\(suffix)"
+            if mode == .sampleData {
+                captureMacHomeAction("Season Suggestions", name: name, dismissAfterCapture: false)
+                captureSeasonSuggestionsResult(name: "\(prefix)-season-suggestions-results\(suffix)")
+                dismissPresentedSurface()
+            } else {
+                captureMacHomeAction("Season Suggestions", name: name)
+            }
         }
     }
 
@@ -870,6 +918,32 @@ final class VisualScreenshotTests: XCTestCase {
         if mode != .guest && UITestFeatureFlags.enableFeed {
             selectSidebar("Feed")
             tapAndCapture(identifier: "feed_new_post_button", fallbackButton: "New Post", name: "\(prefix)-feed-compose-sheet")
+        }
+    }
+
+    private func captureSidebarGuestAccountLimits() {
+        let entries = [
+            ("Assistant", "50-guest-limit-assistant"),
+            ("Weather", "50-guest-limit-weather"),
+            ("Catalog", "50-guest-limit-catalog"),
+            ("AI Packs", "50-guest-limit-ai-packs"),
+        ]
+
+        for (label, name) in entries {
+            selectSidebar(label)
+            capture(name)
+            assertExpectedAccountRequiredState(for: name)
+        }
+
+        if UITestFeatureFlags.enableFeed {
+            selectSidebar("Feed")
+            capture("50-guest-limit-feed")
+            assertExpectedAccountRequiredState(for: "50-guest-limit-feed")
+        }
+        if UITestFeatureFlags.enableWildlifeIdentification {
+            selectSidebar("Wildlife")
+            capture("50-guest-limit-wildlife")
+            assertExpectedAccountRequiredState(for: "50-guest-limit-wildlife")
         }
     }
 
@@ -990,6 +1064,27 @@ final class VisualScreenshotTests: XCTestCase {
             app.swipeUp()
         }
         XCTFail("Expected Home action '\(title)' for screenshot \(name)")
+    }
+
+    private func captureSeasonSuggestionsResult(name: String) {
+        let field = app.textFields["season_suggestions_location"].firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 5), "Expected Season Suggestions location field for \(name)")
+        activate(field)
+        field.typeText("Leavenworth, WA")
+
+        let submit = app.buttons["season_suggestions_submit"].firstMatch
+        XCTAssertTrue(submit.waitForExistence(timeout: 5), "Expected Season Suggestions submit button for \(name)")
+        activate(submit)
+
+        let results = app.descendants(matching: .any)
+            .matching(identifier: "season_suggestions_results")
+            .firstMatch
+        let deterministicTitle = app.staticTexts["Shoulder Season Overnight"]
+        XCTAssertTrue(
+            results.waitForExistence(timeout: 20) || deterministicTitle.waitForExistence(timeout: 2),
+            "Expected Season Suggestions results for \(name)"
+        )
+        capture(name)
     }
     #endif
 
@@ -1186,6 +1281,7 @@ final class VisualScreenshotTests: XCTestCase {
         let email = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
             ?? "e2e@packrat.test"
         let userId = ProcessInfo.processInfo.environment["E2E_TEST_USER_ID"]
+            ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_USER_ID") as? String)
             ?? "00000000-0000-4000-8000-000000000001"
 
         app.terminate()
@@ -1197,8 +1293,10 @@ final class VisualScreenshotTests: XCTestCase {
             "--seed-e2e-auth",
         ]
         app.launchEnvironment["PACKRAT_VISUAL_SCREENSHOTS"] = "1"
+        app.launchEnvironment["E2E_API_BASE_URL"] = visualE2EAPIBaseURL
         app.launchEnvironment["PACKRAT_E2E_EMAIL"] = email
         app.launchEnvironment["PACKRAT_E2E_USER_ID"] = userId
+        app.launchEnvironment["PACKRAT_E2E_SESSION_TOKEN"] = visualE2ESessionToken(email: email, userId: userId)
         if sampleData {
             app.launchArguments.append("--visual-sample-data")
             app.launchEnvironment["PACKRAT_VISUAL_SAMPLE_DATA"] = "1"
@@ -1239,11 +1337,34 @@ final class VisualScreenshotTests: XCTestCase {
             app.launchArguments.append("--force-offline")
         }
         app.launchEnvironment["PACKRAT_VISUAL_SCREENSHOTS"] = "1"
+        app.launchEnvironment["E2E_API_BASE_URL"] = visualE2EAPIBaseURL
         app.launch()
         #if os(macOS)
         app.activate()
         dismissSystemInterruptions()
         #endif
+    }
+
+    private var visualE2EAPIBaseURL: String {
+        ProcessInfo.processInfo.environment["E2E_API_BASE_URL"] ?? "http://localhost:8787"
+    }
+
+    private func visualE2ESessionToken(email: String, userId: String) -> String {
+        if let token = ProcessInfo.processInfo.environment["PACKRAT_E2E_SESSION_TOKEN"], !token.isEmpty {
+            return token
+        }
+        let bundle = Bundle(for: VisualScreenshotTests.self)
+        if let token = bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_SESSION_TOKEN") as? String,
+           !token.isEmpty {
+            return token
+        }
+
+        let secret = ProcessInfo.processInfo.environment["BETTER_AUTH_SECRET"]
+            ?? "e2e-better-auth-secret-at-least-32-chars"
+        let material = "\(secret):\(email.lowercased()):\(userId)"
+        let digest = SHA256.hash(data: Data(material.utf8))
+        let hex = digest.map { String(format: "%02x", $0) }.joined()
+        return "e2e-local.\(hex)"
     }
 
     private func restartLoggedOut() {

@@ -3,12 +3,19 @@ import NukeUI
 
 struct CatalogView: View {
     @Environment(AppState.self) private var appState
+    @Environment(AuthManager.self) private var authManager
 
     var body: some View {
         @Bindable var vm = appState.catalogVM
 
         return Group {
-            if vm.isLoading && vm.items.isEmpty {
+            if !authManager.isAuthenticated {
+                GuestLimitedView(
+                    "Catalog Requires an Account",
+                    subtitle: "Gear search syncs with PackRat's catalog service. Local packs and trips still work in guest mode.",
+                    systemImage: "magnifyingglass"
+                )
+            } else if vm.isLoading && vm.items.isEmpty {
                 ProgressView("Searching gear…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = vm.error {
                 ErrorView(error, retry: { await vm.search(reset: true) })
@@ -42,8 +49,16 @@ struct CatalogView: View {
         #else
         .searchable(text: $vm.searchText, prompt: "Search tents, packs, sleeping bags…")
         #endif
-        .onChange(of: vm.searchText) { vm.onSearchTextChanged() }
-        .onSubmit(of: .search) { Task { await vm.search(reset: true) } }
+        .onChange(of: vm.searchText) {
+            if authManager.isAuthenticated {
+                vm.onSearchTextChanged()
+            }
+        }
+        .onSubmit(of: .search) {
+            if authManager.isAuthenticated {
+                Task { await vm.search(reset: true) }
+            }
+        }
         .toolbar {
             if vm.isLoading && !vm.items.isEmpty {
                 ToolbarItem(placement: .secondaryAction) {
@@ -98,9 +113,7 @@ struct CatalogItemRow: View {
     private var rowContent: some View {
         HStack(spacing: 12) {
             RemoteImage(url: item.primaryImage, contentMode: .fill, cornerRadius: 8) {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(.fill.secondary)
-                    .overlay { Image(systemName: "photo").foregroundStyle(.tertiary) }
+                CatalogArtwork(item: item)
             }
             .frame(width: 56, height: 56)
 
@@ -159,6 +172,45 @@ struct CatalogItemRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+    }
+}
+
+struct CatalogArtwork: View {
+    let item: CatalogItem
+    var iconSize: CGFloat = 22
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(tint.opacity(0.14))
+            .overlay {
+                Image(systemName: symbol)
+                    .font(.system(size: iconSize, weight: .semibold))
+                    .foregroundStyle(tint)
+            }
+            .accessibilityHidden(true)
+    }
+
+    private var symbol: String {
+        let category = item.categories?.first?.lowercased() ?? ""
+        if category.contains("tent") || category.contains("shelter") { return "tent" }
+        if category.contains("pack") || category.contains("backpack") { return "backpack" }
+        if category.contains("sleep") || category.contains("bag") || category.contains("quilt") { return "moon.zzz" }
+        if category.contains("water") || category.contains("filter") || category.contains("hydration") { return "drop" }
+        if category.contains("cook") || category.contains("food") || category.contains("kitchen") { return "fork.knife" }
+        if category.contains("cloth") || category.contains("jacket") || category.contains("rain") { return "tshirt" }
+        if category.contains("light") || category.contains("lamp") { return "flashlight.on.fill" }
+        if category.contains("safety") || category.contains("first aid") { return "cross.case" }
+        return "mountain.2"
+    }
+
+    private var tint: Color {
+        let category = item.categories?.first?.lowercased() ?? ""
+        if category.contains("water") || category.contains("filter") || category.contains("hydration") { return .cyan }
+        if category.contains("cook") || category.contains("food") || category.contains("kitchen") { return .orange }
+        if category.contains("safety") || category.contains("first aid") { return .red }
+        if category.contains("sleep") || category.contains("bag") || category.contains("quilt") { return .indigo }
+        if category.contains("cloth") || category.contains("jacket") || category.contains("rain") { return .teal }
+        return .blue
     }
 }
 

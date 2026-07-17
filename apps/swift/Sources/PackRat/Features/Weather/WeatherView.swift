@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WeatherView: View {
+    @Environment(AuthManager.self) private var authManager
     @Bindable var viewModel: WeatherViewModel
     @State private var showingAlerts = false
     @State private var showingAlertPreferences = false
@@ -11,45 +12,55 @@ struct WeatherView: View {
     }
 
     var body: some View {
-        List {
-            searchStateContent
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-
-            if !viewModel.savedLocations.isEmpty && viewModel.searchText.isEmpty && viewModel.searchResults.isEmpty {
-                savedLocationsSection
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-            }
-
-            if let forecast = viewModel.forecast {
-                forecastContent(forecast)
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-            } else if viewModel.isLoadingForecast {
-                ProgressView("Loading forecast…")
-                    .frame(maxWidth: .infinity)
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-            } else if let error = viewModel.forecastError {
-                ErrorView(error, retry: { await viewModel.refresh() })
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-            } else if viewModel.savedLocations.isEmpty {
-                EmptyStateView(
-                    "No Saved Locations",
-                    subtitle: "Search for a city or ZIP code and save it to track the weather",
+        Group {
+            if !authManager.isAuthenticated {
+                GuestLimitedView(
+                    "Weather Requires an Account",
+                    subtitle: "Forecasts and alerts come from PackRat's weather service. Local packs and trips still work in guest mode.",
                     systemImage: "cloud.sun"
                 )
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
+            } else {
+                List {
+                    searchStateContent
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+
+                    if !viewModel.savedLocations.isEmpty && viewModel.searchText.isEmpty && viewModel.searchResults.isEmpty {
+                        savedLocationsSection
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
+
+                    if let forecast = viewModel.forecast {
+                        forecastContent(forecast)
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    } else if viewModel.isLoadingForecast {
+                        ProgressView("Loading forecast…")
+                            .frame(maxWidth: .infinity)
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    } else if let error = viewModel.forecastError {
+                        ErrorView(error, retry: { await viewModel.refresh() })
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    } else if viewModel.savedLocations.isEmpty {
+                        EmptyStateView(
+                            "No Saved Locations",
+                            subtitle: "Search for a city or ZIP code and save it to track the weather",
+                            systemImage: "cloud.sun"
+                        )
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                    }
+                }
+                #if os(iOS)
+                .listStyle(.insetGrouped)
+                #else
+                .listStyle(.inset)
+                #endif
             }
         }
-        #if os(iOS)
-        .listStyle(.insetGrouped)
-        #else
-        .listStyle(.inset)
-        #endif
         .navigationTitle("Weather")
         #if os(iOS)
         .searchable(
@@ -61,32 +72,42 @@ struct WeatherView: View {
         #else
         .searchable(text: $viewModel.searchText, isPresented: $isSearchPresented, prompt: "Search locations…")
         #endif
-        .onChange(of: viewModel.searchText) { viewModel.onSearchTextChanged() }
-        .refreshable { await viewModel.refresh() }
+        .onChange(of: viewModel.searchText) {
+            if authManager.isAuthenticated {
+                viewModel.onSearchTextChanged()
+            }
+        }
+        .refreshable {
+            if authManager.isAuthenticated {
+                await viewModel.refresh()
+            }
+        }
         .toolbar {
-            ToolbarItem(placement: alertsToolbarPlacement) {
-                Button {
-                    showingAlerts = true
-                } label: {
-                    Label("Alerts", systemImage: activeAlerts.isEmpty ? "bell" : "bell.badge.fill")
-                        .foregroundStyle(activeAlerts.isEmpty ? Color.secondary : Color.red)
+            if authManager.isAuthenticated {
+                ToolbarItem(placement: alertsToolbarPlacement) {
+                    Button {
+                        showingAlerts = true
+                    } label: {
+                        Label("Alerts", systemImage: activeAlerts.isEmpty ? "bell" : "bell.badge.fill")
+                            .foregroundStyle(activeAlerts.isEmpty ? Color.secondary : Color.red)
+                    }
+                    .disabled(viewModel.forecast == nil)
+                    .accessibilityLabel("Alerts")
+                    .accessibilityIdentifier("weather_alerts_button")
                 }
-                .disabled(viewModel.forecast == nil)
-                .accessibilityLabel("Alerts")
-                .accessibilityIdentifier("weather_alerts_button")
-            }
-            if viewModel.isLoadingForecast && viewModel.forecast != nil {
-                ToolbarItem(placement: .secondaryAction) {
-                    ProgressView().controlSize(.small)
+                if viewModel.isLoadingForecast && viewModel.forecast != nil {
+                    ToolbarItem(placement: .secondaryAction) {
+                        ProgressView().controlSize(.small)
+                    }
                 }
-            }
-            ToolbarItem(placement: preferencesToolbarPlacement) {
-                NavigationLink {
-                    WeatherAlertPreferencesView()
-                } label: {
-                    Label("Alert Preferences", systemImage: "slider.horizontal.3")
+                ToolbarItem(placement: preferencesToolbarPlacement) {
+                    NavigationLink {
+                        WeatherAlertPreferencesView()
+                    } label: {
+                        Label("Alert Preferences", systemImage: "slider.horizontal.3")
+                    }
+                    .accessibilityIdentifier("weather_alert_preferences_button")
                 }
-                .accessibilityIdentifier("weather_alert_preferences_button")
             }
         }
         .sheet(isPresented: $showingAlerts) {

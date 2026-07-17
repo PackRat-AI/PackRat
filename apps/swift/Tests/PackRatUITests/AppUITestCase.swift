@@ -36,19 +36,26 @@ class AppUITestCase: XCTestCase {
         // bearer token accepted by the worker, avoiding brittle UI sign-in
         // while still exercising authenticated API routes.
         app.launchArguments.append("--reset-auth")
+        // Feature suites are not login tests. Let the known E2E credentials
+        // seed app auth after the form submit, while AuthTests keeps covering
+        // the visible auth flows with its own setup.
+        app.launchArguments.append("--allow-e2e-login-seed")
         app.launchArguments.append(contentsOf: additionalLaunchArguments)
         if let apiBaseURL = ProcessInfo.processInfo.environment["E2E_API_BASE_URL"], !apiBaseURL.isEmpty {
             app.launchEnvironment["E2E_API_BASE_URL"] = apiBaseURL
         }
+        injectE2EAuthEnvironment()
         let bundle = Bundle(for: AppUITestCase.self)
-        let seededAuthToken =
-            (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_SESSION_TOKEN") as? String)
-            ?? ProcessInfo.processInfo.environment["PACKRAT_E2E_SESSION_TOKEN"]
+        let seededAuthEmail =
+            ProcessInfo.processInfo.environment["PACKRAT_E2E_EMAIL"]
+            ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
             ?? ""
-        if !seededAuthToken.isEmpty {
+        if !seededAuthEmail.isEmpty {
             let runnerEnvironment = ProcessInfo.processInfo.environment
             app.launchArguments.append("--seed-e2e-auth")
-            app.launchEnvironment["PACKRAT_E2E_SESSION_TOKEN"] = seededAuthToken
+            app.launchEnvironment["PACKRAT_E2E_SESSION_TOKEN"] = runnerEnvironment["PACKRAT_E2E_SESSION_TOKEN"]
+                ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_SESSION_TOKEN") as? String)
+                ?? ""
             app.launchEnvironment["PACKRAT_E2E_EMAIL"] = runnerEnvironment["PACKRAT_E2E_EMAIL"]
                 ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
                 ?? ""
@@ -122,6 +129,23 @@ class AppUITestCase: XCTestCase {
         )
     }
 
+    private func injectE2EAuthEnvironment() {
+        let bundle = Bundle(for: AppUITestCase.self)
+        let runnerEnvironment = ProcessInfo.processInfo.environment
+        app.launchEnvironment["PACKRAT_E2E_EMAIL"] = runnerEnvironment["PACKRAT_E2E_EMAIL"]
+            ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
+            ?? ""
+        app.launchEnvironment["PACKRAT_E2E_PASSWORD"] = runnerEnvironment["PACKRAT_E2E_PASSWORD"]
+            ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_PASSWORD") as? String)
+            ?? ""
+        app.launchEnvironment["PACKRAT_E2E_SESSION_TOKEN"] = runnerEnvironment["PACKRAT_E2E_SESSION_TOKEN"]
+            ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_SESSION_TOKEN") as? String)
+            ?? ""
+        app.launchEnvironment["PACKRAT_E2E_USER_ID"] = runnerEnvironment["PACKRAT_E2E_USER_ID"]
+            ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_USER_ID") as? String)
+            ?? ""
+    }
+
     func submitLoginForm() {
         #if os(macOS)
         // macOS can show a password/autofill popover over the submit button
@@ -141,8 +165,8 @@ class AppUITestCase: XCTestCase {
         #if os(iOS)
         return app.tabBars.firstMatch.waitForExistence(timeout: timeout)
         #elseif os(macOS)
-        return app.otherElements["app_navigation"].waitForExistence(timeout: timeout)
-            || app.outlines["app_sidebar"].waitForExistence(timeout: 1)
+        return app.outlines["app_sidebar"].waitForExistence(timeout: timeout)
+            || app.otherElements["app_navigation"].waitForExistence(timeout: 1)
             || app.staticTexts["Home"].waitForExistence(timeout: 1)
             || app.outlines.firstMatch.waitForExistence(timeout: 1)
         #else
@@ -232,8 +256,8 @@ class AppUITestCase: XCTestCase {
         }
 
         let direct = app.tabBars.buttons[label]
-        if direct.exists {
-            direct.tap()
+        if direct.waitForExistence(timeout: 5) {
+            tapTabBarButton(direct)
             return
         }
 
@@ -272,11 +296,7 @@ class AppUITestCase: XCTestCase {
             }
         }
 
-        XCTAssertTrue(
-            direct.waitForExistence(timeout: 5),
-            "Primary tab '\(label)' not found in tab bar"
-        )
-        direct.tap()
+        XCTFail("Primary tab '\(label)' not found in tab bar")
     }
 
     func goToHomeAction(_ title: String) {
@@ -308,6 +328,19 @@ class AppUITestCase: XCTestCase {
         let tabBarTop = app.tabBars.firstMatch.exists ? app.tabBars.firstMatch.frame.minY : app.frame.maxY
         return element.frame.minY >= 0 && element.frame.maxY <= tabBarTop - 12
     }
+
+    private func tapTabBarButton(_ element: XCUIElement) {
+        let frame = element.frame
+        guard frame.width > 0, frame.height > 0 else {
+            element.tap()
+            return
+        }
+        let coordinate = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+            .withOffset(CGVector(dx: frame.midX, dy: frame.midY))
+        coordinate.tap()
+        Thread.sleep(forTimeInterval: 0.35)
+        coordinate.tap()
+    }
     #endif
 
     // MARK: - Wait helpers
@@ -324,6 +357,30 @@ class AppUITestCase: XCTestCase {
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
         let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
         XCTAssertEqual(result, .completed, "\(element.description) should have disappeared")
+    }
+
+    func waitForStaticText(containing text: String, timeout: TimeInterval = 10) -> Bool {
+        let predicate = NSPredicate { [weak self] _, _ in
+            guard let self else { return false }
+            return self.app.staticTexts.allElementsBoundByIndex.contains { element in
+                element.exists && element.label.localizedCaseInsensitiveContains(text)
+            }
+        }
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: nil)
+        return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
+    }
+
+    func waitForElement(identifier: String, containing text: String, timeout: TimeInterval = 10) -> Bool {
+        let predicate = NSPredicate { [weak self] _, _ in
+            guard let self else { return false }
+            return self.app.descendants(matching: .any).matching(identifier: identifier)
+                .allElementsBoundByIndex
+                .contains { element in
+                    element.exists && element.label.localizedCaseInsensitiveContains(text)
+                }
+        }
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: nil)
+        return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
     }
 
     /// Attaches a screenshot + accessibility tree dump on failure for triage.

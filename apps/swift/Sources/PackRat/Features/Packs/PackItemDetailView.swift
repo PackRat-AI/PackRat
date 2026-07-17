@@ -14,13 +14,12 @@ struct PackItemDetailView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    summarySection
                     metadataSection
                     if let notes = item.notes, !notes.isEmpty {
                         notesSection(notes)
                     }
-                    if isLoadingSimilar || !similarItems.isEmpty {
-                        similarSection
-                    }
+                    similarSection
                 }
                 .padding(.bottom, 24)
             }
@@ -48,6 +47,87 @@ struct PackItemDetailView: View {
     }
 
     // MARK: - Metadata
+
+    private var summarySection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 14) {
+                itemImage
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(item.name)
+                        .font(.title2.bold())
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let description = item.description, !description.isEmpty {
+                        Text(description)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Pack item")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+
+            VStack(spacing: 0) {
+                detailRow("Weight", value: item.displayWeight.isEmpty ? "Not set" : item.displayWeight, symbol: "scalemass")
+                detailRow("Quantity", value: "\(item.quantity)", symbol: "number")
+                detailRow("Category", value: item.category?.capitalized ?? "Uncategorized", symbol: "tag")
+                detailRow("Pack Weight", value: packWeightLabel, symbol: "backpack")
+                if item.catalogItemId != nil {
+                    detailRow("Catalog Match", value: "Linked", symbol: "link")
+                }
+                if item.isAIGenerated == true {
+                    detailRow("Source", value: "AI generated", symbol: "sparkles")
+                }
+            }
+            .background(.background, in: RoundedRectangle(cornerRadius: 12))
+        }
+        .padding(.horizontal)
+    }
+
+    private var itemImage: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 14)
+                .fill(.fill.secondary)
+                .frame(width: 72, height: 72)
+
+            if let image = item.image, let url = URL(string: image) {
+                LazyImage(url: url) { state in
+                    if let image = state.image {
+                        image.resizable().scaledToFill()
+                    } else {
+                        Image(systemName: categorySymbol)
+                            .font(.title2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(width: 72, height: 72)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            } else {
+                Image(systemName: categorySymbol)
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func detailRow(_ title: String, value: String, symbol: String) -> some View {
+        LabeledContent {
+            Text(value)
+                .foregroundStyle(.primary)
+        } label: {
+            Label(title, systemImage: symbol)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .overlay(alignment: .bottom) {
+            Divider().padding(.leading, 42)
+        }
+    }
 
     private var metadataSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -92,6 +172,28 @@ struct PackItemDetailView: View {
             }
         }
         .padding(.horizontal)
+    }
+
+    private var categorySymbol: String {
+        switch item.category?.lowercased() {
+        case "shelter": return "tent"
+        case "sleep": return "moon.zzz"
+        case "food", "kitchen": return "fork.knife"
+        case "clothing": return "tshirt"
+        case "water": return "drop"
+        case "safety": return "cross.case"
+        case "pack": return "backpack"
+        default: return "archivebox"
+        }
+    }
+
+    private var packWeightLabel: String {
+        switch (item.worn, item.consumable) {
+        case (true, true): return "Worn consumable"
+        case (true, false): return "Worn on body"
+        case (false, true): return "Consumable"
+        case (false, false): return "Base weight"
+        }
     }
 
     private func metaChip(value: String, label: String, symbol: String, color: Color) -> some View {
@@ -150,6 +252,14 @@ struct PackItemDetailView: View {
                 ProgressView()
                     .frame(maxWidth: .infinity)
                     .padding()
+            } else if similarItems.isEmpty {
+                ContentUnavailableView(
+                    "No Similar Gear",
+                    systemImage: "magnifyingglass",
+                    description: Text("Catalog suggestions will appear when matching gear is available.")
+                )
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {

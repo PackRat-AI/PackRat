@@ -195,9 +195,18 @@ struct AppNavigation: View {
         case .trips:
             TripsListView(viewModel: appState.tripsVM, selectedId: $state.selectedTripId)
         case .templates:
-            PackTemplatesListView(viewModel: appState.templatesVM, selectedId: $state.selectedTemplateId, packsVM: appState.packsVM)
+            PackTemplatesListView(
+                viewModel: appState.templatesVM,
+                selectedId: $state.selectedTemplateId,
+                packsVM: appState.packsVM,
+                showsGuestLimitInList: false
+            )
         case .trailConditions:
-            TrailConditionsListView(viewModel: appState.trailConditionsVM, selectedId: $state.selectedReportId)
+            TrailConditionsListView(
+                viewModel: appState.trailConditionsVM,
+                selectedId: $state.selectedReportId,
+                showsGuestLimitInList: false
+            )
         default:
             EmptyView()
         }

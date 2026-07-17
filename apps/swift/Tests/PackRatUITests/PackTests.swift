@@ -32,21 +32,19 @@ final class PackTests: AppUITestCase {
     }
 
     func testCreatePackWithCategory() throws {
-        // The createPack helper already picks Hiking as the category.
-        let packName = uniqueName("E2E Hiking Pack")
+        let packName = uniqueName("E2E Backpacking Pack")
         createdPackName = packName
 
-        createPack(named: packName)
+        createPack(named: packName, category: "Backpacking")
 
         XCTAssertTrue(
             app.staticTexts[packName].waitForExistence(timeout: 5),
             "Pack with category must appear in list"
         )
 
-        // Hiking badge should be visible on the row
         XCTAssertTrue(
-            app.staticTexts["Hiking"].firstMatch.exists,
-            "Hiking category label must appear on the pack row"
+            app.staticTexts["Backpacking"].firstMatch.waitForExistence(timeout: 5),
+            "Selected Backpacking category label must appear on the pack row"
         )
     }
 
@@ -185,17 +183,39 @@ final class PackTests: AppUITestCase {
 
     // MARK: - Helpers
 
-    private func createPack(named name: String) {
+    private func createPack(named name: String, category: String? = nil) {
         goToTab("Packs")
-        waitFor(app.buttons["New Pack"]).tap()
+        waitFor(app.buttons["packs_new_pack_button"].firstMatch).tap()
 
         let nameField = app.textFields["pack_name"]
         waitFor(nameField)
         nameField.tap()
         nameField.typeText(name)
 
+        if let category {
+            selectPackCategory(category)
+        }
+
         app.buttons["Create"].tap()
         waitFor(app.staticTexts[name], timeout: 15)
+    }
+
+    private func selectPackCategory(_ category: String) {
+        let picker = app.buttons["pack_category"].firstMatch
+        let fallbackPicker = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Category'")).firstMatch
+        let targetPicker = picker.waitForExistence(timeout: 2) ? picker : fallbackPicker
+        waitFor(targetPicker, timeout: 5, message: "Pack category picker must be visible")
+        targetPicker.tap()
+
+        let option = app.buttons[category].firstMatch
+        let optionText = app.staticTexts[category].firstMatch
+        if option.waitForExistence(timeout: 5) {
+            option.tap()
+        } else {
+            waitFor(optionText, timeout: 5, message: "Pack category option '\(category)' must be visible").tap()
+        }
+
+        app.navigationBars["Category"].buttons.element(boundBy: 0).tapIfExists()
     }
 
     private func openPack(named name: String) {

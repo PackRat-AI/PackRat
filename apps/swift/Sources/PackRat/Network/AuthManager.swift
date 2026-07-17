@@ -331,9 +331,10 @@ final class AuthManager {
             updatedAt: nil
         )
 
-        KeychainService.shared.saveSessionToken(
-            environment["PACKRAT_E2E_SESSION_TOKEN"] ?? "packrat-e2e-session"
-        )
+        let sessionToken = environment["PACKRAT_E2E_SESSION_TOKEN"]
+            .flatMap { $0.isEmpty ? nil : $0 }
+            ?? "packrat-e2e-session"
+        KeychainService.shared.saveSessionToken(sessionToken)
         persistUser(user)
         isGuest = false
         currentUser = user

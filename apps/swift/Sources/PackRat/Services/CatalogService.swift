@@ -20,7 +20,10 @@ final class CatalogService: Sendable {
     }
 
     func semanticSearch(query: String, limit: Int = 10) async throws -> [CatalogItem] {
-        let endpoint = Endpoint(.get, "/api/catalog/search", query: ["q": query, "limit": "\(limit)"])
+        let endpoint = Endpoint(.get, "/api/catalog/vector-search", query: ["q": query, "limit": "\(limit)"])
+        if let wrapped = try? await api.send(endpoint, as: CatalogSearchResponse.self) {
+            return wrapped.items
+        }
         return try await api.send(endpoint)
     }
 }

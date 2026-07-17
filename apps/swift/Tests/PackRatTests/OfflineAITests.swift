@@ -1,4 +1,5 @@
 import Foundation
+import Defaults
 import Testing
 @testable import PackRat
 
@@ -256,5 +257,21 @@ struct OfflineAIViewModelTests {
         #expect(vm.prompt.isEmpty)
         #expect(vm.response.isEmpty)
         #expect(vm.state == .idle)
+    }
+}
+
+// MARK: - LocalLLMProviderFactory
+
+@Suite("LocalLLMProviderFactory")
+@MainActor
+struct LocalLLMProviderFactoryTests {
+    @Test("uses mock provider even when stale MLX debug preference is enabled")
+    func staleMLXPreferenceUsesMockProvider() {
+        Defaults[.useRealLocalLLM] = true
+        defer { Defaults[.useRealLocalLLM] = false }
+
+        let provider = LocalLLMProviderFactory.makeProvider()
+
+        #expect(provider is MockLocalLLMProvider)
     }
 }

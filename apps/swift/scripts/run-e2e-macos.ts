@@ -34,6 +34,7 @@ import {
   oneOrMore,
 } from 'magic-regexp';
 import { ArgsError } from './lib/args';
+import { ensureLocalE2EAPI } from './lib/e2e-api';
 import { normalizeMacOSTestSelectors, parseMacOSArgs } from './lib/macos-args';
 import { formatSummaryLine, readSummary, XcResultError } from './lib/xcresult';
 
@@ -87,14 +88,18 @@ if (!E2E_EMAIL || !E2E_PASSWORD) {
   process.exit(1);
 }
 const PACKRAT_ENV = process.env.PACKRAT_ENV || 'local';
-const localE2ESessionToken = deriveLocalE2ESessionToken();
-const uiTestEmail = process.env.E2E_TEST_EMAIL ?? E2E_EMAIL;
-const uiTestPassword = process.env.E2E_TEST_PASSWORD ?? E2E_PASSWORD;
 
 if (!existsSync(SCHEME_PATH)) {
   console.error(`❌ Scheme not found at ${SCHEME_PATH} — run 'bun swift' first`);
   process.exit(1);
 }
+
+const localAPI = await ensureLocalE2EAPI({ packratEnv: PACKRAT_ENV, env: process.env });
+loadEnvFile(resolve(REPO_ROOT, 'packages/api/.dev.vars.e2e'), true);
+
+const localE2ESessionToken = deriveLocalE2ESessionToken();
+const uiTestEmail = process.env.E2E_TEST_EMAIL ?? E2E_EMAIL;
+const uiTestPassword = process.env.E2E_TEST_PASSWORD ?? E2E_PASSWORD;
 
 function assertAutomationModeAvailable(): void {
   const result = spawnSync('automationmodetool', ['help'], {
@@ -128,12 +133,14 @@ function escapeXml(s: string): string {
 }
 
 function deriveLocalE2ESessionToken(): string | undefined {
-  const dbUrl = process.env.NEON_DATABASE_URL ?? '';
-  const secret = process.env.BETTER_AUTH_SECRET;
+  if (PACKRAT_ENV !== 'local' && PACKRAT_ENV !== 'dev-local') return undefined;
+  const secret =
+    process.env.PACKRAT_AUTH_SECRET ??
+    process.env.BETTER_AUTH_SECRET ??
+    'e2e-better-auth-secret-at-least-32-chars';
   const email = process.env.E2E_TEST_EMAIL?.toLowerCase();
   const userId = process.env.E2E_TEST_USER_ID;
-  if (!(dbUrl.includes('127.0.0.1') || dbUrl.includes('localhost'))) return undefined;
-  if (!secret || !email || !userId) return undefined;
+  if (!email || !userId) return undefined;
   const digest = createHash('sha256').update([secret, email, userId].join(':')).digest('hex');
   return `e2e-local.${digest}`;
 }
@@ -284,41 +291,43 @@ function redactSecrets(output: string): string {
   return redacted;
 }
 
-const resultStatus = await new Promise<number | null>((resolve) => {
-  const child = spawn('xcodebuild', args, {
-    cwd: SWIFT_DIR,
-    env: process.env,
-  });
-
-  child.stdout.on('data', (chunk) => {
-    process.stdout.write(redactSecrets(chunk.toString()));
-  });
-  child.stderr.on('data', (chunk) => {
-    process.stderr.write(redactSecrets(chunk.toString()));
-  });
-  child.on('close', (code) => resolve(code));
-});
-
-const result = {
-  status: resultStatus,
-};
-
+let exitStatus = 1;
 try {
-  const summary = readSummary(resultBundle);
-  console.log('');
-  console.log(formatSummaryLine(summary));
-  if (summary.failingTests.length > 0) {
-    console.log('  Failing tests:');
-    for (const t of summary.failingTests) {
-      console.log(`    • ${t.identifier}`);
+  const resultStatus = await new Promise<number | null>((resolve) => {
+    const child = spawn('xcodebuild', args, {
+      cwd: SWIFT_DIR,
+      env: process.env,
+    });
+
+    child.stdout.on('data', (chunk) => {
+      process.stdout.write(redactSecrets(chunk.toString()));
+    });
+    child.stderr.on('data', (chunk) => {
+      process.stderr.write(redactSecrets(chunk.toString()));
+    });
+    child.on('close', (code) => resolve(code));
+  });
+  exitStatus = resultStatus ?? 1;
+
+  try {
+    const summary = readSummary(resultBundle);
+    console.log('');
+    console.log(formatSummaryLine(summary));
+    if (summary.failingTests.length > 0) {
+      console.log('  Failing tests:');
+      for (const t of summary.failingTests) {
+        console.log(`    • ${t.identifier}`);
+      }
+    }
+  } catch (err) {
+    if (err instanceof XcResultError) {
+      console.error(`⚠️  ${err.message}`);
+    } else {
+      throw err;
     }
   }
-} catch (err) {
-  if (err instanceof XcResultError) {
-    console.error(`⚠️  ${err.message}`);
-  } else {
-    throw err;
-  }
+} finally {
+  await localAPI.stop();
 }
 
-process.exit(result.status ?? 1);
+process.exit(exitStatus);

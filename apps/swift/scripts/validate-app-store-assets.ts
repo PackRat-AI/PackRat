@@ -2,9 +2,12 @@ import { resolve } from 'node:path';
 import { validateAppIconSet } from './lib/app-store-assets';
 
 const repoRoot = resolve(import.meta.dir, '../../..');
-const iconSetDir = resolve(repoRoot, 'apps/swift/Resources/Assets.xcassets/AppIcon.appiconset');
+const iconSetDirs = [
+  resolve(repoRoot, 'apps/swift/Resources/Assets.xcassets/AppIcon.appiconset'),
+  resolve(repoRoot, 'apps/swift/Resources/WatchAssets.xcassets/WatchAppIcon.appiconset'),
+];
 
-const issues = validateAppIconSet(iconSetDir);
+const issues = iconSetDirs.flatMap((iconSetDir) => validateAppIconSet(iconSetDir));
 
 if (issues.length > 0) {
   console.error('App Store asset validation failed:');
