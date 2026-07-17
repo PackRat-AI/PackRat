@@ -28,7 +28,7 @@
  *   bun apps/swift/scripts/upload-testflight.ts --staging  # dev API
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -119,7 +119,15 @@ run('xcodebuild', [
 // 3. Upload to TestFlight via altool (app-specific-password auth).
 // `--asc-provider` (team short name) is required when the Apple ID belongs to
 // more than one team, so altool knows which one to deliver to.
-const ipa = join(exportDir, `${SCHEME}.ipa`);
+//
+// -exportArchive names the .ipa after the app's product name (PackRat-iOS),
+// NOT the scheme — so discover it by globbing rather than assuming a name.
+const ipas = readdirSync(exportDir).filter((f) => f.endsWith('.ipa'));
+if (ipas.length !== 1) {
+  console.error(`Expected exactly one .ipa in ${exportDir}, found: ${ipas.join(', ') || '(none)'}`);
+  process.exit(1);
+}
+const ipa = join(exportDir, ipas[0]);
 run('xcrun', [
   'altool',
   '--upload-app',
