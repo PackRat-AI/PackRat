@@ -18,8 +18,14 @@
  * Optional env:
  *   BUILD_NUMBER             CFBundleVersion for this upload (default: timestamp)
  *
+ * Flags:
+ *   --staging                Archive the Staging config (PACKRAT_ENV=dev) so the
+ *                            TestFlight build targets the deployed DEV API instead
+ *                            of production. Default (no flag) = Release/production.
+ *
  * Usage:
- *   bun apps/swift/scripts/upload-testflight.ts
+ *   bun apps/swift/scripts/upload-testflight.ts            # production
+ *   bun apps/swift/scripts/upload-testflight.ts --staging  # dev API
  */
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
@@ -28,8 +34,13 @@ import { join } from 'node:path';
 
 const SWIFT_DIR = new URL('..', import.meta.url).pathname;
 const PROJECT = join(SWIFT_DIR, 'PackRat.xcodeproj');
-const SCHEME = 'PackRat-iOS';
 const BUNDLE_ID = 'com.andrewbierman.packrat.swift';
+
+// --staging archives the Staging config (PACKRAT_ENV=dev) via the dedicated
+// scheme; the default archives PackRat-iOS (Release config → production).
+const STAGING = process.argv.includes('--staging');
+const SCHEME = STAGING ? 'PackRat-iOS-Staging' : 'PackRat-iOS';
+const CONFIGURATION = STAGING ? 'Staging' : 'Release';
 
 function req(name: string): string {
   const v = process.env[name];
@@ -61,6 +72,8 @@ run('xcodebuild', [
   PROJECT,
   '-scheme',
   SCHEME,
+  '-configuration',
+  CONFIGURATION,
   '-destination',
   'generic/platform=iOS',
   '-archivePath',
@@ -106,7 +119,7 @@ run('xcodebuild', [
 // 3. Upload to TestFlight via altool (app-specific-password auth).
 // `--asc-provider` (team short name) is required when the Apple ID belongs to
 // more than one team, so altool knows which one to deliver to.
-const ipa = join(exportDir, 'PackRat-iOS.ipa');
+const ipa = join(exportDir, `${SCHEME}.ipa`);
 run('xcrun', [
   'altool',
   '--upload-app',
@@ -122,5 +135,8 @@ run('xcrun', [
   teamId,
 ]);
 
-console.log(`\n✓ Uploaded build ${buildNumber} to TestFlight (${BUNDLE_ID}).`);
+console.log(
+  `\n✓ Uploaded build ${buildNumber} to TestFlight (${BUNDLE_ID}, ${CONFIGURATION}` +
+    `${STAGING ? ' → dev API' : ' → production'}).`,
+);
 console.log('It will appear in App Store Connect after processing (usually 5-15 min).');

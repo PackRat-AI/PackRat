@@ -13,10 +13,12 @@ options:
 
 configs:
   Debug: debug
+  Staging: release
   Release: release
 
 configFiles:
   Debug: xcconfig/Config-Debug.xcconfig
+  Staging: xcconfig/Config-Staging.xcconfig
   Release: xcconfig/Config-Release.xcconfig
 
 packages:
@@ -335,6 +337,16 @@ schemes:
       config: Debug
     archive:
       config: Release
+  # Ad-hoc QA distribution scheme — archives the Staging config (→ dev API).
+  # Built by .github/workflows/swift-staging-adhoc.yml and exported ad-hoc.
+  PackRat-iOS-Staging:
+    build:
+      targets:
+        PackRat-iOS: all
+    run:
+      config: Staging
+    archive:
+      config: Staging
   PackRat-macOS:
     build:
       targets:
