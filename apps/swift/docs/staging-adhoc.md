@@ -34,53 +34,96 @@ provisioning profile can install the build.
 > **Why GitHub Actions and not EAS?** EAS Build assumes a React Native/Expo
 > project (`package.json` + `ios/Podfile`); `apps/swift` is a native
 > xcodegen-generated `.xcodeproj` with SPM, so EAS can't build it without a
-> fragile custom-build pipeline. We instead build on GitHub Actions and **reuse
-> the one EAS asset that transfers**: the account-wide distribution certificate
-> (see below).
+> fragile custom-build pipeline. We build on GitHub Actions instead and manage
+> the signing assets ourselves (below).
 
 ## Required GitHub secrets
 
 | Secret | What it is |
 |---|---|
-| `IOS_DIST_CERT_P12` | base64 of an Apple **Distribution** certificate exported as `.p12` |
+| `IOS_DIST_CERT_P12` | base64 of an Apple **Distribution** certificate + private key exported as `.p12` |
 | `IOS_DIST_CERT_PASSWORD` | the password you set when exporting the `.p12` |
 | `IOS_ADHOC_PROVISIONING_PROFILE` | base64 of an **ad-hoc** `.mobileprovision` for `com.andrewbierman.packrat.swift`, listing QA device UDIDs |
 
 Team ID `666HGMV2LU` and bundle id `com.andrewbierman.packrat.swift` are hard-coded in
 the workflow's export options — update them there if they change.
 
-> **Reuse the cert EAS already manages.** A distribution certificate is
-> account-wide (not bundle-id-specific), so the same cert EAS uses for the Expo
-> builds signs the Swift app too. Only the **ad-hoc profile** must be new,
-> because a provisioning profile *is* bundle-id-specific and EAS's profiles are
-> issued for the Expo bundle ids (`com.andrewbierman.packrat[.preview]`), not
-> `com.andrewbierman.packrat.swift`. So the only net-new Apple asset here is the
-> one ad-hoc profile below.
+Both the cert and the profile are created **fresh** here (an admin on the Apple
+team is required). Two ways to make them — pick one.
 
-### Generating the secrets
+### Option A — one command with fastlane (recommended)
 
-**Distribution certificate — reuse EAS's.** Export it from the credentials EAS
-already manages instead of minting a new one (Apple caps distribution certs per
-account, so don't create a duplicate):
+`fastlane` creates the distribution cert **and** the ad-hoc profile from the CLI;
+you just approve the Apple 2FA prompt on your device. Requires an admin Apple ID.
 
 ```sh
-cd apps/expo
-eas credentials -p ios            # → Distribution Certificate → export .p12
-base64 -i dist.p12 | pbcopy       # → IOS_DIST_CERT_P12
-                                  #   IOS_DIST_CERT_PASSWORD = the export password
+brew install fastlane   # or: gem install fastlane
+
+# 1. Register QA devices (name + UDID). Get a UDID via Finder → device → click
+#    the info line → right-click → Copy UDID, or Xcode → Devices and Simulators.
+fastlane run register_devices \
+  devices:'{"Ibrahim iPhone":"00008120-000XXXXXXXXXXX"}' \
+  team_id:666HGMV2LU
+
+# 2. Create/download the Apple Distribution certificate → writes a .cert + .p12.
+fastlane run cert \
+  development:false \
+  team_id:666HGMV2LU \
+  output_path:./signing
+
+# 3. Create the ad-hoc profile for the Swift bundle id, including all registered
+#    devices → writes a .mobileprovision.
+fastlane run sigh \
+  adhoc:true \
+  app_identifier:com.andrewbierman.packrat.swift \
+  team_id:666HGMV2LU \
+  output_path:./signing
 ```
 
-If you'd rather not export from EAS, Apple Developer → Certificates → an existing
-**Apple Distribution** cert works too — but reuse the private key you already
-have; downloading the `.cer` alone can't be exported as a `.p12` without it.
-
-**Ad-hoc provisioning profile — this is the one new asset** (Apple Developer →
-Profiles → new **Ad Hoc** profile for the `com.andrewbierman.packrat.swift` App
-ID, select that same distribution cert, check every QA device):
+Then encode the two files into the secrets (the `.p12` password is whatever you
+gave `cert`; if it didn't prompt, it's empty — set `IOS_DIST_CERT_PASSWORD=""`):
 
 ```sh
-base64 -i PackRat_AdHoc.mobileprovision | pbcopy   # → IOS_ADHOC_PROVISIONING_PROFILE
+base64 -i ./signing/*.p12            | pbcopy   # → IOS_DIST_CERT_P12
+base64 -i ./signing/*.mobileprovision | pbcopy  # → IOS_ADHOC_PROVISIONING_PROFILE
 ```
+
+> `./signing` holds private keys — it's outside the repo working tree here, but
+> delete it once the secrets are set: `rm -rf ./signing`.
+
+### Option B — Apple Developer portal (manual)
+
+Portal home: **developer.apple.com/account → Certificates, Identifiers &
+Profiles**. Left menu has **Certificates · Identifiers · Devices · Profiles**.
+
+1. **Devices** → **＋** → register each QA device (name + UDID).
+2. **Identifiers** → confirm an App ID for `com.andrewbierman.packrat.swift`
+   exists; if not, **＋** → App IDs → App → Explicit bundle id → Register.
+3. **Certificates** → **＋** → **Apple Distribution** → follow the CSR steps
+   (Keychain Access → Certificate Assistant → Request a Certificate from a CA),
+   upload the CSR, download the `.cer`, double-click to add it to your Keychain.
+   In **Keychain Access**, find the cert, expand it, select **both** the cert and
+   its private key → right-click → **Export 2 items** → save as `.p12` (set a
+   password = `IOS_DIST_CERT_PASSWORD`).
+4. **Profiles** → **＋** → **Ad Hoc** → App ID `com.andrewbierman.packrat.swift`
+   → select the distribution cert from step 3 → check every registered device →
+   name it `PackRat Swift Ad Hoc` → **Generate** → **Download**.
+
+Encode both:
+
+```sh
+base64 -i dist.p12                    | pbcopy   # → IOS_DIST_CERT_P12
+base64 -i PackRat_Swift_Ad_Hoc.mobileprovision | pbcopy  # → IOS_ADHOC_PROVISIONING_PROFILE
+```
+
+### Add the secrets to GitHub
+
+Repo → **Settings → Secrets and variables → Actions → New repository secret**.
+Add `IOS_DIST_CERT_P12`, `IOS_DIST_CERT_PASSWORD`, and
+`IOS_ADHOC_PROVISIONING_PROFILE`.
+
+> The profile is bound to the cert you selected: the workflow must sign with the
+> same cert whose `.p12` is in `IOS_DIST_CERT_P12`, or the export fails.
 
 ### Adding a new QA device
 
