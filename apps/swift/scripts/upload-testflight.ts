@@ -13,7 +13,7 @@
  * Required env (put in apps/swift/.env.local, gitignored):
  *   APPLE_ID                 your Apple ID email
  *   APPLE_APP_PASSWORD       app-specific password (xxxx-xxxx-xxxx-xxxx)
- *   APPLE_TEAM_ID            the team that owns the record (e.g. 7WV9JYCW55)
+ *   APPLE_TEAM_ID            the team that owns the record (e.g. 666HGMV2LU)
  *
  * Optional env:
  *   BUILD_NUMBER             CFBundleVersion for this upload (default: timestamp)
