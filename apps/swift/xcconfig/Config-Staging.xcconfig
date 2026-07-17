@@ -1,0 +1,17 @@
+// Staging build settings — ad-hoc QA distribution (GitHub pre-release .ipa).
+//
+// This is the middle tier between Debug (local dev) and Release (App Store),
+// analogous to Expo's `preview` profile: a signed build shipped to QA that
+// targets the deployed DEV API, not production.
+//
+// Built by .github/workflows/swift-staging-adhoc.yml via:
+//   xcodebuild archive -configuration Staging
+//   xcodebuild -exportArchive   (method: ad-hoc)
+//
+// xcconfig files treat // as a comment, so full URLs can't be stored here.
+// PACKRAT_ENV selects an environment name; URLs live in APIClient.swift.
+PACKRAT_ENV = dev
+
+// SENTRY_DSN flows xcconfig → Info.plist → runtime. Provided by CI from a
+// secret at archive time; empty disables Sentry (SDK silently no-ops).
+SENTRY_DSN =
