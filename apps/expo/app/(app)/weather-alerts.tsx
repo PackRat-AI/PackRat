@@ -1,7 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
-import { EarlyAccessGate } from 'expo-app/features/purchases';
 import { useWeatherAlerts } from 'expo-app/features/weather/hooks/useWeatherAlert';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -130,14 +129,6 @@ function WeatherAlertCard({ alert }: { alert: WeatherAlert }) {
 }
 
 export default function WeatherAlertsScreen() {
-  return (
-    <EarlyAccessGate featureKey="weather-alerts">
-      <WeatherAlertsScreenContent />
-    </EarlyAccessGate>
-  );
-}
-
-function WeatherAlertsScreenContent() {
   const { t } = useTranslation();
   const router = useRouter();
   const { alerts, loading, error, activeLocation } = useWeatherAlerts();

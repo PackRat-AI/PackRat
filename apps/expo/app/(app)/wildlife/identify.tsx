@@ -1,4 +1,3 @@
-import { EarlyAccessGate } from 'expo-app/features/purchases';
 import { IdentificationScreen } from 'expo-app/features/wildlife/screens/IdentificationScreen';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { Redirect } from 'expo-router';
@@ -8,9 +7,5 @@ export default function IdentifyRoute() {
   if (!enableWildlifeIdentification) {
     return <Redirect href="/" />;
   }
-  return (
-    <EarlyAccessGate featureKey="wildlife">
-      <IdentificationScreen />
-    </EarlyAccessGate>
-  );
+  return <IdentificationScreen />;
 }

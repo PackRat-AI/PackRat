@@ -1,6 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
-import { EarlyAccessGate } from 'expo-app/features/purchases';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack } from 'expo-router';
@@ -175,14 +174,6 @@ function SharedPackCard({ pack }: { pack: (typeof SHARED_PACKS)[0] }) {
 }
 
 export default function SharedPacksScreen() {
-  return (
-    <EarlyAccessGate featureKey="shared-packs">
-      <SharedPacksScreenContent />
-    </EarlyAccessGate>
-  );
-}
-
-function SharedPacksScreenContent() {
   const { t } = useTranslation();
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>

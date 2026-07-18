@@ -11,7 +11,6 @@ import { isAuthed } from 'expo-app/features/auth/store';
 import { ActivityPicker } from 'expo-app/features/packs/components/ActivityPicker';
 import { GapAnalysisModal } from 'expo-app/features/packs/components/GapAnalysisModal';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
-import { usePresentPaywall } from 'expo-app/features/purchases';
 import { LocationPicker } from 'expo-app/features/weather/components';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { cn } from 'expo-app/lib/cn';
@@ -24,7 +23,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import { useMemo, useState } from 'react';
 import { Image, Platform, ScrollView, Share, TouchableOpacity, View } from 'react-native';
-import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
@@ -79,8 +77,6 @@ export function PackDetailScreen() {
   // safe-cast: pack is guaranteed non-undefined by the early-return guard below;
   // TypeScript cannot track narrowing across the closure boundary.
   const pack = (isOwnedByUser ? packFromStore : packFromApi) as Pack;
-
-  const { presentPaywallIfNeeded } = usePresentPaywall();
 
   const { colors } = useColorScheme();
   const insets = useSafeAreaInsets();
@@ -195,11 +191,6 @@ export function PackDetailScreen() {
           showSignInCopy: 'true',
         },
       });
-    }
-
-    const paywallResult = await presentPaywallIfNeeded();
-    if (paywallResult === PAYWALL_RESULT.CANCELLED || paywallResult === PAYWALL_RESULT.ERROR) {
-      return;
     }
 
     // Start with activity selection

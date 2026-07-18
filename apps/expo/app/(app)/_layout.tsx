@@ -186,10 +186,9 @@ export default function AppLayout() {
           name="weather-alerts"
           options={{
             ...getAppBarOptions(),
-            // Navigator-level header default so the EarlyAccessGate's loading /
-            // offline-fallback states still show the proper large-title header.
-            // The screen's own <Stack.Screen> overrides this with the translated
-            // title once the feature content mounts.
+            // Navigator-level header default so early loading states still show
+            // the proper large-title header. The screen's own <Stack.Screen>
+            // overrides this with the translated title once content mounts.
             title: 'Weather Alerts',
             presentation: 'card',
             animation: 'default',
@@ -228,10 +227,9 @@ export default function AppLayout() {
           name="shared-packs"
           options={{
             ...getAppBarOptions(),
-            // Navigator-level header default so the EarlyAccessGate's loading /
-            // offline-fallback states still show the proper large-title header.
-            // The screen's own <Stack.Screen> overrides this with the translated
-            // title once the feature content mounts.
+            // Navigator-level header default so early loading states still show
+            // the proper large-title header. The screen's own <Stack.Screen>
+            // overrides this with the translated title once content mounts.
             title: 'Shared Packs',
             presentation: 'modal',
             animation: 'slide_from_bottom',
