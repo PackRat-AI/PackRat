@@ -9,12 +9,18 @@ struct AuthGateView: View {
 
     var body: some View {
         Group {
-            if authManager.canUseApp {
+            if authManager.isRestoringSession {
+                ProgressView()
+                    .controlSize(.large)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.secondary.opacity(0.08))
+            } else if authManager.canUseApp {
                 AppNavigation()
             } else {
                 authContent
             }
         }
+        .animation(.spring(duration: 0.3), value: authManager.isRestoringSession)
         .animation(.spring(duration: 0.3), value: authManager.canUseApp)
         .animation(.spring(duration: 0.3), value: route)
         .onOpenURL { url in

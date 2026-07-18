@@ -10,6 +10,7 @@ import UIKit
 final class AuthManager {
     var currentUser: User?
     var isGuest = false
+    var isRestoringSession = false
     var isAuthenticated: Bool { currentUser != nil }
     var canUseApp: Bool { isAuthenticated || isGuest }
 
@@ -31,6 +32,7 @@ final class AuthManager {
             return
         }
         loadStoredUser()
+        restoreStoredSessionIfNeeded()
     }
 
     // MARK: - Auth Actions
@@ -314,6 +316,32 @@ final class AuthManager {
         currentUser = user
         isGuest = false
         SentryConfig.setUser(id: user.id, email: user.email)
+    }
+
+    private func restoreStoredSessionIfNeeded() {
+        guard currentUser == nil,
+              !isGuest,
+              KeychainService.shared.sessionToken != nil
+        else {
+            return
+        }
+
+        isRestoringSession = true
+        Task {
+            do {
+                try await refreshProfile()
+            } catch PackRatError.unauthorized {
+                await MainActor.run {
+                    signOut()
+                }
+            } catch {
+                // Preserve the token for transient network failures. The app
+                // can still recover on the next launch or explicit refresh.
+            }
+            await MainActor.run {
+                isRestoringSession = false
+            }
+        }
     }
 
     private func seedE2EAuthenticatedUser() {
