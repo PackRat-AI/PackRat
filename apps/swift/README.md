@@ -94,6 +94,8 @@ Upload commands require an explicit lane so we do not accidentally test the
 wrong App Store Connect record:
 
 ```sh
+APP_STORE_CURRENT_BUILD_NUMBER=2026071801 BUILD_NUMBER=2026071802 \
+  bun swift:testflight:preflight --replacement --production
 bun apps/swift/scripts/upload-testflight.ts --replacement --dry-run
 bun apps/swift/scripts/upload-testflight.ts --replacement
 bun apps/swift/scripts/upload-testflight.ts --side-by-side --staging
@@ -105,6 +107,12 @@ script archives Release (`PACKRAT_ENV=production`).
 Use `--dry-run` before a real upload to verify the lane, bundle id, display
 name, build configuration, API environment, and Xcode archive overrides without
 requiring Apple credentials or running Xcode.
+
+Use `swift:testflight:preflight` before the replacement upload when validating a
+seamless update. It fails unless the resolved archive is the existing Expo
+listing (`com.andrewbierman.packrat`, `PackRat`), Release/production, and, when
+`APP_STORE_CURRENT_BUILD_NUMBER` is supplied, has a strictly greater build
+number than the latest App Store Connect build.
 
 ## Data Isolation
 

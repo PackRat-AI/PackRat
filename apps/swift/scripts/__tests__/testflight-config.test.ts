@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   parseTestFlightUploadConfig,
   TestFlightConfigError,
+  verifyTestFlightReplacementReadiness,
   xcodeArchiveOverrides,
 } from '../lib/testflight-config';
 
@@ -111,5 +112,67 @@ describe('parseTestFlightUploadConfig', () => {
     expect(() =>
       parseTestFlightUploadConfig({ argv: ['--replacement', '--staging', '--production'] }),
     ).toThrow('Use either --staging or --production, not both.');
+  });
+
+  it('verifies replacement settings for seamless TestFlight update', () => {
+    const config = parseTestFlightUploadConfig({
+      argv: ['--replacement', '--production'],
+      env: { BUILD_NUMBER: '2026071802' },
+    });
+
+    expect(
+      verifyTestFlightReplacementReadiness({
+        config,
+        currentAppStoreBuildNumber: '2026071801',
+      }),
+    ).toEqual({ ok: true, errors: [], warnings: [] });
+  });
+
+  it('rejects side-by-side settings for replacement readiness', () => {
+    const config = parseTestFlightUploadConfig({
+      argv: ['--side-by-side', '--production'],
+      env: { BUILD_NUMBER: '2026071802' },
+    });
+
+    const readiness = verifyTestFlightReplacementReadiness({
+      config,
+      currentAppStoreBuildNumber: '2026071801',
+    });
+
+    expect(readiness.ok).toBe(false);
+    expect(readiness.errors).toContain(
+      'Use --replacement. Side-by-side Swift beta builds cannot update the Expo app.',
+    );
+  });
+
+  it('rejects stale replacement build numbers', () => {
+    const config = parseTestFlightUploadConfig({
+      argv: ['--replacement', '--production'],
+      env: { BUILD_NUMBER: '2026071801' },
+    });
+
+    const readiness = verifyTestFlightReplacementReadiness({
+      config,
+      currentAppStoreBuildNumber: '2026071801',
+    });
+
+    expect(readiness.ok).toBe(false);
+    expect(readiness.errors).toContain(
+      'Build number 2026071801 must be greater than current App Store/TestFlight build 2026071801.',
+    );
+  });
+
+  it('warns when current App Store build is not supplied', () => {
+    const config = parseTestFlightUploadConfig({
+      argv: ['--replacement', '--production'],
+      env: { BUILD_NUMBER: '2026071802' },
+    });
+
+    const readiness = verifyTestFlightReplacementReadiness({ config });
+
+    expect(readiness.ok).toBe(true);
+    expect(readiness.warnings).toContain(
+      'APP_STORE_CURRENT_BUILD_NUMBER was not provided; verify the replacement build number is greater than the latest App Store Connect build before upload.',
+    );
   });
 });

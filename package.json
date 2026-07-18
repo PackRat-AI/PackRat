@@ -71,6 +71,7 @@
     "swift:models": "bun run apps/swift/scripts/generate-swift-models.ts",
     "swift:quicktype": "bun run apps/swift/scripts/generate-quicktype-models.ts",
     "swift:screenshots": "bun run apps/swift/scripts/capture-visual-screenshots.ts",
+    "swift:testflight:preflight": "bun run apps/swift/scripts/verify-testflight-replacement.ts",
     "swift:validate-assets": "bun run apps/swift/scripts/validate-app-store-assets.ts",
     "swift:watch-sync-smoke": "bun run apps/swift/scripts/watch-sync-smoke.ts",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
