@@ -201,6 +201,71 @@ describe('pack widget app contract', () => {
     ).toBeNull();
   });
 
+  it('converts supported units and calculates totals when the API omits them', () => {
+    const snapshot = normalizePackSnapshot({
+      id: 'unit-pack',
+      name: 'Unit pack',
+      items: [
+        {
+          id: 'kg',
+          name: 'Kilogram item',
+          category: null,
+          weight: 1,
+          weightUnit: 'kg',
+          quantity: 1,
+          consumable: false,
+          worn: false,
+        },
+        {
+          id: 'lb',
+          name: 'Pound item',
+          category: 'Clothing',
+          weight: 1,
+          weightUnit: 'lb',
+          quantity: 1,
+          consumable: false,
+          worn: true,
+        },
+        {
+          id: 'lbs',
+          name: 'Pounds item',
+          category: 'Clothing',
+          weight: 1,
+          weightUnit: 'lbs',
+          quantity: 1,
+          consumable: true,
+          worn: false,
+        },
+      ],
+    });
+    expect(snapshot?.items.map((item) => item.weight)).toEqual([1000, 453.59, 453.59]);
+    expect(snapshot?.totals).toMatchObject({ totalWeight: 1907.18, baseWeight: 1000 });
+    expect(snapshot?.categories.find((category) => category.name === 'Clothing')).toMatchObject({
+      itemCount: 2,
+      weight: 907.18,
+    });
+    expect(snapshot?.categories.some((category) => category.name === 'Uncategorized')).toBe(true);
+  });
+
+  it('rejects a pack whose individually valid items exceed the aggregate weight bound', () => {
+    expect(
+      normalizePackSnapshot({
+        id: 'aggregate-overflow',
+        name: 'Aggregate overflow',
+        items: Array.from({ length: 2 }, (_, index) => ({
+          id: `item-${index}`,
+          name: 'Very heavy item',
+          category: 'other',
+          weight: 10_000_000,
+          weightUnit: 'kg',
+          quantity: 60,
+          consumable: false,
+          worn: false,
+        })),
+      }),
+    ).toBeNull();
+  });
+
   it('turns rejected Eden requests into ordinary MCP errors', async () => {
     const registerTool = vi.fn();
     const get = vi.fn().mockRejectedValue(new Error('network unavailable'));

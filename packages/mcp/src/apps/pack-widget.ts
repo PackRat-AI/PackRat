@@ -97,13 +97,13 @@ export function normalizePackSnapshot(value: unknown): PackSnapshot | null {
     const name = bounded({ value: item.category || 'Uncategorized', length: 80 });
     const category = categoryMap.get(name) ?? { name, itemCount: 0, weight: 0 };
     const itemGrams = grams({ weight: item.weight, unit: item.weightUnit }) * item.quantity;
-    if (!Number.isFinite(itemGrams) || itemGrams > MAX_WEIGHT_GRAMS) return null;
+    if (itemGrams > MAX_WEIGHT_GRAMS) return null;
     category.itemCount += 1;
     category.weight = Math.round((category.weight + itemGrams) * 100) / 100;
     categoryMap.set(name, category);
     calculatedTotal += itemGrams;
     if (!item.consumable && !item.worn) calculatedBase += itemGrams;
-    if (calculatedTotal > MAX_WEIGHT_GRAMS || calculatedBase > MAX_WEIGHT_GRAMS) return null;
+    if (calculatedTotal > MAX_WEIGHT_GRAMS) return null;
     if (index < MAX_ITEM_ROWS) {
       visible.push({
         id: bounded({ value: item.id, length: 80 }),
