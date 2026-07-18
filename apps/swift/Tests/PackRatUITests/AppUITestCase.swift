@@ -172,6 +172,10 @@ class AppUITestCase: XCTestCase {
         #else
         if submitButton.isHittable {
             submitButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            Thread.sleep(forTimeInterval: 0.25)
+            if submitButton.exists, submitButton.isHittable, submitButton.isEnabled {
+                submitButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
         } else {
             app.typeText("\n")
         }

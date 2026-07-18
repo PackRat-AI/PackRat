@@ -35,6 +35,9 @@ struct LoginView: View {
 
                     SecureField("Password", text: $password)
                         .textContentType(.password)
+                        #if os(iOS)
+                        .submitLabel(.go)
+                        #endif
                         .onSubmit { submit() }
                         .padding(.horizontal, 14)
                         .padding(.vertical, 12)
