@@ -2,9 +2,11 @@
 /**
  * Archive the native Swift PackRat iOS app and upload it to TestFlight.
  *
- * This targets a SEPARATE App Store Connect record from the production Expo
- * app: bundle id `com.andrewbierman.packrat.swift`. Register that app record
- * in App Store Connect once before the first upload.
+ * Choose the App Store Connect lane explicitly:
+ *   --replacement   existing Expo/App Store listing (`com.andrewbierman.packrat`,
+ *                   display name `PackRat`) for true TestFlight update testing.
+ *   --side-by-side  separate Swift beta listing (`com.andrewbierman.packrat.swift`,
+ *                   display name `PackRat Swift`) for parallel beta installs.
  *
  * Auth uses an Apple ID + app-specific password (no App Store Connect API key
  * required). Generate a password at appleid.apple.com -> Sign-In & Security ->
@@ -19,50 +21,80 @@
  *   BUILD_NUMBER             CFBundleVersion for this upload (default: timestamp)
  *
  * Flags:
+ *   --replacement            Archive for the existing Expo/App Store iOS listing.
+ *   --side-by-side           Archive for the separate Swift beta listing.
  *   --staging                Archive the Staging config (PACKRAT_ENV=dev) so the
- *                            TestFlight build targets the deployed DEV API instead
- *                            of production. Default (no flag) = Release/production.
+ *                            build targets the deployed DEV API instead of production.
+ *   --production             Optional clarity flag; Release/production is the default
+ *                            API profile when --staging is absent.
  *
  * Usage:
- *   bun apps/swift/scripts/upload-testflight.ts            # production
- *   bun apps/swift/scripts/upload-testflight.ts --staging  # dev API
+ *   bun apps/swift/scripts/upload-testflight.ts --replacement
+ *   bun apps/swift/scripts/upload-testflight.ts --side-by-side --staging
  */
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { nodeEnv } from '@packrat/env/node';
+import {
+  parseTestFlightUploadConfig,
+  TestFlightConfigError,
+  type TestFlightUploadConfig,
+  xcodeArchiveOverrides,
+} from './lib/testflight-config';
 
 const SWIFT_DIR = new URL('..', import.meta.url).pathname;
 const PROJECT = join(SWIFT_DIR, 'PackRat.xcodeproj');
-const BUNDLE_ID = 'com.andrewbierman.packrat.swift';
+const HELP = process.argv.includes('--help') || process.argv.includes('-h');
 
-// --staging archives the Staging config (PACKRAT_ENV=dev) via the dedicated
-// scheme; the default archives PackRat-iOS (Release config → production).
-const STAGING = process.argv.includes('--staging');
-const SCHEME = STAGING ? 'PackRat-iOS-Staging' : 'PackRat-iOS';
-const CONFIGURATION = STAGING ? 'Staging' : 'Release';
+function usage(): string {
+  return [
+    'Usage:',
+    '  bun apps/swift/scripts/upload-testflight.ts --replacement [--production|--staging]',
+    '  bun apps/swift/scripts/upload-testflight.ts --side-by-side [--production|--staging]',
+    '',
+    'Lanes:',
+    '  --replacement   Existing Expo/App Store listing: com.andrewbierman.packrat, PackRat.',
+    '  --side-by-side  Separate Swift beta listing: com.andrewbierman.packrat.swift, PackRat Swift.',
+  ].join('\n');
+}
 
-function req(name: string): string {
-  const v =
-    name === 'APPLE_ID'
-      ? nodeEnv.APPLE_ID
-      : name === 'APPLE_APP_PASSWORD'
-        ? nodeEnv.APPLE_APP_PASSWORD
-        : name === 'APPLE_TEAM_ID'
-          ? nodeEnv.APPLE_TEAM_ID
-          : undefined;
+if (HELP) {
+  console.log(usage());
+  process.exit(0);
+}
+
+let uploadConfig: TestFlightUploadConfig;
+try {
+  uploadConfig = parseTestFlightUploadConfig({
+    argv: process.argv.slice(2),
+  });
+} catch (error) {
+  if (error instanceof TestFlightConfigError) {
+    console.error(`${error.message}\n\n${usage()}`);
+    process.exit(1);
+  }
+  throw error;
+}
+
+const { nodeEnv } = await import('@packrat/env/node');
+
+function req(input: { name: 'APPLE_ID' | 'APPLE_APP_PASSWORD' | 'APPLE_TEAM_ID' }): string {
+  const v = nodeEnv[input.name];
   if (!v) {
-    console.error(`Missing required env var: ${name}. See script header.`);
+    console.error(`Missing required env var: ${input.name}. See script header.`);
     process.exit(1);
   }
   return v;
 }
 
-const appleId = req('APPLE_ID');
-const appPassword = req('APPLE_APP_PASSWORD');
-const teamId = req('APPLE_TEAM_ID');
-const buildNumber = nodeEnv.BUILD_NUMBER ?? String(Math.floor(Date.now() / 1000));
+if (nodeEnv.BUILD_NUMBER) {
+  uploadConfig = { ...uploadConfig, buildNumber: nodeEnv.BUILD_NUMBER };
+}
+
+const appleId = req({ name: 'APPLE_ID' });
+const appPassword = req({ name: 'APPLE_APP_PASSWORD' });
+const teamId = req({ name: 'APPLE_TEAM_ID' });
 
 const work = mkdtempSync(join(tmpdir(), 'packrat-tf-'));
 const archivePath = join(work, 'PackRat.xcarchive');
@@ -82,9 +114,9 @@ run({
     '-project',
     PROJECT,
     '-scheme',
-    SCHEME,
+    uploadConfig.scheme,
     '-configuration',
-    CONFIGURATION,
+    uploadConfig.configuration,
     '-destination',
     'generic/platform=iOS',
     '-archivePath',
@@ -92,8 +124,7 @@ run({
     // Lets Xcode register the App IDs and generate provisioning profiles for
     // the (new) bundle ids on the fly, using the signed-in account.
     '-allowProvisioningUpdates',
-    `CURRENT_PROJECT_VERSION=${buildNumber}`,
-    `DEVELOPMENT_TEAM=${teamId}`,
+    ...xcodeArchiveOverrides({ config: uploadConfig, teamId }),
   ],
 });
 
@@ -134,7 +165,7 @@ run({
 // 3. Upload to TestFlight via altool (app-specific-password auth).
 // `--asc-provider` (team short name) is required when the Apple ID belongs to
 // more than one team, so altool knows which one to deliver to.
-const ipa = join(exportDir, `${SCHEME}.ipa`);
+const ipa = join(exportDir, `${uploadConfig.scheme}.ipa`);
 run({
   cmd: 'xcrun',
   args: [
@@ -154,7 +185,7 @@ run({
 });
 
 console.log(
-  `\n✓ Uploaded build ${buildNumber} to TestFlight (${BUNDLE_ID}, ${CONFIGURATION}` +
-    `${STAGING ? ' → dev API' : ' → production'}).`,
+  `\n✓ Uploaded build ${uploadConfig.buildNumber} to TestFlight (${uploadConfig.bundleId}, ${uploadConfig.displayName}, ${uploadConfig.configuration}` +
+    `${uploadConfig.staging ? ' -> dev API' : ' -> production'}, ${uploadConfig.lane}).`,
 );
 console.log('It will appear in App Store Connect after processing (usually 5-15 min).');

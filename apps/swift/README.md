@@ -71,6 +71,28 @@ Swift E2E CI is defined in `.github/workflows/swift-e2e.yml`.
 
 See `docs/ci/swift-e2e-runner.md` for self-hosted Mac runner setup.
 
+## TestFlight Lanes
+
+The Swift iOS app has two TestFlight identities:
+
+- Replacement beta: `com.andrewbierman.packrat`, display name `PackRat`. This is
+  the existing Expo/App Store listing and is the only lane that can validate a
+  seamless update for existing testers.
+- Side-by-side beta: `com.andrewbierman.packrat.swift`, display name
+  `PackRat Swift`. This is useful for parallel Swift QA, but iOS treats it as a
+  separate app with separate install, keychain, and app container state.
+
+Upload commands require an explicit lane so we do not accidentally test the
+wrong App Store Connect record:
+
+```sh
+bun apps/swift/scripts/upload-testflight.ts --replacement
+bun apps/swift/scripts/upload-testflight.ts --side-by-side --staging
+```
+
+`--staging` uses the Staging build config (`PACKRAT_ENV=dev`). Without it, the
+script archives Release (`PACKRAT_ENV=production`).
+
 ## Data Isolation
 
 Swift E2E tests use unique names for records they create. That keeps repeated

@@ -11,6 +11,7 @@
 // xcconfig files treat // as a comment, so full URLs can't be stored here.
 // PACKRAT_ENV selects an environment name; URLs live in APIClient.swift.
 PACKRAT_ENV = dev
+PACKRAT_DISPLAY_NAME = PackRat Swift
 
 // SENTRY_DSN flows xcconfig → Info.plist → runtime. Provided by CI from a
 // secret at archive time; empty disables Sentry (SDK silently no-ops).

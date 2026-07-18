@@ -117,6 +117,10 @@ export const nodeEnvSchema = z.object({
   PACKRAT_WATCH_SYNC_WAIT_MS: z.string().regex(/^\d+$/).optional(),
   PACKRAT_WATCH_SYNC_PHONE_ID: z.string().min(1).optional(),
   PACKRAT_WATCH_SYNC_WATCH_ID: z.string().min(1).optional(),
+  APPLE_ID: z.string().email().optional(),
+  APPLE_APP_PASSWORD: z.string().min(1).optional(),
+  APPLE_TEAM_ID: z.string().min(1).optional(),
+  BUILD_NUMBER: z.string().regex(/^\d+$/).optional(),
 });
 
 export type NodeEnv = z.infer<typeof nodeEnvSchema>;
@@ -191,4 +195,8 @@ export const nodeEnv = nodeEnvSchema.parse({
   PACKRAT_WATCH_SYNC_WAIT_MS: process.env.PACKRAT_WATCH_SYNC_WAIT_MS,
   PACKRAT_WATCH_SYNC_PHONE_ID: process.env.PACKRAT_WATCH_SYNC_PHONE_ID,
   PACKRAT_WATCH_SYNC_WATCH_ID: process.env.PACKRAT_WATCH_SYNC_WATCH_ID,
+  APPLE_ID: process.env.APPLE_ID,
+  APPLE_APP_PASSWORD: process.env.APPLE_APP_PASSWORD,
+  APPLE_TEAM_ID: process.env.APPLE_TEAM_ID,
+  BUILD_NUMBER: process.env.BUILD_NUMBER,
 });

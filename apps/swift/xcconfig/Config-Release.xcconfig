@@ -1,4 +1,5 @@
 PACKRAT_ENV = production
+PACKRAT_DISPLAY_NAME = PackRat Swift
 
 // SENTRY_DSN flows xcconfig → Info.plist → runtime. Set this in the build
 // environment (CI secret, Release-build script, or Config-Release.local.xcconfig
