@@ -8,15 +8,11 @@ const script = resolve(repoRoot, 'apps/swift/scripts/upload-testflight.ts');
 
 describe('upload-testflight CLI', () => {
   it('uses BUILD_NUMBER in dry-run preflight output', () => {
-    const output = execFileSync(
-      'bun',
-      [script, '--replacement', '--production', '--dry-run'],
-      {
-        cwd: repoRoot,
-        encoding: 'utf8',
-        env: { ...currentEnv, APPLE_ASC_PROVIDER: 'PackRatProvider', BUILD_NUMBER: '2026071801' },
-      },
-    );
+    const output = execFileSync('bun', [script, '--replacement', '--production', '--dry-run'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      env: { ...currentEnv, APPLE_ASC_PROVIDER: 'PackRatProvider', BUILD_NUMBER: '2026071801' },
+    });
 
     const preflight = JSON.parse(output);
     expect(preflight).toMatchObject({
