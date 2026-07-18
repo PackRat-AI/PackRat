@@ -1,6 +1,7 @@
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
-import { getEnv } from '@packrat/api/utils/env-validation';
+import { getEnv, isLocalE2EApiEnv } from '@packrat/api/utils/env-validation';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import { asNumber, asString, isArray } from '@packrat/guards';
 import {
   GuideCategoriesResponseSchema,
@@ -18,10 +19,11 @@ const MDX_EXT_RE = /\.(mdx?|md)$/;
 const DASH_RE = /-/g;
 const isLocalE2EGuidesEnv = () => {
   const { E2E_TEST_USER_ID, NEON_DATABASE_URL } = getEnv();
-  return (
-    Boolean(E2E_TEST_USER_ID) &&
-    (NEON_DATABASE_URL.includes('127.0.0.1') || NEON_DATABASE_URL.includes('localhost'))
-  );
+  return isLocalE2EApiEnv({
+    databaseUrl: NEON_DATABASE_URL,
+    e2eUserId: E2E_TEST_USER_ID,
+    requireE2EUser: true,
+  });
 };
 
 const localE2EGuides = [
@@ -201,6 +203,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
           totalPages,
         });
       } catch (error) {
+        captureApiException({ error, operation: 'guides.list' });
         console.error('Error listing guides:', error);
         throw error;
       }
@@ -263,6 +266,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
         const categories = Array.from(categoriesSet).sort();
         return GuideCategoriesResponseSchema.parse({ categories, count: categories.length });
       } catch (error) {
+        captureApiException({ error, operation: 'guides.categories' });
         console.error('Error getting guide categories:', error);
         throw error;
       }
@@ -386,6 +390,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
           query: q,
         });
       } catch (error) {
+        captureApiException({ error, operation: 'guides.search' });
         console.error('Error searching guides:', error);
         throw error;
       }
@@ -451,6 +456,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
           updatedAt: object.uploaded.toISOString(),
         });
       } catch (error) {
+        captureApiException({ error, operation: 'guides.detail' });
         console.error('Error fetching guide:', error);
         throw error;
       }

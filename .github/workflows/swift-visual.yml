@@ -137,7 +137,7 @@ jobs:
         run: bun swift
 
       - name: Boot iOS simulator
-        if: ${{ (github.event.inputs.platform || 'all') != 'macos' }}
+        if: ${{ (github.event.inputs.platform || 'all') == 'ios' || (github.event.inputs.platform || 'all') == 'all' || (github.event.inputs.platform || 'all') == 'both' }}
         run: |
           DEVICE_ID=$(xcrun simctl create Swift-Visual "iPhone 17" \
             "$(xcrun simctl list runtimes -j | jq -r '.runtimes[] | select(.identifier | contains("iOS-")) | .identifier' | sort -V | tail -1)")

@@ -1,7 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
-import { getEnv } from '@packrat/api/utils/env-validation';
+import { getEnv, isLocalE2EApiEnv } from '@packrat/api/utils/env-validation';
 import { type PackItem, packItems } from '@packrat/db';
 import { SeasonSuggestionsRequestSchema } from '@packrat/schemas/seasonSuggestions';
 import { generateObject } from 'ai';
@@ -10,15 +10,15 @@ import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 import { DEFAULT_MODELS } from '../utils/ai/models';
 
-const isE2EStubOpenAiKey = (openAiApiKey: string | undefined) =>
-  openAiApiKey?.startsWith('sk-e2e-stub-') === true;
-
 const isLocalE2ESeasonSuggestionEnv = (input: {
   openAiApiKey: string | undefined;
   databaseUrl: string;
 }) =>
-  (isE2EStubOpenAiKey(input.openAiApiKey) || input.openAiApiKey === 'sk-test') &&
-  (input.databaseUrl.includes('127.0.0.1') || input.databaseUrl.includes('localhost'));
+  isLocalE2EApiEnv({
+    databaseUrl: input.databaseUrl,
+    openAiApiKey: input.openAiApiKey,
+    requireStubOpenAI: true,
+  });
 
 /**
  * Formats user inventory items for AI processing

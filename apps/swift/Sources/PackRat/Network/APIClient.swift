@@ -51,6 +51,14 @@ actor APIClient {
         return try await execute(request, as: T.self)
     }
 
+    func sendData(_ endpoint: some APIEndpoint) async throws -> Data {
+        let request = try buildRequest(endpoint, sessionToken: KeychainService.shared.sessionToken)
+        let (data, response) = try await dataWithTransientRetry(for: request)
+        captureSessionTokenIfPresent(response)
+        try validateStatus(response, data: data)
+        return data
+    }
+
     func sendDiscarding(_ endpoint: some APIEndpoint) async throws {
         let request = try buildRequest(endpoint, sessionToken: KeychainService.shared.sessionToken)
         let (data, response) = try await dataWithTransientRetry(for: request)

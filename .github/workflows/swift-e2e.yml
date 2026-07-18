@@ -124,8 +124,10 @@ jobs:
         run: |
           target="${{ inputs.api_environment || 'configured-secret' }}"
           missing=()
-          [ -z "${E2E_EMAIL:-}" ] && missing+=("E2E_TEST_EMAIL")
-          [ -z "${E2E_PASSWORD:-}" ] && missing+=("E2E_TEST_PASSWORD")
+          if [ "$target" != "local" ]; then
+            [ -z "${E2E_EMAIL:-}" ] && missing+=("E2E_TEST_EMAIL")
+            [ -z "${E2E_PASSWORD:-}" ] && missing+=("E2E_TEST_PASSWORD")
+          fi
           if [ "$target" = "configured-secret" ] && [ -z "${E2E_API_BASE_URL:-}" ]; then
             missing+=("SWIFT_E2E_API_BASE_URL")
           fi
@@ -252,8 +254,10 @@ jobs:
         run: |
           target="${{ inputs.api_environment || 'configured-secret' }}"
           missing=()
-          [ -z "${E2E_EMAIL:-}" ] && missing+=("E2E_TEST_EMAIL")
-          [ -z "${E2E_PASSWORD:-}" ] && missing+=("E2E_TEST_PASSWORD")
+          if [ "$target" != "local" ]; then
+            [ -z "${E2E_EMAIL:-}" ] && missing+=("E2E_TEST_EMAIL")
+            [ -z "${E2E_PASSWORD:-}" ] && missing+=("E2E_TEST_PASSWORD")
+          fi
           if [ "$target" = "configured-secret" ] && [ -z "${E2E_API_BASE_URL:-}" ]; then
             missing+=("SWIFT_E2E_API_BASE_URL")
           fi

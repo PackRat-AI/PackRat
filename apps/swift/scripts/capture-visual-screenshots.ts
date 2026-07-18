@@ -941,7 +941,7 @@ async function runXcodeVisualTest(
     `PACKRAT_VISUAL_AUTH_MODE=${authMode}`,
     `PACKRAT_VISUAL_PLATFORM=${platform}`,
   ];
-  injectVisualSchemeEnvironment(platform, {
+  const restoreVisualScheme = injectVisualSchemeEnvironment(platform, {
     E2E_API_BASE_URL: apiBaseURL,
     PACKRAT_ENV: packratEnv,
     PACKRAT_SCREENSHOT_DIR: writableScreenshotDir,
@@ -988,85 +988,98 @@ async function runXcodeVisualTest(
   console.log(`→ XCTest write dir: ${writableScreenshotDir}`);
   console.log(`→ Result bundle: ${resultBundle}`);
 
-  await assertDeployedVisualAuthReady({ packratEnv, apiBaseURL, authMode });
+  try {
+    await assertDeployedVisualAuthReady({ packratEnv, apiBaseURL, authMode });
 
-  if (platform === 'macos') {
-    assertAutomationModeAvailable();
-    clearMacNotificationBanners();
-  }
+    if (platform === 'macos') {
+      assertAutomationModeAvailable();
+      clearMacNotificationBanners();
+    }
 
-  return new Promise((resolvePromise, reject) => {
-    let timedOut = false;
-    let finalized = false;
-    const child = spawn('xcodebuild', args, {
-      cwd: SWIFT_DIR,
-      env: {
-        ...Bun.env,
-        E2E_API_BASE_URL: apiBaseURL,
-        PACKRAT_ENV: packratEnv,
-        PACKRAT_VISUAL_AUTH_MODE: authMode,
-        PACKRAT_SCREENSHOT_DIR: writableScreenshotDir,
-        PACKRAT_VISUAL_PLATFORM: platform,
-      },
-    });
-    const timeout = setTimeout(() => {
-      timedOut = true;
-      console.error(
-        `xcodebuild timed out after ${Math.round(XCODEBUILD_TIMEOUT_MS / 1000)}s for ${platform}; terminating child process.`,
-      );
-      child.kill('SIGINT');
-      setTimeout(() => {
-        if (!child.killed) child.kill('SIGKILL');
-      }, 5_000).unref();
-    }, XCODEBUILD_TIMEOUT_MS);
-    timeout.unref();
+    return await new Promise((resolvePromise, reject) => {
+      let timedOut = false;
+      let finalized = false;
+      const child = spawn('xcodebuild', args, {
+        cwd: SWIFT_DIR,
+        env: {
+          ...Bun.env,
+          E2E_API_BASE_URL: apiBaseURL,
+          PACKRAT_ENV: packratEnv,
+          PACKRAT_VISUAL_AUTH_MODE: authMode,
+          PACKRAT_SCREENSHOT_DIR: writableScreenshotDir,
+          PACKRAT_VISUAL_PLATFORM: platform,
+        },
+      });
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        console.error(
+          `xcodebuild timed out after ${Math.round(XCODEBUILD_TIMEOUT_MS / 1000)}s for ${platform}; terminating child process.`,
+        );
+        child.kill('SIGINT');
+        setTimeout(() => {
+          if (!child.killed) child.kill('SIGKILL');
+        }, 5_000).unref();
+      }, XCODEBUILD_TIMEOUT_MS);
+      timeout.unref();
 
-    child.stdout.on('data', (chunk) => process.stdout.write(redactSecrets(chunk.toString())));
-    child.stderr.on('data', (chunk) => process.stderr.write(redactSecrets(chunk.toString())));
-    child.on('error', (err) => {
-      if (finalized) return;
-      finalized = true;
-      clearTimeout(timeout);
-      reject(err);
-    });
-    const finalize = (code: number | null) => {
-      if (finalized) return;
-      finalized = true;
-      clearTimeout(timeout);
-      try {
-        const summary = summarizeResult(resultBundle);
-        copyScreenshots(writableScreenshotDir, screenshotDir);
-        if (listScreenshots(screenshotDir).length === 0) {
-          exportScreenshotsFromResultBundle(resultBundle, screenshotDir);
-        }
-        if (code === 0) {
-          resolvePromise({ resultBundle, summary });
+      child.stdout.on('data', (chunk) => process.stdout.write(redactSecrets(chunk.toString())));
+      child.stderr.on('data', (chunk) => process.stderr.write(redactSecrets(chunk.toString())));
+      child.on('error', (err) => {
+        if (finalized) return;
+        finalized = true;
+        clearTimeout(timeout);
+        reject(err);
+      });
+      const finalize = (code: number | null) => {
+        if (finalized) return;
+        finalized = true;
+        clearTimeout(timeout);
+        try {
+          const summary = summarizeResult(resultBundle);
+          copyScreenshots(writableScreenshotDir, screenshotDir);
+          if (listScreenshots(screenshotDir).length === 0) {
+            exportScreenshotsFromResultBundle(resultBundle, screenshotDir);
+          }
+          if (code === 0) {
+            resolvePromise({ resultBundle, summary });
+            return;
+          }
+        } catch (err) {
+          reject(err);
           return;
         }
-      } catch (err) {
-        reject(err);
-        return;
-      }
-      if (timedOut) {
-        reject(
-          new Error(
-            `xcodebuild timed out after ${Math.round(XCODEBUILD_TIMEOUT_MS / 1000)}s for ${platform}`,
-          ),
-        );
-      } else {
-        reject(new Error(`xcodebuild exited with ${code ?? 'unknown status'} for ${platform}`));
-      }
-    };
-    child.on('exit', finalize);
-    child.on('close', finalize);
-  });
+        if (timedOut) {
+          reject(
+            new Error(
+              `xcodebuild timed out after ${Math.round(XCODEBUILD_TIMEOUT_MS / 1000)}s for ${platform}`,
+            ),
+          );
+        } else {
+          reject(new Error(`xcodebuild exited with ${code ?? 'unknown status'} for ${platform}`));
+        }
+      };
+      child.on('exit', finalize);
+      child.on('close', finalize);
+    });
+  } finally {
+    restoreVisualScheme();
+  }
 }
 
-function injectVisualSchemeEnvironment(platform: Platform, env: Record<string, string>): void {
+function injectVisualSchemeEnvironment(
+  platform: Platform,
+  env: Record<string, string>,
+): () => void {
   const schemePath = platform === 'macos' ? MACOS_SCHEME_PATH : IOS_SCHEME_PATH;
-  if (!existsSync(schemePath)) return;
+  if (!existsSync(schemePath)) return () => {};
 
-  let content = readFileSync(schemePath, 'utf8');
+  const originalContent = readFileSync(schemePath, 'utf8');
+  let content = originalContent;
+  const restore = () => {
+    if (existsSync(schemePath) && readFileSync(schemePath, 'utf8') !== originalContent) {
+      writeFileSync(schemePath, originalContent);
+    }
+  };
   content = removeEnvironmentVariablesBlock(content);
   content = content.replace(
     'shouldUseLaunchSchemeArgsEnv = "YES"',
@@ -1078,7 +1091,7 @@ function injectVisualSchemeEnvironment(platform: Platform, env: Record<string, s
     .map(([key, value]) => environmentVariableXml(key, value));
   if (variables.length === 0) {
     writeFileSync(schemePath, content);
-    return;
+    return restore;
   }
 
   const block = [
@@ -1088,6 +1101,7 @@ function injectVisualSchemeEnvironment(platform: Platform, env: Record<string, s
     '',
   ].join('\n');
   writeFileSync(schemePath, content.replace('   </TestAction>', `${block}   </TestAction>`));
+  return restore;
 }
 
 function buildSettingsToEnv(settings: string[]): Record<string, string> {

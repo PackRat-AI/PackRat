@@ -591,10 +591,11 @@ final class VisualScreenshotTests: XCTestCase {
         }
     }
 
-    private func captureTab(_ label: String, name: String) {
+    private func captureTab(_ label: String, name: String, beforeCapture: (() -> Void)? = nil) {
         let tab = app.tabBars.buttons[label]
         XCTAssertTrue(tab.waitForExistence(timeout: 5), "Expected tab '\(label)' for screenshot \(name)")
         tab.tap()
+        beforeCapture?()
         capture(name)
     }
 
@@ -602,7 +603,8 @@ final class VisualScreenshotTests: XCTestCase {
         _ title: String,
         name: String,
         dismissAfterCapture: Bool = true,
-        destinationIdentifier: String? = nil
+        destinationIdentifier: String? = nil,
+        beforeCapture: (() -> Void)? = nil
     ) {
         let baselineName = name.hasPrefix("home-before-") ? name : "home-before-\(name)"
         openHomeForActionBaseline(name: baselineName)
@@ -615,6 +617,7 @@ final class VisualScreenshotTests: XCTestCase {
                     "Expected Home action '\(title)' to open '\(destinationIdentifier)' for screenshot \(name)"
                 )
             }
+            beforeCapture?()
             self.capture(name)
             if dismissAfterCapture {
                 self.dismissPhoneDestination()
@@ -786,14 +789,19 @@ final class VisualScreenshotTests: XCTestCase {
     }
 
     private func captureGuestLimitedHomeAction(_ title: String, name: String) {
-        captureHomeAction(title, name: name, dismissAfterCapture: false)
-        assertExpectedAccountRequiredState(for: name)
+        captureHomeAction(
+            title,
+            name: name,
+            dismissAfterCapture: false,
+            beforeCapture: { self.assertExpectedAccountRequiredState(for: name) }
+        )
         dismissPhoneDestination()
     }
 
     private func captureGuestLimitedTab(_ label: String, name: String) {
-        captureTab(label, name: name)
-        assertExpectedAccountRequiredState(for: name)
+        captureTab(label, name: name) {
+            self.assertExpectedAccountRequiredState(for: name)
+        }
     }
 
     private func capturePhoneGuestAccountLimits() {
@@ -934,19 +942,19 @@ final class VisualScreenshotTests: XCTestCase {
 
         for (label, name) in entries {
             selectSidebar(label)
-            capture(name)
             assertExpectedAccountRequiredState(for: name)
+            capture(name)
         }
 
         if UITestFeatureFlags.enableFeed {
             selectSidebar("Feed")
-            capture("50-guest-limit-feed")
             assertExpectedAccountRequiredState(for: "50-guest-limit-feed")
+            capture("50-guest-limit-feed")
         }
         if UITestFeatureFlags.enableWildlifeIdentification {
             selectSidebar("Wildlife")
-            capture("50-guest-limit-wildlife")
             assertExpectedAccountRequiredState(for: "50-guest-limit-wildlife")
+            capture("50-guest-limit-wildlife")
         }
     }
 
@@ -1281,9 +1289,11 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func launchAuthenticated(sampleData: Bool = false, forceOffline: Bool = false) {
         let bundle = Bundle(for: VisualScreenshotTests.self)
-        let email = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
+        let email = ProcessInfo.processInfo.environment["PACKRAT_E2E_EMAIL"]
+            ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
             ?? "e2e@packrat.test"
-        let userId = ProcessInfo.processInfo.environment["E2E_TEST_USER_ID"]
+        let userId = ProcessInfo.processInfo.environment["PACKRAT_E2E_USER_ID"]
+            ?? ProcessInfo.processInfo.environment["E2E_TEST_USER_ID"]
             ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_USER_ID") as? String)
             ?? "00000000-0000-4000-8000-000000000001"
 

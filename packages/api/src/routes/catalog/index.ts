@@ -6,7 +6,8 @@ import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { buildInstanceId } from '@packrat/api/utils/buildInstanceId';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
-import { getEnv } from '@packrat/api/utils/env-validation';
+import { getEnv, isLocalE2EApiEnv } from '@packrat/api/utils/env-validation';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import type { CatalogEtlWorkflowParams } from '@packrat/api/workflows/catalog-etl-workflow';
 import { type ChunkSpec, chunkCsvForR2 } from '@packrat/api/workflows/shared/chunkCsvForR2';
 import { catalogItems, etlJobs, packItems } from '@packrat/db';
@@ -40,10 +41,11 @@ import { z } from 'zod';
 
 const isLocalE2ECatalogEnv = () => {
   const { NEON_DATABASE_URL, OPENAI_API_KEY } = getEnv();
-  return (
-    (OPENAI_API_KEY === 'sk-test' || OPENAI_API_KEY?.startsWith('sk-e2e-stub-') === true) &&
-    (NEON_DATABASE_URL.includes('127.0.0.1') || NEON_DATABASE_URL.includes('localhost'))
-  );
+  return isLocalE2EApiEnv({
+    databaseUrl: NEON_DATABASE_URL,
+    openAiApiKey: OPENAI_API_KEY,
+    requireStubOpenAI: true,
+  });
 };
 
 const localE2ECatalogItems = [
@@ -202,6 +204,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         const catalogService = new CatalogService();
         return await catalogService.vectorSearch({ q: searchQuery, opts: { limit, offset } });
       } catch (error) {
+        captureApiException({ error, operation: 'catalog.vectorSearch' });
         console.error('Vector search error:', error);
         return status(500, { error: 'Failed to search catalog items' });
       }

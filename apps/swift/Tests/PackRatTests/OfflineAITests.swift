@@ -267,8 +267,9 @@ struct OfflineAIViewModelTests {
 struct LocalLLMProviderFactoryTests {
     @Test("uses mock provider even when stale MLX debug preference is enabled")
     func staleMLXPreferenceUsesMockProvider() {
+        let previousValue = Defaults[.useRealLocalLLM]
         Defaults[.useRealLocalLLM] = true
-        defer { Defaults[.useRealLocalLLM] = false }
+        defer { Defaults[.useRealLocalLLM] = previousValue }
 
         let provider = LocalLLMProviderFactory.makeProvider()
 

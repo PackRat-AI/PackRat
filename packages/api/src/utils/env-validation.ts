@@ -220,6 +220,25 @@ const testEnvSchema = apiEnvObjectSchema
 
 type ValidatedAppEnv = z.infer<typeof validatedApiEnvSchema>;
 
+export function isLocalE2EApiEnv(input: {
+  databaseUrl: string;
+  e2eUserId?: string;
+  openAiApiKey?: string;
+  requireE2EUser?: boolean;
+  requireStubOpenAI?: boolean;
+}): boolean {
+  const databaseIsLocal =
+    input.databaseUrl.includes('127.0.0.1') || input.databaseUrl.includes('localhost');
+  if (!databaseIsLocal) return false;
+  if (input.requireE2EUser === true && !input.e2eUserId) return false;
+  if (input.requireStubOpenAI === true) {
+    const isStubOpenAI =
+      input.openAiApiKey === 'sk-test' || input.openAiApiKey?.startsWith('sk-e2e-stub-') === true;
+    if (!isStubOpenAI) return false;
+  }
+  return true;
+}
+
 // Override Cloudflare binding types with proper TypeScript types
 export type ValidatedEnv = Omit<
   ValidatedAppEnv,

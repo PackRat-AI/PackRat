@@ -135,10 +135,7 @@ function escapeXml(s: string): string {
 
 function deriveLocalE2ESessionToken(): string | undefined {
   if (PACKRAT_ENV !== 'local' && PACKRAT_ENV !== 'dev-local') return undefined;
-  const secret =
-    process.env.PACKRAT_AUTH_SECRET ??
-    process.env.BETTER_AUTH_SECRET ??
-    'e2e-better-auth-secret-at-least-32-chars';
+  const secret = process.env.BETTER_AUTH_SECRET ?? 'e2e-better-auth-secret-at-least-32-chars';
   const email = process.env.E2E_TEST_EMAIL?.toLowerCase();
   const userId = process.env.E2E_TEST_USER_ID;
   if (!email || !userId) return undefined;
