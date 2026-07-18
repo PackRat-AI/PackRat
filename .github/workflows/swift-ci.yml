@@ -79,6 +79,7 @@ jobs:
           E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
         run: |
+          set -o pipefail
           cd apps/swift
           # Use signing-bypass on macOS so CI can build/test without a Mac Development cert
           # provisioned for the runner. iOS Simulator never needs signing, but
@@ -117,7 +118,12 @@ jobs:
           if [ -d "/tmp/${{ matrix.scheme }}-smoke.xcresult" ]; then
             xcrun xcresulttool get test-results summary \
               --path "/tmp/${{ matrix.scheme }}-smoke.xcresult" --compact \
+              | tee "/tmp/${{ matrix.scheme }}-smoke-summary.json" \
               | jq '{ result, totalTestCount, passedTests, failedTests, skippedTests, expectedFailures }' || true
+            if [ -f "/tmp/${{ matrix.scheme }}-smoke-summary.json" ]; then
+              jq -e '.result == "Passed" and (.failedTests // 0) == 0' \
+                "/tmp/${{ matrix.scheme }}-smoke-summary.json" >/dev/null
+            fi
           fi
 
       - name: Upload xcresult on failure
