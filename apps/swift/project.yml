@@ -24,7 +24,7 @@ configFiles:
 packages:
   Nuke:
     url: https://github.com/kean/Nuke
-    from: "12.0.0"
+    from: "13.0.0"
   MarkdownUI:
     url: https://github.com/gonzalezreal/swift-markdown-ui
     from: "2.4.0"
