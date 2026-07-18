@@ -37,6 +37,18 @@ const outputs = [
 type FeatureFlags = typeof APP_CONFIG.featureFlags;
 type FeatureFlagName = keyof FeatureFlags;
 
+function isFeatureFlagName(value: string): value is FeatureFlagName {
+  return Object.hasOwn(APP_CONFIG.featureFlags, value);
+}
+
+function featureFlagsWithValue(value: boolean): FeatureFlags {
+  const flags = { ...APP_CONFIG.featureFlags };
+  for (const key of Object.keys(flags)) {
+    if (isFeatureFlagName(key)) flags[key] = value;
+  }
+  return flags;
+}
+
 function parseFeatureFlagOverrides(): Partial<Record<FeatureFlagName, boolean>> {
   const raw = nodeEnv.PACKRAT_SWIFT_FEATURE_FLAG_OVERRIDES;
   if (!raw?.trim()) return {};
@@ -45,17 +57,16 @@ function parseFeatureFlagOverrides(): Partial<Record<FeatureFlagName, boolean>> 
   if (!isObject(parsed)) {
     throw new Error('PACKRAT_SWIFT_FEATURE_FLAG_OVERRIDES must be a JSON object');
   }
-  const knownFlags = new Set(Object.keys(APP_CONFIG.featureFlags));
   const overrides: Partial<Record<FeatureFlagName, boolean>> = {};
 
   for (const [key, value] of Object.entries(parsed)) {
-    if (!knownFlags.has(key)) {
+    if (!isFeatureFlagName(key)) {
       throw new Error(`Unknown PACKRAT_SWIFT_FEATURE_FLAG_OVERRIDES key: ${key}`);
     }
     if (value !== true && value !== false) {
       throw new Error(`PACKRAT_SWIFT_FEATURE_FLAG_OVERRIDES.${key} must be a boolean`);
     }
-    overrides[key as FeatureFlagName] = value;
+    overrides[key] = value;
   }
 
   return overrides;
@@ -63,14 +74,13 @@ function parseFeatureFlagOverrides(): Partial<Record<FeatureFlagName, boolean>> 
 
 function featureFlagsForProfile(): FeatureFlags {
   const profile = nodeEnv.PACKRAT_SWIFT_FEATURE_FLAG_PROFILE ?? 'default';
-  const entries = Object.entries(APP_CONFIG.featureFlags) as [FeatureFlagName, boolean][];
   const baseFlags =
     profile === 'default'
-      ? Object.fromEntries(entries)
+      ? { ...APP_CONFIG.featureFlags }
       : profile === 'all-on'
-        ? Object.fromEntries(entries.map(([key]) => [key, true]))
+        ? featureFlagsWithValue(true)
         : profile === 'all-off'
-          ? Object.fromEntries(entries.map(([key]) => [key, false]))
+          ? featureFlagsWithValue(false)
           : undefined;
 
   if (!baseFlags) {
@@ -82,7 +92,7 @@ function featureFlagsForProfile(): FeatureFlags {
   return {
     ...baseFlags,
     ...parseFeatureFlagOverrides(),
-  } as FeatureFlags;
+  };
 }
 
 const featureFlags = featureFlagsForProfile();

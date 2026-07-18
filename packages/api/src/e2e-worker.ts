@@ -18,6 +18,10 @@ function enrichEnv(env: Env): Env {
   return env;
 }
 
+function envRecord(env: Env): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(env));
+}
+
 function wellKnownMetadataKind(pathname: string): 'openid' | 'authorization-server' | null {
   if (
     pathname === WELL_KNOWN_OPENID_CONFIG_PATH ||
@@ -37,8 +41,8 @@ function wellKnownMetadataKind(pathname: string): 'openid' | 'authorization-serv
 export default {
   // biome-ignore lint/complexity/useMaxParams: Cloudflare Worker fetch callbacks receive request, env, and context.
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const e = getEnv(enrichEnv(env) as unknown as Record<string, unknown>);
-    setWorkerEnv(e as unknown as Record<string, unknown>);
+    const e = getEnv(envRecord(enrichEnv(env)));
+    setWorkerEnv(envRecord(e));
 
     const url = new URL(request.url);
     if (request.method === 'GET') {

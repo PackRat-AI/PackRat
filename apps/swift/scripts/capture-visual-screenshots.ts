@@ -17,7 +17,7 @@ import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { APP_CONFIG } from '@packrat/config/config';
 import { nodeEnv } from '@packrat/env/node';
-import { fromZod, isNumber, isObject, isString } from '@packrat/guards';
+import { fromZod } from '@packrat/guards';
 import { safeJsonParse, safeJsonStringify, sleep } from '@packrat/utils';
 import {
   anyOf,
@@ -1473,6 +1473,34 @@ const AttachmentManifestEntrySchema = z
   })
   .passthrough();
 const parseAttachmentManifest = fromZod(z.array(AttachmentManifestEntrySchema));
+const TestRefSchema = z.object({
+  identifier: z.string(),
+  testName: z.string().optional(),
+  className: z.string().optional(),
+});
+const TestSummarySchema = z.object({
+  totalTestCount: z.number(),
+  passedTests: z.number(),
+  failedTests: z.number(),
+  skippedTests: z.number(),
+  expectedFailures: z.number(),
+  passed: z.number(),
+  failed: z.number(),
+  skipped: z.number(),
+  result: z.string(),
+  failingTests: z.array(TestRefSchema),
+});
+const PlatformRunSummarySchema = z.object({
+  platform: z.enum(['ios', 'ipad', 'macos', 'watch']),
+  screenshotDir: z.string(),
+  screenshotCount: z.number().optional(),
+  coverageManifest: z.string(),
+  contactSheet: z.string(),
+  groupedContactSheets: z.array(z.string()),
+  resultBundle: z.string().optional(),
+  testSummary: TestSummarySchema.optional(),
+});
+const parsePlatformRunSummaryValue = fromZod(PlatformRunSummarySchema);
 
 function visualAuthMode(packratEnv: string): 'seeded' | 'real' {
   const explicit = Bun.env.PACKRAT_VISUAL_AUTH_MODE;
@@ -2205,36 +2233,22 @@ function addExistingArtifactSummaries(
 }
 
 function parsePlatformRunSummary(value: unknown): PlatformRunSummary | null {
-  if (!isObject(value)) return null;
-  const candidate = value as Record<string, unknown>;
-  if (!isPlatform(candidate.platform)) return null;
-  if (
-    !isString(candidate.screenshotDir) ||
-    !isString(candidate.coverageManifest) ||
-    !isString(candidate.contactSheet) ||
-    !Array.isArray(candidate.groupedContactSheets) ||
-    !candidate.groupedContactSheets.every((entry) => isString(entry))
-  ) {
-    return null;
-  }
+  const candidate = parsePlatformRunSummaryValue(value);
+  if (!candidate) return null;
 
   return {
     platform: candidate.platform,
     screenshotDir: candidate.screenshotDir,
     screenshotCount:
-      isNumber(candidate.screenshotCount) && Number.isFinite(candidate.screenshotCount)
+      candidate.screenshotCount !== undefined && Number.isFinite(candidate.screenshotCount)
         ? candidate.screenshotCount
         : countCapturedScreenshots(candidate.screenshotDir),
     coverageManifest: candidate.coverageManifest,
     contactSheet: candidate.contactSheet,
     groupedContactSheets: candidate.groupedContactSheets,
-    ...(isString(candidate.resultBundle) ? { resultBundle: candidate.resultBundle } : {}),
-    ...(candidate.testSummary ? { testSummary: candidate.testSummary as TestSummary } : {}),
+    ...(candidate.resultBundle ? { resultBundle: candidate.resultBundle } : {}),
+    ...(candidate.testSummary ? { testSummary: candidate.testSummary } : {}),
   };
-}
-
-function isPlatform(value: unknown): value is Platform {
-  return value === 'ios' || value === 'ipad' || value === 'macos' || value === 'watch';
 }
 
 function countCapturedScreenshots(screenshotDir: string): number {
