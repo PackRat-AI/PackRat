@@ -63,9 +63,13 @@ targets:
       - Sources/PackRatShared
       - path: Resources/Assets.xcassets
         buildPhase: resources
+      - path: Resources/PrivacyInfo.xcprivacy
+        buildPhase: resources
     entitlements:
       path: Resources/PackRat-iOS.entitlements
-      properties: {}
+      properties:
+        com.apple.developer.applesignin:
+          - Default
     info:
       path: Resources/Info-iOS.plist
       properties:
@@ -90,6 +94,8 @@ targets:
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
         NSLocationWhenInUseUsageDescription: "This app needs access to your location while you are using it."
+        NSCameraUsageDescription: "This app requires access to your camera to let you take photos or scan items."
+        NSPhotoLibraryUsageDescription: "This app needs access to your photo library to let you upload or choose photos."
         ITSAppUsesNonExemptEncryption: false
         PACKRAT_ENV: $(PACKRAT_ENV)
         SENTRY_DSN: $(SENTRY_DSN)
@@ -158,6 +164,8 @@ targets:
         buildPhase: resources
       - path: Resources/WatchAssets.xcassets
         buildPhase: resources
+      - path: Resources/PrivacyInfo.xcprivacy
+        buildPhase: resources
     info:
       path: Resources/Info-watchOS.plist
       properties:
@@ -188,6 +196,8 @@ targets:
       - Sources/PackRat
       - Sources/PackRatShared
       - path: Resources/Assets.xcassets
+        buildPhase: resources
+      - path: Resources/PrivacyInfo.xcprivacy
         buildPhase: resources
     entitlements:
       path: Resources/PackRat-macOS.entitlements

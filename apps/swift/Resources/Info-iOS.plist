@@ -60,8 +60,12 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires access to your camera to let you take photos or scan items.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs access to your location while you are using it.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photo library to let you upload or choose photos.</string>
 	<key>PACKRAT_ENV</key>
 	<string>$(PACKRAT_ENV)</string>
 	<key>SENTRY_DSN</key>
