@@ -106,8 +106,16 @@ export function useFeatureAccess(key: string): FeatureAccessResult {
   // rather than waiting for the connectivity probe.
   const unresolvedDueToError = !resolved && (configError || entitlementError);
 
+  // `allowed` MUST require `resolved`. hasFeatureAccess returns true for a
+  // missing config row (unconfigured feature = GA), but offline we can't tell
+  // "genuinely unconfigured" from "config not loaded yet" — so an unresolved
+  // config would fail OPEN and leak a gated feature to a free user. Only grant
+  // once both signals are actually resolved; until then the gate shows a
+  // spinner / "can't verify" fallback instead of the feature.
+  const allowed = resolved && hasFeatureAccess(feature, { hasPro: isProMember });
+
   return {
-    allowed: hasFeatureAccess(feature, { hasPro: isProMember }),
+    allowed,
     isLoading: configLoading || entitlementLoading,
     resolved,
     unresolvedDueToError,

@@ -75,7 +75,13 @@ export function TanstackProvider({ children }: { children: React.ReactNode }) {
         persister,
         maxAge: 1000 * 60 * 60 * 24 * 7, // discard restored cache older than 7 days
         dehydrateOptions: {
-          shouldDehydrateQuery: (query) => isPersistedQuery(query.queryKey),
+          // Only persist our allowlisted query keys, AND only a successful
+          // result — never a pending/errored snapshot that would restore as
+          // stale-but-"resolved" offline. (This mirrors React Query's default
+          // shouldDehydrateQuery success check, inlined to avoid a duplicate
+          // query-core type mismatch across the persist-client package.)
+          shouldDehydrateQuery: (query) =>
+            isPersistedQuery(query.queryKey) && query.state.status === 'success',
         },
       }}
     >
