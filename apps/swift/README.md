@@ -19,6 +19,7 @@ mkdir -p /Volumes/CrucialX10/tmp/andrewbierman
 ```sh
 bun run test:swift:runner
 bun run test:swift:unit
+bun run e2e:swift:ios-sanity
 bun run e2e:swift:ios-smoke
 bun run e2e:swift:ios
 bun run e2e:swift:mac
@@ -29,10 +30,15 @@ bun run e2e:swift:mac-ui
 `e2e:swift` defaults to iOS UI tests for compatibility with the original
 runner. All Xcode result bundles are written under `apps/swift/TestResults/`.
 
+Sanity mode is the fastest TestFlight-style loading check:
+
+- `e2e:swift:ios-sanity`: iOS launch, guest entry, real login, and primary tabs.
+
 Smoke modes are intentionally small PR gates:
 
 - `e2e:swift:mac-smoke`: macOS login, sidebar navigation, and pack create/add-item.
-- `e2e:swift:ios-smoke`: iOS login, tab navigation, and pack create.
+- `e2e:swift:ios-smoke`: iOS auth, guest persistence, feature gating, navigation,
+  search/filter/explore entry points, and weather entry.
 
 Full modes are the platform confidence gates:
 

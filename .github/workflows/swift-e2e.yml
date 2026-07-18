@@ -39,8 +39,9 @@ on:
         description: "iOS test depth for manual runs"
         required: false
         type: choice
-        default: smoke
+        default: sanity
         options:
+          - sanity
           - smoke
           - full
       api_environment:
@@ -307,8 +308,10 @@ jobs:
           plan="${{ inputs.ios_test_plan || 'full' }}"
           if [ "$plan" = "full" ]; then
             bun run e2e:swift:ios
-          else
+          elif [ "$plan" = "smoke" ]; then
             bun run e2e:swift:ios-smoke
+          else
+            bun run e2e:swift:ios-sanity
           fi
 
       - name: Summarize iOS xcresult

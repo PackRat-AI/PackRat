@@ -10,11 +10,16 @@ describe('parseArgs', () => {
     expect(parseArgs(['--plan', 'smoke'])).toEqual({ plan: 'iOS-Smoke', passthrough: [] });
   });
 
+  it('resolves --plan sanity to iOS-Sanity', () => {
+    expect(parseArgs(['--plan', 'sanity'])).toEqual({ plan: 'iOS-Sanity', passthrough: [] });
+  });
+
   it('resolves --plan full to iOS-Full', () => {
     expect(parseArgs(['--plan', 'full'])).toEqual({ plan: 'iOS-Full', passthrough: [] });
   });
 
-  it('accepts the canonical iOS-Smoke and iOS-Full names', () => {
+  it('accepts the canonical iOS-Sanity, iOS-Smoke, and iOS-Full names', () => {
+    expect(parseArgs(['--plan', 'iOS-Sanity']).plan).toBe('iOS-Sanity');
     expect(parseArgs(['--plan', 'iOS-Smoke']).plan).toBe('iOS-Smoke');
     expect(parseArgs(['--plan', 'iOS-Full']).plan).toBe('iOS-Full');
   });
@@ -26,6 +31,7 @@ describe('parseArgs', () => {
   it('accepts legacy positional iOS mode aliases used by package scripts', () => {
     expect(parseArgs(['ios-ui'])).toEqual({ plan: 'iOS-Full', passthrough: [] });
     expect(parseArgs(['ios-smoke'])).toEqual({ plan: 'iOS-Smoke', passthrough: [] });
+    expect(parseArgs(['ios-sanity'])).toEqual({ plan: 'iOS-Sanity', passthrough: [] });
   });
 
   it('maps unit mode to the iOS unit test target instead of an xcodebuild action', () => {
@@ -52,6 +58,7 @@ describe('parseArgs', () => {
   });
 
   it('case-insensitive alias matching', () => {
+    expect(parseArgs(['--plan', 'SANITY']).plan).toBe('iOS-Sanity');
     expect(parseArgs(['--plan', 'SMOKE']).plan).toBe('iOS-Smoke');
     expect(parseArgs(['--plan', 'FULL']).plan).toBe('iOS-Full');
   });
