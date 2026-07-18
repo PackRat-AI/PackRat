@@ -15,6 +15,7 @@ import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { APP_CONFIG } from '@packrat/config/config';
+import { nodeEnv } from '@packrat/env/node';
 import { isObject } from '@packrat/guards';
 import { safeJsonParse } from '@packrat/utils';
 import { renderSwiftFeatureFlags } from './lib/config-codegen';
@@ -37,7 +38,7 @@ type FeatureFlags = typeof APP_CONFIG.featureFlags;
 type FeatureFlagName = keyof FeatureFlags;
 
 function parseFeatureFlagOverrides(): Partial<Record<FeatureFlagName, boolean>> {
-  const raw = process.env.PACKRAT_SWIFT_FEATURE_FLAG_OVERRIDES;
+  const raw = nodeEnv.PACKRAT_SWIFT_FEATURE_FLAG_OVERRIDES;
   if (!raw?.trim()) return {};
 
   const parsed = safeJsonParse(raw);
@@ -61,7 +62,7 @@ function parseFeatureFlagOverrides(): Partial<Record<FeatureFlagName, boolean>> 
 }
 
 function featureFlagsForProfile(): FeatureFlags {
-  const profile = process.env.PACKRAT_SWIFT_FEATURE_FLAG_PROFILE ?? 'default';
+  const profile = nodeEnv.PACKRAT_SWIFT_FEATURE_FLAG_PROFILE ?? 'default';
   const entries = Object.entries(APP_CONFIG.featureFlags) as [FeatureFlagName, boolean][];
   const baseFlags =
     profile === 'default'

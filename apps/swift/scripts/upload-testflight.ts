@@ -31,6 +31,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { nodeEnv } from '@packrat/env/node';
 
 const SWIFT_DIR = new URL('..', import.meta.url).pathname;
 const PROJECT = join(SWIFT_DIR, 'PackRat.xcodeproj');
@@ -43,7 +44,14 @@ const SCHEME = STAGING ? 'PackRat-iOS-Staging' : 'PackRat-iOS';
 const CONFIGURATION = STAGING ? 'Staging' : 'Release';
 
 function req(name: string): string {
-  const v = process.env[name];
+  const v =
+    name === 'APPLE_ID'
+      ? nodeEnv.APPLE_ID
+      : name === 'APPLE_APP_PASSWORD'
+        ? nodeEnv.APPLE_APP_PASSWORD
+        : name === 'APPLE_TEAM_ID'
+          ? nodeEnv.APPLE_TEAM_ID
+          : undefined;
   if (!v) {
     console.error(`Missing required env var: ${name}. See script header.`);
     process.exit(1);
@@ -54,7 +62,7 @@ function req(name: string): string {
 const appleId = req('APPLE_ID');
 const appPassword = req('APPLE_APP_PASSWORD');
 const teamId = req('APPLE_TEAM_ID');
-const buildNumber = process.env.BUILD_NUMBER ?? String(Math.floor(Date.now() / 1000));
+const buildNumber = nodeEnv.BUILD_NUMBER ?? String(Math.floor(Date.now() / 1000));
 
 const work = mkdtempSync(join(tmpdir(), 'packrat-tf-'));
 const archivePath = join(work, 'PackRat.xcarchive');
