@@ -206,10 +206,7 @@ async function waitForWatchSnapshot(watchId: string, timeoutMs: number): Promise
       'data',
     ]);
     if (container) {
-      const preferences = resolve(
-        container,
-        `Library/Preferences/${WATCH_BUNDLE_ID}.plist`,
-      );
+      const preferences = resolve(container, `Library/Preferences/${WATCH_BUNDLE_ID}.plist`);
       const payload = outputOrNull('/usr/libexec/PlistBuddy', [
         '-c',
         'Print :watch.snapshot',

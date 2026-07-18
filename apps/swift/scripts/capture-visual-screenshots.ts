@@ -1392,13 +1392,7 @@ async function launchWatchRouteWithRetry(options: {
     }
     const result = spawnSync(
       'xcrun',
-      [
-        'simctl',
-        'launch',
-        '--terminate-running-process',
-        deviceId,
-        WATCH_BUNDLE_ID,
-      ],
+      ['simctl', 'launch', '--terminate-running-process', deviceId, WATCH_BUNDLE_ID],
       {
         cwd: SWIFT_DIR,
         env: { ...Bun.env, ...env },
