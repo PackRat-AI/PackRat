@@ -80,6 +80,10 @@ jobs:
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
         run: |
           if [ "${{ matrix.scheme }}" = "PackRat-iOS" ]; then
+            export E2E_EMAIL="${E2E_EMAIL:-e2e@packrattest.local}"
+            export E2E_PASSWORD="${E2E_PASSWORD:-E2eTestPass123!}"
+            export E2E_TEST_EMAIL="${E2E_TEST_EMAIL:-$E2E_EMAIL}"
+            export E2E_TEST_PASSWORD="${E2E_TEST_PASSWORD:-$E2E_PASSWORD}"
             bun run e2e:swift:ios-smoke
             exit 0
           fi
