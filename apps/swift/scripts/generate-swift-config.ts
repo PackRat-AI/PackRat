@@ -15,6 +15,8 @@ import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { APP_CONFIG } from '@packrat/config/config';
+import { isObject } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import { renderSwiftFeatureFlags } from './lib/config-codegen';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
@@ -38,7 +40,10 @@ function parseFeatureFlagOverrides(): Partial<Record<FeatureFlagName, boolean>> 
   const raw = process.env.PACKRAT_SWIFT_FEATURE_FLAG_OVERRIDES;
   if (!raw?.trim()) return {};
 
-  const parsed = JSON.parse(raw) as Record<string, unknown>;
+  const parsed = safeJsonParse(raw);
+  if (!isObject(parsed)) {
+    throw new Error('PACKRAT_SWIFT_FEATURE_FLAG_OVERRIDES must be a JSON object');
+  }
   const knownFlags = new Set(Object.keys(APP_CONFIG.featureFlags));
   const overrides: Partial<Record<FeatureFlagName, boolean>> = {};
 
@@ -46,7 +51,7 @@ function parseFeatureFlagOverrides(): Partial<Record<FeatureFlagName, boolean>> 
     if (!knownFlags.has(key)) {
       throw new Error(`Unknown PACKRAT_SWIFT_FEATURE_FLAG_OVERRIDES key: ${key}`);
     }
-    if (typeof value !== 'boolean') {
+    if (value !== true && value !== false) {
       throw new Error(`PACKRAT_SWIFT_FEATURE_FLAG_OVERRIDES.${key} must be a boolean`);
     }
     overrides[key as FeatureFlagName] = value;

@@ -156,7 +156,7 @@ const seedOutput = await run({
   },
   captureOutput: true,
 });
-const seededUserId = seedOutput.match(/\(id=([^)]+)\)/)?.[1];
+const seededUserId = seedOutput.split('(id=').at(1)?.split(')').at(0);
 if (!seededUserId) {
   throw new Error('Unable to resolve seeded E2E user id from db:seed:e2e-user output.');
 }

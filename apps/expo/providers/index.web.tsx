@@ -24,10 +24,8 @@ export function Providers({ children }: { children: ReactNode }) {
             <GestureHandlerRootView style={{ flex: 1 }}>
               <ActionSheetProvider useCustomActionSheet>
                 <BottomSheetModalProvider>
-                  <>
-                    {children}
-                    <PortalHost />
-                  </>
+                  {children}
+                  <PortalHost />
                 </BottomSheetModalProvider>
               </ActionSheetProvider>
             </GestureHandlerRootView>

@@ -17,7 +17,7 @@ import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { APP_CONFIG } from '@packrat/config/config';
 import { nodeEnv } from '@packrat/env/node';
-import { fromZod } from '@packrat/guards';
+import { fromZod, isNumber, isObject, isString } from '@packrat/guards';
 import { safeJsonParse, safeJsonStringify, sleep } from '@packrat/utils';
 import {
   anyOf,
@@ -96,6 +96,10 @@ const SECRET_BUILD_SETTING_RE = createRegExp(
   oneOrMore(charNotIn(' \t\n\r')),
   [globalFlag],
 );
+const E2E_LOCAL_TOKEN_RE = createRegExp(exactly('e2e-local.'), oneOrMore(charIn('A-F0-9')), [
+  globalFlag,
+  caseInsensitive,
+]);
 const XCODEBUILD_TIMEOUT_MS = durationFromEnv('PACKRAT_VISUAL_XCODEBUILD_TIMEOUT_MS', 30 * 60_000);
 const XCRESULT_EXPORT_TIMEOUT_MS = durationFromEnv('PACKRAT_XCRESULT_EXPORT_TIMEOUT_MS', 90_000);
 const AUTOMATION_MODE_TIMEOUT_MS = 10_000;
@@ -349,7 +353,7 @@ function redactSecrets(output: string): string {
     if (!secret) continue;
     redacted = redacted.split(secret).join('[REDACTED]');
   }
-  redacted = redacted.replace(/e2e-local\.[a-f0-9]{64}/gi, '[REDACTED_E2E_TOKEN]');
+  redacted = redacted.replace(E2E_LOCAL_TOKEN_RE, '[REDACTED_E2E_TOKEN]');
   redacted = redacted.replace(EMAIL_RE, '[REDACTED_EMAIL]');
   redacted = redacted.replace(SECRET_BUILD_SETTING_RE, (match) => {
     const equalsIndex = match.indexOf('=');
@@ -1539,7 +1543,7 @@ async function assertDeployedVisualAuthReady(input: {
   const response = await fetch(`${baseURL}/api/auth/sign-in/email`, {
     method: 'POST',
     headers: { accept: 'application/json', 'content-type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: safeJsonStringify({ email, password }),
   });
   if (!response.ok) {
     throw new Error(
@@ -2201,15 +2205,15 @@ function addExistingArtifactSummaries(
 }
 
 function parsePlatformRunSummary(value: unknown): PlatformRunSummary | null {
-  if (!value || typeof value !== 'object') return null;
+  if (!isObject(value)) return null;
   const candidate = value as Record<string, unknown>;
   if (!isPlatform(candidate.platform)) return null;
   if (
-    typeof candidate.screenshotDir !== 'string' ||
-    typeof candidate.coverageManifest !== 'string' ||
-    typeof candidate.contactSheet !== 'string' ||
+    !isString(candidate.screenshotDir) ||
+    !isString(candidate.coverageManifest) ||
+    !isString(candidate.contactSheet) ||
     !Array.isArray(candidate.groupedContactSheets) ||
-    !candidate.groupedContactSheets.every((entry) => typeof entry === 'string')
+    !candidate.groupedContactSheets.every((entry) => isString(entry))
   ) {
     return null;
   }
@@ -2218,13 +2222,13 @@ function parsePlatformRunSummary(value: unknown): PlatformRunSummary | null {
     platform: candidate.platform,
     screenshotDir: candidate.screenshotDir,
     screenshotCount:
-      typeof candidate.screenshotCount === 'number' && Number.isFinite(candidate.screenshotCount)
+      isNumber(candidate.screenshotCount) && Number.isFinite(candidate.screenshotCount)
         ? candidate.screenshotCount
         : countCapturedScreenshots(candidate.screenshotDir),
     coverageManifest: candidate.coverageManifest,
     contactSheet: candidate.contactSheet,
     groupedContactSheets: candidate.groupedContactSheets,
-    ...(typeof candidate.resultBundle === 'string' ? { resultBundle: candidate.resultBundle } : {}),
+    ...(isString(candidate.resultBundle) ? { resultBundle: candidate.resultBundle } : {}),
     ...(candidate.testSummary ? { testSummary: candidate.testSummary as TestSummary } : {}),
   };
 }
