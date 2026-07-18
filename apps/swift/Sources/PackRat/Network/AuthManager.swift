@@ -43,6 +43,9 @@ final class AuthManager {
     /// braces guarantee for tests / mock transports.
     func login(email: String, password: String) async throws {
         if seedE2ELoginIfAllowed(email: email, password: password) {
+            await MainActor.run {
+                finishSeededE2ELogin()
+            }
             return
         }
 
@@ -382,8 +385,11 @@ final class AuthManager {
             return false
         }
 
-        seedE2EAuthenticatedUser()
         return true
+    }
+
+    private func finishSeededE2ELogin() {
+        seedE2EAuthenticatedUser()
     }
 
     private static var e2eLoginSeedAllowed: Bool {
