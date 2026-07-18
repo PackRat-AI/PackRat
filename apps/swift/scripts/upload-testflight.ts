@@ -27,15 +27,19 @@
  *                            build targets the deployed DEV API instead of production.
  *   --production             Optional clarity flag; Release/production is the default
  *                            API profile when --staging is absent.
+ *   --dry-run                Print the resolved archive identity/settings and exit
+ *                            before reading Apple credentials or running Xcode.
  *
  * Usage:
  *   bun apps/swift/scripts/upload-testflight.ts --replacement
+ *   bun apps/swift/scripts/upload-testflight.ts --replacement --dry-run
  *   bun apps/swift/scripts/upload-testflight.ts --side-by-side --staging
  */
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { safeJsonStringify } from '@packrat/utils';
 import {
   parseTestFlightUploadConfig,
   TestFlightConfigError,
@@ -50,8 +54,8 @@ const HELP = process.argv.includes('--help') || process.argv.includes('-h');
 function usage(): string {
   return [
     'Usage:',
-    '  bun apps/swift/scripts/upload-testflight.ts --replacement [--production|--staging]',
-    '  bun apps/swift/scripts/upload-testflight.ts --side-by-side [--production|--staging]',
+    '  bun apps/swift/scripts/upload-testflight.ts --replacement [--production|--staging] [--dry-run]',
+    '  bun apps/swift/scripts/upload-testflight.ts --side-by-side [--production|--staging] [--dry-run]',
     '',
     'Lanes:',
     '  --replacement   Existing Expo/App Store listing: com.andrewbierman.packrat, PackRat.',
@@ -77,6 +81,28 @@ try {
   throw error;
 }
 
+function printPreflight(input: { config: TestFlightUploadConfig; teamId?: string }) {
+  const { config, teamId = '<APPLE_TEAM_ID>' } = input;
+  const archiveOverrides = xcodeArchiveOverrides({ config, teamId });
+  console.log(
+    safeJsonStringify({
+      lane: config.lane,
+      bundleId: config.bundleId,
+      displayName: config.displayName,
+      scheme: config.scheme,
+      configuration: config.configuration,
+      apiEnvironment: config.apiEnvironment,
+      buildNumber: config.buildNumber,
+      archiveOverrides,
+    }),
+  );
+}
+
+if (uploadConfig.dryRun) {
+  printPreflight({ config: uploadConfig });
+  process.exit(0);
+}
+
 const { nodeEnv } = await import('@packrat/env/node');
 
 function req(input: { name: 'APPLE_ID' | 'APPLE_APP_PASSWORD' | 'APPLE_TEAM_ID' }): string {
@@ -95,6 +121,7 @@ if (nodeEnv.BUILD_NUMBER) {
 const appleId = req({ name: 'APPLE_ID' });
 const appPassword = req({ name: 'APPLE_APP_PASSWORD' });
 const teamId = req({ name: 'APPLE_TEAM_ID' });
+printPreflight({ config: uploadConfig, teamId });
 
 const work = mkdtempSync(join(tmpdir(), 'packrat-tf-'));
 const archivePath = join(work, 'PackRat.xcarchive');

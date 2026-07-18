@@ -30,11 +30,13 @@ describe('parseTestFlightUploadConfig', () => {
     ).toMatchObject({
       lane: 'side-by-side',
       staging: false,
+      dryRun: false,
       scheme: 'PackRat-iOS',
       configuration: 'Release',
       bundleId: 'com.andrewbierman.packrat.swift',
       displayName: 'PackRat Swift',
       buildNumber: '123',
+      apiEnvironment: 'production',
     });
   });
 
@@ -47,11 +49,13 @@ describe('parseTestFlightUploadConfig', () => {
     expect(config).toMatchObject({
       lane: 'replacement',
       staging: false,
+      dryRun: false,
       scheme: 'PackRat-iOS',
       configuration: 'Release',
       bundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
       buildNumber: '456',
+      apiEnvironment: 'production',
     });
     expect(xcodeArchiveOverrides({ config, teamId: 'TEAM123' })).toEqual([
       'CURRENT_PROJECT_VERSION=456',
@@ -70,10 +74,28 @@ describe('parseTestFlightUploadConfig', () => {
     ).toMatchObject({
       lane: 'replacement',
       staging: true,
+      dryRun: false,
       scheme: 'PackRat-iOS-Staging',
       configuration: 'Staging',
       bundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
+      apiEnvironment: 'dev',
+    });
+  });
+
+  it('supports dry-run preflight without changing identity', () => {
+    expect(
+      parseTestFlightUploadConfig({
+        argv: ['--replacement', '--dry-run'],
+        env: { BUILD_NUMBER: '101' },
+      }),
+    ).toMatchObject({
+      lane: 'replacement',
+      dryRun: true,
+      bundleId: 'com.andrewbierman.packrat',
+      displayName: 'PackRat',
+      apiEnvironment: 'production',
+      buildNumber: '101',
     });
   });
 

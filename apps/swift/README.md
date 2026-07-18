@@ -86,12 +86,17 @@ Upload commands require an explicit lane so we do not accidentally test the
 wrong App Store Connect record:
 
 ```sh
+bun apps/swift/scripts/upload-testflight.ts --replacement --dry-run
 bun apps/swift/scripts/upload-testflight.ts --replacement
 bun apps/swift/scripts/upload-testflight.ts --side-by-side --staging
 ```
 
 `--staging` uses the Staging build config (`PACKRAT_ENV=dev`). Without it, the
 script archives Release (`PACKRAT_ENV=production`).
+
+Use `--dry-run` before a real upload to verify the lane, bundle id, display
+name, build configuration, API environment, and Xcode archive overrides without
+requiring Apple credentials or running Xcode.
 
 ## Data Isolation
 

@@ -3,11 +3,13 @@ export type TestFlightLane = 'side-by-side' | 'replacement';
 export type TestFlightUploadConfig = {
   lane: TestFlightLane;
   staging: boolean;
+  dryRun: boolean;
   scheme: string;
   configuration: string;
   bundleId: string;
   displayName: string;
   buildNumber: string;
+  apiEnvironment: 'dev' | 'production';
 };
 
 export class TestFlightConfigError extends Error {
@@ -29,6 +31,7 @@ export function parseTestFlightUploadConfig(input: {
   const replacement = argv.includes('--replacement');
   const staging = argv.includes('--staging');
   const production = argv.includes('--production');
+  const dryRun = argv.includes('--dry-run');
 
   if (sideBySide === replacement) {
     throw new TestFlightConfigError(
@@ -45,11 +48,13 @@ export function parseTestFlightUploadConfig(input: {
   return {
     lane,
     staging,
+    dryRun,
     scheme: staging ? 'PackRat-iOS-Staging' : 'PackRat-iOS',
     configuration: staging ? 'Staging' : 'Release',
     bundleId: replacement ? REPLACEMENT_BUNDLE_ID : SIDE_BY_SIDE_BUNDLE_ID,
     displayName: replacement ? 'PackRat' : 'PackRat Swift',
     buildNumber,
+    apiEnvironment: staging ? 'dev' : 'production',
   };
 }
 
