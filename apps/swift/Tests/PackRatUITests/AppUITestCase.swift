@@ -171,8 +171,6 @@ class AppUITestCase: XCTestCase {
         app.typeText("\u{1b}")
         submitButton.tap()
         #else
-        app.typeText("\n")
-        Thread.sleep(forTimeInterval: 0.5)
         if submitButton.isHittable {
             submitButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             Thread.sleep(forTimeInterval: 0.25)
@@ -180,7 +178,15 @@ class AppUITestCase: XCTestCase {
                 submitButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             }
         } else {
-            app.typeText("\n")
+            let goButton = app.keyboards.buttons["Go"]
+            let returnButton = app.keyboards.buttons["Return"]
+            if goButton.waitForExistence(timeout: 1) {
+                goButton.tap()
+            } else if returnButton.waitForExistence(timeout: 1) {
+                returnButton.tap()
+            } else {
+                submitButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
         }
         #endif
     }
