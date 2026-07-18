@@ -286,6 +286,14 @@ jobs:
           E2E_TEST_EMAIL: ${{ env.E2E_EMAIL }}
           E2E_TEST_PASSWORD: ${{ env.E2E_PASSWORD }}
 
+      - name: Boot iOS simulator
+        run: |
+          DEVICE_ID=$(xcrun simctl create Swift-E2E "iPhone 17" \
+            "$(xcrun simctl list runtimes -j | jq -r '.runtimes[] | select(.identifier | contains("iOS-")) | .identifier' | sort -V | tail -1)")
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID"
+          echo "IOS_SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
+
       - name: Run iOS Swift UI E2E
         run: bun run e2e:swift:ios
 
