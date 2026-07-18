@@ -167,6 +167,10 @@ jobs:
           E2E_TEST_EMAIL: ${{ env.E2E_EMAIL }}
           E2E_TEST_PASSWORD: ${{ env.E2E_PASSWORD }}
 
+      - name: Verify deployed Swift auth
+        if: ${{ (inputs.api_environment || 'configured-secret') != 'local' }}
+        run: bun run apps/swift/scripts/verify-deployed-auth.ts
+
       - name: Run macOS Swift UI E2E
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -294,6 +298,10 @@ jobs:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
           E2E_TEST_EMAIL: ${{ env.E2E_EMAIL }}
           E2E_TEST_PASSWORD: ${{ env.E2E_PASSWORD }}
+
+      - name: Verify deployed Swift auth
+        if: ${{ (inputs.api_environment || 'configured-secret') != 'local' }}
+        run: bun run apps/swift/scripts/verify-deployed-auth.ts
 
       - name: Boot iOS simulator
         run: |
