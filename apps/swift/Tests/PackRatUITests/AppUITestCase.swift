@@ -170,6 +170,8 @@ class AppUITestCase: XCTestCase {
         app.typeText("\u{1b}")
         submitButton.tap()
         #else
+        app.typeText("\n")
+        Thread.sleep(forTimeInterval: 0.5)
         if submitButton.isHittable {
             submitButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             Thread.sleep(forTimeInterval: 0.25)
