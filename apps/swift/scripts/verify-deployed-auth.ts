@@ -1,4 +1,6 @@
 import { nodeEnv } from '@packrat/env/node';
+import { isObject, isString } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 
 type AuthPreflightInput = {
   apiBaseURL: string | undefined;
@@ -30,7 +32,7 @@ function required(input: { value: string | undefined; name: string }): string {
 function responseMessage(input: { body: AuthResponseBody; status: number }): string {
   const { body, status } = input;
   for (const value of [body.message, body.error, body.code]) {
-    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (isString(value) && value.trim()) return value.trim();
   }
   return `HTTP ${status}`;
 }
@@ -38,7 +40,7 @@ function responseMessage(input: { body: AuthResponseBody; status: number }): str
 async function parseBody(response: Pick<Response, 'json'>): Promise<AuthResponseBody> {
   try {
     const body = await response.json();
-    return body && typeof body === 'object' ? (body as AuthResponseBody) : {};
+    return isObject(body) ? (body as AuthResponseBody) : {};
   } catch {
     return {};
   }
@@ -61,7 +63,7 @@ export async function verifyDeployedAuth(input: AuthPreflightInput): Promise<voi
       'Content-Type': 'application/json',
       Origin: 'packrat://',
     },
-    body: JSON.stringify({ email, password }),
+    body: safeJsonStringify({ email, password }),
   });
   const body = await parseBody(response);
   const token = response.headers.get('set-auth-token') ?? body.token;
