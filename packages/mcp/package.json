@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@cloudflare/workers-oauth-provider": "^0.4.0",
+    "@modelcontextprotocol/ext-apps": "^1.7.4",
     "@modelcontextprotocol/sdk": "^1.11.0",
     "@packrat/api-client": "workspace:*",
     "agents": "^0.11.0",

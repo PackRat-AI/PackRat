@@ -33,6 +33,7 @@ import { OAuthProvider } from '@cloudflare/workers-oauth-provider';
 import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpAgent } from 'agents/mcp';
 import { z } from 'zod';
+import { registerPackWidget } from './apps/pack-widget';
 import { PackRatAuthHandler } from './auth';
 import { createMcpClients, type McpClients } from './client';
 import { registerPrompts } from './prompts';
@@ -203,6 +204,7 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
     registerAdminTools(this);
 
     // ── Resources + prompts ────────────────────────────────────────────────
+    registerPackWidget(this.server);
     registerResources(this);
     registerPrompts(this);
   }
