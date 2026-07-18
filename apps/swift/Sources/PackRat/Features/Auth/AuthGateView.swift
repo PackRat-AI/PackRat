@@ -29,12 +29,6 @@ struct AuthGateView: View {
                 return
             }
             #endif
-            let link = DeepLink.parse(url)
-            // Routing per destination is deferred — the scheme handler is wired here
-            // so deep links surface via Sentry breadcrumbs (once U9 lands) and the
-            // logs, even before each destination has a binding. This is enough to
-            // close the parity gap with Expo's `packrat://` scheme.
-            print("[DeepLink] received \(url) → \(link)")
         }
     }
 

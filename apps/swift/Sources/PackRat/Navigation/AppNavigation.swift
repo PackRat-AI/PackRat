@@ -100,6 +100,14 @@ struct AppNavigation: View {
     #endif
 
     var body: some View {
+        navigationBody
+            .onOpenURL { url in
+                appState.apply(DeepLink.parse(url))
+            }
+    }
+
+    @ViewBuilder
+    private var navigationBody: some View {
         #if os(iOS)
         if horizontalSizeClass == .compact {
             phoneLayout
