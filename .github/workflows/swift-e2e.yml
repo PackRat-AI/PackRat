@@ -63,6 +63,19 @@ on:
           - default
           - all-on
           - all-off
+      run_testflight_preflight:
+        description: "Verify replacement TestFlight metadata without archiving"
+        required: false
+        type: boolean
+        default: false
+      replacement_build_number:
+        description: "Swift replacement build number intended for upload"
+        required: false
+        type: string
+      current_app_store_build_number:
+        description: "Latest existing PackRat App Store/TestFlight build number"
+        required: false
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -80,6 +93,40 @@ env:
   PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
 
 jobs:
+  testflight-replacement-preflight:
+    name: TestFlight replacement preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'workflow_dispatch' && inputs.run_testflight_preflight
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Verify replacement TestFlight metadata
+        env:
+          BUILD_NUMBER: ${{ inputs.replacement_build_number }}
+          APP_STORE_CURRENT_BUILD_NUMBER: ${{ inputs.current_app_store_build_number }}
+        run: |
+          missing=()
+          [ -z "${BUILD_NUMBER:-}" ] && missing+=("replacement_build_number")
+          [ -z "${APP_STORE_CURRENT_BUILD_NUMBER:-}" ] && missing+=("current_app_store_build_number")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Required TestFlight preflight inputs missing: ${missing[*]}"
+            exit 1
+          fi
+          bun swift:testflight:preflight --replacement --production
+
   macos-ui:
     name: macOS Swift UI E2E
     runs-on: [self-hosted, macOS, packrat-e2e]

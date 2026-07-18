@@ -114,6 +114,11 @@ listing (`com.andrewbierman.packrat`, `PackRat`), Release/production, and, when
 `APP_STORE_CURRENT_BUILD_NUMBER` is supplied, has a strictly greater build
 number than the latest App Store Connect build.
 
+The same check is available from the manual **Swift E2E Tests** GitHub workflow:
+enable `run_testflight_preflight`, then provide `replacement_build_number` and
+`current_app_store_build_number`. That verifies the replacement metadata without
+archiving or uploading.
+
 ## Data Isolation
 
 Swift E2E tests use unique names for records they create. That keeps repeated
