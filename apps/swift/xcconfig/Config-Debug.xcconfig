@@ -5,16 +5,20 @@
 // NOTE: xcconfig files treat // as a comment, so full URLs can't be stored here.
 // Use PACKRAT_ENV to select an environment; URLs live in APIClient.swift.
 //
-// Default = local because the deployed dev + production APIs at workers.dev are
-// currently missing the /api/auth/* user-auth routes (verified 2026-05-20 — only
-// /api/admin/login is mounted on either). The latest main source has them but
-// they have not shipped. Until that's resolved, e2e tests + Debug builds need a
-// wrangler dev running locally on :8787.
+// Three-tier setup (mirrors Expo's development / preview / production):
+//   Debug   (this file, Run)     → local     — your machine's wrangler dev
+//   Staging (Config-Staging,     → dev       — deployed dev API, ad-hoc QA builds
+//            ad-hoc Archive)
+//   Release (Config-Release,     → production — App Store
+//            Archive)
 //
-// To use the deployed dev API instead (e.g., after the auth routes deploy):
-//   echo "PACKRAT_ENV = dev" > xcconfig/Config-Debug.local.xcconfig
-// The .local.xcconfig file is gitignored and picked up via the #include? above.
-PACKRAT_ENV = dev-local
+// Debug = local because a Debug build IS your local dev build (like Expo's dev
+// client) and should hit your local API. When you run on a PHYSICAL device,
+// localhost is the phone itself, not your Mac — point it at the deployed dev API
+// via the gitignored override (picked up by the #include? above):
+//   echo "PACKRAT_ENV = dev"       > xcconfig/Config-Debug.local.xcconfig  # deployed dev
+//   echo "PACKRAT_ENV = dev-local" > xcconfig/Config-Debug.local.xcconfig  # wrangler on :8791
+PACKRAT_ENV = local
 
 // SENTRY_DSN flows xcconfig → Info.plist → runtime.
 // Drop the DSN into Config-Debug.local.xcconfig to enable Sentry on Debug

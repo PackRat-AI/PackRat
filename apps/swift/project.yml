@@ -13,10 +13,12 @@ options:
 
 configs:
   Debug: debug
+  Staging: release
   Release: release
 
 configFiles:
   Debug: xcconfig/Config-Debug.xcconfig
+  Staging: xcconfig/Config-Staging.xcconfig
   Release: xcconfig/Config-Release.xcconfig
 
 packages:
@@ -72,12 +74,8 @@ targets:
         CFBundleShortVersionString: "2.0.29"
         CFBundleVersion: "2026071601"
         LSRequiresIPhoneOS: true
-        UILaunchScreen:
-          UIColorName: ""
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: true
-        NSLocationWhenInUseUsageDescription: "This app needs access to your location while you are using it."
-        ITSAppUsesNonExemptEncryption: false
+        # All four orientations are required for iPad (device family "1,2");
+        # App Store validation (error 90474) rejects the bundle otherwise.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
@@ -87,6 +85,12 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+        UILaunchScreen:
+          UIColorName: ""
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+        NSLocationWhenInUseUsageDescription: "This app needs access to your location while you are using it."
+        ITSAppUsesNonExemptEncryption: false
         PACKRAT_ENV: $(PACKRAT_ENV)
         SENTRY_DSN: $(SENTRY_DSN)
         GOOGLE_IOS_CLIENT_ID: 993694750638-97t0vhfml04u2avrlbve22jbs9qcinbc.apps.googleusercontent.com
@@ -127,7 +131,9 @@ targets:
         product: Sentry
       - package: GoogleSignIn
         product: GoogleSignIn
-      - target: PackRat-Watch
+      # PackRat-Watch is intentionally not embedded in distribution builds yet.
+      # Keep the companion target buildable while Swift beta TestFlight ships as
+      # a side-by-side iOS app first.
     settings:
       base:
         SWIFT_VERSION: "5.9"
@@ -135,7 +141,7 @@ targets:
         CURRENT_PROJECT_VERSION: "2026071601"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
-        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat
+        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift
         PRODUCT_MODULE_NAME: PackRat
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -159,7 +165,7 @@ targets:
         CFBundleShortVersionString: "2.0.29"
         CFBundleVersion: "2026071601"
         WKApplication: true
-        WKCompanionAppBundleIdentifier: com.andrewbierman.packrat
+        WKCompanionAppBundleIdentifier: com.andrewbierman.packrat.swift
         ITSAppUsesNonExemptEncryption: false
     settings:
       base:
@@ -168,7 +174,7 @@ targets:
         CURRENT_PROJECT_VERSION: "2026071601"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
-        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.watchkitapp
+        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift.watchkitapp
         PRODUCT_MODULE_NAME: PackRatWatch
         ASSETCATALOG_COMPILER_APPICON_NAME: WatchAppIcon
 
@@ -345,6 +351,16 @@ schemes:
       config: Debug
     archive:
       config: Release
+  # Ad-hoc QA distribution scheme — archives the Staging config (→ dev API).
+  # Built by .github/workflows/swift-staging-adhoc.yml and exported ad-hoc.
+  PackRat-iOS-Staging:
+    build:
+      targets:
+        PackRat-iOS: all
+    run:
+      config: Staging
+    archive:
+      config: Staging
   PackRat-macOS:
     build:
       targets:

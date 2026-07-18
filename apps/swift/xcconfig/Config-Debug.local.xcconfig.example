@@ -1,3 +1,10 @@
-// Copy to Config-Debug.local.xcconfig (gitignored) to override the debug environment.
-// Valid values: local, staging, production
-// PACKRAT_ENV = staging
+// Copy to Config-Debug.local.xcconfig (gitignored) to override the Debug environment.
+// Useful when running a Debug build on a physical device (localhost = the phone,
+// not your Mac) — point it at the deployed dev API instead.
+//
+// Valid PACKRAT_ENV values (URLs live in APIClient.swift):
+//   local      → http://localhost:8787   (your wrangler dev)
+//   dev-local  → http://localhost:8791   (orchestrator's parallel wrangler)
+//   dev        → deployed dev API
+//   production → deployed production API
+// PACKRAT_ENV = dev
