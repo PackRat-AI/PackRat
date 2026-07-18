@@ -120,6 +120,7 @@ export const nodeEnvSchema = z.object({
   APPLE_ID: z.string().email().optional(),
   APPLE_APP_PASSWORD: z.string().min(1).optional(),
   APPLE_TEAM_ID: z.string().min(1).optional(),
+  APPLE_ASC_PROVIDER: z.string().min(1).optional(),
   BUILD_NUMBER: z.string().regex(/^\d+$/).optional(),
 });
 
@@ -198,5 +199,6 @@ export const nodeEnv = nodeEnvSchema.parse({
   APPLE_ID: process.env.APPLE_ID,
   APPLE_APP_PASSWORD: process.env.APPLE_APP_PASSWORD,
   APPLE_TEAM_ID: process.env.APPLE_TEAM_ID,
+  APPLE_ASC_PROVIDER: process.env.APPLE_ASC_PROVIDER,
   BUILD_NUMBER: process.env.BUILD_NUMBER,
 });

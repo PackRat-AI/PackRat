@@ -15,9 +15,11 @@
  * Required env (put in apps/swift/.env.local, gitignored):
  *   APPLE_ID                 your Apple ID email
  *   APPLE_APP_PASSWORD       app-specific password (xxxx-xxxx-xxxx-xxxx)
- *   APPLE_TEAM_ID            the team that owns the record (e.g. 7WV9JYCW55)
+ *   APPLE_TEAM_ID            Apple Developer Team ID used for signing
  *
  * Optional env:
+ *   APPLE_ASC_PROVIDER       App Store Connect provider short name for altool;
+ *                            defaults to APPLE_TEAM_ID when omitted
  *   BUILD_NUMBER             CFBundleVersion for this upload (default: timestamp)
  *
  * Flags:
@@ -39,6 +41,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { nodeEnv } from '@packrat/env/node';
 import { safeJsonStringify } from '@packrat/utils';
 import {
   parseTestFlightUploadConfig,
@@ -73,6 +76,7 @@ let uploadConfig: TestFlightUploadConfig;
 try {
   uploadConfig = parseTestFlightUploadConfig({
     argv: process.argv.slice(2),
+    env: { BUILD_NUMBER: nodeEnv.BUILD_NUMBER },
   });
 } catch (error) {
   if (error instanceof TestFlightConfigError) {
@@ -82,8 +86,16 @@ try {
   throw error;
 }
 
-function printPreflight(input: { config: TestFlightUploadConfig; teamId?: string }) {
-  const { config, teamId = '<APPLE_TEAM_ID>' } = input;
+function printPreflight(input: {
+  config: TestFlightUploadConfig;
+  teamId?: string;
+  ascProvider?: string;
+}) {
+  const {
+    config,
+    teamId = '<APPLE_TEAM_ID>',
+    ascProvider = '<APPLE_ASC_PROVIDER or APPLE_TEAM_ID>',
+  } = input;
   const archiveOverrides = xcodeArchiveOverrides({ config, teamId });
   console.log(
     safeJsonStringify({
@@ -96,17 +108,16 @@ function printPreflight(input: { config: TestFlightUploadConfig; teamId?: string
       configuration: config.configuration,
       apiEnvironment: config.apiEnvironment,
       buildNumber: config.buildNumber,
+      ascProvider,
       archiveOverrides,
     }),
   );
 }
 
 if (uploadConfig.dryRun) {
-  printPreflight({ config: uploadConfig });
+  printPreflight({ config: uploadConfig, ascProvider: nodeEnv.APPLE_ASC_PROVIDER });
   process.exit(0);
 }
-
-const { nodeEnv } = await import('@packrat/env/node');
 
 function req(input: { name: 'APPLE_ID' | 'APPLE_APP_PASSWORD' | 'APPLE_TEAM_ID' }): string {
   const v = nodeEnv[input.name];
@@ -124,7 +135,8 @@ if (nodeEnv.BUILD_NUMBER) {
 const appleId = req({ name: 'APPLE_ID' });
 const appPassword = req({ name: 'APPLE_APP_PASSWORD' });
 const teamId = req({ name: 'APPLE_TEAM_ID' });
-printPreflight({ config: uploadConfig, teamId });
+const ascProvider = nodeEnv.APPLE_ASC_PROVIDER ?? teamId;
+printPreflight({ config: uploadConfig, teamId, ascProvider });
 
 const work = mkdtempSync(join(tmpdir(), 'packrat-tf-'));
 const archivePath = join(work, 'PackRat.xcarchive');
@@ -210,7 +222,7 @@ run({
     '--password',
     appPassword,
     '--asc-provider',
-    teamId,
+    ascProvider,
   ],
 });
 
