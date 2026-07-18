@@ -34,6 +34,8 @@ describe('parseTestFlightUploadConfig', () => {
       scheme: 'PackRat-iOS',
       configuration: 'Release',
       bundleId: 'com.andrewbierman.packrat.swift',
+      watchBundleId: 'com.andrewbierman.packrat.swift.watchkitapp',
+      companionBundleId: 'com.andrewbierman.packrat.swift',
       displayName: 'PackRat Swift',
       buildNumber: '123',
       apiEnvironment: 'production',
@@ -53,6 +55,8 @@ describe('parseTestFlightUploadConfig', () => {
       scheme: 'PackRat-iOS',
       configuration: 'Release',
       bundleId: 'com.andrewbierman.packrat',
+      watchBundleId: 'com.andrewbierman.packrat.watchkitapp',
+      companionBundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
       buildNumber: '456',
       apiEnvironment: 'production',
@@ -60,7 +64,9 @@ describe('parseTestFlightUploadConfig', () => {
     expect(xcodeArchiveOverrides({ config, teamId: 'TEAM123' })).toEqual([
       'CURRENT_PROJECT_VERSION=456',
       'DEVELOPMENT_TEAM=TEAM123',
-      'PRODUCT_BUNDLE_IDENTIFIER=com.andrewbierman.packrat',
+      'PACKRAT_IOS_BUNDLE_IDENTIFIER=com.andrewbierman.packrat',
+      'PACKRAT_WATCH_BUNDLE_IDENTIFIER=com.andrewbierman.packrat.watchkitapp',
+      'PACKRAT_COMPANION_BUNDLE_IDENTIFIER=com.andrewbierman.packrat',
       'PACKRAT_DISPLAY_NAME=PackRat',
     ]);
   });
@@ -78,6 +84,8 @@ describe('parseTestFlightUploadConfig', () => {
       scheme: 'PackRat-iOS-Staging',
       configuration: 'Staging',
       bundleId: 'com.andrewbierman.packrat',
+      watchBundleId: 'com.andrewbierman.packrat.watchkitapp',
+      companionBundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
       apiEnvironment: 'dev',
     });

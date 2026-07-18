@@ -89,6 +89,8 @@ function printPreflight(input: { config: TestFlightUploadConfig; teamId?: string
     safeJsonStringify({
       lane: config.lane,
       bundleId: config.bundleId,
+      watchBundleId: config.watchBundleId,
+      companionBundleId: config.companionBundleId,
       displayName: config.displayName,
       scheme: config.scheme,
       configuration: config.configuration,

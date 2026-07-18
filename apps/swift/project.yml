@@ -137,9 +137,12 @@ targets:
         product: Sentry
       - package: GoogleSignIn
         product: GoogleSignIn
-      # PackRat-Watch is intentionally not embedded in distribution builds yet.
-      # Keep the companion target buildable while Swift beta TestFlight ships as
-      # a side-by-side iOS app first.
+      - target: PackRat-Watch
+        embed: true
+        codeSign: true
+        copy:
+          destination: wrapper
+          subpath: Watch
     settings:
       base:
         SWIFT_VERSION: "5.9"
@@ -147,7 +150,10 @@ targets:
         CURRENT_PROJECT_VERSION: "2026071601"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
-        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift
+        PACKRAT_IOS_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift
+        PRODUCT_BUNDLE_IDENTIFIER: $(PACKRAT_IOS_BUNDLE_IDENTIFIER)
+        PACKRAT_COMPANION_BUNDLE_IDENTIFIER: $(PACKRAT_IOS_BUNDLE_IDENTIFIER)
+        PACKRAT_WATCH_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift.watchkitapp
         PACKRAT_DISPLAY_NAME: PackRat Swift
         PRODUCT_MODULE_NAME: PackRat
         TARGETED_DEVICE_FAMILY: "1,2"
@@ -174,7 +180,7 @@ targets:
         CFBundleShortVersionString: "2.0.29"
         CFBundleVersion: "2026071601"
         WKApplication: true
-        WKCompanionAppBundleIdentifier: com.andrewbierman.packrat.swift
+        WKCompanionAppBundleIdentifier: $(PACKRAT_COMPANION_BUNDLE_IDENTIFIER)
         ITSAppUsesNonExemptEncryption: false
     settings:
       base:
@@ -183,7 +189,9 @@ targets:
         CURRENT_PROJECT_VERSION: "2026071601"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
-        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift.watchkitapp
+        PACKRAT_WATCH_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift.watchkitapp
+        PRODUCT_BUNDLE_IDENTIFIER: $(PACKRAT_WATCH_BUNDLE_IDENTIFIER)
+        PACKRAT_COMPANION_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift
         PACKRAT_DISPLAY_NAME: PackRat Swift
         PRODUCT_MODULE_NAME: PackRatWatch
         ASSETCATALOG_COMPILER_APPICON_NAME: WatchAppIcon

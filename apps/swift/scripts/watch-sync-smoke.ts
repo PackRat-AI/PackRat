@@ -20,8 +20,14 @@ type SimulatorPair = {
 const REPO_ROOT = resolve(import.meta.dir, '../../..');
 const SWIFT_DIR = resolve(REPO_ROOT, 'apps/swift');
 const ARTIFACT_DIR = resolve(REPO_ROOT, 'artifacts/screenshots-latest');
-const IOS_BUNDLE_ID = 'com.andrewbierman.packrat';
-const WATCH_BUNDLE_ID = 'com.andrewbierman.packrat.watchkitapp';
+const IOS_BUNDLE_ID = nodeEnv.PACKRAT_IOS_BUNDLE_ID ?? 'com.andrewbierman.packrat.swift';
+const WATCH_BUNDLE_ID =
+  nodeEnv.PACKRAT_WATCH_BUNDLE_ID ?? 'com.andrewbierman.packrat.swift.watchkitapp';
+const KNOWN_IOS_BUNDLE_IDS = ['com.andrewbierman.packrat', 'com.andrewbierman.packrat.swift'];
+const KNOWN_WATCH_BUNDLE_IDS = [
+  'com.andrewbierman.packrat.watchkitapp',
+  'com.andrewbierman.packrat.swift.watchkitapp',
+];
 const WAIT_MS = Number(nodeEnv.PACKRAT_WATCH_SYNC_WAIT_MS ?? 45_000);
 
 // biome-ignore lint/complexity/useMaxParams: command wrappers read like shell invocations.
@@ -202,7 +208,7 @@ async function waitForWatchSnapshot(watchId: string, timeoutMs: number): Promise
     if (container) {
       const preferences = resolve(
         container,
-        'Library/Preferences/com.andrewbierman.packrat.watchkitapp.plist',
+        `Library/Preferences/${WATCH_BUNDLE_ID}.plist`,
       );
       const payload = outputOrNull('/usr/libexec/PlistBuddy', [
         '-c',
@@ -256,16 +262,27 @@ async function main() {
 
   const iosAppPath = appPath('PackRat-iOS', phoneDestination);
   const standaloneWatchAppPath = appPath('PackRat-Watch', watchDestination);
-  const embeddedWatchAppPath = resolve(iosAppPath, 'Watch/PackRat-Watch.app');
+  const embeddedWatchCandidates = [
+    resolve(iosAppPath, 'PlugIns/PackRat-Watch.app'),
+    resolve(iosAppPath, 'Watch/PackRat-Watch.app'),
+  ];
+  const embeddedWatchAppPath = embeddedWatchCandidates.find((candidate) => existsSync(candidate));
   if (!existsSync(iosAppPath)) throw new Error(`Missing iOS app at ${iosAppPath}`);
-  if (!existsSync(embeddedWatchAppPath))
-    throw new Error(`Missing embedded Watch app at ${embeddedWatchAppPath}`);
+  if (!embeddedWatchAppPath) {
+    throw new Error(`Missing embedded Watch app at ${embeddedWatchCandidates.join(' or ')}`);
+  }
   if (!existsSync(standaloneWatchAppPath))
     throw new Error(`Missing Watch app at ${standaloneWatchAppPath}`);
 
   console.log('-> Installing apps');
-  run('xcrun', ['simctl', 'uninstall', phoneId, IOS_BUNDLE_ID], { allowFailure: true });
-  run('xcrun', ['simctl', 'uninstall', watchId, WATCH_BUNDLE_ID], { allowFailure: true });
+  for (const bundleId of KNOWN_IOS_BUNDLE_IDS) {
+    run('xcrun', ['simctl', 'terminate', phoneId, bundleId], { allowFailure: true });
+    run('xcrun', ['simctl', 'uninstall', phoneId, bundleId], { allowFailure: true });
+  }
+  for (const bundleId of KNOWN_WATCH_BUNDLE_IDS) {
+    run('xcrun', ['simctl', 'terminate', watchId, bundleId], { allowFailure: true });
+    run('xcrun', ['simctl', 'uninstall', watchId, bundleId], { allowFailure: true });
+  }
   await installAppWithRetry(phoneId, IOS_BUNDLE_ID, iosAppPath);
   await installAppWithRetry(watchId, WATCH_BUNDLE_ID, standaloneWatchAppPath);
   await waitForInstalledApp(phoneId, IOS_BUNDLE_ID);

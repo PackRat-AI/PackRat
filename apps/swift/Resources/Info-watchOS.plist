@@ -27,6 +27,6 @@
 	<key>WKApplication</key>
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>com.andrewbierman.packrat.swift</string>
+	<string>$(PACKRAT_COMPANION_BUNDLE_IDENTIFIER)</string>
 </dict>
 </plist>

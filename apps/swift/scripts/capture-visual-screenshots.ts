@@ -81,6 +81,8 @@ const MACOS_SCHEME_PATH = resolve(
   SWIFT_DIR,
   'PackRat.xcodeproj/xcshareddata/xcschemes/PackRat-macOS.xcscheme',
 );
+const WATCH_BUNDLE_ID =
+  nodeEnv.PACKRAT_WATCH_BUNDLE_ID ?? 'com.andrewbierman.packrat.swift.watchkitapp';
 const EMAIL_RE = createRegExp(
   oneOrMore(charIn('A-Z0-9._%+-')),
   '@',
@@ -1395,7 +1397,7 @@ async function launchWatchRouteWithRetry(options: {
         'launch',
         '--terminate-running-process',
         deviceId,
-        'com.andrewbierman.packrat.watchkitapp',
+        WATCH_BUNDLE_ID,
       ],
       {
         cwd: SWIFT_DIR,

@@ -77,10 +77,12 @@ The Swift iOS app has two TestFlight identities:
 
 - Replacement beta: `com.andrewbierman.packrat`, display name `PackRat`. This is
   the existing Expo/App Store listing and is the only lane that can validate a
-  seamless update for existing testers.
+  seamless update for existing testers. Its embedded watchOS companion uses
+  `com.andrewbierman.packrat.watchkitapp`.
 - Side-by-side beta: `com.andrewbierman.packrat.swift`, display name
   `PackRat Swift`. This is useful for parallel Swift QA, but iOS treats it as a
-  separate app with separate install, keychain, and app container state.
+  separate app with separate install, keychain, and app container state. Its
+  embedded watchOS companion uses `com.andrewbierman.packrat.swift.watchkitapp`.
 
 Upload commands require an explicit lane so we do not accidentally test the
 wrong App Store Connect record:

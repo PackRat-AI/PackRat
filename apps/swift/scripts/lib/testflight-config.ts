@@ -7,6 +7,8 @@ export type TestFlightUploadConfig = {
   scheme: string;
   configuration: string;
   bundleId: string;
+  watchBundleId: string;
+  companionBundleId: string;
   displayName: string;
   buildNumber: string;
   apiEnvironment: 'dev' | 'production';
@@ -21,6 +23,8 @@ export class TestFlightConfigError extends Error {
 
 const SIDE_BY_SIDE_BUNDLE_ID = 'com.andrewbierman.packrat.swift';
 const REPLACEMENT_BUNDLE_ID = 'com.andrewbierman.packrat';
+const SIDE_BY_SIDE_WATCH_BUNDLE_ID = 'com.andrewbierman.packrat.swift.watchkitapp';
+const REPLACEMENT_WATCH_BUNDLE_ID = 'com.andrewbierman.packrat.watchkitapp';
 
 export function parseTestFlightUploadConfig(input: {
   argv: readonly string[];
@@ -52,6 +56,8 @@ export function parseTestFlightUploadConfig(input: {
     scheme: staging ? 'PackRat-iOS-Staging' : 'PackRat-iOS',
     configuration: staging ? 'Staging' : 'Release',
     bundleId: replacement ? REPLACEMENT_BUNDLE_ID : SIDE_BY_SIDE_BUNDLE_ID,
+    watchBundleId: replacement ? REPLACEMENT_WATCH_BUNDLE_ID : SIDE_BY_SIDE_WATCH_BUNDLE_ID,
+    companionBundleId: replacement ? REPLACEMENT_BUNDLE_ID : SIDE_BY_SIDE_BUNDLE_ID,
     displayName: replacement ? 'PackRat' : 'PackRat Swift',
     buildNumber,
     apiEnvironment: staging ? 'dev' : 'production',
@@ -66,7 +72,9 @@ export function xcodeArchiveOverrides(input: {
   return [
     `CURRENT_PROJECT_VERSION=${config.buildNumber}`,
     `DEVELOPMENT_TEAM=${teamId}`,
-    `PRODUCT_BUNDLE_IDENTIFIER=${config.bundleId}`,
+    `PACKRAT_IOS_BUNDLE_IDENTIFIER=${config.bundleId}`,
+    `PACKRAT_WATCH_BUNDLE_IDENTIFIER=${config.watchBundleId}`,
+    `PACKRAT_COMPANION_BUNDLE_IDENTIFIER=${config.companionBundleId}`,
     `PACKRAT_DISPLAY_NAME=${config.displayName}`,
   ];
 }
