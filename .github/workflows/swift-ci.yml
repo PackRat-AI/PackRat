@@ -79,19 +79,23 @@ jobs:
           E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
         run: |
-          if [ "${{ matrix.scheme }}" = "PackRat-iOS" ]; then
-            export E2E_EMAIL="${E2E_EMAIL:-e2e@packrattest.local}"
-            export E2E_PASSWORD="${E2E_PASSWORD:-E2eTestPass123!}"
-            export E2E_TEST_EMAIL="${E2E_TEST_EMAIL:-$E2E_EMAIL}"
-            export E2E_TEST_PASSWORD="${E2E_TEST_PASSWORD:-$E2E_PASSWORD}"
-            bun run e2e:swift:ios-smoke
-            exit 0
-          fi
-
           cd apps/swift
           # Use signing-bypass on macOS so CI can build/test without a Mac Development cert
-          # provisioned for the runner. iOS Simulator never needs signing.
-          CODE_SIGN_ARGS=(CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_ALLOWED=NO)
+          # provisioned for the runner. iOS Simulator never needs signing, but
+          # it does need the same PACKRAT_E2E_* build settings as the local
+          # wrapper so smoke auth does not depend on repository secrets.
+          if [ "${{ matrix.scheme }}" = "PackRat-iOS" ]; then
+            E2E_EMAIL="${E2E_EMAIL:-e2e@packrattest.local}"
+            E2E_PASSWORD="${E2E_PASSWORD:-E2eTestPass123!}"
+            CODE_SIGN_ARGS=(
+              "PACKRAT_E2E_EMAIL=${E2E_EMAIL}"
+              "PACKRAT_E2E_PASSWORD=${E2E_PASSWORD}"
+              "PACKRAT_E2E_ALLOW_LOGIN_SEED=1"
+              "PACKRAT_ENV=local"
+            )
+          else
+            CODE_SIGN_ARGS=(CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_ALLOWED=NO)
+          fi
           DESTINATION="${{ matrix.destination }}"
           if [ "${{ matrix.scheme }}" = "PackRat-iOS" ]; then
             DESTINATION="platform=iOS Simulator,id=${IOS_SIMULATOR_ID}"
