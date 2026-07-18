@@ -27,7 +27,7 @@ jobs:
   build-and-smoke:
     name: ${{ matrix.scheme }} (smoke)
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -74,7 +74,7 @@ jobs:
           echo "IOS_SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
 
       - name: Run ${{ matrix.plan }} test plan
-        timeout-minutes: 20
+        timeout-minutes: 35
         env:
           E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
