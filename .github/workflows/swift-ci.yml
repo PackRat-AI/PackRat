@@ -79,14 +79,15 @@ jobs:
           E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
         run: |
+          if [ "${{ matrix.scheme }}" = "PackRat-iOS" ]; then
+            bun run e2e:swift:ios-smoke
+            exit 0
+          fi
+
           cd apps/swift
           # Use signing-bypass on macOS so CI can build/test without a Mac Development cert
           # provisioned for the runner. iOS Simulator never needs signing.
-          if [ "${{ matrix.scheme }}" = "PackRat-macOS" ]; then
-            CODE_SIGN_ARGS=(CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_ALLOWED=NO)
-          else
-            CODE_SIGN_ARGS=()
-          fi
+          CODE_SIGN_ARGS=(CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_ALLOWED=NO)
           DESTINATION="${{ matrix.destination }}"
           if [ "${{ matrix.scheme }}" = "PackRat-iOS" ]; then
             DESTINATION="platform=iOS Simulator,id=${IOS_SIMULATOR_ID}"
