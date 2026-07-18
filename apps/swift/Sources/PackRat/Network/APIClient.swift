@@ -206,10 +206,14 @@ actor APIClient {
         guard let http = response as? HTTPURLResponse else { throw PackRatError.unknown }
         switch http.statusCode {
         case 200...299: return
-        case 401: throw PackRatError.unauthorized
+        case 401:
+            if let message = APIErrorBody.decodeMessage(from: data), !message.isEmpty {
+                throw PackRatError.httpError(statusCode: http.statusCode, message: message)
+            }
+            throw PackRatError.unauthorized
         case 404: throw PackRatError.notFound
         default:
-            let message = (try? JSONDecoder().decode(APIErrorBody.self, from: data))?.error
+            let message = APIErrorBody.decodeMessage(from: data)
             throw PackRatError.httpError(statusCode: http.statusCode, message: message)
         }
     }
@@ -231,4 +235,14 @@ actor APIClient {
 
 private struct APIErrorBody: Decodable {
     let error: String?
+    let message: String?
+    let code: String?
+
+    static func decodeMessage(from data: Data) -> String? {
+        guard let body = try? JSONDecoder().decode(Self.self, from: data) else {
+            return nil
+        }
+
+        return body.message ?? body.error ?? body.code
+    }
 }

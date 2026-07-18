@@ -134,9 +134,10 @@ class AppUITestCase: XCTestCase {
 
         submitLoginForm()
 
+        let loggedIn = waitForLoggedIn(timeout: 20)
         XCTAssertTrue(
-            waitForLoggedIn(timeout: 20),
-            "Logged-in landmark must appear after login — check credentials or network"
+            loggedIn,
+            "Logged-in landmark must appear after login — \(visibleLoginFailureMessage())"
         )
     }
 
@@ -182,6 +183,20 @@ class AppUITestCase: XCTestCase {
             app.typeText("\n")
         }
         #endif
+    }
+
+    func visibleLoginFailureMessage() -> String {
+        let loginError = app.staticTexts["login_error"]
+        if loginError.exists, !loginError.label.isEmpty {
+            return "visible login error: \(loginError.label)"
+        }
+
+        let inlineError = app.staticTexts["inline_error"]
+        if inlineError.exists, !inlineError.label.isEmpty {
+            return "visible inline error: \(inlineError.label)"
+        }
+
+        return "no visible login error"
     }
 
     /// Cross-platform "is the user logged in NOW?" wait with an explicit timeout.

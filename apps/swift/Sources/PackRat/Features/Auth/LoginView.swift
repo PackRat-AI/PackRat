@@ -46,7 +46,7 @@ struct LoginView: View {
                 .authGroupedSurface()
 
                 if let error {
-                    InlineErrorView(message: error)
+                    LoginInlineErrorView(message: error)
                 }
 
                 VStack(spacing: 12) {
@@ -177,6 +177,26 @@ struct LoginView: View {
         }
     }
     #endif
+}
+
+private struct LoginInlineErrorView: View {
+    let message: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .foregroundStyle(.red)
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(3)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .accessibilityIdentifier("login_error")
+    }
 }
 
 @ViewBuilder

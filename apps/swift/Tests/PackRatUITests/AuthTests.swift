@@ -231,7 +231,11 @@ final class AuthTests: AppUITestCase {
 
         submitLoginForm()
 
-        XCTAssertTrue(waitForLoggedIn(timeout: 20), "Logged-in landmark must appear after successful login")
+        let loggedIn = waitForLoggedIn(timeout: 20)
+        XCTAssertTrue(
+            loggedIn,
+            "Logged-in landmark must appear after successful login — \(visibleLoginFailureMessage())"
+        )
         XCTAssertFalse(app.textFields["login_email"].exists, "Login form should be dismissed")
     }
 
