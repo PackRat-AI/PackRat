@@ -26,7 +26,8 @@ async function isHealthy(baseURL: string): Promise<boolean> {
   }
 }
 
-async function waitForHealthy(baseURL: string, child: ChildProcess): Promise<void> {
+async function waitForHealthy(input: { baseURL: string; child: ChildProcess }): Promise<void> {
+  const { baseURL, child } = input;
   const startedAt = Date.now();
   let exited = false;
   let exitCode: number | null = null;
@@ -100,7 +101,7 @@ export async function ensureLocalE2EAPI(input: {
   child.stderr?.on('data', (chunk) => process.stderr.write(chunk));
 
   try {
-    await waitForHealthy(baseURL, child);
+    await waitForHealthy({ baseURL, child });
     console.log(`✓ Local E2E API is healthy at ${baseURL}`);
   } catch (error) {
     await stopChild(child);

@@ -68,30 +68,34 @@ const work = mkdtempSync(join(tmpdir(), 'packrat-tf-'));
 const archivePath = join(work, 'PackRat.xcarchive');
 const exportDir = join(work, 'export');
 
-function run(cmd: string, args: string[]) {
+function run(input: { cmd: string; args: string[] }) {
+  const { cmd, args } = input;
   console.log(`\n$ ${cmd} ${args.join(' ')}`);
   execFileSync(cmd, args, { stdio: 'inherit' });
 }
 
 // 1. Archive for a real device (TestFlight cannot accept a simulator build).
-run('xcodebuild', [
-  'archive',
-  '-project',
-  PROJECT,
-  '-scheme',
-  SCHEME,
-  '-configuration',
-  CONFIGURATION,
-  '-destination',
-  'generic/platform=iOS',
-  '-archivePath',
-  archivePath,
-  // Lets Xcode register the App IDs and generate provisioning profiles for
-  // the (new) bundle ids on the fly, using the signed-in account.
-  '-allowProvisioningUpdates',
-  `CURRENT_PROJECT_VERSION=${buildNumber}`,
-  `DEVELOPMENT_TEAM=${teamId}`,
-]);
+run({
+  cmd: 'xcodebuild',
+  args: [
+    'archive',
+    '-project',
+    PROJECT,
+    '-scheme',
+    SCHEME,
+    '-configuration',
+    CONFIGURATION,
+    '-destination',
+    'generic/platform=iOS',
+    '-archivePath',
+    archivePath,
+    // Lets Xcode register the App IDs and generate provisioning profiles for
+    // the (new) bundle ids on the fly, using the signed-in account.
+    '-allowProvisioningUpdates',
+    `CURRENT_PROJECT_VERSION=${buildNumber}`,
+    `DEVELOPMENT_TEAM=${teamId}`,
+  ],
+});
 
 // 2. Export a signed .ipa for App Store distribution.
 const exportOptions = join(work, 'ExportOptions.plist');
@@ -111,37 +115,43 @@ writeFileSync(
 `,
 );
 
-run('xcodebuild', [
-  '-exportArchive',
-  '-archivePath',
-  archivePath,
-  '-exportPath',
-  exportDir,
-  '-exportOptionsPlist',
-  exportOptions,
-  // Export also needs to generate the App Store distribution profiles for the
-  // new bundle ids on the fly.
-  '-allowProvisioningUpdates',
-]);
+run({
+  cmd: 'xcodebuild',
+  args: [
+    '-exportArchive',
+    '-archivePath',
+    archivePath,
+    '-exportPath',
+    exportDir,
+    '-exportOptionsPlist',
+    exportOptions,
+    // Export also needs to generate the App Store distribution profiles for the
+    // new bundle ids on the fly.
+    '-allowProvisioningUpdates',
+  ],
+});
 
 // 3. Upload to TestFlight via altool (app-specific-password auth).
 // `--asc-provider` (team short name) is required when the Apple ID belongs to
 // more than one team, so altool knows which one to deliver to.
 const ipa = join(exportDir, `${SCHEME}.ipa`);
-run('xcrun', [
-  'altool',
-  '--upload-app',
-  '--type',
-  'ios',
-  '--file',
-  ipa,
-  '--username',
-  appleId,
-  '--password',
-  appPassword,
-  '--asc-provider',
-  teamId,
-]);
+run({
+  cmd: 'xcrun',
+  args: [
+    'altool',
+    '--upload-app',
+    '--type',
+    'ios',
+    '--file',
+    ipa,
+    '--username',
+    appleId,
+    '--password',
+    appPassword,
+    '--asc-provider',
+    teamId,
+  ],
+});
 
 console.log(
   `\n✓ Uploaded build ${buildNumber} to TestFlight (${BUNDLE_ID}, ${CONFIGURATION}` +

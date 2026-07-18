@@ -13,9 +13,12 @@ import { DEFAULT_MODELS } from '../utils/ai/models';
 const isE2EStubOpenAiKey = (openAiApiKey: string | undefined) =>
   openAiApiKey?.startsWith('sk-e2e-stub-') === true;
 
-const isLocalE2ESeasonSuggestionEnv = (openAiApiKey: string | undefined, databaseUrl: string) =>
-  (isE2EStubOpenAiKey(openAiApiKey) || openAiApiKey === 'sk-test') &&
-  (databaseUrl.includes('127.0.0.1') || databaseUrl.includes('localhost'));
+const isLocalE2ESeasonSuggestionEnv = (input: {
+  openAiApiKey: string | undefined;
+  databaseUrl: string;
+}) =>
+  (isE2EStubOpenAiKey(input.openAiApiKey) || input.openAiApiKey === 'sk-test') &&
+  (input.databaseUrl.includes('127.0.0.1') || input.databaseUrl.includes('localhost'));
 
 /**
  * Formats user inventory items for AI processing
@@ -48,7 +51,12 @@ export const seasonSuggestionsRoutes = new Elysia({ prefix: '/season-suggestions
         NEON_DATABASE_URL,
       } = getEnv();
 
-      if (isLocalE2ESeasonSuggestionEnv(OPENAI_API_KEY, NEON_DATABASE_URL)) {
+      if (
+        isLocalE2ESeasonSuggestionEnv({
+          openAiApiKey: OPENAI_API_KEY,
+          databaseUrl: NEON_DATABASE_URL,
+        })
+      ) {
         const suggestionItems = [
           {
             id: 'e2e-season-rain-shell',
