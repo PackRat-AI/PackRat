@@ -46,6 +46,7 @@ import {
   type TestFlightUploadConfig,
   xcodeArchiveOverrides,
 } from './lib/testflight-config';
+import { findExportedIPA } from './lib/testflight-export';
 
 const SWIFT_DIR = new URL('..', import.meta.url).pathname;
 const PROJECT = join(SWIFT_DIR, 'PackRat.xcodeproj');
@@ -192,7 +193,7 @@ run({
 // 3. Upload to TestFlight via altool (app-specific-password auth).
 // `--asc-provider` (team short name) is required when the Apple ID belongs to
 // more than one team, so altool knows which one to deliver to.
-const ipa = join(exportDir, `${uploadConfig.scheme}.ipa`);
+const ipa = findExportedIPA(exportDir);
 run({
   cmd: 'xcrun',
   args: [
