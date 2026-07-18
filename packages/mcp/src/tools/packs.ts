@@ -57,7 +57,7 @@ export function registerPackTools(agent: AgentContext): void {
         onSuccess: (data) => {
           const snapshot = normalizePackSnapshot(data);
           if (!snapshot) return errMessage('get pack returned malformed data');
-          return okStructured(snapshot);
+          return okStructured({ data, structuredContent: snapshot });
         },
       }),
   );

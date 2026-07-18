@@ -72,8 +72,8 @@ the PackRat OAuth sign-in when prompted. Then verify:
    ChatGPT compatibility `openai/outputTemplate` pointing to
    `ui://packrat/pack-workspace-v1.html`.
 2. `resources/read` for that URI returns `text/html;profile=mcp-app` HTML.
-3. Calling `get_pack` with an owned pack ID returns a terse text `content` fallback plus bounded
-   `structuredContent`; it must not return tokens or a direct API URL.
+3. Calling `get_pack` with an owned pack ID returns the complete Eden API result as formatted JSON
+   text `content` plus bounded `structuredContent`; it must not return tokens or a direct API URL.
 4. A generic MCP client can consume the text or structured result and ignore the UI metadata.
 
 Inspector versions can rename controls, but the protocol operations above are the source of
@@ -147,7 +147,7 @@ Automated/local checks:
 - [ ] `bun test:mcp` passes.
 - [ ] `bun run check` reports no new issues.
 - [ ] The Wrangler dry run bundles the Worker and embedded widget without publishing.
-- [ ] `/health` succeeds on the local, tunneled, or deployed HTTPS origin.
+- [ ] `/health` succeeds on the local HTTP origin or the tunneled/deployed HTTPS origin.
 - [ ] Inspector completes OAuth, lists `get_pack`, reads the linked UI resource, and observes both
       text `content` and `structuredContent`.
 - [ ] An unauthenticated or unauthorized pack call remains an MCP error and exposes no stale

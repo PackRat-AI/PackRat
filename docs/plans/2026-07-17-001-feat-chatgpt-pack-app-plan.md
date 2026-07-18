@@ -42,7 +42,7 @@ The current MCP surface is capable but text-only. Rebuilding the same domain acc
 
 - R1. The existing `/mcp` endpoint remains the single remote tool endpoint for both generic MCP clients and the ChatGPT App.
 - R2. `get_pack` continues to fetch authoritative data through `@packrat/api-client` and Eden Treaty; the widget must not call Packrat API routes directly.
-- R3. A successful `get_pack` result includes concise `structuredContent` suitable for both the model and widget, a terse text `content` fallback, and no credentials or sensitive widget-only payloads.
+- R3. A successful `get_pack` result includes concise `structuredContent` suitable for both the model and widget, the complete Eden API result serialized as formatted JSON in the text `content` fallback, and no credentials or sensitive widget-only payloads.
 - R4. The `get_pack` descriptor links to a versioned `ui://` resource using MCP Apps standard metadata and accurate read-only annotations.
 - R5. The widget renders the pack name, aggregate weight/count information, and an accessible item/category breakdown from the tool result, including empty and failure states.
 - R6. The widget uses the MCP Apps bridge as the portable integration surface and treats `window.openai` only as an optional compatibility/host enhancement.
@@ -51,7 +51,7 @@ The current MCP surface is capable but text-only. Rebuilding the same domain acc
 - R9. Automated tests protect the tool descriptor, UI resource, structured result, error fallback, and generic-client compatibility.
 - R10. Developer documentation explains local Worker startup, MCP Inspector validation, HTTPS tunneling, ChatGPT Developer Mode connection, and the required refresh after metadata changes.
 - R11. User-controlled pack and item text renders only through safe DOM text APIs after runtime snapshot validation; API data is never interpolated through `innerHTML`.
-- R12. The model/widget snapshot is deterministically bounded by field length, item-row count, and serialized size, and reports total/truncated counts when the API result exceeds those limits.
+- R12. The model/widget snapshot is deterministically bounded by field length, item-row count, category count, and the resulting composed serialized-size ceiling, and reports total/truncated counts when the API result exceeds those limits.
 
 ### Key Flow
 

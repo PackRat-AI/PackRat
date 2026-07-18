@@ -1,4 +1,5 @@
 import { RESOURCE_MIME_TYPE, registerAppResource } from '@modelcontextprotocol/ext-apps/server';
+import { isObject } from '@packrat/guards';
 import { z } from 'zod';
 
 export const PACK_WIDGET_URI = 'ui://packrat/pack-workspace-v1.html';
@@ -12,6 +13,7 @@ const PACK_WIDGET_CSP = {
 const MAX_NAME_LENGTH = 160;
 const MAX_ITEM_ROWS = 50;
 const MAX_CATEGORIES = 24;
+const MAX_SOURCE_ITEMS = 10_000;
 const MAX_WEIGHT_GRAMS = 1_000_000_000_000;
 
 const PackItemInput = z
@@ -66,10 +68,13 @@ function bounded({ value, length = MAX_NAME_LENGTH }: { value: string; length?: 
   return value.slice(0, length);
 }
 
-function grams({ weight, unit }: { weight: number; unit: string }): number {
+function grams({ weight, unit }: { weight: number; unit: string }): number | null {
   const normalizedUnit = unit.toLowerCase();
-  let factor = 1;
+  let factor: number;
   switch (normalizedUnit) {
+    case 'g':
+      factor = 1;
+      break;
     case 'kg':
       factor = 1000;
       break;
@@ -80,12 +85,18 @@ function grams({ weight, unit }: { weight: number; unit: string }): number {
     case 'lbs':
       factor = 453.592;
       break;
+    default:
+      return null;
   }
   return Math.round(weight * factor * 100) / 100;
 }
 
 /** Validate and reduce an API pack into the bounded model/widget contract. */
 export function normalizePackSnapshot(value: unknown): PackSnapshot | null {
+  if (isObject(value)) {
+    const sourceItems = Reflect.get(value, 'items');
+    if (Array.isArray(sourceItems) && sourceItems.length > MAX_SOURCE_ITEMS) return null;
+  }
   const parsed = PackInput.safeParse(value);
   if (!parsed.success) return null;
   const pack = parsed.data;
@@ -96,7 +107,9 @@ export function normalizePackSnapshot(value: unknown): PackSnapshot | null {
   for (const [index, item] of pack.items.entries()) {
     const name = bounded({ value: item.category || 'Uncategorized', length: 80 });
     const category = categoryMap.get(name) ?? { name, itemCount: 0, weight: 0 };
-    const itemGrams = grams({ weight: item.weight, unit: item.weightUnit }) * item.quantity;
+    const unitGrams = grams({ weight: item.weight, unit: item.weightUnit });
+    if (unitGrams == null) return null;
+    const itemGrams = unitGrams * item.quantity;
     if (itemGrams > MAX_WEIGHT_GRAMS) return null;
     category.itemCount += 1;
     category.weight = Math.round((category.weight + itemGrams) * 100) / 100;
@@ -109,7 +122,7 @@ export function normalizePackSnapshot(value: unknown): PackSnapshot | null {
         id: bounded({ value: item.id, length: 80 }),
         name: bounded({ value: item.name }),
         category: name,
-        weight: grams({ weight: item.weight, unit: item.weightUnit }),
+        weight: unitGrams,
         weightUnit: 'g',
         quantity: item.quantity,
         consumable: item.consumable,

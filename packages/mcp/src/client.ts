@@ -72,8 +72,14 @@ export function ok(data: unknown): McpToolResult {
   };
 }
 
-export function okStructured(data: Record<string, unknown>): McpToolResult {
-  return { ...ok(data), structuredContent: data };
+export function okStructured({
+  data,
+  structuredContent,
+}: {
+  data: unknown;
+  structuredContent: Record<string, unknown>;
+}): McpToolResult {
+  return { ...ok(data), structuredContent };
 }
 
 export function errMessage(message: string): McpToolResult {

@@ -35,7 +35,7 @@ describe('pack widget app contract', () => {
 
   it('returns structured content alongside the ordinary text fallback', () => {
     const snapshot = { pack: { id: 'pack-1', name: 'Weekender' }, itemCount: 3 };
-    const result = okStructured(snapshot);
+    const result = okStructured({ data: snapshot, structuredContent: snapshot });
 
     expect(result.structuredContent).toEqual(snapshot);
     expect(result.content[0]).toEqual({
@@ -52,18 +52,16 @@ describe('pack widget app contract', () => {
         name: 'Weekender',
         totalWeight: 1250,
         baseWeight: 900,
-        items: [
-          {
-            id: 'item-1',
-            name: 'Tent',
-            category: 'shelter',
-            weight: 1250,
-            weightUnit: 'g',
-            quantity: 1,
-            consumable: false,
-            worn: false,
-          },
-        ],
+        items: Array.from({ length: 51 }, (_, index) => ({
+          id: `item-${index}`,
+          name: index === 50 ? 'Generic fallback only item' : `Item ${index}`,
+          category: 'shelter',
+          weight: 1,
+          weightUnit: 'g',
+          quantity: 1,
+          consumable: false,
+          worn: false,
+        })),
       },
       error: null,
       status: 200,
@@ -91,10 +89,11 @@ describe('pack widget app contract', () => {
     expect(result.isError).toBeUndefined();
     expect(result.structuredContent).toMatchObject({
       pack: { id: 'pack-1', name: 'Weekender' },
-      totals: { itemCount: 1, totalWeight: 1250, baseWeight: 900 },
+      totals: { itemCount: 51, displayedItemCount: 50, truncatedItemCount: 1 },
     });
+    expect(result.structuredContent.items).toHaveLength(50);
     expect(result.content[0].text).toContain('Weekender');
-    expect(result.content[0].text).toContain('1250');
+    expect(result.content[0].text).toContain('Generic fallback only item');
   });
 
   it.each([401, 403, 404])('keeps %s API failures as ordinary MCP errors', async (status) => {
@@ -266,6 +265,47 @@ describe('pack widget app contract', () => {
     ).toBeNull();
   });
 
+  it('rejects unsupported weight units', () => {
+    expect(
+      normalizePackSnapshot({
+        id: 'unsupported-unit',
+        name: 'Unsupported unit',
+        items: [
+          {
+            id: 'item-1',
+            name: 'Stone item',
+            category: 'other',
+            weight: 1,
+            weightUnit: 'stone',
+            quantity: 1,
+            consumable: false,
+            worn: false,
+          },
+        ],
+      }),
+    ).toBeNull();
+  });
+
+  it('rejects source arrays above the pre-parse aggregation limit', () => {
+    const item = {
+      id: 'item',
+      name: 'Item',
+      category: 'other',
+      weight: 1,
+      weightUnit: 'g',
+      quantity: 1,
+      consumable: false,
+      worn: false,
+    };
+    expect(
+      normalizePackSnapshot({
+        id: 'too-many-items',
+        name: 'Too many items',
+        items: Array.from({ length: 10_001 }, () => item),
+      }),
+    ).toBeNull();
+  });
+
   it('turns rejected Eden requests into ordinary MCP errors', async () => {
     const registerTool = vi.fn();
     const get = vi.fn().mockRejectedValue(new Error('network unavailable'));
@@ -283,14 +323,14 @@ describe('pack widget app contract', () => {
   it('bounds hostile and oversized API text deterministically', () => {
     const payload = '<img src=x onerror=alert(1)><script>alert(2)</script>';
     const snapshot = normalizePackSnapshot({
-      id: 'pack-xss',
+      id: payload.repeat(20),
       name: payload.repeat(20),
       totalWeight: 100,
       baseWeight: 100,
       items: Array.from({ length: 80 }, (_, index) => ({
-        id: `item-${index}`,
+        id: `${payload}-${index}`.repeat(20),
         name: `${payload}-${index}`.repeat(20),
-        category: index % 2 ? 'shelter' : 'kitchen',
+        category: `${payload}-category-${index % 30}`.repeat(5),
         weight: 1,
         weightUnit: 'g',
         quantity: 1,
@@ -301,10 +341,14 @@ describe('pack widget app contract', () => {
     expect(snapshot).not.toBeNull();
     expect(snapshot?.pack.name.length).toBeLessThanOrEqual(160);
     expect(snapshot?.items).toHaveLength(50);
+    expect(snapshot?.categories).toHaveLength(24);
     expect(snapshot?.totals).toMatchObject({
       itemCount: 80,
       displayedItemCount: 50,
       truncatedItemCount: 30,
+      categoryCount: 30,
+      displayedCategoryCount: 24,
+      truncatedCategoryCount: 6,
     });
     expect(JSON.stringify(snapshot).length).toBeLessThanOrEqual(32_000);
   });
