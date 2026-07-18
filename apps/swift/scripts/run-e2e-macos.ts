@@ -295,7 +295,7 @@ function redactSecrets(output: string): string {
 
 let exitStatus = 1;
 try {
-  const resultStatus = await new Promise<number | null>((resolve) => {
+  const resultStatus = await new Promise<number | null>((resolve, reject) => {
     const child = spawn('xcodebuild', args, {
       cwd: SWIFT_DIR,
       env: process.env,
@@ -307,6 +307,7 @@ try {
     child.stderr.on('data', (chunk) => {
       process.stderr.write(redactSecrets(chunk.toString()));
     });
+    child.once('error', reject);
     child.on('close', (code) => resolve(code));
   });
   exitStatus = resultStatus ?? 1;

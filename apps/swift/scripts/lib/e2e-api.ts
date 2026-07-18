@@ -31,12 +31,19 @@ async function waitForHealthy(input: { baseURL: string; child: ChildProcess }): 
   const startedAt = Date.now();
   let exited = false;
   let exitCode: number | null = null;
+  let spawnError: Error | undefined;
+  child.once('error', (error) => {
+    spawnError = error;
+  });
   child.once('exit', (code) => {
     exited = true;
     exitCode = code;
   });
 
   while (Date.now() - startedAt < 120_000) {
+    if (spawnError) {
+      throw new Error(`Local E2E API failed to start: ${spawnError.message}`);
+    }
     if (await isHealthy(baseURL)) return;
     if (exited) {
       throw new Error(
