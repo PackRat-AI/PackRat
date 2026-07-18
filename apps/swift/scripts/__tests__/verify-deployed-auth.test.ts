@@ -75,7 +75,9 @@ describe('verifyDeployedAuth', () => {
             body: { message: 'Invalid email or password', code: 'INVALID_EMAIL_OR_PASSWORD' },
           }),
       }),
-    ).rejects.toThrow('Swift deployed auth preflight failed: Invalid email or password');
+    ).rejects.toThrow(
+      'Swift deployed auth preflight failed: Invalid email or password. Check that E2E_TEST_EMAIL/E2E_TEST_PASSWORD match a real QA user on https://api.example.test; production is not seeded by Swift CI.',
+    );
   });
 
   it('falls back to status when the error body is not JSON', async () => {

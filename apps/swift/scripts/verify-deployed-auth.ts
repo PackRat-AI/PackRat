@@ -37,6 +37,14 @@ function responseMessage(input: { body: AuthResponseBody; status: number }): str
   return `HTTP ${status}`;
 }
 
+function authFailureMessage(input: { body: AuthResponseBody; status: number; apiBaseURL: string }) {
+  const message = responseMessage(input);
+  if (input.status === 401) {
+    return `${message}. Check that E2E_TEST_EMAIL/E2E_TEST_PASSWORD match a real QA user on ${input.apiBaseURL}; production is not seeded by Swift CI.`;
+  }
+  return message;
+}
+
 async function parseBody(response: Pick<Response, 'json'>): Promise<AuthResponseBody> {
   try {
     const body = await response.json();
@@ -77,9 +85,10 @@ export async function verifyDeployedAuth(input: AuthPreflightInput): Promise<voi
 
   if (!response.ok) {
     throw new Error(
-      `Swift deployed auth preflight failed: ${responseMessage({
+      `Swift deployed auth preflight failed: ${authFailureMessage({
         body,
         status: response.status,
+        apiBaseURL,
       })}`,
     );
   }
