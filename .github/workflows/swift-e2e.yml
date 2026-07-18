@@ -35,6 +35,14 @@ on:
         required: false
         type: boolean
         default: false
+      ios_test_plan:
+        description: "iOS test depth for manual runs"
+        required: false
+        type: choice
+        default: smoke
+        options:
+          - smoke
+          - full
       api_environment:
         description: "API target for manual runs"
         required: false
@@ -295,7 +303,13 @@ jobs:
           echo "IOS_SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
 
       - name: Run iOS Swift UI E2E
-        run: bun run e2e:swift:ios
+        run: |
+          plan="${{ inputs.ios_test_plan || 'full' }}"
+          if [ "$plan" = "full" ]; then
+            bun run e2e:swift:ios
+          else
+            bun run e2e:swift:ios-smoke
+          fi
 
       - name: Summarize iOS xcresult
         if: always()
