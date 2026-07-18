@@ -75,8 +75,8 @@ targets:
       properties:
         CFBundleDisplayName: $(PACKRAT_DISPLAY_NAME)
         CFBundleIconName: AppIcon
-        CFBundleShortVersionString: "2.0.29"
-        CFBundleVersion: "2026071601"
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSRequiresIPhoneOS: true
         # All four orientations are required for iPad (device family "1,2");
         # App Store validation (error 90474) rejects the bundle otherwise.
@@ -177,8 +177,8 @@ targets:
       properties:
         CFBundleDisplayName: $(PACKRAT_DISPLAY_NAME)
         CFBundleIconName: WatchAppIcon
-        CFBundleShortVersionString: "2.0.29"
-        CFBundleVersion: "2026071601"
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         WKApplication: true
         WKCompanionAppBundleIdentifier: $(PACKRAT_COMPANION_BUNDLE_IDENTIFIER)
         ITSAppUsesNonExemptEncryption: false
@@ -217,8 +217,8 @@ targets:
       properties:
         CFBundleDisplayName: $(PACKRAT_DISPLAY_NAME)
         CFBundleIconName: AppIcon
-        CFBundleShortVersionString: "2.0.29"
-        CFBundleVersion: "2026071601"
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSPrincipalClass: NSApplication
         NSHighResolutionCapable: true
         PACKRAT_ENV: $(PACKRAT_ENV)
