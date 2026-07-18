@@ -93,10 +93,12 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Install xcodegen
+        run: brew install xcodegen
 
       - name: Resolve Swift E2E target
         run: |
@@ -223,10 +225,12 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Install xcodegen
+        run: brew install xcodegen
 
       - name: Resolve Swift E2E target
         run: |
