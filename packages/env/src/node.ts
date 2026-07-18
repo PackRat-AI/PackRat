@@ -87,6 +87,8 @@ export const nodeEnvSchema = z.object({
 
   // ── OpenAI (packages/api/src/db/seed-e2e-catalog.ts) ──────────────
   OPENAI_API_KEY: z.string().min(1).optional(),
+  WEATHER_API_KEY: z.string().min(1).optional(),
+  APPLE_PRIVATE_KEY: z.string().min(1).optional(),
   E2E_API_URL: z.string().url().optional(),
   E2E_DB_URL: z.string().url().optional(),
   E2E_DB_PORT: z.string().regex(/^\d+$/, 'E2E_DB_PORT must be a numeric string').optional(),
@@ -159,6 +161,8 @@ export const nodeEnv = nodeEnvSchema.parse({
   E2E_TEST_EMAIL: process.env.E2E_TEST_EMAIL,
   E2E_TEST_PASSWORD: process.env.E2E_TEST_PASSWORD,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  WEATHER_API_KEY: process.env.WEATHER_API_KEY,
+  APPLE_PRIVATE_KEY: process.env.APPLE_PRIVATE_KEY,
   E2E_API_URL: process.env.E2E_API_URL,
   E2E_DB_URL: process.env.E2E_DB_URL,
   E2E_DB_PORT: process.env.E2E_DB_PORT,
