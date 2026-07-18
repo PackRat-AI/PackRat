@@ -18,6 +18,8 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>E2E_API_BASE_URL</key>
+	<string>$(E2E_API_BASE_URL)</string>
 	<key>PACKRAT_E2E_EMAIL</key>
 	<string>$(PACKRAT_E2E_EMAIL)</string>
 	<key>PACKRAT_E2E_PASSWORD</key>
@@ -26,7 +28,13 @@
 	<string>$(PACKRAT_E2E_SESSION_TOKEN)</string>
 	<key>PACKRAT_E2E_USER_ID</key>
 	<string>$(PACKRAT_E2E_USER_ID)</string>
+	<key>PACKRAT_E2E_ALLOW_LOGIN_SEED</key>
+	<string>$(PACKRAT_E2E_ALLOW_LOGIN_SEED)</string>
 	<key>PACKRAT_SCREENSHOT_DIR</key>
 	<string>$(PACKRAT_SCREENSHOT_DIR)</string>
+	<key>PACKRAT_VISUAL_AUTH_MODE</key>
+	<string>$(PACKRAT_VISUAL_AUTH_MODE)</string>
+	<key>PACKRAT_VISUAL_PLATFORM</key>
+	<string>$(PACKRAT_VISUAL_PLATFORM)</string>
 </dict>
 </plist>

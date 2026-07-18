@@ -349,6 +349,7 @@ function redactSecrets(output: string): string {
     if (!secret) continue;
     redacted = redacted.split(secret).join('[REDACTED]');
   }
+  redacted = redacted.replace(/e2e-local\.[a-f0-9]{64}/gi, '[REDACTED_E2E_TOKEN]');
   redacted = redacted.replace(EMAIL_RE, '[REDACTED_EMAIL]');
   redacted = redacted.replace(SECRET_BUILD_SETTING_RE, (match) => {
     const equalsIndex = match.indexOf('=');
@@ -918,14 +919,29 @@ function allocateResultBundle(platform: Platform): string {
   return path;
 }
 
-function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<VisualTestResult> {
+async function runXcodeVisualTest(
+  platform: Platform,
+  screenshotDir: string,
+): Promise<VisualTestResult> {
   if (platform === 'watch') return runWatchVisualCapture(screenshotDir);
 
   const resultBundle = allocateResultBundle(platform);
   const writableScreenshotDir = allocateWritableScreenshotDir(platform);
-  const credentials = e2eBuildSettings();
+  const packratEnv = Bun.env.PACKRAT_ENV ?? nodeEnv.PACKRAT_ENV ?? 'local';
+  const authMode = visualAuthMode(packratEnv);
+  const apiBaseURL = Bun.env.E2E_API_BASE_URL ?? '';
+  const credentials = e2eBuildSettings(packratEnv);
+  const visualBuildSettings = [
+    ...(apiBaseURL ? [`E2E_API_BASE_URL=${apiBaseURL}`] : []),
+    `PACKRAT_ENV=${packratEnv}`,
+    `PACKRAT_VISUAL_AUTH_MODE=${authMode}`,
+    `PACKRAT_VISUAL_PLATFORM=${platform}`,
+  ];
   injectVisualSchemeEnvironment(platform, {
+    E2E_API_BASE_URL: apiBaseURL,
+    PACKRAT_ENV: packratEnv,
     PACKRAT_SCREENSHOT_DIR: writableScreenshotDir,
+    PACKRAT_VISUAL_AUTH_MODE: authMode,
     PACKRAT_VISUAL_PLATFORM: platform,
     ...buildSettingsToEnv(credentials),
   });
@@ -944,6 +960,7 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
           '-destination',
           pickIOSDestination(platform),
           '-only-testing:PackRatUITests/VisualScreenshotTests',
+          ...visualBuildSettings,
           ...credentials,
         ]
       : [
@@ -958,6 +975,7 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
           'CODE_SIGN_IDENTITY=-',
           'CODE_SIGNING_ALLOWED=YES',
           'CODE_SIGNING_REQUIRED=NO',
+          ...visualBuildSettings,
           ...credentials,
         ];
 
@@ -965,6 +983,8 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
   console.log(`→ Screenshot dir: ${screenshotDir}`);
   console.log(`→ XCTest write dir: ${writableScreenshotDir}`);
   console.log(`→ Result bundle: ${resultBundle}`);
+
+  await assertDeployedVisualAuthReady({ packratEnv, apiBaseURL, authMode });
 
   if (platform === 'macos') {
     assertAutomationModeAvailable();
@@ -978,7 +998,9 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
       cwd: SWIFT_DIR,
       env: {
         ...Bun.env,
-        PACKRAT_ENV: Bun.env.PACKRAT_ENV ?? nodeEnv.PACKRAT_ENV ?? 'local',
+        E2E_API_BASE_URL: apiBaseURL,
+        PACKRAT_ENV: packratEnv,
+        PACKRAT_VISUAL_AUTH_MODE: authMode,
         PACKRAT_SCREENSHOT_DIR: writableScreenshotDir,
         PACKRAT_VISUAL_PLATFORM: platform,
       },
@@ -1448,7 +1470,13 @@ const AttachmentManifestEntrySchema = z
   .passthrough();
 const parseAttachmentManifest = fromZod(z.array(AttachmentManifestEntrySchema));
 
-function e2eBuildSettings(): string[] {
+function visualAuthMode(packratEnv: string): 'seeded' | 'real' {
+  const explicit = Bun.env.PACKRAT_VISUAL_AUTH_MODE;
+  if (explicit === 'seeded' || explicit === 'real') return explicit;
+  return packratEnv === 'local' || packratEnv === 'dev-local' ? 'seeded' : 'real';
+}
+
+function e2eBuildSettings(packratEnv: string): string[] {
   const apiE2EEnv = readSimpleEnvFile(API_E2E_ENV_PATH);
   const email = Bun.env.E2E_TEST_EMAIL ?? Bun.env.E2E_EMAIL ?? apiE2EEnv.E2E_TEST_EMAIL;
   const password = Bun.env.E2E_TEST_PASSWORD ?? Bun.env.E2E_PASSWORD ?? apiE2EEnv.E2E_TEST_PASSWORD;
@@ -1460,9 +1488,10 @@ function e2eBuildSettings(): string[] {
   }
 
   const userId = Bun.env.E2E_TEST_USER_ID ?? apiE2EEnv.E2E_TEST_USER_ID;
+  const shouldSynthesizeLocalToken = packratEnv === 'local' || packratEnv === 'dev-local';
   const sessionToken =
     Bun.env.PACKRAT_E2E_SESSION_TOKEN ??
-    (userId
+    (shouldSynthesizeLocalToken && userId
       ? localE2ESessionToken({
           secret:
             Bun.env.BETTER_AUTH_SECRET ??
@@ -1476,9 +1505,54 @@ function e2eBuildSettings(): string[] {
   return [
     `PACKRAT_E2E_EMAIL=${email}`,
     `PACKRAT_E2E_PASSWORD=${password}`,
+    `PACKRAT_E2E_ALLOW_LOGIN_SEED=${shouldSynthesizeLocalToken ? '1' : '0'}`,
     ...(userId ? [`PACKRAT_E2E_USER_ID=${userId}`] : []),
     ...(sessionToken ? [`PACKRAT_E2E_SESSION_TOKEN=${sessionToken}`] : []),
   ];
+}
+
+async function assertDeployedVisualAuthReady(input: {
+  packratEnv: string;
+  apiBaseURL: string;
+  authMode: 'seeded' | 'real';
+}): Promise<void> {
+  const { packratEnv, apiBaseURL, authMode } = input;
+  if (authMode !== 'real') return;
+
+  const baseURL =
+    apiBaseURL ||
+    (packratEnv === 'dev'
+      ? 'https://packrat-api-dev.orange-frost-d665.workers.dev'
+      : packratEnv === 'production'
+        ? 'https://packrat-api.orange-frost-d665.workers.dev'
+        : '');
+  if (!baseURL) return;
+
+  const email = Bun.env.E2E_TEST_EMAIL ?? Bun.env.E2E_EMAIL ?? apiE2EEnv.E2E_TEST_EMAIL;
+  const password = Bun.env.E2E_TEST_PASSWORD ?? Bun.env.E2E_PASSWORD ?? apiE2EEnv.E2E_TEST_PASSWORD;
+  if (!email || !password) {
+    throw new Error(
+      `PACKRAT_VISUAL_AUTH_MODE=real for PACKRAT_ENV=${packratEnv}, but E2E credentials are missing.`,
+    );
+  }
+
+  const response = await fetch(`${baseURL}/api/auth/sign-in/email`, {
+    method: 'POST',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!response.ok) {
+    throw new Error(
+      [
+        `Swift visual real-auth preflight failed for PACKRAT_ENV=${packratEnv}: ${response.status}.`,
+        packratEnv === 'dev'
+          ? 'Seed the dev E2E user before capturing deployed-dev screenshots.'
+          : 'Use a valid production QA account before capturing production/TestFlight screenshots.',
+        'The visual runner no longer falls back to seeded auth for deployed APIs.',
+      ].join(' '),
+    );
+  }
+  console.log(`✓ Verified deployed ${packratEnv} E2E auth before visual capture`);
 }
 
 function localE2ESessionToken(input: { secret: string; email: string; userId: string }): string {

@@ -25,7 +25,8 @@ final class AuthManager {
             UserDefaults.standard.removeObject(forKey: "current_user")
             UserDefaults.standard.removeObject(forKey: skippedLoginKey)
         }
-        if ProcessInfo.processInfo.arguments.contains("--seed-e2e-auth") {
+        if ProcessInfo.processInfo.arguments.contains("--seed-e2e-auth"),
+           Self.e2eLoginSeedAllowed {
             seedE2EAuthenticatedUser()
             return
         }
@@ -344,6 +345,7 @@ final class AuthManager {
     private func seedE2ELoginIfAllowed(email: String, password: String) -> Bool {
         let environment = ProcessInfo.processInfo.environment
         guard ProcessInfo.processInfo.arguments.contains("--allow-e2e-login-seed"),
+              Self.e2eLoginSeedAllowed,
               let expectedEmail = environment["PACKRAT_E2E_EMAIL"],
               let expectedPassword = environment["PACKRAT_E2E_PASSWORD"],
               email.caseInsensitiveCompare(expectedEmail) == .orderedSame,
@@ -354,6 +356,11 @@ final class AuthManager {
 
         seedE2EAuthenticatedUser()
         return true
+    }
+
+    private static var e2eLoginSeedAllowed: Bool {
+        let value = ProcessInfo.processInfo.environment["PACKRAT_E2E_ALLOW_LOGIN_SEED"] ?? ""
+        return value == "1" || value.caseInsensitiveCompare("true") == .orderedSame
     }
 }
 

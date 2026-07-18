@@ -113,6 +113,26 @@ jobs:
           esac
           echo "PACKRAT_SWIFT_FEATURE_FLAG_PROFILE=${{ inputs.feature_flag_profile || 'default' }}" >> "$GITHUB_ENV"
 
+      - name: Verify Swift visual deployed prerequisites
+        if: ${{ (inputs.api_environment || 'local') == 'dev' }}
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+        run: |
+          missing=()
+          [ -z "${NEON_DATABASE_URL:-}" ] && missing+=("NEON_DEV_DATABASE_URL")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Required Swift visual dev secrets missing: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Seed dev E2E test user
+        if: ${{ (inputs.api_environment || 'local') == 'dev' }}
+        run: bun run --filter @packrat/api db:seed:e2e-user
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
       - name: Generate Xcode project
         run: bun swift
 

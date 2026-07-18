@@ -43,10 +43,13 @@ final class VisualScreenshotTests: XCTestCase {
 
     private var isPadVisualRun: Bool {
         #if os(iOS)
-        ProcessInfo.processInfo.environment["PACKRAT_VISUAL_PLATFORM"] == "ipad"
+        let bundle = Bundle(for: VisualScreenshotTests.self)
+        let platform = ProcessInfo.processInfo.environment["PACKRAT_VISUAL_PLATFORM"]
+            ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_VISUAL_PLATFORM") as? String)
+        return platform == "ipad"
             || screenshotDirectory?.path.contains("ipad") == true
         #else
-        false
+        return false
         #endif
     }
 
@@ -1284,6 +1287,11 @@ final class VisualScreenshotTests: XCTestCase {
             ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_USER_ID") as? String)
             ?? "00000000-0000-4000-8000-000000000001"
 
+        if usesRealVisualLogin && !sampleData && !forceOffline {
+            launchRealAuthenticated(email: email)
+            return
+        }
+
         app.terminate()
         app = XCUIApplication()
         app.launchArguments = [
@@ -1297,6 +1305,7 @@ final class VisualScreenshotTests: XCTestCase {
         app.launchEnvironment["PACKRAT_E2E_EMAIL"] = email
         app.launchEnvironment["PACKRAT_E2E_USER_ID"] = userId
         app.launchEnvironment["PACKRAT_E2E_SESSION_TOKEN"] = visualE2ESessionToken(email: email, userId: userId)
+        app.launchEnvironment["PACKRAT_E2E_ALLOW_LOGIN_SEED"] = "1"
         if sampleData {
             app.launchArguments.append("--visual-sample-data")
             app.launchEnvironment["PACKRAT_VISUAL_SAMPLE_DATA"] = "1"
@@ -1311,6 +1320,54 @@ final class VisualScreenshotTests: XCTestCase {
         dismissSystemInterruptions()
         #endif
         XCTAssertTrue(waitForAuthenticatedShell(), "Authenticated visual shell must launch from seeded E2E state")
+    }
+
+    private var usesRealVisualLogin: Bool {
+        let bundle = Bundle(for: VisualScreenshotTests.self)
+        return ProcessInfo.processInfo.environment["PACKRAT_VISUAL_AUTH_MODE"] == "real"
+            || (bundle.object(forInfoDictionaryKey: "PACKRAT_VISUAL_AUTH_MODE") as? String) == "real"
+    }
+
+    private func launchRealAuthenticated(email: String) {
+        let bundle = Bundle(for: VisualScreenshotTests.self)
+        let password = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_PASSWORD") as? String) ?? ""
+        XCTAssertFalse(password.isEmpty, "PACKRAT_E2E_PASSWORD is required for real visual login")
+
+        app.terminate()
+        app = XCUIApplication()
+        app.launchArguments = [
+            "--disable-animations",
+            "--use-userdefaults-auth",
+            "--reset-auth",
+        ]
+        app.launchEnvironment["PACKRAT_VISUAL_SCREENSHOTS"] = "1"
+        app.launchEnvironment["E2E_API_BASE_URL"] = visualE2EAPIBaseURL
+        app.launch()
+        #if os(macOS)
+        app.activate()
+        dismissSystemInterruptions()
+        #endif
+
+        let signIn = app.buttons["auth_sign_in"]
+        if signIn.waitForExistence(timeout: 10) {
+            signIn.tap()
+        }
+
+        let emailField = app.textFields["login_email"]
+        XCTAssertTrue(emailField.waitForExistence(timeout: 10), "Login screen must appear for real visual login")
+        emailField.tap()
+        emailField.typeText(email)
+
+        let passwordField = app.secureTextFields["login_password"]
+        passwordField.tap()
+        passwordField.typeText(password)
+
+        #if os(macOS)
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
+        #endif
+        app.buttons["login_submit"].tap()
+
+        XCTAssertTrue(waitForAuthenticatedShell(), "Authenticated visual shell must launch from real login")
     }
 
     private func waitForAuthenticatedShell() -> Bool {
@@ -1346,7 +1403,10 @@ final class VisualScreenshotTests: XCTestCase {
     }
 
     private var visualE2EAPIBaseURL: String {
-        ProcessInfo.processInfo.environment["E2E_API_BASE_URL"] ?? "http://localhost:8787"
+        let bundle = Bundle(for: VisualScreenshotTests.self)
+        return ProcessInfo.processInfo.environment["E2E_API_BASE_URL"]
+            ?? (bundle.object(forInfoDictionaryKey: "E2E_API_BASE_URL") as? String)
+            ?? "http://localhost:8787"
     }
 
     private func visualE2ESessionToken(email: String, userId: String) -> String {

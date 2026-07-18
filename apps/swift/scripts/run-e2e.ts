@@ -98,6 +98,7 @@ const localAPI = await ensureLocalE2EAPI({ packratEnv: PACKRAT_ENV, env: process
 loadEnvFile(resolve(REPO_ROOT, 'packages/api/.dev.vars.e2e'), true);
 
 const localE2ESessionToken = deriveLocalE2ESessionToken();
+const allowLoginSeed = PACKRAT_ENV === 'local' || PACKRAT_ENV === 'dev-local';
 const uiTestEmail = process.env.E2E_TEST_EMAIL ?? E2E_EMAIL;
 const uiTestPassword = process.env.E2E_TEST_PASSWORD ?? E2E_PASSWORD;
 
@@ -132,6 +133,7 @@ type SchemeEnv = {
   password: string;
   sessionToken?: string;
   userId?: string;
+  allowLoginSeed: boolean;
 };
 
 function environmentVariableXml(key: string, value: string): string {
@@ -144,7 +146,7 @@ function environmentVariableXml(key: string, value: string): string {
   ].join('\n');
 }
 
-function injectScheme({ email, password, sessionToken, userId }: SchemeEnv): void {
+function injectScheme({ email, password, sessionToken, userId, allowLoginSeed }: SchemeEnv): void {
   let content = readFileSync(SCHEME_PATH, 'utf8');
 
   // Strip any prior EnvironmentVariables block (idempotent re-runs).
@@ -161,6 +163,7 @@ function injectScheme({ email, password, sessionToken, userId }: SchemeEnv): voi
     environmentVariableXml('E2E_PASSWORD', password),
     environmentVariableXml('PACKRAT_E2E_EMAIL', uiTestEmail),
     environmentVariableXml('PACKRAT_E2E_PASSWORD', uiTestPassword),
+    environmentVariableXml('PACKRAT_E2E_ALLOW_LOGIN_SEED', allowLoginSeed ? '1' : '0'),
   ];
   if (sessionToken)
     variables.push(environmentVariableXml('PACKRAT_E2E_SESSION_TOKEN', sessionToken));
@@ -233,6 +236,7 @@ injectScheme({
   password: E2E_PASSWORD,
   sessionToken: localE2ESessionToken,
   userId: process.env.E2E_TEST_USER_ID,
+  allowLoginSeed,
 });
 console.log('✓ Injected E2E credentials into scheme');
 
@@ -263,6 +267,7 @@ const args = [
   `PACKRAT_E2E_PASSWORD=${uiTestPassword}`,
   `PACKRAT_E2E_SESSION_TOKEN=${localE2ESessionToken ?? ''}`,
   `PACKRAT_E2E_USER_ID=${process.env.E2E_TEST_USER_ID ?? ''}`,
+  `PACKRAT_E2E_ALLOW_LOGIN_SEED=${allowLoginSeed ? '1' : '0'}`,
   `PACKRAT_ENV=${PACKRAT_ENV}`,
 ];
 

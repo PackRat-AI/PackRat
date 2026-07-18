@@ -36,10 +36,13 @@ class AppUITestCase: XCTestCase {
         // bearer token accepted by the worker, avoiding brittle UI sign-in
         // while still exercising authenticated API routes.
         app.launchArguments.append("--reset-auth")
-        // Feature suites are not login tests. Let the known E2E credentials
-        // seed app auth after the form submit, while AuthTests keeps covering
-        // the visible auth flows with its own setup.
-        app.launchArguments.append("--allow-e2e-login-seed")
+        // Feature suites are not login tests. Local API runs can opt into
+        // deterministic seeded auth; deployed API runs must use real login so
+        // TestFlight-style failures are visible in E2E and screenshots.
+        if e2eLoginSeedAllowed {
+            app.launchArguments.append("--allow-e2e-login-seed")
+            app.launchEnvironment["PACKRAT_E2E_ALLOW_LOGIN_SEED"] = "1"
+        }
         app.launchArguments.append(contentsOf: additionalLaunchArguments)
         if let apiBaseURL = ProcessInfo.processInfo.environment["E2E_API_BASE_URL"], !apiBaseURL.isEmpty {
             app.launchEnvironment["E2E_API_BASE_URL"] = apiBaseURL
@@ -50,7 +53,7 @@ class AppUITestCase: XCTestCase {
             ProcessInfo.processInfo.environment["PACKRAT_E2E_EMAIL"]
             ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
             ?? ""
-        if !seededAuthEmail.isEmpty {
+        if e2eLoginSeedAllowed && !seededAuthEmail.isEmpty {
             let runnerEnvironment = ProcessInfo.processInfo.environment
             app.launchArguments.append("--seed-e2e-auth")
             app.launchEnvironment["PACKRAT_E2E_SESSION_TOKEN"] = runnerEnvironment["PACKRAT_E2E_SESSION_TOKEN"]
@@ -71,6 +74,14 @@ class AppUITestCase: XCTestCase {
     }
 
     // MARK: - Login helper
+
+    var e2eLoginSeedAllowed: Bool {
+        let bundle = Bundle(for: AppUITestCase.self)
+        let value = ProcessInfo.processInfo.environment["PACKRAT_E2E_ALLOW_LOGIN_SEED"]
+            ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_ALLOW_LOGIN_SEED") as? String)
+            ?? ""
+        return value == "1" || value.caseInsensitiveCompare("true") == .orderedSame
+    }
 
     /// Best-effort cross-platform "is the user logged in?" detector.
     ///
@@ -144,6 +155,9 @@ class AppUITestCase: XCTestCase {
         app.launchEnvironment["PACKRAT_E2E_USER_ID"] = runnerEnvironment["PACKRAT_E2E_USER_ID"]
             ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_USER_ID") as? String)
             ?? ""
+        if e2eLoginSeedAllowed {
+            app.launchEnvironment["PACKRAT_E2E_ALLOW_LOGIN_SEED"] = "1"
+        }
     }
 
     func submitLoginForm() {

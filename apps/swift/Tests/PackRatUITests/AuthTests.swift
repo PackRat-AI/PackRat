@@ -8,7 +8,10 @@ final class AuthTests: AppUITestCase {
         app.launchArguments.append("--use-userdefaults-auth")
         // Force logged-out state so the login screen is reachable.
         app.launchArguments.append("--reset-auth")
-        app.launchArguments.append("--allow-e2e-login-seed")
+        if e2eLoginSeedAllowed {
+            app.launchArguments.append("--allow-e2e-login-seed")
+            app.launchEnvironment["PACKRAT_E2E_ALLOW_LOGIN_SEED"] = "1"
+        }
         if let apiBaseURL = ProcessInfo.processInfo.environment["E2E_API_BASE_URL"], !apiBaseURL.isEmpty {
             app.launchEnvironment["E2E_API_BASE_URL"] = apiBaseURL
         }
@@ -249,6 +252,9 @@ final class AuthTests: AppUITestCase {
             (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_SESSION_TOKEN") as? String) ?? ""
         app.launchEnvironment["PACKRAT_E2E_USER_ID"] =
             (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_USER_ID") as? String) ?? ""
+        if e2eLoginSeedAllowed {
+            app.launchEnvironment["PACKRAT_E2E_ALLOW_LOGIN_SEED"] = "1"
+        }
     }
 
     #if os(iOS)
