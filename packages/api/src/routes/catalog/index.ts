@@ -1,5 +1,9 @@
 import { createDb } from '@packrat/api/db';
 import { apiKeyAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
+// TEST SCAFFOLDING (revenuecat webhook live test) — remove when done. Gates the
+// catalog list behind the 'catalog' early-access feature to exercise server-side
+// enforcement end-to-end. See docs/testing-offline-early-access.md live-test runbook.
+import { enforceFeatureAccess } from '@packrat/api/middleware/featureGate';
 import { CatalogService } from '@packrat/api/services';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
@@ -35,7 +39,7 @@ import {
   ne,
   sql,
 } from 'drizzle-orm';
-import { Elysia, NotFoundError, status } from 'elysia';
+import { Elysia, NotFoundError, status, t } from 'elysia';
 import { z } from 'zod';
 
 export const catalogRoutes = new Elysia({ prefix: '/catalog' })
@@ -55,7 +59,11 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   // -- List items
   .get(
     '/',
-    async ({ query }) => {
+    async ({ query, user }) => {
+      // TEST SCAFFOLDING (revenuecat webhook live test) — remove when done.
+      const denied = await enforceFeatureAccess('catalog', user.userId);
+      if (denied) return denied;
+
       const { page = 1, limit = 20, q, category: encodedCategory, sort } = query;
       let category: string | undefined;
       if (isString(encodedCategory) && encodedCategory.length > 0) {
@@ -89,7 +97,11 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       query: CatalogItemsQuerySchema,
-      response: { 200: 'catalog.CatalogItemsResponse' },
+      response: {
+        200: 'catalog.CatalogItemsResponse',
+        // TEST SCAFFOLDING (revenuecat webhook live test) — remove when done.
+        403: t.Object({ error: t.String(), code: t.String(), feature: t.String() }),
+      },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
