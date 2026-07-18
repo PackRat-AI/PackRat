@@ -161,13 +161,20 @@ class AppUITestCase: XCTestCase {
     }
 
     func submitLoginForm() {
+        let submitButton = app.buttons["login_submit"]
+        XCTAssertTrue(submitButton.waitForExistence(timeout: 5), "Login submit button must be visible")
+        XCTAssertTrue(submitButton.isEnabled, "Login submit button must be enabled after credentials are filled")
         #if os(macOS)
         // macOS can show a password/autofill popover over the submit button
         // after typing into SecureField. Escape dismisses it before tapping.
         app.typeText("\u{1b}")
-        app.buttons["login_submit"].tap()
+        submitButton.tap()
         #else
-        app.buttons["login_submit"].tap()
+        if submitButton.isHittable {
+            submitButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        } else {
+            app.typeText("\n")
+        }
         #endif
     }
 
