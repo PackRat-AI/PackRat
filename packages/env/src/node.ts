@@ -84,6 +84,7 @@ export const nodeEnvSchema = z.object({
   E2E_PASSWORD: z.string().min(1).optional(),
   E2E_TEST_EMAIL: z.string().email().optional(),
   E2E_TEST_PASSWORD: z.string().min(1).optional(),
+  E2E_API_BASE_URL: z.string().url().optional(),
 
   // ── OpenAI (packages/api/src/db/seed-e2e-catalog.ts) ──────────────
   OPENAI_API_KEY: z.string().min(1).optional(),
@@ -165,6 +166,7 @@ export const nodeEnv = nodeEnvSchema.parse({
   E2E_PASSWORD: process.env.E2E_PASSWORD,
   E2E_TEST_EMAIL: process.env.E2E_TEST_EMAIL,
   E2E_TEST_PASSWORD: process.env.E2E_TEST_PASSWORD,
+  E2E_API_BASE_URL: process.env.E2E_API_BASE_URL,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   WEATHER_API_KEY: process.env.WEATHER_API_KEY,
   APPLE_PRIVATE_KEY: process.env.APPLE_PRIVATE_KEY,

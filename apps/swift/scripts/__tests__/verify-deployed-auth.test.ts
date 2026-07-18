@@ -34,8 +34,8 @@ describe('verifyDeployedAuth', () => {
         apiBaseURL: 'https://api.example.test/base-path',
         email: 'tester@example.com',
         password: 'correct horse battery staple',
+        fetchImpl,
       },
-      fetchImpl,
     );
 
     expect(fetchImpl).toHaveBeenCalledOnce();
@@ -59,8 +59,9 @@ describe('verifyDeployedAuth', () => {
           apiBaseURL: 'https://api.example.test',
           email: 'tester@example.com',
           password: 'password',
+          fetchImpl: async () =>
+            response({ ok: true, body: { user: { id: 'user-1' }, token: 'body-token' } }),
         },
-        async () => response({ ok: true, body: { user: { id: 'user-1' }, token: 'body-token' } }),
       ),
     ).resolves.toBeUndefined();
   });
@@ -72,13 +73,13 @@ describe('verifyDeployedAuth', () => {
           apiBaseURL: 'https://api.example.test',
           email: 'tester@example.com',
           password: 'wrong',
+          fetchImpl: async () =>
+            response({
+              ok: false,
+              status: 401,
+              body: { message: 'Invalid email or password', code: 'INVALID_EMAIL_OR_PASSWORD' },
+            }),
         },
-        async () =>
-          response({
-            ok: false,
-            status: 401,
-            body: { message: 'Invalid email or password', code: 'INVALID_EMAIL_OR_PASSWORD' },
-          }),
       ),
     ).rejects.toThrow('Swift deployed auth preflight failed: Invalid email or password');
   });
@@ -90,8 +91,8 @@ describe('verifyDeployedAuth', () => {
           apiBaseURL: 'https://api.example.test',
           email: 'tester@example.com',
           password: 'wrong',
+          fetchImpl: async () => response({ ok: false, status: 503, jsonThrows: true }),
         },
-        async () => response({ ok: false, status: 503, jsonThrows: true }),
       ),
     ).rejects.toThrow('Swift deployed auth preflight failed: HTTP 503');
   });
@@ -103,8 +104,8 @@ describe('verifyDeployedAuth', () => {
           apiBaseURL: 'https://api.example.test',
           email: 'tester@example.com',
           password: 'password',
+          fetchImpl: async () => response({ ok: true, body: { user: { id: 'user-1' } } }),
         },
-        async () => response({ ok: true, body: { user: { id: 'user-1' } } }),
       ),
     ).rejects.toThrow('Swift deployed auth preflight succeeded without user or session token');
   });
@@ -118,8 +119,8 @@ describe('verifyDeployedAuth', () => {
           apiBaseURL: 'https://api.example.test',
           email: '',
           password: 'password',
+          fetchImpl,
         },
-        fetchImpl,
       ),
     ).rejects.toThrow('Missing deployed auth preflight input: E2E_EMAIL');
     expect(fetchImpl).not.toHaveBeenCalled();

@@ -1,7 +1,10 @@
+import { nodeEnv } from '@packrat/env/node';
+
 type AuthPreflightInput = {
   apiBaseURL: string | undefined;
   email: string | undefined;
   password: string | undefined;
+  fetchImpl?: FetchLike;
 };
 
 type FetchLike = (
@@ -17,13 +20,15 @@ type AuthResponseBody = {
   code?: unknown;
 };
 
-function required(value: string | undefined, name: string): string {
+function required(input: { value: string | undefined; name: string }): string {
+  const { value, name } = input;
   const trimmed = value?.trim();
   if (!trimmed) throw new Error(`Missing deployed auth preflight input: ${name}`);
   return trimmed;
 }
 
-function responseMessage(body: AuthResponseBody, status: number): string {
+function responseMessage(input: { body: AuthResponseBody; status: number }): string {
+  const { body, status } = input;
   for (const value of [body.message, body.error, body.code]) {
     if (typeof value === 'string' && value.trim()) return value.trim();
   }
@@ -44,13 +49,11 @@ function signInURL(apiBaseURL: string): URL {
   return new URL('api/auth/sign-in/email', normalizedBaseURL);
 }
 
-export async function verifyDeployedAuth(
-  input: AuthPreflightInput,
-  fetchImpl: FetchLike = fetch,
-): Promise<void> {
-  const apiBaseURL = required(input.apiBaseURL, 'E2E_API_BASE_URL');
-  const email = required(input.email, 'E2E_EMAIL');
-  const password = required(input.password, 'E2E_PASSWORD');
+export async function verifyDeployedAuth(input: AuthPreflightInput): Promise<void> {
+  const fetchImpl = input.fetchImpl ?? fetch;
+  const apiBaseURL = required({ value: input.apiBaseURL, name: 'E2E_API_BASE_URL' });
+  const email = required({ value: input.email, name: 'E2E_EMAIL' });
+  const password = required({ value: input.password, name: 'E2E_PASSWORD' });
 
   const response = await fetchImpl(signInURL(apiBaseURL), {
     method: 'POST',
@@ -65,7 +68,10 @@ export async function verifyDeployedAuth(
 
   if (!response.ok) {
     throw new Error(
-      `Swift deployed auth preflight failed: ${responseMessage(body, response.status)}`,
+      `Swift deployed auth preflight failed: ${responseMessage({
+        body,
+        status: response.status,
+      })}`,
     );
   }
 
@@ -77,9 +83,9 @@ export async function verifyDeployedAuth(
 if (import.meta.main) {
   try {
     await verifyDeployedAuth({
-      apiBaseURL: process.env.E2E_API_BASE_URL,
-      email: process.env.E2E_EMAIL,
-      password: process.env.E2E_PASSWORD,
+      apiBaseURL: nodeEnv.E2E_API_BASE_URL,
+      email: nodeEnv.E2E_EMAIL,
+      password: nodeEnv.E2E_PASSWORD,
     });
     console.log('Swift deployed auth preflight passed');
   } catch (error) {
