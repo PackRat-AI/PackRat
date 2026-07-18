@@ -14,7 +14,7 @@ type FetchLike = (
   init?: RequestInit,
 ) => Promise<Pick<Response, 'ok' | 'status' | 'json' | 'headers'>>;
 
-type AuthResponseBody = {
+type AuthResponseBody = Record<string, unknown> & {
   user?: unknown;
   token?: unknown;
   message?: unknown;
@@ -40,7 +40,14 @@ function responseMessage(input: { body: AuthResponseBody; status: number }): str
 async function parseBody(response: Pick<Response, 'json'>): Promise<AuthResponseBody> {
   try {
     const body = await response.json();
-    return isObject(body) ? (body as AuthResponseBody) : {};
+    if (!isObject(body)) return {};
+    return {
+      user: body.user,
+      token: body.token,
+      message: body.message,
+      error: body.error,
+      code: body.code,
+    };
   } catch {
     return {};
   }
