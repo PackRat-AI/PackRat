@@ -78,49 +78,51 @@ struct LoginView: View {
                     .foregroundStyle(.tint)
                     .font(.callout)
 
-                VStack(spacing: 10) {
-                    HStack(spacing: 12) {
-                        Divider()
-                        Text("Or continue with")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                        Divider()
-                    }
+                if AppFeatureFlags.enableOAuth {
+                    VStack(spacing: 10) {
+                        HStack(spacing: 12) {
+                            Divider()
+                            Text("Or continue with")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                            Divider()
+                        }
 
-                    #if os(iOS)
-                    Button {
-                        signInWithGoogle()
-                    } label: {
-                        Label("Continue with Google", systemImage: "g.circle")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-                    .disabled(isLoading)
-                    .accessibilityIdentifier("auth_google")
+                        #if os(iOS)
+                        Button {
+                            signInWithGoogle()
+                        } label: {
+                            Label("Continue with Google", systemImage: "g.circle")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .disabled(isLoading)
+                        .accessibilityIdentifier("auth_google")
 
-                    SignInWithAppleButton(.continue) { request in
-                        request.requestedScopes = [.fullName, .email]
-                    } onCompletion: { result in
-                        signInWithApple(result)
+                        SignInWithAppleButton(.continue) { request in
+                            request.requestedScopes = [.fullName, .email]
+                        } onCompletion: { result in
+                            signInWithApple(result)
+                        }
+                        .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                        .frame(height: 44)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .disabled(isLoading)
+                        .accessibilityIdentifier("auth_apple")
+                        #else
+                        Button {
+                            error = "Google sign-in is available in the iOS app. Use email sign-in on macOS for now."
+                        } label: {
+                            Label("Continue with Google", systemImage: "g.circle")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .accessibilityIdentifier("auth_google")
+                        #endif
                     }
-                    .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                    .frame(height: 44)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .disabled(isLoading)
-                    .accessibilityIdentifier("auth_apple")
-                    #else
-                    Button {
-                        error = "Google sign-in is available in the iOS app. Use email sign-in on macOS for now."
-                    } label: {
-                        Label("Continue with Google", systemImage: "g.circle")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-                    .accessibilityIdentifier("auth_google")
-                    #endif
                 }
             }
         }
