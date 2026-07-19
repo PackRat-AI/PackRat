@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
+import { isString } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import type { TestFlightUploadConfig } from './testflight-config';
 
 type PlistValue = string | boolean | number | null;
@@ -38,11 +40,12 @@ function parseXmlPlistStrings(xml: string): Plist {
 
 function readPlist(path: string): Plist {
   try {
-    return JSON.parse(
+    return safeJsonParse<Plist>(
       execFileSync('plutil', ['-convert', 'json', '-o', '-', path], {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
       }),
+      { strict: true },
     );
   } catch {
     return parseXmlPlistStrings(readFileSync(path, 'utf8'));
@@ -68,7 +71,7 @@ function findAppBundles(root: string): string[] {
 function plistString(input: { plist: Plist; key: string }): string {
   const { plist, key } = input;
   const value = plist[key];
-  return typeof value === 'string' ? value : String(value ?? '');
+  return isString(value) ? value : String(value ?? '');
 }
 
 function expectEqual(input: { errors: string[]; label: string; actual: string; expected: string }) {
