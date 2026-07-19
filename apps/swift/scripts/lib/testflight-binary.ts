@@ -65,7 +65,8 @@ function findAppBundles(root: string): string[] {
   return apps;
 }
 
-function plistString(plist: Plist, key: string): string {
+function plistString(input: { plist: Plist; key: string }): string {
+  const { plist, key } = input;
   const value = plist[key];
   return typeof value === 'string' ? value : String(value ?? '');
 }
@@ -103,29 +104,29 @@ function verifyAppBundles(input: {
   expectEqual({
     errors,
     label: 'iOS bundle id',
-    actual: plistString(iosPlist, 'CFBundleIdentifier'),
+    actual: plistString({ plist: iosPlist, key: 'CFBundleIdentifier' }),
     expected: config.bundleId,
   });
   expectEqual({
     errors,
     label: 'iOS display name',
-    actual: plistString(iosPlist, 'CFBundleDisplayName'),
+    actual: plistString({ plist: iosPlist, key: 'CFBundleDisplayName' }),
     expected: config.displayName,
   });
   expectEqual({
     errors,
     label: 'iOS build number',
-    actual: plistString(iosPlist, 'CFBundleVersion'),
+    actual: plistString({ plist: iosPlist, key: 'CFBundleVersion' }),
     expected: config.buildNumber,
   });
   expectEqual({
     errors,
     label: 'iOS API environment',
-    actual: plistString(iosPlist, 'PACKRAT_ENV'),
+    actual: plistString({ plist: iosPlist, key: 'PACKRAT_ENV' }),
     expected: config.apiEnvironment,
   });
 
-  const watchApp = findAppBundles(join(iosApp, 'Watch'))[0] ?? null;
+  const watchApp = findAppBundles(join(iosApp, 'Watch')).at(0) ?? null;
   if (!watchApp) {
     errors.push('Could not find embedded watchOS .app bundle.');
   } else {
@@ -133,25 +134,25 @@ function verifyAppBundles(input: {
     expectEqual({
       errors,
       label: 'watchOS bundle id',
-      actual: plistString(watchPlist, 'CFBundleIdentifier'),
+      actual: plistString({ plist: watchPlist, key: 'CFBundleIdentifier' }),
       expected: config.watchBundleId,
     });
     expectEqual({
       errors,
       label: 'watchOS companion bundle id',
-      actual: plistString(watchPlist, 'WKCompanionAppBundleIdentifier'),
+      actual: plistString({ plist: watchPlist, key: 'WKCompanionAppBundleIdentifier' }),
       expected: config.companionBundleId,
     });
     expectEqual({
       errors,
       label: 'watchOS display name',
-      actual: plistString(watchPlist, 'CFBundleDisplayName'),
+      actual: plistString({ plist: watchPlist, key: 'CFBundleDisplayName' }),
       expected: config.displayName,
     });
     expectEqual({
       errors,
       label: 'watchOS build number',
-      actual: plistString(watchPlist, 'CFBundleVersion'),
+      actual: plistString({ plist: watchPlist, key: 'CFBundleVersion' }),
       expected: config.buildNumber,
     });
   }
