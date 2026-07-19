@@ -21,11 +21,11 @@ on:
         description: "API target for screenshot capture"
         required: false
         type: choice
-        default: local
+        default: production
         options:
+          - production
           - local
           - dev
-          - production
       feature_flag_profile:
         description: "Temporary Swift feature flag profile"
         required: false
@@ -96,7 +96,7 @@ jobs:
 
       - name: Resolve Swift visual target
         run: |
-          target="${{ inputs.api_environment || 'local' }}"
+          target="${{ inputs.api_environment || 'production' }}"
           case "$target" in
             local)
               echo "PACKRAT_ENV=local" >> "$GITHUB_ENV"
@@ -114,7 +114,7 @@ jobs:
           echo "PACKRAT_SWIFT_FEATURE_FLAG_PROFILE=${{ inputs.feature_flag_profile || 'default' }}" >> "$GITHUB_ENV"
 
       - name: Verify Swift visual deployed prerequisites
-        if: ${{ (inputs.api_environment || 'local') == 'dev' }}
+        if: ${{ (inputs.api_environment || 'production') == 'dev' }}
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
         run: |
@@ -126,7 +126,7 @@ jobs:
           fi
 
       - name: Seed dev E2E test user
-        if: ${{ (inputs.api_environment || 'local') == 'dev' }}
+        if: ${{ (inputs.api_environment || 'production') == 'dev' }}
         run: bun run --filter @packrat/api db:seed:e2e-user
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}

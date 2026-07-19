@@ -34,10 +34,13 @@
  *                            API profile when --staging is absent.
  *   --dry-run                Print the resolved archive identity/settings and exit
  *                            before reading Apple credentials or running Xcode.
+ *   --verify-archive-only    Archive, export, inspect binary metadata, then exit
+ *                            before reading Apple ID upload credentials.
  *
  * Usage:
  *   bun apps/swift/scripts/upload-testflight.ts --replacement
  *   bun apps/swift/scripts/upload-testflight.ts --replacement --dry-run
+ *   bun apps/swift/scripts/upload-testflight.ts --replacement --verify-archive-only
  *   bun apps/swift/scripts/upload-testflight.ts --side-by-side --staging
  */
 import { execFileSync } from 'node:child_process';
@@ -46,6 +49,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { nodeEnv } from '@packrat/env/node';
 import { safeJsonStringify } from '@packrat/utils';
+import { verifyTestFlightArchive, verifyTestFlightIPA } from './lib/testflight-binary';
 import {
   parseTestFlightUploadConfig,
   TestFlightConfigError,
@@ -58,11 +62,13 @@ import { findExportedIPA } from './lib/testflight-export';
 const SWIFT_DIR = new URL('..', import.meta.url).pathname;
 const PROJECT = join(SWIFT_DIR, 'PackRat.xcodeproj');
 const HELP = process.argv.includes('--help') || process.argv.includes('-h');
+const VERIFY_ARCHIVE_ONLY = process.argv.includes('--verify-archive-only');
 
 function usage(): string {
   return [
     'Usage:',
     '  bun apps/swift/scripts/upload-testflight.ts --replacement [--production|--staging] [--dry-run]',
+    '  bun apps/swift/scripts/upload-testflight.ts --replacement [--production|--staging] --verify-archive-only',
     '  bun apps/swift/scripts/upload-testflight.ts --side-by-side [--production|--staging] [--dry-run]',
     '',
     'Lanes:',
@@ -149,9 +155,9 @@ if (uploadConfig.lane === 'replacement') {
   }
 }
 
-const appleId = req({ name: 'APPLE_ID' });
-const appPassword = req({ name: 'APPLE_APP_PASSWORD' });
 const teamId = req({ name: 'APPLE_TEAM_ID' });
+const appleId = VERIFY_ARCHIVE_ONLY ? undefined : req({ name: 'APPLE_ID' });
+const appPassword = VERIFY_ARCHIVE_ONLY ? undefined : req({ name: 'APPLE_APP_PASSWORD' });
 const ascProvider = nodeEnv.APPLE_ASC_PROVIDER ?? teamId;
 printPreflight({ config: uploadConfig, teamId, ascProvider });
 
@@ -163,6 +169,18 @@ function run(input: { cmd: string; args: string[] }) {
   const { cmd, args } = input;
   console.log(`\n$ ${cmd} ${args.join(' ')}`);
   execFileSync(cmd, args, { stdio: 'inherit' });
+}
+
+function verifyBinary(input: {
+  label: string;
+  result: ReturnType<typeof verifyTestFlightArchive>;
+}) {
+  const { label, result } = input;
+  if (!result.ok) {
+    for (const error of result.errors) console.error(`${label} verification failed: ${error}`);
+    process.exit(1);
+  }
+  console.log(`✓ Verified ${label} metadata (${result.iosApp}, ${result.watchApp})`);
 }
 
 // 1. Archive for a real device (TestFlight cannot accept a simulator build).
@@ -185,6 +203,10 @@ run({
     '-allowProvisioningUpdates',
     ...xcodeArchiveOverrides({ config: uploadConfig, teamId }),
   ],
+});
+verifyBinary({
+  label: 'TestFlight archive',
+  result: verifyTestFlightArchive({ archivePath, config: uploadConfig }),
 });
 
 // 2. Export a signed .ipa for App Store distribution.
@@ -225,6 +247,16 @@ run({
 // `--asc-provider` (team short name) is required when the Apple ID belongs to
 // more than one team, so altool knows which one to deliver to.
 const ipa = findExportedIPA(exportDir);
+verifyBinary({
+  label: 'TestFlight IPA',
+  result: verifyTestFlightIPA({ ipaPath: ipa, config: uploadConfig }),
+});
+
+if (VERIFY_ARCHIVE_ONLY) {
+  console.log('\n✓ Archive/export verification passed; skipping TestFlight upload.');
+  process.exit(0);
+}
+
 run({
   cmd: 'xcrun',
   args: [
@@ -235,9 +267,9 @@ run({
     '--file',
     ipa,
     '--username',
-    appleId,
+    appleId ?? '',
     '--password',
-    appPassword,
+    appPassword ?? '',
     '--asc-provider',
     ascProvider,
   ],

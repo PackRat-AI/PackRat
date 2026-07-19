@@ -97,6 +97,7 @@ wrong App Store Connect record:
 APP_STORE_CURRENT_BUILD_NUMBER=2026071801 BUILD_NUMBER=2026071802 \
   bun swift:testflight:preflight --replacement --production
 bun apps/swift/scripts/upload-testflight.ts --replacement --dry-run
+bun apps/swift/scripts/upload-testflight.ts --replacement --verify-archive-only
 bun apps/swift/scripts/upload-testflight.ts --replacement
 bun apps/swift/scripts/upload-testflight.ts --side-by-side --staging
 ```
@@ -107,6 +108,12 @@ script archives Release (`PACKRAT_ENV=production`).
 Use `--dry-run` before a real upload to verify the lane, bundle id, display
 name, build configuration, API environment, and Xcode archive overrides without
 requiring Apple credentials or running Xcode.
+
+Use `--verify-archive-only` on a Mac signing runner before a real replacement
+upload when you want TestFlight-level confidence without shipping a build. It
+archives, exports, and inspects the built app/IPA metadata for the replacement
+bundle ids, display name, build number, production `PACKRAT_ENV`, and embedded
+watch companion linkage, then exits before upload.
 
 Use `swift:testflight:preflight` before the replacement upload when validating a
 seamless update. It fails unless the resolved archive is the existing Expo
@@ -119,6 +126,14 @@ The same check is available from the manual **Swift E2E Tests** GitHub workflow:
 enable `run_testflight_preflight`, then provide `replacement_build_number` and
 `current_app_store_build_number`. That verifies the replacement metadata without
 archiving or uploading.
+
+The manual **Swift E2E Tests** workflow can also run
+`run_testflight_archive_verification` with the same build-number inputs. That
+uses a macOS runner to archive/export and verify the actual binary metadata
+without uploading to TestFlight. The **Swift Visual Screenshots** workflow
+defaults to production real-auth screenshots so the recurring contact sheets do
+not accidentally prove only local seeded behavior; choose `local` explicitly for
+fixture-backed visual review.
 
 ## Data Isolation
 
