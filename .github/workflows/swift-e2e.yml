@@ -349,13 +349,7 @@ jobs:
         run: |
           target="${{ inputs.api_environment || 'configured-secret' }}"
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            target="local"
-            {
-              echo "E2E_EMAIL=${E2E_EMAIL:-e2e@packrattest.local}"
-              echo "E2E_PASSWORD=${E2E_PASSWORD:-E2eTestPass123!}"
-              echo "E2E_TEST_EMAIL=${E2E_EMAIL:-e2e@packrattest.local}"
-              echo "E2E_TEST_PASSWORD=${E2E_PASSWORD:-E2eTestPass123!}"
-            } >> "$GITHUB_ENV"
+            target="dev"
           fi
           case "$target" in
             configured-secret)
@@ -380,7 +374,7 @@ jobs:
         run: |
           target="${{ inputs.api_environment || 'configured-secret' }}"
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            target="local"
+            target="dev"
           fi
           missing=()
           if [ "$target" != "local" ]; then
@@ -404,7 +398,7 @@ jobs:
         run: bun run swift
 
       - name: Seed E2E test user
-        if: ${{ github.event_name != 'pull_request' && (inputs.api_environment || 'configured-secret') != 'local' && (inputs.api_environment || 'configured-secret') != 'production' }}
+        if: ${{ (github.event_name == 'pull_request' || (inputs.api_environment || 'configured-secret') != 'local') && (inputs.api_environment || 'configured-secret') != 'production' }}
         run: bun run --filter @packrat/api db:seed:e2e-user
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
@@ -412,7 +406,7 @@ jobs:
           E2E_TEST_PASSWORD: ${{ env.E2E_PASSWORD }}
 
       - name: Verify deployed Swift auth
-        if: ${{ github.event_name != 'pull_request' && (inputs.api_environment || 'configured-secret') != 'local' }}
+        if: ${{ github.event_name == 'pull_request' || (inputs.api_environment || 'configured-secret') != 'local' }}
         run: bun run apps/swift/scripts/verify-deployed-auth.ts
 
       - name: Boot iOS simulator
