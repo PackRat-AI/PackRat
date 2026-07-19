@@ -185,7 +185,12 @@ class AppUITestCase: XCTestCase {
             } else if returnButton.waitForExistence(timeout: 1) {
                 returnButton.tap()
             } else {
-                submitButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+                app.swipeUp()
+                if submitButton.waitForExistence(timeout: 2), submitButton.isHittable {
+                    submitButton.tap()
+                } else {
+                    app.typeText("\n")
+                }
             }
         }
         #endif
