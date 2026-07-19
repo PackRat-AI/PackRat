@@ -128,6 +128,10 @@ export const nodeEnvSchema = z.object({
 
 export type NodeEnv = z.infer<typeof nodeEnvSchema>;
 
+function optionalEnv(value: string | undefined): string | undefined {
+  return value?.trim() ? value : undefined;
+}
+
 /**
  * Typed env parsed from `process.env` at module load. Throws a Zod
  * validation error if any value fails its schema constraint.
@@ -167,7 +171,7 @@ export const nodeEnv = nodeEnvSchema.parse({
   E2E_PASSWORD: process.env.E2E_PASSWORD,
   E2E_TEST_EMAIL: process.env.E2E_TEST_EMAIL,
   E2E_TEST_PASSWORD: process.env.E2E_TEST_PASSWORD,
-  E2E_API_BASE_URL: process.env.E2E_API_BASE_URL,
+  E2E_API_BASE_URL: optionalEnv(process.env.E2E_API_BASE_URL),
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   WEATHER_API_KEY: process.env.WEATHER_API_KEY,
   APPLE_PRIVATE_KEY: process.env.APPLE_PRIVATE_KEY,
