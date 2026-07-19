@@ -213,8 +213,9 @@ Worker):
 - [ ] A member connects, completes PackRat OAuth, and enables PackRat for a new conversation.
 - [ ] `get_pack` renders the same populated and empty pack states as the Inspector fixture.
 - [ ] Disabling the interactive `get_pack` tool leaves ordinary text-based PackRat tools usable.
-- [ ] Claude receives no result above its host limit; the bounded widget snapshot remains under
-      the repository's 32,000-character test ceiling.
+- [ ] Claude renders long packs from the bounded structured snapshot without crossing its host
+      limit. The repository's character-length test is a structural regression guard, not proof of
+      an external host byte limit.
 
 Only the live Claude checklist establishes Claude host and Team-admin behavior. Protocol tests do
 not prove that the Team workspace policy, public network path, or user OAuth grants are configured.

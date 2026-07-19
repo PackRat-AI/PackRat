@@ -40,7 +40,7 @@ The current MCP surface is capable but text-only. Rebuilding the same domain acc
 
 ### Requirements
 
-- R1. The existing `/mcp` endpoint remains the single remote tool endpoint for both generic MCP clients and the ChatGPT App.
+- R1. The existing `/mcp` endpoint remains the single remote tool endpoint for generic MCP clients, ChatGPT, and Claude.
 - R2. `get_pack` continues to fetch authoritative data through `@packrat/api-client` and Eden Treaty; the widget must not call Packrat API routes directly.
 - R3. A successful `get_pack` result includes concise `structuredContent` suitable for both the model and widget, the complete Eden API result serialized as formatted JSON in the text `content` fallback, and no credentials or sensitive widget-only payloads.
 - R4. The `get_pack` descriptor links to a versioned `ui://` resource using MCP Apps standard metadata and accurate read-only annotations.
@@ -49,9 +49,9 @@ The current MCP surface is capable but text-only. Rebuilding the same domain acc
 - R7. The resource declares the narrowest practical CSP and avoids remote scripts, direct API access, and bearer/admin token exposure.
 - R8. Existing non-App MCP tool behavior, OAuth 2.1/PKCE handling, admin-tool visibility, resources, and prompts remain unchanged.
 - R9. Automated tests protect the tool descriptor, UI resource, structured result, error fallback, and generic-client compatibility.
-- R10. Developer documentation explains local Worker startup, MCP Inspector validation, HTTPS tunneling, ChatGPT Developer Mode connection, and the required refresh after metadata changes.
+- R10. Developer documentation explains local Worker startup, MCP Inspector validation, HTTPS tunneling, ChatGPT Developer Mode connection, Claude Team connection, and refresh behavior after metadata changes.
 - R11. User-controlled pack and item text renders only through safe DOM text APIs after runtime snapshot validation; API data is never interpolated through `innerHTML`.
-- R12. The model/widget snapshot is deterministically bounded by field length, item-row count, category count, and the resulting composed serialized-size ceiling, and reports total/truncated counts when the API result exceeds those limits.
+- R12. The structured model/widget snapshot is deterministically bounded by field character length, item-row count, and category count, and reports total/truncated counts when the API result exceeds those limits. The complete text fallback remains intentionally unbounded by this snapshot contract.
 
 ### Key Flow
 
@@ -164,7 +164,7 @@ flowchart TB
   5. A tool-result notification re-renders the widget from `structuredContent`; messages from non-parent sources or malformed envelopes are ignored.
   6. The descriptor marks the tool read-only, non-destructive, idempotent, and closed-world accurately.
   7. Pack/item strings containing HTML, script, and event-handler payloads render as inert text; no API-derived value reaches `innerHTML`.
-  8. Oversized strings and item lists produce a bounded serialized snapshot with deterministic truncation and accurate total/truncated counts.
+  8. Oversized strings and item lists produce a structurally bounded snapshot with deterministic character truncation and accurate total/truncated counts.
 - **Verification:** Unit/contract tests prove descriptor and result behavior; a rendered widget fixture remains usable at narrow and wide widths and under light/dark color schemes.
 
 ### U3. Document and smoke-test the ChatGPT development loop
@@ -201,7 +201,7 @@ flowchart TB
 
 - `get_pack` remains a thin Eden Treaty-backed MCP operation and now advertises one versioned MCP Apps widget.
 - The widget renders populated and empty packs from `structuredContent`, has accessible fallbacks, and contains no direct API/auth path.
-- User-controlled text is schema-validated and rendered inertly, and oversized packs cannot create an unbounded model/widget payload.
+- User-controlled text is schema-validated and rendered inertly, and oversized packs cannot create an unbounded structured widget snapshot. The complete generic-client text fallback remains a separate intentional contract.
 - Generic MCP clients retain a usable text result and all unrelated tools/resources/prompts behave as before.
 - Descriptor annotations, UI metadata, resource MIME/CSP, and result partitioning match current official Apps SDK guidance.
 - Focused tests, MCP coverage, lint, and a production-faithful Worker bundle pass.
