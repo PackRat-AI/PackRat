@@ -35,11 +35,11 @@ async function run(opts: {
     ? await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text()])
     : ['', ''];
   const exitCode = await child.exited;
-  if (exitCode !== 0) throw new Error(`${command.join(' ')} exited with ${exitCode}`);
   if (opts.captureOutput) {
     if (stdout) process.stdout.write(stdout);
     if (stderr) process.stderr.write(stderr);
   }
+  if (exitCode !== 0) throw new Error(`${command.join(' ')} exited with ${exitCode}`);
   return `${stdout}${stderr}`;
 }
 
