@@ -273,6 +273,11 @@ const PACK_WIDGET_HTML = `<!doctype html>
 /** Register the portable, versioned MCP Apps resource used by the pack workspace. */
 export function registerPackWidget(server: Parameters<typeof registerAppResource>[0]): void {
   const ui = { csp: PACK_WIDGET_CSP, prefersBorder: true };
+  const resourceMeta = {
+    ui,
+    'openai/widgetDescription':
+      'Read-only PackRat workspace showing pack weights, categories, and item rows.',
+  };
 
   registerAppResource(
     server,
@@ -281,7 +286,7 @@ export function registerPackWidget(server: Parameters<typeof registerAppResource
     {
       description: 'Read-only PackRat pack workspace',
       mimeType: PACK_WIDGET_MIME_TYPE,
-      _meta: { ui },
+      _meta: resourceMeta,
     },
     async () => ({
       contents: [
@@ -289,7 +294,7 @@ export function registerPackWidget(server: Parameters<typeof registerAppResource
           uri: PACK_WIDGET_URI,
           mimeType: PACK_WIDGET_MIME_TYPE,
           text: PACK_WIDGET_HTML,
-          _meta: { ui },
+          _meta: resourceMeta,
         },
       ],
     }),

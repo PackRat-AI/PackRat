@@ -20,12 +20,16 @@ describe('pack widget app contract', () => {
     expect(PACK_WIDGET_URI).toMatch(/^ui:\/\/packrat\/pack-workspace-v\d+\.html$/);
     expect(metadata.mimeType).toBe(PACK_WIDGET_MIME_TYPE);
     expect(metadata._meta.ui.csp).toEqual({ connectDomains: [], resourceDomains: [] });
+    expect(metadata._meta['openai/widgetDescription']).toContain('PackRat workspace');
 
     const result = await read(new URL(PACK_WIDGET_URI));
     expect(result.contents).toHaveLength(1);
     expect(result.contents[0]).toMatchObject({
       uri: PACK_WIDGET_URI,
       mimeType: PACK_WIDGET_MIME_TYPE,
+      _meta: {
+        'openai/widgetDescription': expect.stringContaining('PackRat workspace'),
+      },
     });
     expect(result.contents[0].text).toContain('<!doctype html>');
     expect(result.contents[0].text).not.toMatch(/<script[^>]+src=/i);

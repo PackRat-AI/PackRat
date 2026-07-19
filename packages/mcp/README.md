@@ -1,13 +1,13 @@
-# PackRat MCP and ChatGPT App
+# PackRat MCP App for ChatGPT and Claude
 
-This Cloudflare Worker is the single remote MCP endpoint for PackRat. Ordinary MCP clients and
-ChatGPT both connect to `/mcp`; the `get_pack` tool additionally links the portable MCP Apps
-resource `ui://packrat/pack-workspace-v1.html`. Pack data still comes through
+This Cloudflare Worker is the single remote MCP endpoint for PackRat. Ordinary MCP clients,
+ChatGPT, and Claude all connect to `/mcp`; the `get_pack` tool additionally links the portable MCP
+Apps resource `ui://packrat/pack-workspace-v1.html`. Pack data still comes through
 `@packrat/api-client` and Eden Treaty. The embedded widget does not call the PackRat API or handle
 credentials itself.
 
-No OpenAI API key is needed. ChatGPT connects to this Worker as a remote MCP server and completes
-the Worker's OAuth flow.
+No OpenAI or Anthropic API key is needed. ChatGPT and Claude connect to this Worker as remote MCP
+clients and complete the Worker's OAuth flow.
 
 ## Prerequisites and bindings
 
@@ -117,10 +117,46 @@ ChatGPT caches tool descriptors and UI resources. After changing a tool descript
 4. Re-run `tools/list` and `resources/read` in Inspector to distinguish a Worker problem from a
    ChatGPT cache problem.
 
+## Connect from a Claude Team workspace
+
+Claude Team supports [remote custom connectors](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp)
+and [cross-platform MCP Apps](https://claude.com/docs/connectors/building/mcp-apps/cross-compatibility).
+It uses the same public HTTPS
+`https://<host>/mcp` URL, tool descriptors, OAuth flow, and embedded resource as ChatGPT. Do not
+create a Claude-specific API adapter or put an Anthropic API key in the Worker.
+
+An Owner or Primary Owner must add the connector for the organization:
+
+1. Open **Organization settings → Connectors**.
+2. Select **Add**, hover over **Custom**, and choose **Web**.
+3. Enter the Worker's public `https://<host>/mcp` URL.
+4. Leave the advanced OAuth client credentials empty so Claude uses the Worker's dynamic client
+   registration. Only provide a client ID and secret if PackRat later disables dynamic
+   registration and provisions Claude as a fixed OAuth client.
+5. Add the connector. Each member then opens **Customize → Connectors**, selects the PackRat custom
+   connector, and clicks **Connect** to complete PackRat sign-in.
+6. In a conversation, enable PackRat from the **+ → Connectors** menu and ask Claude to show an
+   owned pack.
+
+Claude connects from Anthropic's cloud, including when the user is in Claude Desktop. The Worker
+must therefore be publicly reachable; a localhost URL, private VPN hostname, or local Desktop MCP
+configuration is not a substitute for the Team connector. A development tunnel is suitable for a
+short test, while a stable deployed Worker URL is required for shared use.
+
+The widget uses the portable MCP Apps `ui/*` JSON-RPC bridge and self-contained HTML, so Claude can
+render the same inline workspace. The `openai/*` fields are additive ChatGPT compatibility metadata
+and may be ignored by Claude. If an organization owner disables the interactive `get_pack` tool,
+the other text-based MCP tools remain available; generic clients can also consume `get_pack`'s
+ordinary text fallback.
+
+After changing the connector URL, Claude currently requires removing and re-adding the custom
+connector. After metadata or widget changes at the same URL, start a new conversation when
+validating so an older host snapshot does not mask the update.
+
 ## Deploy the existing Worker
 
-There is no separate ChatGPT frontend deployment. After configuring the real `OAUTH_KV` namespace
-IDs and `PACKRAT_API_URL` for the target environment, use the existing scripts:
+There is no separate ChatGPT or Claude frontend deployment. After configuring the real `OAUTH_KV`
+namespace IDs and `PACKRAT_API_URL` for the target environment, use the existing scripts:
 
 ```sh
 # Development Worker (packrat-mcp-dev)
@@ -132,7 +168,8 @@ bun mcp:deploy
 
 The production command maps to `wrangler deploy --minify`; the development command adds `-e dev`.
 Set deployed variables with Wrangler or the Cloudflare dashboard and validate the printed Worker
-origin plus `/mcp`. Publishing updates the same endpoint used by generic MCP clients and ChatGPT.
+origin plus `/mcp`. Publishing updates the same endpoint used by generic MCP clients, ChatGPT,
+and Claude.
 
 For a production-faithful bundle without publishing, run:
 
@@ -167,3 +204,17 @@ Live ChatGPT checks (require a ChatGPT account with Developer Mode and a reachab
 The repository tests and Inspector establish generic MCP and MCP Apps protocol compatibility.
 Only the live checklist establishes ChatGPT host behavior; do not report those items as passed
 without running them in an eligible ChatGPT account.
+
+Live Claude Team checks (require an organization Owner, a Team member, and a reachable HTTPS
+Worker):
+
+- [ ] The Owner adds the exact `https://<host>/mcp` URL under **Organization settings →
+      Connectors**.
+- [ ] A member connects, completes PackRat OAuth, and enables PackRat for a new conversation.
+- [ ] `get_pack` renders the same populated and empty pack states as the Inspector fixture.
+- [ ] Disabling the interactive `get_pack` tool leaves ordinary text-based PackRat tools usable.
+- [ ] Claude receives no result above its host limit; the bounded widget snapshot remains under
+      the repository's 32,000-character test ceiling.
+
+Only the live Claude checklist establishes Claude host and Team-admin behavior. Protocol tests do
+not prove that the Team workspace policy, public network path, or user OAuth grants are configured.
