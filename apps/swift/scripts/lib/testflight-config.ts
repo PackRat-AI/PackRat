@@ -17,6 +17,7 @@ export type TestFlightUploadConfig = {
 export type TestFlightReplacementReadinessInput = {
   config: TestFlightUploadConfig;
   currentAppStoreBuildNumber?: string | undefined;
+  requireCurrentAppStoreBuildNumber?: boolean | undefined;
 };
 
 export type TestFlightReplacementReadiness = {
@@ -98,7 +99,7 @@ function isPositiveInteger(value: string): boolean {
 export function verifyTestFlightReplacementReadiness(
   input: TestFlightReplacementReadinessInput,
 ): TestFlightReplacementReadiness {
-  const { config, currentAppStoreBuildNumber } = input;
+  const { config, currentAppStoreBuildNumber, requireCurrentAppStoreBuildNumber = false } = input;
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -146,9 +147,13 @@ export function verifyTestFlightReplacementReadiness(
       );
     }
   } else {
-    warnings.push(
-      'APP_STORE_CURRENT_BUILD_NUMBER was not provided; verify the replacement build number is greater than the latest App Store Connect build before upload.',
-    );
+    const message =
+      'APP_STORE_CURRENT_BUILD_NUMBER was not provided; verify the replacement build number is greater than the latest App Store Connect build before upload.';
+    if (requireCurrentAppStoreBuildNumber) {
+      errors.push(message);
+    } else {
+      warnings.push(message);
+    }
   }
 
   return {

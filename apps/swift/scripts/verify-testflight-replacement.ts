@@ -43,6 +43,7 @@ try {
   const readiness = verifyTestFlightReplacementReadiness({
     config,
     currentAppStoreBuildNumber: nodeEnv.APP_STORE_CURRENT_BUILD_NUMBER,
+    requireCurrentAppStoreBuildNumber: true,
   });
   const report = {
     lane: config.lane,

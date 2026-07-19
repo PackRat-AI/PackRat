@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { env as currentEnv } from 'node:process';
 import { describe, expect, it } from 'vitest';
@@ -49,5 +49,46 @@ describe('upload-testflight CLI', () => {
       ok: true,
       errors: [],
     });
+  });
+
+  it('fails replacement preflight CLI without the current App Store build number', () => {
+    const env = { ...currentEnv, BUILD_NUMBER: '2026071802' };
+    delete env.APP_STORE_CURRENT_BUILD_NUMBER;
+
+    const result = spawnSync('bun', [verifyScript, '--replacement', '--production'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      env,
+    });
+
+    expect(result.status).toBe(1);
+    const report = JSON.parse(result.stdout);
+    expect(report.ok).toBe(false);
+    expect(report.errors).toContain(
+      'APP_STORE_CURRENT_BUILD_NUMBER was not provided; verify the replacement build number is greater than the latest App Store Connect build before upload.',
+    );
+  });
+
+  it('blocks real replacement uploads before Apple credentials when current build is missing', () => {
+    const env = {
+      ...currentEnv,
+      APPLE_ID: 'tester@example.com',
+      APPLE_APP_PASSWORD: 'test-app-password',
+      APPLE_TEAM_ID: 'TEAM123',
+      BUILD_NUMBER: '2026071802',
+    };
+    delete env.APP_STORE_CURRENT_BUILD_NUMBER;
+
+    const result = spawnSync('bun', [script, '--replacement', '--production'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      env,
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      'Replacement TestFlight preflight failed: APP_STORE_CURRENT_BUILD_NUMBER was not provided',
+    );
+    expect(result.stderr).not.toContain('xcodebuild archive');
   });
 });

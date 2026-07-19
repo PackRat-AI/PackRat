@@ -175,4 +175,21 @@ describe('parseTestFlightUploadConfig', () => {
       'APP_STORE_CURRENT_BUILD_NUMBER was not provided; verify the replacement build number is greater than the latest App Store Connect build before upload.',
     );
   });
+
+  it('rejects missing current App Store build when strict replacement readiness is required', () => {
+    const config = parseTestFlightUploadConfig({
+      argv: ['--replacement', '--production'],
+      env: { BUILD_NUMBER: '2026071802' },
+    });
+
+    const readiness = verifyTestFlightReplacementReadiness({
+      config,
+      requireCurrentAppStoreBuildNumber: true,
+    });
+
+    expect(readiness.ok).toBe(false);
+    expect(readiness.errors).toContain(
+      'APP_STORE_CURRENT_BUILD_NUMBER was not provided; verify the replacement build number is greater than the latest App Store Connect build before upload.',
+    );
+  });
 });

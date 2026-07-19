@@ -21,6 +21,9 @@
  *   APPLE_ASC_PROVIDER       App Store Connect provider short name for altool;
  *                            defaults to APPLE_TEAM_ID when omitted
  *   BUILD_NUMBER             CFBundleVersion for this upload (default: timestamp)
+ *   APP_STORE_CURRENT_BUILD_NUMBER
+ *                            Required for --replacement uploads; latest existing
+ *                            PackRat App Store/TestFlight build number.
  *
  * Flags:
  *   --replacement            Archive for the existing Expo/App Store iOS listing.
@@ -47,6 +50,7 @@ import {
   parseTestFlightUploadConfig,
   TestFlightConfigError,
   type TestFlightUploadConfig,
+  verifyTestFlightReplacementReadiness,
   xcodeArchiveOverrides,
 } from './lib/testflight-config';
 import { findExportedIPA } from './lib/testflight-export';
@@ -130,6 +134,19 @@ function req(input: { name: 'APPLE_ID' | 'APPLE_APP_PASSWORD' | 'APPLE_TEAM_ID' 
 
 if (nodeEnv.BUILD_NUMBER) {
   uploadConfig = { ...uploadConfig, buildNumber: nodeEnv.BUILD_NUMBER };
+}
+
+if (uploadConfig.lane === 'replacement') {
+  const readiness = verifyTestFlightReplacementReadiness({
+    config: uploadConfig,
+    currentAppStoreBuildNumber: nodeEnv.APP_STORE_CURRENT_BUILD_NUMBER,
+    requireCurrentAppStoreBuildNumber: true,
+  });
+  if (!readiness.ok) {
+    for (const error of readiness.errors)
+      console.error(`Replacement TestFlight preflight failed: ${error}`);
+    process.exit(1);
+  }
 }
 
 const appleId = req({ name: 'APPLE_ID' });

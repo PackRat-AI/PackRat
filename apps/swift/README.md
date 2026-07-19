@@ -110,9 +110,10 @@ requiring Apple credentials or running Xcode.
 
 Use `swift:testflight:preflight` before the replacement upload when validating a
 seamless update. It fails unless the resolved archive is the existing Expo
-listing (`com.andrewbierman.packrat`, `PackRat`), Release/production, and, when
-`APP_STORE_CURRENT_BUILD_NUMBER` is supplied, has a strictly greater build
-number than the latest App Store Connect build.
+listing (`com.andrewbierman.packrat`, `PackRat`), Release/production, and has a
+strictly greater build number than `APP_STORE_CURRENT_BUILD_NUMBER`. Real
+`--replacement` uploads enforce the same check before reading Apple credentials
+or archiving.
 
 The same check is available from the manual **Swift E2E Tests** GitHub workflow:
 enable `run_testflight_preflight`, then provide `replacement_build_number` and
