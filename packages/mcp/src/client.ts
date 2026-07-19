@@ -62,11 +62,24 @@ function noopHooks(getToken: TokenProvider) {
 
 export type McpToolResult = {
   content: [{ type: 'text'; text: string }];
+  structuredContent?: Record<string, unknown>;
   isError?: true;
 };
 
 export function ok(data: unknown): McpToolResult {
-  return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+  return {
+    content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+  };
+}
+
+export function okStructured({
+  data,
+  structuredContent,
+}: {
+  data: unknown;
+  structuredContent: Record<string, unknown>;
+}): McpToolResult {
+  return { ...ok(data), structuredContent };
 }
 
 export function errMessage(message: string): McpToolResult {
@@ -97,15 +110,18 @@ export type CallOptions = {
  * Thrown errors and `{ error: ... }` responses both surface as `isError: true`.
  */
 export async function call<T>(
-  args: { promise: Promise<TreatyResponse<T>> } & CallOptions,
+  args: {
+    promise: Promise<TreatyResponse<T>>;
+    onSuccess?: (data: T) => McpToolResult;
+  } & CallOptions,
 ): Promise<McpToolResult> {
-  const { promise, ...options } = args;
+  const { promise, onSuccess, ...options } = args;
   try {
     const result = await promise;
     if (result.error || result.data == null) {
       return formatError({ status: result.status, body: result.error?.value, opts: options });
     }
-    return ok(result.data);
+    return onSuccess?.(result.data) ?? ok(result.data);
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     return errMessage(`${options.action ?? 'request'} failed: ${message}`);

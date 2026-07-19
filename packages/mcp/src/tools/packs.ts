@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { call, nowIso } from '../client';
+import { normalizePackSnapshot, PACK_WIDGET_URI } from '../apps/pack-widget';
+import { call, errMessage, nowIso, okStructured } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
 import type { AgentContext } from '../types';
 
@@ -35,12 +36,29 @@ export function registerPackTools(agent: AgentContext): void {
       inputSchema: {
         pack_id: z.string().describe('The unique pack ID (e.g. "p_abc123")'),
       },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+      _meta: {
+        ui: { resourceUri: PACK_WIDGET_URI },
+        'openai/outputTemplate': PACK_WIDGET_URI,
+        'openai/toolInvocation/invoking': 'Loading pack…',
+        'openai/toolInvocation/invoked': 'Pack loaded',
+      },
     },
     async ({ pack_id }) =>
       call({
         promise: agent.api.user.packs({ packId: pack_id }).get(),
         action: 'get pack',
         resourceHint: `pack ${pack_id}`,
+        onSuccess: (data) => {
+          const snapshot = normalizePackSnapshot(data);
+          if (!snapshot) return errMessage('get pack returned malformed data');
+          return okStructured({ data, structuredContent: snapshot });
+        },
       }),
   );
 
