@@ -134,7 +134,7 @@ jobs:
 
   testflight-replacement-archive:
     name: TestFlight replacement archive verification
-    runs-on: macos-15
+    runs-on: [self-hosted, macOS, packrat-e2e]
     timeout-minutes: 60
     if: github.event_name == 'workflow_dispatch' && inputs.run_testflight_archive_verification
 

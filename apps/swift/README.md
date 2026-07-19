@@ -109,11 +109,14 @@ Use `--dry-run` before a real upload to verify the lane, bundle id, display
 name, build configuration, API environment, and Xcode archive overrides without
 requiring Apple credentials or running Xcode.
 
-Use `--verify-archive-only` on a Mac signing runner before a real replacement
-upload when you want TestFlight-level confidence without shipping a build. It
-archives, exports, and inspects the built app/IPA metadata for the replacement
-bundle ids, display name, build number, production `PACKRAT_ENV`, and embedded
-watch companion linkage, then exits before upload.
+Use `--verify-archive-only` on a self-hosted Mac signing runner before a real
+replacement upload when you want TestFlight-level confidence without shipping a
+build. It archives, exports, and inspects the built app/IPA metadata for the
+replacement bundle ids, display name, build number, production `PACKRAT_ENV`,
+and embedded watch companion linkage, then exits before upload. The hosted
+GitHub macOS runners do not have a signed-in Apple account or provisioning
+profiles, so the manual archive verification job runs on the same
+`self-hosted`, `macOS`, `packrat-e2e` runner used for Mac app UI automation.
 
 Use `swift:testflight:preflight` before the replacement upload when validating a
 seamless update. It fails unless the resolved archive is the existing Expo
