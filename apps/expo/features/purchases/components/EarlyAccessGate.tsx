@@ -38,9 +38,9 @@ interface EarlyAccessGateProps {
  * Gates a feature by its early-access state. While the feature is inside its
  * early-access window it behaves like the Pro paywall (Pro members pass,
  * everyone else sees the paywall); once it graduates to free for everyone the
- * gate becomes a no-op and simply renders its children. Unlike the permanent
- * `ProGate`, access here is temporary by design — the feature opens up to all
- * users on its graduation date.
+ * gate becomes a no-op and simply renders its children. Access here is
+ * temporary by design — the feature opens up to all users on its graduation
+ * date.
  */
 export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) {
   const {

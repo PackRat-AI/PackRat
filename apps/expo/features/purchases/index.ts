@@ -1,6 +1,5 @@
 export { CustomerCenterButton, presentCustomerCenter } from './components/CustomerCenter';
 export { EarlyAccessGate } from './components/EarlyAccessGate';
-export { ProGate } from './components/ProGate';
 export {
   CUSTOMER_INFO_QUERY_KEY,
   OFFERINGS_QUERY_KEY,
