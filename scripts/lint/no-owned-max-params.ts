@@ -74,6 +74,8 @@ const EXCLUDED_FILES = new Set([
   'apps/swift/scripts/lib/app-store-assets.ts',
   'apps/swift/scripts/run-e2e-macos.ts',
   'apps/swift/scripts/run-e2e.ts',
+  // run(cmd, args) mirrors Node's execFileSync(file, args) positional signature.
+  'apps/swift/scripts/upload-testflight.ts',
   'apps/swift/scripts/watch-sync-smoke.ts',
   // Cloudflare/Sentry/logger helpers intentionally mirror external callback/API shapes.
   'packages/api/src/index.ts',
