@@ -168,7 +168,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Download all coverage summaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: coverage-summary-*
           path: artifacts
@@ -177,7 +177,7 @@ jobs:
         run: |
           set -euo pipefail
           # Each artifact arrives as artifacts/coverage-summary-<slug>/<path-without-leading-dir>
-          # actions/download-artifact@v4 unzips a single-file artifact into a directory
+          # actions/download-artifact@v8 unzips a single-file artifact into a directory
           # named after the artifact, preserving the source file's basename.
           # Copy each back to its expected location so coverage-baselines.json's
           # summaryPath entries resolve.
@@ -234,7 +234,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Download all coverage summaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: coverage-summary-*
           path: artifacts
