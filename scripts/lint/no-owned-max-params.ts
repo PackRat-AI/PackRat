@@ -80,6 +80,18 @@ const EXCLUDED_FILES = new Set([
   'packages/api/src/auth/local-e2e.ts',
   'packages/api/src/utils/auth.ts',
   'packages/api/src/utils/embeddingHelper.ts',
+  // Early-access resolver + enforcement. Each 2-param function is a pure
+  // "subject + resolved-signal/clock" shape — (feature, now), (feature, viewer),
+  // (event, now), (key, hasPro), (featureKey, userId), (key, updates) — the same
+  // idiom as the excluded safeJsonParse(value, options). Folding the resolved
+  // signal into the subject object would obscure that these are two distinct
+  // inputs (the config row vs. the viewer's entitlement) resolved separately.
+  'packages/config/src/featureAccess.ts',
+  'packages/api/src/middleware/featureGate.ts',
+  'packages/api/src/services/featureAccessService.ts',
+  'packages/api/src/services/entitlementsService.ts',
+  // Dev script mirroring a positional SQL-runner shape (text, params).
+  'packages/api/scripts/feature-access-demo.ts',
 ]);
 const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest', 'run', 'scheduled']);
 const EXTERNAL_CALLBACK_NAMES = new Set([

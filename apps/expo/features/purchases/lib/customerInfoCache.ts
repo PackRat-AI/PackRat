@@ -1,6 +1,6 @@
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import type { CustomerInfo } from 'react-native-purchases';
 
 // The RevenueCat SDK caches customerInfo natively and `getCustomerInfo()`

@@ -1,9 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { FEATURE_ACCESS_QUERY_KEY } from 'expo-app/features/purchases/hooks/useFeatureAccess';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import type React from 'react';
 
 // 401 = handled by auth refresh cycle; 429 = transient rate-limit; 404 = intentional not-found.
