@@ -1,3 +1,4 @@
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import type { CustomerInfo } from 'react-native-purchases';
@@ -13,7 +14,7 @@ const STORAGE_KEY = 'purchases.customerInfo.v1';
 /** Persist the latest customerInfo. Best-effort — failures are non-fatal. */
 export async function persistCustomerInfo(info: CustomerInfo): Promise<void> {
   try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(info));
+    await AsyncStorage.setItem(STORAGE_KEY, safeJsonStringify(info));
   } catch (error) {
     Sentry.captureException(error, {
       tags: { feature: 'purchases', action: 'persistCustomerInfo' },
@@ -25,7 +26,7 @@ export async function persistCustomerInfo(info: CustomerInfo): Promise<void> {
 export async function readPersistedCustomerInfo(): Promise<CustomerInfo | null> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as CustomerInfo) : null;
+    return raw ? safeJsonParse<CustomerInfo>(raw, { strict: true }) : null;
   } catch (error) {
     Sentry.captureException(error, {
       tags: { feature: 'purchases', action: 'readPersistedCustomerInfo' },

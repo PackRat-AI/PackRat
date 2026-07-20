@@ -18,6 +18,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { neon, neonConfig } from '@neondatabase/serverless';
+import { title } from '@packrat/utils';
 import { Client } from 'pg';
 import WebSocket from 'ws';
 
@@ -143,7 +144,7 @@ async function main() {
 }
 
 function prettyLabel(key: string): string {
-  return key.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  return title(key);
 }
 
 main().catch((e) => {

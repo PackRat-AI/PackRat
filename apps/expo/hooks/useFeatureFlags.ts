@@ -1,3 +1,4 @@
+import { isBoolean } from '@packrat/guards';
 import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -64,7 +65,8 @@ export function useFeatureFlags(): FeatureFlagsMap {
     // removed server-side reliably reverts instead of sticking.
     const next: FeatureFlagsMap = { ...appConfig.featureFlags };
     for (const key of Object.keys(next) as FeatureFlagKey[]) {
-      if (typeof data[key] === 'boolean') next[key] = data[key];
+      const value = data[key];
+      if (isBoolean(value)) next[key] = value;
     }
     setCached(next);
   }, [data, setCached]);
