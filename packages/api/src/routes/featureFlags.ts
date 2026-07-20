@@ -12,26 +12,29 @@ import { listEffectiveFeatureFlags } from '../services/featureFlagsService';
  * @packrat/config), so a stale/unset key on the client always falls back to
  * the same value it would have shipped with today.
  */
-export const featureFlagsRoutes = new Elysia({ prefix: '/feature-flags' }).get(
-  '/',
-  async () => {
-    try {
-      return await listEffectiveFeatureFlags();
-    } catch (error) {
-      captureApiException({
-        error,
-        operation: 'featureFlags.list.route',
-        tags: { feature: 'featureFlags' },
-      });
-      return status(500, { error: 'Internal server error', code: 'FEATURE_FLAGS_LIST_ERROR' });
-    }
-  },
-  {
-    detail: {
-      tags: ['Feature Flags'],
-      summary: 'List effective feature flags',
-      description:
-        'Returns the effective boolean value for every known feature flag key. A DB override wins over the coded default.',
+export const featureFlagsRoutes = new Elysia({ prefix: '/feature-flags' })
+  // public-route: non-sensitive flag values the client needs regardless of auth
+  // state; every key falls back to its coded default.
+  .get(
+    '/',
+    async () => {
+      try {
+        return await listEffectiveFeatureFlags();
+      } catch (error) {
+        captureApiException({
+          error,
+          operation: 'featureFlags.list.route',
+          tags: { feature: 'featureFlags' },
+        });
+        return status(500, { error: 'Internal server error', code: 'FEATURE_FLAGS_LIST_ERROR' });
+      }
     },
-  },
-);
+    {
+      detail: {
+        tags: ['Feature Flags'],
+        summary: 'List effective feature flags',
+        description:
+          'Returns the effective boolean value for every known feature flag key. A DB override wins over the coded default.',
+      },
+    },
+  );

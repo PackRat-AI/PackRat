@@ -11,26 +11,29 @@ import { listFeatureAccess } from '../services/featureAccessService';
  * client by combining this config with the viewer's RevenueCat entitlement via
  * `hasFeatureAccess` from @packrat/config.
  */
-export const featureAccessRoutes = new Elysia({ prefix: '/feature-access' }).get(
-  '/',
-  async () => {
-    try {
-      return await listFeatureAccess();
-    } catch (error) {
-      captureApiException({
-        error,
-        operation: 'featureAccess.list.route',
-        tags: { feature: 'featureAccess' },
-      });
-      return status(500, { error: 'Internal server error', code: 'FEATURE_ACCESS_LIST_ERROR' });
-    }
-  },
-  {
-    detail: {
-      tags: ['Feature Access'],
-      summary: 'List feature-access config',
-      description:
-        'Returns the early-access config for all features. The client gates each feature by resolving its `earlyAccessUntil` against the viewer’s Pro entitlement.',
+export const featureAccessRoutes = new Elysia({ prefix: '/feature-access' })
+  // public-route: non-sensitive early-access config the client fetches before
+  // auth to render gates; the gating decision happens client-side.
+  .get(
+    '/',
+    async () => {
+      try {
+        return await listFeatureAccess();
+      } catch (error) {
+        captureApiException({
+          error,
+          operation: 'featureAccess.list.route',
+          tags: { feature: 'featureAccess' },
+        });
+        return status(500, { error: 'Internal server error', code: 'FEATURE_ACCESS_LIST_ERROR' });
+      }
     },
-  },
-);
+    {
+      detail: {
+        tags: ['Feature Access'],
+        summary: 'List feature-access config',
+        description:
+          'Returns the early-access config for all features. The client gates each feature by resolving its `earlyAccessUntil` against the viewer’s Pro entitlement.',
+      },
+    },
+  );

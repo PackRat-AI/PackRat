@@ -1,4 +1,8 @@
+import { FeatureFlag } from '@packrat/config';
 import { z } from 'zod';
+
+// All flag keys known to the codebase, as a non-empty tuple for z.enum.
+const FEATURE_FLAG_KEYS = Object.values(FeatureFlag) as [string, ...string[]];
 
 // ─── Error responses ──────────────────────────────────────────────────────────
 
@@ -126,6 +130,12 @@ export const AdminFeatureFlagListSchema = z.array(AdminFeatureFlagItemSchema);
 export const FeatureFlagUpsertBodySchema = z.object({
   enabled: z.boolean(),
   description: z.string().nullable().optional(),
+});
+
+// Only known keys are writable — prevents a typo from creating an orphaned
+// override row that listEffectiveFeatureFlags silently ignores.
+export const FeatureFlagKeyParamSchema = z.object({
+  key: z.enum(FEATURE_FLAG_KEYS),
 });
 
 // ─── Feature Access ───────────────────────────────────────────────────────────

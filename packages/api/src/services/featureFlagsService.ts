@@ -11,7 +11,8 @@ export const KNOWN_FEATURE_FLAG_KEYS = Object.freeze(Object.values(FeatureFlag))
 // Default lookup by a plain `string` key (e.g. from a DB row) rather than the
 // narrow FeatureFlag literal union.
 function getDefaultFlagValue(key: string): boolean {
-  return (APP_CONFIG.featureFlags as Record<string, boolean>)[key] ?? false;
+  const defaults: Record<string, boolean> = APP_CONFIG.featureFlags;
+  return defaults[key] ?? false;
 }
 
 export interface AdminFeatureFlagItem {

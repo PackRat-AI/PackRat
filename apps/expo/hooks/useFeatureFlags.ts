@@ -13,6 +13,11 @@ import { useEffect } from 'react';
 
 export const FEATURE_FLAGS_QUERY_KEY = ['featureFlags', 'config'] as const;
 
+// The known flag keys, typed. Object.keys widens to string[], but the keys of
+// the statically-defined config object are exactly FeatureFlagKey.
+// safe-cast: keys of a compile-time-known object are its keyof union
+const knownFeatureFlagKeys = Object.keys(appConfig.featureFlags) as FeatureFlagKey[];
+
 /**
  * Fetches the effective feature-flag map from the API. Cached for 5 minutes —
  * flags change rarely, and a stale read at worst shows/hides a feature a
@@ -64,7 +69,9 @@ export function useFeatureFlags(): FeatureFlagsMap {
     // rather than folding onto the previously cached value, so a flag
     // removed server-side reliably reverts instead of sticking.
     const next: FeatureFlagsMap = { ...appConfig.featureFlags };
-    for (const key of Object.keys(next) as FeatureFlagKey[]) {
+    // Iterate the typed known keys, not the server response, so an unrecognized
+    // server key can't create a flag and each key is a FeatureFlagKey by type.
+    for (const key of knownFeatureFlagKeys) {
       const value = data[key];
       if (isBoolean(value)) next[key] = value;
     }

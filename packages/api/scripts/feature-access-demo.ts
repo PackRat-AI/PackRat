@@ -18,6 +18,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { neon, neonConfig } from '@neondatabase/serverless';
+import { nodeEnv } from '@packrat/env/node';
 import { title } from '@packrat/utils';
 import { Client } from 'pg';
 import WebSocket from 'ws';
@@ -29,7 +30,7 @@ const NEON_URL_RE = /^\s*NEON_DATABASE_URL\s*=\s*["']?([^"'\n]+)["']?/m;
 function resolveUrl(): string {
   const flagIdx = process.argv.indexOf('--url');
   if (flagIdx !== -1 && process.argv[flagIdx + 1]) return process.argv[flagIdx + 1] as string;
-  if (process.env.NEON_DATABASE_URL) return process.env.NEON_DATABASE_URL;
+  if (nodeEnv.NEON_DATABASE_URL) return nodeEnv.NEON_DATABASE_URL;
   try {
     const devVars = readFileSync(new URL('../.dev.vars', import.meta.url).pathname, 'utf-8');
     const match = devVars.match(NEON_URL_RE);
@@ -66,9 +67,11 @@ async function withDb<T>(url: string, fn: (run: SqlRunner) => Promise<T>): Promi
     }
   }
   const sql = neon(url);
-  return fn(
-    async (text, params) => (await sql.query(text, params ?? [])) as Record<string, unknown>[],
-  );
+  return fn(async (text, params) => {
+    // safe-cast: neon's untyped query returns row objects keyed by column name
+    const rows = (await sql.query(text, params ?? [])) as Record<string, unknown>[];
+    return rows;
+  });
 }
 
 function positionalArgs(): string[] {

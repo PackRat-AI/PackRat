@@ -1,6 +1,5 @@
 import {
   deleteFeatureFlagOverride,
-  KNOWN_FEATURE_FLAG_KEYS,
   listFeatureFlagsForAdmin,
   upsertFeatureFlagOverride,
 } from '@packrat/api/services/featureFlagsService';
@@ -8,17 +7,11 @@ import { captureApiException } from '@packrat/api/utils/sentry';
 import {
   AdminErrorResponses,
   AdminFeatureFlagListSchema,
+  FeatureFlagKeyParamSchema,
   FeatureFlagUpsertBodySchema,
   SuccessSchema,
 } from '@packrat/schemas/admin';
 import { Elysia, status } from 'elysia';
-import { z } from 'zod';
-
-// Only known keys are writable — prevents a typo from creating an orphaned
-// override row that listEffectiveFeatureFlags silently ignores.
-const KeyParamSchema = z.object({
-  key: z.enum(KNOWN_FEATURE_FLAG_KEYS as [string, ...string[]]),
-});
 
 export const adminFeatureFlagsRoutes = new Elysia({ prefix: '/feature-flags' })
   .get(
@@ -61,7 +54,7 @@ export const adminFeatureFlagsRoutes = new Elysia({ prefix: '/feature-flags' })
       }
     },
     {
-      params: KeyParamSchema,
+      params: FeatureFlagKeyParamSchema,
       body: FeatureFlagUpsertBodySchema,
       response: {
         200: AdminFeatureFlagListSchema.element,
@@ -88,7 +81,7 @@ export const adminFeatureFlagsRoutes = new Elysia({ prefix: '/feature-flags' })
       }
     },
     {
-      params: KeyParamSchema,
+      params: FeatureFlagKeyParamSchema,
       response: { 200: SuccessSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Reset a feature flag to its coded default' },
     },
