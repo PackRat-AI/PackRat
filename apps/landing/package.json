@@ -53,7 +53,7 @@
     "cmdk": "catalog:",
     "date-fns": "catalog:",
     "embla-carousel-react": "catalog:",
-    "framer-motion": "^12.19.1",
+    "framer-motion": "^12.42.2",
     "input-otp": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
