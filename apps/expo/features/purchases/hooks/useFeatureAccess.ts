@@ -1,4 +1,4 @@
-import { type FeatureAccessLike, hasFeatureAccess, isInEarlyAccess } from '@packrat/config';
+import { type FeatureAccessLike, isInEarlyAccess } from '@packrat/config';
 import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
@@ -16,9 +16,9 @@ interface FeatureAccessConfigItem extends FeatureAccessLike {
  * Fetch the global early-access config — the small list of features that are
  * (or recently were) in an early-access window. Cached for 5 minutes and
  * persisted to disk (see TanstackProvider) so it resolves offline. The config
- * changes rarely; a stale read at worst shows the paywall a little early or
- * late. Gating itself is resolved by `hasFeatureAccess` against the viewer's
- * Pro entitlement — an in-window feature stays gated for non-Pro viewers.
+ * changes rarely. A client-gated feature is gated by default for non-Pro
+ * viewers; it only opens to them once this config confirms GA for its key (see
+ * `useFeatureAccess`), so a stale read errs toward gating, never toward leaking.
  */
 export function useFeatureAccessConfig() {
   return useQuery({
@@ -106,13 +106,21 @@ export function useFeatureAccess(key: string): FeatureAccessResult {
   // rather than waiting for the connectivity probe.
   const unresolvedDueToError = !resolved && (configError || entitlementError);
 
-  // `allowed` MUST require `resolved`. hasFeatureAccess returns true for a
-  // missing config row (unconfigured feature = GA), but offline we can't tell
-  // "genuinely unconfigured" from "config not loaded yet" — so an unresolved
-  // config would fail OPEN and leak a gated feature to a free user. Only grant
-  // once both signals are actually resolved; until then the gate shows a
-  // spinner / "can't verify" fallback instead of the feature.
-  const allowed = resolved && hasFeatureAccess(feature, { hasPro: isProMember });
+  // A client-gated feature (wrapped in EarlyAccessGate) is GATED BY DEFAULT.
+  //
+  // Pro members always pass. A free user is allowed ONLY when the config
+  // positively confirms general availability: a *resolved* config that actually
+  // HAS a row for this key whose early-access window is not active. Every other
+  // state gates the free user — no row (likely a new feature whose row isn't
+  // seeded/propagated yet), config not loaded, stale cache missing a new row,
+  // or any "can't determine". Absence of proof-of-GA is treated as gated, not
+  // free, so there is no window in which a gated feature leaks to a free user.
+  //
+  // (This intentionally does NOT use hasFeatureAccess's "missing row = free"
+  // default: that GA-by-absence rule is only safe server-side, where a missing
+  // row is unambiguous. On the client, `feature === undefined` is ambiguous.)
+  const confirmedGA = resolved && feature !== undefined && !isInEarlyAccess(feature);
+  const allowed = isProMember || confirmedGA;
 
   return {
     allowed,
