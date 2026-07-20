@@ -15,6 +15,7 @@
 
 import { generateId } from '@ai-sdk/provider-utils';
 import { isString } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import type { LlamaLanguageModel } from '@react-native-ai/llama';
 
 // Minimal structural slice of LanguageModelV2CallOptions we need
@@ -63,13 +64,13 @@ function toolResultOutputToString(output: any): string {
       return String(output.value ?? '');
     case 'json':
     case 'error-json':
-      return JSON.stringify(output.value);
+      return safeJsonStringify(output.value);
     case 'content':
       return (output.value ?? [])
         .map((p: { type: string; text?: string }) => (p.type === 'text' ? (p.text ?? '') : ''))
         .join('');
     default:
-      return JSON.stringify(output);
+      return safeJsonStringify(output);
   }
 }
 
@@ -114,7 +115,7 @@ function convertPromptToLlamaMessages(prompt: Prompt): LlamaMessage[] {
             id: p.toolCallId,
             function: {
               name: p.toolName,
-              arguments: isString(p.input) ? p.input : JSON.stringify(p.input),
+              arguments: isString(p.input) ? p.input : safeJsonStringify(p.input),
             },
           })),
         });

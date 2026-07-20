@@ -120,6 +120,22 @@ describe('embeddingService', () => {
         cloudflareAiBinding: expect.anything(),
       });
     });
+
+    it('returns deterministic embeddings for e2e stub keys', async () => {
+      const first = await generateEmbedding({
+        ...baseParams,
+        openAiApiKey: 'sk-e2e-stub-placeholder',
+        value: 'test\ntext',
+      });
+      const second = await generateEmbedding({
+        ...baseParams,
+        openAiApiKey: 'sk-e2e-stub-placeholder',
+        value: 'test text',
+      });
+
+      expect(first).toHaveLength(1536);
+      expect(first).toEqual(second);
+    });
   });
 
   describe('generateManyEmbeddings', () => {
@@ -219,6 +235,19 @@ describe('embeddingService', () => {
         model: expect.any(String),
         values: ['text with spaces'],
       });
+    });
+
+    it('returns deterministic embeddings for e2e stub keys', async () => {
+      const result = await generateManyEmbeddings({
+        ...baseParams,
+        openAiApiKey: 'sk-e2e-stub-placeholder',
+        values: ['first\nitem', '', 'second item'],
+      });
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toHaveLength(1536);
+      expect(result[1]).toHaveLength(1536);
+      expect(result[0]).not.toEqual(result[1]);
     });
   });
 });

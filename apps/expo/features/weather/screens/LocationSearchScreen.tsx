@@ -1,8 +1,9 @@
 import { Text } from '@packrat/ui/nativewindui';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { SearchInput } from 'expo-app/components/SearchInput';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -55,7 +56,7 @@ export default function LocationSearchScreen() {
       try {
         const storedSearches = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
         if (storedSearches) {
-          setRecentSearches(JSON.parse(storedSearches));
+          setRecentSearches(safeJsonParse<string[]>(storedSearches, { strict: true }));
         }
       } catch (err) {
         console.error('Error loading recent searches:', err);
@@ -80,14 +81,14 @@ export default function LocationSearchScreen() {
         ].slice(0, 5); // Keep only 5 most recent
 
         setRecentSearches(updatedSearches);
-        await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updatedSearches));
+        await AsyncStorage.setItem(RECENT_SEARCHES_KEY, safeJsonStringify(updatedSearches));
         return;
       }
 
       // Add new search term to the beginning and limit to 5
       const updatedSearches = [searchTerm, ...recentSearches].slice(0, 5);
       setRecentSearches(updatedSearches);
-      await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updatedSearches));
+      await AsyncStorage.setItem(RECENT_SEARCHES_KEY, safeJsonStringify(updatedSearches));
     } catch (err) {
       console.error('Error saving recent search:', err);
       Sentry.captureException(err, {
@@ -405,7 +406,7 @@ export default function LocationSearchScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Search Input */}
-      <View className="px-4">
+      <View className="px-4 my-4">
         <SearchInput
           ref={searchInputRef}
           placeholder={t('weather.searchForCity')}

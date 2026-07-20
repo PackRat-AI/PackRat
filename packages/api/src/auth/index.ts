@@ -9,27 +9,76 @@
 
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { expo } from '@better-auth/expo';
+import { oauthProvider } from '@better-auth/oauth-provider';
 import { generateAppleClientSecret, verifyPasswordCompat } from '@packrat/api/auth/auth.helpers';
 import { createConnection } from '@packrat/api/db';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import * as schema from '@packrat/db';
 import { isObject } from '@packrat/guards';
-import { betterAuth } from 'better-auth';
+import { safeJsonParse } from '@packrat/utils';
+import { type BetterAuthPlugin, betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
+
+// ─── MCP OAuth scope catalog (advertised in scopes_supported) ───────────────
+// `openid`, `profile`, `email`, `offline_access` are the OIDC standard scopes
+// the plugin advertises by default; we include them explicitly so this list
+// is the single source of truth for `scopes_supported` in discovery metadata.
+// MCP scopes are mapped to tool visibility in packages/mcp/src/scopes.ts.
+const MCP_OAUTH_SCOPES = [
+  'openid',
+  'profile',
+  'email',
+  'offline_access',
+  'mcp:read',
+  'mcp:write',
+  'mcp:admin',
+] as const;
+
+// RFC 8707 audience — JWT access tokens are bound to this `aud` claim.
+// The MCP worker verifies tokens carry exactly this audience; any other
+// `resource` parameter results in `invalid_request` (400) from the plugin's
+// `checkResource` (validAudiences enforcement).
+const MCP_AUDIENCE = 'https://mcp.packratai.com/mcp';
+// In local dev the MCP worker's `/.well-known/oauth-protected-resource` advertises
+// `resource: "http://localhost:8788/mcp"` (via MCP_PUBLIC_URL). Inspector sends that
+// back as the `resource` param in the authorize request, so we must accept it here too.
+const MCP_AUDIENCE_LOCAL_DEV = 'http://localhost:8788/mcp';
+const TRAILING_SLASH_RE = /\/$/;
 
 // ─── Per-isolate auth instance cache ─────────────────────────────────────────
 // Stores the in-flight Promise so concurrent requests that arrive before the
 // first initialization completes all await the same Promise rather than each
 // kicking off a redundant build. Evicted on rejection so the next call retries.
-// Keyed by NEON_DATABASE_URL|BETTER_AUTH_URL — miniflare creates a new env
+// Keyed by NEON_DATABASE_URL|PACKRAT_API_URL — miniflare creates a new env
 // object per request, so a WeakMap never hits; the URL composite key is stable
 // within an isolate lifetime and distinguishes different env configurations.
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth's generic type parameter is too specific to the exact plugin set — can't use ReturnType<typeof betterAuth> here
 const authCache = new Map<string, Promise<any>>();
 
+function getTrustedOrigins(env: ValidatedEnv): string[] {
+  const configured = env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return [
+    env.PACKRAT_API_URL,
+    ...(configured ?? []),
+    'packrat://',
+    ...(env.ENVIRONMENT === 'development'
+      ? [
+          'http://localhost:*',
+          'http://localhost:8787',
+          'http://localhost:8791',
+          'https://*.localhost',
+          'https://*.localhost:*',
+        ]
+      : []),
+  ];
+}
+
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth instance type is plugin-specific and can't be expressed at declaration time without duplicating the full config signature
 export async function getAuth(env: ValidatedEnv): Promise<any> {
-  const cacheKey = `${env.NEON_DATABASE_URL}|${env.BETTER_AUTH_URL}`;
+  const cacheKey = `${env.NEON_DATABASE_URL}|${env.PACKRAT_API_URL}|${env.BETTER_AUTH_TRUSTED_ORIGINS ?? ''}|${env.ENVIRONMENT}`;
   const cached = authCache.get(cacheKey);
   if (cached) return cached;
 
@@ -48,12 +97,14 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
   const db = createConnection({ url: env.NEON_DATABASE_URL, useNeonHttp: true });
 
   const auth = betterAuth({
-    baseURL: env.BETTER_AUTH_URL,
-    secret: env.BETTER_AUTH_SECRET,
+    baseURL: env.PACKRAT_API_URL,
+    secret: env.PACKRAT_AUTH_SECRET,
 
     advanced: {
       // All IDs are UUID-formatted text (matching the DB migration).
-      generateId: () => crypto.randomUUID(),
+      database: {
+        generateId: () => crypto.randomUUID(),
+      },
       // Trust the X-Forwarded-For header added by Cloudflare.
       ipAddress: {
         ipAddressHeaders: ['cf-connecting-ip', 'x-forwarded-for'],
@@ -61,6 +112,10 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       // Disable cross-site cookies so the Bearer plugin is the primary
       // session mechanism for mobile/API clients.
       crossSubDomainCookies: { enabled: false },
+    },
+
+    session: {
+      storeSessionInDatabase: true,
     },
 
     // Use KV as a fast secondary store for session lookups.
@@ -88,17 +143,33 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
         account: schema.account,
         verification: schema.verification,
         jwks: schema.jwks,
+        // OAuth provider (@better-auth/oauth-provider@1.6.x) tables.
+        // The plugin auto-registers these models when present, gating its
+        // discovery + token + consent endpoints on their availability.
+        oauthClient: schema.oauthClient,
+        oauthAccessToken: schema.oauthAccessToken,
+        oauthRefreshToken: schema.oauthRefreshToken,
+        oauthConsent: schema.oauthConsent,
       },
     }),
 
-    // Map Better Auth's model field names to our column names.
+    // Do NOT set a snake_case `fieldName` here. The Drizzle adapter returns rows
+    // keyed by the table's camelCase property names (firstName, lastName, …), and
+    // Better Auth's transformOutput looks each value up by `field.fieldName || key`.
+    // A `fieldName: 'first_name'` makes it read data['first_name'] — which Drizzle
+    // never produces — so the field silently drops out of every session/sign-in
+    // response (this is exactly why firstName/lastName/avatarUrl were missing).
+    // Omitting fieldName uses the field name, which already matches the Drizzle
+    // property; Drizzle owns the snake_case SQL column mapping.
     user: {
       additionalFields: {
         role: { type: 'string', defaultValue: 'USER' },
-        firstName: { type: 'string', fieldName: 'first_name' },
-        lastName: { type: 'string', fieldName: 'last_name' },
-        avatarUrl: { type: 'string', fieldName: 'avatar_url' },
-        passwordHash: { type: 'string', fieldName: 'password_hash' },
+        firstName: { type: 'string' },
+        lastName: { type: 'string' },
+        avatarUrl: { type: 'string' },
+        // Legacy column from pre-migration auth; Better Auth verifies against
+        // account.password, not this. Never accept from clients or echo it back.
+        passwordHash: { type: 'string', input: false, returned: false },
       },
     },
 
@@ -153,9 +224,12 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       bearer(),
 
       // JWT: issues asymmetric JWTs and exposes a JWKS endpoint at
-      // /api/auth/jwks for downstream service verification.
+      // /api/auth/jwks for downstream service verification. The OAuth provider
+      // plugin reads this plugin's signer to mint JWT access tokens when a
+      // client sends `resource` (RFC 8707) — so this config also gates MCP.
+      //
       // Private key encryption is disabled — it causes decrypt failures when
-      // BETTER_AUTH_SECRET rotates or differs across environments.
+      // PACKRAT_AUTH_SECRET rotates or differs across environments.
       //
       // The adapter.getJwks filter skips any rows that were stored in the old
       // encrypted format (where JSON.parse(privateKey) returns a string rather
@@ -171,23 +245,64 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
             const keys: any[] = (await ctx.context.adapter.findMany({ model: 'jwks' })) ?? [];
             // biome-ignore lint/suspicious/noExplicitAny: jwks row type from Better Auth is not exported
             return keys.filter((key: any) => {
-              try {
-                return isObject(JSON.parse(key.privateKey));
-              } catch {
-                return false;
-              }
+              return isObject(safeJsonParse(key.privateKey, { strict: true }));
             });
           },
         },
       }),
 
       // Admin: role-based user management endpoints.
-      admin(),
+      // safe-cast: Better Auth 1.6.13's admin plugin return type is narrower than BetterAuthPlugin.
+      admin() as unknown as BetterAuthPlugin,
 
       // Expo: promotes the expo-origin header → Origin so the CSRF check
       // passes for requests from the native app (which can't send a browser
       // Origin header).
       expo(),
+
+      // OAuth 2.1 Authorization Server for the MCP worker.
+      //
+      // Configuration rationale (cross-reference: spike findings in
+      // docs/mcp/better-auth-oauth-provider-spike-2026-05-25.md):
+      //  - `scopes`: declares the MCP scope catalog; advertised under
+      //    `scopes_supported` in the AS metadata.
+      //  - `validAudiences`: RFC 8707 — `/oauth2/authorize` rejects any
+      //    `resource` parameter not in this list with 400 invalid_request.
+      //  - `allowDynamicClientRegistration: false` + Claude pre-registered
+      //    via packages/api/src/db/seed-claude-oauth-client.ts — DCR is
+      //    closed because we know our connector clients ahead of time.
+      //  - `consentPage`: points at `/oauth/consent` (mounted in the worker
+      //    fetch handler in src/index.ts). The consent page server-side
+      //    filters `mcp:admin` from non-admin grants and POSTs the reduced
+      //    scope to `/oauth2/consent` — the plugin's native scope-reduction
+      //    mechanism (customAccessTokenClaims CANNOT reduce scope; see
+      //    spike §Q1-Q2).
+      //  - `loginPage`: '/api/auth/sign-in' is a static placeholder URL the
+      //    plugin redirects to for `prompt=login`. PackRat clients (Claude)
+      //    rely on the user being already signed in via Better Auth's web
+      //    auth flow before initiating OAuth; this URL is set so the plugin
+      //    doesn't throw on missing config — the actual sign-in surface is
+      //    the existing Better Auth endpoints, not a custom page.
+      //  - `disableJwtPlugin` is intentionally unset: JWT access tokens are
+      //    the default — but ONLY issued when the client sends a `resource`
+      //    parameter (`isJwtAccessToken = audience && !opts.disableJwtPlugin`,
+      //    spike §Q4). Claude.ai sends `resource` per the MCP 2025-11-25
+      //    spec. Verified in U9 dev verification.
+      oauthProvider({
+        scopes: [...MCP_OAUTH_SCOPES],
+        validAudiences: (() => {
+          const audiences = [MCP_AUDIENCE];
+          if (env.PACKRAT_API_URL.startsWith('http://localhost'))
+            audiences.push(MCP_AUDIENCE_LOCAL_DEV);
+          if (env.PACKRAT_MCP_URL)
+            audiences.push(`${env.PACKRAT_MCP_URL.replace(TRAILING_SLASH_RE, '')}/mcp`);
+          return audiences;
+        })(),
+        allowDynamicClientRegistration: false,
+        allowUnauthenticatedClientRegistration: false,
+        consentPage: '/oauth/consent',
+        loginPage: '/api/auth/sign-in',
+      }),
     ],
 
     rateLimit: {
@@ -197,15 +312,11 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       storage: 'secondary-storage',
     },
 
-    // The web app is served from a different origin than the API (e.g. the
-    // Playwright e2e harness serves the static export on a separate port), so
-    // its origin must be trusted for the cross-origin CSRF/CORS check. Only
-    // trust localhost in development — never in production.
-    trustedOrigins: [
-      env.BETTER_AUTH_URL,
-      'packrat://',
-      ...(env.ENVIRONMENT === 'development' ? ['http://localhost:*'] : []),
-    ],
+    // NOTE: keep in lockstep with `auth.config.ts` (the CLI-facing static
+    // config). `https://mcp.packratai.com` is intentionally not trusted here:
+    // OAuth lives on api.packrat.world and the MCP worker does not call Better
+    // Auth sign-in endpoints directly.
+    trustedOrigins: getTrustedOrigins(env),
   });
 
   return auth;

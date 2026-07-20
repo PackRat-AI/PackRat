@@ -1,3 +1,4 @@
+import type { PackCategory } from '@packrat/constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys, useApiClient } from '../../../shared/api';
 import { generateId } from '../../../shared/lib/uuid';
@@ -5,7 +6,7 @@ import { generateId } from '../../../shared/lib/uuid';
 interface CreatePackInput {
   name: string;
   description?: string;
-  category?: string;
+  category?: PackCategory;
   isPublic?: boolean;
   image?: string | null;
   tags?: string[];
@@ -20,6 +21,7 @@ export function useCreatePackMutation() {
       const { data, error } = await client.packs.post({
         ...input,
         id: generateId(),
+        category: input.category ?? 'custom',
         isPublic: input.isPublic ?? false,
         localCreatedAt: now,
         localUpdatedAt: now,

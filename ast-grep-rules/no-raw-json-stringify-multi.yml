@@ -1,0 +1,27 @@
+id: no-raw-json-stringify-multi
+language: typescript
+# WARNING (not error): multi-argument JSON.stringify (replacer / space). Flagged
+# for the separate JSON-migration unit but intentionally NO autofix — there is
+# no clean 1:1 rewrite, so the orchestrator's codemod handles these by hand.
+# The single-arg form is covered (with autofix) by no-raw-json-stringify.yml;
+# the `not` constraint below keeps the two rules from double-reporting.
+severity: error
+message: "Prefer safeJsonStringify from @packrat/utils over raw JSON.stringify (multi-arg: replacer/space need manual migration)."
+ignores:
+  - "**/test/**"
+  - "**/playwright/**"
+  - "**/e2e/**"
+  - "scripts/**"
+  - ".github/**"
+  - "**/packages/utils/**"
+  - "**/mocks/**"
+  - "**/__mocks__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+rule:
+  all:
+    - pattern: JSON.stringify($$$ARGS)
+    - not:
+        pattern: JSON.stringify($X)

@@ -38,7 +38,7 @@ function withEnv(overrides: Record<string, unknown> = {}) {
  */
 async function issueTestAdminJwt(): Promise<string> {
   const env = vi.mocked(getEnv)();
-  const secret = new TextEncoder().encode(String(env.BETTER_AUTH_SECRET ?? 'secret'));
+  const secret = new TextEncoder().encode(String(env.PACKRAT_AUTH_SECRET ?? 'secret'));
   return new SignJWT({ role: 'admin' })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject('admin')
@@ -272,7 +272,7 @@ describe('bypass attempts', () => {
 
   it('rejects a regular user JWT (correct secret, wrong role)', async () => {
     const env = vi.mocked(getEnv)();
-    const secret = new TextEncoder().encode(String(env.BETTER_AUTH_SECRET ?? 'secret'));
+    const secret = new TextEncoder().encode(String(env.PACKRAT_AUTH_SECRET ?? 'secret'));
     const token = await new SignJWT({ role: 'USER', userId: 42 })
       .setProtectedHeader({ alg: 'HS256' })
       .setSubject('42')
@@ -353,5 +353,123 @@ describe('bypass attempts', () => {
     const p = (await badPass.json()) as { error: string };
     // Both must return the same error message (no username enumeration)
     expect(u.error).toBe(p.error);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// U5: Better Auth bearer fallback in adminAuthGuard
+//
+// Per the resolved D1 decision (see
+// docs/plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md U5),
+// the admin guard accepts a Better Auth session bearer in addition to the
+// legacy HS256 packrat-admin JWT — but only when the resolved session's
+// `user.role === 'ADMIN'`. This lets the MCP Worker send the same Better
+// Auth bearer for both user and admin API calls; the API gates by role
+// rather than a parallel token type.
+//
+// The global `@packrat/api/auth` mock in test/setup.ts validates HS256
+// tokens signed with the test secret and maps `payload.role` straight to
+// `session.user.role`, so we can build session bearers here by signing
+// JWTs with the same secret and varying the role claim.
+// ---------------------------------------------------------------------------
+
+/**
+ * Issue a JWT in the shape the Better Auth mock recognizes: signed with the
+ * test secret, carrying `userId` (becomes `session.user.id`) and `role`
+ * (becomes `session.user.role`). Crucially, this token does NOT have the
+ * packrat-admin issuer/audience set, so `verifyAdminJwt` will reject it —
+ * forcing the guard to fall through to `verifyBetterAuthAdmin`.
+ */
+async function issueBetterAuthSessionBearer(role: 'ADMIN' | 'USER'): Promise<string> {
+  // Match the secret used inside the global `@packrat/api/auth` mock in
+  // test/setup.ts (`new TextEncoder().encode('secret')`).
+  const sessionSecret = new TextEncoder().encode('secret');
+  return new SignJWT({ userId: `${role.toLowerCase()}-user-id`, role })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('1h')
+    .sign(sessionSecret);
+}
+
+describe('adminAuthGuard — Better Auth bearer fallback (U5)', () => {
+  it('accepts a Better Auth session bearer when user.role === "ADMIN"', async () => {
+    const bearer = await issueBetterAuthSessionBearer('ADMIN');
+    const res = await app.fetch(adminReq('/stats', { authorization: `Bearer ${bearer}` }));
+    expect(res.status).not.toBe(401);
+  });
+
+  it('rejects a Better Auth session bearer when user.role === "USER"', async () => {
+    const bearer = await issueBetterAuthSessionBearer('USER');
+    const res = await app.fetch(adminReq('/stats', { authorization: `Bearer ${bearer}` }));
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a Better Auth bearer signed with the wrong secret (mock returns null session)', async () => {
+    // The Better Auth mock returns null for tokens it can't verify; the
+    // admin JWT path also rejects (wrong issuer/audience), so the guard
+    // hits the 401 branch.
+    const wrongSecret = new TextEncoder().encode('not-the-mock-secret');
+    const bearer = await new SignJWT({ userId: 'admin-user-id', role: 'ADMIN' })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(wrongSecret);
+    const res = await app.fetch(adminReq('/stats', { authorization: `Bearer ${bearer}` }));
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a bearer that decodes to a session with no role field', async () => {
+    // Session.user.role is missing → the strict `role === "ADMIN"` check fails.
+    const sessionSecret = new TextEncoder().encode('secret');
+    const bearer = await new SignJWT({ userId: 'no-role-user' })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(sessionSecret);
+    const res = await app.fetch(adminReq('/stats', { authorization: `Bearer ${bearer}` }));
+    expect(res.status).toBe(401);
+  });
+
+  it('accepts an HS256 admin JWT even after the Better Auth path is wired (back-compat regression guard)', async () => {
+    // The legacy packrat-admin JWT path must keep working for apps/admin
+    // and any internal scripts. This is the same assertion as the
+    // "CF Access not configured" group above, repeated here so a future
+    // refactor that accidentally reverses guard order (Better Auth
+    // first) regresses visibly.
+    const token = await issueTestAdminJwt();
+    const res = await app.fetch(adminReq('/stats', { authorization: `Bearer ${token}` }));
+    expect(res.status).not.toBe(401);
+  });
+
+  it('tries the HS256 admin JWT first, then the Better Auth bearer (no unnecessary session lookup)', async () => {
+    // When the bearer IS a valid admin JWT, the guard should accept it
+    // without ever calling the Better Auth mock. We assert this by
+    // counting the spy invocations on `getAuth().api.getSession`.
+    const { getAuth } = await import('@packrat/api/auth');
+    const auth = await vi.mocked(getAuth)(withEnv() as Parameters<typeof getAuth>[0]);
+    const getSessionSpy = auth.api.getSession as ReturnType<typeof vi.fn>;
+    const callsBefore = getSessionSpy.mock.calls.length;
+
+    const token = await issueTestAdminJwt();
+    const res = await app.fetch(adminReq('/stats', { authorization: `Bearer ${token}` }));
+    expect(res.status).not.toBe(401);
+    // Better Auth was not consulted because the HS256 JWT was sufficient.
+    expect(getSessionSpy.mock.calls.length).toBe(callsBefore);
+  });
+
+  it('falls through to Better Auth when the HS256 path rejects the token', async () => {
+    // A bearer that's NOT a valid packrat-admin JWT but IS a valid Better
+    // Auth ADMIN session should be accepted via the fallback. Verifies
+    // the OR-of-two-paths shape of the guard.
+    const { getAuth } = await import('@packrat/api/auth');
+    const auth = await vi.mocked(getAuth)(withEnv() as Parameters<typeof getAuth>[0]);
+    const getSessionSpy = auth.api.getSession as ReturnType<typeof vi.fn>;
+    const callsBefore = getSessionSpy.mock.calls.length;
+
+    const bearer = await issueBetterAuthSessionBearer('ADMIN');
+    const res = await app.fetch(adminReq('/stats', { authorization: `Bearer ${bearer}` }));
+    expect(res.status).not.toBe(401);
+    // Better Auth WAS consulted because the HS256 verify failed first.
+    expect(getSessionSpy.mock.calls.length).toBeGreaterThan(callsBefore);
   });
 });

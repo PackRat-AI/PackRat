@@ -28,8 +28,15 @@ import { mapCsvRowToItem } from '@packrat/api/utils/csv-utils';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { isJsonlFile, mapJsonRowToItem } from '@packrat/api/utils/json-utils';
+import {
+  createQueryMetricsStore,
+  flushQueryMetrics,
+  queryMetricsAls,
+} from '@packrat/api/utils/queryMetrics';
+import { record } from '@packrat/api/utils/sentry';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/db';
 import { toRecord } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import { parse } from 'csv-parse';
 import { eq } from 'drizzle-orm';
 import type { ChunkSpec } from './shared/chunkCsvForR2';
@@ -145,7 +152,7 @@ export async function processChunk({
 
         let parsedObj: Record<string, unknown>;
         try {
-          parsedObj = toRecord(JSON.parse(trimmed));
+          parsedObj = toRecord(safeJsonParse(trimmed, { strict: true }));
         } catch (parseErr) {
           invalidItemsBatch.push({
             jobId,
@@ -195,7 +202,7 @@ export async function processChunk({
     const lastLine = buffer.trim();
     if (lastLine && firstLineSkipped) {
       try {
-        const parsedObj = toRecord(JSON.parse(lastLine));
+        const parsedObj = toRecord(safeJsonParse(lastLine, { strict: true }));
         const item = mapJsonRowToItem(parsedObj);
         if (item) {
           const validated = validator.validateItem(item);
@@ -244,6 +251,9 @@ export async function processChunk({
           rawData: { parseError: message },
           rowIndex: parserLine,
         });
+        // Count the skipped row toward rowsProcessed (reported as rowIndex);
+        // otherwise rows dropped by the parser silently undercount the total.
+        rowIndex++;
       },
     });
 
@@ -263,11 +273,11 @@ export async function processChunk({
       throw err;
     });
 
-    for await (const record of parser) {
+    for await (const rawRow of parser) {
       if (rowIndex % 100 === 0) {
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
-      const row = record as string[];
+      const row = rawRow as string[];
 
       if (!isHeaderProcessed) {
         fieldMap = {};
@@ -348,7 +358,20 @@ export class CatalogEtlWorkflow extends WorkflowEntrypoint<Env, CatalogEtlWorkfl
             retries: { limit: 3, delay: '30 seconds', backoff: 'exponential' },
             timeout: '5 minutes',
           },
-          async () => processChunk({ jobId, chunk, env: this.env }),
+          async () => {
+            const store = createQueryMetricsStore({
+              route: `workflow/catalog-etl/chunk-${chunk.chunkIndex}`,
+              method: 'WORKFLOW',
+            });
+            return queryMetricsAls.run(store, async () => {
+              try {
+                return await processChunk({ jobId, chunk, env: this.env });
+              } finally {
+                store.totalDurationMs = Date.now() - store.startTimeMs;
+                await flushQueryMetrics({ store }).catch(() => {});
+              }
+            });
+          },
         );
         chunkResults.push(result);
       }
@@ -369,23 +392,59 @@ export class CatalogEtlWorkflow extends WorkflowEntrypoint<Env, CatalogEtlWorkfl
         throw new Error(`Workflow ${jobId} received empty chunks array`);
       }
       await step.do('aggregate', async () => {
-        const db = createDbClient(this.env);
-        await db
-          .update(etlJobs)
-          .set({
-            totalProcessed: totals.rowsProcessed,
-            totalValid: totals.rowsValid,
-            totalInvalid: totals.rowsInvalid,
-          })
-          .where(eq(etlJobs.id, jobId));
+        const store = createQueryMetricsStore({
+          route: 'workflow/catalog-etl/aggregate',
+          method: 'WORKFLOW',
+        });
+        return queryMetricsAls.run(store, async () => {
+          try {
+            await record({
+              operation: 'catalogEtl.aggregate',
+              extra: { jobId },
+              fn: async () => {
+                const db = createDbClient(this.env);
+                await db
+                  .tag('workflow.aggregateEtlTotals')
+                  .update(etlJobs)
+                  .set({
+                    totalProcessed: totals.rowsProcessed,
+                    totalValid: totals.rowsValid,
+                    totalInvalid: totals.rowsInvalid,
+                  })
+                  .where(eq(etlJobs.id, jobId));
+              },
+            });
+          } finally {
+            store.totalDurationMs = Date.now() - store.startTimeMs;
+            await flushQueryMetrics({ store }).catch(() => {});
+          }
+        });
       });
 
       await step.do('finalize', async () => {
-        const db = createDbClient(this.env);
-        await db
-          .update(etlJobs)
-          .set({ status: 'completed', completedAt: new Date() })
-          .where(eq(etlJobs.id, jobId));
+        const store = createQueryMetricsStore({
+          route: 'workflow/catalog-etl/finalize',
+          method: 'WORKFLOW',
+        });
+        return queryMetricsAls.run(store, async () => {
+          try {
+            await record({
+              operation: 'catalogEtl.finalize',
+              extra: { jobId },
+              fn: async () => {
+                const db = createDbClient(this.env);
+                await db
+                  .tag('workflow.markJobCompleted')
+                  .update(etlJobs)
+                  .set({ status: 'completed', completedAt: new Date() })
+                  .where(eq(etlJobs.id, jobId));
+              },
+            });
+          } finally {
+            store.totalDurationMs = Date.now() - store.startTimeMs;
+            await flushQueryMetrics({ store }).catch(() => {});
+          }
+        });
       });
 
       return {
@@ -401,12 +460,15 @@ export class CatalogEtlWorkflow extends WorkflowEntrypoint<Env, CatalogEtlWorkfl
       try {
         const db = createDbClient(this.env);
         await db
+          .tag('workflow.markJobFailed')
           .update(etlJobs)
           .set({ status: 'failed', completedAt: new Date() })
           .where(eq(etlJobs.id, jobId));
       } catch {
         // ignore — status update is best-effort; don't mask the original error
       }
+      // No manual capture: this class is exported via instrumentWorkflowWithSentry
+      // (index.ts), which captures the rethrown error with workflow context.
       throw err;
     }
   }

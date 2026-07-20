@@ -8,8 +8,10 @@ import {
   Text,
 } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { testIds } from 'expo-app/lib/testIds';
 import { TouchableWithoutFeedback, View } from 'react-native';
 import type { CatalogItem } from '../types';
 import { CatalogItemImage } from './CatalogItemImage';
@@ -22,9 +24,10 @@ type CatalogItemSelectCardProps = {
 
 export function CatalogItemSelectCard({ item, isSelected, onToggle }: CatalogItemSelectCardProps) {
   const { colors } = useColorScheme();
+  const { unit, convertWeight } = useWeightUnit();
 
   return (
-    <TouchableWithoutFeedback onPress={onToggle}>
+    <TouchableWithoutFeedback onPress={onToggle} testID={testIds.items.catalogCard(item.id)}>
       <Card className={cn('overflow-hidden mb-3', isSelected && 'border-primary bg-primary/5')}>
         <View className="relative">
           <CatalogItemImage
@@ -76,7 +79,9 @@ export function CatalogItemSelectCard({ item, isSelected, onToggle }: CatalogIte
           <View className="flex-row items-center">
             <Icon name="dumbbell" size={14} color={colors.grey} />
             <Text className="ml-1 text-xs text-muted-foreground">
-              {item.weight} {item.weightUnit}
+              {item.weight != null
+                ? `${convertWeight({ weight: item.weight, fromUnit: item.weightUnit ?? 'g' })} ${unit}`
+                : ''}
             </Text>
           </View>
           {item.usageCount && item.usageCount > 0 && (

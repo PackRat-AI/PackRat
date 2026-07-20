@@ -4,6 +4,7 @@
     "lib": ["ESNext"],
     "types": ["@cloudflare/workers-types/2022-10-31"],
     "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
     "baseUrl": ".",
     "paths": {
       "@packrat/api-client": ["../api-client/src/index.ts"],

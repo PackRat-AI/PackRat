@@ -10,6 +10,7 @@
     "moduleResolution": "bundler",
     "noEmit": true,
     "noUncheckedIndexedAccess": true,
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
@@ -71,7 +72,22 @@
     "**/.expo",
     "**/coverage",
     "packages/api/container_src",
+    // wrangler-generated CF binding types (cf-typegen) — a large generated file.
+    // CF types already reach the API via src/global.d.ts's
+    // `/// <reference types="@cloudflare/workers-types" />`, so it needn't enter
+    // the root program.
+    "**/worker-configuration.d.ts",
+    // The API's integration tests run under vitest (Cloudflare workers pool),
+    // not the root tsc.
+    "packages/api/test",
+    // Server-rendered HTML package: owns ALL the @kitajs/html JSX in isolation
+    // and is consumed by the API only through its BUILT, JSX-free dist `.d.ts`
+    // (`renderConsentPage(data): string`). Its JSX source declares a global JSX
+    // namespace, so — like packages/mcp — it must not enter this
+    // React/React-Native root program.
+    "packages/consent-ui",
     "packages/mcp",
+    "apps/swift/scripts",
     "packages/osm-db",
     "packages/osm-import",
     "packages/overpass"

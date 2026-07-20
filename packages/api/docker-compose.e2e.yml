@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: e2e_user
       POSTGRES_PASSWORD: e2e_pass
     ports:
-      - "127.0.0.1:5435:5432"
+      - "127.0.0.1:${E2E_DB_PORT:-5435}:5432"
     volumes:
       - postgres_e2e_data:/var/lib/postgresql/data
     healthcheck:

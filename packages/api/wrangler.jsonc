@@ -1,13 +1,16 @@
 {
   "$schema": "https://developers.cloudflare.com/schemas/wrangler.json",
   "name": "packrat-api",
+  // Pinned so `wrangler dev` (remote mode, forced by containers/DO bindings) selects
+  // the right account in non-interactive agent shells. Account IDs are not secrets.
+  "account_id": "a0e238a64b4bb8d9ca35c30149c26893",
   "main": "src/index.ts",
   // Elysia 1.4+ CloudflareAdapter requires compatibility_date >= 2025-06-01.
   "compatibility_date": "2025-06-01",
   // nodejs_compat is kept because other dependencies (bcryptjs, pg) rely on it.
   // nodejs_als is required by @sentry/cloudflare for AsyncLocalStorage-based
   // request/workflow context propagation across awaits.
-  "compatibility_flags": ["nodejs_compat", "nodejs_als"],
+  "compatibility_flags": ["nodejs_compat", "nodejs_als", "global_fetch_strictly_public"],
   "keep_vars": true,
   "logpush": true,
   // Generate + upload source maps to Cloudflare so Workers logs show
@@ -96,6 +99,14 @@
   "ai": {
     "binding": "AI"
   },
+  // D1 database for query metrics (edge-local, no egress cost vs Neon).
+  "d1_databases": [
+    {
+      "binding": "METRICS_DB",
+      "database_name": "packrat-metrics",
+      "database_id": "c9dedf14-aec8-42fa-aa81-76daa16c08b4"
+    }
+  ],
   // Catalog ETL workflow — the durable execution engine for catalog ingests.
   // The producer endpoint at POST /catalog/etl triggers a new instance per
   // source CSV; each chunk is a step.do call inside the workflow. Replaces
@@ -225,6 +236,13 @@
       "ai": {
         "binding": "AI"
       },
+      "d1_databases": [
+        {
+          "binding": "METRICS_DB",
+          "database_name": "packrat-metrics-dev",
+          "database_id": "92447d92-56fa-431b-aa33-659269f632de"
+        }
+      ],
       "workflows": [
         {
           "name": "packrat-catalog-etl-dev",

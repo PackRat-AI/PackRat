@@ -1,16 +1,25 @@
 import { z } from 'zod';
 import { call } from '../client';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerAiTools(agent: AgentContext): void {
   // ── Web search (Perplexity) ───────────────────────────────────────────────
 
-  agent.server.registerTool(
-    'web_search',
+  tool<{ query: string }>(
+    agent.server,
+    'packrat_web_search',
     {
+      title: 'Web Search',
       description:
-        'Search the web for current, real-time information using Perplexity AI. Use this for current trail conditions, recent news, current gear prices and deals, permit availability, or anything requiring up-to-date info not in the PackRat knowledge base.',
+        'Search the public web for current, real-time information. Use this for current trail conditions, recent news, current gear prices and deals, permit availability, or anything requiring up-to-date info not in the PackRat knowledge base.',
       inputSchema: { query: z.string().min(3) },
+      annotations: {
+        title: 'Web Search',
+        readOnlyHint: true,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
     },
     async ({ query }) =>
       call({
@@ -20,15 +29,27 @@ export function registerAiTools(agent: AgentContext): void {
   );
 
   // ── Execute SQL (read-only) ───────────────────────────────────────────────
+  //
+  // Admin-classified per the EXPLICIT_ADMIN override in `scopes.ts`. Even
+  // though the API itself rejects non-SELECT statements, raw DB access is
+  // too high-blast-radius to expose to mcp:read or mcp:write clients.
 
-  agent.server.registerTool(
-    'execute_sql_query',
+  tool<{ query: string; limit: number }>(
+    agent.server,
+    'packrat_execute_sql_query',
     {
+      title: 'Execute Read-Only SQL Query',
       description:
-        'Execute a read-only SQL SELECT query against the PackRat database for advanced analytics. Only SELECT statements are allowed.',
+        'Execute a read-only SQL SELECT query against the PackRat database for advanced analytics. Only SELECT statements are allowed. Admin-only.',
       inputSchema: {
         query: z.string().min(10),
         limit: z.number().int().min(1).max(500).default(100),
+      },
+      annotations: {
+        title: 'Execute Read-Only SQL Query',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ query, limit }) =>
@@ -39,12 +60,22 @@ export function registerAiTools(agent: AgentContext): void {
   );
 
   // ── DB schema ─────────────────────────────────────────────────────────────
+  //
+  // Admin-classified per the EXPLICIT_ADMIN override in `scopes.ts`.
 
-  agent.server.registerTool(
-    'get_database_schema',
+  tool<Record<string, never>>(
+    agent.server,
+    'packrat_get_database_schema',
     {
-      description: 'Get the PackRat DB schema — table names, columns, types.',
+      title: 'Get Database Schema',
+      description: 'Get the PackRat DB schema — table names, columns, types. Admin-only.',
       inputSchema: {},
+      annotations: {
+        title: 'Get Database Schema',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async () => call({ promise: agent.api.user.ai['db-schema'].get(), action: 'fetch DB schema' }),
   );

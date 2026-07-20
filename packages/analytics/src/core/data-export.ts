@@ -7,6 +7,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import type { DuckDBConnection } from '@duckdb/node-api';
+import { safeJsonStringify } from '@packrat/utils';
 import { DBConfig, QUALITY_WEIGHTS } from './constants';
 import { SQLFragments } from './query-builder';
 
@@ -209,7 +210,7 @@ export class DataExporter {
 
     writeFileSync(
       filepath.replace(FILE_EXTENSION_PATTERN, '.summary.json'),
-      JSON.stringify(summary, null, 2),
+      safeJsonStringify(summary, null, 2),
     );
 
     return summary;

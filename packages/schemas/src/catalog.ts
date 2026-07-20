@@ -1,5 +1,6 @@
 import { WEIGHT_UNITS } from '@packrat/constants';
 import { isString } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import { z } from 'zod';
 import { datetimeString } from './utils';
 
@@ -125,7 +126,7 @@ export const CatalogItemsQuerySchema = z.object({
     .preprocess((val) => {
       if (isString(val)) {
         try {
-          return JSON.parse(val);
+          return safeJsonParse(val, { strict: true });
         } catch {
           return undefined;
         }

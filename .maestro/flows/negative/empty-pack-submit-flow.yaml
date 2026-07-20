@@ -5,8 +5,20 @@ appId: ${APP_ID}
 - tapOn:
     text: "Packs"
 - waitForAnimationToEnd
-- tapOn:
-    id: "create-pack-button"
+- runFlow:
+    when:
+      visible:
+        text: "create-pack-empty-button"
+    commands:
+      - tapOn:
+          text: "create-pack-empty-button"
+- runFlow:
+    when:
+      visible:
+        id: "create-pack-button"
+    commands:
+      - tapOn:
+          id: "create-pack-button"
 - waitForAnimationToEnd
 # Try to submit without filling any fields
 - tapOn:

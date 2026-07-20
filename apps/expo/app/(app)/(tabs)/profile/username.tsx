@@ -4,11 +4,8 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function UsernameScreen() {
-  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [username, setUsername] = React.useState('mrzachnugent');
 
@@ -37,13 +34,7 @@ export default function UsernameScreen() {
         }}
       />
 
-      <KeyboardAwareScrollView
-        bottomOffset={8}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingBottom: insets.bottom }}
-      >
+      <View className="flex-1">
         <Form className="gap-5 px-4 pt-8">
           <FormSection
             materialIconProps={{ name: 'account-circle-outline' }}
@@ -84,7 +75,7 @@ export default function UsernameScreen() {
             </View>
           )}
         </Form>
-      </KeyboardAwareScrollView>
+      </View>
     </>
   );
 }

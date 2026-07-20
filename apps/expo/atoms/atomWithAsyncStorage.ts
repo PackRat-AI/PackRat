@@ -1,5 +1,6 @@
 import { isFunction } from '@packrat/guards';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { atom } from 'jotai';
 
 export const atomWithAsyncStorage = <T>({
@@ -14,7 +15,7 @@ export const atomWithAsyncStorage = <T>({
   baseAtom.onMount = (setValue) => {
     (async () => {
       const item = await AsyncStorage.getItem(key);
-      setValue(item ? JSON.parse(item) : initialValue);
+      setValue(item ? safeJsonParse<T>(item) : initialValue);
     })();
   };
 
@@ -23,7 +24,7 @@ export const atomWithAsyncStorage = <T>({
     (get, set, update) => {
       const nextValue = isFunction(update) ? update(get(baseAtom)) : update;
       set(baseAtom, nextValue);
-      AsyncStorage.setItem(key, JSON.stringify(nextValue));
+      AsyncStorage.setItem(key, safeJsonStringify(nextValue));
     },
   );
 

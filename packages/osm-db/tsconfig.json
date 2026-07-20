@@ -1,6 +1,7 @@
 {
   "extends": "@packrat/typescript-config/base.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "noEmit": false,
     "outDir": "dist"
   },

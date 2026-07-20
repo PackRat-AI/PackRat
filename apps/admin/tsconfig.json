@@ -1,11 +1,11 @@
 {
   "extends": "@packrat/typescript-config/nextjs.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "paths": {
       "@packrat/app": ["../../packages/app/src/index.ts"],
       "@packrat/app/*": ["../../packages/app/src/*"],
       "admin-app/*": ["./*"],
-      "@packrat/api/*": ["../../packages/api/src/*"],
       "@packrat/guards": ["../../packages/guards/src"],
       "@packrat/guards/*": ["../../packages/guards/src/*"],
       "@packrat/web-ui": ["../../packages/web-ui/src"],

@@ -12,13 +12,15 @@ export class PackItemService {
   }
 
   async getPackItemDetails(itemId: string) {
-    const item = await this.db.query.packItems.findFirst({
+    const item = await this.db.tag('packItem.getPackItemDetails').query.packItems.findFirst({
+      // lint:allow-unprojected-fat-table reason: detail-shape service feeds client-side AI tool stub; defer narrowing to pivot migration (separate embedding table makes this safe by construction)
       where: and(
         eq(packItems.id, itemId),
         eq(packItems.userId, this.userId),
         eq(packItems.deleted, false),
       ),
       with: {
+        // lint:allow-unprojected-fat-table reason: detail-shape service feeds client-side AI tool stub; defer to pivot migration (separate embedding table makes this safe by construction)
         pack: true,
         catalogItem: true,
       },

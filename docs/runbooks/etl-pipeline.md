@@ -6,7 +6,7 @@ new runs; anyone debugging why the catalog isn't updating.
 
 ## Architecture at a glance
 
-```
+```text
 Scraper → R2 object (packrat-scrapy-bucket)
                     │
                     ▼
@@ -65,6 +65,7 @@ curl -X POST 'https://packrat-api.orange-frost-d665.workers.dev/api/catalog/etl?
 ```
 
 Response:
+
 ```json
 {
   "message": "Catalog ETL workflow triggered",
@@ -115,6 +116,7 @@ The retry endpoint:
 4. Calls `env.ETL_WORKFLOW.create(...)` with the chunks
 
 Response:
+
 ```json
 {
   "success": true,
@@ -146,6 +148,7 @@ correctly handles quoted multi-line fields, unlike raw `\n` counting), and
 writes the result to `etl_jobs.verified_row_count` + `etl_jobs.verified_at`.
 
 Response:
+
 ```json
 {
   "success": true,

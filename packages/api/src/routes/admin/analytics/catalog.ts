@@ -1,6 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import type { CatalogEtlWorkflowParams } from '@packrat/api/workflows/catalog-etl-workflow';
 import { type ChunkSpec, chunkCsvForR2 } from '@packrat/api/workflows/shared/chunkCsvForR2';
 import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/db';
@@ -57,6 +58,7 @@ async function reingestJob(args: {
 
   try {
     const [original] = await db
+      .tag('adminAnalytics.etlGetJob')
       .select()
       .from(etlJobs)
       .where(eq(etlJobs.id, originalJobId))
@@ -132,7 +134,7 @@ async function reingestJob(args: {
     const suffix = mode === 'retry' ? 'retry' : 'repair';
     const workflowInstanceId = `${suffix}-${newJobId}`;
 
-    await db.insert(etlJobs).values({
+    await db.tag('adminAnalytics.etlCreateReingestJob').insert(etlJobs).values({
       id: newJobId,
       status: 'running',
       source: original.source,
@@ -157,6 +159,7 @@ async function reingestJob(args: {
       await env.ETL_WORKFLOW.create({ id: workflowInstanceId, params: workflowParams });
     } catch (enqueueErr) {
       await db
+        .tag('adminAnalytics.etlUpdateJobStatus')
         .update(etlJobs)
         .set({ status: 'failed', completedAt: new Date() })
         .where(eq(etlJobs.id, newJobId));
@@ -165,7 +168,18 @@ async function reingestJob(args: {
 
     return { success: true, newJobId, objectKey, workflowInstanceId };
   } catch (error) {
-    console.error(`ETL ${mode} error:`, error);
+    captureApiException({
+      error,
+      operation: `admin.analytics.catalog.reingest.${mode}`,
+      tags: { feature: 'catalogAnalytics' },
+      extra: {
+        httpStatus: 500,
+        errorCode: mode === 'retry' ? 'ETL_RETRY_ERROR' : 'ETL_REPAIR_ERROR',
+        originalJobId,
+        mode,
+        force,
+      },
+    });
     return {
       _statusCode: 500,
       error: `Failed to ${mode === 'retry' ? 'retry' : 'repair'} ETL job`,
@@ -186,6 +200,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
 
         const [totals, embeddingStats, availabilityStats, recentCount] = await Promise.all([
           db
+            .tag('adminAnalytics.catalogOverviewTotals')
             .select({
               totalItems: count(),
               totalBrands: sql<number>`count(distinct ${catalogItems.brand})`,
@@ -195,17 +210,20 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
             })
             .from(catalogItems),
           db
+            .tag('adminAnalytics.catalogOverviewEmbeddings')
             .select({
               total: count(),
               withEmbedding: sql<number>`count(${catalogItems.embedding})`,
             })
             .from(catalogItems),
           db
+            .tag('adminAnalytics.catalogOverviewAvailability')
             .select({ status: catalogItems.availability, count: count() })
             .from(catalogItems)
             .groupBy(catalogItems.availability)
             .orderBy(desc(count())),
           db
+            .tag('adminAnalytics.catalogOverviewRecentCount')
             .select({ count: count() })
             .from(catalogItems)
             .where(gt(catalogItems.createdAt, thirtyDaysAgo)),
@@ -259,6 +277,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
 
       try {
         const brands = await db
+          .tag('adminAnalytics.catalogBrands')
           .select({
             brand: catalogItems.brand,
             itemCount: count(),
@@ -311,6 +330,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         END`;
 
         const distribution = await db
+          .tag('adminAnalytics.catalogPrices')
           .select({ bucket: bucketExpr, count: count(), minForOrder: min(catalogItems.price) })
           .from(catalogItems)
           .where(and(isNotNull(catalogItems.price), gt(catalogItems.price, 0)))
@@ -340,8 +360,14 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
 
       try {
         const [jobs, summary] = await Promise.all([
-          db.select().from(etlJobs).orderBy(desc(etlJobs.startedAt)).limit(limit),
           db
+            .tag('adminAnalytics.etlJobsList')
+            .select()
+            .from(etlJobs)
+            .orderBy(desc(etlJobs.startedAt))
+            .limit(limit),
+          db
+            .tag('adminAnalytics.etlJobsSummary')
             .select({
               totalRuns: count(),
               completed: sql<number>`count(*) filter (where ${etlJobs.status} = 'completed')`,
@@ -405,8 +431,12 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
 
       try {
         const [total, withEmbedding] = await Promise.all([
-          db.select({ count: count() }).from(catalogItems),
-          db.select({ count: count() }).from(catalogItems).where(isNotNull(catalogItems.embedding)),
+          db.tag('adminAnalytics.embeddingsTotal').select({ count: count() }).from(catalogItems),
+          db
+            .tag('adminAnalytics.embeddingsWithEmbedding')
+            .select({ count: count() })
+            .from(catalogItems)
+            .where(isNotNull(catalogItems.embedding)),
         ]);
 
         const totalCount = total[0]?.count ?? 0;
@@ -439,8 +469,10 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
 
       try {
         const [rows, [total]] = await Promise.all([
-          db.execute<{ field: string; reason: string; count: number }>(
-            sql`
+          db
+            .tag('adminAnalytics.etlFailureSummary')
+            .execute<{ field: string; reason: string; count: number }>(
+              sql`
               SELECT
                 err->>'field'  AS field,
                 err->>'reason' AS reason,
@@ -451,8 +483,11 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
               ORDER BY count DESC
               LIMIT ${limit}
             `,
-          ),
-          db.select({ n: count() }).from(invalidItemLogs),
+            ),
+          db
+            .tag('adminAnalytics.etlFailureSummaryCount')
+            .select({ n: count() })
+            .from(invalidItemLogs),
         ]);
 
         return {
@@ -491,13 +526,16 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       try {
         const [samples, breakdown] = await Promise.all([
           db
+            .tag('adminAnalytics.etlJobFailureSamples')
             .select()
             .from(invalidItemLogs)
             .where(eq(invalidItemLogs.jobId, params.jobId))
             .orderBy(invalidItemLogs.rowIndex)
             .limit(limit),
-          db.execute<{ field: string; reason: string; count: number }>(
-            sql`
+          db
+            .tag('adminAnalytics.etlJobFailureBreakdown')
+            .execute<{ field: string; reason: string; count: number }>(
+              sql`
               SELECT
                 err->>'field'  AS field,
                 err->>'reason' AS reason,
@@ -508,7 +546,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
               GROUP BY err->>'field', err->>'reason'
               ORDER BY count DESC
             `,
-          ),
+            ),
         ]);
 
         return {
@@ -555,6 +593,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         const stuckCutoff = new Date(Date.now() - 30 * 60 * 1000);
 
         const reset = await db
+          .tag('adminAnalytics.etlResetStuck')
           .update(etlJobs)
           .set({ status: 'failed', completedAt: new Date() })
           .where(and(eq(etlJobs.status, 'running'), lt(etlJobs.startedAt, stuckCutoff)))
@@ -648,7 +687,12 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       const db = createDb();
 
       try {
-        const [job] = await db.select().from(etlJobs).where(eq(etlJobs.id, params.jobId)).limit(1);
+        const [job] = await db
+          .tag('adminAnalytics.etlReconcileGetJob')
+          .select()
+          .from(etlJobs)
+          .where(eq(etlJobs.id, params.jobId))
+          .limit(1);
 
         if (!job) return status(404, { error: 'ETL job not found' });
 
@@ -700,6 +744,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         const delta = actualRowCount === null ? null : expectedRowCount - actualRowCount;
 
         await db
+          .tag('adminAnalytics.etlReconcileUpdateJob')
           .update(etlJobs)
           .set({
             verifiedAt: new Date(),
@@ -715,7 +760,12 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           delta,
         };
       } catch (error) {
-        console.error('ETL reconcile error:', error);
+        captureApiException({
+          error,
+          operation: 'admin.analytics.catalog.reconcile',
+          tags: { feature: 'catalogAnalytics' },
+          extra: { httpStatus: 500, errorCode: 'ETL_RECONCILE_ERROR', jobId: params.jobId },
+        });
         return status(500, {
           error: 'Failed to reconcile ETL job',
           code: 'ETL_RECONCILE_ERROR',
@@ -759,7 +809,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         // Single GROUP BY query. catalog_item_etl_jobs is the per-item-per-job
         // join; we attribute each catalog item to its most recent ingest source
         // via DISTINCT ON. Then aggregate per source.
-        const rows = (await db.execute(sql`
+        const auditResult = await db.tag('adminAnalytics.catalogAudit').execute(sql`
           WITH latest_per_item AS (
             SELECT DISTINCT ON (cie.catalog_item_id)
               cie.catalog_item_id,
@@ -810,7 +860,8 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           ${sourceFilter ? sql`WHERE lpi.source = ${sourceFilter}` : sql``}
           GROUP BY lpi.source, lj.last_id, lj.last_at
           ORDER BY lpi.source
-        `)) as unknown as Array<{
+        `);
+        const rows = (auditResult.rows ?? auditResult) as Array<{
           source: string;
           total_items: number;
           last_id: string | null;
@@ -904,7 +955,12 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           sources,
         };
       } catch (error) {
-        console.error('Catalog audit error:', error);
+        captureApiException({
+          error,
+          operation: 'admin.analytics.catalog.audit',
+          tags: { feature: 'catalogAnalytics' },
+          extra: { httpStatus: 500, errorCode: 'AUDIT_ERROR', source: query.source ?? null },
+        });
         return status(500, { error: 'Failed to generate catalog audit', code: 'AUDIT_ERROR' });
       }
     },

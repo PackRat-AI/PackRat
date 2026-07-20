@@ -1,8 +1,8 @@
+import { isArray } from '@packrat/guards';
 import { Text } from '@packrat/ui/nativewindui';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
-import { isArray } from 'radash';
 import { useMemo } from 'react';
 import { Image, Platform, Pressable, ScrollView, View } from 'react-native';
 import { usePackTemplates } from '../hooks';

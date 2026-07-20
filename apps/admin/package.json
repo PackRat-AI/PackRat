@@ -1,14 +1,13 @@
 {
   "name": "packrat-admin-app",
-  "version": "2.0.28",
+  "version": "2.1.0",
   "private": true,
   "scripts": {
     "build": "next build",
     "check-types": "tsc --noEmit",
     "clean": "bunx rimraf node_modules .next out",
-    "dev": "next dev --port 3002",
+    "dev": "next dev --port ${PORT:-3002}",
     "doctor:react": "bunx react-doctor",
-    "lint": "next lint",
     "start": "next start"
   },
   "dependencies": {
@@ -17,6 +16,7 @@
     "@packrat/app": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/schemas": "workspace:*",
+    "@packrat/utils": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-alert-dialog": "catalog:",
     "@radix-ui/react-avatar": "catalog:",

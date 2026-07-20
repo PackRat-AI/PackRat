@@ -73,6 +73,11 @@ Enforced by **Biome 2.0** via lefthook pre-commit hook:
 - No `any` — use proper TypeScript types or `unknown`
 - Strict null checks enabled, no unchecked indexed access
 
+### TypeScript conventions
+
+- **Never use `as unknown as T`** to bypass type errors. Widen the function signature with a generic constraint, extract a structural type, or fix the source type instead. Each `as unknown` site is a place where two types don't agree and TS is being silenced — over time these become load-bearing lies. The only legitimate use is documenting a known third-party type bug inline with a precise assertion and a comment naming the bug.
+- **Prefer `Object.freeze({...} as const)` over bare `as const`** for narrow-typed lookup tables, column whitelists, and config dictionaries. `as const` is type-only; `Object.freeze` adds runtime immutability so accidental mutations fail loudly rather than silently corrupting state. Keep the inner `as const` for literal-type narrowing.
+
 ## Conventions
 
 ### API (packages/api)
@@ -84,6 +89,22 @@ Enforced by **Biome 2.0** via lefthook pre-commit hook:
 - Middleware in `src/middleware/` — use the `authPlugin` macro (`isAuthenticated: true`) for protected routes
 - Soft deletes for all user content
 - async/await everywhere (no raw promises)
+
+#### DB query projection discipline (cost-bearing)
+
+Neon compute + egress are metered. Every column a query SELECTs is bytes shipped from Postgres to the Worker. The `catalog_items` and `pack_items` tables carry a 1536-dim `vector(1536)` embedding column plus large JSONB content (`reviews`, `qas`, `faqs`, `techs`, `links`, `variants`) — a single unprojected row is ~50-100 KB. List endpoints, ETL `.returning()`, and embedding-backfill scans that don't project columns can ship multi-MB payloads per call.
+
+**Default to explicit projection at every Drizzle query touching `catalog_items` or `pack_items`:**
+
+- `db.select({ id: t.id, name: t.name, ... }).from(t)` — never `db.select().from(t)` for these tables
+- `db.query.X.findFirst/findMany({ columns: { id: true, ... } })` — never `with: { foo: true }` shortcut, never an unfiltered `findMany`
+- `.returning({ id: t.id, ... })` — never `.returning()` no-arg on insert/update/upsert against these tables
+- For exclude patterns (drop only embedding, keep everything else), use `getTableColumns(t)` destructure: `const { embedding: _, ...cols } = getTableColumns(catalogItems); db.select({ ...cols, similarity }).from(catalogItems)` — Drizzle docs document this as the official exclude shape
+- **Don't mix `true` and `false` in a `columns:` object** — Drizzle silently ignores the `false` entries when any `true` is present. Either all-whitelist or all-exclude.
+
+When a service or compute helper reads only a subset of columns, extract a projection type in `packages/db/src/projections.ts` (derive from the inferred schema via `Pick<>` so column renames propagate) and make the consumer generic over it. Lets callers narrow DB queries without `as unknown` casts at the boundary. Existing types there: `PackItemForWeights`, `PackForWeights`, `PackItemForBreakdown`, `PackForBreakdown`.
+
+**Lint:** `bun packages/api/scripts/lint/no-unprojected-fat-table-queries.ts` (runs in CI) fails the build on new `SELECT *` / no-`columns:` / no-arg `.returning()` against the fat tables. Use the inline opt-out `// lint:allow-unprojected-fat-table reason: <text>` only when the full row is genuinely needed (e.g., embedding regen text, detail endpoint).
 
 ### Mobile (apps/expo)
 
@@ -103,6 +124,7 @@ features/{name}/
 - **Forms**: TanStack React Form
 - **Feature flags**: `apps/expo/config.ts` — `featureFlags` object, default new flags to `false`
 - **Animations**: React Native Reanimated 4
+- **E2E selectors**: Prefer stable `testID` values from `apps/expo/lib/testIds.ts` for Maestro and Playwright selectors. Add or extend app-controlled test IDs for important user actions and assertions instead of matching visible text. Use text selectors only when the surface is external or not app-controlled, such as Expo dev-client UI, native permission dialogs, or unavoidable system copy.
 
 ### Web Apps (apps/guides, apps/landing, apps/trails)
 
@@ -136,28 +158,33 @@ Sentry.addBreadcrumb({ category: 'feature', message: 'Action started', level: 'i
 - **Better Auth errors** (plain objects with `{ message, status, code }`) are not JS Errors. Use `toAuthError` from `expo-app/features/auth/lib/authErrors` to convert them into an `AuthClientError` that carries `status` and `code`. Capture and throw that — do not create a separate synthetic error for Sentry and another for throwing.
 - Include `httpStatus` and `errorCode` in `extra` for any HTTP error so they're searchable in Sentry.
 
-**API / Cloudflare Workers** — use helpers from `@packrat/api/utils/sentry`:
+**API / Cloudflare Workers** — helpers from `@packrat/api/utils/sentry`. There are **three boundaries by where code runs** — match the tier to the situation instead of wrapping everything in try/catch:
 
-```ts
-import { apiAddBreadcrumb, captureApiException } from '@packrat/api/utils/sentry';
+1. **Route handlers → do nothing.** Elysia's global `.onError` (`src/app.ts`) is the central sink: it reports unexpected errors (skips `VALIDATION`/`PARSE`/`NOT_FOUND`), tagged by the matched **route template** + `request_id`. Let errors propagate — don't add a try/catch *just* to report. Only catch in a route to **translate** an error into a specific response (and then it's a swallow — see tier 3).
 
-// Breadcrumb before significant async steps
-apiAddBreadcrumb({ category: 'feature', message: 'Fetching external data', level: 'info' });
+2. **Sub-operations you rethrow from → wrap in `record`.** Workflow `step.do` bodies, queue/cron consumers, and services called outside an Elysia request. It opens a Sentry span (OTel-semantic, Workers-native) **and** captures-with-context **and** rethrows:
 
-// In every catch block
-} catch (error) {
-  captureApiException(error, {
-    operation: 'featureName.action',
-    userId,
-    tags: { feature: 'myFeature' },
-    extra: { relevantId },
-  });
-  throw error; // or return an error response
-}
-```
+   ```ts
+   import { record } from '@packrat/api/utils/sentry';
 
-- Use `captureApiException` (not raw `captureException`) — it wraps the call with structured operation context and also logs to console for wrangler dev output.
-- Every route `catch` block and service method that interacts with the DB or an external API must have a `captureApiException` call.
+   await record({ operation: 'etl.processLogsBatch', extra: { jobId } }, async () => {
+     await db.insert(logs).values(rows);
+   });
+   ```
+
+3. **Catches that swallow → call `captureApiException`** (object signature). Fail-closed `return false`, best-effort metrics, per-item loops that continue, route catches that return an error response:
+
+   ```ts
+   } catch (error) {
+     captureApiException({ error, operation: 'verifyAdmin', extra: { userId } });
+     return false; // swallowed — nothing to rethrow
+   }
+   ```
+
+- Capture is **idempotent + deduped** (a marker is stamped on the error), so `record`/`captureApiException` + the outer boundary (`.onError`, `withSentry`, `instrumentWorkflowWithSentry`) never double-report — enrich-and-rethrow is always safe.
+- Every event in a request shares a **`request_id`** tag (`cf-ray`, set in `.onRequest`), echoed in the `X-Request-Id` response header — pivot on it to tie an `.onError` report to the granular `record`/`captureApiException` events. Sentry's automatic `trace_id` correlates them too.
+- Don't use raw `captureException` — the wrappers add operation context + console logging. Include `httpStatus`/`errorCode` in `extra` for HTTP errors; breadcrumb significant steps with `apiAddBreadcrumb`.
+- **Not** `@elysiajs/opentelemetry`: its Node OTel SDK doesn't run on workerd (BatchSpanProcessor, AsyncHooks). `record` gives the same `record(name, fn)` ergonomics on Sentry's Workers-native tracer.
 
 ### API Client (`@packrat/api-client`)
 
@@ -248,27 +275,24 @@ Defined in root `tsconfig.json`:
 
 ## Database
 
-- ORM: Drizzle (`packages/api/src/db/schema.ts`)
-- Migrations: Drizzle Kit (`drizzle-kit`)
+- ORM: Drizzle (`packages/db/src/schema/` after the schema extraction)
+- Migrations: **always** Drizzle Kit (`drizzle-kit generate`) — never hand-written SQL
 - Embeddings: pgvector with 1536 dimensions
 
-### Migration discipline (read before touching `packages/api/drizzle/`)
+### Migrations — HARD RULE
 
-1. **Always generate via drizzle-kit.** Edit `packages/api/src/db/schema.ts` (or `packages/db/src/schema.ts` for the shared workspace), then run from the API package:
+**Do not hand-write SQL migrations.** Always use Drizzle Kit:
 
-   ```bash
-   cd packages/api && bun run db:generate
-   ```
+1. Change the schema in `packages/api/src/db/schema.ts` or `packages/db/src/schema.ts` / `packages/db/src/schema/*.ts`, depending on where the table is owned.
+2. Run `bun run db:generate` from `packages/api/` or the matching package Drizzle command to emit the migration SQL.
+3. Keep the random migration filename that Drizzle Kit generates. Do not rename it.
+4. Review the generated SQL, snapshot, and journal entry for correctness.
+5. Commit both the schema change and the generated migration in the same PR.
+6. Run `bunx drizzle-kit check` from `packages/api/` before pushing when API migrations changed.
 
-   Drizzle-kit emits a random-name file like `0048_loud_squirrel_girl.sql`. That random name is fine — keep it. The naming convention here is "whatever drizzle-kit gives you."
+Hand-written migrations get out of sync with the schema, drift across environments, and break the Better Auth / drizzle-zod / inferred-TS-types unified pipeline (PR #2414). If `drizzle-kit generate` produces a migration you disagree with, **fix the schema or the generator config** — do not edit the SQL by hand.
 
-2. **Do not rename a generated migration file.** The `meta/_journal.json` `tag` field, the migration SQL filename, and the snapshot filename all encode the migration identity together. Renaming any one of them (even with corresponding journal edits) makes the migration look hand-authored and creates drift that future drizzle-kit operations can mis-handle.
-
-3. **Do not hand-edit `meta/_journal.json`, `meta/*_snapshot.json`, or the generated SQL.** If the generated migration is wrong, fix the schema, delete the bad migration + snapshot + journal entry, and regenerate. Do not patch around it.
-
-4. **Collapse additive changes into one migration when they ship together** — fewer snapshot files in the diff, easier to revert as a unit. Splitting only makes sense when migrations need to land in separate releases.
-
-5. **Verify after generating.** Run `bunx drizzle-kit check` from `packages/api/` — it validates the snapshot chain is internally consistent. Run before pushing.
+If you find a migration in the repo that was hand-written (no `drizzle-kit` provenance), flag it in your PR description and regenerate from schema as a follow-up commit.
 
 ## EAS Build Profiles
 

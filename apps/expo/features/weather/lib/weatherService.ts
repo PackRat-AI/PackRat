@@ -111,13 +111,13 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
   const todayForecast = forecast.forecastday[0];
   assertDefined(todayForecast);
 
-  // Format hourly forecast
+  // Format hourly forecast — temps stored in Celsius; display layer converts
   const hourlyForecast = todayForecast.hour
     .filter((hour) => {
       const hourTime = new Date(hour.time);
       return hourTime > localTime;
     })
-    .slice(0, 24) // Get next 24 hours
+    .slice(0, 24)
     .map((hour) => {
       const hourTime = new Date(hour.time);
       return {
@@ -125,21 +125,21 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
           hour: 'numeric',
           hour12: true,
         }),
-        temp: Math.round(hour.temp_f),
+        temp: Math.round(hour.temp_c),
         icon: getIconNameFromCode({ code: hour.condition.code, isDay: hour.is_day }) as string,
         weatherCode: hour.condition.code,
         isDay: hour.is_day,
       };
     });
 
-  // Format daily forecast
+  // Format daily forecast — temps in Celsius
   const dailyForecast = forecast.forecastday.map((day) => {
     const date = new Date(day.date);
     return {
       day: date.toLocaleDateString('en-US', { weekday: 'short' }),
-      high: Math.round(day.day.maxtemp_f),
-      low: Math.round(day.day.mintemp_f),
-      icon: getIconNameFromCode({ code: day.day.condition.code, isDay: 1 }) as string, // Always use day icon for daily forecast
+      high: Math.round(day.day.maxtemp_c),
+      low: Math.round(day.day.mintemp_c),
+      icon: getIconNameFromCode({ code: day.day.condition.code, isDay: 1 }) as string,
       weatherCode: day.day.condition.code,
     };
   });
@@ -153,20 +153,20 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
   return {
     id: location.id,
     name: location.name,
-    temperature: Math.round(current.temp_f),
+    temperature: Math.round(current.temp_c),
     condition: current.condition.text,
     time: formattedTime,
-    highTemp: Math.round(todayForecast.day.maxtemp_f),
-    lowTemp: Math.round(todayForecast.day.mintemp_f),
+    highTemp: Math.round(todayForecast.day.maxtemp_c),
+    lowTemp: Math.round(todayForecast.day.mintemp_c),
     alerts: alertText,
     lat: location.lat,
     lon: location.lon,
     details: {
-      feelsLike: Math.round(current.feelslike_f),
+      feelsLike: Math.round(current.feelslike_c),
       humidity: current.humidity,
-      visibility: Math.round(current.vis_miles),
+      visibility: Math.round(current.vis_km),
       uvIndex: current.uv,
-      windSpeed: Math.round(current.wind_mph),
+      windSpeed: Math.round(current.wind_kph),
       weatherCode: current.condition.code,
       isDay: current.is_day,
     },

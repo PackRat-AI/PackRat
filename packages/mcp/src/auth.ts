@@ -1,327 +1,223 @@
 /**
- * PackRat MCP OAuth 2.1 authorization handler.
+ * PackRat MCP operational endpoints.
  *
- * Implements the user-facing parts of the OAuth flow:
- *   GET  /authorize → parse OAuth request, redirect to /login
- *   GET  /login     → serve sign-in form
- *   POST /login     → call Better Auth API, store session, redirect to /callback
- *   GET  /callback  → complete authorization, redirect client back with auth code
- *   GET  /          → health check (also /health)
+ * After the U3+U4 cutover this module hosts only the non-OAuth surface:
  *
- * KV layout (all keys expire after 10 minutes):
- *   oauth_state:<stateKey>  → JSON-serialised AuthRequest from parseAuthRequest()
- *   session:<stateKey>      → JSON { token: string, userId: string }
+ *   GET  /            → real health probe (also /health); 200 when the API
+ *                       `/health` succeeds, 503 when it's down; isolate-local
+ *                       10s cache so reviewer probes don't synthesise load
+ *                       against the upstream surface (U16).
+ *   GET  /status      → public-safe metadata block: version, scope catalog,
+ *                       deploy id (from env.CF_VERSION_METADATA), legal /
+ *                       support links (U16).
+ *
+ * Everything OAuth — the authorize/login/callback state machine, the DCR
+ * register gate, the CSRF infrastructure, the role-lookup bridge — was
+ * deleted in U3+U4 of the Better Auth OAuth consolidation refactor. The
+ * MCP worker is now a pure protected resource: it validates JWT access
+ * tokens minted by the API worker (`api.packrat.world`) via `verifyMcpToken`
+ * and delegates to the MCP Durable Object. Issuance, consent, refresh,
+ * DCR, and KV cleanup all live in the API worker's Better Auth plugin.
  */
 
-import { isString } from '@packrat/guards';
-import { createRegExp, exactly, global as globalFlag } from 'magic-regexp';
-import { z } from 'zod';
-import type { Env, Props } from './types';
+import { ServiceMeta, WorkerRoute } from './constants';
+import { correlationIdFrom, createLogger, getCorrelationId } from './observability';
+import { SCOPES_SUPPORTED } from './scopes';
+import type { Env } from './types';
 
-// ── HTML-escape regexes (magic-regexp so the pre-push hook is satisfied) ─────
-const AMP_RE = createRegExp(exactly('&'), [globalFlag]);
-const LT_RE = createRegExp(exactly('<'), [globalFlag]);
-const GT_RE = createRegExp(exactly('>'), [globalFlag]);
-const QUOT_RE = createRegExp(exactly('"'), [globalFlag]);
+// ── /health + /status (U16) ──────────────────────────────────────────────────
 
-// ── Zod schemas for external data ─────────────────────────────────────────────
+/**
+ * Public-safe legal / support / docs URLs surfaced on both `/health` and
+ * `/status`. Single source of truth so the two endpoints can never drift —
+ * a reviewer hitting either gets the same brand-aligned values.
+ *
+ * All URLs land on `packratai.com` (the canonical brand domain per the
+ * plan's domain-unification decision). `support` is the mailto we also
+ * surface from the listing.
+ */
+const PUBLIC_LINKS = {
+  docs: 'https://packratai.com/mcp',
+  terms: 'https://packratai.com/terms-of-service',
+  privacy: 'https://packratai.com/privacy-policy',
+  support: 'mailto:hello@packratai.com',
+} as const;
 
-const OAuthStateSchema = z.object({
-  responseType: z.string(),
-  clientId: z.string(),
-  redirectUri: z.string(),
-  scope: z.array(z.string()),
-  state: z.string(),
-});
-
-const SessionKvSchema = z.object({
-  token: z.string(),
-  userId: z.string(),
-});
-
-const SignInResponseSchema = z.object({
-  session: z.object({ token: z.string() }).optional(),
-  user: z.object({ id: z.string() }).optional(),
-});
-
-// ── KV key helpers ────────────────────────────────────────────────────────────
-
-const STATE_TTL = 600; // 10 minutes in seconds
-
-function oauthStateKey(key: string) {
-  return `oauth_state:${key}`;
+/**
+ * Per-isolate cache for `/health` responses. A reviewer (or a Cloudflare-
+ * native uptime monitor) hitting `/health` once per second would otherwise
+ * land an upstream `/health` fetch on every call — easy to accidentally
+ * turn into a synthetic load source against the API. Ten seconds is plenty
+ * for an external uptime probe (which polls every 30-60s) and keeps the
+ * freshness window short enough that a real outage surfaces within one
+ * cache-window of when it began.
+ *
+ * Isolate-local state — every Worker isolate keeps its own copy, so a
+ * fleet of N isolates allows up to N probe-batches per 10s window. That's
+ * still bounded by the isolate-pool size (single-digits for our traffic
+ * shape) and avoids the complexity + extra subrequests a shared Worker-
+ * wide cache would require. See `docs/mcp/runbook.md` § "U16 /health +
+ * /status" for the operator-facing trade-off.
+ *
+ * Module-level `let` (rather than `WeakMap` / `LRU`) is deliberate: a
+ * single shared entry is all this cache holds, and we want the simplest
+ * possible eviction story so a future refactor can't silently introduce
+ * a per-key memory leak.
+ */
+interface HealthCacheEntry {
+  body: unknown;
+  status: number;
+  expiresAt: number;
 }
-function sessionKey(key: string) {
-  return `session:${key}`;
-}
+let healthCache: HealthCacheEntry | null = null;
+const HEALTH_CACHE_TTL_MS = 10_000;
 
-// ── HTML helpers ──────────────────────────────────────────────────────────────
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(AMP_RE, '&amp;')
-    .replace(LT_RE, '&lt;')
-    .replace(GT_RE, '&gt;')
-    .replace(QUOT_RE, '&quot;');
-}
-
-function loginPage({ state, error }: { state: string; error?: string }): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sign in · PackRat</title>
-  <style>
-    body { font-family: system-ui, sans-serif; max-width: 400px; margin: 80px auto; padding: 0 16px; color: #1a1a1a; }
-    h1 { font-size: 1.5rem; margin-bottom: 8px; }
-    p.sub { color: #666; margin-bottom: 24px; font-size: .9rem; }
-    label { display: block; margin-bottom: 16px; font-size: .9rem; font-weight: 500; }
-    input { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; padding: 8px 12px;
-            border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
-    button { width: 100%; padding: 10px; background: #2563eb; color: white; border: none;
-             border-radius: 6px; font-size: 1rem; cursor: pointer; margin-top: 8px; }
-    button:hover { background: #1d4ed8; }
-    .error { color: #dc2626; background: #fef2f2; border: 1px solid #fecaca;
-             border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: .9rem; }
-  </style>
-</head>
-<body>
-  <h1>Sign in to PackRat</h1>
-  <p class="sub">An MCP client is requesting access to your PackRat account.</p>
-  ${error ? `<div class="error">${escapeHtml(error)}</div>` : ''}
-  <form method="POST" action="/login">
-    <input type="hidden" name="state" value="${escapeHtml(state)}" />
-    <label>Email
-      <input type="email" name="email" required autocomplete="email" />
-    </label>
-    <label>Password
-      <input type="password" name="password" required autocomplete="current-password" />
-    </label>
-    <button type="submit">Sign in</button>
-  </form>
-</body>
-</html>`;
+/**
+ * Reset the `/health` cache. Test-only — every test that exercises the
+ * probing path should call this in `beforeEach` so the isolate-local
+ * cache doesn't leak between cases. Not exported in the public API
+ * surface; the `__resetHealthCacheForTests` name signals intent at the
+ * call site.
+ */
+export function __resetHealthCacheForTests(): void {
+  healthCache = null;
 }
 
-/** FormData.get() returns FormDataEntryValue | null (string | File | null). Extract string only. */
-function getFormString({
-  data,
-  key,
-}: {
-  data: { get(name: string): string | File | null };
-  key: string;
-}): string {
-  const val = data.get(key);
-  return isString(val) ? val : '';
+/**
+ * Timeout for the upstream PackRat API health probe. 3s is long enough to
+ * tolerate transient network jitter without hanging the `/health`
+ * response — and short enough that the synchronous wait stays well below
+ * any reasonable reviewer-tool timeout (Cloudflare's external uptime
+ * probes default to ~10s).
+ */
+const API_HEALTH_PROBE_TIMEOUT_MS = 3000;
+
+/**
+ * Probe the PackRat API's `/health` endpoint (see
+ * `packages/api/src/index.ts`). Hits the API's root `/health`, NOT
+ * `/api/health` — Elysia mounts the meta route at the worker root, so
+ * the canonical URL is `${PACKRAT_API_URL}/health`. Any non-2xx (or any
+ * fetch throw within the timeout window) collapses to `false`. Empty /
+ * missing `PACKRAT_API_URL` (unit test environment without the binding)
+ * also collapses to `false` rather than throwing a `URL` constructor
+ * error.
+ */
+async function probeApi(env: Env): Promise<boolean> {
+  const base = env.PACKRAT_API_URL;
+  if (!base || base.length === 0) return false;
+  try {
+    const res = await fetch(`${base}/health`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(API_HEALTH_PROBE_TIMEOUT_MS),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
-// ── Handler ───────────────────────────────────────────────────────────────────
-
-export const PackRatAuthHandler = {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-
-    // Health check
-    if (url.pathname === '/' || url.pathname === '/health') {
-      return Response.json({
-        status: 'ok',
-        service: 'packrat-mcp',
-        version: '1.0.0',
-        transport: 'streamable-http',
-        endpoint: '/mcp',
-        docs: 'https://packrat.world/docs/mcp',
-      });
-    }
-
-    if (url.pathname === '/authorize') {
-      return handleAuthorize({ request, env });
-    }
-
-    if (url.pathname === '/login') {
-      return request.method === 'POST'
-        ? handleLoginPost({ request, env })
-        : handleLoginGet(request);
-    }
-
-    if (url.pathname === '/callback') {
-      return handleCallback({ request, env });
-    }
-
-    return Response.json({ error: 'Not Found' }, { status: 404 });
-  },
-};
-
-// ── /authorize ────────────────────────────────────────────────────────────────
-
-async function handleAuthorize({
+/**
+ * Build the `/health` JSON body + status by probing the upstream API. The
+ * result is cached for `HEALTH_CACHE_TTL_MS` in the isolate-local
+ * `healthCache` slot above.
+ *
+ * Body shape (stable — reviewers parse this):
+ *   {
+ *     status: 'ok' | 'degraded',
+ *     service, version, transport, endpoint,
+ *     docs, terms, privacy, support,             // U12 legal/support surface
+ *     probes: { api: 'ok' | 'down' },
+ *   }
+ *
+ * On the degraded path we emit a WARN-level structured log so an operator
+ * tailing logs sees which dependency tripped the response.
+ *
+ * Note: KV is no longer a dependency — the U3+U4 cutover removed all KV
+ * usage from the worker, so only the API probe survives.
+ */
+export async function handleHealth({
   request,
   env,
 }: {
   request: Request;
   env: Env;
 }): Promise<Response> {
-  let oauthReq: z.infer<typeof OAuthStateSchema>;
-  try {
-    const parsed = await env.OAUTH_PROVIDER.parseAuthRequest(request);
-    const result = OAuthStateSchema.safeParse(parsed);
-    if (!result.success) throw new Error('Invalid OAuth request');
-    oauthReq = result.data;
-  } catch {
-    return Response.json(
-      { error: 'invalid_request', error_description: 'Malformed authorization request' },
-      { status: 400 },
-    );
+  const now = Date.now();
+  if (healthCache && healthCache.expiresAt > now) {
+    return Response.json(healthCache.body, { status: healthCache.status });
   }
 
-  const stateKey = crypto.randomUUID();
-  await env.OAUTH_KV.put(oauthStateKey(stateKey), JSON.stringify(oauthReq), {
-    expirationTtl: STATE_TTL,
-  });
+  const apiResult = await Promise.allSettled([probeApi(env)]);
+  const apiOk = apiResult[0].status === 'fulfilled' && apiResult[0].value === true;
+  const allOk = apiOk;
 
-  const loginUrl = new URL('/login', request.url);
-  loginUrl.searchParams.set('state', stateKey);
-  return Response.redirect(loginUrl.toString(), 302);
-}
+  const body = {
+    status: allOk ? 'ok' : 'degraded',
+    service: ServiceMeta.Name,
+    version: ServiceMeta.Version,
+    transport: ServiceMeta.Transport,
+    endpoint: WorkerRoute.Mcp,
+    docs: PUBLIC_LINKS.docs,
+    terms: PUBLIC_LINKS.terms,
+    privacy: PUBLIC_LINKS.privacy,
+    support: PUBLIC_LINKS.support,
+    probes: {
+      api: apiOk ? 'ok' : 'down',
+    },
+  };
+  const status = allOk ? 200 : 503;
 
-// ── /login GET ────────────────────────────────────────────────────────────────
-
-function handleLoginGet(request: Request): Response {
-  const state = new URL(request.url).searchParams.get('state') ?? '';
-  return new Response(loginPage({ state }), {
-    headers: { 'Content-Type': 'text/html; charset=utf-8' },
-  });
-}
-
-// ── /login POST ───────────────────────────────────────────────────────────────
-
-async function handleLoginPost({
-  request,
-  env,
-}: {
-  request: Request;
-  env: Env;
-}): Promise<Response> {
-  let email: string;
-  let password: string;
-  let state: string;
-
-  try {
-    const form = await request.formData();
-    email = getFormString({ data: form, key: 'email' });
-    password = getFormString({ data: form, key: 'password' });
-    state = getFormString({ data: form, key: 'state' });
-  } catch {
-    return new Response(loginPage({ state: '', error: 'Invalid form submission.' }), {
-      status: 400,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    });
-  }
-
-  if (!email || !password || !state) {
-    return new Response(loginPage({ state, error: 'Email and password are required.' }), {
-      status: 400,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    });
-  }
-
-  const oauthReqStr = await env.OAUTH_KV.get(oauthStateKey(state));
-  if (!oauthReqStr) {
-    return new Response(loginPage({ state, error: 'Session expired. Please start over.' }), {
-      status: 400,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    });
-  }
-
-  let signInRes: Response;
-  try {
-    signInRes = await fetch(`${env.PACKRAT_API_URL}/api/auth/sign-in/email`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-  } catch {
-    return new Response(loginPage({ state, error: 'Could not reach PackRat. Try again.' }), {
-      status: 502,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    });
-  }
-
-  if (!signInRes.ok) {
-    return new Response(loginPage({ state, error: 'Invalid email or password.' }), {
-      status: 401,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    });
-  }
-
-  const signInResult = SignInResponseSchema.safeParse(await signInRes.json().catch(() => null));
-  const betterAuthToken = signInResult.success ? signInResult.data.session?.token : undefined;
-  const userId = signInResult.success ? signInResult.data.user?.id : undefined;
-
-  if (!betterAuthToken || !userId) {
-    return new Response(
-      loginPage({ state, error: 'Sign-in succeeded but session data was missing.' }),
-      {
-        status: 502,
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  // U15: degraded health is interesting to operators — tail-able with
+  // `wrangler tail --env prod --format pretty | grep mcp.health.degraded`.
+  // We only log on the degraded path; healthy `/health` calls are
+  // silent (otherwise external uptime probes spam Workers Logs every
+  // probe-interval seconds).
+  if (!allOk) {
+    const correlationId = getCorrelationId(request) ?? correlationIdFrom(request);
+    const log = createLogger({ correlationId });
+    log.warn({
+      msg: 'mcp.health.degraded',
+      fields: {
+        reason: 'api_down',
+        statusCode: status,
       },
-    );
+    });
   }
 
-  await env.OAUTH_KV.put(sessionKey(state), JSON.stringify({ token: betterAuthToken, userId }), {
-    expirationTtl: STATE_TTL,
-  });
-
-  const callbackUrl = new URL('/callback', request.url);
-  callbackUrl.searchParams.set('state', state);
-  return Response.redirect(callbackUrl.toString(), 302);
+  healthCache = { body, status, expiresAt: now + HEALTH_CACHE_TTL_MS };
+  return Response.json(body, { status });
 }
 
-// ── /callback ─────────────────────────────────────────────────────────────────
-
-async function handleCallback({ request, env }: { request: Request; env: Env }): Promise<Response> {
-  const state = new URL(request.url).searchParams.get('state') ?? '';
-
-  const [oauthReqStr, sessionStr] = await Promise.all([
-    env.OAUTH_KV.get(oauthStateKey(state)),
-    env.OAUTH_KV.get(sessionKey(state)),
-  ]);
-
-  if (!oauthReqStr || !sessionStr) {
-    return Response.json(
-      { error: 'invalid_request', error_description: 'Invalid or expired state' },
-      { status: 400 },
-    );
-  }
-
-  const oauthReqResult = OAuthStateSchema.safeParse(JSON.parse(oauthReqStr));
-  const sessionResult = SessionKvSchema.safeParse(JSON.parse(sessionStr));
-
-  if (!oauthReqResult.success || !sessionResult.success) {
-    return Response.json(
-      { error: 'invalid_request', error_description: 'Corrupted state data' },
-      { status: 400 },
-    );
-  }
-
-  const oauthReq = oauthReqResult.data;
-  const { token: betterAuthToken, userId } = sessionResult.data;
-
-  // Clean up KV state (best-effort)
-  void Promise.all([
-    env.OAUTH_KV.delete(oauthStateKey(state)),
-    env.OAUTH_KV.delete(sessionKey(state)),
-  ]);
-
-  const props: Props = { betterAuthToken, userId };
-
-  const { redirectTo } = await env.OAUTH_PROVIDER.completeAuthorization({
-    request: oauthReq,
-    userId,
-    metadata: {},
-    scope: oauthReq.scope,
-    props,
+/**
+ * `/status` — public-safe metadata block with no secrets ever.
+ *
+ * Returns the version + transport + scope catalog + brand URLs + the
+ * Cloudflare deploy id (`env.CF_VERSION_METADATA.id` when the
+ * `version_metadata` binding is present; sentinel `'unknown'` otherwise).
+ * Unlike `/health` this is NOT cached:
+ * the body is pure constants + an env-var read, no upstream calls — so
+ * the per-call cost is already O(1) and a cache would add only
+ * complexity. Also unlike `/health` there is no probe, no 503 path,
+ * and no degraded surface.
+ *
+ * The whitelisted fields here are deliberate. Reviewers want a single
+ * read-only metadata endpoint to verify a deployed Worker matches the
+ * version + scope catalog they were promised; everything they need is in
+ * the body. Things we will NEVER add: `PACKRAT_API_URL` (internal),
+ * anything from `props`, any token, any runtime feature-flag value
+ * beyond the canonical scope list.
+ */
+export function handleStatus({ request: _request, env }: { request: Request; env: Env }): Response {
+  return Response.json({
+    service: ServiceMeta.Name,
+    version: ServiceMeta.Version,
+    transport: ServiceMeta.Transport,
+    endpoint: WorkerRoute.Mcp,
+    scopes_supported: [...SCOPES_SUPPORTED],
+    docs: PUBLIC_LINKS.docs,
+    terms: PUBLIC_LINKS.terms,
+    privacy: PUBLIC_LINKS.privacy,
+    support: PUBLIC_LINKS.support,
+    deployId: env.CF_VERSION_METADATA?.id ?? 'unknown',
   });
-
-  return Response.redirect(redirectTo, 302);
 }

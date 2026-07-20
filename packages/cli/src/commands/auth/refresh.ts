@@ -1,3 +1,4 @@
+import { safeJsonStringify } from '@packrat/utils';
 import chalk from 'chalk';
 import { defineCommand } from 'citty';
 import consola from 'consola';
@@ -26,7 +27,7 @@ export default defineCommand({
     const response = await fetch(`${baseUrl}/api/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken: config.refreshToken }),
+      body: safeJsonStringify({ refreshToken: config.refreshToken }),
     });
     const parsed = RefreshResponseSchema.safeParse(await response.json().catch(() => null));
     if (!response.ok || !parsed.success || !parsed.data.accessToken) {

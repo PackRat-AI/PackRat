@@ -19,6 +19,8 @@ type ReportedContentResponse = {
   }>;
 };
 
+export type ReportedContentItem = ReportedContentResponse['reportedItems'][number];
+
 type ReportedContentCount = {
   count: number;
   total: number;

@@ -1,0 +1,38 @@
+id: no-primitive-cast
+snapshots:
+  const a = x as string;:
+    labels:
+    - source: x as string
+      style: primary
+      start: 10
+      end: 21
+  const b = y as number;:
+    labels:
+    - source: y as number
+      style: primary
+      start: 10
+      end: 21
+  const c = z as boolean;:
+    labels:
+    - source: z as boolean
+      style: primary
+      start: 10
+      end: 22
+  const d = (s as unknown) as string;:
+    labels:
+    - source: (s as unknown) as string
+      style: primary
+      start: 10
+      end: 34
+  const e = params.lat as string;:
+    labels:
+    - source: params.lat as string
+      style: primary
+      start: 10
+      end: 30
+  const f = Number.parseFloat(params.lon as string);:
+    labels:
+    - source: params.lon as string
+      style: primary
+      start: 28
+      end: 48

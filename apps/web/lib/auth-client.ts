@@ -1,10 +1,10 @@
 'use client';
 
-import { webEnv } from '@packrat/env/web';
 import { nextCookies } from 'better-auth/next-js';
 import { createAuthClient } from 'better-auth/react';
+import { getApiBaseUrl } from 'web-app/lib/getApiBaseUrl';
 
 export const authClient = createAuthClient({
-  baseURL: webEnv.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787',
+  baseURL: getApiBaseUrl(),
   plugins: [nextCookies()],
 });

@@ -1,13 +1,20 @@
 import { getAuth } from '@packrat/api/auth';
+import { resolveMcpBearerUser } from '@packrat/api/auth/mcp-token';
 import { adminAuthPlugin } from '@packrat/api/middleware/auth';
 import { Elysia } from 'elysia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // getAuth is mocked globally by test/setup.ts. Override here to control sessions.
 const mockGetSession = vi.fn();
+const mockResolveMcpBearerUser = vi.mocked(resolveMcpBearerUser);
+
+vi.mock('@packrat/api/auth/mcp-token', () => ({
+  resolveMcpBearerUser: vi.fn(),
+}));
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockResolveMcpBearerUser.mockResolvedValue(null);
 
   vi.mocked(getAuth).mockResolvedValue({
     api: { getSession: mockGetSession },
@@ -66,6 +73,28 @@ describe('adminAuthPlugin / isAdmin', () => {
     const body = await res.json();
     expect(body.role).toBe('ADMIN');
     expect(body.userId).toBe('admin-99');
+  });
+
+  it('accepts a valid MCP OAuth bearer with mcp:admin when session lookup returns null', async () => {
+    mockGetSession.mockResolvedValue(null);
+    mockResolveMcpBearerUser.mockResolvedValue({
+      userId: 'mcp-admin-1',
+      role: 'ADMIN',
+      email: 'admin@test.com',
+      name: 'MCP Admin',
+    });
+    const app = buildAdminApp();
+    const res = await app.handle(
+      new Request('http://localhost/admin-only', {
+        headers: { authorization: 'Bearer mcp-oauth-jwt' },
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.userId).toBe('mcp-admin-1');
+    expect(mockResolveMcpBearerUser).toHaveBeenCalledWith(
+      expect.objectContaining({ requireAdminScope: true }),
+    );
   });
 
   it('rejects X-API-Key on admin routes', async () => {

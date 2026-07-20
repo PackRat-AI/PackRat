@@ -1,6 +1,11 @@
 import { treaty } from '@elysiajs/eden';
-import type { App } from '@packrat/api';
-import { isObject, isString } from '@packrat/guards';
+// Import from `@packrat/api/app` (the JSX-free Elysia contract), NOT the worker
+// entry `@packrat/api`. The entry mounts the server-rendered OAuth consent page
+// (@kitajs/html), whose JSX types would otherwise leak into every consumer of
+// this client (packages/mcp, apps/*) via the `App` type.
+import type { App } from '@packrat/api/app';
+import { isFunction, isObject, isString } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 
 /**
  * Auth integration hooks. Session state (token storage, refresh dedup,
@@ -36,9 +41,7 @@ export type ApiClientConfig = {
  * other.
  */
 function isCloneable<T>(input: T): input is T & { clone(): T } {
-  return (
-    isObject(input) && 'clone' in input && typeof (input as { clone: unknown }).clone === 'function'
-  );
+  return isObject(input) && 'clone' in input && isFunction((input as { clone: unknown }).clone);
 }
 
 /**
@@ -62,7 +65,7 @@ export function createApiClient(config: ApiClientConfig) {
         const response = await baseFetcher(`${config.baseUrl}/api/auth/refresh`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
+          body: safeJsonStringify({ refreshToken }),
         });
         const data = (await response.json().catch(() => null)) as {
           success?: boolean;
@@ -130,11 +133,7 @@ export function createApiClient(config: ApiClientConfig) {
         });
       } else if (Array.isArray(existing)) {
         for (const entry of existing) {
-          if (
-            Array.isArray(entry) &&
-            typeof entry[0] === 'string' &&
-            typeof entry[1] === 'string'
-          ) {
+          if (Array.isArray(entry) && isString(entry[0]) && isString(entry[1])) {
             headers.set(entry[0], entry[1]);
           }
         }
@@ -267,7 +266,7 @@ export class PackRatApiClient {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body !== undefined ? safeJsonStringify(body) : undefined,
     });
     return this.handleResponse<T>(response);
   }
@@ -276,7 +275,7 @@ export class PackRatApiClient {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body !== undefined ? safeJsonStringify(body) : undefined,
     });
     return this.handleResponse<T>(response);
   }
@@ -285,7 +284,7 @@ export class PackRatApiClient {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body !== undefined ? safeJsonStringify(body) : undefined,
     });
     return this.handleResponse<T>(response);
   }
@@ -324,7 +323,7 @@ export function createPackRatClient({
 // ── MCP tool result helpers ───────────────────────────────────────────────────
 
 export function ok(data: unknown): { content: [{ type: 'text'; text: string }] } {
-  return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+  return { content: [{ type: 'text', text: safeJsonStringify(data, null, 2) }] };
 }
 
 export function err(error: unknown): { content: [{ type: 'text'; text: string }]; isError: true } {

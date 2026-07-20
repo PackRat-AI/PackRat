@@ -2,6 +2,7 @@ import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import { Platform, View } from 'react-native';
 import { usePackTemplates } from '../hooks';
@@ -37,6 +38,7 @@ export function PackTemplatesTile() {
       item={{
         title: t('packTemplates.packTemplates'),
       }}
+      testID={testIds.packTemplates.dashboardTile}
       onPress={handlePress}
       target="Cell"
       index={0}

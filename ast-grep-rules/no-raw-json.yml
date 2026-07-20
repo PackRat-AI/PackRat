@@ -1,0 +1,24 @@
+id: no-raw-json
+language: typescript
+# WARNING (not error): the repo-wide JSON migration (~156 sites) is a separate
+# unit handled by the orchestrator. This rule surfaces JSON.parse call sites
+# without failing CI yet. The `fix` rewrites JSON.parse($X) -> safeJsonParse($X);
+# import insertion is out of scope here (the orchestrator's codemod handles it).
+severity: error
+message: "Prefer safeJsonParse from @packrat/utils over raw JSON.parse. Raw JSON.parse throws on malformed input and returns `any`; safeJsonParse returns a typed result."
+ignores:
+  - "**/test/**"
+  - "**/playwright/**"
+  - "**/e2e/**"
+  - "scripts/**"
+  - ".github/**"
+  - "**/packages/utils/**"
+  - "**/mocks/**"
+  - "**/__mocks__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+rule:
+  pattern: JSON.parse($X)
+fix: safeJsonParse($X)

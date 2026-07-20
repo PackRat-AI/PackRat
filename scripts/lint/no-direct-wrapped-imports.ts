@@ -1,51 +1,100 @@
 #!/usr/bin/env bun
 //
-// no-direct-wrapped-imports.ts — enforces the lib/ wrapper convention.
+// no-direct-wrapped-imports.ts — enforces the apps/expo/lib/ wrapper convention.
 //
-// Some external modules are wrapped in `apps/expo/lib/` so callers get a single
-// import that works across platforms (the `.web` variant handles browser
-// behaviour). Once a module is wrapped, it must be imported from the wrapper
-// everywhere else — importing the raw dependency directly bypasses the web
-// shim and reintroduces platform branches.
+// Platform-sensitive external dependencies (native modules, expo-* packages
+// that are stubbed or throw on web, etc.) must be imported through a wrapper
+// module in apps/expo/lib/ rather than directly. The wrapper's `.web.ts`
+// variant handles browser behavior so callers need no `Platform.OS` branches
+// and the web bundle (`expo export -p web`) keeps working.
 //
-// To wrap a new module, add it to WRAPPED below and create lib/<name>.ts
-// (+ lib/<name>.web.ts as needed).
+// Each entry in WRAPPED maps a module specifier to the wrapper that should be
+// imported instead. A direct import of a wrapped module anywhere in apps/expo
+// (outside the wrapper itself and test/spec files) is a violation.
 //
 // Exit code:
 //   0 — no violations
 //   1 — violations found (details printed to stdout)
+//
+// Wired into the `lint:custom` script in root package.json.
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = join(import.meta.dir, '..', '..');
-const ROOTS = ['apps', 'packages'];
-const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build', '.wrangler', '.expo']);
+const EXPO_ROOT = join(ROOT, 'apps', 'expo');
 
-// Raw module specifier → the wrapper module that owns it. Only the wrapper file
-// (and its platform variants) may import the raw module.
-const WRAPPED: Record<string, string> = {
-  'expo-secure-store': 'apps/expo/lib/secureStore',
-  'expo-apple-authentication': 'apps/expo/lib/appleAuthentication',
-  'expo-updates': 'apps/expo/lib/updates',
-};
-
-const VARIANT = /\.(web|native|ios|android)$/;
-
-function ownsModule(relPathNoExt: string, wrapper: string): boolean {
-  return relPathNoExt === wrapper || relPathNoExt.replace(VARIANT, '') === wrapper;
+// module specifier (or specifier prefix) → wrapper import path the call site
+// should use instead. The `wrapperFile` is the wrapper's source path relative
+// to apps/expo, used to exempt the wrapper itself from the rule.
+interface WrappedEntry {
+  /** Import specifier that is forbidden outside the wrapper. */
+  module: string;
+  /** Wrapper path callers should import from instead. */
+  wrapper: string;
+  /** Wrapper source files (relative to apps/expo) exempt from the rule. */
+  wrapperFiles: string[];
 }
 
+const WRAPPED: WrappedEntry[] = [
+  {
+    module: 'expo-secure-store',
+    wrapper: 'expo-app/lib/secureStore',
+    wrapperFiles: ['lib/secureStore.ts', 'lib/secureStore.web.ts'],
+  },
+  {
+    module: 'expo-apple-authentication',
+    wrapper: 'expo-app/lib/appleAuthentication',
+    wrapperFiles: ['lib/appleAuthentication.ts', 'lib/appleAuthentication.web.ts'],
+  },
+  {
+    module: 'expo-updates',
+    wrapper: 'expo-app/lib/updates',
+    wrapperFiles: ['lib/updates.ts', 'lib/updates.web.ts'],
+  },
+  {
+    module: '@react-native-async-storage/async-storage',
+    wrapper: 'expo-app/lib/asyncStorage',
+    wrapperFiles: ['lib/asyncStorage.ts'],
+  },
+  {
+    module: '@react-native-google-signin/google-signin',
+    wrapper: 'expo-app/lib/googleSignin',
+    wrapperFiles: ['lib/googleSignin.ts', 'lib/googleSignin.web.ts'],
+  },
+  {
+    module: 'expo-sqlite/kv-store',
+    wrapper: 'expo-app/lib/expoSqliteKvStore',
+    wrapperFiles: ['lib/expoSqliteKvStore.ts', 'lib/expoSqliteKvStore.web.ts'],
+  },
+];
+
+const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build', '.expo', '.wrangler']);
+
+// app.config.ts / app.json reference plugin names as build-time strings, not
+// runtime imports — they are not call sites and are exempt.
+const EXEMPT_FILES = new Set(['app.config.ts', 'app.config.js', 'metro.config.js']);
+
 function isTargetFile(name: string): boolean {
-  return /\.(ts|tsx|cts|mts)$/.test(name);
+  return /\.(ts|tsx|cts|mts)$/.test(name) && !/\.(test|spec)\.(ts|tsx|cts|mts)$/.test(name);
+}
+
+function buildImportPattern(module: string): RegExp {
+  // Matches `from 'module'` and `from 'module/subpath'` in both import and
+  // export-from statements, plus bare `import 'module'` side-effect imports.
+  const escaped = module.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?:from|import)\\s+['"]${escaped}(?:/[^'"]*)?['"]`);
 }
 
 interface Violation {
   file: string;
   line: number;
-  module: string;
+  content: string;
   wrapper: string;
 }
+
+const wrapperFileSet = new Set(WRAPPED.flatMap((e) => e.wrapperFiles));
+const patterns = WRAPPED.map((e) => ({ ...e, pattern: buildImportPattern(e.module) }));
 
 function walkDir(dir: string, relPath: string, violations: Violation[]): void {
   let entries: string[];
@@ -57,8 +106,9 @@ function walkDir(dir: string, relPath: string, violations: Violation[]): void {
 
   for (const entry of entries) {
     if (EXCLUDED_DIRS.has(entry)) continue;
+
     const entryFull = join(dir, entry);
-    const entryRel = `${relPath}/${entry}`;
+    const entryRel = relPath ? `${relPath}/${entry}` : entry;
 
     let isDir = false;
     try {
@@ -71,9 +121,11 @@ function walkDir(dir: string, relPath: string, violations: Violation[]): void {
       walkDir(entryFull, entryRel, violations);
       continue;
     }
-    if (!isTargetFile(entry)) continue;
 
-    const relNoExt = entryRel.replace(/\.(ts|tsx|cts|mts)$/, '');
+    if (!isTargetFile(entry)) continue;
+    if (wrapperFileSet.has(entryRel)) continue;
+    if (EXEMPT_FILES.has(entry)) continue;
+
     let content: string;
     try {
       content = readFileSync(entryFull, 'utf-8');
@@ -84,11 +136,9 @@ function walkDir(dir: string, relPath: string, violations: Violation[]): void {
     const lines = content.split('\n');
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i] ?? '';
-      for (const [mod, wrapper] of Object.entries(WRAPPED)) {
-        // import ... from 'mod'  /  require('mod')  /  import('mod')
-        const re = new RegExp(`(from|require\\(|import\\()\\s*['"]${mod}['"]`);
-        if (re.test(line) && !ownsModule(relNoExt, wrapper)) {
-          violations.push({ file: entryRel, line: i + 1, module: mod, wrapper });
+      for (const { pattern, wrapper } of patterns) {
+        if (pattern.test(line)) {
+          violations.push({ file: entryRel, line: i + 1, content: line.trim(), wrapper });
         }
       }
     }
@@ -96,18 +146,17 @@ function walkDir(dir: string, relPath: string, violations: Violation[]): void {
 }
 
 const violations: Violation[] = [];
-for (const root of ROOTS) {
-  walkDir(join(ROOT, root), root, violations);
-}
+walkDir(EXPO_ROOT, '', violations);
 
 if (violations.length > 0) {
   console.log(
     `Direct imports of wrapped modules found (${violations.length}) — import from the lib/ wrapper instead:\n`,
   );
-  for (const { file, line, module, wrapper } of violations) {
-    console.log(`${file}:${line}: import '${module}' → use '${wrapper}'`);
+  for (const { file, line, content, wrapper } of violations) {
+    console.log(`apps/expo/${file}:${line}: ${content}`);
+    console.log(`  → import from '${wrapper}'\n`);
   }
   process.exit(1);
 }
 
-console.log('No direct imports of wrapped modules.');
+console.log('No direct imports of wrapped modules in apps/expo.');

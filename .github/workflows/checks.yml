@@ -46,6 +46,12 @@ jobs:
         run: bun scripts/lint/no-circular-deps.ts
       - name: Check for duplicate/catalog dependencies
         run: bun scripts/lint/no-duplicate-deps.ts
+      - name: Check overrides are documented
+        run: bun scripts/lint/no-undocumented-overrides.ts
+      - name: Test override-registry lint
+        run: bun test:lint
+      - name: Check fat-table queries are explicitly projected
+        run: bun scripts/lint/no-unprojected-fat-table-queries.ts
       - name: Check package.json ordering
         run: bun scripts/format/sort-package-json.ts --check
       - name: Custom lint rules (typeof guards, raw regex, process.env)
@@ -54,8 +60,27 @@ jobs:
         run: bun scripts/lint/no-unauth-routes.ts
       - name: Check unsafe type casts
         run: bun check:casts:strict
-      - name: Check types
+      - name: Check for duplicate @packrat/utils implementations
+        run: bun check:utils
+      - name: Check @packrat/utils provenance manifest
+        run: bun check:provenance:strict
+      - name: Check code duplication (jscpd)
+        run: bun check:duplication
+      # Two type-check passes, deliberately. `bun check-types` runs a single
+      # root `tsc` over the shared React-Native/web/node program (jsx:
+      # react-native, lib DOM+ESNext). That program structurally CANNOT house
+      # packages with a different global type environment — Cloudflare Workers
+      # packages (packages/mcp: @cloudflare/workers-types, no DOM) and the
+      # @kitajs/html JSX package (packages/consent-ui: global JSX namespace) —
+      # so those, plus osm-db/osm-import/overpass, are excluded from the root
+      # tsconfig. `bun check-types:packages` (turbo) then type-checks EVERY
+      # package under its OWN tsconfig, closing that gap. Both must stay: the
+      # root pass catches cross-package program errors, the turbo pass catches
+      # per-package errors the root program can't see (e.g. MCP, #2533).
+      - name: Check types (root tsc — shared RN/web/node program)
         run: bun check-types
+      - name: Check types (per-package — turbo, each tsconfig)
+        run: bun check-types:packages
       - name: Run Expo Doctor
         run: bunx expo-doctor
         working-directory: apps/expo

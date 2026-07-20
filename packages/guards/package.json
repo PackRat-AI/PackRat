@@ -1,6 +1,6 @@
 {
   "name": "@packrat/guards",
-  "version": "2.0.28",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,7 +12,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "radash": "catalog:",
+    "@packrat/utils": "workspace:*",
     "ts-extras": "catalog:",
     "zod": "catalog:"
   }

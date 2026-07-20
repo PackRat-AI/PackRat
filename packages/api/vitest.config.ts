@@ -20,6 +20,7 @@ export default defineWorkersConfig({
     pool: '@cloudflare/vitest-pool-workers',
     poolOptions: {
       workers: {
+        isolatedStorage: false,
         // singleWorker: one workerd isolate shared across all test files.
         // Without this, each file gets a fresh isolate, which tears down at
         // file end without cleanly closing in-flight Neon Pool websockets →
