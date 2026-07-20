@@ -140,7 +140,7 @@
     "react-i18next": "^17.0.4",
     "react-leaflet": "catalog:",
     "react-native": "0.85.3",
-    "react-native-blob-util": "^0.24.5",
+    "react-native-blob-util": "^0.24.10",
     "react-native-css-interop": "^0.2.3",
     "react-native-gesture-handler": "~2.31.1",
     "react-native-get-random-values": "~1.11.0",
