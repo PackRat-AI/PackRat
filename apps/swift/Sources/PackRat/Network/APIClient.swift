@@ -25,6 +25,20 @@ actor APIClient {
         "production": "https://packrat-api.orange-frost-d665.workers.dev",
     ]
 
+    /// Public R2 bucket URL for user-uploaded images (avatars, pack photos).
+    /// Fixed across environments — matches `EXPO_PUBLIC_R2_PUBLIC_URL` on the Expo side.
+    static let r2PublicURL = "https://pub-c3852b07b730407889986338ca3ef0e5.r2.dev"
+
+    /// Resolves a possibly-relative R2 object key to a fetchable absolute URL.
+    /// Server-stored image fields (e.g. `avatarUrl`) may be a bare R2 key or
+    /// already-absolute URL (OAuth-provided avatars). Mirrors Expo's
+    /// `buildPackTemplateItemImageUrl`.
+    static func resolvedImageURL(_ value: String?) -> URL? {
+        guard let value, !value.isEmpty else { return nil }
+        if value.hasPrefix("http") { return URL(string: value) }
+        return URL(string: "\(r2PublicURL)/\(value)")
+    }
+
     /// The build-time environment name from `PACKRAT_ENV` (xcconfig → Info.plist).
     /// `nil` if unset.
     static var environmentName: String? {

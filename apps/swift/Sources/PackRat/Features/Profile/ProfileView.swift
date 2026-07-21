@@ -1,10 +1,9 @@
 import SwiftUI
 import NukeUI
-import UserNotifications
+import PhotosUI
 
 struct ProfileView: View {
     @Environment(AuthManager.self) private var authManager
-    @Environment(\.openURL) private var openURL
     @State private var firstName = ""
     @State private var lastName = ""
     @State private var isSaving = false
@@ -12,11 +11,12 @@ struct ProfileView: View {
     @State private var saveSuccess = false
     @State private var showingSignOutAlert = false
     @State private var showingDeleteAccountAlert = false
-    @State private var showingAvatarPicker = false
+    @State private var avatarPhotoItem: PhotosPickerItem?
     @State private var isUploadingAvatar = false
     @State private var isDeletingAccount = false
-    @State private var notificationsEnabled = false
-    @State private var notificationAuthStatus: UNAuthorizationStatus = .notDetermined
+    #if os(macOS)
+    @State private var showingAvatarPicker = false
+    #endif
 
     var body: some View {
         Group {
@@ -27,10 +27,7 @@ struct ProfileView: View {
             }
         }
         .navigationTitle("Profile")
-        .onAppear {
-            prefill()
-            Task { await refreshNotificationStatus() }
-        }
+        .onAppear { prefill() }
         .alert("Sign Out", isPresented: $showingSignOutAlert) {
             Button("Sign Out", role: .destructive) {
                 Task { try? await authManager.logout() }
@@ -81,8 +78,6 @@ struct ProfileView: View {
             } footer: {
                 Text("An account unlocks sync, social features, AI tools, templates, and profile settings.")
             }
-
-            notificationSection
         }
         .packRatFormStyle()
     }
@@ -148,8 +143,6 @@ struct ProfileView: View {
                 .disabled(isSaving || !hasChanges)
             }
 
-            notificationSection
-
             Section {
                 Button("Sign Out", role: .destructive) {
                     showingSignOutAlert = true
@@ -166,39 +159,12 @@ struct ProfileView: View {
         #endif
     }
 
-    private var notificationSection: some View {
-        Section("Notifications") {
-            if notificationAuthStatus == .denied {
-                HStack {
-                    Image(systemName: "bell.slash.fill").foregroundStyle(.secondary)
-                    Text("Notifications are blocked in Settings")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    #if os(iOS)
-                    Button("Open Settings") {
-                        if let url = URL(string: UIApplication.openSettingsURLString) {
-                            openURL(url)
-                        }
-                    }
-                    .font(.callout)
-                    #endif
-                }
-            } else {
-                Toggle("Push Notifications", isOn: $notificationsEnabled)
-                    .onChange(of: notificationsEnabled) { _, enabled in
-                        Task { await toggleNotifications(enabled) }
-                    }
-            }
-        }
-    }
-
     // MARK: - Avatar
 
     private var avatarSection: some View {
         ZStack(alignment: .bottomTrailing) {
-            if let url = authManager.currentUser?.avatarUrl {
-                LazyImage(url: URL(string: url)) { state in
+            if let imageURL = APIClient.resolvedImageURL(authManager.currentUser?.avatarUrl) {
+                LazyImage(url: imageURL) { state in
                     if let image = state.image {
                         image.resizable().scaledToFill()
                     } else {
@@ -218,6 +184,15 @@ struct ProfileView: View {
                     .background(.regularMaterial, in: Circle())
                     .offset(x: 4, y: 4)
             } else {
+                #if os(iOS)
+                PhotosPicker(selection: $avatarPhotoItem, matching: .images) {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(.tint)
+                        .background(Circle().fill(.background))
+                }
+                .offset(x: 4, y: 4)
+                #else
                 Button {
                     showingAvatarPicker = true
                 } label: {
@@ -228,8 +203,20 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
                 .offset(x: 4, y: 4)
+                #endif
             }
         }
+        #if os(iOS)
+        .onChange(of: avatarPhotoItem) { _, item in
+            guard let item else { return }
+            Task {
+                defer { avatarPhotoItem = nil }
+                guard let data = try? await item.loadTransferable(type: Data.self),
+                      let image = UIImage(data: data) else { return }
+                await uploadAvatar(image: image)
+            }
+        }
+        #endif
         #if os(macOS)
         .fileImporter(
             isPresented: $showingAvatarPicker,
@@ -288,24 +275,6 @@ struct ProfileView: View {
         }
     }
 
-    private func refreshNotificationStatus() async {
-        let center = UNUserNotificationCenter.current()
-        let settings = await center.notificationSettings()
-        notificationAuthStatus = settings.authorizationStatus
-        notificationsEnabled = settings.authorizationStatus == .authorized
-    }
-
-    private func toggleNotifications(_ enable: Bool) async {
-        let center = UNUserNotificationCenter.current()
-        if enable {
-            let status = await center.notificationSettings().authorizationStatus
-            if status == .notDetermined {
-                _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
-            }
-        }
-        await refreshNotificationStatus()
-    }
-
     private func deleteAccount() async {
         isDeletingAccount = true
         defer { isDeletingAccount = false }
@@ -318,17 +287,28 @@ struct ProfileView: View {
         }
     }
 
-    #if os(macOS)
-    private func uploadAvatar(url: URL) async {
+    private func uploadAvatar(avatarUrl: String) async {
         isUploadingAvatar = true
         defer { isUploadingAvatar = false }
         do {
-            let avatarUrl = try await UploadService.shared.uploadImage(at: url)
             struct AvatarBody: Encodable { let avatarUrl: String }
             let endpoint = Endpoint(.put, "/api/user/profile", body: AvatarBody(avatarUrl: avatarUrl))
             try await APIClient.shared.sendDiscarding(endpoint)
             try await authManager.refreshProfile()
         } catch { }
+    }
+
+    #if os(macOS)
+    private func uploadAvatar(url: URL) async {
+        guard let publicUrl = try? await UploadService.shared.uploadImage(at: url) else { return }
+        await uploadAvatar(avatarUrl: publicUrl)
+    }
+    #endif
+
+    #if os(iOS)
+    private func uploadAvatar(image: UIImage) async {
+        guard let publicUrl = try? await UploadService.shared.uploadUIImage(image) else { return }
+        await uploadAvatar(avatarUrl: publicUrl)
     }
     #endif
 }
