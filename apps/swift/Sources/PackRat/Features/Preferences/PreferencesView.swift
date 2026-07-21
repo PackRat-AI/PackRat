@@ -29,6 +29,8 @@ struct PreferencesView: View {
     @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
     @AppStorage("apiBaseURL") private var apiBaseURL: String = ""
 
+    @State private var showingClearDataConfirm = false
+
     var body: some View {
         #if os(macOS)
         // Fixed-size tabbed layout for the macOS Settings window (Cmd+,).
@@ -46,6 +48,7 @@ struct PreferencesView: View {
         }
         .padding(20)
         .frame(width: 460, height: 320)
+        .clearDataConfirmation(isPresented: $showingClearDataConfirm, onConfirm: clearAppData)
         #else
         // iOS: a single scrolling form pushed onto a navigation stack. The
         // macOS tabs become grouped sections so all settings stay reachable
@@ -62,7 +65,19 @@ struct PreferencesView: View {
             aboutSection
         }
         .navigationTitle("Settings")
+        .clearDataConfirmation(isPresented: $showingClearDataConfirm, onConfirm: clearAppData)
         #endif
+    }
+
+    /// Clears cached data (URL/image caches) and locally stored preference
+    /// defaults. Auth lives in the Keychain, so the user stays signed in —
+    /// mirrors the Expo Settings "Clear App Data" behavior.
+    private func clearAppData() {
+        URLCache.shared.removeAllCachedResponses()
+        let defaults = UserDefaults.standard
+        for key in ["defaultAppWeightUnit", "preferMetric", "temperatureUnit", "speedUnit", "apiBaseURL", "accentColorName"] {
+            defaults.removeObject(forKey: key)
+        }
     }
 
     #if os(macOS)
@@ -132,28 +147,41 @@ struct PreferencesView: View {
 
     @ViewBuilder
     private var advancedSection: some View {
-        Section("API Server") {
-            HStack {
-                ForEach(["local", "dev", "production"], id: \.self) { env in
-                    if let url = APIClient.environments[env] {
-                        Button(env.capitalized) {
-                            apiBaseURL = url == apiBaseURL ? "" : url
+        // Developer-only backend controls. Hidden entirely in production so end
+        // users can't repoint the app at a dev/local API or wipe their data.
+        if APIClient.isNonProduction {
+            Section("API Server") {
+                HStack {
+                    ForEach(["local", "dev", "production"], id: \.self) { env in
+                        if let url = APIClient.environments[env] {
+                            Button(env.capitalized) {
+                                apiBaseURL = url == apiBaseURL ? "" : url
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(effectiveURL == url ? .accentColor : nil)
                         }
-                        .buttonStyle(.bordered)
-                        .tint(effectiveURL == url ? .accentColor : nil)
                     }
                 }
-            }
-            TextField("Custom URL (overrides build default)", text: $apiBaseURL)
-                .textFieldStyle(.roundedBorder)
-            LabeledContent("Effective") {
-                Text(effectiveURL)
-                    .font(.caption.monospaced())
+                TextField("Custom URL (overrides build default)", text: $apiBaseURL)
+                    .textFieldStyle(.roundedBorder)
+                LabeledContent("Effective") {
+                    Text(effectiveURL)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+                Text("Empty = use build-time default (PACKRAT_ENV from xcconfig). Changes apply immediately.")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            Text("Empty = use build-time default (PACKRAT_ENV from xcconfig). Changes apply immediately.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+
+            Section("Developer") {
+                Button("Clear App Data", role: .destructive) {
+                    showingClearDataConfirm = true
+                }
+                Text("Deletes cached data and locally stored preferences. You stay logged in.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
 
         Section {
@@ -194,5 +222,17 @@ struct PreferencesView: View {
         temperatureUnit = .fahrenheit
         speedUnit = .mph
         apiBaseURL = ""
+    }
+}
+
+private extension View {
+    /// Shared confirmation dialog for the destructive "Clear App Data" action.
+    func clearDataConfirmation(isPresented: Binding<Bool>, onConfirm: @escaping () -> Void) -> some View {
+        alert("Clear App Data", isPresented: isPresented) {
+            Button("Cancel", role: .cancel) {}
+            Button("Clear", role: .destructive, action: onConfirm)
+        } message: {
+            Text("This deletes the cache and locally stored preferences. You will stay logged in.")
+        }
     }
 }
