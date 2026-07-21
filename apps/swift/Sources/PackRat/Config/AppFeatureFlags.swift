@@ -9,6 +9,7 @@ enum AppFeatureFlags {
     static let enableOAuth = true
     static let enablePackInsights = false
     static let enablePackTemplates = true
+    static let enableRevenueCat = true
     static let enableSharedPacks = false
     static let enableShoppingList = false
     static let enableTrailConditions = true
