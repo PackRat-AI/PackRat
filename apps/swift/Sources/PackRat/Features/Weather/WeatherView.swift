@@ -6,6 +6,12 @@ struct WeatherView: View {
     @State private var showingAlerts = false
     @State private var showingAlertPreferences = false
     @State private var isSearchPresented = false
+    @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
+
+    /// Renders an API wind value (always mph) in the user's preferred unit.
+    private func windDisplay(mph: Double) -> String {
+        speedUnit == .kmh ? "\(Int((mph * 1.609344).rounded())) km/h" : "\(Int(mph.rounded())) mph"
+    }
 
     private var activeAlerts: [WeatherAlert] {
         viewModel.forecast?.alerts?.alert ?? []
@@ -301,7 +307,7 @@ struct WeatherView: View {
                 Divider().frame(height: 32)
                 weatherDetail("Humidity", value: "\(current.humidity ?? 0)%", symbol: "humidity")
                 Divider().frame(height: 32)
-                weatherDetail("Wind", value: String(format: "%.0f mph", current.windMph ?? 0), symbol: "wind")
+                weatherDetail("Wind", value: windDisplay(mph: current.windMph ?? 0), symbol: "wind")
                 Divider().frame(height: 32)
                 weatherDetail("UV Index", value: String(format: "%.0f", current.uv ?? 0), symbol: "sun.max")
             }

@@ -182,7 +182,7 @@ export function PackDetailScreen() {
     return 'text-green-500';
   };
 
-  const handleAnalyzeGapsPress = () => {
+  const handleAnalyzeGapsPress = async () => {
     if (!isAuthed.peek()) {
       return router.push({
         pathname: '/auth',

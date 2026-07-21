@@ -74,12 +74,26 @@ const EXCLUDED_FILES = new Set([
   'apps/swift/scripts/lib/app-store-assets.ts',
   'apps/swift/scripts/run-e2e-macos.ts',
   'apps/swift/scripts/run-e2e.ts',
+  // run(cmd, args) mirrors Node's execFileSync(file, args) positional signature.
+  'apps/swift/scripts/upload-testflight.ts',
   'apps/swift/scripts/watch-sync-smoke.ts',
   // Cloudflare/Sentry/logger helpers intentionally mirror external callback/API shapes.
   'packages/api/src/index.ts',
   'packages/api/src/auth/local-e2e.ts',
   'packages/api/src/utils/auth.ts',
   'packages/api/src/utils/embeddingHelper.ts',
+  // Early-access resolver + enforcement. Each 2-param function is a pure
+  // "subject + resolved-signal/clock" shape — (feature, now), (feature, viewer),
+  // (event, now), (key, hasPro), (featureKey, userId), (key, updates) — the same
+  // idiom as the excluded safeJsonParse(value, options). Folding the resolved
+  // signal into the subject object would obscure that these are two distinct
+  // inputs (the config row vs. the viewer's entitlement) resolved separately.
+  'packages/config/src/featureAccess.ts',
+  'packages/api/src/middleware/featureGate.ts',
+  'packages/api/src/services/featureAccessService.ts',
+  'packages/api/src/services/entitlementsService.ts',
+  // Dev script mirroring a positional SQL-runner shape (text, params).
+  'packages/api/scripts/feature-access-demo.ts',
 ]);
 const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest', 'run', 'scheduled']);
 const EXTERNAL_CALLBACK_NAMES = new Set([

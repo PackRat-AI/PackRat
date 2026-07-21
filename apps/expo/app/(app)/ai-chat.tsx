@@ -11,7 +11,6 @@ import { fetch as expoFetch } from 'expo/fetch';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
-import { featureFlags } from 'expo-app/config';
 import { aiModeAtom, localModelStatusAtom } from 'expo-app/features/ai/atoms/aiModeAtoms';
 import {
   clearChatMessages,
@@ -36,6 +35,7 @@ import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/pack
 import { packsStore } from 'expo-app/features/packs/store/packs';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { authClient, getStoredSessionToken } from 'expo-app/lib/auth-client';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -91,6 +91,7 @@ export default function AIChat() {
 
   const aiMode = useAtomValue(aiModeAtom);
   const modelStatus = useAtomValue(localModelStatusAtom);
+  const enableLocalAI = useFeatureFlag('enableLocalAI');
 
   const context = React.useMemo(
     () => ({
@@ -132,7 +133,7 @@ export default function AIChat() {
   // properly invalidated — prevents "Timed out waiting for modules to be
   // invalidated" crashes on hot reload and app restart.
   React.useEffect(() => {
-    if (!featureFlags.enableLocalAI) return;
+    if (!enableLocalAI) return;
 
     initLocalModel(isAuthenticated);
 
@@ -159,7 +160,7 @@ export default function AIChat() {
   // Re-initialize the Apple provider when auth state changes so that the
   // set of available tools stays in sync with the user's authentication status.
   React.useEffect(() => {
-    if (!featureFlags.enableLocalAI || !isAppleIntelligenceAvailable()) return;
+    if (!enableLocalAI || !isAppleIntelligenceAvailable()) return;
     releaseLocalModel().then(() => initLocalModel(isAuthenticated));
   }, [isAuthenticated]);
 
@@ -185,7 +186,7 @@ export default function AIChat() {
   const tools = React.useMemo(() => createLocalTools(isAuthenticated), [isAuthenticated]);
 
   const { transport, transportKey } = React.useMemo(() => {
-    if (featureFlags.enableLocalAI && aiMode === 'local' && isLocalReady) {
+    if (enableLocalAI && aiMode === 'local' && isLocalReady) {
       const model = getLocalModel();
       if (model) {
         let systemPrompt = `You are PackRat AI, a helpful assistant for hikers and outdoor enthusiasts.
@@ -372,7 +373,7 @@ export default function AIChat() {
     const messageText = text || input;
 
     // Guard: local mode but model not ready
-    if (featureFlags.enableLocalAI && aiMode === 'local' && modelStatus !== 'ready') {
+    if (enableLocalAI && aiMode === 'local' && modelStatus !== 'ready') {
       const toastTitle =
         modelStatus === 'downloading'
           ? t('ai.modelStillDownloading')

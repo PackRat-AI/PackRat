@@ -1,7 +1,7 @@
 import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
-import { featureFlags } from 'expo-app/config';
 import { useTrips } from 'expo-app/features/trips/hooks';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { parseLocalDate } from 'expo-app/lib/utils/dateUtils';
@@ -28,7 +28,8 @@ export function UpcomingTripsTile() {
     [trips],
   );
 
-  if (!featureFlags.enableTrips) return null;
+  const enableTrips = useFeatureFlag('enableTrips');
+  if (!enableTrips) return null;
 
   return (
     <ListItem

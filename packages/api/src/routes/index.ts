@@ -4,12 +4,15 @@ import { aiRoutes } from './ai';
 import { alltrailsRoutes } from './alltrails';
 import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
+import { featureAccessRoutes } from './featureAccess';
+import { featureFlagsRoutes } from './featureFlags';
 import { feedRoutes } from './feed';
 import { guidesRoutes } from './guides';
 import { knowledgeBaseRoutes } from './knowledgeBase';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
 import { passwordResetRoutes } from './passwordReset';
+import { revenuecatWebhookRoutes } from './revenuecatWebhook';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
 import { trailConditionsRoutes } from './trailConditions';
 import { trailsRoutes } from './trails';
@@ -43,4 +46,7 @@ export const routes = new Elysia({ prefix: '/api' })
   .use(trailsRoutes)
   .use(wildlifeRoutes)
   .use(knowledgeBaseRoutes)
-  .use(alltrailsRoutes);
+  .use(alltrailsRoutes)
+  .use(featureAccessRoutes)
+  .use(featureFlagsRoutes)
+  .use(revenuecatWebhookRoutes);

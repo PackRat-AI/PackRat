@@ -98,6 +98,10 @@
     "expo-sqlite": "~56.0.4",
     "react": "19.2.3"
   },
+  "dependencies": {
+    "react-native-purchases": "^10.4.0",
+    "react-native-purchases-ui": "^10.4.0"
+  },
   "devDependencies": {
     "@ast-grep/cli": "^0.43.0",
     "@biomejs/biome": "2.4.6",

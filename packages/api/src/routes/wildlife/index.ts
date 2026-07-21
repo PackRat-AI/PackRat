@@ -1,5 +1,6 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { enforceFeatureAccess } from '@packrat/api/middleware/featureGate';
 import { WildlifeIdentificationService } from '@packrat/api/services/wildlifeIdentificationService';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
@@ -24,6 +25,13 @@ export const wildlifeRoutes = new Elysia({ prefix: '/wildlife' })
       if (!image.startsWith(`${user.userId}-`)) {
         return status(403, { error: 'Unauthorized' });
       }
+
+      // Server-side early-access gate: while wildlife ID is in its early-access
+      // window, only Pro members may run this (expensive) identification. The
+      // mobile UI gates too, but the server enforces so the check can't be
+      // bypassed. Resolves via the entitlements table populated by the RC webhook.
+      const denied = await enforceFeatureAccess('wildlife', user.userId);
+      if (denied) return denied;
 
       const { PACKRAT_BUCKET_R2_BUCKET_NAME, PACKRAT_BUCKET } = getEnv();
       const command = new GetObjectCommand({
