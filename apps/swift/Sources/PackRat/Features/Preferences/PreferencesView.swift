@@ -23,6 +23,7 @@ final class AppPreferences: ObservableObject {
 // MARK: - Settings / Preferences window (Cmd+,)
 
 struct PreferencesView: View {
+    @Environment(AuthManager.self) private var authManager
     @AppStorage("defaultAppWeightUnit") private var defaultAppWeightUnit: AppWeightUnit = .grams
     @AppStorage("preferMetric") private var preferMetric: Bool = true
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
@@ -69,15 +70,10 @@ struct PreferencesView: View {
         #endif
     }
 
-    /// Clears cached data (URL/image caches) and locally stored preference
-    /// defaults. Auth lives in the Keychain, so the user stays signed in —
-    /// mirrors the Expo Settings "Clear App Data" behavior.
+    /// Android-style "Clear Data": wipes all local data including auth, then
+    /// returns the app to the auth gate (the user is signed out).
     private func clearAppData() {
-        URLCache.shared.removeAllCachedResponses()
-        let defaults = UserDefaults.standard
-        for key in ["defaultAppWeightUnit", "preferMetric", "temperatureUnit", "speedUnit", "apiBaseURL", "accentColorName"] {
-            defaults.removeObject(forKey: key)
-        }
+        authManager.clearAllData()
     }
 
     #if os(macOS)
@@ -175,10 +171,10 @@ struct PreferencesView: View {
             }
 
             Section("Developer") {
-                Button("Clear App Data", role: .destructive) {
+                Button("Clear Data", role: .destructive) {
                     showingClearDataConfirm = true
                 }
-                Text("Deletes cached data and locally stored preferences. You stay logged in.")
+                Text("Erases all local data — cache, preferences, and sign-in. Signs you out and resets the app.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -228,11 +224,11 @@ struct PreferencesView: View {
 private extension View {
     /// Shared confirmation dialog for the destructive "Clear App Data" action.
     func clearDataConfirmation(isPresented: Binding<Bool>, onConfirm: @escaping () -> Void) -> some View {
-        alert("Clear App Data", isPresented: isPresented) {
+        alert("Clear Data", isPresented: isPresented) {
             Button("Cancel", role: .cancel) {}
-            Button("Clear", role: .destructive, action: onConfirm)
+            Button("Clear Data", role: .destructive, action: onConfirm)
         } message: {
-            Text("This deletes the cache and locally stored preferences. You will stay logged in.")
+            Text("This erases all local data and signs you out. This cannot be undone.")
         }
     }
 }
