@@ -69,6 +69,9 @@ const ALLOWED: string[] = [
   // to xcodebuild. Not app code.
   'apps/swift/scripts/run-e2e.ts',
   'apps/swift/scripts/run-e2e-macos.ts',
+  // TestFlight upload script — reads Apple credentials / BUILD_NUMBER from the
+  // CI environment and forwards to xcodebuild/altool. Not app code.
+  'apps/swift/scripts/upload-testflight.ts',
   // Playwright web E2E test infrastructure — Node process, reads env for CI secrets
   'apps/expo/playwright/',
   // OSM import script — spawns subprocesses and must pass the full OS env (PATH, HOME, etc.)

@@ -1,4 +1,4 @@
-import { featureFlags } from 'expo-app/config';
+import { useFeatureFlags } from 'expo-app/hooks/useFeatureFlags';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Tabs } from 'expo-router';
 
@@ -10,6 +10,7 @@ import { Tabs } from 'expo-router';
  */
 export default function TabLayout() {
   const { t } = useTranslation();
+  const featureFlags = useFeatureFlags();
 
   return (
     <Tabs screenOptions={{ headerShown: false }}>

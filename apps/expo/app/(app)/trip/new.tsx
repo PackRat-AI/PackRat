@@ -1,10 +1,9 @@
-import { featureFlags } from 'expo-app/config';
 import { CreateTripScreen } from 'expo-app/features/trips/screens/CreateTripScreen';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { Redirect } from 'expo-router';
 
 export default function TripNewScreen() {
-  // Gate deep links behind the trips feature flag so e.g. `packrat://trip/new`
-  // cannot bypass the kill switch.
-  if (!featureFlags.enableTrips) return <Redirect href="/" />;
+  const enableTrips = useFeatureFlag('enableTrips');
+  if (!enableTrips) return <Redirect href="/" />;
   return <CreateTripScreen />;
 }

@@ -1,10 +1,10 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
-import { featureFlags } from 'expo-app/config';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import { usePackWeightHistory } from 'expo-app/features/packs/hooks/usePackWeightHistory';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, View } from 'react-native';
@@ -19,6 +19,7 @@ export default function PackStatsScreen() {
   const pack = usePackDetailsFromStore(packId);
   const weightHistory = usePackWeightHistory(packId);
   const { unit: weightUnit, convertWeight } = useWeightUnit();
+  const enablePackInsights = useFeatureFlag('enablePackInsights');
 
   const categories = computeCategorySummaries({ pack, preferredUnit: weightUnit });
   const CATEGORY_DISTRIBUTION = categories.map((category) => ({
@@ -146,7 +147,7 @@ export default function PackStatsScreen() {
         </View>
 
         {/* Pack Insights Section */}
-        {featureFlags.enablePackInsights && (
+        {enablePackInsights && (
           <View className="my-4 mb-8 rounded-lg bg-card p-4">
             <Text variant="heading" className="mb-4 font-semibold">
               {t('packs.packInsights')}
