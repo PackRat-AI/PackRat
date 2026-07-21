@@ -1,13 +1,7 @@
 import { assertDefined, isString } from '@packrat/guards';
 import type { ContextMenuMethods } from '@packrat/ui/nativewindui';
-import {
-  Avatar,
-  AvatarFallback,
-  Button,
-  ContextMenu,
-  createContextItem,
-  Text,
-} from '@packrat/ui/nativewindui';
+import { Button, ContextMenu, createContextItem, Text } from '@packrat/ui/nativewindui';
+import { Avatar, AvatarFallback } from '@packrat/ui/src/avatar';
 import { FlashList } from '@shopify/flash-list';
 import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';

@@ -1,5 +1,6 @@
-import { Avatar, AvatarFallback, AvatarImage, Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/src/avatar';
 import { parseWeightUnit } from '@packrat/units';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';

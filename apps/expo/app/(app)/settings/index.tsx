@@ -1,4 +1,6 @@
-import { ActivityIndicator, SegmentedControl, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { SegmentedControl } from '@packrat/ui/src/segmented-control';
+import { Text } from '@packrat/ui/src/text';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
@@ -217,7 +219,7 @@ export default function SettingsScreen() {
                           <Text
                             variant="footnote"
                             className="font-medium"
-                            style={{ color: colors.primary }}
+                            textColor={colors.primary}
                           >
                             Download
                           </Text>

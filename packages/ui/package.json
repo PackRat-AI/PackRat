@@ -6,6 +6,9 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@packrat-ai/nativewindui": "2.2.1"
+    "@expo/ui": "^56.0.9",
+    "@packrat-ai/nativewindui": "2.2.1",
+    "@rn-primitives/avatar": "^1.1.0",
+    "tailwindcss": "catalog:"
   }
 }

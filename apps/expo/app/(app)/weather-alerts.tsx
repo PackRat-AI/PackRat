@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Text } from '@packrat/ui/src/text';
 import { useWeatherAlerts } from 'expo-app/features/weather/hooks/useWeatherAlert';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -107,7 +107,7 @@ function WeatherAlertCard({ alert }: { alert: WeatherAlert }) {
 
               <AlertSeverity severity={alert.severity} />
             </View>
-            <Text variant="subhead" className="text-muted-foreground">
+            <Text variant="subhead" color="secondary">
               {alert.location} • {alert.dates}
             </Text>
           </View>
@@ -138,12 +138,7 @@ export default function WeatherAlertsScreen() {
       <Stack.Screen options={{ ...getAppBarOptions(), title: t('weather.weatherAlertsTitle') }} />
       <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
         <View className="flex-row items-center justify-between p-4">
-          <Text
-            variant="subhead"
-            className="flex-1 text-muted-foreground"
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
+          <Text variant="subhead" color="secondary" className="flex-1" numberOfLines={1}>
             {t('weather.currentWeatherAlerts')}
           </Text>
 
@@ -152,7 +147,7 @@ export default function WeatherAlertsScreen() {
             className="flex-row items-center gap-1 ml-2"
           >
             <MaterialCommunityIcons name="tune-vertical-variant" size={16} color="#3B82F6" />
-            <Text variant="footnote" className="text-primary">
+            <Text variant="footnote" textColor="#3B82F6">
               {t('weather.manageAlerts')}
             </Text>
           </Pressable>
@@ -161,10 +156,14 @@ export default function WeatherAlertsScreen() {
         <View className="pb-4">
           {loading && <Text className="mx-4">Loading alerts...</Text>}
 
-          {error && <Text className="mx-4 text-red-500">{error}</Text>}
+          {error && (
+            <Text className="mx-4" textColor="#EF4444">
+              {error}
+            </Text>
+          )}
 
           {!loading && alerts.length === 0 && (
-            <Text className="mx-4 text-muted-foreground">
+            <Text className="mx-4" color="secondary">
               No active alerts for {activeLocation?.name ?? 'this location'}
             </Text>
           )}
@@ -175,7 +174,7 @@ export default function WeatherAlertsScreen() {
         </View>
 
         <View className="mx-4 my-2 rounded-lg bg-card p-4">
-          <Text variant="footnote" className="text-muted-foreground">
+          <Text variant="footnote" color="secondary">
             {t('weather.weatherDataLastUpdated', {
               date: new Date().toLocaleTimeString(),
             })}

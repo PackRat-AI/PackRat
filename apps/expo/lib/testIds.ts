@@ -129,6 +129,7 @@ export const testIds = Object.freeze({
     usernameInput: 'profile:username-input',
     saveBtn: 'profile:save',
     nameEditBtn: 'profile:name-edit',
+    settingsBtn: 'profile:settings-btn',
   }),
 
   // ── Settings ──────────────────────────────────────────────────────────────

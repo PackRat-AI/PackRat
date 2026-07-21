@@ -1,7 +1,8 @@
-import { ActivityIndicator, Button, SegmentedControl } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { IosTransparentHeaderOverlapFix } from '@packrat/ui/src/ios-transparent-header-overlap-fix';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
+import { SegmentedControl } from '@packrat/ui/src/segmented-control';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';

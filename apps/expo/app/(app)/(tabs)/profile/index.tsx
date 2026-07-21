@@ -2,8 +2,6 @@ import { clientEnvs } from '@packrat/env/expo-client';
 import { isRemoteUrl, isString } from '@packrat/guards';
 import {
   ActivityIndicator,
-  Avatar,
-  AvatarFallback,
   Button,
   List,
   ListItem,
@@ -12,6 +10,7 @@ import {
   Text,
 } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Avatar, AvatarFallback } from '@packrat/ui/src/avatar';
 import * as Sentry from '@sentry/react-native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
@@ -49,7 +48,7 @@ function SettingsIcon() {
   const { colors } = useColorScheme();
   return (
     <Link href="/settings" asChild>
-      <Pressable className="opacity-80">
+      <Pressable testID={testIds.profile.settingsBtn} className="opacity-80">
         {({ pressed }) => (
           <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
             <Icon name="cog-outline" color={colors.foreground} />

@@ -1,7 +1,8 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import type { WeightUnit } from '@packrat/constants';
 import { safeIndexOf } from '@packrat/guards';
-import { Form, FormItem, FormSection, SegmentedControl, TextField } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
+import { SegmentedControl } from '@packrat/ui/src/segmented-control';
 import * as Sentry from '@sentry/react-native';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
