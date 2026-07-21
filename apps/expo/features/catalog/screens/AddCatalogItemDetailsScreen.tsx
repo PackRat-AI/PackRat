@@ -1,5 +1,6 @@
 import { assertDefined } from '@packrat/guards';
-import { Button, Text } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Burnt from 'burnt';

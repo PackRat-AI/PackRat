@@ -1,5 +1,6 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { featureFlags } from 'expo-app/config';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

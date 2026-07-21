@@ -1,5 +1,5 @@
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import type { Pack } from 'expo-app/features/packs';
 import { useRecentPacks } from 'expo-app/features/packs/hooks/useRecentPacks';

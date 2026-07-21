@@ -1,5 +1,7 @@
 import { isDefined } from '@packrat/guards';
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
@@ -185,7 +187,7 @@ export function ItemDetailScreen() {
           {itemHasNotes && itemNotes && (
             <View className="mt-2">
               <Text className="mb-1 text-xs text-muted-foreground">{t('packs.notes')}</Text>
-              <Text style={{ color: colors.foreground }}>{itemNotes}</Text>
+              <Text textColor={colors.foreground}>{itemNotes}</Text>
             </View>
           )}
         </View>
@@ -198,7 +200,7 @@ export function ItemDetailScreen() {
               className="flex-row items-center justify-center rounded-full  px-4 py-3"
             >
               <Icon name="message-outline" size={20} color={colors.foreground} />
-              <Text style={{ color: colors.foreground }}>{t('packs.askAIAboutItem')}</Text>
+              <Text textColor={colors.foreground}>{t('packs.askAIAboutItem')}</Text>
             </Button>
           </View>
         )}

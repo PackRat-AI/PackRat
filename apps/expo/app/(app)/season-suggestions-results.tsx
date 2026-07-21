@@ -1,5 +1,5 @@
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Text } from '@packrat/ui/src/text';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { PackItemImage } from 'expo-app/features/packs/components/PackItemImage';
@@ -185,7 +185,7 @@ function DevErrorPanel({ active, onSelect }: DevErrorPanelProps) {
               <Text
                 variant="footnote"
                 className="font-semibold"
-                style={{ color: isActive ? 'white' : colors.foreground }}
+                textColor={isActive ? 'white' : colors.foreground}
               >
                 {chip.label}
               </Text>

@@ -1,6 +1,8 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { assertNonNull } from '@packrat/guards';
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { ErrorState } from 'expo-app/components/ErrorState';

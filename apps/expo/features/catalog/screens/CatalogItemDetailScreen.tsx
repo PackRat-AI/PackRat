@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Button, Text } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { catalogGroupVariantsAtom } from 'expo-app/atoms/catalogGroupAtom';
 import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';

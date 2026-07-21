@@ -1,6 +1,7 @@
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { keyIn } from '@packrat/guards';
-import { Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
+import { Text as SelectableText, Sheet, useSheetRef } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import type { ToolUIPart, UIMessage } from 'ai';
 import * as Burnt from 'burnt';
@@ -209,7 +210,7 @@ export const ChatBubble = React.memo(function ChatBubble({
             </Text>
 
             <View className="mb-6">
-              <Text selectable>
+              <SelectableText selectable>
                 {isAI
                   ? formatAIResponse(
                       item.parts
@@ -221,7 +222,7 @@ export const ChatBubble = React.memo(function ChatBubble({
                       .filter((part) => part.type === 'text')
                       .map((part) => part.text)
                       .join('\n')}
-              </Text>
+              </SelectableText>
             </View>
           </View>
         </BottomSheetScrollView>

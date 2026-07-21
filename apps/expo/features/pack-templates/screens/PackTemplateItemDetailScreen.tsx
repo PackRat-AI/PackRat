@@ -1,5 +1,5 @@
 import { assertDefined } from '@packrat/guards';
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';

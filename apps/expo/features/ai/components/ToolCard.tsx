@@ -1,5 +1,6 @@
 import { EvilIcons, Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Card, CardContent, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Card, CardContent } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import type React from 'react';
 import { Pressable, View } from 'react-native';

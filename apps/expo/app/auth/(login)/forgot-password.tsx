@@ -1,13 +1,7 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
-import {
-  AlertAnchor,
-  Button,
-  Form,
-  FormItem,
-  FormSection,
-  Text,
-  TextField,
-} from '@packrat/ui/nativewindui';
+import { AlertAnchor, Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { useForm } from '@tanstack/react-form';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';

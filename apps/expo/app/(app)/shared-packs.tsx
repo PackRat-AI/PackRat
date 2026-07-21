@@ -1,6 +1,6 @@
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/src/avatar';
+import { Text } from '@packrat/ui/src/text';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack } from 'expo-router';

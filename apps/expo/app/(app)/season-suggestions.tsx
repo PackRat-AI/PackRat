@@ -1,7 +1,8 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { assertDefined } from '@packrat/guards';
-import { Button, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { LocationSearchSheet } from 'expo-app/features/packs/components/LocationSearchSheet';

@@ -1,5 +1,7 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
-import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, AlertAnchor } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { featureFlags } from 'expo-app/config';
 import {
   isLoadingAtom,

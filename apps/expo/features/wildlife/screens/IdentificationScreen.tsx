@@ -1,5 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';

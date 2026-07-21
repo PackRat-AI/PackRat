@@ -1,5 +1,7 @@
 import { assertDefined } from '@packrat/guards';
-import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Card } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';

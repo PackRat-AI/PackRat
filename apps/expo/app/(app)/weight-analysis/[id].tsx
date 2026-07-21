@@ -1,7 +1,7 @@
 'use client';
 
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Text } from '@packrat/ui/src/text';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeightAnalysis';
 import { cn } from 'expo-app/lib/cn';

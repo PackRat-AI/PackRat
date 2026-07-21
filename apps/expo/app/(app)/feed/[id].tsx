@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { useQuery } from '@tanstack/react-query';
 import { userStore } from 'expo-app/features/auth/store';
 import { PostDetailScreen } from 'expo-app/features/feed';

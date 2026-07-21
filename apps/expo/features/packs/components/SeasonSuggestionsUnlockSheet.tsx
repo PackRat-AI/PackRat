@@ -1,6 +1,8 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
-import { Button, Sheet, Text } from '@packrat/ui/nativewindui';
+import { Sheet } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

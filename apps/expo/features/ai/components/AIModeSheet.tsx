@@ -1,7 +1,8 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { isFunction } from '@packrat/guards';
-import { Sheet, Text } from '@packrat/ui/nativewindui';
+import { Sheet } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuthState } from 'expo-app/features/auth/hooks/useAuthState';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

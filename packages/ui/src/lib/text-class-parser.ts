@@ -89,6 +89,7 @@ function resolveTailwindPaletteColor(className: string): string | undefined {
   const match = className.match(TEXT_COLOR_CLASS);
   if (!match) return undefined;
   const [, family, shade] = match;
+  if (!family || !shade) return undefined;
   const palette = (colors as TailwindPalette)[family as keyof TailwindPalette];
   if (!palette || typeof palette !== 'object') return undefined;
   return (palette as Record<string, string>)[shade];
@@ -134,7 +135,8 @@ function splitTextClassName(
     } else if (token in TEXT_ALIGN) {
       textStyle.textAlign = TEXT_ALIGN[token];
     } else if (token in THEME_COLOR_KEY) {
-      textStyle.color = themeColors[THEME_COLOR_KEY[token]];
+      const themeKey = THEME_COLOR_KEY[token];
+      if (themeKey) textStyle.color = themeColors[themeKey];
     } else if (token in FIXED_COLOR) {
       textStyle.color = FIXED_COLOR[token];
     } else {

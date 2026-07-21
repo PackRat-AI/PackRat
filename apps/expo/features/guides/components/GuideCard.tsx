@@ -1,4 +1,5 @@
-import { Card, CardContent, CardTitle, Text } from '@packrat/ui/nativewindui';
+import { Card, CardContent, CardTitle } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { TouchableOpacity, View } from 'react-native';

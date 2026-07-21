@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { decodeHtmlEntities } from 'expo-app/lib/utils/decodeHtmlEntities';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';

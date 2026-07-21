@@ -1,4 +1,6 @@
-import { Button, Text, useSheetRef } from '@packrat/ui/nativewindui';
+import { useSheetRef } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';

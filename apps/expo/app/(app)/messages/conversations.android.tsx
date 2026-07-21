@@ -1,6 +1,5 @@
 import { assertDefined } from '@packrat/guards';
 import {
-  Button,
   ContextMenu,
   createContextItem,
   createDropdownItem,
@@ -8,11 +7,12 @@ import {
   List,
   ListItem,
   type ListRenderItemInfo,
-  Text,
   Toolbar,
   ToolbarCTA,
 } from '@packrat/ui/nativewindui';
 import { Avatar, AvatarFallback } from '@packrat/ui/src/avatar';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { Portal } from '@rn-primitives/portal';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';

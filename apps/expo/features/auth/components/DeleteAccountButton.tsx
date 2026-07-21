@@ -1,5 +1,7 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
-import { ActivityIndicator, Alert, Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Alert } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
@@ -79,7 +81,7 @@ export function DeleteAccountButton() {
           ) : (
             <Icon name="trash-can-outline" color={colors.destructive} />
           )}
-          <Text style={{ color: colors.destructive }}>{t('auth.deleteAccount')}</Text>
+          <Text textColor={colors.destructive}>{t('auth.deleteAccount')}</Text>
         </View>
         <Icon name="chevron-right" color={colors.destructive} />
       </Button>

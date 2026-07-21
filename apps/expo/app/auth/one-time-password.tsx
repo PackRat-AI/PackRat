@@ -1,5 +1,7 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
-import { ActivityIndicator, AlertAnchor, Button, Text, TextField } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, AlertAnchor, TextField } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';

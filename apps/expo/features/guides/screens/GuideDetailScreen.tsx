@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { Markdown } from 'expo-app/components/Markdown';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

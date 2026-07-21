@@ -29,6 +29,13 @@ NativeWindUI was chosen for native look and feel. Expo UI now provides that dire
 
 Migrating a call site is: swap the import, keep `className`/`style` as-is for layout (typography classes on `Text` self-resolve via the parser), move `variant`/color-driven typography to the wrapper's semantic props (`variant`, `color`, `textColor` for one-off hex overrides) only when there's no matching class. **Always reload and eyeball the screen after converting it** — the `matchContents` bug reproduced silently in the type system and only showed up visually.
 
+**Known gaps, kept on `@packrat-ai/nativewindui`, not migrated:**
+- `apps/expo/features/packs/components/GapSuggestionRow.tsx` — `Text` used as a `MaskedView` `maskElement`; a `Host`-bridged native view's compatibility with `MaskedView`'s alpha-mask rendering is unverified, higher risk than worth it for this one file.
+- `apps/expo/app/(app)/demo/index.tsx` — dev-only component showcase screen using `uiTextView`/`selectable` props with no `@expo/ui` equivalent.
+- `apps/expo/features/ai/components/ChatBubble.tsx` — one `Text` aliased to `SelectableText` (old package) for the text-selection bottom sheet; `selectable` has no `@expo/ui` equivalent. The other 4 `Text` uses in that file are migrated.
+
+**Codemod caveat:** the bulk of Text/Button call sites (139 files) were converted via a scripted import swap + typecheck pass, not one-by-one on-device verification like the first two files. The `matchContents`-collapse bug (zero-height stacking) is a silent, type-safe failure — a broad visual QA pass across converted screens is still owed before calling this phase fully verified, typecheck passing is necessary but not sufficient.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.

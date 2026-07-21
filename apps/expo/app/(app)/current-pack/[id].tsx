@@ -1,6 +1,6 @@
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/src/avatar';
+import { Text } from '@packrat/ui/src/text';
 import { parseWeightUnit } from '@packrat/units';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
@@ -77,7 +77,7 @@ function CategoryItem({ category, index }: { category: CategorySummary; index: n
         className="h-6 w-6 items-center justify-center rounded-full"
         style={{ backgroundColor: colors.grey4 }}
       >
-        <Text variant="caption2" style={{ color: colors.grey }}>
+        <Text variant="caption2" textColor={colors.grey}>
           {category.items}
         </Text>
       </View>

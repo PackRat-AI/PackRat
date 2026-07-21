@@ -1,7 +1,7 @@
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { IosTransparentHeaderOverlapFix } from '@packrat/ui/src/ios-transparent-header-overlap-fix';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
+import { Text } from '@packrat/ui/src/text';
 import { catalogGroupVariantsAtom } from 'expo-app/atoms/catalogGroupAtom';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';

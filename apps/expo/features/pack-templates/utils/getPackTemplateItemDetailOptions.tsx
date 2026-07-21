@@ -1,5 +1,6 @@
 import { assertDefined } from '@packrat/guards';
-import { Alert, Button } from '@packrat/ui/nativewindui';
+import { Alert } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';

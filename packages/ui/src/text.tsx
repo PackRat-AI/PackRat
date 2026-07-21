@@ -1,3 +1,4 @@
+import type { UniversalTextStyle } from '@expo/ui';
 import { Text as ExpoText, Host } from '@expo/ui';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { cssInterop } from 'nativewind';
@@ -62,6 +63,8 @@ type TextProps = {
   color?: TextColor;
   /** Overrides the resolved theme/variant color (e.g. a fixed brand/status hex). */
   textColor?: string;
+  /** Escape hatch for arbitrary native text styling not covered by variant/color/className. */
+  textStyle?: UniversalTextStyle;
   numberOfLines?: number;
   /**
    * NativeWind classes. Font-weight/size, text-align, and text-color utilities (font-medium,
@@ -79,6 +82,7 @@ function Text({
   variant = 'body',
   color = 'primary',
   textColor,
+  textStyle,
   numberOfLines,
   className,
   style,
@@ -103,6 +107,7 @@ function Text({
           fontWeight: VARIANT_WEIGHT[variant],
           color: textColor ?? colors[COLOR_KEY[color]],
           ...classTextStyle,
+          ...textStyle,
         }}
       >
         {flattenToString(children)}

@@ -5,8 +5,8 @@ import {
   CardFooter,
   CardSubtitle,
   CardTitle,
-  Text,
 } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { cn } from 'expo-app/lib/cn';

@@ -1,14 +1,14 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   AlertAnchor,
-  Button,
   Checkbox,
   Form,
   FormItem,
   FormSection,
-  Text,
   TextField,
 } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';

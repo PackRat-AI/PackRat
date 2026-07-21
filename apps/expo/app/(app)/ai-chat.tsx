@@ -1,6 +1,8 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
 import { clientEnvs } from '@packrat/env/expo-client';
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import {
   DefaultChatTransport,
   lastAssistantMessageIsCompleteWithToolCalls,

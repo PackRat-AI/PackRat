@@ -1,4 +1,5 @@
-import { ActivityIndicator, Text, TextField } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, TextField } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

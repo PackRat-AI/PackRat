@@ -1,5 +1,6 @@
-import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Text } from '@packrat/ui/src/text';
 import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { TrailConditionReportCard } from 'expo-app/features/trail-conditions/components/TrailConditionReportCard';

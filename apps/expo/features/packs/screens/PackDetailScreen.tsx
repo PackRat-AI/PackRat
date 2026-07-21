@@ -1,6 +1,8 @@
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { isDefined } from '@packrat/guards';
-import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Sheet, useSheetRef } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { devSkipAutoAnalyzeAtom } from 'expo-app/atoms/devAtoms';

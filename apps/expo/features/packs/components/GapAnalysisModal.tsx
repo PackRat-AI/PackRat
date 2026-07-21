@@ -1,4 +1,6 @@
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { devSkipAutoAnalyzeAtom } from 'expo-app/atoms/devAtoms';
 import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
@@ -335,7 +337,7 @@ function DevGapPanel({
               <Text
                 variant="footnote"
                 className="font-semibold"
-                style={{ color: isActive ? 'white' : colors.foreground }}
+                textColor={isActive ? 'white' : colors.foreground}
               >
                 {chip.label}
               </Text>
@@ -356,7 +358,7 @@ function DevGapPanel({
           <Text
             variant="footnote"
             className="font-semibold"
-            style={{ color: skipAutoAnalyze ? 'white' : colors.foreground }}
+            textColor={skipAutoAnalyze ? 'white' : colors.foreground}
           >
             {skipAutoAnalyze ? 'ON' : 'OFF'}
           </Text>
@@ -498,7 +500,7 @@ export function GapAnalysisModal({
         {/* Header */}
         <View className="flex-row items-center justify-between border-b border-border p-4">
           <View className="flex-1">
-            <Text variant="footnote" className="uppercase text-xs" style={{ color: colors.grey2 }}>
+            <Text variant="footnote" className="uppercase text-xs" textColor={colors.grey2}>
               {t('packs.gapAnalysis')}
             </Text>
             <Text numberOfLines={1}>{pack.name}</Text>
