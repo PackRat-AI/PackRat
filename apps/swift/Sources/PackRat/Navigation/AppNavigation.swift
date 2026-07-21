@@ -67,6 +67,7 @@ private enum PhoneTab: Hashable {
     case packs
     case trips
     case chat
+    case profile
 
     init?(navItem: NavItem) {
         switch navItem {
@@ -78,12 +79,15 @@ private enum PhoneTab: Hashable {
         }
     }
 
+    /// The `NavItem` this tab maps to, or `nil` for tabs (like `.profile`)
+    /// that are not `NavItem` destinations and manage their own content.
     var navItem: NavItem? {
         switch self {
         case .home: return .home
         case .packs: return .packs
         case .trips: return .trips
         case .chat: return .chat
+        case .profile: return nil
         }
     }
 }
@@ -307,6 +311,23 @@ struct AppNavigation: View {
                 .tabItem { Label(item.label, systemImage: item.symbol) }
                 .tag(PhoneTab(navItem: item)!)
             }
+
+            NavigationStack {
+                ProfileView()
+                    .navigationTitle("Profile")
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            NavigationLink {
+                                PreferencesView()
+                            } label: {
+                                Label("Settings", systemImage: "gearshape")
+                            }
+                            .accessibilityIdentifier("profile_settings_button")
+                        }
+                    }
+            }
+            .tabItem { Label("Profile", systemImage: "person.circle") }
+            .tag(PhoneTab.profile)
         }
         .onChange(of: phoneTab) { _, newTab in
             if let item = newTab.navItem {

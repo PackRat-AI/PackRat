@@ -42,6 +42,7 @@ struct PackRatApp: App {
         #if os(macOS)
         Settings {
             PreferencesView()
+                .environment(authManager)
         }
 
         WindowGroup("Pack", id: "pack", for: String.self) { $packId in

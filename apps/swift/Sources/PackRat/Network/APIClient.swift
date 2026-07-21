@@ -25,11 +25,35 @@ actor APIClient {
         "production": "https://packrat-api.orange-frost-d665.workers.dev",
     ]
 
+    /// The build-time environment name from `PACKRAT_ENV` (xcconfig → Info.plist).
+    /// `nil` if unset.
+    static var environmentName: String? {
+        Bundle.main.object(forInfoDictionaryKey: "PACKRAT_ENV") as? String
+    }
+
+    /// True for local/dev/staging builds — anything that is not the production
+    /// release. Used to gate developer-only UI (API server override, clear app
+    /// data) so those controls never ship to end users. Debug builds always
+    /// qualify; release builds only if their `PACKRAT_ENV` is not `production`
+    /// (the Staging config ships a `release` build pointed at the dev API).
+    static var isNonProduction: Bool {
+        #if DEBUG
+        return true
+        #else
+        return environmentName != "production"
+        #endif
+    }
+
     static var resolvedBaseURL: URL {
         if let override = ProcessInfo.processInfo.environment["E2E_API_BASE_URL"],
            !override.isEmpty,
            let url = URL(string: override) { return url }
-        if let override = UserDefaults.standard.string(forKey: "apiBaseURL"),
+        // Honor the user-facing API server override only in non-production
+        // builds. The override UI is gated the same way (see PreferencesView),
+        // but gate the read too so a stale/injected value can never repoint a
+        // production app at another backend.
+        if isNonProduction,
+           let override = UserDefaults.standard.string(forKey: "apiBaseURL"),
            !override.isEmpty,
            let url = URL(string: override) { return url }
         if let env = Bundle.main.object(forInfoDictionaryKey: "PACKRAT_ENV") as? String,
