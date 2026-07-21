@@ -139,7 +139,7 @@ struct PacksListView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(.background)
+        .background(.bar)
     }
 
     // MARK: - Pack Row
@@ -177,9 +177,6 @@ struct PacksListView: View {
                     }
                 }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(.background)
         .accessibilityIdentifier(isExplore ? "packs_public_list" : "packs_list")
     }
 
