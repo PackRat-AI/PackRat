@@ -26,36 +26,42 @@ struct PacksListView: View {
     }
 
     var body: some View {
-        Group {
-            if viewModel.isLoading && viewModel.packs.isEmpty && !isExplore {
-                ProgressView("Loading packs…").frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.error, viewModel.packs.isEmpty, !isExplore {
-                ErrorView(error, retry: { await viewModel.load(context: modelContext) })
-            } else if isLoadingPublic && publicPacks.isEmpty {
-                ProgressView("Loading…").frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if displayedPacks.isEmpty && !viewModel.searchText.isEmpty {
-                ContentUnavailableView.search(text: viewModel.searchText)
-                    .accessibilityIdentifier("packs_search_empty_state")
-            } else if displayedPacks.isEmpty && !isExplore {
-                EmptyStateView(
-                    "No Packs Yet",
-                    subtitle: "Create your first pack to start tracking gear weight",
-                    systemImage: "backpack",
-                    actionLabel: "New Pack",
-                    accessibilityIdentifier: "packs_empty_state",
-                    action: { showingCreateSheet = true }
-                )
-            } else if displayedPacks.isEmpty && isExplore {
-                EmptyStateView(
-                    "No Public Packs",
-                    subtitle: "No packs match your filter",
-                    systemImage: "globe",
-                    accessibilityIdentifier: "packs_public_empty_state"
-                )
-            } else {
-                packList
+        VStack(spacing: 0) {
+            categoryFilterBar
+
+            Group {
+                if viewModel.isLoading && viewModel.packs.isEmpty && !isExplore {
+                    ProgressView("Loading packs…").frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = viewModel.error, viewModel.packs.isEmpty, !isExplore {
+                    ErrorView(error, retry: { await viewModel.load(context: modelContext) })
+                } else if isLoadingPublic && publicPacks.isEmpty {
+                    ProgressView("Loading…").frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if displayedPacks.isEmpty && !viewModel.searchText.isEmpty {
+                    ContentUnavailableView.search(text: viewModel.searchText)
+                        .accessibilityIdentifier("packs_search_empty_state")
+                } else if displayedPacks.isEmpty && !isExplore {
+                    EmptyStateView(
+                        "No Packs Yet",
+                        subtitle: "Create your first pack to start tracking gear weight",
+                        systemImage: "backpack",
+                        actionLabel: "New Pack",
+                        accessibilityIdentifier: "packs_empty_state",
+                        action: { showingCreateSheet = true }
+                    )
+                } else if displayedPacks.isEmpty && isExplore {
+                    EmptyStateView(
+                        "No Public Packs",
+                        subtitle: "No packs match your filter",
+                        systemImage: "globe",
+                        accessibilityIdentifier: "packs_public_empty_state"
+                    )
+                } else {
+                    packList
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .background(.background)
         .navigationTitle("Packs")
         .searchable(text: $viewModel.searchText, prompt: "Search packs")
         .toolbar {
@@ -76,9 +82,6 @@ struct PacksListView: View {
                 }
                 .accessibilityIdentifier("packs_recent_button")
             }
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            categoryFilterBar
         }
         .task { await viewModel.load(context: modelContext) }
         .refreshable {
@@ -136,7 +139,7 @@ struct PacksListView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(.bar)
+        .background(.background)
     }
 
     // MARK: - Pack Row
@@ -174,6 +177,9 @@ struct PacksListView: View {
                     }
                 }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(.background)
         .accessibilityIdentifier(isExplore ? "packs_public_list" : "packs_list")
     }
 
