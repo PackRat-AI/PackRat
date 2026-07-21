@@ -315,6 +315,16 @@ struct AppNavigation: View {
             NavigationStack {
                 ProfileView()
                     .navigationTitle("Profile")
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            NavigationLink {
+                                PreferencesView()
+                            } label: {
+                                Label("Settings", systemImage: "gearshape")
+                            }
+                            .accessibilityIdentifier("profile_settings_button")
+                        }
+                    }
             }
             .tabItem { Label("Profile", systemImage: "person.circle") }
             .tag(PhoneTab.profile)

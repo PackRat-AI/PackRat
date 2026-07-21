@@ -8,6 +8,7 @@ final class AppPreferences: ObservableObject {
     @AppStorage("defaultAppWeightUnit") var defaultAppWeightUnit: AppWeightUnit = .grams
     @AppStorage("preferMetric") var preferMetric: Bool = true
     @AppStorage("temperatureUnit") var temperatureUnit: TemperatureUnit = .fahrenheit
+    @AppStorage("speedUnit") var speedUnit: SpeedUnit = .mph
     @AppStorage("accentColorName") var accentColorName: String = "blue"
     @AppStorage("apiBaseURL") var apiBaseURL: String = ""
 
@@ -25,9 +26,12 @@ struct PreferencesView: View {
     @AppStorage("defaultAppWeightUnit") private var defaultAppWeightUnit: AppWeightUnit = .grams
     @AppStorage("preferMetric") private var preferMetric: Bool = true
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
+    @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
     @AppStorage("apiBaseURL") private var apiBaseURL: String = ""
 
     var body: some View {
+        #if os(macOS)
+        // Fixed-size tabbed layout for the macOS Settings window (Cmd+,).
         TabView {
             generalTab
                 .tabItem { Label("General", systemImage: "gearshape") }
@@ -42,8 +46,26 @@ struct PreferencesView: View {
         }
         .padding(20)
         .frame(width: 460, height: 320)
+        #else
+        // iOS: a single scrolling form pushed onto a navigation stack. The
+        // macOS tabs become grouped sections so all settings stay reachable
+        // on iPhone, where there is no dedicated Settings window.
+        Form {
+            generalSection
+            unitsSection
+            advancedSection
+            #if DEBUG
+            Section("Debug") {
+                NavigationLink("On-device AI") { OfflineAIView() }
+            }
+            #endif
+            aboutSection
+        }
+        .navigationTitle("Settings")
+        #endif
     }
 
+    #if os(macOS)
     #if DEBUG
     private var debugTab: some View {
         NavigationStack {
@@ -53,31 +75,52 @@ struct PreferencesView: View {
     #endif
 
     private var generalTab: some View {
-        Form {
-            Section("Temperature") {
-                Picker("Display temperature in", selection: $temperatureUnit) {
-                    ForEach(AppPreferences.TemperatureUnit.allCases, id: \.self) { unit in
-                        Text(unit.label).tag(unit)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-        }
-        .packRatFormStyle()
+        Form { generalSection }
+            .packRatFormStyle()
     }
 
     private var unitsTab: some View {
-        Form {
-            Section("Weight") {
-                Picker("Default weight unit", selection: $defaultAppWeightUnit) {
-                    ForEach(AppWeightUnit.allCases, id: \.self) { unit in
-                        Text(unit.rawValue).tag(unit)
-                    }
+        Form { unitsSection }
+            .packRatFormStyle()
+    }
+
+    private var advancedTab: some View {
+        Form { advancedSection }
+            .packRatFormStyle()
+    }
+    #endif
+
+    @ViewBuilder
+    private var generalSection: some View {
+        Section("Temperature") {
+            Picker("Display temperature in", selection: $temperatureUnit) {
+                ForEach(AppPreferences.TemperatureUnit.allCases, id: \.self) { unit in
+                    Text(unit.label).tag(unit)
                 }
-                Toggle("Prefer metric display", isOn: $preferMetric)
             }
+            .pickerStyle(.segmented)
         }
-        .packRatFormStyle()
+    }
+
+    @ViewBuilder
+    private var unitsSection: some View {
+        Section("Weight") {
+            Picker("Default weight unit", selection: $defaultAppWeightUnit) {
+                ForEach(AppWeightUnit.allCases, id: \.self) { unit in
+                    Text(unit.rawValue).tag(unit)
+                }
+            }
+            Toggle("Prefer metric display", isOn: $preferMetric)
+        }
+
+        Section("Wind & Distance") {
+            Picker("Wind & distance", selection: $speedUnit) {
+                ForEach(SpeedUnit.allCases, id: \.self) { unit in
+                    Text(unit.label).tag(unit)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
     }
 
     private var effectiveURL: String {
@@ -87,45 +130,69 @@ struct PreferencesView: View {
         return "http://localhost:8787"
     }
 
-    private var advancedTab: some View {
-        Form {
-            Section("API Server") {
-                HStack {
-                    ForEach(["local", "dev", "production"], id: \.self) { env in
-                        if let url = APIClient.environments[env] {
-                            Button(env.capitalized) {
-                                apiBaseURL = url == apiBaseURL ? "" : url
-                            }
-                            .buttonStyle(.bordered)
-                            .tint(effectiveURL == url ? .accentColor : nil)
+    @ViewBuilder
+    private var advancedSection: some View {
+        Section("API Server") {
+            HStack {
+                ForEach(["local", "dev", "production"], id: \.self) { env in
+                    if let url = APIClient.environments[env] {
+                        Button(env.capitalized) {
+                            apiBaseURL = url == apiBaseURL ? "" : url
                         }
+                        .buttonStyle(.bordered)
+                        .tint(effectiveURL == url ? .accentColor : nil)
                     }
                 }
-                TextField("Custom URL (overrides build default)", text: $apiBaseURL)
-                    .textFieldStyle(.roundedBorder)
-                LabeledContent("Effective") {
-                    Text(effectiveURL)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                }
-                Text("Empty = use build-time default (PACKRAT_ENV from xcconfig). Changes apply immediately.")
-                    .font(.caption)
+            }
+            TextField("Custom URL (overrides build default)", text: $apiBaseURL)
+                .textFieldStyle(.roundedBorder)
+            LabeledContent("Effective") {
+                Text(effectiveURL)
+                    .font(.caption.monospaced())
                     .foregroundStyle(.secondary)
             }
+            Text("Empty = use build-time default (PACKRAT_ENV from xcconfig). Changes apply immediately.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
 
-            Section {
-                Button("Reset All Preferences", role: .destructive) {
-                    resetDefaults()
-                }
+        Section {
+            Button("Reset All Preferences", role: .destructive) {
+                resetDefaults()
             }
         }
-        .packRatFormStyle()
+
+        #if os(macOS)
+        aboutSection
+        #endif
+    }
+
+    @ViewBuilder
+    private var aboutSection: some View {
+        Section("About") {
+            LabeledContent(appName, value: appVersionString)
+        }
+    }
+
+    private var appName: String {
+        (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
+            ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String)
+            ?? "PackRat"
+    }
+
+    /// "v1.2.3 (45)" — short version + build number, matching the version
+    /// string the Expo Settings screen shows.
+    private var appVersionString: String {
+        let short = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "—"
+        let build = (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? ""
+        return build.isEmpty ? "v\(short)" : "v\(short) (\(build))"
     }
 
     private func resetDefaults() {
         defaultAppWeightUnit = .grams
         preferMetric = true
         temperatureUnit = .fahrenheit
+        speedUnit = .mph
         apiBaseURL = ""
     }
 }
