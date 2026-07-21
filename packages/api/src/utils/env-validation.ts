@@ -54,6 +54,9 @@ export const apiEnvObjectSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string(),
   // Apple Sign In (Better Auth social provider)
   APPLE_CLIENT_ID: z.string(), // bundle ID e.g. world.packrat.app
+  // Native Swift app's distinct bundle ID (separate Xcode target, not an EAS build
+  // variant of the Expo app) — appears in its Apple ID token's `aud` claim.
+  APPLE_SWIFT_CLIENT_ID: z.string().optional(),
   APPLE_PRIVATE_KEY: z.string(), // .p8 key contents — store via wrangler secret
   APPLE_KEY_ID: z.string(),
   APPLE_TEAM_ID: z.string(),
