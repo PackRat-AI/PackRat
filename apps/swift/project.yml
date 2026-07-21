@@ -146,8 +146,8 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "2.0.29"
-        CURRENT_PROJECT_VERSION: "2026071601"
+        MARKETING_VERSION: "2.1.0"
+        CURRENT_PROJECT_VERSION: "2026072101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
         PACKRAT_IOS_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift
@@ -185,8 +185,8 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "2.0.29"
-        CURRENT_PROJECT_VERSION: "2026071601"
+        MARKETING_VERSION: "2.1.0"
+        CURRENT_PROJECT_VERSION: "2026072101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
         PACKRAT_WATCH_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift.watchkitapp
@@ -247,8 +247,8 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "2.0.29"
-        CURRENT_PROJECT_VERSION: "2026071601"
+        MARKETING_VERSION: "2.1.0"
+        CURRENT_PROJECT_VERSION: "2026072101"
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
         CODE_SIGN_IDENTITY: "-"

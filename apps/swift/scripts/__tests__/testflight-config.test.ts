@@ -38,6 +38,7 @@ describe('parseTestFlightUploadConfig', () => {
       watchBundleId: 'com.andrewbierman.packrat.swift.watchkitapp',
       companionBundleId: 'com.andrewbierman.packrat.swift',
       displayName: 'PackRat Swift',
+      marketingVersion: '2.1.0',
       buildNumber: '123',
       apiEnvironment: 'production',
     });
@@ -59,10 +60,12 @@ describe('parseTestFlightUploadConfig', () => {
       watchBundleId: 'com.andrewbierman.packrat.watchkitapp',
       companionBundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
+      marketingVersion: '2.1.0',
       buildNumber: '456',
       apiEnvironment: 'production',
     });
     expect(xcodeArchiveOverrides({ config, teamId: 'TEAM123' })).toEqual([
+      'MARKETING_VERSION=2.1.0',
       'CURRENT_PROJECT_VERSION=456',
       'DEVELOPMENT_TEAM=TEAM123',
       'PACKRAT_IOS_BUNDLE_IDENTIFIER=com.andrewbierman.packrat',
@@ -103,9 +106,22 @@ describe('parseTestFlightUploadConfig', () => {
       dryRun: true,
       bundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
+      marketingVersion: '2.1.0',
       apiEnvironment: 'production',
       buildNumber: '101',
     });
+  });
+
+  it('allows an explicit marketing version override for controlled release testing', () => {
+    const config = parseTestFlightUploadConfig({
+      argv: ['--replacement', '--production'],
+      env: { BUILD_NUMBER: '2026072101', MARKETING_VERSION: '2.1.1' },
+    });
+
+    expect(config.marketingVersion).toBe('2.1.1');
+    expect(xcodeArchiveOverrides({ config, teamId: 'TEAM123' })).toContain(
+      'MARKETING_VERSION=2.1.1',
+    );
   });
 
   it('rejects conflicting API profile flags', () => {

@@ -10,6 +10,7 @@ export type TestFlightUploadConfig = {
   watchBundleId: string;
   companionBundleId: string;
   displayName: string;
+  marketingVersion: string;
   buildNumber: string;
   apiEnvironment: 'dev' | 'production';
 };
@@ -37,10 +38,11 @@ const SIDE_BY_SIDE_BUNDLE_ID = 'com.andrewbierman.packrat.swift';
 const REPLACEMENT_BUNDLE_ID = 'com.andrewbierman.packrat';
 const SIDE_BY_SIDE_WATCH_BUNDLE_ID = 'com.andrewbierman.packrat.swift.watchkitapp';
 const REPLACEMENT_WATCH_BUNDLE_ID = 'com.andrewbierman.packrat.watchkitapp';
+const SWIFT_MARKETING_VERSION = '2.1.0';
 
 export function parseTestFlightUploadConfig(input: {
   argv: readonly string[];
-  env?: { BUILD_NUMBER?: string | undefined };
+  env?: { BUILD_NUMBER?: string | undefined; MARKETING_VERSION?: string | undefined };
 }): TestFlightUploadConfig {
   const { argv, env = {} } = input;
   const sideBySide = argv.includes('--side-by-side');
@@ -59,6 +61,7 @@ export function parseTestFlightUploadConfig(input: {
   }
 
   const lane: TestFlightLane = replacement ? 'replacement' : 'side-by-side';
+  const marketingVersion = env.MARKETING_VERSION ?? SWIFT_MARKETING_VERSION;
   const buildNumber = env.BUILD_NUMBER ?? String(Math.floor(Date.now() / 1000));
 
   return {
@@ -71,6 +74,7 @@ export function parseTestFlightUploadConfig(input: {
     watchBundleId: replacement ? REPLACEMENT_WATCH_BUNDLE_ID : SIDE_BY_SIDE_WATCH_BUNDLE_ID,
     companionBundleId: replacement ? REPLACEMENT_BUNDLE_ID : SIDE_BY_SIDE_BUNDLE_ID,
     displayName: replacement ? 'PackRat' : 'PackRat Swift',
+    marketingVersion,
     buildNumber,
     apiEnvironment: staging ? 'dev' : 'production',
   };
@@ -82,6 +86,7 @@ export function xcodeArchiveOverrides(input: {
 }): string[] {
   const { config, teamId } = input;
   return [
+    `MARKETING_VERSION=${config.marketingVersion}`,
     `CURRENT_PROJECT_VERSION=${config.buildNumber}`,
     `DEVELOPMENT_TEAM=${teamId}`,
     `PACKRAT_IOS_BUNDLE_IDENTIFIER=${config.bundleId}`,

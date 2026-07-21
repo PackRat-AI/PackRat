@@ -21,6 +21,8 @@
  *   APPLE_ASC_PROVIDER       App Store Connect provider short name for altool;
  *                            defaults to APPLE_TEAM_ID when omitted
  *   BUILD_NUMBER             CFBundleVersion for this upload (default: timestamp)
+ *   MARKETING_VERSION        CFBundleShortVersionString for this upload
+ *                            (default: Swift minor bump 2.1.0)
  *   APP_STORE_CURRENT_BUILD_NUMBER
  *                            Required for --replacement uploads; latest existing
  *                            PackRat App Store/TestFlight build number.
@@ -86,7 +88,7 @@ let uploadConfig: TestFlightUploadConfig;
 try {
   uploadConfig = parseTestFlightUploadConfig({
     argv: process.argv.slice(2),
-    env: { BUILD_NUMBER: nodeEnv.BUILD_NUMBER },
+    env: { BUILD_NUMBER: nodeEnv.BUILD_NUMBER, MARKETING_VERSION: nodeEnv.MARKETING_VERSION },
   });
 } catch (error) {
   if (error instanceof TestFlightConfigError) {
@@ -117,6 +119,7 @@ function printPreflight(input: {
       scheme: config.scheme,
       configuration: config.configuration,
       apiEnvironment: config.apiEnvironment,
+      marketingVersion: config.marketingVersion,
       buildNumber: config.buildNumber,
       ascProvider,
       archiveOverrides,

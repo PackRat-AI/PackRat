@@ -20,10 +20,12 @@ describe('upload-testflight CLI', () => {
       lane: 'replacement',
       bundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
+      marketingVersion: '2.1.0',
       buildNumber: '2026071801',
       apiEnvironment: 'production',
       ascProvider: 'PackRatProvider',
     });
+    expect(preflight.archiveOverrides).toContain('MARKETING_VERSION=2.1.0');
     expect(preflight.archiveOverrides).toContain('CURRENT_PROJECT_VERSION=2026071801');
   });
 
@@ -44,6 +46,7 @@ describe('upload-testflight CLI', () => {
       bundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
       apiEnvironment: 'production',
+      marketingVersion: '2.1.0',
       buildNumber: '2026071802',
       currentAppStoreBuildNumber: '2026071801',
       ok: true,

@@ -138,6 +138,85 @@ struct WeatherViewModelTests {
         vm.onSearchTextChanged()
         #expect(vm.searchResults.isEmpty)
     }
+
+    @Test("selectLocation falls back to by-name forecast when id lookup fails")
+    @MainActor func forecastFallsBackToByName() async {
+        let service = FallbackWeatherService()
+        let vm = WeatherViewModel(service: service)
+        let denver = WeatherLocation(
+            id: 5419384,
+            name: "Denver",
+            region: "Colorado",
+            country: "United States",
+            lat: 39.74,
+            lon: -104.98
+        )
+
+        await vm.selectLocation(denver)
+
+        #expect(vm.forecast?.location?.name == "Denver")
+        #expect(vm.forecastError == nil)
+        #expect(await service.idForecastRequests == 1)
+        #expect(await service.nameForecastQueries == ["Denver, Colorado"])
+    }
+}
+
+private actor FallbackWeatherService: WeatherServicing {
+    private(set) var idForecastRequests = 0
+    private(set) var nameForecastQueries: [String] = []
+
+    func searchLocations(query: String) async throws -> [WeatherLocation] {
+        [
+            WeatherLocation(
+                id: 5419384,
+                name: "Denver",
+                region: "Colorado",
+                country: "United States",
+                lat: 39.74,
+                lon: -104.98
+            ),
+        ]
+    }
+
+    func getForecast(locationId: Int) async throws -> WeatherForecastResponse {
+        idForecastRequests += 1
+        throw PackRatError.httpError(statusCode: 500, message: "WeatherAPI HTTP 500")
+    }
+
+    func getForecast(query: String) async throws -> WeatherForecastResponse {
+        nameForecastQueries.append(query)
+        return WeatherForecastResponse(
+            location: WeatherResponseLocation(
+                id: 5419384,
+                name: "Denver",
+                region: "Colorado",
+                country: "United States",
+                lat: 39.74,
+                lon: -104.98,
+                localtime: nil,
+                localtimeEpoch: nil,
+                tzId: nil
+            ),
+            current: WeatherCurrent(
+                tempC: 22,
+                tempF: 72,
+                feelslikeC: 22,
+                feelslikeF: 72,
+                humidity: 32,
+                windMph: 7,
+                windKph: 11,
+                windDir: "WSW",
+                condition: WeatherCondition(text: "Partly cloudy", icon: nil, code: 1003),
+                uv: 5,
+                visMiles: 10,
+                precipIn: 0,
+                cloud: 25,
+                isDay: 1
+            ),
+            forecast: WeatherForecast(forecastday: []),
+            alerts: WeatherAlertsWrapper(alert: [])
+        )
+    }
 }
 
 // MARK: - CatalogViewModel

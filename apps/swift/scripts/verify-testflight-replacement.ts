@@ -38,7 +38,7 @@ if (HELP) {
 try {
   const config = parseTestFlightUploadConfig({
     argv: process.argv.slice(2),
-    env: { BUILD_NUMBER: nodeEnv.BUILD_NUMBER },
+    env: { BUILD_NUMBER: nodeEnv.BUILD_NUMBER, MARKETING_VERSION: nodeEnv.MARKETING_VERSION },
   });
   const readiness = verifyTestFlightReplacementReadiness({
     config,
@@ -53,6 +53,7 @@ try {
     displayName: config.displayName,
     configuration: config.configuration,
     apiEnvironment: config.apiEnvironment,
+    marketingVersion: config.marketingVersion,
     buildNumber: config.buildNumber,
     currentAppStoreBuildNumber: nodeEnv.APP_STORE_CURRENT_BUILD_NUMBER ?? null,
     ok: readiness.ok,
