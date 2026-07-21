@@ -50,15 +50,7 @@ struct ProfileView: View {
     }
 
     private var authenticatedProfile: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                avatarSection
-                    .padding(.top, 8)
-
-                profileForm
-            }
-            .padding()
-        }
+        profileForm
     }
 
     private var guestProfile: some View {
@@ -97,6 +89,16 @@ struct ProfileView: View {
 
     private var profileForm: some View {
         Form {
+            Section {
+                HStack {
+                    Spacer()
+                    avatarSection
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+            }
+            .listRowBackground(Color.clear)
+
             Section("Account Info") {
                 LabeledContent("Email") {
                     Text(authManager.currentUser?.email ?? "")
