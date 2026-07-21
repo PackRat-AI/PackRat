@@ -25,9 +25,20 @@ actor APIClient {
         "production": "https://packrat-api.orange-frost-d665.workers.dev",
     ]
 
-    /// Public R2 bucket URL for user-uploaded images (avatars, pack photos).
-    /// Fixed across environments — matches `EXPO_PUBLIC_R2_PUBLIC_URL` on the Expo side.
-    static let r2PublicURL = "https://pub-c3852b07b730407889986338ca3ef0e5.r2.dev"
+    /// Public R2 bucket URL for user-uploaded images (avatars, pack photos), per
+    /// `PACKRAT_ENV`. Production has its own bucket; local/dev-local/dev share the
+    /// dev bucket. Matches `EXPO_PUBLIC_R2_PUBLIC_URL` per EAS environment
+    /// (`eas env:list production|preview|development` in apps/expo).
+    static let r2PublicURLs: [String: String] = [
+        "local":      "https://pub-c3852b07b730407889986338ca3ef0e5.r2.dev",
+        "dev-local":  "https://pub-c3852b07b730407889986338ca3ef0e5.r2.dev",
+        "dev":        "https://pub-c3852b07b730407889986338ca3ef0e5.r2.dev",
+        "production": "https://pub-f2a42eb361574f2194b90161912acf3d.r2.dev",
+    ]
+
+    static var r2PublicURL: String {
+        r2PublicURLs[environmentName ?? ""] ?? r2PublicURLs["dev"]!
+    }
 
     /// Resolves a possibly-relative R2 object key to a fetchable absolute URL.
     /// Server-stored image fields (e.g. `avatarUrl`) may be a bare R2 key or

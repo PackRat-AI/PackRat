@@ -1,6 +1,7 @@
 import SwiftUI
 import NukeUI
 import PhotosUI
+import Sentry
 
 struct ProfileView: View {
     @Environment(AuthManager.self) private var authManager
@@ -213,6 +214,10 @@ struct ProfileView: View {
                 defer { avatarPhotoItem = nil }
                 guard let data = try? await item.loadTransferable(type: Data.self),
                       let image = UIImage(data: data) else { return }
+                guard data.count <= Self.avatarMaxBytes else {
+                    saveError = "Image is too large. Please choose a photo under 5MB."
+                    return
+                }
                 await uploadAvatar(image: image)
             }
         }
@@ -295,20 +300,53 @@ struct ProfileView: View {
             let endpoint = Endpoint(.put, "/api/user/profile", body: AvatarBody(avatarUrl: avatarUrl))
             try await APIClient.shared.sendDiscarding(endpoint)
             try await authManager.refreshProfile()
-        } catch { }
+        } catch {
+            saveError = error.localizedDescription
+            SentrySDK.capture(error: error) { scope in
+                scope.setTag(value: "profile", key: "feature")
+                scope.setTag(value: "updateAvatarUrl", key: "action")
+            }
+        }
     }
+
+    /// Matches Expo's client-side avatar size guard (profile/index.tsx AVATAR_MAX_BYTES).
+    private static let avatarMaxBytes = 5 * 1024 * 1024
 
     #if os(macOS)
     private func uploadAvatar(url: URL) async {
-        guard let publicUrl = try? await UploadService.shared.uploadImage(at: url) else { return }
-        await uploadAvatar(avatarUrl: publicUrl)
+        guard let userId = authManager.currentUser?.id else { return }
+        isUploadingAvatar = true
+        do {
+            let objectKey = try await UploadService.shared.uploadImage(at: url, userId: userId)
+            isUploadingAvatar = false
+            await uploadAvatar(avatarUrl: objectKey)
+        } catch {
+            isUploadingAvatar = false
+            saveError = error.localizedDescription
+            SentrySDK.capture(error: error) { scope in
+                scope.setTag(value: "profile", key: "feature")
+                scope.setTag(value: "uploadAvatar", key: "action")
+            }
+        }
     }
     #endif
 
     #if os(iOS)
     private func uploadAvatar(image: UIImage) async {
-        guard let publicUrl = try? await UploadService.shared.uploadUIImage(image) else { return }
-        await uploadAvatar(avatarUrl: publicUrl)
+        guard let userId = authManager.currentUser?.id else { return }
+        isUploadingAvatar = true
+        do {
+            let objectKey = try await UploadService.shared.uploadUIImage(image, userId: userId)
+            isUploadingAvatar = false
+            await uploadAvatar(avatarUrl: objectKey)
+        } catch {
+            isUploadingAvatar = false
+            saveError = error.localizedDescription
+            SentrySDK.capture(error: error) { scope in
+                scope.setTag(value: "profile", key: "feature")
+                scope.setTag(value: "uploadAvatar", key: "action")
+            }
+        }
     }
     #endif
 }
