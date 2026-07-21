@@ -17,7 +17,7 @@ struct RemoteImage<Placeholder: View>: View {
     }
 
     var body: some View {
-        if let urlString = url, let imageURL = URL(string: urlString) {
+        if let imageURL = APIClient.resolvedImageURL(url) {
             LazyImage(url: imageURL) { state in
                 if let image = state.image {
                     image

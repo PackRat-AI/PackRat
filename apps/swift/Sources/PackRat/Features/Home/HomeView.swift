@@ -89,22 +89,23 @@ struct HomeView: View {
 
     private var headerSection: some View {
         HStack(alignment: .center, spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(.tint.opacity(0.12))
-
-                if authManager.currentUser == nil {
+            if authManager.currentUser == nil {
+                ZStack {
+                    Circle()
+                        .fill(.tint.opacity(0.12))
                     Image(systemName: "person.crop.circle.fill")
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.tint)
                         .symbolRenderingMode(.hierarchical)
-                } else {
-                    Text(authManager.currentUser?.initials ?? "?")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.tint)
                 }
+                .frame(width: 44, height: 44)
+            } else {
+                AvatarView(
+                    url: authManager.currentUser?.avatarUrl,
+                    fallbackText: authManager.currentUser?.initials ?? "?",
+                    size: 44
+                )
             }
-            .frame(width: 44, height: 44)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(firstName.isEmpty ? greeting : "\(greeting), \(firstName)")

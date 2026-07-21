@@ -393,14 +393,11 @@ struct AppNavigation: View {
         let email = authManager.currentUser?.email ?? ""
 
         return HStack(spacing: 8) {
-            Circle()
-                .fill(.tint.opacity(0.12))
-                .frame(width: 30, height: 30)
-                .overlay {
-                    Text(authManager.currentUser?.initials ?? "?")
-                        .font(.caption.bold())
-                        .foregroundStyle(.tint)
-                }
+            AvatarView(
+                url: authManager.currentUser?.avatarUrl,
+                fallbackText: authManager.currentUser?.initials ?? "?",
+                size: 30
+            )
             VStack(alignment: .leading, spacing: 1) {
                 if let displayName {
                     Text(displayName)
