@@ -73,6 +73,24 @@ Verified on-device (iOS): `auth/(login)/index.tsx` renders correctly — grouped
 
 **Phase 3 is now fully complete** — all of Text, Button, List, Toggle, TextField, Sheet, and Form/FormSection/FormItem are migrated off `@packrat-ai/nativewindui`. Remaining work is Phase 4 (`Alert`, `ContextMenu`/`DropdownMenu`, `Toolbar` — all previously deprioritized as higher-risk) and Phase 2's `SearchInput`.
 
+## Resolved: Alert/AlertAnchor — no @expo/ui bridge needed on either platform
+
+Investigated the previously-paused `Alert` (blocked earlier in this migration on an unverified `ExpoAlert.Trigger` invisible-button mechanism and `@expo/ui` Jetpack Compose `AlertDialog`'s fixed 2-button/no-prompt-slot limitation, which can't cover the old API's N-button + prompt-mode surface). Re-reading the old package's actual source resolved both blockers at once: **the old package's Android/default `Alert` was never `@expo/ui` either** — it was already built on `@rn-primitives/alert-dialog` (an unstyled RN primitive, not a native bridge). Only the docs' original replacement-map guess (SwiftUI Alert + Jetpack Compose AlertDialog) assumed otherwise.
+
+Given that, the simplest and lowest-risk path for both platforms:
+- **`alert.ios.tsx`**: rewritten to use RN core's `Alert.alert`/`Alert.prompt` directly — both already render a real native `UIAlertController`, so there's no reason to route through `@expo/ui`'s SwiftUI `Alert` and its unverified `Trigger` mechanism at all. Same native look, zero Host risk, `Alert.prompt` is iOS-only in RN core which happens to match this file being iOS-only.
+- **`alert.tsx`** (Android/default): ported directly from the old package's `@rn-primitives/alert-dialog`-based implementation — no `@expo/ui` involved, N-button layout and prompt-mode (plain-text/secure-text/login-password) all carry over unchanged.
+
+One real prop-shape adaptation: `materialIcon` used the old package's own `Icon` (`materialCommunityIcon` prop); this app's `Icon` takes a plain `name` string. Real call sites (`AIPacksScreen.tsx`, `DeleteAccountButton.tsx`) already passed `{ name: '...', color: '...' }`-shaped objects, so `materialIcon` is now typed `{ name: MaterialIconName; color?: string }` — a drop-in match, no call-site rewrites needed beyond the import swap.
+
+A type-only gap in `@rn-primitives/hooks`' `useAugmentedRef`: its return type doesn't line up with `AlertDialogPrimitive.Root`'s `ref` prop even though the runtime behavior (methods merged onto the forwarded View ref) is the documented pattern — same category as the SwiftUI/Jetpack-Compose `Host` `className` typing gap, resolved the same way (local `as unknown as React.Ref<View>` cast with a comment naming the mismatch).
+
+18 call sites updated, all pure `Alert`/`AlertAnchor`/`AlertMethods` imports (no splitting needed).
+
+**On-device verification gap, accepted deliberately:** both platforms' `Alert` only appear after a user action (button press or, for the auth-flow error alerts, a failed form submission) — no deep-linkable "alert shown" state, and the mandated `xcrun simctl` deep-link+screenshot workflow can't type into fields or press buttons to trigger one. Typecheck and lint are clean. Risk is asymmetric by platform: iOS is essentially zero-risk (unmodified RN core native API); Android is a direct, unmodified port of already-shipped code using an already-installed primitive, same risk class as `Sheet`/`Form`. Both accepted on typecheck+lint given that profile — flagging here per the same standard as the `Sheet` gap above.
+
+Phase 4 remaining: `ContextMenu`/`DropdownMenu` (unverified `RNHostView`/Trigger mechanism on iOS), `Toolbar` (no `@expo/ui` equivalent identified). Phase 2's `SearchInput` also still open.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.

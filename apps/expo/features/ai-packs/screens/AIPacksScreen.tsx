@@ -1,4 +1,4 @@
-import { Alert, type AlertMethods } from '@packrat/ui/nativewindui';
+import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';

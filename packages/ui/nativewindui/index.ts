@@ -33,7 +33,8 @@ export type { ButtonProps } from '@packrat-ai/nativewindui';
 //
 // Phase 4 — @expo/ui platform-specific wrappers (.ios.tsx + .android.tsx) in packages/ui/src/
 // ActivityIndicator ✓ done — packages/ui/src/loading-indicator.ios.tsx + .android.tsx
-export { Alert, AlertAnchor } from '@packrat-ai/nativewindui'; //  14 uses → @expo/ui SwiftUI Alert + JC AlertDialog
+// Alert/AlertAnchor ✓ done — packages/ui/src/alert.tsx (Android/default, @rn-primitives/alert-dialog)
+//   + alert.ios.tsx (RN core Alert.alert/Alert.prompt — no Host bridge on either platform)
 export type { AlertMethods } from '@packrat-ai/nativewindui'; //  14 uses
 // Card ✓ done — packages/ui/src/card.tsx, plain RN composition (no native Host needed).
 //   CardBadge/CardImage dropped — zero real call sites used them; re-add from the old

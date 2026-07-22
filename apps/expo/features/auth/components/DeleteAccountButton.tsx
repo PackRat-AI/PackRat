@@ -1,5 +1,5 @@
-import type { AlertMethods } from '@packrat/ui/nativewindui';
-import { Alert } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/src/alert';
+import { Alert } from '@packrat/ui/src/alert';
 import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';

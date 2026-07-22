@@ -1,5 +1,5 @@
-import type { AlertMethods } from '@packrat/ui/nativewindui';
-import { AlertAnchor } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/src/alert';
+import { AlertAnchor } from '@packrat/ui/src/alert';
 import { Button } from '@packrat/ui/src/button';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { Text } from '@packrat/ui/src/text';

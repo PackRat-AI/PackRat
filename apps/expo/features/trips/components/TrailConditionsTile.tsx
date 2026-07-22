@@ -1,5 +1,5 @@
-import type { AlertMethods } from '@packrat/ui/nativewindui';
-import { Alert } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/src/alert';
+import { Alert } from '@packrat/ui/src/alert';
 import { ListItem } from '@packrat/ui/src/list';
 import { Icon } from 'expo-app/components/Icon';
 import { featureFlags } from 'expo-app/config';
