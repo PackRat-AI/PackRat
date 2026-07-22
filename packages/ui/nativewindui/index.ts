@@ -43,16 +43,9 @@ export { Toggle } from '@packrat-ai/nativewindui'; //   1 use  → @expo/ui Univ
 // ActivityIndicator ✓ done — packages/ui/src/loading-indicator.ios.tsx + .android.tsx
 export { Alert, AlertAnchor } from '@packrat-ai/nativewindui'; //  14 uses → @expo/ui SwiftUI Alert + JC AlertDialog
 export type { AlertMethods } from '@packrat-ai/nativewindui'; //  14 uses
-export {
-  Card,
-  CardContent,
-  CardTitle,
-  CardBadge,
-  CardDescription,
-  CardFooter,
-  CardImage,
-  CardSubtitle,
-} from '@packrat-ai/nativewindui'; //   8 uses → JC Card (Android) + custom View (iOS)
+// Card ✓ done — packages/ui/src/card.tsx, plain RN composition (no native Host needed).
+//   CardBadge/CardImage dropped — zero real call sites used them; re-add from the old
+//   Card.tsx source (git history) if a future screen needs them.
 // SegmentedControl ✓ done — packages/ui/src/segmented-control.tsx wraps @expo/ui community SegmentedControl
 // Checkbox ✓ done — packages/ui/src/checkbox.tsx wraps @rn-primitives/checkbox directly (already RN-native, no Host risk)
 export { ContextMenu, createContextItem, createContextSubMenu } from '@packrat-ai/nativewindui'; //   multiple uses → SwiftUI ContextMenu + JC DropdownMenu

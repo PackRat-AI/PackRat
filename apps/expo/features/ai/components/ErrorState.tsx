@@ -1,5 +1,5 @@
 import { EvilIcons, Ionicons } from '@expo/vector-icons';
-import { Card, CardContent } from '@packrat/ui/nativewindui';
+import { Card, CardContent } from '@packrat/ui/src/card';
 import { Text } from '@packrat/ui/src/text';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';

@@ -1,6 +1,6 @@
 import { assertDefined } from '@packrat/guards';
-import { Card } from '@packrat/ui/nativewindui';
 import { Button } from '@packrat/ui/src/button';
+import { Card } from '@packrat/ui/src/card';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
