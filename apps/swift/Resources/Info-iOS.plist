@@ -41,14 +41,14 @@
 			<string>world.packrat.google</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.993694750638-97t0vhfml04u2avrlbve22jbs9qcinbc</string>
+				<string>com.googleusercontent.apps.993694750638-f2pbg3e5tkt2btn9eih6c8ah8igal55m</string>
 			</array>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>GOOGLE_IOS_CLIENT_ID</key>
-	<string>993694750638-97t0vhfml04u2avrlbve22jbs9qcinbc.apps.googleusercontent.com</string>
+	<string>993694750638-f2pbg3e5tkt2btn9eih6c8ah8igal55m.apps.googleusercontent.com</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSRequiresIPhoneOS</key>

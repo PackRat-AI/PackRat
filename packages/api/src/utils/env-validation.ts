@@ -51,6 +51,10 @@ export const apiEnvObjectSchema = z.object({
   // iOS native Google Sign-In uses a separate OAuth client whose ID appears in the
   // ID token's `aud` claim — Better Auth must accept both audiences or native sign-in fails.
   GOOGLE_IOS_CLIENT_ID: z.string().optional(),
+  // Native Swift app's distinct bundle ID (com.andrewbierman.packrat.swift) needs its
+  // own Google iOS OAuth client — Google client IDs are bound to a single bundle ID,
+  // so the Expo app's GOOGLE_IOS_CLIENT_ID doesn't cover it.
+  GOOGLE_IOS_SWIFT_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string(),
   // Apple Sign In (Better Auth social provider)
   APPLE_CLIENT_ID: z.string(), // bundle ID e.g. world.packrat.app

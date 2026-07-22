@@ -194,10 +194,15 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
     socialProviders: {
       google: {
         // iOS native Google Sign-In requests an id token whose `aud` claim is the
-        // iOS OAuth client ID, distinct from the web client ID — accept both audiences.
-        clientId: [env.GOOGLE_CLIENT_ID, env.GOOGLE_IOS_CLIENT_ID].filter((id): id is string =>
-          Boolean(id),
-        ),
+        // iOS OAuth client ID, distinct from the web client ID. Google client IDs
+        // are bound to a single bundle ID, so the Swift app (a separate Xcode
+        // target with its own bundle ID) needs its own client ID too — accept
+        // all three audiences.
+        clientId: [
+          env.GOOGLE_CLIENT_ID,
+          env.GOOGLE_IOS_CLIENT_ID,
+          env.GOOGLE_IOS_SWIFT_CLIENT_ID,
+        ].filter((id): id is string => Boolean(id)),
         clientSecret: env.GOOGLE_CLIENT_SECRET ?? '',
       },
       // Always register Apple when clientId is present so the native id-token

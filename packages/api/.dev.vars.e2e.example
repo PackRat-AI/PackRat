@@ -59,6 +59,7 @@ EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=<your-google-ios-client-id>
 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=<your-google-web-client-id>
 GOOGLE_CLIENT_ID=<your-google-client-id>
 GOOGLE_IOS_CLIENT_ID=<your-google-ios-client-id>
+GOOGLE_IOS_SWIFT_CLIENT_ID=<your-google-ios-swift-client-id>
 GOOGLE_CLIENT_SECRET=<your-google-client-secret>
 
 # ── Maps ─────────────────────────────────────────────────────────────────────
