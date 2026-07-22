@@ -46,7 +46,8 @@ export type { AlertMethods } from '@packrat-ai/nativewindui'; //  14 uses
 //   @expo/ui Host bridge on either platform)
 // DropdownMenu/createDropdownItem/createDropdownSubMenu ✓ done — packages/ui/src/dropdown-menu/
 //   (Android/default: @rn-primitives/dropdown-menu; iOS: react-native-ios-context-menu)
-export { Toolbar, ToolbarCTA, ToolbarIcon } from '@packrat-ai/nativewindui'; //   multiple uses → platform-specific Toolbar
+// Toolbar/ToolbarCTA/ToolbarIcon ✓ done — packages/ui/src/toolbar.tsx, plain RN composition
+//   (expo-blur's BlurView, already RN-native, no Host risk)
 //
 // Phase 5 — no @expo/ui equivalent
 // Avatar ✓ done — packages/ui/src/avatar.tsx wraps @rn-primitives/avatar directly

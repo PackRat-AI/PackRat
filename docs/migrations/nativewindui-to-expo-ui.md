@@ -110,6 +110,16 @@ Adaptations beyond the mechanical port:
 
 **On-device verification**: `messages/conversations.tsx` (uses both `ContextMenu` per-row and `DropdownMenu` for the top-bar filter) loads and renders correctly via deep link — confirms the import graph and screen mount work. The actual menu-open interaction (long-press for `ContextMenu`, tap for `DropdownMenu`) requires a touch gesture the mandated `xcrun simctl` deep-link+screenshot workflow can't perform (no coordinate taps). Typecheck and lint are clean. Same accepted-gap category as `Sheet`/`Form`/`Alert` above — flagging per the same standard.
 
+## Resolved: Toolbar/ToolbarCTA/ToolbarIcon — no @expo/ui bridge, fourth (and final) time this pattern holds
+
+Same story again: the old package's `Toolbar` wrapped `expo-blur`'s `BlurView` (already an installed dependency), not `@expo/ui`. Ported directly to `packages/ui/src/toolbar.tsx`. `icon` props switched from the old package's `Icon` shape to this app's (`name` string + `color`); the one real call site (`conversations.android.tsx`'s `ToolbarCTA`) already passed a plain `{ name: '...' }` object. `ToolbarIcon` has zero real call sites but was ported anyway for API completeness (same shape as `ToolbarCTA`, cheap to keep).
+
+2 call sites updated (`conversations.tsx`, `conversations.android.tsx`).
+
+**This closes out Phase 4 and the entire component migration** — every component originally exported from `packages/ui/nativewindui/index.ts` is now ported to `packages/ui/src/`. In hindsight, all four of the "high-risk, paused" Phase 4 components (`Alert`, `ContextMenu`, `DropdownMenu`, `Toolbar`) turned out to need zero `@expo/ui` Host bridge — the original replacement-map guesses (SwiftUI Alert, Jetpack Compose AlertDialog/DropdownMenu, generic "platform-specific Toolbar") were never verified against the old package's actual source, which already used plain RN composition and third-party native libraries throughout. Only `Text`, `Button`, and `ActivityIndicator` (Phase 3) ever touched `@expo/ui` for real.
+
+Remaining before full removal: Phase 2's `SearchInput` (marked "reverted, pending re-migration" in the tracker), then the final removal phase (drop the `@packrat-ai/nativewindui` dependency, `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN`, etc.) once the tracker is fully empty.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.
