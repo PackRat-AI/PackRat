@@ -1,6 +1,7 @@
-import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
+import { TextField } from '@packrat/ui/src/text-field';
 import { useForm } from '@tanstack/react-form';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';

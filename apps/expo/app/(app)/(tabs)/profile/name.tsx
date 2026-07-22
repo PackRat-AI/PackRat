@@ -1,7 +1,8 @@
-import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
 import { Button } from '@packrat/ui/src/button';
 import { IosTransparentHeaderOverlapFix } from '@packrat/ui/src/ios-transparent-header-overlap-fix';
 import { Text } from '@packrat/ui/src/text';
+import { TextField } from '@packrat/ui/src/text-field';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
 import { cn } from 'expo-app/lib/cn';

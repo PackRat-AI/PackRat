@@ -1,8 +1,9 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
-import { AlertAnchor, Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
+import { AlertAnchor, Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
 import { Button } from '@packrat/ui/src/button';
 import { Checkbox } from '@packrat/ui/src/checkbox';
 import { Text } from '@packrat/ui/src/text';
+import { TextField } from '@packrat/ui/src/text-field';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';

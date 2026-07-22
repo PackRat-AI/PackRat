@@ -25,8 +25,8 @@ export type { ButtonProps } from '@packrat-ai/nativewindui';
 //   reproduces the Button-collapse bug fixed earlier.
 export { Sheet, useSheetRef } from '@packrat-ai/nativewindui'; //  16 uses → @expo/ui Universal BottomSheet
 export { Form, FormSection, FormItem } from '@packrat-ai/nativewindui'; //  24 uses → @expo/ui Universal FieldGroup + SwiftUI Form
-export { TextField } from '@packrat-ai/nativewindui'; //   9 uses → @expo/ui Universal TextInput
-export type { TextFieldProps, TextFieldRef } from '@packrat-ai/nativewindui';
+// TextField ✓ done — packages/ui/src/text-field.tsx (Android/default, Material floating label)
+//   + text-field.ios.tsx (simple, matches the old package's platform split exactly).
 // Toggle ✓ done — packages/ui/src/toggle.tsx wraps react-native's Switch directly (already RN-native, no Host risk)
 //
 // Phase 4 — @expo/ui platform-specific wrappers (.ios.tsx + .android.tsx) in packages/ui/src/

@@ -1,5 +1,6 @@
 import { assertDefined, isString } from '@packrat/guards';
-import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
+import { TextField } from '@packrat/ui/src/text-field';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Sentry from '@sentry/react-native';
 import { useForm } from '@tanstack/react-form';

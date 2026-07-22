@@ -45,6 +45,16 @@ Migrating a call site is: swap the import, keep `className`/`style` as-is for la
   **Fix**: `Button` now auto-extracts a plain string when `children` is exactly one `Text` (or raw string) with only string content, and passes it via `@expo/ui`'s `label` prop instead of nesting — see `extractLabel` in `button.tsx`. This resolves the dominant case with zero call-site rewrites.
   **Known remaining gap**: icon+text or multi-child `Button` content still nests a `Host`-bridged child and is still nested-Host-risky — not yet fixed, not yet verified on-device. Before trusting any `Button` with non-plain-text children, verify it on a real device first.
 
+## Resolved: TextField — no Host bridge, two platform files
+
+`TextField` never needed a native Host bridge — the old package's implementation was already plain RN (`TextInput`/`Pressable`/`View`/Reanimated), never `@expo/ui`. The original plan (replacement map, above) assumed wrapping `@expo/ui` Universal `TextInput`, but that component has no floating-label, no Material-variant styling, and no advantage over the existing RN composition — so it was ported directly instead.
+
+The old package had two genuinely different platform designs (not a shared component with platform tweaks): iOS used a simple non-animated layout, Android used a Material-style floating label with Reanimated. Rather than force one design onto both platforms, both were preserved as separate files — `packages/ui/src/text-field.tsx` (Android/default, Material) and `packages/ui/src/text-field.ios.tsx` (iOS, simple) — sharing one `TextFieldProps`/`TextFieldRef` type so call sites see one API regardless of platform. Metro resolves the `.ios.tsx` suffix at bundle time from the unsuffixed import path; a platform-suffix-free base file isn't needed here since `text-field.tsx` itself is a real implementation (the Android/default), not a re-export shim.
+
+One typecheck fix needed: the Material `MaterialLabel`'s filled-variant background referenced `colors.border`, a key that existed on the old package's own theme but not on this app's `apps/expo/theme/colors.ts`. Changed to `colors.card` (closest surface color used for filled-variant containers elsewhere) — verified via grep that no real call site passes `materialVariant="filled"`, so this path was already dead code, fixed for type correctness only.
+
+Verified on-device (iOS): `auth/(create-account)/credentials.tsx` (4 stacked fields, one with `leftView`) and `auth/(login)/index.tsx` (2 fields) both render correctly — fields sized correctly, dividers between fields visible, placeholder text and Submit/Continue button positioned correctly. Android Material design not yet re-verified on-device in this migration pass (previously only visually reviewed pre-port); low risk since it's a near-1:1 port of the original 334-line file.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.
@@ -77,7 +87,7 @@ Priority column: **U** = `@expo/ui` Universal, **S** = `@expo/ui` SwiftUI (iOS),
 | `Form` | 8 | `Form` / `FieldGroup` | S + U | `src/form.ios.tsx` + `.tsx` |
 | `FormSection` | 8 | `Section` / `FieldGroup.Section` | S + U | `src/form-section.ios.tsx` + `.tsx` |
 | `FormItem` | 8 | `LabeledContent` / `FieldGroup.Section` row | S + U | part of form-section |
-| `TextField` | 9 | `TextInput` | U | `src/text-input.tsx` |
+| `TextField` | 9 | plain RN `TextInput`/`Pressable`/`View` (no Host bridge needed) | — | `src/text-field.tsx` + `.ios.tsx` |
 | `Card` + `CardContent` + `CardTitle` | 8 | `Card` / custom `View` | JC + custom iOS | `src/card.android.tsx` + `.ios.tsx` |
 | `SegmentedControl` | 3 | `SegmentedControl` | C | `src/segmented-control.tsx` |
 | `Toggle` | 1 | `Switch` | U | `src/switch.tsx` |
