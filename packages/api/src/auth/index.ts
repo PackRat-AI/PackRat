@@ -193,7 +193,11 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
 
     socialProviders: {
       google: {
-        clientId: env.GOOGLE_CLIENT_ID ?? '',
+        // iOS native Google Sign-In requests an id token whose `aud` claim is the
+        // iOS OAuth client ID, distinct from the web client ID — accept both audiences.
+        clientId: [env.GOOGLE_CLIENT_ID, env.GOOGLE_IOS_CLIENT_ID].filter((id): id is string =>
+          Boolean(id),
+        ),
         clientSecret: env.GOOGLE_CLIENT_SECRET ?? '',
       },
       // Always register Apple when clientId is present so the native id-token
@@ -201,7 +205,9 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       // verifies against Apple's public JWKS; the secret is only used for the
       // web OAuth redirect flow).
       // audience covers all EAS build variants — Apple puts the bundle ID in
-      // the `aud` claim, which differs per variant (.dev, .preview, base).
+      // the `aud` claim, which differs per variant (.dev, .preview, base) — plus
+      // the native Swift app's distinct bundle ID, which is a separate Xcode
+      // target and not an EAS build variant of the Expo app.
       ...(env.APPLE_CLIENT_ID
         ? {
             apple: {
@@ -212,6 +218,7 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
                 env.APPLE_CLIENT_ID,
                 `${env.APPLE_CLIENT_ID}.dev`,
                 `${env.APPLE_CLIENT_ID}.preview`,
+                ...(env.APPLE_SWIFT_CLIENT_ID ? [env.APPLE_SWIFT_CLIENT_ID] : []),
               ],
             },
           }

@@ -58,6 +58,7 @@ PACKRAT_GUIDES_BASE_URL=https://guides.packratai.com/
 EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=<your-google-ios-client-id>
 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=<your-google-web-client-id>
 GOOGLE_CLIENT_ID=<your-google-client-id>
+GOOGLE_IOS_CLIENT_ID=<your-google-ios-client-id>
 GOOGLE_CLIENT_SECRET=<your-google-client-secret>
 
 # ── Maps ─────────────────────────────────────────────────────────────────────
@@ -68,6 +69,7 @@ SENTRY_DSN=<your-sentry-dsn>
 
 # ── Apple Sign In ─────────────────────────────────────────────────────────────
 APPLE_CLIENT_ID=<your-apple-client-id>
+APPLE_SWIFT_CLIENT_ID=<your-apple-swift-client-id>
 APPLE_PRIVATE_KEY=<your-apple-private-key>
 APPLE_KEY_ID=<your-apple-key-id>
 APPLE_TEAM_ID=<your-apple-team-id>

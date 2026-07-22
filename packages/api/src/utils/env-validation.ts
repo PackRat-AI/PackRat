@@ -48,9 +48,15 @@ export const apiEnvObjectSchema = z.object({
   E2E_TEST_USER_ID: z.string().uuid().optional(),
   // Google OAuth (Better Auth social provider)
   GOOGLE_CLIENT_ID: z.string(),
+  // iOS native Google Sign-In uses a separate OAuth client whose ID appears in the
+  // ID token's `aud` claim — Better Auth must accept both audiences or native sign-in fails.
+  GOOGLE_IOS_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string(),
   // Apple Sign In (Better Auth social provider)
   APPLE_CLIENT_ID: z.string(), // bundle ID e.g. world.packrat.app
+  // Native Swift app's distinct bundle ID (separate Xcode target, not an EAS build
+  // variant of the Expo app) — appears in its Apple ID token's `aud` claim.
+  APPLE_SWIFT_CLIENT_ID: z.string().optional(),
   APPLE_PRIVATE_KEY: z.string(), // .p8 key contents — store via wrangler secret
   APPLE_KEY_ID: z.string(),
   APPLE_TEAM_ID: z.string(),
