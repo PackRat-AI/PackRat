@@ -41,9 +41,11 @@ export type { AlertMethods } from '@packrat-ai/nativewindui'; //  14 uses
 //   Card.tsx source (git history) if a future screen needs them.
 // SegmentedControl ✓ done — packages/ui/src/segmented-control.tsx wraps @expo/ui community SegmentedControl
 // Checkbox ✓ done — packages/ui/src/checkbox.tsx wraps @rn-primitives/checkbox directly (already RN-native, no Host risk)
-export { ContextMenu, createContextItem, createContextSubMenu } from '@packrat-ai/nativewindui'; //   multiple uses → SwiftUI ContextMenu + JC DropdownMenu
-export type { ContextMenuMethods } from '@packrat-ai/nativewindui';
-export { DropdownMenu, createDropdownItem, createDropdownSubMenu } from '@packrat-ai/nativewindui'; //   multiple uses → @expo/ui DropdownMenu
+// ContextMenu/createContextItem/createContextSubMenu ✓ done — packages/ui/src/context-menu/
+//   (Android/default: @rn-primitives/context-menu; iOS: react-native-ios-context-menu — no
+//   @expo/ui Host bridge on either platform)
+// DropdownMenu/createDropdownItem/createDropdownSubMenu ✓ done — packages/ui/src/dropdown-menu/
+//   (Android/default: @rn-primitives/dropdown-menu; iOS: react-native-ios-context-menu)
 export { Toolbar, ToolbarCTA, ToolbarIcon } from '@packrat-ai/nativewindui'; //   multiple uses → platform-specific Toolbar
 //
 // Phase 5 — no @expo/ui equivalent

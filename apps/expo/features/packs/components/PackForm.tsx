@@ -1,7 +1,7 @@
 import { fromZod } from '@packrat/guards';
 import { PackCategorySchema } from '@packrat/schemas/constants';
-import { createDropdownItem, DropdownMenu } from '@packrat/ui/nativewindui';
 import { Button } from '@packrat/ui/src/button';
+import { createDropdownItem, DropdownMenu } from '@packrat/ui/src/dropdown-menu';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { TextField } from '@packrat/ui/src/text-field';
 import { useForm } from '@tanstack/react-form';

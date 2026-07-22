@@ -1,7 +1,7 @@
 import { Button as ExpoButton, Host } from '@expo/ui';
 import { cssInterop } from 'nativewind';
 import { Children, isValidElement, type ReactNode } from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
 import { shouldMatchContents } from './lib/text-class-parser';
 import { Text } from './text';
 
@@ -67,6 +67,8 @@ type ButtonProps = {
   /** ANDROID ONLY on the old API — no @expo/ui equivalent (Host has no ripple-overflow root). Accepted and ignored. */
   androidRootClassName?: string;
   accessible?: boolean;
+  accessibilityHint?: string;
+  onLayout?: (event: LayoutChangeEvent) => void;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -80,6 +82,8 @@ function Button({
   disabled,
   className,
   accessible,
+  accessibilityHint,
+  onLayout,
   style,
   testID,
 }: ButtonProps) {
@@ -93,6 +97,8 @@ function Button({
       className={className}
       style={[SIZE_STYLE[size], style]}
       accessible={accessible}
+      accessibilityHint={accessibilityHint}
+      onLayout={onLayout}
       testID={testID}
     >
       <ExpoButton

@@ -91,6 +91,25 @@ A type-only gap in `@rn-primitives/hooks`' `useAugmentedRef`: its return type do
 
 Phase 4 remaining: `ContextMenu`/`DropdownMenu` (unverified `RNHostView`/Trigger mechanism on iOS), `Toolbar` (no `@expo/ui` equivalent identified). Phase 2's `SearchInput` also still open.
 
+## Resolved: ContextMenu/DropdownMenu — no @expo/ui bridge, third time this pattern holds
+
+The previously-documented blocker ("unverified `RNHostView`/Trigger mechanism on iOS") was based on the same wrong assumption as `Alert`: that these components used `@expo/ui`. They don't, on either platform:
+
+- **Android/default**: `@rn-primitives/context-menu` / `@rn-primitives/dropdown-menu` — unstyled RN primitives, not `@expo/ui`.
+- **iOS**: `react-native-ios-context-menu` — a real, separate third-party native library (its own Fabric/paper native module), also not `@expo/ui`. `DropdownMenu` and `ContextMenu` share the same iOS library (`ContextMenuButton` vs. `ContextMenuView`).
+
+Ported directly to `packages/ui/src/context-menu/` and `packages/ui/src/dropdown-menu/` (each: `types.ts`, `utils.ts` for `create*Item`/`create*SubMenu`, the Android/default `.tsx`, the iOS `.ios.tsx`, and an `index.ts` barrel). `ContextMenuSubMenu`/`DropdownMenuSubMenu` on Android reuse `DropdownMenu` itself (same as the original), so `DropdownMenu` had to be built first.
+
+Adaptations beyond the mechanical port:
+- `icon`/`materialIcon` fields switched from the old package's own `Icon` (`sfSymbol`/`materialCommunityIcon` object props) to this app's `Icon` (`name` string + `color`) — same pattern as `Form`'s `materialIconProps` and `Alert`'s `materialIcon`. No real call site used `icon`/`image` on any item, so this is a type-only change.
+- `Button` (already-migrated `@expo/ui`-wrapped version) didn't expose `accessibilityHint` or `onLayout`, both used by menu item rows (accessibility hint text) and submenu triggers (measuring trigger position for flyout placement). Widened `packages/ui/src/button.tsx`'s `ButtonProps` to accept both and pass them through to `Host` — a real, reusable gap-fix, not menu-specific.
+- Two stale `@ts-expect-error` suppressions (for a `react-native-ios-context-menu` type bug referenced in a GitHub issue) no longer reproduce against the currently-installed version's types — removed rather than left as dead suppressions (`tsc` flags unused `@ts-expect-error` as an error).
+- `useMaxParams` (Biome, max 2) hit twice more: `toConfigMenu` (3 params, both iOS files) converted to an options object; `View.measure`'s 6-argument native callback (in `context-menu.tsx`'s `onTriggerLongPress`) can't be restructured since it's RN core's own signature — suppressed with `biome-ignore` and a comment naming the reason, consistent with the project's convention for third-party API shapes outside our control.
+
+11 call sites updated across the messages/chat feature and the two pack-category dropdown pickers (`PackForm.tsx`, `PackTemplateForm.tsx`). One dead-code exception: `ChatBubble.tsx` imports `Text as SelectableText` from the old package but its `ContextMenu` usage is fully commented out — left as-is, not migrated, since there's nothing live to migrate.
+
+**On-device verification**: `messages/conversations.tsx` (uses both `ContextMenu` per-row and `DropdownMenu` for the top-bar filter) loads and renders correctly via deep link — confirms the import graph and screen mount work. The actual menu-open interaction (long-press for `ContextMenu`, tap for `DropdownMenu`) requires a touch gesture the mandated `xcrun simctl` deep-link+screenshot workflow can't perform (no coordinate taps). Typecheck and lint are clean. Same accepted-gap category as `Sheet`/`Form`/`Alert` above — flagging per the same standard.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.

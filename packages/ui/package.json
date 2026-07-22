@@ -12,7 +12,10 @@
     "@rn-primitives/alert-dialog": "^1.1.0",
     "@rn-primitives/avatar": "^1.1.0",
     "@rn-primitives/checkbox": "^1.1.0",
+    "@rn-primitives/context-menu": "^1.1.0",
+    "@rn-primitives/dropdown-menu": "^1.1.0",
     "@rn-primitives/hooks": "^1.1.0",
+    "react-native-ios-context-menu": "^3.2.1",
     "tailwindcss": "catalog:"
   }
 }

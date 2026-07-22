@@ -1,8 +1,8 @@
 import { assertDefined, isString } from '@packrat/guards';
-import type { ContextMenuMethods } from '@packrat/ui/nativewindui';
-import { ContextMenu, createContextItem } from '@packrat/ui/nativewindui';
 import { Avatar, AvatarFallback } from '@packrat/ui/src/avatar';
 import { Button } from '@packrat/ui/src/button';
+import type { ContextMenuMethods } from '@packrat/ui/src/context-menu';
+import { ContextMenu, createContextItem } from '@packrat/ui/src/context-menu';
 import { Text } from '@packrat/ui/src/text';
 import { FlashList } from '@shopify/flash-list';
 import { Icon } from 'expo-app/components/Icon';

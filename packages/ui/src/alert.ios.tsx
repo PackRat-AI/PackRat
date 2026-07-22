@@ -58,7 +58,7 @@ function AlertImpl({ ref }: AlertProps & { ref?: React.Ref<AlertMethods> }) {
         args.buttons.map((b) => ({
           text: b.text,
           style: b.style,
-          onPress: (value) => b.onPress?.(value ?? ''),
+          onPress: (value?: string) => b.onPress?.(value ?? ''),
         })),
         args.prompt.type === 'secure-text' ? 'secure-text' : 'plain-text',
         args.prompt.defaultValue,
