@@ -10,11 +10,7 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { expo } from '@better-auth/expo';
 import { oauthProvider } from '@better-auth/oauth-provider';
-import {
-  generateAppleClientSecret,
-  verifyAppleIdTokenWithLogging,
-  verifyPasswordCompat,
-} from '@packrat/api/auth/auth.helpers';
+import { generateAppleClientSecret, verifyPasswordCompat } from '@packrat/api/auth/auth.helpers';
 import { createConnection } from '@packrat/api/db';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import * as schema from '@packrat/db';
@@ -224,14 +220,6 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
                 `${env.APPLE_CLIENT_ID}.preview`,
                 ...(env.APPLE_SWIFT_CLIENT_ID ? [env.APPLE_SWIFT_CLIENT_ID] : []),
               ],
-              // TEMPORARY: logs the real jose verification error instead of
-              // Better Auth's generic "Invalid id token" — remove once diagnosed.
-              verifyIdToken: verifyAppleIdTokenWithLogging([
-                env.APPLE_CLIENT_ID,
-                `${env.APPLE_CLIENT_ID}.dev`,
-                `${env.APPLE_CLIENT_ID}.preview`,
-                ...(env.APPLE_SWIFT_CLIENT_ID ? [env.APPLE_SWIFT_CLIENT_ID] : []),
-              ]),
             },
           }
         : {}),

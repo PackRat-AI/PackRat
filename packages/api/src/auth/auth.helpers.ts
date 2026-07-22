@@ -1,8 +1,7 @@
 import { verifyPassword } from '@better-auth/utils/password';
-import { betterFetch } from '@better-fetch/fetch';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import * as bcrypt from 'bcryptjs';
-import { decodeProtectedHeader, importJWK, importPKCS8, jwtVerify, SignJWT } from 'jose';
+import { importPKCS8, SignJWT } from 'jose';
 
 // Matches bcrypt hashes ($2a$, $2b$, $2y$) left over from pre-migration auth.
 const BCRYPT_HASH_RE = /^\$2[aby]\$/;
@@ -44,51 +43,4 @@ export async function generateAppleClientSecret(env: ValidatedEnv): Promise<stri
     );
     return null;
   }
-}
-
-// TEMPORARY DEBUG SHIM — Better Auth's built-in apple.verifyIdToken swallows
-// the underlying jose error and returns bare `false`, so a failed sign-in only
-// ever logs "Invalid id token" with no indication of *why* (bad audience,
-// bad issuer, expired, wrong alg, JWKS lookup failure, etc). This mirrors
-// that verification exactly but logs the caught error before returning false.
-// Remove once the audience mismatch is diagnosed.
-export function verifyAppleIdTokenWithLogging(audience: string[]) {
-  return async (token: string, nonce?: string | null): Promise<boolean> => {
-    try {
-      const { kid, alg } = decodeProtectedHeader(token);
-      if (!kid || !alg) {
-        console.error('[auth][apple-debug] missing kid/alg in protected header', { kid, alg });
-        return false;
-      }
-      const { data } = await betterFetch<{ keys: Array<Record<string, string>> }>(
-        'https://appleid.apple.com/auth/keys',
-      );
-      const jwk = data?.keys?.find((k) => k.kid === kid);
-      if (!jwk) {
-        console.error('[auth][apple-debug] no matching JWK for kid', { kid });
-        return false;
-      }
-      const key = await importJWK(jwk, jwk.alg);
-      const { payload } = await jwtVerify(token, key, {
-        algorithms: [alg],
-        issuer: 'https://appleid.apple.com',
-        audience,
-        maxTokenAge: '1h',
-      });
-      if (nonce && payload.nonce !== nonce) {
-        console.error('[auth][apple-debug] nonce mismatch', {
-          expected: nonce,
-          actual: payload.nonce,
-        });
-        return false;
-      }
-      return true;
-    } catch (err) {
-      console.error('[auth][apple-debug] verifyIdToken failed', {
-        audience,
-        error: err instanceof Error ? `${err.name}: ${err.message}` : err,
-      });
-      return false;
-    }
-  };
 }
