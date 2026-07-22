@@ -37,7 +37,7 @@ export { Sheet, useSheetRef } from '@packrat-ai/nativewindui'; //  16 uses → @
 export { Form, FormSection, FormItem } from '@packrat-ai/nativewindui'; //  24 uses → @expo/ui Universal FieldGroup + SwiftUI Form
 export { TextField } from '@packrat-ai/nativewindui'; //   9 uses → @expo/ui Universal TextInput
 export type { TextFieldProps, TextFieldRef } from '@packrat-ai/nativewindui';
-export { Toggle } from '@packrat-ai/nativewindui'; //   1 use  → @expo/ui Universal Switch
+// Toggle ✓ done — packages/ui/src/toggle.tsx wraps react-native's Switch directly (already RN-native, no Host risk)
 //
 // Phase 4 — @expo/ui platform-specific wrappers (.ios.tsx + .android.tsx) in packages/ui/src/
 // ActivityIndicator ✓ done — packages/ui/src/loading-indicator.ios.tsx + .android.tsx

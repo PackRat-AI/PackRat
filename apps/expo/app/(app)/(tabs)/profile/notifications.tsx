@@ -1,6 +1,7 @@
-import { Form, FormItem, FormSection, Toggle } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
+import { Toggle } from '@packrat/ui/src/toggle';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
