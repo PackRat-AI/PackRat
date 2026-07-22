@@ -1,7 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { assertNonNull } from '@packrat/guards';
-import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { Button } from '@packrat/ui/src/button';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
@@ -210,7 +210,7 @@ export function ItemsScanScreen() {
                 <Text className="text-xl font-semibold text-center mb-2">
                   {t('packs.noItemsFound')}
                 </Text>
-                <Text className="text-center text-muted-foreground text-base leading-6">
+                <Text className="text-center text-muted-foreground text-base leading-6" wrap>
                   {t('packs.weCouldntIdentify')}
                 </Text>
               </View>
@@ -223,7 +223,7 @@ export function ItemsScanScreen() {
                   <View className="bg-primary/10 rounded-full p-1.5 mt-0.5">
                     <Icon name="lightbulb" size={12} color={colors.primary} />
                   </View>
-                  <Text className="flex-1 text-sm text-muted-foreground">
+                  <Text className="flex-1 text-sm text-muted-foreground" wrap>
                     {t('packs.spreadItemsContrast')}
                   </Text>
                 </View>
@@ -236,7 +236,7 @@ export function ItemsScanScreen() {
                       color={colors.primary}
                     />
                   </View>
-                  <Text className="flex-1 text-sm text-muted-foreground">
+                  <Text className="flex-1 text-sm text-muted-foreground" wrap>
                     {t('packs.useGoodLighting')}
                   </Text>
                 </View>
@@ -244,7 +244,7 @@ export function ItemsScanScreen() {
                   <View className="bg-primary/10 rounded-full p-1.5 mt-0.5">
                     <Icon name="eye" size={12} color={colors.primary} />
                   </View>
-                  <Text className="flex-1 text-sm text-muted-foreground">
+                  <Text className="flex-1 text-sm text-muted-foreground" wrap>
                     {t('packs.ensureItemsVisible')}
                   </Text>
                 </View>

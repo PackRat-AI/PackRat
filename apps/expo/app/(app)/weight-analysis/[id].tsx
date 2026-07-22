@@ -82,7 +82,7 @@ export default function WeightAnalysisScreen() {
           <Text variant="heading" className="mb-2 font-semibold">
             {t('packs.weightBreakdown')}
           </Text>
-          <Text variant="subhead" className="mb-4 text-muted-foreground">
+          <Text variant="subhead" className="mb-4 text-muted-foreground" wrap>
             {t('packs.detailedAnalysis')}
           </Text>
         </View>
@@ -132,7 +132,9 @@ export default function WeightAnalysisScreen() {
         ))}
 
         {!data.categories.length && (
-          <Text className="px-8 text-center">{t('packs.addItemsForBreakdown')}</Text>
+          <Text className="px-8 text-center" wrap>
+            {t('packs.addItemsForBreakdown')}
+          </Text>
         )}
       </ScrollView>
     </SafeAreaView>

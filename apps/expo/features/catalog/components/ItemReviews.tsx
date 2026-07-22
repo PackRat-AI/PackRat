@@ -99,6 +99,7 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
               <Text
                 className="text-foreground"
                 numberOfLines={shouldTruncate && !isExpanded ? 3 : undefined}
+                wrap
               >
                 {review.text}
               </Text>

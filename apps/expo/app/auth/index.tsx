@@ -1,6 +1,7 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
-import { ActivityIndicator, AlertAnchor } from '@packrat/ui/nativewindui';
+import { AlertAnchor } from '@packrat/ui/nativewindui';
 import { Button } from '@packrat/ui/src/button';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { featureFlags } from 'expo-app/config';
 import {
@@ -101,7 +102,7 @@ export default function AuthIndexScreen() {
               </>
             )}
             {showSignInCopy && (
-              <Text className="pt-4 text-center text-muted-foreground">
+              <Text className="pt-4 text-center text-muted-foreground" wrap>
                 {t('auth.signInMessage')}
               </Text>
             )}

@@ -48,7 +48,7 @@ function EmptyState({ onPlanTrip }: { onPlanTrip: () => void }) {
         <Text variant="title3" className="font-semibold text-foreground">
           {t('trips.noUpcomingTrips')}
         </Text>
-        <Text variant="subhead" className="text-center text-muted-foreground">
+        <Text variant="subhead" className="text-center text-muted-foreground" wrap>
           {t('trips.noUpcomingTripsDesc')}
         </Text>
       </View>

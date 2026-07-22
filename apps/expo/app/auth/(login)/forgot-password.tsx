@@ -93,7 +93,7 @@ export default function ForgotPasswordScreen() {
                 {t('auth.whatsYourEmail')}
               </Text>
             )}
-            <Text className="px-4 pt-2 text-center text-muted-foreground">
+            <Text className="px-4 pt-2 text-center text-muted-foreground" wrap>
               {t('auth.forgotPasswordMessage')}
             </Text>
           </View>

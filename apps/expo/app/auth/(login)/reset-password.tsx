@@ -185,7 +185,7 @@ export default function ResetPasswordScreen() {
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
               {t('auth.createNewPassword')}
             </Text>
-            <Text className="px-4 pt-2 text-center text-muted-foreground">
+            <Text className="px-4 pt-2 text-center text-muted-foreground" wrap>
               {t('auth.newPasswordDifferent')}
             </Text>
           </View>

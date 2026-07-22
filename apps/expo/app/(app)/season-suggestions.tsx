@@ -119,7 +119,7 @@ export default function SeasonSuggestionsScreen() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
         <View className="py-6">
           <View className="mb-6">
-            <Text variant="body" className="text-muted-foreground">
+            <Text variant="body" className="text-muted-foreground" wrap>
               {t('seasons.personalizedRecommendations')}
             </Text>
           </View>

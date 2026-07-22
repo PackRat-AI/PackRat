@@ -1,4 +1,4 @@
-import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { SegmentedControl } from '@packrat/ui/src/segmented-control';
 import { Text } from '@packrat/ui/src/text';
 import * as Burnt from 'burnt';

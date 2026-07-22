@@ -1,5 +1,5 @@
-import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { Button } from '@packrat/ui/src/button';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { devSkipAutoAnalyzeAtom } from 'expo-app/atoms/devAtoms';
 import { Icon } from 'expo-app/components/Icon';
@@ -590,7 +590,7 @@ export function GapAnalysisModal({
                 <Text className="mt-4 text-center font-medium text-foreground">
                   {t('packs.packLooksComplete')}
                 </Text>
-                <Text className="mt-2 text-center text-sm text-muted-foreground">
+                <Text className="mt-2 text-center text-sm text-muted-foreground" wrap>
                   {t('packs.noSignificantGaps')}
                 </Text>
               </View>

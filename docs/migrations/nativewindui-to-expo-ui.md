@@ -37,6 +37,8 @@ Migrating a call site is: swap the import, keep `className`/`style` as-is for la
 
 **Codemod caveat:** the bulk of Text/Button call sites (139 files) were converted via a scripted import swap + typecheck pass, not one-by-one on-device verification like the first two files. The `matchContents`-collapse bug (zero-height stacking) is a silent, type-safe failure — a broad visual QA pass across converted screens is still owed before calling this phase fully verified, typecheck passing is necessary but not sufficient.
 
+**Post-codemod on-device sweep** found the `wrap` default itself needs auditing beyond field-name heuristics — two more real overflow bugs surfaced by hand (`trail-conditions.tsx` disclaimer box, `season-suggestions.tsx` subtitle) that the original `.notes`/`.description`/etc. field-name scan missed, because they were plain translated strings (`t('...')`) with no distinguishing field name. A follow-up structural scan (note/callout boxes — `bg-muted`/`bg-card` + padding — disclaimer/hint/error/empty-state copy, strings >~40 chars) caught 39 more across 30 files. **This pattern (missing `wrap` on prose text) is the single highest-risk remaining defect class in the Text migration** — any new screen conversion should default to checking every `Text` inside a padded note/card/box for `wrap`, not just ones with an obviously-named data field.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.

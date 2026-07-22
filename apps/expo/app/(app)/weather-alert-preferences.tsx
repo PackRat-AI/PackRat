@@ -86,7 +86,7 @@ export default function WeatherAlertPreferencesScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium">{t('weather.weatherNotifications')}</Text>
-                  <Text variant="caption1" className="text-muted-foreground">
+                  <Text variant="caption1" className="text-muted-foreground" wrap>
                     {t('weather.weatherNotificationsDesc')}
                   </Text>
                 </View>
@@ -103,7 +103,7 @@ export default function WeatherAlertPreferencesScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium">{t('weather.locationMonitoring')}</Text>
-                  <Text variant="caption1" className="text-muted-foreground">
+                  <Text variant="caption1" className="text-muted-foreground" wrap>
                     {t('weather.locationMonitoringDesc')}
                   </Text>
                 </View>
@@ -144,7 +144,7 @@ export default function WeatherAlertPreferencesScreen() {
                       >
                         {t(`weather.${key}` as never)}
                       </Text>
-                      <Text variant="caption1" className="text-muted-foreground">
+                      <Text variant="caption1" className="text-muted-foreground" wrap>
                         {t(`weather.${key}Desc` as never)}
                       </Text>
                     </View>

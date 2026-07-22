@@ -40,7 +40,7 @@ export type { TextFieldProps, TextFieldRef } from '@packrat-ai/nativewindui';
 export { Toggle } from '@packrat-ai/nativewindui'; //   1 use  → @expo/ui Universal Switch
 //
 // Phase 4 — @expo/ui platform-specific wrappers (.ios.tsx + .android.tsx) in packages/ui/src/
-export { ActivityIndicator } from '@packrat-ai/nativewindui'; //  22 uses → ProgressView (iOS) + LoadingIndicator (Android)
+// ActivityIndicator ✓ done — packages/ui/src/loading-indicator.ios.tsx + .android.tsx
 export { Alert, AlertAnchor } from '@packrat-ai/nativewindui'; //  14 uses → @expo/ui SwiftUI Alert + JC AlertDialog
 export type { AlertMethods } from '@packrat-ai/nativewindui'; //  14 uses
 export {

@@ -123,7 +123,7 @@ export function WildlifeScreen() {
             <Text className="text-xl font-semibold text-center mb-2">
               {t('wildlife.noIdentifications')}
             </Text>
-            <Text className="text-center text-muted-foreground text-base">
+            <Text className="text-center text-muted-foreground text-base" wrap>
               {t('wildlife.noIdentificationsDescription')}
             </Text>
           </View>

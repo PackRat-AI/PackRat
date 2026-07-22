@@ -1,7 +1,6 @@
 import { clientEnvs } from '@packrat/env/expo-client';
 import { isRemoteUrl, isString } from '@packrat/guards';
 import {
-  ActivityIndicator,
   List,
   ListItem,
   type ListRenderItemInfo,
@@ -10,6 +9,7 @@ import {
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Avatar, AvatarFallback } from '@packrat/ui/src/avatar';
 import { Button } from '@packrat/ui/src/button';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';

@@ -38,7 +38,9 @@ export function ProfileAuthWall() {
           <Text variant="title1" className="mb-2 text-center">
             {t('profile.createYourAccount')}
           </Text>
-          <Text className="mb-6 text-center text-muted-foreground">{t('profile.joinPackRat')}</Text>
+          <Text className="mb-6 text-center text-muted-foreground" wrap>
+            {t('profile.joinPackRat')}
+          </Text>
         </View>
 
         <View className="mb-10 flex-col gap-6">
@@ -100,7 +102,9 @@ function FeatureItem({
         <Text variant="title3" className="mb-0.5">
           {title}
         </Text>
-        <Text className="text-muted-foreground">{description}</Text>
+        <Text className="text-muted-foreground" wrap>
+          {description}
+        </Text>
       </View>
     </View>
   );

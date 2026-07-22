@@ -320,10 +320,10 @@ export default function LocationSearchScreen() {
       return (
         <View className="flex-1 items-center justify-center p-8">
           <Icon name="magnify-minus-outline" size={48} color={colors.grey2} />
-          <Text className="mt-4 text-center text-muted-foreground">
+          <Text className="mt-4 text-center text-muted-foreground" wrap>
             {t('weather.noLocationsFound', { query })}
           </Text>
-          <Text className="mt-1 text-center text-sm text-muted-foreground">
+          <Text className="mt-1 text-center text-sm text-muted-foreground" wrap>
             {t('weather.tryDifferentSearch')}
           </Text>
         </View>

@@ -57,7 +57,7 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
               <Text className="text-lg font-semibold text-foreground mb-2">
                 {t('packTemplates.createTemplate')}
               </Text>
-              <Text className="text-sm text-muted-foreground leading-5">
+              <Text className="text-sm text-muted-foreground leading-5" wrap>
                 {t('packTemplates.chooseCreationMethod')}
               </Text>
             </View>
@@ -74,7 +74,7 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
                 <Text className="text-base font-semibold text-foreground mb-1">
                   {t('packTemplates.createFromScratch')}
                 </Text>
-                <Text className="text-sm text-muted-foreground">
+                <Text className="text-sm text-muted-foreground" wrap>
                   {t('packTemplates.createFromScratchDescription')}
                 </Text>
               </View>
@@ -94,7 +94,7 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
                   <Text className="text-base font-semibold text-foreground mb-1">
                     {t('packTemplates.importFromOnlineContent')}
                   </Text>
-                  <Text className="text-sm text-muted-foreground">
+                  <Text className="text-sm text-muted-foreground" wrap>
                     {t('packTemplates.importFromOnlineContentDescription')}
                   </Text>
                 </View>

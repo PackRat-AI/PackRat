@@ -161,7 +161,7 @@ function LocationsScreen() {
             </Text>
             <View className="bg-muted/30 items-center rounded-lg p-4">
               <Icon name="magnify-minus-outline" size={24} color={colors.grey2} />
-              <Text className="mt-2 text-muted-foreground">
+              <Text className="mt-2 text-muted-foreground" wrap>
                 {t('weather.noLocationsMatch', { query: searchQuery })}
               </Text>
               <View className="mt-4 flex-row">
@@ -241,7 +241,7 @@ function LocationsScreen() {
                 <Text className="mt-4 text-center text-lg font-medium">
                   {t('weather.noSavedLocations')}
                 </Text>
-                <Text className="mb-4 mt-2 px-8 text-center text-sm text-muted-foreground">
+                <Text className="mb-4 mt-2 px-8 text-center text-sm text-muted-foreground" wrap>
                   {t('weather.noSavedLocationsDesc')}
                 </Text>
                 <Button variant="primary" onPress={handleAddLocation}>

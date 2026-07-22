@@ -59,7 +59,7 @@ export const SeasonSuggestionsUnlockSheet = React.forwardRef<
           {t('seasons.unlockTitle')}
         </Text>
 
-        <Text variant="subhead" className="mb-6 text-center text-muted-foreground">
+        <Text variant="subhead" className="mb-6 text-center text-muted-foreground" wrap>
           {t('seasons.unlockDescription')}
         </Text>
 

@@ -154,28 +154,28 @@ export default function PackStatsScreen() {
             </Text>
 
             <View className="mb-3 rounded-md bg-muted p-3 dark:bg-gray-100/5">
-              <Text variant="subhead" className="font-medium">
+              <Text variant="subhead" className="font-medium" wrap>
                 {t('packs.lighterThanSimilar')}
               </Text>
-              <Text variant="footnote" className="mt-1 text-muted-foreground">
+              <Text variant="footnote" className="mt-1 text-muted-foreground" wrap>
                 {t('packs.basedOnData')}
               </Text>
             </View>
 
             <View className="mb-3 rounded-md bg-muted p-3 dark:bg-gray-100/5">
-              <Text variant="subhead" className="font-medium">
+              <Text variant="subhead" className="font-medium" wrap>
                 {t('packs.reducedWeight')}
               </Text>
-              <Text variant="footnote" className="mt-1 text-muted-foreground">
+              <Text variant="footnote" className="mt-1 text-muted-foreground" wrap>
                 {t('packs.weightReduction')}
               </Text>
             </View>
 
             <View className="rounded-md bg-muted p-3 dark:bg-gray-100/5">
-              <Text variant="subhead" className="font-medium">
+              <Text variant="subhead" className="font-medium" wrap>
                 {t('packs.heaviestCategory')}
               </Text>
-              <Text variant="footnote" className="mt-1 text-muted-foreground">
+              <Text variant="footnote" className="mt-1 text-muted-foreground" wrap>
                 {t('packs.considerUltralight')}
               </Text>
             </View>

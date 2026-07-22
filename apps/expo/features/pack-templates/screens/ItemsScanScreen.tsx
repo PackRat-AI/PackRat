@@ -1,7 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { assertNonNull } from '@packrat/guards';
-import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { Button } from '@packrat/ui/src/button';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
@@ -232,7 +232,7 @@ export function ItemsScanScreen() {
                 <Text className="text-xl font-semibold text-center mb-2">
                   {t('packTemplates.noDetections')}
                 </Text>
-                <Text className="text-center text-muted-foreground text-base leading-6">
+                <Text className="text-center text-muted-foreground text-base leading-6" wrap>
                   {t('packTemplates.tryDifferentImage')}
                 </Text>
               </View>

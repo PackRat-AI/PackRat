@@ -23,7 +23,7 @@ export function CatalogItemsAuthWall() {
           <Text variant="title1" className="text-center">
             {t('catalog.createYourPerfectPack')}
           </Text>
-          <Text variant="body" className="mb-6 text-center text-muted-foreground">
+          <Text variant="body" className="mb-6 text-center text-muted-foreground" wrap>
             {t('catalog.signInMessage')}
           </Text>
         </View>

@@ -85,7 +85,9 @@ function FeatureItem({
         <Text variant="title3" className="mb-0.5">
           {title}
         </Text>
-        <Text className="text-muted-foreground">{description}</Text>
+        <Text className="text-muted-foreground" wrap>
+          {description}
+        </Text>
       </View>
     </View>
   );

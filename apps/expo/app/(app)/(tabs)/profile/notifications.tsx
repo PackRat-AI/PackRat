@@ -81,7 +81,7 @@ export default function NotificationsScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium">{t('profile.weatherAlerts')}</Text>
-                  <Text variant="caption1" className="text-muted-foreground">
+                  <Text variant="caption1" className="text-muted-foreground" wrap>
                     {t('profile.weatherAlertsNotif')}
                   </Text>
                 </View>

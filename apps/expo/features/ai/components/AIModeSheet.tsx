@@ -188,7 +188,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
           {showSlowDeviceWarning && (
             <View className="mt-3 flex-row items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950">
               <Icon name="alert-outline" size={16} color="#d97706" />
-              <Text variant="footnote" className="flex-1 text-amber-700 dark:text-amber-300">
+              <Text variant="footnote" className="flex-1 text-amber-700 dark:text-amber-300" wrap>
                 {t('ai.localInferenceSlowNote')}
               </Text>
             </View>

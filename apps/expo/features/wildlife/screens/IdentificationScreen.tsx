@@ -1,6 +1,6 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { Button } from '@packrat/ui/src/button';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { appAlert } from 'expo-app/app/_layout';
@@ -210,7 +210,7 @@ export function IdentificationScreen() {
                 <Text className="text-lg font-semibold text-center mb-2">
                   {t('wildlife.noResultsFound')}
                 </Text>
-                <Text className="text-center text-muted-foreground text-sm">
+                <Text className="text-center text-muted-foreground text-sm" wrap>
                   {t('wildlife.noResultsDescription')}
                 </Text>
               </View>

@@ -32,7 +32,7 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
           <Text variant="title3" className="mb-2 text-center font-semibold">
             {t('seasons.chooseLocation')}
           </Text>
-          <Text variant="subhead" className="mb-10 text-center text-muted-foreground">
+          <Text variant="subhead" className="mb-10 text-center text-muted-foreground" wrap>
             {t('seasons.chooseLocationDescription')}
           </Text>
 

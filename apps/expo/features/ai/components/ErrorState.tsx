@@ -33,10 +33,10 @@ export function ErrorState({ error, onRetry, onClear }: ErrorStateProps) {
               {t('errors.contextOverflow.title')}
             </Text>
           </View>
-          <Text variant="caption1" className="text-muted-foreground">
+          <Text variant="caption1" className="text-muted-foreground" wrap>
             {t('errors.contextOverflow.description')}
           </Text>
-          <Text variant="caption1" className="text-muted-foreground">
+          <Text variant="caption1" className="text-muted-foreground" wrap>
             {t('errors.contextOverflow.hint')}
           </Text>
           {onClear && (
