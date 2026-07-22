@@ -121,7 +121,7 @@ export function SpeciesDetailScreen() {
             <Text className="text-sm font-semibold text-foreground mb-2 uppercase tracking-wide">
               {t('wildlife.description')}
             </Text>
-            <Text className="text-base text-foreground leading-6">
+            <Text wrap className="text-base text-foreground leading-6">
               {displaySpecies.description}
             </Text>
           </View>

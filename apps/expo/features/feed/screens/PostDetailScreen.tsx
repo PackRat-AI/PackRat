@@ -122,7 +122,11 @@ export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps)
 
       {/* Post info */}
       <View className="px-4 py-3">
-        {post.caption && <Text className="text-base mb-3">{post.caption}</Text>}
+        {post.caption && (
+          <Text wrap className="text-base mb-3">
+            {post.caption}
+          </Text>
+        )}
 
         {/* Like row */}
         <View className="flex-row items-center gap-4">

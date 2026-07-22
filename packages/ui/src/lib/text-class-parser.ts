@@ -107,10 +107,33 @@ function hasExplicitSizing(tokens: string[]): boolean {
 
 const WHITESPACE = /\s+/;
 
-/** For components with no textStyle escape hatch (e.g. Button) — just the sizing detection. */
+type HostMatchContents = boolean | { vertical?: boolean; horizontal?: boolean };
+
+/**
+ * For components with no textStyle escape hatch (e.g. Button) — matches both axes to content
+ * when there's no explicit sizing class. A button should size to its label/icon by default,
+ * not stretch to fill an arbitrary parent width.
+ */
 function shouldMatchContents(className: string | undefined): boolean {
   if (!className) return true;
   return !hasExplicitSizing(className.split(WHITESPACE).filter(Boolean));
+}
+
+/**
+ * For Text. Two conflicting default needs, disambiguated by the caller's explicit `wrap` flag:
+ * - `wrap: false` (default) — matches both axes to content, so short labels/badges/headings
+ *   shrink-wrap to their own text width, same as the old NativeWindUI Text's default behavior.
+ * - `wrap: true` — matches only the vertical axis, so the Host box keeps the parent's width
+ *   constraint and paragraph/note text wraps at that width instead of overflowing unwrapped.
+ * An explicit sizing class (flex-1, w-*, ...) always wins over either default.
+ */
+function textMatchContents(hostClassName: string | undefined, wrap: boolean): HostMatchContents {
+  const hasSizing = hostClassName
+    ? hasExplicitSizing(hostClassName.split(WHITESPACE).filter(Boolean))
+    : false;
+  // An explicit sizing class always wins — Yoga sizes the box, nothing matches to content.
+  if (hasSizing) return false;
+  return wrap ? { vertical: true } : true;
 }
 
 /**
@@ -118,11 +141,26 @@ function shouldMatchContents(className: string | undefined): boolean {
  * applied to the @expo/ui Host's textStyle, since Host's className interop only reaches the
  * box, never the native-bridged text inside) and everything else (kept as className on Host).
  */
-function splitTextClassName(
-  className: string | undefined,
-  themeColors: ThemeColors,
-): { textStyle: ParsedTextStyle; hostClassName: string | undefined; matchContents: boolean } {
-  if (!className) return { textStyle: {}, hostClassName: undefined, matchContents: true };
+function splitTextClassName({
+  className,
+  themeColors,
+  wrap,
+}: {
+  className: string | undefined;
+  themeColors: ThemeColors;
+  wrap: boolean;
+}): {
+  textStyle: ParsedTextStyle;
+  hostClassName: string | undefined;
+  matchContents: HostMatchContents;
+} {
+  if (!className) {
+    return {
+      textStyle: {},
+      hostClassName: undefined,
+      matchContents: textMatchContents(undefined, wrap),
+    };
+  }
 
   const textStyle: ParsedTextStyle = {};
   const hostTokens: string[] = [];
@@ -149,12 +187,13 @@ function splitTextClassName(
     }
   }
 
+  const hostClassName = hostTokens.length > 0 ? hostTokens.join(' ') : undefined;
   return {
     textStyle,
-    hostClassName: hostTokens.length > 0 ? hostTokens.join(' ') : undefined,
-    matchContents: !hasExplicitSizing(hostTokens),
+    hostClassName,
+    matchContents: textMatchContents(hostClassName, wrap),
   };
 }
 
 export { shouldMatchContents, splitTextClassName };
-export type { ParsedTextStyle };
+export type { HostMatchContents, ParsedTextStyle };

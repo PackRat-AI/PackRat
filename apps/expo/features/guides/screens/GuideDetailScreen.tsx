@@ -88,7 +88,9 @@ export const GuideDetailScreen = () => {
       </View>
 
       {guide.description && (
-        <Text className="text-gray-600 dark:text-gray-400 mb-2 text-base">{guide.description}</Text>
+        <Text className="text-gray-600 dark:text-gray-400 mb-2 text-base" wrap>
+          {guide.description}
+        </Text>
       )}
 
       <Markdown>{guide.content || ''}</Markdown>

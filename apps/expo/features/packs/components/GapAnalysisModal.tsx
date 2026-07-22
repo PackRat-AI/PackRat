@@ -556,7 +556,7 @@ export function GapAnalysisModal({
               <Pressable onPress={() => setActiveControlIndex(null)}>
                 <View>
                   {analysis.summary && (
-                    <Text className="mb-4 px-1 text-sm text-muted-foreground">
+                    <Text wrap className="mb-4 px-1 text-sm text-muted-foreground">
                       {analysis.summary}
                     </Text>
                   )}

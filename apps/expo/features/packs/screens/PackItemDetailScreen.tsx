@@ -134,7 +134,9 @@ export function ItemDetailScreen() {
           <Text className="mb-3 text-muted-foreground">{item.category}</Text>
 
           {item.description && (
-            <Text className="mb-4 text-muted-foreground">{item.description}</Text>
+            <Text wrap className="mb-4 text-muted-foreground">
+              {item.description}
+            </Text>
           )}
 
           <View className="mb-4 flex-row justify-between">
@@ -187,7 +189,9 @@ export function ItemDetailScreen() {
           {itemHasNotes && itemNotes && (
             <View className="mt-2">
               <Text className="mb-1 text-xs text-muted-foreground">{t('packs.notes')}</Text>
-              <Text textColor={colors.foreground}>{itemNotes}</Text>
+              <Text textColor={colors.foreground} wrap>
+                {itemNotes}
+              </Text>
             </View>
           )}
         </View>

@@ -119,7 +119,7 @@ function WeatherAlertCard({ alert }: { alert: WeatherAlert }) {
           <View className="mr-2 mt-1 text-muted-foreground">
             <MaterialCommunityIcons name="information-outline" size={16} color={colors.grey} />
           </View>
-          <Text variant="body" className="flex-1">
+          <Text variant="body" className="flex-1" wrap>
             {alert.details}
           </Text>
         </View>

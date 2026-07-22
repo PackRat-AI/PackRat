@@ -495,7 +495,9 @@ export function PackDetailScreen() {
           </View>
 
           {pack.description && (
-            <Text className="mb-4 text-muted-foreground">{pack.description}</Text>
+            <Text wrap className="mb-4 text-muted-foreground">
+              {pack.description}
+            </Text>
           )}
 
           <View className="mb-4 flex-row justify-between">

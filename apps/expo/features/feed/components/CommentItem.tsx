@@ -33,7 +33,9 @@ export const CommentItem: React.FC<CommentItemProps> = ({
             {formatRelativeDate({ dateValue: comment.createdAt })}
           </Text>
         </View>
-        <Text className="text-sm mt-0.5">{comment.content}</Text>
+        <Text className="text-sm mt-0.5" wrap>
+          {comment.content}
+        </Text>
         <View className="flex-row items-center gap-3 mt-1">
           <TouchableOpacity
             onPress={() => onLike(comment.id)}

@@ -31,7 +31,7 @@ function RecentPackCard({ pack }: { pack: Pack }) {
               {pack.name}
             </Text>
             {pack.description && (
-              <Text variant="subhead" className="text-muted-foreground">
+              <Text variant="subhead" className="text-muted-foreground" wrap>
                 {pack.description}
               </Text>
             )}

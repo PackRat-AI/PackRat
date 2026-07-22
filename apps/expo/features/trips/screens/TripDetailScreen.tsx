@@ -101,7 +101,9 @@ export function TripDetailScreen() {
           <View className="mb-6">
             <Text className="text-lg font-semibold text-foreground mb-2">{t('trips.details')}</Text>
             {trip.description ? (
-              <Text className="text-sm text-muted-foreground">{trip.description}</Text>
+              <Text className="text-sm text-muted-foreground" wrap>
+                {trip.description}
+              </Text>
             ) : (
               <Text className="text-sm text-muted-foreground italic">
                 {t('trips.noDetailsAvailable')}
@@ -200,7 +202,7 @@ export function TripDetailScreen() {
                         {t('trailConditions.reportConditionsTitle')}
                       </Text>
                     </View>
-                    <Text className="text-sm text-muted-foreground mb-3">
+                    <Text className="text-sm text-muted-foreground mb-3" wrap>
                       {t('trailConditions.reportConditionsPrompt')}
                     </Text>
                     <Button

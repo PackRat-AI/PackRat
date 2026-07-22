@@ -142,7 +142,9 @@ function ShoppingItemCard({ item }: { item: (typeof SHOPPING_LIST)[0] }) {
 
         {item.notes && (
           <View className="mt-3 rounded-md bg-muted p-3 dark:bg-gray-50/10">
-            <Text variant="footnote">{item.notes}</Text>
+            <Text variant="footnote" wrap>
+              {item.notes}
+            </Text>
           </View>
         )}
 

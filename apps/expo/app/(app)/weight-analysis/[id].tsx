@@ -116,7 +116,7 @@ export default function WeightAnalysisScreen() {
                     <View>
                       <Text>{item.name}</Text>
                       {item.notes && (
-                        <Text variant="footnote" className="text-muted-foreground">
+                        <Text variant="footnote" className="text-muted-foreground" wrap>
                           {item.notes}
                         </Text>
                       )}

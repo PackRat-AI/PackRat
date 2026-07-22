@@ -89,7 +89,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, curr
       {/* Caption */}
       {post.caption && (
         <Pressable onPress={handlePress}>
-          <Text className="px-4 pt-2 text-sm" numberOfLines={3}>
+          <Text className="px-4 pt-2 text-sm" numberOfLines={3} wrap>
             {post.caption}
           </Text>
         </Pressable>

@@ -67,6 +67,14 @@ type TextProps = {
   textStyle?: UniversalTextStyle;
   numberOfLines?: number;
   /**
+   * Set for paragraph/note/dynamic-length text that should wrap at its container's width
+   * (Host sizes only its height to content, keeping the parent's width constraint). Leave unset
+   * (default) for labels, badges, and headings that should shrink-wrap to their own text width —
+   * matching the old NativeWindUI Text's default behavior. Only matters when className has no
+   * explicit sizing (flex-1, w-*, h-*, ...), which always wins over either default.
+   */
+  wrap?: boolean;
+  /**
    * NativeWind classes. Font-weight/size, text-align, and text-color utilities (font-medium,
    * text-lg, text-center, text-muted-foreground, text-red-500, ...) are extracted and applied
    * to the native text itself — Host's className interop only reaches the box, never the
@@ -84,6 +92,7 @@ function Text({
   textColor,
   textStyle,
   numberOfLines,
+  wrap = false,
   className,
   style,
   testID,
@@ -93,11 +102,8 @@ function Text({
     textStyle: classTextStyle,
     hostClassName,
     matchContents,
-  } = splitTextClassName(className, colors);
+  } = splitTextClassName({ className, themeColors: colors, wrap });
   return (
-    // matchContents only when className has no explicit sizing (flex-1, w-*, h-*, ...) — those
-    // need Yoga to size the box; everything else needs matchContents or it collapses to zero
-    // height (Host has no other size signal without a native-content-driven size).
     <Host matchContents={matchContents} className={hostClassName} style={style} testID={testID}>
       <ExpoText
         numberOfLines={numberOfLines}

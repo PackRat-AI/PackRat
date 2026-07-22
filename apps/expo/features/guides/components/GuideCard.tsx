@@ -27,7 +27,11 @@ export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
               {guide.difficulty && <Text variant="footnote">{guide.difficulty}</Text>}
               <CardTitle className="text-lg font-semibold mb-1">{guide.title}</CardTitle>
               {guide.description && (
-                <Text className="text-sm text-gray-600 dark:text-gray-400 mb-2" numberOfLines={2}>
+                <Text
+                  className="text-sm text-gray-600 dark:text-gray-400 mb-2"
+                  numberOfLines={2}
+                  wrap
+                >
                   {guide.description}
                 </Text>
               )}

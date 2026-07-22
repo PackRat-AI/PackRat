@@ -118,7 +118,7 @@ export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
         </View>
 
         {template.description && (
-          <Text className="text-sm text-muted-foreground" numberOfLines={2}>
+          <Text className="text-sm text-muted-foreground" numberOfLines={2} wrap>
             {template.description}
           </Text>
         )}
