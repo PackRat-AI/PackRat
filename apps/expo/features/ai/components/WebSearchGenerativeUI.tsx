@@ -2,7 +2,7 @@ import EvilIcons from '@expo/vector-icons/EvilIcons';
 import Fontisto from '@expo/vector-icons/Fontisto';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { Sheet, useSheetRef } from '@packrat/ui/nativewindui';
+import { Sheet, useSheetRef } from '@packrat/ui/src/bottom-sheet';
 import { Card, CardContent } from '@packrat/ui/src/card';
 import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';

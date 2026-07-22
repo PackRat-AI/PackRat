@@ -2,7 +2,7 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { isString, toRecordArray } from '@packrat/guards';
-import { Sheet } from '@packrat/ui/nativewindui';
+import { Sheet } from '@packrat/ui/src/bottom-sheet';
 import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';

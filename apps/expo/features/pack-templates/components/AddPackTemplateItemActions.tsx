@@ -2,7 +2,7 @@ import { useActionSheet } from '@expo/react-native-action-sheet';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { isFunction } from '@packrat/guards';
-import { Sheet } from '@packrat/ui/nativewindui';
+import { Sheet } from '@packrat/ui/src/bottom-sheet';
 import { Text } from '@packrat/ui/src/text';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';

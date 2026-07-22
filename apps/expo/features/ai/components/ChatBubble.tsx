@@ -1,6 +1,7 @@
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { keyIn } from '@packrat/guards';
-import { Text as SelectableText, Sheet, useSheetRef } from '@packrat/ui/nativewindui';
+import { Text as SelectableText } from '@packrat/ui/nativewindui';
+import { Sheet, useSheetRef } from '@packrat/ui/src/bottom-sheet';
 import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import type { ToolUIPart, UIMessage } from 'ai';

@@ -1,6 +1,6 @@
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { isDefined } from '@packrat/guards';
-import { Sheet, useSheetRef } from '@packrat/ui/nativewindui';
+import { Sheet, useSheetRef } from '@packrat/ui/src/bottom-sheet';
 import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';

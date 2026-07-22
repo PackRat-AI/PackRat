@@ -1,4 +1,4 @@
-import { useSheetRef } from '@packrat/ui/nativewindui';
+import { useSheetRef } from '@packrat/ui/src/bottom-sheet';
 import { Button } from '@packrat/ui/src/button';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';

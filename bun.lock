@@ -746,6 +746,7 @@
       "version": "2.0.28",
       "dependencies": {
         "@expo/ui": "^56.0.9",
+        "@gorhom/bottom-sheet": "^5.1.2",
         "@packrat-ai/nativewindui": "2.2.1",
         "@rn-primitives/avatar": "^1.1.0",
         "@rn-primitives/checkbox": "^1.1.0",

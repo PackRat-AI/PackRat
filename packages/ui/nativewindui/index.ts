@@ -23,7 +23,8 @@ export type { ButtonProps } from '@packrat-ai/nativewindui';
 //   (FlashList + View/Pressable + Text). ListItem uses Pressable, not the migrated Button —
 //   nesting a Host-bridged Button around multiple Host-bridged Text children (title+subtitle)
 //   reproduces the Button-collapse bug fixed earlier.
-export { Sheet, useSheetRef } from '@packrat-ai/nativewindui'; //  16 uses → @expo/ui Universal BottomSheet
+// Sheet/useSheetRef ✓ done — packages/ui/src/bottom-sheet.tsx, plain RN composition
+//   (@gorhom/bottom-sheet, already RN-native, no Host risk)
 export { Form, FormSection, FormItem } from '@packrat-ai/nativewindui'; //  24 uses → @expo/ui Universal FieldGroup + SwiftUI Form
 // TextField ✓ done — packages/ui/src/text-field.tsx (Android/default, Material floating label)
 //   + text-field.ios.tsx (simple, matches the old package's platform split exactly).

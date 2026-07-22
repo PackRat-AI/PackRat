@@ -55,6 +55,14 @@ One typecheck fix needed: the Material `MaterialLabel`'s filled-variant backgrou
 
 Verified on-device (iOS): `auth/(create-account)/credentials.tsx` (4 stacked fields, one with `leftView`) and `auth/(login)/index.tsx` (2 fields) both render correctly — fields sized correctly, dividers between fields visible, placeholder text and Submit/Continue button positioned correctly. Android Material design not yet re-verified on-device in this migration pass (previously only visually reviewed pre-port); low risk since it's a near-1:1 port of the original 334-line file.
 
+## Resolved: Sheet/useSheetRef — no Host bridge, direct port
+
+`Sheet`/`useSheetRef` never needed `@expo/ui` either — the old package's implementation was already a thin wrapper around `@gorhom/bottom-sheet`'s `BottomSheetModal` (an actively-maintained RN library, already a JS dependency of `apps/expo`, added to `packages/ui/package.json` too). Ported unchanged to `packages/ui/src/bottom-sheet.tsx`; same zero-native-bridge category as `List`/`Card`/`Toggle`/`Checkbox`/`Avatar`.
+
+17 call sites updated. A few files import `Sheet`/`useSheetRef` alongside still-unmigrated `Alert`/`Form` symbols from the same `@packrat/ui/nativewindui` line (`ChatBubble.tsx`, `getPackTemplateDetailOptions.tsx`) — these were split into two import lines rather than migrated wholesale, since `Alert`/`Form` aren't done yet.
+
+**On-device verification gap, accepted deliberately:** `Sheet` only opens via an in-app button press (e.g. the "+" FAB on `pack-templates` opening `TemplateCreationOptions`) — there's no deep-linkable "sheet open" state, and the user's mandated `xcrun simctl`-only workflow (deep-link navigation + screenshot, no coordinate taps/AppleScript/cliclick) has no way to trigger it. Typecheck and lint are clean, and the component is an unmodified 1:1 port of an already-shipped wrapper around an unchanged third-party library — the same risk profile as other zero-Host-bridge ports that were accepted on typecheck+lint alone. Flagging here rather than silently skipping the check.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.
