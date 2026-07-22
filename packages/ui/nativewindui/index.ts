@@ -16,9 +16,13 @@
 //   component rather than migrating to headerSearchBarOptions, which doesn't fit that usage)
 //
 // Phase 3 — @expo/ui Universal → packages/ui/src/
-export { Text, TextClassContext, textVariants } from '@packrat-ai/nativewindui'; // 114 uses → @expo/ui Universal Text
-export { Button, buttonVariants, buttonTextVariants } from '@packrat-ai/nativewindui'; //  49 uses → @expo/ui Universal Button
-export type { ButtonProps } from '@packrat-ai/nativewindui';
+// Text/Button ✓ done for all but 3 documented exceptions, kept live for those call sites only:
+//   GapSuggestionRow.tsx (Text as a MaskedView maskElement — Host compatibility unverified),
+//   demo/index.tsx (uiTextView/selectable, no @expo/ui equivalent),
+//   ChatBubble.tsx (one Text aliased SelectableText for the text-selection sheet).
+//   Do not add new call sites here — use packages/ui/src/text.tsx and button.tsx instead.
+export { Text, TextClassContext, textVariants } from '@packrat-ai/nativewindui';
+export { Button, buttonVariants, buttonTextVariants } from '@packrat-ai/nativewindui';
 // List/ListItem/ListSectionHeader ✓ done — packages/ui/src/list.tsx, plain RN composition
 //   (FlashList + View/Pressable + Text). ListItem uses Pressable, not the migrated Button —
 //   nesting a Host-bridged Button around multiple Host-bridged Text children (title+subtitle)
@@ -35,7 +39,6 @@ export type { ButtonProps } from '@packrat-ai/nativewindui';
 // ActivityIndicator ✓ done — packages/ui/src/loading-indicator.ios.tsx + .android.tsx
 // Alert/AlertAnchor ✓ done — packages/ui/src/alert.tsx (Android/default, @rn-primitives/alert-dialog)
 //   + alert.ios.tsx (RN core Alert.alert/Alert.prompt — no Host bridge on either platform)
-export type { AlertMethods } from '@packrat-ai/nativewindui'; //  14 uses
 // Card ✓ done — packages/ui/src/card.tsx, plain RN composition (no native Host needed).
 //   CardBadge/CardImage dropped — zero real call sites used them; re-add from the old
 //   Card.tsx source (git history) if a future screen needs them.
