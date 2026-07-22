@@ -1,8 +1,9 @@
 import { Button as ExpoButton, Host } from '@expo/ui';
 import { cssInterop } from 'nativewind';
-import type { ReactNode } from 'react';
+import { Children, isValidElement, type ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { shouldMatchContents } from './lib/text-class-parser';
+import { Text } from './text';
 
 cssInterop(Host, { className: 'style' });
 
@@ -34,6 +35,27 @@ function resolveVariant(variant: ButtonVariant): 'filled' | 'outlined' | 'text' 
     : (variant as 'filled' | 'outlined' | 'text');
 }
 
+/**
+ * Extracts a plain string label when `children` is exactly one `Text` (or raw string) with
+ * only string content, so Button can use @expo/ui's `label` prop instead of nesting a Text's
+ * own Host inside Button's Host. Two independent native-bridge Hosts can't correctly report
+ * intrinsic size across that boundary — nesting them collapsed the button to near-zero size
+ * with its label overflowing outside, confirmed on-device. Anything more complex (icon+text,
+ * multiple children) falls through to `children` unchanged — still nested-Host-risky, a known
+ * gap, but rare relative to the plain-text-label case this fixes.
+ */
+function extractLabel(children: ReactNode): string | undefined {
+  const kids = Children.toArray(children);
+  if (kids.length !== 1) return undefined;
+  const only = kids[0];
+  if (typeof only === 'string') return only;
+  if (isValidElement(only) && only.type === Text) {
+    const inner = (only.props as { children?: ReactNode }).children;
+    return typeof inner === 'string' ? inner : undefined;
+  }
+  return undefined;
+}
+
 type ButtonProps = {
   children?: ReactNode;
   label?: string;
@@ -61,6 +83,7 @@ function Button({
   style,
   testID,
 }: ButtonProps) {
+  const resolvedLabel = label ?? extractLabel(children);
   return (
     // matchContents only when className has no explicit sizing (flex-1, w-*, h-*, ...) — those
     // need Yoga to size the box; everything else needs matchContents or it collapses to zero
@@ -73,12 +96,12 @@ function Button({
       testID={testID}
     >
       <ExpoButton
-        label={label}
+        label={resolvedLabel}
         onPress={onPress}
         variant={resolveVariant(variant)}
         disabled={disabled}
       >
-        {children}
+        {resolvedLabel === undefined ? children : undefined}
       </ExpoButton>
     </Host>
   );
