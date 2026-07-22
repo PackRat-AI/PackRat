@@ -25,7 +25,8 @@ export type { ButtonProps } from '@packrat-ai/nativewindui';
 //   reproduces the Button-collapse bug fixed earlier.
 // Sheet/useSheetRef ✓ done — packages/ui/src/bottom-sheet.tsx, plain RN composition
 //   (@gorhom/bottom-sheet, already RN-native, no Host risk)
-export { Form, FormSection, FormItem } from '@packrat-ai/nativewindui'; //  24 uses → @expo/ui Universal FieldGroup + SwiftUI Form
+// Form/FormSection/FormItem ✓ done — packages/ui/src/form.tsx, plain RN View composition
+//   (no Host bridge needed — old package's Form was already plain RN)
 // TextField ✓ done — packages/ui/src/text-field.tsx (Android/default, Material floating label)
 //   + text-field.ios.tsx (simple, matches the old package's platform split exactly).
 // Toggle ✓ done — packages/ui/src/toggle.tsx wraps react-native's Switch directly (already RN-native, no Host risk)

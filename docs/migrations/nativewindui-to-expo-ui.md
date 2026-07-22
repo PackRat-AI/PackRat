@@ -63,6 +63,16 @@ Verified on-device (iOS): `auth/(create-account)/credentials.tsx` (4 stacked fie
 
 **On-device verification gap, accepted deliberately:** `Sheet` only opens via an in-app button press (e.g. the "+" FAB on `pack-templates` opening `TemplateCreationOptions`) — there's no deep-linkable "sheet open" state, and the user's mandated `xcrun simctl`-only workflow (deep-link navigation + screenshot, no coordinate taps/AppleScript/cliclick) has no way to trigger it. Typecheck and lint are clean, and the component is an unmodified 1:1 port of an already-shipped wrapper around an unchanged third-party library — the same risk profile as other zero-Host-bridge ports that were accepted on typecheck+lint alone. Flagging here rather than silently skipping the check.
 
+## Resolved: Form/FormSection/FormItem — no Host bridge, direct port
+
+Same story as `Sheet`/`TextField`: the old package's `Form` was already plain RN `View` composition — no `@expo/ui` involved. Ported directly to `packages/ui/src/form.tsx`. One real prop-shape difference handled: `FormSection`'s `materialIconProps` used the old package's own `Icon` component (`sfSymbol`/`materialCommunityIcon` object props); this app has its own `Icon` (`apps/expo/components/Icon`) with a unified `name` string prop. All 6 real call sites already passed `materialIconProps={{ name: '...' }}` (a plain MaterialCommunityIcons name string), so the new type (`{ name: MaterialIconName }`) is a drop-in match — no call-site changes needed beyond the import swap.
+
+15 call sites updated (2 of them, `PackForm.tsx`/`PackTemplateForm.tsx`, needed splitting a still-mixed `DropdownMenu`+`Form` import into two lines; 3 auth screens similarly split from `AlertAnchor`).
+
+Verified on-device (iOS): `auth/(login)/index.tsx` renders correctly — grouped card with divider between Email/Password fields, matching the pre-migration layout exactly.
+
+**Phase 3 is now fully complete** — all of Text, Button, List, Toggle, TextField, Sheet, and Form/FormSection/FormItem are migrated off `@packrat-ai/nativewindui`. Remaining work is Phase 4 (`Alert`, `ContextMenu`/`DropdownMenu`, `Toolbar` — all previously deprioritized as higher-risk) and Phase 2's `SearchInput`.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.

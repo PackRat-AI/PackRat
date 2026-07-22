@@ -1,13 +1,8 @@
 import { fromZod } from '@packrat/guards';
 import { PackCategorySchema } from '@packrat/schemas/constants';
-import {
-  createDropdownItem,
-  DropdownMenu,
-  Form,
-  FormItem,
-  FormSection,
-} from '@packrat/ui/nativewindui';
+import { createDropdownItem, DropdownMenu } from '@packrat/ui/nativewindui';
 import { Button } from '@packrat/ui/src/button';
+import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { TextField } from '@packrat/ui/src/text-field';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
