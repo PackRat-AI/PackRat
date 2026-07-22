@@ -1,6 +1,5 @@
 import { assertDefined } from '@packrat/guards';
 import {
-  Checkbox,
   ContextMenu,
   createContextItem,
   createDropdownItem,
@@ -13,6 +12,7 @@ import {
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Avatar, AvatarFallback } from '@packrat/ui/src/avatar';
 import { Button } from '@packrat/ui/src/button';
+import { Checkbox } from '@packrat/ui/src/checkbox';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';

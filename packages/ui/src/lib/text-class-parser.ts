@@ -153,12 +153,16 @@ function splitTextClassName({
   textStyle: ParsedTextStyle;
   hostClassName: string | undefined;
   matchContents: HostMatchContents;
+  /** wrap:true with no explicit sizing class needs a fallback width — Host has nothing to wrap
+   * text against otherwise, since the parent may not stretch it (e.g. `items-center`). */
+  needsExplicitWidth: boolean;
 } {
   if (!className) {
     return {
       textStyle: {},
       hostClassName: undefined,
       matchContents: textMatchContents(undefined, wrap),
+      needsExplicitWidth: wrap,
     };
   }
 
@@ -192,6 +196,7 @@ function splitTextClassName({
     textStyle,
     hostClassName,
     matchContents: textMatchContents(hostClassName, wrap),
+    needsExplicitWidth: wrap && !hasExplicitSizing(hostTokens),
   };
 }
 

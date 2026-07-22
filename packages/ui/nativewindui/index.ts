@@ -54,7 +54,7 @@ export {
   CardSubtitle,
 } from '@packrat-ai/nativewindui'; //   8 uses → JC Card (Android) + custom View (iOS)
 // SegmentedControl ✓ done — packages/ui/src/segmented-control.tsx wraps @expo/ui community SegmentedControl
-export { Checkbox } from '@packrat-ai/nativewindui'; //   3 uses → @expo/ui Universal Checkbox
+// Checkbox ✓ done — packages/ui/src/checkbox.tsx wraps @rn-primitives/checkbox directly (already RN-native, no Host risk)
 export { ContextMenu, createContextItem, createContextSubMenu } from '@packrat-ai/nativewindui'; //   multiple uses → SwiftUI ContextMenu + JC DropdownMenu
 export type { ContextMenuMethods } from '@packrat-ai/nativewindui';
 export { DropdownMenu, createDropdownItem, createDropdownSubMenu } from '@packrat-ai/nativewindui'; //   multiple uses → @expo/ui DropdownMenu

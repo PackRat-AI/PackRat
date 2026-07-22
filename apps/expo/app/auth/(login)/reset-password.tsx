@@ -1,13 +1,7 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
-import {
-  AlertAnchor,
-  Checkbox,
-  Form,
-  FormItem,
-  FormSection,
-  TextField,
-} from '@packrat/ui/nativewindui';
+import { AlertAnchor, Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
 import { Button } from '@packrat/ui/src/button';
+import { Checkbox } from '@packrat/ui/src/checkbox';
 import { Text } from '@packrat/ui/src/text';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';

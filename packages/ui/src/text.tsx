@@ -102,9 +102,20 @@ function Text({
     textStyle: classTextStyle,
     hostClassName,
     matchContents,
+    needsExplicitWidth,
   } = splitTextClassName({ className, themeColors: colors, wrap });
+  // wrap needs a definite width to wrap against — matchContents:{vertical:true} alone only
+  // stops Host from shrink-wrapping, it doesn't give SwiftUI/Compose anything to wrap AT. A
+  // parent using `items-center` (cross-axis center, not the Yoga default `stretch`) never hands
+  // the Host a width, so without this the text renders one word per line at ~0 available width.
+  const resolvedStyle = needsExplicitWidth ? [{ width: '100%' as const }, style] : style;
   return (
-    <Host matchContents={matchContents} className={hostClassName} style={style} testID={testID}>
+    <Host
+      matchContents={matchContents}
+      className={hostClassName}
+      style={resolvedStyle}
+      testID={testID}
+    >
       <ExpoText
         numberOfLines={numberOfLines}
         textStyle={{
