@@ -1,5 +1,6 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
-import { Alert, ListItem } from '@packrat/ui/nativewindui';
+import { Alert } from '@packrat/ui/nativewindui';
+import { ListItem } from '@packrat/ui/src/list';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';

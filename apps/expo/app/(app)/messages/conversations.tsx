@@ -4,15 +4,13 @@ import {
   createContextItem,
   createDropdownItem,
   DropdownMenu,
-  List,
-  ListItem,
-  type ListRenderItemInfo,
   Toolbar,
 } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Avatar, AvatarFallback } from '@packrat/ui/src/avatar';
 import { Button } from '@packrat/ui/src/button';
 import { Checkbox } from '@packrat/ui/src/checkbox';
+import { List, ListItem, type ListRenderItemInfo } from '@packrat/ui/src/list';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
@@ -20,14 +18,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
-import {
-  Dimensions,
-  Platform,
-  Pressable,
-  type TextStyle,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import { Dimensions, Platform, Pressable, View, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   type AnimatedStyle,
@@ -238,7 +229,7 @@ const CONTEXT_MENU_ITEMS = [
 
 const TIME_STAMP_WIDTH = 96;
 
-const TEXT_STYLE: TextStyle = {
+const TEXT_STYLE: ViewStyle = {
   paddingRight: TIME_STAMP_WIDTH,
 };
 

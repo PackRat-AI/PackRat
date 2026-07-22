@@ -1,4 +1,4 @@
-import { ListItem } from '@packrat/ui/nativewindui';
+import { ListItem } from '@packrat/ui/src/list';
 import { Icon } from 'expo-app/components/Icon';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

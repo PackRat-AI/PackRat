@@ -19,20 +19,10 @@ export type { SearchInputProps, SearchInputRef } from '@packrat-ai/nativewindui'
 export { Text, TextClassContext, textVariants } from '@packrat-ai/nativewindui'; // 114 uses → @expo/ui Universal Text
 export { Button, buttonVariants, buttonTextVariants } from '@packrat-ai/nativewindui'; //  49 uses → @expo/ui Universal Button
 export type { ButtonProps } from '@packrat-ai/nativewindui';
-export {
-  ListItem,
-  List,
-  ListSectionHeader,
-  getStickyHeaderIndices,
-} from '@packrat-ai/nativewindui'; //  22 uses → @expo/ui Universal ListItem + List
-export type {
-  ListDataItem,
-  ListItemProps,
-  ListProps,
-  ListRef,
-  ListRenderItemInfo,
-  ListSectionHeaderProps,
-} from '@packrat-ai/nativewindui';
+// List/ListItem/ListSectionHeader ✓ done — packages/ui/src/list.tsx, plain RN composition
+//   (FlashList + View/Pressable + Text). ListItem uses Pressable, not the migrated Button —
+//   nesting a Host-bridged Button around multiple Host-bridged Text children (title+subtitle)
+//   reproduces the Button-collapse bug fixed earlier.
 export { Sheet, useSheetRef } from '@packrat-ai/nativewindui'; //  16 uses → @expo/ui Universal BottomSheet
 export { Form, FormSection, FormItem } from '@packrat-ai/nativewindui'; //  24 uses → @expo/ui Universal FieldGroup + SwiftUI Form
 export { TextField } from '@packrat-ai/nativewindui'; //   9 uses → @expo/ui Universal TextInput

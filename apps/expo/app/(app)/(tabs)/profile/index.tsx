@@ -1,14 +1,9 @@
 import { clientEnvs } from '@packrat/env/expo-client';
 import { isRemoteUrl, isString } from '@packrat/guards';
-import {
-  List,
-  ListItem,
-  type ListRenderItemInfo,
-  ListSectionHeader,
-} from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Avatar, AvatarFallback } from '@packrat/ui/src/avatar';
 import { Button } from '@packrat/ui/src/button';
+import { List, ListItem, type ListRenderItemInfo, ListSectionHeader } from '@packrat/ui/src/list';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
