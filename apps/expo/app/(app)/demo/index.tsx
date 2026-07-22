@@ -1,5 +1,7 @@
-import { Button, Text } from '@packrat/ui/nativewindui';
+import { Text as SelectableText } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { FlashList } from '@shopify/flash-list';
 import { Card } from 'expo-app/components/Card';
 import { Icon } from 'expo-app/components/Icon';
@@ -11,7 +13,7 @@ import { useHeaderHeight } from 'expo-router/react-navigation';
 import { cssInterop } from 'nativewind';
 import type * as React from 'react';
 import { useState } from 'react';
-import { Linking, useWindowDimensions, View } from 'react-native';
+import { Linking, Pressable, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 cssInterop(FlashList, {
@@ -74,17 +76,14 @@ function ListEmptyComponent() {
       <Text variant="title3" className="pb-1 text-center font-semibold">
         No Components Installed
       </Text>
-      <Text color="tertiary" variant="subhead" className="pb-4 text-center">
-        You can install any of the free components from the{' '}
-        <Text
-          onPress={() => Linking.openURL('https://nativewindui.com')}
-          variant="subhead"
-          className="text-primary"
-        >
-          NativeWindUI
-        </Text>
-        {' website.'}
+      <Text color="tertiary" variant="subhead" className="pb-1 text-center">
+        You can install any of the free components from the NativeWindUI website.
       </Text>
+      <Pressable onPress={() => Linking.openURL('https://nativewindui.com')}>
+        <Text variant="subhead" className="text-primary pb-4 text-center">
+          nativewindui.com
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -213,9 +212,9 @@ const COMPONENTS: ComponentItem[] = [
     name: 'Selectable Text',
     component: function SelectableTextExample() {
       return (
-        <Text uiTextView selectable>
+        <SelectableText uiTextView selectable>
           Long press or double press this text
-        </Text>
+        </SelectableText>
       );
     },
   },

@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
@@ -43,12 +43,14 @@ function ShimmerFindingText({ suggestion }: { suggestion: string }) {
     <MaskedView
       style={{ flex: 1 }}
       maskElement={
-        <Text style={{ fontSize: 12, fontStyle: 'italic' }} className="text-foreground">
+        // @expo/ui's Universal Text has no fontStyle/italic support — dropped, matches the
+        // shimmer-loading state's minor visual polish, not a functional requirement.
+        <Text textStyle={{ fontSize: 12 }} className="text-foreground">
           {text}
         </Text>
       }
     >
-      <Text style={{ fontSize: 12, fontStyle: 'italic' }} className="text-muted-foreground">
+      <Text textStyle={{ fontSize: 12 }} className="text-muted-foreground">
         {text}
       </Text>
       <Animated.View
@@ -239,7 +241,7 @@ export function GapSuggestionRow({
         <View className="flex-row items-start gap-2">
           <View className="flex-1">
             {priorityConfig && (
-              <Text className="mb-1 text-xs font-semibold" style={{ color: priorityColor }}>
+              <Text className="mb-1 text-xs font-semibold" textStyle={{ color: priorityColor }}>
                 {priorityConfig.label}
               </Text>
             )}
@@ -296,7 +298,7 @@ export function GapSuggestionRow({
                     onPress={onSwapPress}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 6 }}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.grey }}>
+                    <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.grey }}>
                       Swap
                     </Text>
                   </ScalePress>
@@ -322,7 +324,7 @@ export function GapSuggestionRow({
                           }}
                         >
                           <Text
-                            style={{
+                            textStyle={{
                               fontSize: 13,
                               fontWeight: '700',
                               color: '#fff',
@@ -344,7 +346,9 @@ export function GapSuggestionRow({
                         onPress={() => displayItem && handleAdd(displayItem)}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 10 }}
                       >
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
+                        <Text
+                          textStyle={{ fontSize: 13, fontWeight: '600', color: colors.primary }}
+                        >
                           Add
                         </Text>
                       </ScalePress>
@@ -399,11 +403,11 @@ export function GapSuggestionRow({
                         hitSlop={{ top: 20, bottom: 20, left: 12, right: 12 }}
                       >
                         <Text
-                          style={{
+                          style={{ minWidth: 20 }}
+                          textStyle={{
                             fontSize: 16,
                             fontWeight: '700',
                             color: '#fff',
-                            minWidth: 20,
                             textAlign: 'center',
                             lineHeight: 20,
                           }}
