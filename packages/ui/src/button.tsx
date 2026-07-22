@@ -68,6 +68,7 @@ type ButtonProps = {
   androidRootClassName?: string;
   accessible?: boolean;
   accessibilityHint?: string;
+  accessibilityLabel?: string;
   onLayout?: (event: LayoutChangeEvent) => void;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -83,6 +84,7 @@ function Button({
   className,
   accessible,
   accessibilityHint,
+  accessibilityLabel,
   onLayout,
   style,
   testID,
@@ -98,6 +100,7 @@ function Button({
       style={[SIZE_STYLE[size], style]}
       accessible={accessible}
       accessibilityHint={accessibilityHint}
+      accessibilityLabel={accessibilityLabel}
       onLayout={onLayout}
       testID={testID}
     >

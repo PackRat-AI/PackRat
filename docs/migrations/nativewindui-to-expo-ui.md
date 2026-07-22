@@ -120,6 +120,20 @@ Same story again: the old package's `Toolbar` wrapped `expo-blur`'s `BlurView` (
 
 Remaining before full removal: Phase 2's `SearchInput` (marked "reverted, pending re-migration" in the tracker), then the final removal phase (drop the `@packrat-ai/nativewindui` dependency, `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN`, etc.) once the tracker is fully empty.
 
+## Resolved: SearchInput — no @expo/ui bridge, kept as a component (not migrated to headerSearchBarOptions)
+
+The original plan (replacement map, above) called for deleting `SearchInput` entirely in favor of Expo Router's `Stack.SearchBar`/`headerSearchBarOptions` — the native nav-bar search pattern. Checked all 6 real call sites (`location-search.tsx`, `PackSelectionScreen.tsx`, `CatalogBrowserModal.tsx`, `PackStatsTile.tsx`, `LocationsScreen.tsx`, `LocationSearchScreen.tsx`): every one renders `SearchInput` inline, embedded in a modal or screen body above a list/map — none are a top-of-screen nav-bar search. `headerSearchBarOptions` doesn't fit that usage (it replaces the nav bar's own search affordance, not an in-content search field), so `SearchInput` was ported as a component instead, matching the same "old plan assumed something the old package's actual source didn't require" pattern found in every other Phase 4 component this session.
+
+Like `TextField`, this has two genuinely different platform designs — Android/default is a pill-shaped button-wrapped search bar, iOS is an animated cancel-button design (Reanimated `measure`-driven width animation). Ported both directly to `packages/ui/src/search-input.tsx` + `.ios.tsx`, sharing `search-input-types.ts`. `Icon` name references switched from the old package's `magnifyingglass`/`multiply` (SF Symbol names) to this app's own icon set naming (`magnify`/`close`, matching what other search/clear UI in this app already uses).
+
+`apps/expo/components/SearchInput.tsx` — a thin wrapper adding the Android keyboard-hide-blur fix (`useKeyboardHideBlur`) — updated to import from the new location instead of `@packrat/ui/nativewindui`; its internal alias renamed from `NativeWindUISearchInput` to `BaseSearchInput` since the old name was no longer accurate.
+
+Also widened `Button`'s props with `accessibilityLabel` (alongside the `accessibilityHint`/`onLayout` additions from the ContextMenu/DropdownMenu migration) — `SearchInput`'s pill-button trigger needed it.
+
+Verified on-device (iOS): `trip/location-search.tsx` — pill-shaped search bar renders correctly with magnifying-glass icon, placeholder text, positioned above the map.
+
+**This closes the entire `packages/ui/nativewindui/index.ts` tracker — every originally-exported component is now ported to `packages/ui/src/`.** Next: the final removal phase (drop `@packrat-ai/nativewindui` from `package.json`, remove `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` from `bunfig.toml`/docs, delete the now-empty `packages/ui/nativewindui/` directory) — not started yet.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.

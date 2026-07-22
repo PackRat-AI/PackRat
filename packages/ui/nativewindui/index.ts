@@ -11,9 +11,9 @@
 // Phase 1 ✓ done — useColorScheme → expo-app/lib/hooks/useColorScheme, cn → expo-app/lib/cn
 // Phase 2 — LargeTitleHeader/SearchInput → Stack.Screen + headerSearchBarOptions
 //   LargeTitleHeader ✓ done
-//   SearchInput — reverted, pending re-migration
-export { SearchInput } from '@packrat-ai/nativewindui'; //   uses → headerSearchBarOptions
-export type { SearchInputProps, SearchInputRef } from '@packrat-ai/nativewindui';
+//   SearchInput ✓ done — packages/ui/src/search-input.tsx + .ios.tsx, plain RN composition
+//   (real call sites are inline/modal search bars, not native nav-bar search — kept as a
+//   component rather than migrating to headerSearchBarOptions, which doesn't fit that usage)
 //
 // Phase 3 — @expo/ui Universal → packages/ui/src/
 export { Text, TextClassContext, textVariants } from '@packrat-ai/nativewindui'; // 114 uses → @expo/ui Universal Text
