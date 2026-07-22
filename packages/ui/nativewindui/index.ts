@@ -1,56 +1,36 @@
-// NativeWindUI → Expo UI migration tracker
+// NativeWindUI → Expo UI migration tracker — COMPLETE
 //
-// Each export line is one component still backed by @packrat-ai/nativewindui.
-// Delete a line when its packages/ui/src/ replacement lands.
-// When this file is empty: remove @packrat-ai/nativewindui from package.json
-// and drop PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN from bunfig.toml.
+// Every component originally exported from this file has been ported to packages/ui/src/.
+// @packrat-ai/nativewindui has been removed from packages/ui/package.json and apps/expo's
+// direct dependency; PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN has been dropped from bunfig.toml.
 //
-// Run `bun check:migration` for per-phase progress.
-// Full plan: docs/migrations/nativewindui-to-expo-ui.md
+// Full history: docs/migrations/nativewindui-to-expo-ui.md
 //
 // Phase 1 ✓ done — useColorScheme → expo-app/lib/hooks/useColorScheme, cn → expo-app/lib/cn
-// Phase 2 — LargeTitleHeader/SearchInput → Stack.Screen + headerSearchBarOptions
-//   LargeTitleHeader ✓ done
-//   SearchInput ✓ done — packages/ui/src/search-input.tsx + .ios.tsx, plain RN composition
-//   (real call sites are inline/modal search bars, not native nav-bar search — kept as a
-//   component rather than migrating to headerSearchBarOptions, which doesn't fit that usage)
+// Phase 2 ✓ done — LargeTitleHeader → Stack.Screen; SearchInput → packages/ui/src/search-input.tsx + .ios.tsx
 //
-// Phase 3 — @expo/ui Universal → packages/ui/src/
-// Text/Button ✓ done for all but 3 documented exceptions, kept live for those call sites only:
-//   GapSuggestionRow.tsx (Text as a MaskedView maskElement — Host compatibility unverified),
-//   demo/index.tsx (uiTextView/selectable, no @expo/ui equivalent),
-//   ChatBubble.tsx (one Text aliased SelectableText for the text-selection sheet).
-//   Do not add new call sites here — use packages/ui/src/text.tsx and button.tsx instead.
-export { Text, TextClassContext, textVariants } from '@packrat-ai/nativewindui';
-export { Button, buttonVariants, buttonTextVariants } from '@packrat-ai/nativewindui';
-// List/ListItem/ListSectionHeader ✓ done — packages/ui/src/list.tsx, plain RN composition
-//   (FlashList + View/Pressable + Text). ListItem uses Pressable, not the migrated Button —
-//   nesting a Host-bridged Button around multiple Host-bridged Text children (title+subtitle)
-//   reproduces the Button-collapse bug fixed earlier.
-// Sheet/useSheetRef ✓ done — packages/ui/src/bottom-sheet.tsx, plain RN composition
-//   (@gorhom/bottom-sheet, already RN-native, no Host risk)
-// Form/FormSection/FormItem ✓ done — packages/ui/src/form.tsx, plain RN View composition
-//   (no Host bridge needed — old package's Form was already plain RN)
-// TextField ✓ done — packages/ui/src/text-field.tsx (Android/default, Material floating label)
-//   + text-field.ios.tsx (simple, matches the old package's platform split exactly).
-// Toggle ✓ done — packages/ui/src/toggle.tsx wraps react-native's Switch directly (already RN-native, no Host risk)
+// Phase 3 ✓ done — @expo/ui Universal → packages/ui/src/
+//   Text/Button/TextClassContext/textVariants/buttonVariants/buttonTextVariants → text.tsx, button.tsx
+//   List/ListItem/ListSectionHeader → list.tsx (plain RN — FlashList + View/Pressable/Text)
+//   Sheet/useSheetRef → bottom-sheet.tsx (@gorhom/bottom-sheet, plain RN)
+//   Form/FormSection/FormItem → form.tsx (plain RN)
+//   TextField → text-field.tsx + .ios.tsx (plain RN)
+//   Toggle → toggle.tsx (RN core Switch)
 //
-// Phase 4 — @expo/ui platform-specific wrappers (.ios.tsx + .android.tsx) in packages/ui/src/
-// ActivityIndicator ✓ done — packages/ui/src/loading-indicator.ios.tsx + .android.tsx
-// Alert/AlertAnchor ✓ done — packages/ui/src/alert.tsx (Android/default, @rn-primitives/alert-dialog)
-//   + alert.ios.tsx (RN core Alert.alert/Alert.prompt — no Host bridge on either platform)
-// Card ✓ done — packages/ui/src/card.tsx, plain RN composition (no native Host needed).
-//   CardBadge/CardImage dropped — zero real call sites used them; re-add from the old
-//   Card.tsx source (git history) if a future screen needs them.
-// SegmentedControl ✓ done — packages/ui/src/segmented-control.tsx wraps @expo/ui community SegmentedControl
-// Checkbox ✓ done — packages/ui/src/checkbox.tsx wraps @rn-primitives/checkbox directly (already RN-native, no Host risk)
-// ContextMenu/createContextItem/createContextSubMenu ✓ done — packages/ui/src/context-menu/
-//   (Android/default: @rn-primitives/context-menu; iOS: react-native-ios-context-menu — no
-//   @expo/ui Host bridge on either platform)
-// DropdownMenu/createDropdownItem/createDropdownSubMenu ✓ done — packages/ui/src/dropdown-menu/
-//   (Android/default: @rn-primitives/dropdown-menu; iOS: react-native-ios-context-menu)
-// Toolbar/ToolbarCTA/ToolbarIcon ✓ done — packages/ui/src/toolbar.tsx, plain RN composition
-//   (expo-blur's BlurView, already RN-native, no Host risk)
+// Phase 4 ✓ done — platform-specific wrappers → packages/ui/src/
+//   ActivityIndicator → loading-indicator.ios.tsx + .android.tsx (@expo/ui)
+//   Alert/AlertAnchor → alert.tsx (@rn-primitives/alert-dialog) + alert.ios.tsx (RN core Alert)
+//   Card → card.tsx (plain RN)
+//   SegmentedControl → segmented-control.tsx (@expo/ui community SegmentedControl)
+//   Checkbox → checkbox.tsx (@rn-primitives/checkbox)
+//   ContextMenu/createContextItem/createContextSubMenu → context-menu/ (@rn-primitives/context-menu,
+//     react-native-ios-context-menu on iOS)
+//   DropdownMenu/createDropdownItem/createDropdownSubMenu → dropdown-menu/ (@rn-primitives/dropdown-menu,
+//     react-native-ios-context-menu on iOS)
+//   Toolbar/ToolbarCTA/ToolbarIcon → toolbar.tsx (expo-blur)
 //
-// Phase 5 — no @expo/ui equivalent
-// Avatar ✓ done — packages/ui/src/avatar.tsx wraps @rn-primitives/avatar directly
+// Phase 5 ✓ done — no @expo/ui equivalent
+//   Avatar → avatar.tsx (@rn-primitives/avatar)
+//   selectable/uiTextView text → selectable-text.tsx (react-native-uitextview directly — the
+//     same underlying native module the old package used for this feature; no @expo/ui
+//     equivalent exists on any platform for text selection)

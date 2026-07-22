@@ -14,7 +14,7 @@ Bun workspace monorepo with three apps and two packages:
 | `apps/guides` | Next.js 15 / React 19 / Radix UI / Shadcn | Content/guides site |
 | `apps/landing` | Next.js 15 / React 19 / Framer Motion | Marketing site |
 | `packages/api` | Elysia on Cloudflare Workers / Drizzle ORM / Neon PostgreSQL | Backend API |
-| `packages/ui` | Re-exports from `@packrat-ai/nativewindui` | Shared UI components |
+| `packages/ui` | `@expo/ui` wrappers + plain RN components | Shared UI components |
 
 ### Infrastructure
 
@@ -213,55 +213,6 @@ export const apiClient = createApiClient({
 - Call via Treaty path syntax: `apiClient.auth.login.post(...)`, `apiClient.trails.search.get({ query: { q } })`
 - Responses are `{ data, error, status }` — check `if (error || !data)` before using `data`
 
-## Private Package Auth
-
-`@packrat-ai/nativewindui` is hosted on GitHub Packages. `bunfig.toml` resolves the scope using `$PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN`. Bun auto-loads `.env.local` before running `install`, so the simplest setup is to put the token there alongside your other secrets.
-
-### One-time GitHub CLI setup
-
-```bash
-gh auth login
-gh auth refresh -h github.com -s read:packages   # write:packages also works
-```
-
-### Preferred: add the token to `.env.local`
-
-Append to the repo-root `.env.local` (gitignored):
-
-```bash
-PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=<token from `gh auth token`>
-```
-
-Then `bun install` just works — Bun picks it up automatically.
-
-### Alternative: export in shell
-
-Useful in ephemeral shells or when you don't keep a `.env.local`:
-
-```bash
-# Inline
-export PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=$(gh auth token)
-bun install
-
-# One-liner
-PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=$(gh auth token) bun install
-```
-
-The `preinstall` hook cannot inject env vars into the parent `bun install` process (Bun has already parsed `bunfig.toml`), so if neither `.env.local` nor a shell export has the token, install will 401.
-
-### CI / environments without `gh`
-
-Set the env var directly from secrets:
-
-```bash
-PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=<personal access token with read:packages>
-```
-
-### Troubleshooting
-
-- **401 on `@packrat-ai/nativewindui`**: Token is missing from both `.env.local` and your shell, or lacks `read:packages`. Check `.env.local` first.
-- The `preinstall` hook (`bun run configure:deps`) only *validates* that the token is visible to the install process — it doesn't inject it.
-
 ## Path Aliases
 
 Defined in root `tsconfig.json`:
@@ -305,9 +256,7 @@ If you find a migration in the repo that was hand-written (no `drizzle-kit` prov
 
 ## Common Issues
 
-- **401 on `bun install`**: Missing `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` — see Private Package Auth above
 - **Next.js build failures**: `apps/guides` and `apps/landing` may fail without internet (fetches remote data)
-- **Type errors after NativeWindUI update**: Check for renamed refs — v2.0.0 renamed `AlertRef` → `AlertMethods`, `LargeTitleSearchBarRef` → `LargeTitleSearchBarMethods`
 - **Bun install hangs**: Normal — takes 120+ seconds. Never cancel mid-install.
 
 ## Documented Solutions

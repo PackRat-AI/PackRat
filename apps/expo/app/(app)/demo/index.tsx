@@ -1,6 +1,6 @@
-import { Text as SelectableText } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Button } from '@packrat/ui/src/button';
+import { SelectableText } from '@packrat/ui/src/selectable-text';
 import { Text } from '@packrat/ui/src/text';
 import { FlashList } from '@shopify/flash-list';
 import { Card } from 'expo-app/components/Card';

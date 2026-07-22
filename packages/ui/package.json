@@ -8,7 +8,6 @@
   "dependencies": {
     "@expo/ui": "^56.0.9",
     "@gorhom/bottom-sheet": "^5.1.2",
-    "@packrat-ai/nativewindui": "2.2.1",
     "@rn-primitives/alert-dialog": "^1.1.0",
     "@rn-primitives/avatar": "^1.1.0",
     "@rn-primitives/checkbox": "^1.1.0",
@@ -16,6 +15,7 @@
     "@rn-primitives/dropdown-menu": "^1.1.0",
     "@rn-primitives/hooks": "^1.1.0",
     "react-native-ios-context-menu": "^3.2.1",
+    "react-native-uitextview": "^1.1.4",
     "tailwindcss": "catalog:"
   }
 }
