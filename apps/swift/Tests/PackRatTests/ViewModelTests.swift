@@ -25,6 +25,34 @@ private func mockTrip(id: String = "t1", name: String = "Test Trip", startDate: 
          deleted: false, createdAt: nil, updatedAt: nil)
 }
 
+@Suite("WeatherTemperatureDisplay")
+struct WeatherTemperatureDisplayTests {
+    @Test("uses Celsius value when Celsius is preferred")
+    func usesPreferredCelsiusValue() {
+        #expect(WeatherTemperatureDisplay.format(celsius: 20, fahrenheit: 99, unit: .celsius) == "20°C")
+    }
+
+    @Test("uses Fahrenheit value when Fahrenheit is preferred")
+    func usesPreferredFahrenheitValue() {
+        #expect(WeatherTemperatureDisplay.format(celsius: 99, fahrenheit: 68, unit: .fahrenheit) == "68°F")
+    }
+
+    @Test("converts Fahrenheit fallback to Celsius")
+    func convertsFahrenheitFallback() {
+        #expect(WeatherTemperatureDisplay.format(celsius: nil, fahrenheit: 68, unit: .celsius) == "20°C")
+    }
+
+    @Test("converts Celsius fallback to Fahrenheit")
+    func convertsCelsiusFallback() {
+        #expect(WeatherTemperatureDisplay.format(celsius: 20, fahrenheit: nil, unit: .fahrenheit) == "68°F")
+    }
+
+    @Test("shows placeholder only when both values are unavailable")
+    func showsMissingPlaceholder() {
+        #expect(WeatherTemperatureDisplay.format(celsius: nil, fahrenheit: nil, unit: .celsius) == "—")
+    }
+}
+
 // MARK: - PacksViewModel
 
 @Suite("PacksViewModel")

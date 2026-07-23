@@ -78,6 +78,25 @@ final class MoreTabsTests: AppUITestCase {
         )
     }
 
+    func testHomeAssistantActionProvidesBackNavigationWithoutChangingDirectTabHistory() {
+        goToHomeAction("AI Assistant")
+        XCTAssertTrue(app.navigationBars["AI Assistant"].waitForExistence(timeout: 8))
+        XCTAssertTrue(
+            app.navigationBars["AI Assistant"].buttons["Home"].waitForExistence(timeout: 5),
+            "Assistant opened from Home should offer native back navigation"
+        )
+
+        app.navigationBars["AI Assistant"].buttons["Home"].tap()
+        XCTAssertTrue(app.navigationBars["Home"].waitForExistence(timeout: 8))
+
+        goToTab("Assistant")
+        XCTAssertTrue(app.navigationBars["AI Assistant"].waitForExistence(timeout: 8))
+        XCTAssertFalse(
+            app.navigationBars["AI Assistant"].buttons["Home"].exists,
+            "The primary Assistant tab should remain a root destination"
+        )
+    }
+
     // MARK: - Guides
 
     func testGuidesTabReachable() {
@@ -96,6 +115,22 @@ final class MoreTabsTests: AppUITestCase {
             app.navigationBars["Gear Inventory"].waitForExistence(timeout: 8),
             "Gear Inventory navigation must appear from Home"
         )
+    }
+
+    func testGearInventorySortMenuExposesOptionsAndUpdatesSelectedValue() {
+        goToHomeAction("Gear Inventory")
+        XCTAssertTrue(app.navigationBars["Gear Inventory"].waitForExistence(timeout: 8))
+
+        let sortMenu = app.buttons["gear_inventory_sort"]
+        XCTAssertTrue(sortMenu.waitForExistence(timeout: 8))
+        XCTAssertEqual(sortMenu.value as? String, "Name")
+
+        sortMenu.tap()
+        let weight = app.buttons["Weight"]
+        XCTAssertTrue(weight.waitForExistence(timeout: 5))
+        weight.tap()
+
+        XCTAssertEqual(sortMenu.value as? String, "Weight")
     }
 
     // MARK: - Wildlife

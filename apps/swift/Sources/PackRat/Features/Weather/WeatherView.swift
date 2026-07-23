@@ -6,6 +6,7 @@ struct WeatherView: View {
     @State private var showingAlerts = false
     @State private var showingAlertPreferences = false
     @State private var isSearchPresented = false
+    @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
     @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
 
     /// Renders an API wind value (always mph) in the user's preferred unit.
@@ -257,7 +258,7 @@ struct WeatherView: View {
                     .padding(.horizontal, 4)
                 VStack(spacing: 0) {
                     ForEach(days) { day in
-                        ForecastRow(day: day)
+                        ForecastRow(day: day, temperatureUnit: temperatureUnit)
                         if day.id != days.last?.id {
                             Divider().padding(.horizontal)
                         }
@@ -285,14 +286,13 @@ struct WeatherView: View {
                     .symbolRenderingMode(.multicolor)
             }
 
-            HStack(alignment: .lastTextBaseline, spacing: 4) {
-                Text(String(format: "%.0f°", current.tempF ?? 0))
-                    .font(.system(size: 64, weight: .thin))
-                Text("F")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 8)
-            }
+            Text(WeatherTemperatureDisplay.format(
+                celsius: current.tempC,
+                fahrenheit: current.tempF,
+                unit: temperatureUnit
+            ))
+            .font(.system(size: 64, weight: .thin))
+            .accessibilityIdentifier("weather_current_temperature")
 
             if let condition = current.condition?.text {
                 Text(condition)
@@ -303,7 +303,16 @@ struct WeatherView: View {
             Divider()
 
             HStack(spacing: 0) {
-                weatherDetail("Feels Like", value: String(format: "%.0f°", current.feelslikeF ?? 0), symbol: "thermometer")
+                weatherDetail(
+                    "Feels Like",
+                    value: WeatherTemperatureDisplay.format(
+                        celsius: current.feelslikeC,
+                        fahrenheit: current.feelslikeF,
+                        unit: temperatureUnit
+                    ),
+                    symbol: "thermometer"
+                )
+                .accessibilityIdentifier("weather_feels_like_temperature")
                 Divider().frame(height: 32)
                 weatherDetail("Humidity", value: "\(current.humidity ?? 0)%", symbol: "humidity")
                 Divider().frame(height: 32)

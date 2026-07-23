@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct HomeView: View {
+    var onOpenAssistant: (() -> Void)?
+
     @Environment(AppState.self) private var appState
     @Environment(AuthManager.self) private var authManager
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -306,7 +308,13 @@ struct HomeView: View {
             ) { appState.navItem = .packs },
             HomeAction(title: "Trips", subtitle: upcomingTripsSubtitle, symbol: "map.fill", color: .green) { appState.navItem = .trips },
             HomeAction(title: "Weather", subtitle: "Forecasts & alerts", symbol: "cloud.sun.fill", color: .cyan) { appState.navItem = .weather },
-            HomeAction(title: "AI Assistant", subtitle: "Ask about gear & trips", symbol: "bubble.left.and.text.bubble.right", color: .purple) { appState.navItem = .chat },
+            HomeAction(title: "AI Assistant", subtitle: "Ask about gear & trips", symbol: "bubble.left.and.text.bubble.right", color: .purple) {
+                if let onOpenAssistant {
+                    onOpenAssistant()
+                } else {
+                    appState.navItem = .chat
+                }
+            },
             HomeAction(title: "AI Packs", subtitle: "Generate pack ideas", symbol: "sparkles", color: .purple) { appState.navItem = .aiPacks },
             HomeAction(title: "Gear Inventory", subtitle: inventorySubtitle, symbol: "shippingbox.fill", color: .orange) { appState.navItem = .gearInventory },
             HomeAction(title: "Season Suggestions", subtitle: "AI-powered packing tips", symbol: "leaf.fill", color: .mint) { showingSeasonSuggestions = true },

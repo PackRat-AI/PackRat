@@ -310,7 +310,10 @@ struct AppNavigation: View {
 
         return TabView(selection: $phoneTab) {
             NavigationStack(path: $phoneHomePath) {
-                phoneContentView(.home)
+                HomeView {
+                    phoneHomePath.append(.chat)
+                }
+                .environment(appState)
                     .navigationTitle(NavItem.home.label)
                     .navigationDestination(for: NavItem.self) { item in
                         phoneContentView(item)
@@ -364,7 +367,9 @@ struct AppNavigation: View {
         }
         .onChange(of: phoneHomePath) { _, path in
             if let item = path.last {
-                state.navItem = item
+                if item != .chat {
+                    state.navItem = item
+                }
             } else if phoneTab == .home {
                 state.navItem = .home
             }
