@@ -16,7 +16,7 @@ extension Defaults.Keys {
     /// on-device LLM via MLX). When false, it uses `MockLocalLLMProvider`
     /// (canned responses). Defaults to `false` until the MLX integration is
     /// product-greenlit and the model bundle/download path is settled.
-    public static let useRealLocalLLM = Key<Bool>("featureFlag.useRealLocalLLM", default: false)
+    public static let useRealLocalLLM = Key<Bool>("featureFlag_useRealLocalLLM", default: false)
 }
 
 // MARK: - Provider factory
@@ -26,8 +26,10 @@ extension Defaults.Keys {
 /// instantiating a concrete provider so flipping the flag at runtime swaps
 /// implementations on the next read.
 public enum LocalLLMProviderFactory {
+    private static let mlxProviderAvailable = false
+
     public static func makeProvider() -> LocalLLMProvider {
-        if AppFeatureFlags.enableLocalAI && Defaults[.useRealLocalLLM] {
+        if AppFeatureFlags.enableLocalAI && mlxProviderAvailable && Defaults[.useRealLocalLLM] {
             return MLXLocalLLMProvider()
         }
         return MockLocalLLMProvider()

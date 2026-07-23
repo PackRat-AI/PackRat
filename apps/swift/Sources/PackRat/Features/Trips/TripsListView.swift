@@ -16,7 +16,7 @@ struct TripsListView: View {
 
     var body: some View {
         Group {
-            if viewModel.isLoading && viewModel.trips.isEmpty {
+            if viewModel.isLoading && viewModel.trips.isEmpty && !viewModel.isCacheLoaded {
                 ProgressView("Loading trips…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.trips.isEmpty {
                 ErrorView(error, retry: { await viewModel.load(context: modelContext) })
@@ -42,7 +42,6 @@ struct TripsListView: View {
                 Button("Plan Trip", systemImage: "plus") { showingCreateSheet = true }
                     .accessibilityIdentifier("trips_plan_trip_button")
                     .keyboardShortcut("n", modifiers: [.command, .shift])
-                    .accessibilityIdentifier("plan_trip_button")
             }
         }
         .task { await viewModel.load(context: modelContext) }

@@ -24,7 +24,7 @@ configFiles:
 packages:
   Nuke:
     url: https://github.com/kean/Nuke
-    from: "12.0.0"
+    exactVersion: "12.8.0"
   MarkdownUI:
     url: https://github.com/gonzalezreal/swift-markdown-ui
     from: "2.4.0"
@@ -61,20 +61,30 @@ targets:
     sources:
       - Sources/PackRat
       - Sources/PackRatShared
-      - Resources/Assets.xcassets
+      - path: Resources/Assets.xcassets
+        buildPhase: resources
+      - path: Resources/PrivacyInfo.xcprivacy
+        buildPhase: resources
     entitlements:
       path: Resources/PackRat-iOS.entitlements
-      properties: {}
+      properties:
+        com.apple.developer.applesignin:
+          - Default
     info:
       path: Resources/Info-iOS.plist
       properties:
-        CFBundleDisplayName: PackRat
-        CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "1"
+        CFBundleDisplayName: $(PACKRAT_DISPLAY_NAME)
+        CFBundleIconName: AppIcon
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSRequiresIPhoneOS: true
         # All four orientations are required for iPad (device family "1,2");
         # App Store validation (error 90474) rejects the bundle otherwise.
         UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
@@ -84,6 +94,8 @@ targets:
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
         NSLocationWhenInUseUsageDescription: "This app needs access to your location while you are using it."
+        NSCameraUsageDescription: "This app requires access to your camera to let you take photos or scan items."
+        NSPhotoLibraryUsageDescription: "This app needs access to your photo library to let you upload or choose photos."
         ITSAppUsesNonExemptEncryption: false
         PACKRAT_ENV: $(PACKRAT_ENV)
         SENTRY_DSN: $(SENTRY_DSN)
@@ -125,17 +137,24 @@ targets:
         product: Sentry
       - package: GoogleSignIn
         product: GoogleSignIn
-      # PackRat-Watch is intentionally NOT embedded in distribution builds yet:
-      # the watch app has no app icons, which App Store validation rejects
-      # (error 90391). Re-add this dependency once watch icons exist.
+      - target: PackRat-Watch
+        embed: true
+        codeSign: true
+        copy:
+          destination: wrapper
+          subpath: Watch
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "2.1.0"
+        CURRENT_PROJECT_VERSION: "2026072101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
-        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift
+        PACKRAT_IOS_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift
+        PRODUCT_BUNDLE_IDENTIFIER: $(PACKRAT_IOS_BUNDLE_IDENTIFIER)
+        PACKRAT_COMPANION_BUNDLE_IDENTIFIER: $(PACKRAT_IOS_BUNDLE_IDENTIFIER)
+        PACKRAT_WATCH_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift.watchkitapp
+        PACKRAT_DISPLAY_NAME: PackRat Swift
         PRODUCT_MODULE_NAME: PackRat
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -147,24 +166,35 @@ targets:
     sources:
       - Sources/PackRatWatch
       - Sources/PackRatShared
+      - path: Resources/Assets.xcassets
+        buildPhase: resources
+      - path: Resources/WatchAssets.xcassets
+        buildPhase: resources
+      - path: Resources/PrivacyInfo.xcprivacy
+        buildPhase: resources
     info:
       path: Resources/Info-watchOS.plist
       properties:
-        CFBundleDisplayName: PackRat
-        CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "1"
+        CFBundleDisplayName: $(PACKRAT_DISPLAY_NAME)
+        CFBundleIconName: WatchAppIcon
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         WKApplication: true
-        WKCompanionAppBundleIdentifier: com.andrewbierman.packrat.swift
+        WKCompanionAppBundleIdentifier: $(PACKRAT_COMPANION_BUNDLE_IDENTIFIER)
         ITSAppUsesNonExemptEncryption: false
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "2.1.0"
+        CURRENT_PROJECT_VERSION: "2026072101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
-        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift.watchkitapp
+        PACKRAT_WATCH_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift.watchkitapp
+        PRODUCT_BUNDLE_IDENTIFIER: $(PACKRAT_WATCH_BUNDLE_IDENTIFIER)
+        PACKRAT_COMPANION_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.swift
+        PACKRAT_DISPLAY_NAME: PackRat Swift
         PRODUCT_MODULE_NAME: PackRatWatch
+        ASSETCATALOG_COMPILER_APPICON_NAME: WatchAppIcon
 
   PackRat-macOS:
     type: application
@@ -173,8 +203,10 @@ targets:
     sources:
       - Sources/PackRat
       - Sources/PackRatShared
-    resources:
-      - Resources/Assets.xcassets
+      - path: Resources/Assets.xcassets
+        buildPhase: resources
+      - path: Resources/PrivacyInfo.xcprivacy
+        buildPhase: resources
     entitlements:
       path: Resources/PackRat-macOS.entitlements
       properties:
@@ -183,9 +215,10 @@ targets:
     info:
       path: Resources/Info-macOS.plist
       properties:
-        CFBundleDisplayName: PackRat
-        CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "1"
+        CFBundleDisplayName: $(PACKRAT_DISPLAY_NAME)
+        CFBundleIconName: AppIcon
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSPrincipalClass: NSApplication
         NSHighResolutionCapable: true
         PACKRAT_ENV: $(PACKRAT_ENV)
@@ -214,15 +247,17 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "2.1.0"
+        CURRENT_PROJECT_VERSION: "2026072101"
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGNING_REQUIRED: NO
         PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.mac
+        PACKRAT_DISPLAY_NAME: PackRat Swift
         # Match iOS target so @testable import PackRat resolves on both platforms.
         PRODUCT_MODULE_NAME: PackRat
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
   PackRatTests:
     type: bundle.unit-test
@@ -259,19 +294,27 @@ targets:
         CFBundlePackageType: BNDL
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "1"
+        E2E_API_BASE_URL: $(E2E_API_BASE_URL)
         PACKRAT_E2E_EMAIL: $(PACKRAT_E2E_EMAIL)
         PACKRAT_E2E_PASSWORD: $(PACKRAT_E2E_PASSWORD)
         PACKRAT_E2E_SESSION_TOKEN: $(PACKRAT_E2E_SESSION_TOKEN)
         PACKRAT_E2E_USER_ID: $(PACKRAT_E2E_USER_ID)
+        PACKRAT_E2E_ALLOW_LOGIN_SEED: $(PACKRAT_E2E_ALLOW_LOGIN_SEED)
         PACKRAT_SCREENSHOT_DIR: $(PACKRAT_SCREENSHOT_DIR)
+        PACKRAT_VISUAL_AUTH_MODE: $(PACKRAT_VISUAL_AUTH_MODE)
+        PACKRAT_VISUAL_PLATFORM: $(PACKRAT_VISUAL_PLATFORM)
     settings:
       base:
         SWIFT_VERSION: "5.9"
+        E2E_API_BASE_URL: ""
         PACKRAT_E2E_EMAIL: ""
         PACKRAT_E2E_PASSWORD: ""
         PACKRAT_E2E_SESSION_TOKEN: ""
         PACKRAT_E2E_USER_ID: ""
+        PACKRAT_E2E_ALLOW_LOGIN_SEED: ""
         PACKRAT_SCREENSHOT_DIR: ""
+        PACKRAT_VISUAL_AUTH_MODE: ""
+        PACKRAT_VISUAL_PLATFORM: ""
 
   PackRatMacOSTests:
     type: bundle.unit-test
@@ -304,19 +347,27 @@ targets:
         CFBundlePackageType: BNDL
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "1"
+        E2E_API_BASE_URL: $(E2E_API_BASE_URL)
         PACKRAT_E2E_EMAIL: $(PACKRAT_E2E_EMAIL)
         PACKRAT_E2E_PASSWORD: $(PACKRAT_E2E_PASSWORD)
         PACKRAT_E2E_SESSION_TOKEN: $(PACKRAT_E2E_SESSION_TOKEN)
         PACKRAT_E2E_USER_ID: $(PACKRAT_E2E_USER_ID)
+        PACKRAT_E2E_ALLOW_LOGIN_SEED: $(PACKRAT_E2E_ALLOW_LOGIN_SEED)
         PACKRAT_SCREENSHOT_DIR: $(PACKRAT_SCREENSHOT_DIR)
+        PACKRAT_VISUAL_AUTH_MODE: $(PACKRAT_VISUAL_AUTH_MODE)
+        PACKRAT_VISUAL_PLATFORM: $(PACKRAT_VISUAL_PLATFORM)
     settings:
       base:
         SWIFT_VERSION: "5.9"
+        E2E_API_BASE_URL: ""
         PACKRAT_E2E_EMAIL: ""
         PACKRAT_E2E_PASSWORD: ""
         PACKRAT_E2E_SESSION_TOKEN: ""
         PACKRAT_E2E_USER_ID: ""
+        PACKRAT_E2E_ALLOW_LOGIN_SEED: ""
         PACKRAT_SCREENSHOT_DIR: ""
+        PACKRAT_VISUAL_AUTH_MODE: ""
+        PACKRAT_VISUAL_PLATFORM: ""
 
 schemes:
   PackRat-iOS:
@@ -330,6 +381,7 @@ schemes:
         - path: TestPlans/iOS-Full.xctestplan
           defaultPlan: true
         - path: TestPlans/iOS-Smoke.xctestplan
+        - path: TestPlans/iOS-Sanity.xctestplan
       targets:
         - PackRatTests
         - PackRatUITests

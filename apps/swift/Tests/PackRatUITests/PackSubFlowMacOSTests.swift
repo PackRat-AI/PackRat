@@ -109,7 +109,7 @@ final class PackSubFlowMacOSTests: AppUITestCase {
 
     private func createPack(named name: String) {
         goToSidebar("Packs")
-        waitFor(app.buttons["New Pack"]).click()
+        waitFor(app.buttons["packs_new_pack_button"].firstMatch).click()
         let nameField = app.textFields["pack_name"]
         waitFor(nameField)
         nameField.click()

@@ -19,6 +19,7 @@
 //   echo "PACKRAT_ENV = dev"       > xcconfig/Config-Debug.local.xcconfig  # deployed dev
 //   echo "PACKRAT_ENV = dev-local" > xcconfig/Config-Debug.local.xcconfig  # wrangler on :8791
 PACKRAT_ENV = local
+PACKRAT_DISPLAY_NAME = PackRat Swift
 
 // SENTRY_DSN flows xcconfig → Info.plist → runtime.
 // Drop the DSN into Config-Debug.local.xcconfig to enable Sentry on Debug

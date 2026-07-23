@@ -1,3 +1,7 @@
+import {
+  oauthProviderAuthServerMetadata,
+  oauthProviderOpenIdConfigMetadata,
+} from '@better-auth/oauth-provider';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
@@ -111,6 +115,12 @@ const ctx = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(oauthProviderAuthServerMetadata).mockReturnValue(
+    vi.fn(async () => Response.json({ issuer: 'http://localhost:8787/api/auth' })),
+  );
+  vi.mocked(oauthProviderOpenIdConfigMetadata).mockReturnValue(
+    vi.fn(async () => Response.json({ issuer: 'http://localhost:8787/api/auth' })),
+  );
 });
 
 describe('Worker /api/auth CORS', () => {
@@ -139,5 +149,31 @@ describe('Worker /api/auth CORS', () => {
     expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true');
     expect(res.headers.get('Access-Control-Allow-Methods')).toContain('POST');
     expect(mocks.getAuth).not.toHaveBeenCalled();
+  });
+
+  it('serves auth-mounted OAuth metadata for Better Auth discovery', async () => {
+    const fetch = worker.fetch;
+    if (!fetch) throw new Error('Worker fetch handler is not configured');
+
+    const request = new Request(
+      'http://localhost:8787/.well-known/oauth-authorization-server/api/auth',
+      {
+        method: 'GET',
+        headers: { Origin: 'http://localhost:5173' },
+      },
+    );
+
+    const res = await fetch(
+      // safe-cast: Cloudflare's typed Request carries cf metadata; this path only reads URL, method, and headers.
+      request as never,
+      { ENVIRONMENT: 'development' } as never,
+      ctx as never,
+    );
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({ issuer: 'http://localhost:8787/api/auth' });
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:5173');
+    expect(oauthProviderAuthServerMetadata).toHaveBeenCalled();
+    expect(mocks.getAuth).toHaveBeenCalled();
   });
 });

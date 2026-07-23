@@ -8,7 +8,10 @@ final class AuthTests: AppUITestCase {
         app.launchArguments.append("--use-userdefaults-auth")
         // Force logged-out state so the login screen is reachable.
         app.launchArguments.append("--reset-auth")
-        app.launchArguments.append("--allow-e2e-login-seed")
+        if e2eLoginSeedAllowed {
+            app.launchArguments.append("--allow-e2e-login-seed")
+            app.launchEnvironment["PACKRAT_E2E_ALLOW_LOGIN_SEED"] = "1"
+        }
         if let apiBaseURL = ProcessInfo.processInfo.environment["E2E_API_BASE_URL"], !apiBaseURL.isEmpty {
             app.launchEnvironment["E2E_API_BASE_URL"] = apiBaseURL
         }
@@ -70,6 +73,20 @@ final class AuthTests: AppUITestCase {
             app.staticTexts["Templates Require an Account"].waitForExistence(timeout: 10),
             "Guest-only account-backed screens should show a native sign-in state instead of a network error"
         )
+        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
+        XCTAssertFalse(app.buttons["Try Again"].exists)
+        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
+
+        app.buttons["Done"].tapIfExists()
+        goToHomeAction("Catalog")
+        XCTAssertTrue(app.staticTexts["Catalog Requires an Account"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
+        XCTAssertFalse(app.buttons["Try Again"].exists)
+        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
+
+        app.buttons["Done"].tapIfExists()
+        goToHomeAction("Weather")
+        XCTAssertTrue(app.staticTexts["Weather Requires an Account"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
         XCTAssertFalse(app.buttons["Try Again"].exists)
         XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
@@ -214,7 +231,11 @@ final class AuthTests: AppUITestCase {
 
         submitLoginForm()
 
-        XCTAssertTrue(waitForLoggedIn(timeout: 20), "Logged-in landmark must appear after successful login")
+        let loggedIn = waitForLoggedIn(timeout: 20)
+        XCTAssertTrue(
+            loggedIn,
+            "Logged-in landmark must appear after successful login — \(visibleLoginFailureMessage())"
+        )
         XCTAssertFalse(app.textFields["login_email"].exists, "Login form should be dismissed")
     }
 
@@ -235,6 +256,9 @@ final class AuthTests: AppUITestCase {
             (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_SESSION_TOKEN") as? String) ?? ""
         app.launchEnvironment["PACKRAT_E2E_USER_ID"] =
             (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_USER_ID") as? String) ?? ""
+        if e2eLoginSeedAllowed {
+            app.launchEnvironment["PACKRAT_E2E_ALLOW_LOGIN_SEED"] = "1"
+        }
     }
 
     #if os(iOS)

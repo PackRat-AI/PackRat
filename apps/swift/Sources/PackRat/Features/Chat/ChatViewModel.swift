@@ -91,27 +91,35 @@ final class ChatViewModel {
 
     private func appendToPlaceholder(id: UUID, text: String) {
         guard let idx = messages.firstIndex(where: { $0.id == id }) else { return }
-        messages[idx].content += text
+        var updated = messages[idx]
+        updated.content += text
+        messages[idx] = updated
     }
 
     private func addToolInvocation(to messageId: UUID, invocation: ToolInvocation) {
         guard let idx = messages.firstIndex(where: { $0.id == messageId }) else { return }
-        messages[idx].toolInvocations.append(invocation)
+        var updated = messages[idx]
+        updated.toolInvocations.append(invocation)
+        messages[idx] = updated
     }
 
     private func updateToolInput(id messageId: UUID, callId: String, data: Data) {
         guard let msgIdx = messages.firstIndex(where: { $0.id == messageId }),
               let toolIdx = messages[msgIdx].toolInvocations.firstIndex(where: { $0.id == callId })
         else { return }
-        messages[msgIdx].toolInvocations[toolIdx].inputData = data
+        var updated = messages[msgIdx]
+        updated.toolInvocations[toolIdx].inputData = data
+        messages[msgIdx] = updated
     }
 
     private func updateToolOutput(id messageId: UUID, callId: String, data: Data) {
         guard let msgIdx = messages.firstIndex(where: { $0.id == messageId }),
               let toolIdx = messages[msgIdx].toolInvocations.firstIndex(where: { $0.id == callId })
         else { return }
-        messages[msgIdx].toolInvocations[toolIdx].outputData = data
-        messages[msgIdx].toolInvocations[toolIdx].state = .complete
+        var updated = messages[msgIdx]
+        updated.toolInvocations[toolIdx].outputData = data
+        updated.toolInvocations[toolIdx].state = .complete
+        messages[msgIdx] = updated
     }
 }
 

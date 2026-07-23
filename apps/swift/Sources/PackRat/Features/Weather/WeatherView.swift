@@ -1,10 +1,12 @@
 import SwiftUI
 
 struct WeatherView: View {
+    @Environment(AuthManager.self) private var authManager
     @Bindable var viewModel: WeatherViewModel
     @State private var showingAlerts = false
     @State private var showingAlertPreferences = false
     @State private var isSearchPresented = false
+    @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
     @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
 
     /// Renders an API wind value (always mph) in the user's preferred unit.
@@ -17,45 +19,55 @@ struct WeatherView: View {
     }
 
     var body: some View {
-        List {
-            searchStateContent
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-
-            if !viewModel.savedLocations.isEmpty && viewModel.searchText.isEmpty && viewModel.searchResults.isEmpty {
-                savedLocationsSection
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-            }
-
-            if let forecast = viewModel.forecast {
-                forecastContent(forecast)
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-            } else if viewModel.isLoadingForecast {
-                ProgressView("Loading forecast…")
-                    .frame(maxWidth: .infinity)
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-            } else if let error = viewModel.forecastError {
-                ErrorView(error, retry: { await viewModel.refresh() })
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-            } else if viewModel.savedLocations.isEmpty {
-                EmptyStateView(
-                    "No Saved Locations",
-                    subtitle: "Search for a city or ZIP code and save it to track the weather",
+        Group {
+            if !authManager.isAuthenticated {
+                GuestLimitedView(
+                    "Weather Requires an Account",
+                    subtitle: "Forecasts and alerts come from PackRat's weather service. Local packs and trips still work in guest mode.",
                     systemImage: "cloud.sun"
                 )
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
+            } else {
+                List {
+                    searchStateContent
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+
+                    if !viewModel.savedLocations.isEmpty && viewModel.searchText.isEmpty && viewModel.searchResults.isEmpty {
+                        savedLocationsSection
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
+
+                    if let forecast = viewModel.forecast {
+                        forecastContent(forecast)
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    } else if viewModel.isLoadingForecast {
+                        ProgressView("Loading forecast…")
+                            .frame(maxWidth: .infinity)
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    } else if let error = viewModel.forecastError {
+                        ErrorView(error, retry: { await viewModel.refresh() })
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    } else if viewModel.savedLocations.isEmpty {
+                        EmptyStateView(
+                            "No Saved Locations",
+                            subtitle: "Search for a city or ZIP code and save it to track the weather",
+                            systemImage: "cloud.sun"
+                        )
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                    }
+                }
+                #if os(iOS)
+                .listStyle(.insetGrouped)
+                #else
+                .listStyle(.inset)
+                #endif
             }
         }
-        #if os(iOS)
-        .listStyle(.insetGrouped)
-        #else
-        .listStyle(.inset)
-        #endif
         .navigationTitle("Weather")
         #if os(iOS)
         .searchable(
@@ -67,32 +79,42 @@ struct WeatherView: View {
         #else
         .searchable(text: $viewModel.searchText, isPresented: $isSearchPresented, prompt: "Search locations…")
         #endif
-        .onChange(of: viewModel.searchText) { viewModel.onSearchTextChanged() }
-        .refreshable { await viewModel.refresh() }
+        .onChange(of: viewModel.searchText) {
+            if authManager.isAuthenticated {
+                viewModel.onSearchTextChanged()
+            }
+        }
+        .refreshable {
+            if authManager.isAuthenticated {
+                await viewModel.refresh()
+            }
+        }
         .toolbar {
-            ToolbarItem(placement: alertsToolbarPlacement) {
-                Button {
-                    showingAlerts = true
-                } label: {
-                    Label("Alerts", systemImage: activeAlerts.isEmpty ? "bell" : "bell.badge.fill")
-                        .foregroundStyle(activeAlerts.isEmpty ? Color.secondary : Color.red)
+            if authManager.isAuthenticated {
+                ToolbarItem(placement: alertsToolbarPlacement) {
+                    Button {
+                        showingAlerts = true
+                    } label: {
+                        Label("Alerts", systemImage: activeAlerts.isEmpty ? "bell" : "bell.badge.fill")
+                            .foregroundStyle(activeAlerts.isEmpty ? Color.secondary : Color.red)
+                    }
+                    .disabled(viewModel.forecast == nil)
+                    .accessibilityLabel("Alerts")
+                    .accessibilityIdentifier("weather_alerts_button")
                 }
-                .disabled(viewModel.forecast == nil)
-                .accessibilityLabel("Alerts")
-                .accessibilityIdentifier("weather_alerts_button")
-            }
-            if viewModel.isLoadingForecast && viewModel.forecast != nil {
-                ToolbarItem(placement: .secondaryAction) {
-                    ProgressView().controlSize(.small)
+                if viewModel.isLoadingForecast && viewModel.forecast != nil {
+                    ToolbarItem(placement: .secondaryAction) {
+                        ProgressView().controlSize(.small)
+                    }
                 }
-            }
-            ToolbarItem(placement: preferencesToolbarPlacement) {
-                NavigationLink {
-                    WeatherAlertPreferencesView()
-                } label: {
-                    Label("Alert Preferences", systemImage: "slider.horizontal.3")
+                ToolbarItem(placement: preferencesToolbarPlacement) {
+                    NavigationLink {
+                        WeatherAlertPreferencesView()
+                    } label: {
+                        Label("Alert Preferences", systemImage: "slider.horizontal.3")
+                    }
+                    .accessibilityIdentifier("weather_alert_preferences_button")
                 }
-                .accessibilityIdentifier("weather_alert_preferences_button")
             }
         }
         .sheet(isPresented: $showingAlerts) {
@@ -236,7 +258,7 @@ struct WeatherView: View {
                     .padding(.horizontal, 4)
                 VStack(spacing: 0) {
                     ForEach(days) { day in
-                        ForecastRow(day: day)
+                        ForecastRow(day: day, temperatureUnit: temperatureUnit)
                         if day.id != days.last?.id {
                             Divider().padding(.horizontal)
                         }
@@ -264,14 +286,13 @@ struct WeatherView: View {
                     .symbolRenderingMode(.multicolor)
             }
 
-            HStack(alignment: .lastTextBaseline, spacing: 4) {
-                Text(String(format: "%.0f°", current.tempF ?? 0))
-                    .font(.system(size: 64, weight: .thin))
-                Text("F")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 8)
-            }
+            Text(WeatherTemperatureDisplay.format(
+                celsius: current.tempC,
+                fahrenheit: current.tempF,
+                unit: temperatureUnit
+            ))
+            .font(.system(size: 64, weight: .thin))
+            .accessibilityIdentifier("weather_current_temperature")
 
             if let condition = current.condition?.text {
                 Text(condition)
@@ -282,7 +303,16 @@ struct WeatherView: View {
             Divider()
 
             HStack(spacing: 0) {
-                weatherDetail("Feels Like", value: String(format: "%.0f°", current.feelslikeF ?? 0), symbol: "thermometer")
+                weatherDetail(
+                    "Feels Like",
+                    value: WeatherTemperatureDisplay.format(
+                        celsius: current.feelslikeC,
+                        fahrenheit: current.feelslikeF,
+                        unit: temperatureUnit
+                    ),
+                    symbol: "thermometer"
+                )
+                .accessibilityIdentifier("weather_feels_like_temperature")
                 Divider().frame(height: 32)
                 weatherDetail("Humidity", value: "\(current.humidity ?? 0)%", symbol: "humidity")
                 Divider().frame(height: 32)

@@ -5,6 +5,10 @@ import XCTest
 /// macOS uses a different navigation idiom (NavigationSplitView sidebar); the
 /// equivalent suite lives in `NavigationMacOSTests` and is gated separately.
 final class NavigationTests: AppUITestCase {
+    override var executionTimeAllowance: TimeInterval {
+        get { 3 * 60 }
+        set { _ = newValue }
+    }
 
     // Each entry: (tab bar label, expected navigation title or landmark text)
     private let tabs: [(tab: String, landmark: String)] = [

@@ -25,6 +25,34 @@ private func mockTrip(id: String = "t1", name: String = "Test Trip", startDate: 
          deleted: false, createdAt: nil, updatedAt: nil)
 }
 
+@Suite("WeatherTemperatureDisplay")
+struct WeatherTemperatureDisplayTests {
+    @Test("uses Celsius value when Celsius is preferred")
+    func usesPreferredCelsiusValue() {
+        #expect(WeatherTemperatureDisplay.format(celsius: 20, fahrenheit: 99, unit: .celsius) == "20°C")
+    }
+
+    @Test("uses Fahrenheit value when Fahrenheit is preferred")
+    func usesPreferredFahrenheitValue() {
+        #expect(WeatherTemperatureDisplay.format(celsius: 99, fahrenheit: 68, unit: .fahrenheit) == "68°F")
+    }
+
+    @Test("converts Fahrenheit fallback to Celsius")
+    func convertsFahrenheitFallback() {
+        #expect(WeatherTemperatureDisplay.format(celsius: nil, fahrenheit: 68, unit: .celsius) == "20°C")
+    }
+
+    @Test("converts Celsius fallback to Fahrenheit")
+    func convertsCelsiusFallback() {
+        #expect(WeatherTemperatureDisplay.format(celsius: 20, fahrenheit: nil, unit: .fahrenheit) == "68°F")
+    }
+
+    @Test("shows placeholder only when both values are unavailable")
+    func showsMissingPlaceholder() {
+        #expect(WeatherTemperatureDisplay.format(celsius: nil, fahrenheit: nil, unit: .celsius) == "—")
+    }
+}
+
 // MARK: - PacksViewModel
 
 @Suite("PacksViewModel")
@@ -137,6 +165,85 @@ struct WeatherViewModelTests {
         vm.searchText = "D"
         vm.onSearchTextChanged()
         #expect(vm.searchResults.isEmpty)
+    }
+
+    @Test("selectLocation falls back to by-name forecast when id lookup fails")
+    @MainActor func forecastFallsBackToByName() async {
+        let service = FallbackWeatherService()
+        let vm = WeatherViewModel(service: service)
+        let denver = WeatherLocation(
+            id: 5419384,
+            name: "Denver",
+            region: "Colorado",
+            country: "United States",
+            lat: 39.74,
+            lon: -104.98
+        )
+
+        await vm.selectLocation(denver)
+
+        #expect(vm.forecast?.location?.name == "Denver")
+        #expect(vm.forecastError == nil)
+        #expect(await service.idForecastRequests == 1)
+        #expect(await service.nameForecastQueries == ["Denver, Colorado"])
+    }
+}
+
+private actor FallbackWeatherService: WeatherServicing {
+    private(set) var idForecastRequests = 0
+    private(set) var nameForecastQueries: [String] = []
+
+    func searchLocations(query: String) async throws -> [WeatherLocation] {
+        [
+            WeatherLocation(
+                id: 5419384,
+                name: "Denver",
+                region: "Colorado",
+                country: "United States",
+                lat: 39.74,
+                lon: -104.98
+            ),
+        ]
+    }
+
+    func getForecast(locationId: Int) async throws -> WeatherForecastResponse {
+        idForecastRequests += 1
+        throw PackRatError.httpError(statusCode: 500, message: "WeatherAPI HTTP 500")
+    }
+
+    func getForecast(query: String) async throws -> WeatherForecastResponse {
+        nameForecastQueries.append(query)
+        return WeatherForecastResponse(
+            location: WeatherResponseLocation(
+                id: 5419384,
+                name: "Denver",
+                region: "Colorado",
+                country: "United States",
+                lat: 39.74,
+                lon: -104.98,
+                localtime: nil,
+                localtimeEpoch: nil,
+                tzId: nil
+            ),
+            current: WeatherCurrent(
+                tempC: 22,
+                tempF: 72,
+                feelslikeC: 22,
+                feelslikeF: 72,
+                humidity: 32,
+                windMph: 7,
+                windKph: 11,
+                windDir: "WSW",
+                condition: WeatherCondition(text: "Partly cloudy", icon: nil, code: 1003),
+                uv: 5,
+                visMiles: 10,
+                precipIn: 0,
+                cloud: 25,
+                isDay: 1
+            ),
+            forecast: WeatherForecast(forecastday: []),
+            alerts: WeatherAlertsWrapper(alert: [])
+        )
     }
 }
 

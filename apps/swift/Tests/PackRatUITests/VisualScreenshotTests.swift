@@ -1,3 +1,4 @@
+import CryptoKit
 import XCTest
 
 final class VisualScreenshotTests: XCTestCase {
@@ -42,10 +43,13 @@ final class VisualScreenshotTests: XCTestCase {
 
     private var isPadVisualRun: Bool {
         #if os(iOS)
-        ProcessInfo.processInfo.environment["PACKRAT_VISUAL_PLATFORM"] == "ipad"
+        let bundle = Bundle(for: VisualScreenshotTests.self)
+        let platform = ProcessInfo.processInfo.environment["PACKRAT_VISUAL_PLATFORM"]
+            ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_VISUAL_PLATFORM") as? String)
+        return platform == "ipad"
             || screenshotDirectory?.path.contains("ipad") == true
         #else
-        false
+        return false
         #endif
     }
 
@@ -112,6 +116,20 @@ final class VisualScreenshotTests: XCTestCase {
         capturePhoneModalConnectedSurface(mode: .guest)
     }
     #endif
+
+    func testGuestAccountLimitVisualSurface() throws {
+        enterGuestMode()
+
+        #if os(iOS)
+        if isPadVisualRun {
+            captureSidebarGuestAccountLimits()
+        } else {
+            capturePhoneGuestAccountLimits()
+        }
+        #elseif os(macOS)
+        captureSidebarGuestAccountLimits()
+        #endif
+    }
 
     func testAuthenticatedVisualSurface() throws {
         launchAuthenticated()
@@ -404,7 +422,14 @@ final class VisualScreenshotTests: XCTestCase {
         let prefix = mode.prefix
         let suffix = mode.suffix
         for action in actions {
-            captureHomeAction(action.title, name: "\(prefix)-\(action.slug)\(suffix)")
+            let name = "\(prefix)-\(action.slug)\(suffix)"
+            if mode == .sampleData, action.title == "Season Suggestions" {
+                captureHomeAction(action.title, name: name, dismissAfterCapture: false)
+                captureSeasonSuggestionsResult(name: "\(prefix)-season-suggestions-results\(suffix)")
+                dismissPhoneDestination()
+            } else {
+                captureHomeAction(action.title, name: name)
+            }
         }
     }
 
@@ -566,10 +591,11 @@ final class VisualScreenshotTests: XCTestCase {
         }
     }
 
-    private func captureTab(_ label: String, name: String) {
+    private func captureTab(_ label: String, name: String, beforeCapture: (() -> Void)? = nil) {
         let tab = app.tabBars.buttons[label]
         XCTAssertTrue(tab.waitForExistence(timeout: 5), "Expected tab '\(label)' for screenshot \(name)")
         tab.tap()
+        beforeCapture?()
         capture(name)
     }
 
@@ -577,32 +603,44 @@ final class VisualScreenshotTests: XCTestCase {
         _ title: String,
         name: String,
         dismissAfterCapture: Bool = true,
-        destinationIdentifier: String? = nil
+        destinationIdentifier: String? = nil,
+        beforeCapture: (() -> Void)? = nil
     ) {
         let baselineName = name.hasPrefix("home-before-") ? name : "home-before-\(name)"
         openHomeForActionBaseline(name: baselineName)
 
+        let verifyAndCapture = {
+            if let destinationIdentifier {
+                let destination = self.app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
+                XCTAssertTrue(
+                    destination.waitForExistence(timeout: 5),
+                    "Expected Home action '\(title)' to open '\(destinationIdentifier)' for screenshot \(name)"
+                )
+            }
+            beforeCapture?()
+            self.capture(name)
+            if dismissAfterCapture {
+                self.dismissPhoneDestination()
+            }
+        }
+
         let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
+        if prefersHomeSearch(for: title) {
+            openHomeActionUsingSearch(title: title, identifier: identifier)
+            verifyAndCapture()
+            return
+        }
+
         let action = app.buttons[identifier]
         var visibleCandidate: XCUIElement?
 
-        for _ in 0..<30 {
+        for _ in 0..<8 {
             if action.exists {
                 visibleCandidate = action
             }
             if action.exists, action.isHittable, actionIsClearOfBottomBar(action) {
                 activate(action)
-                if let destinationIdentifier {
-                    let destination = app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
-                    XCTAssertTrue(
-                        destination.waitForExistence(timeout: 5),
-                        "Expected Home action '\(title)' to open '\(destinationIdentifier)' for screenshot \(name)"
-                    )
-                }
-                capture(name)
-                if dismissAfterCapture {
-                    dismissPhoneDestination()
-                }
+                verifyAndCapture()
                 return
             }
             if action.exists, action.frame.minY < 140 {
@@ -613,32 +651,23 @@ final class VisualScreenshotTests: XCTestCase {
         }
         if let visibleCandidate, visibleCandidate.exists, visibleCandidate.isHittable {
             activate(visibleCandidate)
-            if let destinationIdentifier {
-                let destination = app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
-                XCTAssertTrue(
-                    destination.waitForExistence(timeout: 5),
-                    "Expected Home action '\(title)' to open '\(destinationIdentifier)' for screenshot \(name)"
-                )
-            }
-            capture(name)
-            if dismissAfterCapture {
-                dismissPhoneDestination()
-            }
+            verifyAndCapture()
             return
         }
 
         openHomeActionUsingSearch(title: title, identifier: identifier)
-        if let destinationIdentifier {
-            let destination = app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
-            XCTAssertTrue(
-                destination.waitForExistence(timeout: 5),
-                "Expected Home action '\(title)' to open '\(destinationIdentifier)' for screenshot \(name)"
-            )
-        }
-        capture(name)
-        if dismissAfterCapture {
-            dismissPhoneDestination()
-        }
+        verifyAndCapture()
+    }
+
+    private func prefersHomeSearch(for title: String) -> Bool {
+        [
+            "AI Packs",
+            "Community Feed",
+            "Gear Inventory",
+            "Pack Templates",
+            "Trail Conditions",
+            "Wildlife ID",
+        ].contains(title)
     }
 
     private func openHomeActionUsingSearch(title: String, identifier: String) {
@@ -760,9 +789,33 @@ final class VisualScreenshotTests: XCTestCase {
     }
 
     private func captureGuestLimitedHomeAction(_ title: String, name: String) {
-        captureHomeAction(title, name: name, dismissAfterCapture: false)
-        assertExpectedAccountRequiredState(for: name)
+        captureHomeAction(
+            title,
+            name: name,
+            dismissAfterCapture: false,
+            beforeCapture: { self.assertExpectedAccountRequiredState(for: name) }
+        )
         dismissPhoneDestination()
+    }
+
+    private func captureGuestLimitedTab(_ label: String, name: String) {
+        captureTab(label, name: name) {
+            self.assertExpectedAccountRequiredState(for: name)
+        }
+    }
+
+    private func capturePhoneGuestAccountLimits() {
+        captureGuestLimitedTab("Assistant", name: "50-guest-limit-assistant")
+        captureGuestLimitedHomeAction("AI Packs", name: "50-guest-limit-ai-packs")
+        captureGuestLimitedHomeAction("Catalog", name: "50-guest-limit-catalog")
+        captureGuestLimitedHomeAction("Weather", name: "50-guest-limit-weather")
+
+        if UITestFeatureFlags.enableFeed {
+            captureGuestLimitedHomeAction("Community Feed", name: "50-guest-limit-feed")
+        }
+        if UITestFeatureFlags.enableWildlifeIdentification {
+            captureGuestLimitedHomeAction("Wildlife ID", name: "50-guest-limit-wildlife")
+        }
     }
 
     private func dismissPhoneDestination() {
@@ -815,7 +868,14 @@ final class VisualScreenshotTests: XCTestCase {
         }
 
         if scope != .primary {
-            captureMacHomeAction("Season Suggestions", name: "\(prefix)-season-suggestions\(suffix)")
+            let name = "\(prefix)-season-suggestions\(suffix)"
+            if mode == .sampleData {
+                captureMacHomeAction("Season Suggestions", name: name, dismissAfterCapture: false)
+                captureSeasonSuggestionsResult(name: "\(prefix)-season-suggestions-results\(suffix)")
+                dismissPresentedSurface()
+            } else {
+                captureMacHomeAction("Season Suggestions", name: name)
+            }
         }
     }
 
@@ -869,6 +929,32 @@ final class VisualScreenshotTests: XCTestCase {
         if mode != .guest && UITestFeatureFlags.enableFeed {
             selectSidebar("Feed")
             tapAndCapture(identifier: "feed_new_post_button", fallbackButton: "New Post", name: "\(prefix)-feed-compose-sheet")
+        }
+    }
+
+    private func captureSidebarGuestAccountLimits() {
+        let entries = [
+            ("Assistant", "50-guest-limit-assistant"),
+            ("Weather", "50-guest-limit-weather"),
+            ("Catalog", "50-guest-limit-catalog"),
+            ("AI Packs", "50-guest-limit-ai-packs"),
+        ]
+
+        for (label, name) in entries {
+            selectSidebar(label)
+            assertExpectedAccountRequiredState(for: name)
+            capture(name)
+        }
+
+        if UITestFeatureFlags.enableFeed {
+            selectSidebar("Feed")
+            assertExpectedAccountRequiredState(for: "50-guest-limit-feed")
+            capture("50-guest-limit-feed")
+        }
+        if UITestFeatureFlags.enableWildlifeIdentification {
+            selectSidebar("Wildlife")
+            assertExpectedAccountRequiredState(for: "50-guest-limit-wildlife")
+            capture("50-guest-limit-wildlife")
         }
     }
 
@@ -990,6 +1076,27 @@ final class VisualScreenshotTests: XCTestCase {
         }
         XCTFail("Expected Home action '\(title)' for screenshot \(name)")
     }
+
+    private func captureSeasonSuggestionsResult(name: String) {
+        let field = app.textFields["season_suggestions_location"].firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 5), "Expected Season Suggestions location field for \(name)")
+        activate(field)
+        field.typeText("Leavenworth, WA")
+
+        let submit = app.buttons["season_suggestions_submit"].firstMatch
+        XCTAssertTrue(submit.waitForExistence(timeout: 5), "Expected Season Suggestions submit button for \(name)")
+        activate(submit)
+
+        let results = app.descendants(matching: .any)
+            .matching(identifier: "season_suggestions_results")
+            .firstMatch
+        let deterministicTitle = app.staticTexts["Shoulder Season Overnight"]
+        XCTAssertTrue(
+            results.waitForExistence(timeout: 20) || deterministicTitle.waitForExistence(timeout: 2),
+            "Expected Season Suggestions results for \(name)"
+        )
+        capture(name)
+    }
     #endif
 
     private func captureGlobalSearch(name: String, query: String? = nil) {
@@ -1039,6 +1146,7 @@ final class VisualScreenshotTests: XCTestCase {
     ) {
         let element = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
         XCTAssertTrue(element.waitForExistence(timeout: 5), "Expected element identifier '\(identifier)' for screenshot \(name)")
+        XCTAssertTrue(element.isHittable, "Expected element identifier '\(identifier)' to be hittable for screenshot \(name)")
         activate(element)
         capture(name)
         if dismissAfterCapture {
@@ -1048,7 +1156,7 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func scrollToElement(identifier: String, maxSwipes: Int = 5) {
         let element = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
-        for _ in 0..<maxSwipes where !element.exists {
+        for _ in 0..<maxSwipes where !element.exists || !element.isHittable {
             app.swipeUp()
         }
     }
@@ -1060,7 +1168,7 @@ final class VisualScreenshotTests: XCTestCase {
         }
         activate(button)
         capture(name)
-        dismissPresentedSurface()
+        dismissTransientOverlay()
     }
 
     private func openContextMenuAndCapture(identifier: String, name: String) {
@@ -1072,15 +1180,15 @@ final class VisualScreenshotTests: XCTestCase {
         element.press(forDuration: 1)
         #endif
         capture(name)
-        dismissPresentedSurface()
+        dismissTransientOverlay()
     }
 
     private func tapAndCapture(identifier: String, name: String) {
-        guard let button = findButton(identifier: identifier, timeout: 3) else {
-            XCTFail("Expected button identifier '\(identifier)' for screenshot \(name)")
+        guard let element = findElement(identifier: identifier, timeout: 3) else {
+            XCTFail("Expected tappable element identifier '\(identifier)' for screenshot \(name)")
             return
         }
-        activate(button)
+        activate(element)
         capture(name)
         dismissPresentedSurface()
     }
@@ -1091,12 +1199,12 @@ final class VisualScreenshotTests: XCTestCase {
         name: String,
         dismissAfterCapture: Bool = true
     ) {
-        let button = findButton(identifier: identifier, timeout: 1) ?? findButton(label: label, timeout: 3)
-        guard let button else {
-            XCTFail("Expected button identifier '\(identifier)' or label '\(label)' for screenshot \(name)")
+        let element = findElement(identifier: identifier, timeout: 1) ?? findButton(label: label, timeout: 3)
+        guard let element else {
+            XCTFail("Expected tappable element identifier '\(identifier)' or button label '\(label)' for screenshot \(name)")
             return
         }
-        activate(button)
+        activate(element)
         capture(name)
         if dismissAfterCapture {
             dismissPresentedSurface()
@@ -1117,6 +1225,11 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func findButton(identifier: String, timeout: TimeInterval) -> XCUIElement? {
         let query = app.buttons.matching(identifier: identifier)
+        return findConcreteElement(in: query, timeout: timeout)
+    }
+
+    private func findElement(identifier: String, timeout: TimeInterval) -> XCUIElement? {
+        let query = app.descendants(matching: .any).matching(identifier: identifier)
         return findConcreteElement(in: query, timeout: timeout)
     }
 
@@ -1166,12 +1279,28 @@ final class VisualScreenshotTests: XCTestCase {
         #endif
     }
 
+    private func dismissTransientOverlay() {
+        #if os(macOS)
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
+        #else
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.22)).tap()
+        #endif
+    }
+
     private func launchAuthenticated(sampleData: Bool = false, forceOffline: Bool = false) {
         let bundle = Bundle(for: VisualScreenshotTests.self)
-        let email = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
+        let email = ProcessInfo.processInfo.environment["PACKRAT_E2E_EMAIL"]
+            ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
             ?? "e2e@packrat.test"
-        let userId = ProcessInfo.processInfo.environment["E2E_TEST_USER_ID"]
+        let userId = ProcessInfo.processInfo.environment["PACKRAT_E2E_USER_ID"]
+            ?? ProcessInfo.processInfo.environment["E2E_TEST_USER_ID"]
+            ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_USER_ID") as? String)
             ?? "00000000-0000-4000-8000-000000000001"
+
+        if usesRealVisualLogin && !sampleData && !forceOffline {
+            launchRealAuthenticated(email: email)
+            return
+        }
 
         app.terminate()
         app = XCUIApplication()
@@ -1182,8 +1311,11 @@ final class VisualScreenshotTests: XCTestCase {
             "--seed-e2e-auth",
         ]
         app.launchEnvironment["PACKRAT_VISUAL_SCREENSHOTS"] = "1"
+        app.launchEnvironment["E2E_API_BASE_URL"] = visualE2EAPIBaseURL
         app.launchEnvironment["PACKRAT_E2E_EMAIL"] = email
         app.launchEnvironment["PACKRAT_E2E_USER_ID"] = userId
+        app.launchEnvironment["PACKRAT_E2E_SESSION_TOKEN"] = visualE2ESessionToken(email: email, userId: userId)
+        app.launchEnvironment["PACKRAT_E2E_ALLOW_LOGIN_SEED"] = "1"
         if sampleData {
             app.launchArguments.append("--visual-sample-data")
             app.launchEnvironment["PACKRAT_VISUAL_SAMPLE_DATA"] = "1"
@@ -1198,6 +1330,54 @@ final class VisualScreenshotTests: XCTestCase {
         dismissSystemInterruptions()
         #endif
         XCTAssertTrue(waitForAuthenticatedShell(), "Authenticated visual shell must launch from seeded E2E state")
+    }
+
+    private var usesRealVisualLogin: Bool {
+        let bundle = Bundle(for: VisualScreenshotTests.self)
+        return ProcessInfo.processInfo.environment["PACKRAT_VISUAL_AUTH_MODE"] == "real"
+            || (bundle.object(forInfoDictionaryKey: "PACKRAT_VISUAL_AUTH_MODE") as? String) == "real"
+    }
+
+    private func launchRealAuthenticated(email: String) {
+        let bundle = Bundle(for: VisualScreenshotTests.self)
+        let password = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_PASSWORD") as? String) ?? ""
+        XCTAssertFalse(password.isEmpty, "PACKRAT_E2E_PASSWORD is required for real visual login")
+
+        app.terminate()
+        app = XCUIApplication()
+        app.launchArguments = [
+            "--disable-animations",
+            "--use-userdefaults-auth",
+            "--reset-auth",
+        ]
+        app.launchEnvironment["PACKRAT_VISUAL_SCREENSHOTS"] = "1"
+        app.launchEnvironment["E2E_API_BASE_URL"] = visualE2EAPIBaseURL
+        app.launch()
+        #if os(macOS)
+        app.activate()
+        dismissSystemInterruptions()
+        #endif
+
+        let signIn = app.buttons["auth_sign_in"]
+        if signIn.waitForExistence(timeout: 10) {
+            signIn.tap()
+        }
+
+        let emailField = app.textFields["login_email"]
+        XCTAssertTrue(emailField.waitForExistence(timeout: 10), "Login screen must appear for real visual login")
+        emailField.tap()
+        emailField.typeText(email)
+
+        let passwordField = app.secureTextFields["login_password"]
+        passwordField.tap()
+        passwordField.typeText(password)
+
+        #if os(macOS)
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
+        #endif
+        app.buttons["login_submit"].tap()
+
+        XCTAssertTrue(waitForAuthenticatedShell(), "Authenticated visual shell must launch from real login")
     }
 
     private func waitForAuthenticatedShell() -> Bool {
@@ -1224,11 +1404,37 @@ final class VisualScreenshotTests: XCTestCase {
             app.launchArguments.append("--force-offline")
         }
         app.launchEnvironment["PACKRAT_VISUAL_SCREENSHOTS"] = "1"
+        app.launchEnvironment["E2E_API_BASE_URL"] = visualE2EAPIBaseURL
         app.launch()
         #if os(macOS)
         app.activate()
         dismissSystemInterruptions()
         #endif
+    }
+
+    private var visualE2EAPIBaseURL: String {
+        let bundle = Bundle(for: VisualScreenshotTests.self)
+        return ProcessInfo.processInfo.environment["E2E_API_BASE_URL"]
+            ?? (bundle.object(forInfoDictionaryKey: "E2E_API_BASE_URL") as? String)
+            ?? "http://localhost:8787"
+    }
+
+    private func visualE2ESessionToken(email: String, userId: String) -> String {
+        if let token = ProcessInfo.processInfo.environment["PACKRAT_E2E_SESSION_TOKEN"], !token.isEmpty {
+            return token
+        }
+        let bundle = Bundle(for: VisualScreenshotTests.self)
+        if let token = bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_SESSION_TOKEN") as? String,
+           !token.isEmpty {
+            return token
+        }
+
+        let secret = ProcessInfo.processInfo.environment["BETTER_AUTH_SECRET"]
+            ?? "e2e-better-auth-secret-at-least-32-chars"
+        let material = "\(secret):\(email.lowercased()):\(userId)"
+        let digest = SHA256.hash(data: Data(material.utf8))
+        let hex = digest.map { String(format: "%02x", $0) }.joined()
+        return "e2e-local.\(hex)"
     }
 
     private func restartLoggedOut() {
@@ -1324,14 +1530,12 @@ final class VisualScreenshotTests: XCTestCase {
     @discardableResult
     private func dismissInterruption(in container: XCUIElement) -> Bool {
         #if os(macOS)
+        let allButtons = container.buttons.allElementsBoundByIndex
         for label in ["Remind Me Later", "Not Now", "Continue", "OK", "Allow", "Dismiss", "Close"] {
-            let button = container.buttons[label]
-            if button.exists {
-                if button.isHittable {
-                    button.click()
-                } else {
-                    button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
-                }
+            let matchingButtons = allButtons
+                .filter { $0.label == label || $0.identifier == label }
+            if let button = matchingButtons.first(where: { $0.exists && $0.isHittable }) ?? matchingButtons.first(where: { $0.exists }) {
+                button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
                 return true
             }
         }

@@ -104,6 +104,14 @@ struct AppNavigation: View {
     #endif
 
     var body: some View {
+        navigationBody
+            .onOpenURL { url in
+                appState.apply(DeepLink.parse(url))
+            }
+    }
+
+    @ViewBuilder
+    private var navigationBody: some View {
         #if os(iOS)
         if horizontalSizeClass == .compact {
             phoneLayout
@@ -199,9 +207,18 @@ struct AppNavigation: View {
         case .trips:
             TripsListView(viewModel: appState.tripsVM, selectedId: $state.selectedTripId)
         case .templates:
-            PackTemplatesListView(viewModel: appState.templatesVM, selectedId: $state.selectedTemplateId, packsVM: appState.packsVM)
+            PackTemplatesListView(
+                viewModel: appState.templatesVM,
+                selectedId: $state.selectedTemplateId,
+                packsVM: appState.packsVM,
+                showsGuestLimitInList: false
+            )
         case .trailConditions:
-            TrailConditionsListView(viewModel: appState.trailConditionsVM, selectedId: $state.selectedReportId)
+            TrailConditionsListView(
+                viewModel: appState.trailConditionsVM,
+                selectedId: $state.selectedReportId,
+                showsGuestLimitInList: false
+            )
         default:
             EmptyView()
         }
@@ -293,7 +310,10 @@ struct AppNavigation: View {
 
         return TabView(selection: $phoneTab) {
             NavigationStack(path: $phoneHomePath) {
-                phoneContentView(.home)
+                HomeView {
+                    phoneHomePath.append(.chat)
+                }
+                .environment(appState)
                     .navigationTitle(NavItem.home.label)
                     .navigationDestination(for: NavItem.self) { item in
                         phoneContentView(item)
@@ -347,7 +367,9 @@ struct AppNavigation: View {
         }
         .onChange(of: phoneHomePath) { _, path in
             if let item = path.last {
-                state.navItem = item
+                if item != .chat {
+                    state.navItem = item
+                }
             } else if phoneTab == .home {
                 state.navItem = .home
             }

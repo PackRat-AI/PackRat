@@ -1,4 +1,9 @@
 import { authPlugin } from '@packrat/api/middleware/auth';
+import {
+  buildStubForecast,
+  defaultStubLocation,
+  searchStubLocations,
+} from '@packrat/api/services/weatherService';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { isString } from '@packrat/guards';
@@ -18,6 +23,8 @@ import { ZodError } from 'zod';
 
 const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
 
+const isE2EWeatherStubKey = (key?: string) => key?.startsWith('weather-e2e-stub-') === true;
+
 export const weatherRoutes = new Elysia({ prefix: '/weather' })
   .model({
     'weather.ForecastResponse': WeatherAPIForecastResponseSchema,
@@ -31,6 +38,17 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
 
       if (!q) {
         return status(400, { error: 'Query parameter is required' });
+      }
+
+      if (isE2EWeatherStubKey(WEATHER_API_KEY)) {
+        return searchStubLocations(q).map((item) => ({
+          id: item.id,
+          name: item.name,
+          region: item.region,
+          country: item.country,
+          lat: item.lat,
+          lon: item.lon,
+        }));
       }
 
       try {
@@ -81,6 +99,19 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
         return status(400, {
           error: 'Valid latitude and longitude parameters are required',
         });
+      }
+
+      if (isE2EWeatherStubKey(WEATHER_API_KEY)) {
+        return [
+          {
+            id: defaultStubLocation.id,
+            name: defaultStubLocation.name,
+            region: defaultStubLocation.region,
+            country: defaultStubLocation.country,
+            lat: defaultStubLocation.lat,
+            lon: defaultStubLocation.lon,
+          },
+        ];
       }
 
       try {
@@ -156,6 +187,10 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
         return status(400, { error: 'Valid location ID is required' });
       }
 
+      if (isE2EWeatherStubKey(WEATHER_API_KEY)) {
+        return WeatherAPIForecastResponseSchema.parse(buildStubForecast(id));
+      }
+
       try {
         const q = `id:${id}`;
         const response = await fetch(
@@ -220,6 +255,15 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
       // Schema enforces z.string().min(2); Elysia rejects shorter values
       // before the handler runs.
       const q = query.q;
+
+      if (isE2EWeatherStubKey(WEATHER_API_KEY)) {
+        const firstMatch = first(searchStubLocations(q));
+        if (!firstMatch) {
+          return status(404, { error: `No weather location matched "${q}"` });
+        }
+        return WeatherAPIForecastResponseSchema.parse(buildStubForecast(firstMatch.id));
+      }
+
       try {
         const searchResponse = await fetch(
           `${WEATHER_API_BASE_URL}/search.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(q)}`,

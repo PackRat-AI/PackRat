@@ -1,17 +1,25 @@
-export type TestPlanName = 'iOS-Full' | 'iOS-Smoke';
+export type TestPlanName = 'iOS-Full' | 'iOS-Smoke' | 'iOS-Sanity';
 
 export type ParsedArgs = {
   plan?: TestPlanName;
   passthrough: string[];
 };
 
-const KNOWN_PLANS: TestPlanName[] = ['iOS-Full', 'iOS-Smoke'];
+const KNOWN_PLANS: TestPlanName[] = ['iOS-Full', 'iOS-Smoke', 'iOS-Sanity'];
 
 const ALIASES: Record<string, TestPlanName> = {
   full: 'iOS-Full',
   smoke: 'iOS-Smoke',
+  sanity: 'iOS-Sanity',
+  'ios-ui': 'iOS-Full',
   'ios-full': 'iOS-Full',
   'ios-smoke': 'iOS-Smoke',
+  'ios-sanity': 'iOS-Sanity',
+};
+
+const POSITIONAL_MODES: Record<string, ParsedArgs> = {
+  unit: { passthrough: ['-only-testing:PackRatTests'] },
+  'ios-unit': { passthrough: ['-only-testing:PackRatTests'] },
 };
 
 export class ArgsError extends Error {
@@ -45,7 +53,9 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
     if (a === '--plan') {
       const next = argv[i + 1];
       if (!next || next.startsWith('-')) {
-        throw new ArgsError('--plan requires a value (smoke | full | iOS-Smoke | iOS-Full)');
+        throw new ArgsError(
+          '--plan requires a value (sanity | smoke | full | iOS-Sanity | iOS-Smoke | iOS-Full)',
+        );
       }
       plan = resolvePlan(next);
       i++;
@@ -53,6 +63,17 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
     }
     if (a.startsWith('--plan=')) {
       plan = resolvePlan(a.slice('--plan='.length));
+      continue;
+    }
+    const positionalPlan = ALIASES[a.toLowerCase()];
+    if (positionalPlan) {
+      plan = positionalPlan;
+      continue;
+    }
+    const positionalMode = POSITIONAL_MODES[a.toLowerCase()];
+    if (positionalMode) {
+      if (positionalMode.plan) plan = positionalMode.plan;
+      passthrough.push(...positionalMode.passthrough);
       continue;
     }
     passthrough.push(a);

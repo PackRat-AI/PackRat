@@ -1,14 +1,18 @@
 #!/usr/bin/env bun
 import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   cpSync,
   existsSync,
   mkdirSync,
+  mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { APP_CONFIG } from '@packrat/config/config';
@@ -26,6 +30,7 @@ import {
   oneOrMore,
 } from 'magic-regexp';
 import { z } from 'zod';
+import { ensureLocalE2EAPI } from './lib/e2e-api';
 import { formatSummaryLine, readSummary, type TestSummary, XcResultError } from './lib/xcresult';
 
 type Platform = 'ios' | 'ipad' | 'macos' | 'watch';
@@ -56,6 +61,7 @@ type VisualTestResult = {
 type PlatformRunSummary = {
   platform: Platform;
   screenshotDir: string;
+  screenshotCount: number;
   coverageManifest: string;
   contactSheet: string;
   groupedContactSheets: string[];
@@ -67,6 +73,16 @@ const REPO_ROOT = resolve(import.meta.dir, '../../..');
 const SWIFT_DIR = resolve(REPO_ROOT, 'apps/swift');
 const RESULTS_DIR = resolve(SWIFT_DIR, 'TestResults');
 const DEFAULT_OUT_DIR = resolve(REPO_ROOT, 'artifacts/screenshots');
+const IOS_SCHEME_PATH = resolve(
+  SWIFT_DIR,
+  'PackRat.xcodeproj/xcshareddata/xcschemes/PackRat-iOS.xcscheme',
+);
+const MACOS_SCHEME_PATH = resolve(
+  SWIFT_DIR,
+  'PackRat.xcodeproj/xcshareddata/xcschemes/PackRat-macOS.xcscheme',
+);
+const WATCH_BUNDLE_ID =
+  nodeEnv.PACKRAT_WATCH_BUNDLE_ID ?? 'com.andrewbierman.packrat.swift.watchkitapp';
 const EMAIL_RE = createRegExp(
   oneOrMore(charIn('A-Z0-9._%+-')),
   '@',
@@ -82,6 +98,10 @@ const SECRET_BUILD_SETTING_RE = createRegExp(
   oneOrMore(charNotIn(' \t\n\r')),
   [globalFlag],
 );
+const E2E_LOCAL_TOKEN_RE = createRegExp(exactly('e2e-local.'), oneOrMore(charIn('A-F0-9')), [
+  globalFlag,
+  caseInsensitive,
+]);
 const XCODEBUILD_TIMEOUT_MS = durationFromEnv('PACKRAT_VISUAL_XCODEBUILD_TIMEOUT_MS', 30 * 60_000);
 const XCRESULT_EXPORT_TIMEOUT_MS = durationFromEnv('PACKRAT_XCRESULT_EXPORT_TIMEOUT_MS', 90_000);
 const AUTOMATION_MODE_TIMEOUT_MS = 10_000;
@@ -98,6 +118,7 @@ const CHROME_CANDIDATES = [
   '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
 ];
 const FEATURE_FLAGS = APP_CONFIG.featureFlags;
+const API_E2E_ENV_PATH = resolve(REPO_ROOT, 'packages/api/.dev.vars.e2e');
 const IOS_SURFACES = [
   'packs',
   'trips',
@@ -246,7 +267,7 @@ Captures guest and authenticated visual surfaces through VisualScreenshotTests a
 }
 
 function parseArgs(argv: readonly string[]): Options {
-  let platforms: Platform[] = ['ios', 'ipad', 'macos'];
+  let platforms: Platform[] = ['ios', 'ipad', 'macos', 'watch'];
   let outDir = DEFAULT_OUT_DIR;
   let skipTests = false;
 
@@ -260,7 +281,7 @@ function parseArgs(argv: readonly string[]): Options {
     }
     if (arg === '--platform') {
       const value = argv[++i];
-      if (!value) throw new Error('--platform requires ios, ipad, macos, or both');
+      if (!value) throw new Error('--platform requires ios, ipad, macos, watch, both, or all');
       platforms = parsePlatforms(value);
       continue;
     }
@@ -286,7 +307,7 @@ function parseArgs(argv: readonly string[]): Options {
 
 function parsePlatforms(value: string): Platform[] {
   const normalized = value.toLowerCase();
-  if (normalized === 'both') return ['ios', 'ipad', 'macos'];
+  if (normalized === 'both') return ['ios', 'ipad', 'macos', 'watch'];
   if (normalized === 'all') return ['ios', 'ipad', 'macos', 'watch'];
   if (normalized === 'ios') return ['ios'];
   if (normalized === 'ipad') return ['ipad'];
@@ -334,6 +355,7 @@ function redactSecrets(output: string): string {
     if (!secret) continue;
     redacted = redacted.split(secret).join('[REDACTED]');
   }
+  redacted = redacted.replace(E2E_LOCAL_TOKEN_RE, '[REDACTED_E2E_TOKEN]');
   redacted = redacted.replace(EMAIL_RE, '[REDACTED_EMAIL]');
   redacted = redacted.replace(SECRET_BUILD_SETTING_RE, (match) => {
     const equalsIndex = match.indexOf('=');
@@ -741,9 +763,26 @@ function loadEnvFile(envFile: string): void {
 function pickIOSDestination(platform: Extract<Platform, 'ios' | 'ipad'>): string {
   if (platform === 'ipad') {
     return pickAvailableIOSDestination({
-      preferredNames: ['iPad Pro 13-inch (M5)', 'iPad Pro 11-inch (M5)', 'iPad Air 13-inch (M4)'],
+      preferredNames: [
+        'PackRat E2E iPad',
+        'iPad Pro 13-inch (M5)',
+        'iPad Pro 11-inch (M5)',
+        'iPad Air 13-inch (M4)',
+        'iPad Air 13-inch (M2)',
+        'iPad Pro (12.9-inch) (6th generation)',
+      ],
       fallbackName: 'iPad Pro 13-inch (M5)',
       nameIncludes: 'iPad',
+      createIfMissing: {
+        name: 'PackRat E2E iPad',
+        preferredDeviceTypes: [
+          'iPad Pro 13-inch (M5)',
+          'iPad Pro 11-inch (M5)',
+          'iPad Air 13-inch (M4)',
+          'iPad Air 13-inch (M2)',
+          'iPad Pro (12.9-inch) (6th generation)',
+        ],
+      },
     });
   }
   return pickAvailableIOSDestination({
@@ -757,21 +796,25 @@ function pickAvailableIOSDestination({
   preferredNames,
   fallbackName,
   nameIncludes,
+  createIfMissing,
 }: {
   preferredNames: string[];
   fallbackName: string;
   nameIncludes: string;
+  createIfMissing?: { name: string; preferredDeviceTypes: string[] };
 }): string {
   const result = spawnSync('xcrun', ['simctl', 'list', 'devices', 'available', '-j'], {
     encoding: 'utf8',
     timeout: 10_000,
     maxBuffer: 10 * 1024 * 1024,
   });
+  let inventorySucceeded = false;
   if (result.status === 0) {
     try {
       const parsed = safeJsonParse<{
         devices?: Record<string, Array<{ name?: string; udid?: string; isAvailable?: boolean }>>;
       }>(result.stdout, { strict: true });
+      inventorySucceeded = true;
       const availableDevices = Object.values(parsed.devices ?? {}).flat();
       for (const preferredName of preferredNames) {
         const preferred = availableDevices.find(
@@ -787,7 +830,89 @@ function pickAvailableIOSDestination({
       }
     } catch {}
   }
+  if (createIfMissing && inventorySucceeded) {
+    const createdDeviceId = createIOSSimulator(createIfMissing);
+    if (createdDeviceId) return `platform=iOS Simulator,id=${createdDeviceId}`;
+  }
   return `platform=iOS Simulator,name=${fallbackName}`;
+}
+
+function createIOSSimulator({
+  name,
+  preferredDeviceTypes,
+}: {
+  name: string;
+  preferredDeviceTypes: string[];
+}): string | null {
+  const deviceTypeId = pickDeviceTypeId(preferredDeviceTypes);
+  const runtimeId = pickLatestIOSRuntimeId();
+  if (!deviceTypeId || !runtimeId) return null;
+  const result = spawnSync('xcrun', ['simctl', 'create', name, deviceTypeId, runtimeId], {
+    encoding: 'utf8',
+    timeout: 30_000,
+  });
+  if (result.status !== 0) return null;
+  const deviceId = result.stdout.trim();
+  return deviceId || null;
+}
+
+function pickDeviceTypeId(preferredNames: string[]): string | null {
+  const result = spawnSync('xcrun', ['simctl', 'list', 'devicetypes', '-j'], {
+    encoding: 'utf8',
+    timeout: 10_000,
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  if (result.status !== 0) return null;
+  try {
+    const parsed = safeJsonParse<{
+      devicetypes?: Array<{ name?: string; identifier?: string }>;
+    }>(result.stdout, { strict: true });
+    for (const preferredName of preferredNames) {
+      const deviceType = parsed.devicetypes?.find((candidate) => candidate.name === preferredName);
+      if (deviceType?.identifier) return deviceType.identifier;
+    }
+  } catch {}
+  return null;
+}
+
+function pickLatestIOSRuntimeId(): string | null {
+  const result = spawnSync('xcrun', ['simctl', 'list', 'runtimes', '-j'], {
+    encoding: 'utf8',
+    timeout: 10_000,
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  if (result.status !== 0) return null;
+  try {
+    const parsed = safeJsonParse<{
+      runtimes?: Array<{
+        identifier?: string;
+        isAvailable?: boolean;
+        platform?: string;
+        version?: string;
+      }>;
+    }>(result.stdout, { strict: true });
+    const runtimes = (parsed.runtimes ?? [])
+      .filter(
+        (runtime) =>
+          runtime.isAvailable &&
+          runtime.identifier &&
+          (runtime.platform === 'iOS' || runtime.identifier.includes('iOS')),
+      )
+      .sort((a, b) => compareVersions(b.version ?? '', a.version ?? ''));
+    return runtimes[0]?.identifier ?? null;
+  } catch {}
+  return null;
+}
+
+function compareVersions(left: string, right: string): number {
+  const leftParts = left.split('.').map(Number);
+  const rightParts = right.split('.').map(Number);
+  const count = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < count; index += 1) {
+    const diff = (leftParts[index] || 0) - (rightParts[index] || 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
 }
 
 function allocateResultBundle(platform: Platform): string {
@@ -800,12 +925,32 @@ function allocateResultBundle(platform: Platform): string {
   return path;
 }
 
-function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<VisualTestResult> {
+async function runXcodeVisualTest(
+  platform: Platform,
+  screenshotDir: string,
+): Promise<VisualTestResult> {
   if (platform === 'watch') return runWatchVisualCapture(screenshotDir);
 
   const resultBundle = allocateResultBundle(platform);
   const writableScreenshotDir = allocateWritableScreenshotDir(platform);
-  const credentials = e2eBuildSettings();
+  const packratEnv = Bun.env.PACKRAT_ENV ?? nodeEnv.PACKRAT_ENV ?? 'local';
+  const authMode = visualAuthMode(packratEnv);
+  const apiBaseURL = Bun.env.E2E_API_BASE_URL ?? '';
+  const credentials = e2eBuildSettings(packratEnv);
+  const visualBuildSettings = [
+    ...(apiBaseURL ? [`E2E_API_BASE_URL=${apiBaseURL}`] : []),
+    `PACKRAT_ENV=${packratEnv}`,
+    `PACKRAT_VISUAL_AUTH_MODE=${authMode}`,
+    `PACKRAT_VISUAL_PLATFORM=${platform}`,
+  ];
+  const restoreVisualScheme = injectVisualSchemeEnvironment(platform, {
+    E2E_API_BASE_URL: apiBaseURL,
+    PACKRAT_ENV: packratEnv,
+    PACKRAT_SCREENSHOT_DIR: writableScreenshotDir,
+    PACKRAT_VISUAL_AUTH_MODE: authMode,
+    PACKRAT_VISUAL_PLATFORM: platform,
+    ...buildSettingsToEnv(credentials),
+  });
   const commonArgs = [
     'test',
     '-resultBundlePath',
@@ -821,6 +966,7 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
           '-destination',
           pickIOSDestination(platform),
           '-only-testing:PackRatUITests/VisualScreenshotTests',
+          ...visualBuildSettings,
           ...credentials,
         ]
       : [
@@ -835,6 +981,7 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
           'CODE_SIGN_IDENTITY=-',
           'CODE_SIGNING_ALLOWED=YES',
           'CODE_SIGNING_REQUIRED=NO',
+          ...visualBuildSettings,
           ...credentials,
         ];
 
@@ -843,71 +990,164 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
   console.log(`→ XCTest write dir: ${writableScreenshotDir}`);
   console.log(`→ Result bundle: ${resultBundle}`);
 
-  if (platform === 'macos') assertAutomationModeAvailable();
+  try {
+    await assertDeployedVisualAuthReady({ packratEnv, apiBaseURL, authMode });
 
-  return new Promise((resolvePromise, reject) => {
-    let timedOut = false;
-    let finalized = false;
-    const child = spawn('xcodebuild', args, {
-      cwd: SWIFT_DIR,
-      env: {
-        ...Bun.env,
-        PACKRAT_ENV: Bun.env.PACKRAT_ENV ?? nodeEnv.PACKRAT_ENV ?? 'local',
-        PACKRAT_SCREENSHOT_DIR: writableScreenshotDir,
-        PACKRAT_VISUAL_PLATFORM: platform,
-      },
-    });
-    const timeout = setTimeout(() => {
-      timedOut = true;
-      console.error(
-        `xcodebuild timed out after ${Math.round(XCODEBUILD_TIMEOUT_MS / 1000)}s for ${platform}; terminating child process.`,
-      );
-      child.kill('SIGINT');
-      setTimeout(() => {
-        if (!child.killed) child.kill('SIGKILL');
-      }, 5_000).unref();
-    }, XCODEBUILD_TIMEOUT_MS);
-    timeout.unref();
+    if (platform === 'macos') {
+      assertAutomationModeAvailable();
+      clearMacNotificationBanners();
+    }
 
-    child.stdout.on('data', (chunk) => process.stdout.write(redactSecrets(chunk.toString())));
-    child.stderr.on('data', (chunk) => process.stderr.write(redactSecrets(chunk.toString())));
-    child.on('error', (err) => {
-      if (finalized) return;
-      finalized = true;
-      clearTimeout(timeout);
-      reject(err);
-    });
-    const finalize = (code: number | null) => {
-      if (finalized) return;
-      finalized = true;
-      clearTimeout(timeout);
-      try {
-        const summary = summarizeResult(resultBundle);
-        copyScreenshots(writableScreenshotDir, screenshotDir);
-        if (listScreenshots(screenshotDir).length === 0) {
-          exportScreenshotsFromResultBundle(resultBundle, screenshotDir);
-        }
-        if (code === 0) {
-          resolvePromise({ resultBundle, summary });
+    return await new Promise((resolvePromise, reject) => {
+      let timedOut = false;
+      let finalized = false;
+      const child = spawn('xcodebuild', args, {
+        cwd: SWIFT_DIR,
+        env: {
+          ...Bun.env,
+          E2E_API_BASE_URL: apiBaseURL,
+          PACKRAT_ENV: packratEnv,
+          PACKRAT_VISUAL_AUTH_MODE: authMode,
+          PACKRAT_SCREENSHOT_DIR: writableScreenshotDir,
+          PACKRAT_VISUAL_PLATFORM: platform,
+        },
+      });
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        console.error(
+          `xcodebuild timed out after ${Math.round(XCODEBUILD_TIMEOUT_MS / 1000)}s for ${platform}; terminating child process.`,
+        );
+        child.kill('SIGINT');
+        setTimeout(() => {
+          if (!child.killed) child.kill('SIGKILL');
+        }, 5_000).unref();
+      }, XCODEBUILD_TIMEOUT_MS);
+      timeout.unref();
+
+      child.stdout.on('data', (chunk) => process.stdout.write(redactSecrets(chunk.toString())));
+      child.stderr.on('data', (chunk) => process.stderr.write(redactSecrets(chunk.toString())));
+      child.on('error', (err) => {
+        if (finalized) return;
+        finalized = true;
+        clearTimeout(timeout);
+        reject(err);
+      });
+      const finalize = (code: number | null) => {
+        if (finalized) return;
+        finalized = true;
+        clearTimeout(timeout);
+        try {
+          const summary = summarizeResult(resultBundle);
+          copyScreenshots(writableScreenshotDir, screenshotDir);
+          if (listScreenshots(screenshotDir).length === 0) {
+            exportScreenshotsFromResultBundle(resultBundle, screenshotDir);
+          }
+          if (code === 0) {
+            resolvePromise({ resultBundle, summary });
+            return;
+          }
+        } catch (err) {
+          reject(err);
           return;
         }
-      } catch (err) {
-        reject(err);
-        return;
-      }
-      if (timedOut) {
-        reject(
-          new Error(
-            `xcodebuild timed out after ${Math.round(XCODEBUILD_TIMEOUT_MS / 1000)}s for ${platform}`,
-          ),
-        );
-      } else {
-        reject(new Error(`xcodebuild exited with ${code ?? 'unknown status'} for ${platform}`));
-      }
-    };
-    child.on('exit', finalize);
-    child.on('close', finalize);
-  });
+        if (timedOut) {
+          reject(
+            new Error(
+              `xcodebuild timed out after ${Math.round(XCODEBUILD_TIMEOUT_MS / 1000)}s for ${platform}`,
+            ),
+          );
+        } else {
+          reject(new Error(`xcodebuild exited with ${code ?? 'unknown status'} for ${platform}`));
+        }
+      };
+      child.on('exit', finalize);
+      child.on('close', finalize);
+    });
+  } finally {
+    restoreVisualScheme();
+  }
+}
+
+function injectVisualSchemeEnvironment(
+  platform: Platform,
+  env: Record<string, string>,
+): () => void {
+  const schemePath = platform === 'macos' ? MACOS_SCHEME_PATH : IOS_SCHEME_PATH;
+  if (!existsSync(schemePath)) return () => {};
+
+  const originalContent = readFileSync(schemePath, 'utf8');
+  let content = originalContent;
+  const restore = () => {
+    if (existsSync(schemePath) && readFileSync(schemePath, 'utf8') !== originalContent) {
+      writeFileSync(schemePath, originalContent);
+    }
+  };
+  content = removeEnvironmentVariablesBlock(content);
+  content = content.replace(
+    'shouldUseLaunchSchemeArgsEnv = "YES"',
+    'shouldUseLaunchSchemeArgsEnv = "NO"',
+  );
+
+  const variables = Object.entries(env)
+    .filter(([, value]) => value.length > 0)
+    .map(([key, value]) => environmentVariableXml(key, value));
+  if (variables.length === 0) {
+    writeFileSync(schemePath, content);
+    return restore;
+  }
+
+  const block = [
+    '      <EnvironmentVariables>',
+    ...variables,
+    '      </EnvironmentVariables>',
+    '',
+  ].join('\n');
+  writeFileSync(schemePath, content.replace('   </TestAction>', `${block}   </TestAction>`));
+  return restore;
+}
+
+function buildSettingsToEnv(settings: string[]): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const setting of settings) {
+    const equals = setting.indexOf('=');
+    if (equals <= 0) continue;
+    env[setting.slice(0, equals)] = setting.slice(equals + 1);
+  }
+  return env;
+}
+
+function environmentVariableXml(key: string, value: string): string {
+  return [
+    '         <EnvironmentVariable',
+    `            key = "${escapeXml(key)}"`,
+    `            value = "${escapeXml(value)}"`,
+    '            isEnabled = "YES">',
+    '         </EnvironmentVariable>',
+  ].join('\n');
+}
+
+function removeEnvironmentVariablesBlock(content: string): string {
+  let output = content;
+  while (true) {
+    const start = output.indexOf('<EnvironmentVariables>');
+    if (start === -1) return output;
+    const end = output.indexOf('</EnvironmentVariables>', start);
+    if (end === -1) return output;
+    const removalStart = output.lastIndexOf('\n', start);
+    const removalEnd = end + '</EnvironmentVariables>'.length;
+    output = `${output.slice(0, removalStart === -1 ? start : removalStart)}${output.slice(removalEnd)}`;
+  }
+}
+
+function escapeXml(s: string): string {
+  return Array.from(s, (char) => {
+    if (char === '&') return '&amp;';
+    if (char === '<') return '&lt;';
+    if (char === '>') return '&gt;';
+    if (char === '"') return '&quot;';
+    if (char === "'") return '&apos;';
+    return char;
+  }).join('');
 }
 
 async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestResult> {
@@ -952,11 +1192,11 @@ async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestR
   mkdirSync(screenshotDir, { recursive: true });
   const syncedSnapshot = watchSyncedSnapshotBase64();
   for (const route of [
-    { name: '00-watch-dashboard.png', value: '', snapshot: 'reset' },
+    { name: '00-watch-dashboard.png', value: 'dashboard', snapshot: 'reset' },
     { name: '01-watch-checklist.png', value: 'checklist', snapshot: 'reset' },
     { name: '02-watch-weather.png', value: 'weather', snapshot: 'reset' },
     { name: '03-watch-trail-report.png', value: 'trail-report', snapshot: 'reset' },
-    { name: '10-watch-synced-dashboard.png', value: '', snapshot: 'synced' },
+    { name: '10-watch-synced-dashboard.png', value: 'dashboard', snapshot: 'synced' },
     { name: '11-watch-synced-checklist.png', value: 'checklist', snapshot: 'synced' },
     { name: '12-watch-synced-weather.png', value: 'weather', snapshot: 'synced' },
     { name: '13-watch-synced-trail-report.png', value: 'trail-report', snapshot: 'synced' },
@@ -968,6 +1208,7 @@ async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestR
     },
   ] as const) {
     const env = {
+      SIMCTL_CHILD_PACKRAT_WATCH_DISABLE_CONNECTIVITY: '1',
       ...(route.value ? { SIMCTL_CHILD_PACKRAT_WATCH_SCREENSHOT_ROUTE: route.value } : {}),
       ...(route.snapshot === 'reset'
         ? { SIMCTL_CHILD_PACKRAT_WATCH_RESET_SNAPSHOT: '1' }
@@ -978,7 +1219,7 @@ async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestR
     };
     await launchWatchRouteWithRetry({ deviceId, appPath, env });
 
-    await sleep(1_500);
+    await sleep(4_000);
     const tmpScreenshot = resolve('/tmp', `packrat-watch-${Date.now()}-${route.name}`);
     runChecked({
       command: 'xcrun',
@@ -1151,13 +1392,7 @@ async function launchWatchRouteWithRetry(options: {
     }
     const result = spawnSync(
       'xcrun',
-      [
-        'simctl',
-        'launch',
-        '--terminate-running-process',
-        deviceId,
-        'com.andrewbierman.packrat.watchkitapp',
-      ],
+      ['simctl', 'launch', '--terminate-running-process', deviceId, WATCH_BUNDLE_ID],
       {
         cwd: SWIFT_DIR,
         env: { ...Bun.env, ...env },
@@ -1248,17 +1483,143 @@ const AttachmentManifestEntrySchema = z
   })
   .passthrough();
 const parseAttachmentManifest = fromZod(z.array(AttachmentManifestEntrySchema));
+const TestRefSchema = z.object({
+  identifier: z.string(),
+  testName: z.string().optional(),
+  className: z.string().optional(),
+});
+const TestSummarySchema = z.object({
+  totalTestCount: z.number(),
+  passedTests: z.number(),
+  failedTests: z.number(),
+  skippedTests: z.number(),
+  expectedFailures: z.number(),
+  passed: z.number(),
+  failed: z.number(),
+  skipped: z.number(),
+  result: z.string(),
+  failingTests: z.array(TestRefSchema),
+});
+const PlatformRunSummarySchema = z.object({
+  platform: z.enum(['ios', 'ipad', 'macos', 'watch']),
+  screenshotDir: z.string(),
+  screenshotCount: z.number().optional(),
+  coverageManifest: z.string(),
+  contactSheet: z.string(),
+  groupedContactSheets: z.array(z.string()),
+  resultBundle: z.string().optional(),
+  testSummary: TestSummarySchema.optional(),
+});
+const parsePlatformRunSummaryValue = fromZod(PlatformRunSummarySchema);
 
-function e2eBuildSettings(): string[] {
-  const email = Bun.env.E2E_TEST_EMAIL ?? Bun.env.E2E_EMAIL;
-  const password = Bun.env.E2E_TEST_PASSWORD ?? Bun.env.E2E_PASSWORD;
+function visualAuthMode(packratEnv: string): 'seeded' | 'real' {
+  const explicit = Bun.env.PACKRAT_VISUAL_AUTH_MODE;
+  if (explicit === 'seeded' || explicit === 'real') return explicit;
+  return packratEnv === 'local' || packratEnv === 'dev-local' ? 'seeded' : 'real';
+}
+
+function e2eBuildSettings(packratEnv: string): string[] {
+  const apiE2EEnv = readSimpleEnvFile(API_E2E_ENV_PATH);
+  const email = Bun.env.E2E_TEST_EMAIL ?? Bun.env.E2E_EMAIL ?? apiE2EEnv.E2E_TEST_EMAIL;
+  const password = Bun.env.E2E_TEST_PASSWORD ?? Bun.env.E2E_PASSWORD ?? apiE2EEnv.E2E_TEST_PASSWORD;
   if (!email || !password) {
     console.warn(
       'Warning: E2E_EMAIL/E2E_PASSWORD are not set; authenticated screenshot test will be skipped.',
     );
     return [];
   }
-  return [`PACKRAT_E2E_EMAIL=${email}`, `PACKRAT_E2E_PASSWORD=${password}`];
+
+  const userId = Bun.env.E2E_TEST_USER_ID ?? apiE2EEnv.E2E_TEST_USER_ID;
+  const shouldSynthesizeLocalToken = packratEnv === 'local' || packratEnv === 'dev-local';
+  const sessionToken =
+    Bun.env.PACKRAT_E2E_SESSION_TOKEN ??
+    (shouldSynthesizeLocalToken && userId
+      ? localE2ESessionToken({
+          secret:
+            Bun.env.BETTER_AUTH_SECRET ??
+            apiE2EEnv.BETTER_AUTH_SECRET ??
+            'e2e-better-auth-secret-at-least-32-chars',
+          email,
+          userId,
+        })
+      : undefined);
+
+  return [
+    `PACKRAT_E2E_EMAIL=${email}`,
+    `PACKRAT_E2E_PASSWORD=${password}`,
+    `PACKRAT_E2E_ALLOW_LOGIN_SEED=${shouldSynthesizeLocalToken ? '1' : '0'}`,
+    ...(userId ? [`PACKRAT_E2E_USER_ID=${userId}`] : []),
+    ...(sessionToken ? [`PACKRAT_E2E_SESSION_TOKEN=${sessionToken}`] : []),
+  ];
+}
+
+async function assertDeployedVisualAuthReady(input: {
+  packratEnv: string;
+  apiBaseURL: string;
+  authMode: 'seeded' | 'real';
+}): Promise<void> {
+  const { packratEnv, apiBaseURL, authMode } = input;
+  if (authMode !== 'real') return;
+
+  const baseURL =
+    apiBaseURL ||
+    (packratEnv === 'dev'
+      ? 'https://packrat-api-dev.orange-frost-d665.workers.dev'
+      : packratEnv === 'production'
+        ? 'https://packrat-api.orange-frost-d665.workers.dev'
+        : '');
+  if (!baseURL) return;
+
+  const email = Bun.env.E2E_TEST_EMAIL ?? Bun.env.E2E_EMAIL ?? apiE2EEnv.E2E_TEST_EMAIL;
+  const password = Bun.env.E2E_TEST_PASSWORD ?? Bun.env.E2E_PASSWORD ?? apiE2EEnv.E2E_TEST_PASSWORD;
+  if (!email || !password) {
+    throw new Error(
+      `PACKRAT_VISUAL_AUTH_MODE=real for PACKRAT_ENV=${packratEnv}, but E2E credentials are missing.`,
+    );
+  }
+
+  const response = await fetch(`${baseURL}/api/auth/sign-in/email`, {
+    method: 'POST',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: safeJsonStringify({ email, password }),
+  });
+  if (!response.ok) {
+    throw new Error(
+      [
+        `Swift visual real-auth preflight failed for PACKRAT_ENV=${packratEnv}: ${response.status}.`,
+        packratEnv === 'dev'
+          ? 'Seed the dev E2E user before capturing deployed-dev screenshots.'
+          : 'Use a valid production QA account before capturing production/TestFlight screenshots.',
+        'The visual runner no longer falls back to seeded auth for deployed APIs.',
+      ].join(' '),
+    );
+  }
+  console.log(`✓ Verified deployed ${packratEnv} E2E auth before visual capture`);
+}
+
+function localE2ESessionToken(input: { secret: string; email: string; userId: string }): string {
+  const material = `${input.secret}:${input.email.toLowerCase()}:${input.userId}`;
+  return `e2e-local.${createHash('sha256').update(material).digest('hex')}`;
+}
+
+function readSimpleEnvFile(path: string): Record<string, string> {
+  if (!existsSync(path)) return {};
+  const vars: Record<string, string> = {};
+  for (const rawLine of readFileSync(path, 'utf8').replaceAll('\r\n', '\n').split('\n')) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#') || !line.includes('=')) continue;
+    const index = line.indexOf('=');
+    const key = line.slice(0, index).trim();
+    let value = line.slice(index + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    vars[key] = value;
+  }
+  return vars;
 }
 
 function assertAutomationModeAvailable(): void {
@@ -1490,11 +1851,8 @@ async function screenshotHtml({
   outputPath: string;
   platform: Platform;
 }): Promise<void> {
-  const chrome = CHROME_CANDIDATES.find((candidate) => existsSync(candidate));
-  if (chrome) {
-    renderWithSystemChrome({ chrome, htmlPath, images, outputPath, platform });
-    return;
-  }
+  if (platform === 'macos') clearMacNotificationBanners();
+  rmSync(outputPath, { force: true });
 
   try {
     const { chromium } = await import('@playwright/test');
@@ -1511,13 +1869,17 @@ async function screenshotHtml({
       await browser.close();
     }
   } catch (err) {
-    throw new Error(
-      `No contact sheet renderer found. System Chrome is unavailable and Playwright failed: ${formatError(err)}`,
-    );
+    const chrome = CHROME_CANDIDATES.find((candidate) => existsSync(candidate));
+    if (chrome) {
+      await renderWithSystemChrome({ chrome, htmlPath, images, outputPath, platform });
+      return;
+    }
+
+    throw new Error(`No contact sheet renderer found. Playwright failed: ${formatError(err)}`);
   }
 }
 
-function renderWithSystemChrome({
+async function renderWithSystemChrome({
   chrome,
   htmlPath,
   images,
@@ -1529,27 +1891,135 @@ function renderWithSystemChrome({
   images: string[];
   outputPath: string;
   platform: Platform;
-}): void {
+}): Promise<void> {
   const width = platform === 'ios' ? 1600 : 1800;
   const height = estimateContactSheetHeight({ images, platform, width });
-  const result = spawnSync(
+  const userDataDir = mkdtempSync(resolve(tmpdir(), 'packrat-contact-sheet-chrome-'));
+  const child = spawn(
     chrome,
     [
       '--headless=new',
       '--disable-gpu',
+      '--disable-background-networking',
+      '--disable-breakpad',
+      '--disable-crash-reporter',
+      '--disable-extensions',
+      '--disable-notifications',
+      '--deny-permission-prompts',
       '--hide-scrollbars',
+      '--no-default-browser-check',
+      '--no-first-run',
+      `--user-data-dir=${userDataDir}`,
       `--window-size=${width},${height}`,
       `--screenshot=${outputPath}`,
       pathToFileURL(htmlPath).href,
     ],
-    { encoding: 'utf8', timeout: CONTACT_SHEET_RENDER_TIMEOUT_MS },
+    { detached: true, stdio: ['ignore', 'pipe', 'pipe'] },
+  );
+  let stdout = '';
+  let stderr = '';
+  child.stdout?.on('data', (chunk) => {
+    stdout += chunk.toString();
+  });
+  child.stderr?.on('data', (chunk) => {
+    stderr += chunk.toString();
+  });
+
+  const exitPromise = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(
+    (resolveExit, rejectExit) => {
+      child.once('error', rejectExit);
+      child.once('exit', (code, signal) => resolveExit({ code, signal }));
+    },
   );
 
-  if (result.status !== 0) {
-    throw new Error(
-      `Chrome screenshot failed: ${result.stderr || result.stdout || `exit ${result.status}`}`,
-    );
+  try {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < CONTACT_SHEET_RENDER_TIMEOUT_MS) {
+      if (fileIsNonEmpty(outputPath)) {
+        const exitResult = await Promise.race([exitPromise, sleep(1_000).then(() => null)]);
+        if (exitResult?.code === 0) return;
+        await stopProcessGroup({ pid: child.pid, exitPromise, signal: 'SIGKILL' });
+        return;
+      }
+
+      const exitResult = await Promise.race([exitPromise, sleep(250).then(() => null)]);
+      if (exitResult) {
+        if (exitResult.code === 0 && fileIsNonEmpty(outputPath)) return;
+        throw new Error(
+          `Chrome screenshot failed: ${stderr || stdout || `exit ${exitResult.code ?? exitResult.signal}`}`,
+        );
+      }
+    }
+
+    await stopProcessGroup({ pid: child.pid, exitPromise, signal: 'SIGKILL' });
+    throw new Error(`Chrome screenshot timed out after ${CONTACT_SHEET_RENDER_TIMEOUT_MS}ms`);
+  } finally {
+    rmSync(userDataDir, { recursive: true, force: true });
   }
+}
+
+function fileIsNonEmpty(filePath: string): boolean {
+  try {
+    return statSync(filePath).size > 0;
+  } catch {
+    return false;
+  }
+}
+
+async function stopProcessGroup({
+  pid,
+  exitPromise,
+  signal = 'SIGTERM',
+}: {
+  pid: number | undefined;
+  exitPromise: Promise<unknown>;
+  signal?: NodeJS.Signals;
+}): Promise<void> {
+  if (!pid) return;
+
+  try {
+    process.kill(-pid, signal);
+  } catch {
+    try {
+      process.kill(pid, signal);
+    } catch {
+      return;
+    }
+  }
+
+  await Promise.race([
+    exitPromise.catch(() => undefined),
+    sleep(signal === 'SIGKILL' ? 500 : 1_000),
+  ]);
+}
+
+function clearMacNotificationBanners(): void {
+  if (process.platform !== 'darwin') return;
+  spawnSync(
+    'osascript',
+    [
+      '-e',
+      `tell application "System Events"
+  tell process "NotificationCenter"
+    repeat with notificationWindow in windows
+      repeat with candidate in entire contents of notificationWindow
+        try
+          if subrole of candidate is "AXNotificationCenterAlert" then
+            repeat with candidateAction in actions of candidate
+              try
+                if name of candidateAction is "Close" then perform candidateAction
+              end try
+            end repeat
+          end if
+        end try
+      end repeat
+    end repeat
+  end tell
+end tell`,
+    ],
+    { encoding: 'utf8', timeout: 5_000 },
+  );
+  spawnSync('killall', ['NotificationCenter'], { encoding: 'utf8', timeout: 5_000 });
 }
 
 function estimateContactSheetHeight({
@@ -1563,21 +2033,24 @@ function estimateContactSheetHeight({
 }): number {
   const horizontalPadding = 64;
   const gridGap = 18;
-  const cardWidth = platform === 'watch' ? 220 : platform === 'ios' ? 300 : 520;
+  const cardWidth = platform === 'watch' ? 220 : platform === 'macos' ? 520 : 300;
   const columns = Math.max(
     1,
     Math.floor((width - horizontalPadding + gridGap) / (cardWidth + gridGap)),
   );
+  const renderedCardWidth = Math.floor(
+    (width - horizontalPadding - gridGap * (columns - 1)) / columns,
+  );
   const cardHeights = images.map((image) => {
     const size = readImageSize(image);
     if (!size) return platform === 'watch' ? 280 : platform === 'ios' ? 720 : 420;
-    return Math.ceil((size.height / size.width) * cardWidth) + 42;
+    return Math.ceil((size.height / size.width) * renderedCardWidth) + 64;
   });
   const rows: number[] = [];
   for (let index = 0; index < cardHeights.length; index += columns) {
     rows.push(Math.max(...cardHeights.slice(index, index + columns)));
   }
-  return Math.max(1200, 116 + rows.reduce((sum, row) => sum + row, 0) + gridGap * rows.length);
+  return Math.max(1200, 160 + rows.reduce((sum, row) => sum + row, 0) + gridGap * rows.length);
 }
 
 function readImageSize(image: string): { width: number; height: number } | null {
@@ -1658,55 +2131,139 @@ async function main() {
   loadDotEnv();
   const options = parseArgs(process.argv.slice(2));
   mkdirSync(options.outDir, { recursive: true });
-  const runSummary: PlatformRunSummary[] = [];
+  const runSummaryPath = resolve(options.outDir, 'run-summary.json');
+  const runSummaryByPlatform = readExistingRunSummary(runSummaryPath);
+  addExistingArtifactSummaries(options.outDir, runSummaryByPlatform);
+  const shouldEnsureAPI =
+    !options.skipTests && options.platforms.some((platform) => platform !== 'watch');
+  const apiHandle = shouldEnsureAPI
+    ? await ensureLocalE2EAPI({
+        packratEnv: Bun.env.PACKRAT_ENV ?? nodeEnv.PACKRAT_ENV ?? 'local',
+        env: Bun.env as NodeJS.ProcessEnv,
+      })
+    : null;
 
-  for (const platform of options.platforms) {
-    const dir = screenshotDirFor(options.outDir, platform);
-    let testResult: VisualTestResult | null = null;
-    mkdirSync(dir, { recursive: true });
-    if (!options.skipTests) {
-      rmSync(dir, { recursive: true, force: true });
+  try {
+    for (const platform of options.platforms) {
+      const dir = screenshotDirFor(options.outDir, platform);
+      let testResult: VisualTestResult | null = null;
       mkdirSync(dir, { recursive: true });
-      testResult = await runXcodeVisualTest(platform, dir);
+      if (!options.skipTests) {
+        rmSync(dir, { recursive: true, force: true });
+        mkdirSync(dir, { recursive: true });
+        testResult = await runXcodeVisualTest(platform, dir);
+      }
+      validateScreenshotMatrix(platform, dir);
+      const contactSheet = await renderContactSheet(platform, options.outDir);
+      const groupedContactSheets = await renderGroupedContactSheets(platform, options.outDir);
+      const coverageManifest = resolve(dir, 'coverage-manifest.json');
+      const screenshotCount = countCapturedScreenshots(dir);
+      const existingSummary = runSummaryByPlatform.get(platform);
+      runSummaryByPlatform.set(platform, {
+        platform,
+        screenshotDir: dir,
+        screenshotCount,
+        coverageManifest,
+        contactSheet,
+        groupedContactSheets,
+        ...(testResult
+          ? {
+              resultBundle: testResult.resultBundle,
+              ...(testResult.summary ? { testSummary: testResult.summary } : {}),
+            }
+          : {
+              ...(existingSummary?.resultBundle
+                ? { resultBundle: existingSummary.resultBundle }
+                : {}),
+              ...(existingSummary?.testSummary ? { testSummary: existingSummary.testSummary } : {}),
+            }),
+      });
+      console.log(`✓ ${platform} contact sheet: ${contactSheet}`);
+      for (const groupedContactSheet of groupedContactSheets) {
+        console.log(`✓ ${platform} grouped contact sheet: ${groupedContactSheet}`);
+      }
+      console.log(`✓ ${platform} coverage manifest: ${coverageManifest}`);
     }
-    validateScreenshotMatrix(platform, dir);
-    const contactSheet = await renderContactSheet(platform, options.outDir);
-    const groupedContactSheets = await renderGroupedContactSheets(platform, options.outDir);
-    const coverageManifest = resolve(dir, 'coverage-manifest.json');
-    runSummary.push({
-      platform,
-      screenshotDir: dir,
-      coverageManifest,
-      contactSheet,
-      groupedContactSheets,
-      ...(testResult
-        ? {
-            resultBundle: testResult.resultBundle,
-            ...(testResult.summary ? { testSummary: testResult.summary } : {}),
-          }
-        : {}),
-    });
-    console.log(`✓ ${platform} contact sheet: ${contactSheet}`);
-    for (const groupedContactSheet of groupedContactSheets) {
-      console.log(`✓ ${platform} grouped contact sheet: ${groupedContactSheet}`);
-    }
-    console.log(`✓ ${platform} coverage manifest: ${coverageManifest}`);
+  } finally {
+    await apiHandle?.stop();
   }
 
-  const runSummaryPath = resolve(options.outDir, 'run-summary.json');
   writeFileSync(
     runSummaryPath,
     `${safeJsonStringify(
       {
         generatedAt: new Date().toISOString(),
         skipTests: options.skipTests,
-        platforms: runSummary,
+        platforms: [...runSummaryByPlatform.values()],
       },
       null,
       2,
     )}\n`,
   );
   console.log(`✓ screenshot run summary: ${runSummaryPath}`);
+}
+
+function readExistingRunSummary(path: string): Map<Platform, PlatformRunSummary> {
+  const summaries = new Map<Platform, PlatformRunSummary>();
+  if (!existsSync(path)) return summaries;
+  try {
+    const parsed = safeJsonParse<{ platforms?: unknown[] }>(readFileSync(path, 'utf8'), {
+      strict: true,
+    });
+    for (const candidate of parsed.platforms ?? []) {
+      const summary = parsePlatformRunSummary(candidate);
+      if (summary) summaries.set(summary.platform, summary);
+    }
+  } catch {}
+  return summaries;
+}
+
+function addExistingArtifactSummaries(
+  outDir: string,
+  summaries: Map<Platform, PlatformRunSummary>,
+): void {
+  for (const platform of ['ios', 'ipad', 'macos', 'watch'] satisfies Platform[]) {
+    if (summaries.has(platform)) continue;
+    const screenshotDir = screenshotDirFor(outDir, platform);
+    const coverageManifest = resolve(screenshotDir, 'coverage-manifest.json');
+    const contactSheet = resolve(outDir, `${platform}-contact-sheet.png`);
+    if (!existsSync(coverageManifest) || !existsSync(contactSheet)) continue;
+    const groupedContactSheets = CONTACT_SHEET_GROUPS.map((group) =>
+      resolve(outDir, `${platform}-contact-sheet-${group.suffix}.png`),
+    ).filter((path) => existsSync(path));
+    summaries.set(platform, {
+      platform,
+      screenshotDir,
+      screenshotCount: countCapturedScreenshots(screenshotDir),
+      coverageManifest,
+      contactSheet,
+      groupedContactSheets,
+    });
+  }
+}
+
+function parsePlatformRunSummary(value: unknown): PlatformRunSummary | null {
+  const candidate = parsePlatformRunSummaryValue(value);
+  if (!candidate) return null;
+
+  return {
+    platform: candidate.platform,
+    screenshotDir: candidate.screenshotDir,
+    screenshotCount:
+      candidate.screenshotCount !== undefined && Number.isFinite(candidate.screenshotCount)
+        ? candidate.screenshotCount
+        : countCapturedScreenshots(candidate.screenshotDir),
+    coverageManifest: candidate.coverageManifest,
+    contactSheet: candidate.contactSheet,
+    groupedContactSheets: candidate.groupedContactSheets,
+    ...(candidate.resultBundle ? { resultBundle: candidate.resultBundle } : {}),
+    ...(candidate.testSummary ? { testSummary: candidate.testSummary } : {}),
+  };
+}
+
+function countCapturedScreenshots(screenshotDir: string): number {
+  if (!existsSync(screenshotDir)) return 0;
+  return readdirSync(screenshotDir).filter((fileName) => fileName.endsWith('.png')).length;
 }
 
 main()

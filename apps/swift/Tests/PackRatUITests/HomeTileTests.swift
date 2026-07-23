@@ -6,36 +6,53 @@ final class HomeTileTests: AppUITestCase {
         let destinationTitle: String?
     }
 
-    private let navigationTiles: [Tile] = [
-        Tile(id: "home_tile_my_packs", destinationTitle: "Packs"),
-        Tile(id: "home_tile_trips", destinationTitle: "Trips"),
-        Tile(id: "home_tile_weather", destinationTitle: "Weather"),
-        Tile(id: "home_tile_ai_assistant", destinationTitle: "AI Assistant"),
-        Tile(id: "home_tile_gear_inventory", destinationTitle: "Gear Inventory"),
-        Tile(id: "home_tile_pack_templates", destinationTitle: "Pack Templates"),
-        Tile(id: "home_tile_guides", destinationTitle: "Guides"),
-        Tile(id: "home_tile_catalog", destinationTitle: "Gear Catalog"),
-        Tile(id: "home_tile_community_feed", destinationTitle: "Community Feed"),
-        Tile(id: "home_tile_trail_conditions", destinationTitle: "Trail Conditions"),
-        Tile(id: "home_tile_wildlife_id", destinationTitle: "Wildlife ID")
+    private let primaryNavigationTiles: [Tile] = [
+        Tile(id: "home_action_mypacks", destinationTitle: "Packs"),
+        Tile(id: "home_action_trips", destinationTitle: "Trips"),
+        Tile(id: "home_action_weather", destinationTitle: "Weather"),
+        Tile(id: "home_action_aiassistant", destinationTitle: "AI Assistant"),
     ]
 
-    func testEveryHomeNavigationTileOpensDestination() {
-        for tile in navigationTiles {
-            goToTab("Home")
-            tapHomeTile(tile.id)
+    private let planningNavigationTiles: [Tile] = [
+        Tile(id: "home_action_aipacks", destinationTitle: "AI Packs"),
+        Tile(id: "home_action_gearinventory", destinationTitle: "Gear Inventory"),
+        Tile(id: "home_action_packtemplates", destinationTitle: "Pack Templates"),
+    ]
 
-            guard let destinationTitle = tile.destinationTitle else { continue }
-            XCTAssertTrue(
-                app.navigationBars[destinationTitle].waitForExistence(timeout: 8),
-                "\(tile.id) must open \(destinationTitle)"
-            )
+    private var exploreNavigationTiles: [Tile] {
+        var tiles: [Tile] = [
+            Tile(id: "home_action_guides", destinationTitle: "Guides"),
+            Tile(id: "home_action_catalog", destinationTitle: "Gear Catalog"),
+        ]
+
+        if UITestFeatureFlags.enableFeed {
+            tiles.append(Tile(id: "home_action_communityfeed", destinationTitle: "Feed"))
         }
+        if UITestFeatureFlags.enableTrailConditions {
+            tiles.append(Tile(id: "home_action_trailconditions", destinationTitle: "Trail Conditions"))
+        }
+        if UITestFeatureFlags.enableWildlifeIdentification {
+            tiles.append(Tile(id: "home_action_wildlifeid", destinationTitle: "Wildlife"))
+        }
+
+        return tiles
+    }
+
+    func testPrimaryHomeNavigationTilesOpenDestinations() {
+        assertHomeTilesOpenDestinations(primaryNavigationTiles)
+    }
+
+    func testPlanningHomeNavigationTilesOpenDestinations() {
+        assertHomeTilesOpenDestinations(planningNavigationTiles)
+    }
+
+    func testExploreHomeNavigationTilesOpenDestinations() {
+        assertHomeTilesOpenDestinations(exploreNavigationTiles)
     }
 
     func testSeasonSuggestionsTileOpensAndDismissesSheet() {
-        goToTab("Home")
-        tapHomeTile("home_tile_season_suggestions")
+        goHome()
+        tapHomeTile("home_action_seasonsuggestions")
 
         XCTAssertTrue(
             app.staticTexts["AI-Powered Packing Tips"].waitForExistence(timeout: 5)
@@ -45,9 +62,13 @@ final class HomeTileTests: AppUITestCase {
         app.buttons["Done"].tapIfExists()
     }
 
-    func testShoppingListTileSupportsAddToggleClearAndDone() {
-        goToTab("Home")
-        tapHomeTile("home_tile_shopping_list")
+    func testShoppingListTileSupportsAddToggleClearAndDone() throws {
+        guard UITestFeatureFlags.enableShoppingList else {
+            throw XCTSkip("Shopping List is disabled by feature flags")
+        }
+
+        goHome()
+        tapHomeTile("home_action_shoppinglist")
 
         XCTAssertTrue(
             app.navigationBars.matching(NSPredicate(format: "identifier BEGINSWITH 'Shopping List'")).firstMatch
@@ -86,7 +107,32 @@ final class HomeTileTests: AppUITestCase {
         )
 
         waitFor(app.buttons["shopping_done"], timeout: 5).tap()
-        XCTAssertTrue(app.navigationBars["Home"].waitForExistence(timeout: 5))
+        XCTAssertTrue(destinationExists("Home", timeout: 5))
+    }
+
+    private func goHome() {
+        #if os(macOS)
+        goToSidebar("Home")
+        #else
+        goToTab("Home")
+        #endif
+    }
+
+    private func destinationExists(_ title: String, timeout: TimeInterval) -> Bool {
+        #if os(macOS)
+        let staticText = app.staticTexts[title]
+        let navigationBar = app.navigationBars[title]
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if staticText.exists || navigationBar.exists {
+                return true
+            }
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+        return staticText.exists || navigationBar.exists
+        #else
+        return app.navigationBars[title].waitForExistence(timeout: timeout)
+        #endif
     }
 
     private func tapHomeTile(_ id: String) {
@@ -98,6 +144,19 @@ final class HomeTileTests: AppUITestCase {
             app.swipeUp()
         }
         waitFor(tile, timeout: 5, message: "\(id) must be visible on Home").tap()
+    }
+
+    private func assertHomeTilesOpenDestinations(_ tiles: [Tile]) {
+        for tile in tiles {
+            goHome()
+            tapHomeTile(tile.id)
+
+            guard let destinationTitle = tile.destinationTitle else { continue }
+            XCTAssertTrue(
+                destinationExists(destinationTitle, timeout: 8),
+                "\(tile.id) must open \(destinationTitle)"
+            )
+        }
     }
 
     private func openOverflowMenu() {

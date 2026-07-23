@@ -20,7 +20,8 @@ type GenerateEmbeddingParams = GenerateEmbeddingBaseParams & {
   value: string;
 };
 
-const isE2EStubKey = (key?: string) => key?.startsWith('sk-e2e-stub-') === true;
+const isE2EStubKey = (key?: string) =>
+  key === 'sk-test' || key?.startsWith('sk-e2e-stub-') === true;
 
 const deterministicEmbedding = (value: string): number[] => {
   let hash = 2166136261;

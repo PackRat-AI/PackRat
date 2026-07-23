@@ -30,7 +30,7 @@ struct PacksListView: View {
             categoryFilterBar
 
             Group {
-                if viewModel.isLoading && viewModel.packs.isEmpty && !isExplore {
+                if viewModel.isLoading && viewModel.packs.isEmpty && !viewModel.isCacheLoaded && !isExplore {
                     ProgressView("Loading packs…").frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = viewModel.error, viewModel.packs.isEmpty, !isExplore {
                     ErrorView(error, retry: { await viewModel.load(context: modelContext) })
@@ -70,7 +70,6 @@ struct PacksListView: View {
                     Button("New Pack", systemImage: "plus") { showingCreateSheet = true }
                         .accessibilityIdentifier("packs_new_pack_button")
                         .keyboardShortcut("n", modifiers: .command)
-                        .accessibilityIdentifier("new_pack_button")
                 }
                 if viewModel.isLoading || isLoadingPublic {
                     ProgressView().controlSize(.small)
