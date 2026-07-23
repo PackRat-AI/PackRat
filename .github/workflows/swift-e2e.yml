@@ -211,6 +211,9 @@ jobs:
       - name: Resolve Swift E2E target
         run: |
           target="${{ inputs.api_environment || 'configured-secret' }}"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            target="dev"
+          fi
           case "$target" in
             configured-secret)
               echo "PACKRAT_ENV=dev" >> "$GITHUB_ENV"
@@ -233,6 +236,9 @@ jobs:
       - name: Verify Swift E2E secrets
         run: |
           target="${{ inputs.api_environment || 'configured-secret' }}"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            target="dev"
+          fi
           missing=()
           if [ "$target" != "local" ]; then
             [ -z "${E2E_EMAIL:-}" ] && missing+=("E2E_TEST_EMAIL")
@@ -348,7 +354,8 @@ jobs:
       - name: Resolve Swift E2E target
         run: |
           target="${{ inputs.api_environment || 'configured-secret' }}"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ] ||
+             [ "${{ github.event_name }}" = "schedule" ]; then
             target="dev"
           fi
           case "$target" in
@@ -373,7 +380,8 @@ jobs:
       - name: Verify Swift E2E secrets
         run: |
           target="${{ inputs.api_environment || 'configured-secret' }}"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ] ||
+             [ "${{ github.event_name }}" = "schedule" ]; then
             target="dev"
           fi
           missing=()
