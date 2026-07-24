@@ -174,7 +174,9 @@ describe('registerPackTemplateTools — handler invocation', () => {
     );
   });
 
-  it('packrat_generate_pack_template_from_url POSTs after GENERATE confirmation', async () => {
+  // TEMPORARILY DISABLED — packrat_generate_pack_template_from_url (the
+  // TikTok/YouTube generator) is not registered while it's unstable.
+  it.skip('packrat_generate_pack_template_from_url POSTs after GENERATE confirmation', async () => {
     const { agent, server, calls } = makeAgent({
       resolve: { action: 'accept', content: { confirmation: 'GENERATE' } },
     });
@@ -308,7 +310,8 @@ describe('packTemplates — elicitation declined', () => {
     expect(hasCall(calls, { verb: 'post', segments: ['pack-templates'] })).toBe(false);
   });
 
-  it('generate_pack_template_from_url returns a structured error when cancelled', async () => {
+  // TEMPORARILY DISABLED — generator tool not registered while unstable.
+  it.skip('generate_pack_template_from_url returns a structured error when cancelled', async () => {
     const { agent, server, calls } = makeAgent();
     registerPackTemplateTools(agent);
     const result = await getToolHandler(server, 'packrat_generate_pack_template_from_url')(
@@ -403,7 +406,8 @@ describe('packTemplates error paths — apiFail returns structured error', () =>
     expect((errorCodeOf(result.structuredContent) as string).length).toBeGreaterThan(0);
   });
 
-  it('generate_pack_template_from_url (POST) surfaces an error envelope on accept+apiFail', async () => {
+  // TEMPORARILY DISABLED — generator tool not registered while unstable.
+  it.skip('generate_pack_template_from_url (POST) surfaces an error envelope on accept+apiFail', async () => {
     const { agent, server } = makeAgent({
       resolve: { action: 'accept', content: { confirmation: 'GENERATE' } },
       apiFail: true,

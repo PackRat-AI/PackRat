@@ -67,31 +67,34 @@ export function registerCatalogTools(agent: AgentContext): void {
   );
 
   // ── Semantic/vector search ────────────────────────────────────────────────
-
-  tool<{ query: string; limit: number }>(
-    agent.server,
-    'packrat_semantic_gear_search',
-    {
-      title: 'Semantic Gear Search',
-      description:
-        'Search the gear catalog using vector/semantic search. Good for natural-language queries like "warm but lightweight insulation layer for cold shoulder-season camping" or "minimalist trail running shoe for rocky terrain".',
-      inputSchema: {
-        query: z.string().min(3),
-        limit: z.number().int().min(1).max(30).default(8),
-      },
-      annotations: {
-        title: 'Semantic Gear Search',
-        readOnlyHint: true,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-    },
-    async ({ query, limit }) =>
-      call({
-        promise: agent.api.user.catalog['vector-search'].get({ query: { q: query, limit } }),
-        action: 'semantic catalog search',
-      }),
-  );
+  // TEMPORARILY DISABLED — semantic/vector search is unstable right now.
+  // Re-enable when stable. Keyword search (`packrat_search_gear_catalog`)
+  // covers gear discovery in the meantime.
+  //
+  // tool<{ query: string; limit: number }>(
+  //   agent.server,
+  //   'packrat_semantic_gear_search',
+  //   {
+  //     title: 'Semantic Gear Search',
+  //     description:
+  //       'Search the gear catalog using vector/semantic search. Good for natural-language queries like "warm but lightweight insulation layer for cold shoulder-season camping" or "minimalist trail running shoe for rocky terrain".',
+  //     inputSchema: {
+  //       query: z.string().min(3),
+  //       limit: z.number().int().min(1).max(30).default(8),
+  //     },
+  //     annotations: {
+  //       title: 'Semantic Gear Search',
+  //       readOnlyHint: true,
+  //       idempotentHint: true,
+  //       openWorldHint: false,
+  //     },
+  //   },
+  //   async ({ query, limit }) =>
+  //     call({
+  //       promise: agent.api.user.catalog['vector-search'].get({ query: { q: query, limit } }),
+  //       action: 'semantic catalog search',
+  //     }),
+  // );
 
   // ── Get single item ───────────────────────────────────────────────────────
 
@@ -121,37 +124,39 @@ export function registerCatalogTools(agent: AgentContext): void {
   );
 
   // ── Similar catalog items ─────────────────────────────────────────────────
-
-  tool<{ item_id: number; limit: number; threshold?: number }>(
-    agent.server,
-    'packrat_similar_catalog_items',
-    {
-      title: 'Find Similar Catalog Items',
-      description: 'Find items similar to a given catalog item by embedding similarity.',
-      inputSchema: {
-        item_id: z.number().int(),
-        limit: z.number().int().min(1).max(50).default(10),
-        threshold: z.number().min(0).max(1).optional(),
-      },
-      annotations: {
-        title: 'Find Similar Catalog Items',
-        readOnlyHint: true,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-    },
-    async ({ item_id, limit, threshold }) =>
-      call({
-        promise: agent.api.user.catalog({ id: String(item_id) }).similar.get({
-          query: {
-            limit: String(limit),
-            ...(threshold !== undefined ? { threshold: String(threshold) } : {}),
-          },
-        }),
-        action: 'find similar catalog items',
-        resourceHint: `catalog item ${item_id}`,
-      }),
-  );
+  // TEMPORARILY DISABLED — embedding-similarity search is unstable right now.
+  // Re-enable when stable.
+  //
+  // tool<{ item_id: number; limit: number; threshold?: number }>(
+  //   agent.server,
+  //   'packrat_similar_catalog_items',
+  //   {
+  //     title: 'Find Similar Catalog Items',
+  //     description: 'Find items similar to a given catalog item by embedding similarity.',
+  //     inputSchema: {
+  //       item_id: z.number().int(),
+  //       limit: z.number().int().min(1).max(50).default(10),
+  //       threshold: z.number().min(0).max(1).optional(),
+  //     },
+  //     annotations: {
+  //       title: 'Find Similar Catalog Items',
+  //       readOnlyHint: true,
+  //       idempotentHint: true,
+  //       openWorldHint: false,
+  //     },
+  //   },
+  //   async ({ item_id, limit, threshold }) =>
+  //     call({
+  //       promise: agent.api.user.catalog({ id: String(item_id) }).similar.get({
+  //         query: {
+  //           limit: String(limit),
+  //           ...(threshold !== undefined ? { threshold: String(threshold) } : {}),
+  //         },
+  //       }),
+  //       action: 'find similar catalog items',
+  //       resourceHint: `catalog item ${item_id}`,
+  //     }),
+  // );
 
   // ── List categories ───────────────────────────────────────────────────────
 

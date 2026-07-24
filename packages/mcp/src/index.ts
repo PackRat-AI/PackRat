@@ -57,22 +57,27 @@ import { getVisibleTools } from './scopes';
 import { verifyMcpToken } from './token-verify';
 import { registerAdminTools } from './tools/admin';
 import { registerAiTools } from './tools/ai';
-import { registerAlltrailsTools } from './tools/alltrails';
+// TEMPORARILY DISABLED (see init()) — AllTrails URL preview flaky/unstable.
+// import { registerAlltrailsTools } from './tools/alltrails';
 import { registerAuthTools } from './tools/auth';
 import { registerCatalogTools } from './tools/catalog';
-import { registerFeedTools } from './tools/feed';
+// TEMPORARILY DISABLED (see init()) — feed tools flaky/unstable.
+// import { registerFeedTools } from './tools/feed';
 import { registerGuidesTools } from './tools/guides';
 import { registerKnowledgeTools } from './tools/knowledge';
 import { registerPackTools } from './tools/packs';
 import { registerPackTemplateTools } from './tools/packTemplates';
 import { registerSeasonTools } from './tools/seasons';
 import { registerTrailConditionTools } from './tools/trail-conditions';
-import { registerTrailTools } from './tools/trails';
+// TEMPORARILY DISABLED (see init()) — trail search/geometry flaky/unstable.
+// import { registerTrailTools } from './tools/trails';
 import { registerTripTools } from './tools/trips';
 import { registerUploadTools } from './tools/upload';
 import { registerUserTools } from './tools/user';
-import { registerWeatherTools } from './tools/weather';
-import { registerWildlifeTools } from './tools/wildlife';
+// TEMPORARILY DISABLED (see init()) — weather tools flaky/unstable.
+// import { registerWeatherTools } from './tools/weather';
+// TEMPORARILY DISABLED (see init()) — wildlife identification flaky/unstable.
+// import { registerWildlifeTools } from './tools/wildlife';
 import type { AgentContext, Env, Props } from './types';
 
 export type { Env };
@@ -319,14 +324,19 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
     registerPackTemplateTools(this);
     registerCatalogTools(this);
     registerTripTools(this);
-    registerWeatherTools(this);
+    // TEMPORARILY DISABLED — flaky/unstable upstream; re-enable when stable.
+    // registerWeatherTools(this);
     registerKnowledgeTools(this);
     registerTrailConditionTools(this);
-    registerTrailTools(this);
-    registerFeedTools(this);
+    // TEMPORARILY DISABLED — trail search/geometry (OSM). Re-enable when stable.
+    // registerTrailTools(this);
+    // TEMPORARILY DISABLED — feed tools. Re-enable when stable.
+    // registerFeedTools(this);
     registerSeasonTools(this);
-    registerWildlifeTools(this);
-    registerAlltrailsTools(this);
+    // TEMPORARILY DISABLED — wildlife identification. Re-enable when stable.
+    // registerWildlifeTools(this);
+    // TEMPORARILY DISABLED — AllTrails URL preview. Re-enable when stable.
+    // registerAlltrailsTools(this);
     registerUploadTools(this);
     registerGuidesTools(this);
     registerAiTools(this);

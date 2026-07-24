@@ -65,7 +65,9 @@ describe('packrat_search_gear_catalog', () => {
   });
 });
 
-describe('packrat_semantic_gear_search', () => {
+// TEMPORARILY DISABLED — packrat_semantic_gear_search is not registered while
+// semantic/vector search is unstable. Re-enable alongside the tool.
+describe.skip('packrat_semantic_gear_search', () => {
   it('GETs the vector-search endpoint and returns a text block', async () => {
     const { agent, server, calls } = makeAgent();
     registerCatalogTools(agent);
@@ -95,7 +97,9 @@ describe('packrat_get_catalog_item', () => {
   });
 });
 
-describe('packrat_similar_catalog_items', () => {
+// TEMPORARILY DISABLED — packrat_similar_catalog_items is not registered while
+// embedding-similarity search is unstable. Re-enable alongside the tool.
+describe.skip('packrat_similar_catalog_items', () => {
   it('GETs the similar endpoint with a threshold and returns a text block', async () => {
     const { agent, server, calls } = makeAgent();
     registerCatalogTools(agent);

@@ -541,79 +541,79 @@ export function registerPackTemplateTools(agent: AgentContext): void {
   );
 
   // ── Generate from online content (admin-only on the API side) ─────────────
-  // U7 adds this tool to EXPLICIT_ADMIN in scopes.ts so the MCP-level
-  // surface matches what the API enforces — non-admin OAuth sessions don't
-  // see it in tools/list.
-
-  tool<{ content_url: string; is_app_template: boolean }>(
-    agent.server,
-    'packrat_generate_pack_template_from_url',
-    {
-      title: 'Generate Pack Template From URL (Admin)',
-      description:
-        'Generate a pack template from a TikTok or YouTube link. Admin-only — requires the mcp:admin OAuth scope; the server also gates this on the authenticated user having role ADMIN. Prompts for confirmation before fetching and processing the URL content.',
-      inputSchema: {
-        content_url: z.string().url(),
-        is_app_template: z.boolean().default(false),
-      },
-      annotations: {
-        title: 'Generate Pack Template From URL (Admin)',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: true,
-      },
-    },
-    async ({ content_url, is_app_template }, extra) => {
-      const { logger, actor } = auditCtxFor(agent);
-      // Target is the URL — bounded by the schema's `z.string().url()` and
-      // already known to the operator from the rest of the audit context.
-      // We deliberately do NOT log the LLM-fetched body or any derived
-      // template fields.
-      const target = { type: 'pack_template_source', id: content_url };
-      const confirm = await confirmAction({
-        agent,
-        extra,
-        opts: {
-          message:
-            `Confirm generate template from ${content_url}. ` +
-            `${is_app_template ? '(App-wide template — visible to every user.) ' : ''}` +
-            `The fetched content will be processed by an LLM and the resulting template will be created. ` +
-            `Type GENERATE to proceed:`,
-          expectedConfirmation: 'GENERATE',
-        },
-      });
-      if (!confirm.confirmed) {
-        audit({
-          logger,
-          action: 'generate_pack_template_from_url',
-          fields: {
-            actor,
-            target,
-            outcome: 'declined',
-            error: auditElicitDeclined(confirm.reason),
-          },
-        });
-        return elicitFailureResponse(confirm.reason);
-      }
-      const result = await call({
-        promise: agent.api.user['pack-templates']['generate-from-online-content'].post({
-          contentUrl: content_url,
-          isAppTemplate: is_app_template,
-        }),
-        action: 'generate pack template from URL',
-        requiresAdmin: true,
-      });
-      audit({
-        logger,
-        action: 'generate_pack_template_from_url',
-        fields: {
-          actor,
-          target,
-          ...auditOutcome(result),
-        },
-      });
-      return result;
-    },
-  );
+  // TEMPORARILY DISABLED — the TikTok/YouTube → template generator is
+  // unstable right now. Re-enable when stable. (Admin-only; gated by
+  // EXPLICIT_ADMIN in scopes.ts on the API side.)
+  //
+  // tool<{ content_url: string; is_app_template: boolean }>(
+  //   agent.server,
+  //   'packrat_generate_pack_template_from_url',
+  //   {
+  //     title: 'Generate Pack Template From URL (Admin)',
+  //     description:
+  //       'Generate a pack template from a TikTok or YouTube link. Admin-only — requires the mcp:admin OAuth scope; the server also gates this on the authenticated user having role ADMIN. Prompts for confirmation before fetching and processing the URL content.',
+  //     inputSchema: {
+  //       content_url: z.string().url(),
+  //       is_app_template: z.boolean().default(false),
+  //     },
+  //     annotations: {
+  //       title: 'Generate Pack Template From URL (Admin)',
+  //       readOnlyHint: false,
+  //       destructiveHint: false,
+  //       idempotentHint: false,
+  //       openWorldHint: true,
+  //     },
+  //   },
+  //   async ({ content_url, is_app_template }, extra) => {
+  //     const { logger, actor } = auditCtxFor(agent);
+  //     // Target is the URL — bounded by the schema's `z.string().url()` and
+  //     // already known to the operator from the rest of the audit context.
+  //     // We deliberately do NOT log the LLM-fetched body or any derived
+  //     // template fields.
+  //     const target = { type: 'pack_template_source', id: content_url };
+  //     const confirm = await confirmAction({
+  //       agent,
+  //       extra,
+  //       opts: {
+  //         message:
+  //           `Confirm generate template from ${content_url}. ` +
+  //           `${is_app_template ? '(App-wide template — visible to every user.) ' : ''}` +
+  //           `The fetched content will be processed by an LLM and the resulting template will be created. ` +
+  //           `Type GENERATE to proceed:`,
+  //         expectedConfirmation: 'GENERATE',
+  //       },
+  //     });
+  //     if (!confirm.confirmed) {
+  //       audit({
+  //         logger,
+  //         action: 'generate_pack_template_from_url',
+  //         fields: {
+  //           actor,
+  //           target,
+  //           outcome: 'declined',
+  //           error: auditElicitDeclined(confirm.reason),
+  //         },
+  //       });
+  //       return elicitFailureResponse(confirm.reason);
+  //     }
+  //     const result = await call({
+  //       promise: agent.api.user['pack-templates']['generate-from-online-content'].post({
+  //         contentUrl: content_url,
+  //         isAppTemplate: is_app_template,
+  //       }),
+  //       action: 'generate pack template from URL',
+  //       requiresAdmin: true,
+  //     });
+  //     audit({
+  //       logger,
+  //       action: 'generate_pack_template_from_url',
+  //       fields: {
+  //         actor,
+  //         target,
+  //         ...auditOutcome(result),
+  //       },
+  //     });
+  //     return result;
+  //   },
+  // );
 }

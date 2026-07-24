@@ -238,7 +238,8 @@ describe('U7 named-tool coverage (spot-check)', () => {
     'packrat_get_database_schema',
     'packrat_create_pack_template',
     'packrat_create_app_pack_template',
-    'packrat_generate_pack_template_from_url',
+    // TEMPORARILY DISABLED — packrat_generate_pack_template_from_url is not
+    // registered while unstable. Re-add alongside the tool.
     'packrat_preview_alltrails_url',
   ];
 

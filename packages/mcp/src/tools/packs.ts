@@ -420,70 +420,75 @@ export function registerPackTools(agent: AgentContext): void {
   );
 
   // ── Similar items for an item in a pack ───────────────────────────────────
-
-  tool<{ pack_id: string; item_id: string; limit: number; threshold?: number }>(
-    agent.server,
-    'packrat_similar_pack_items',
-    {
-      title: 'Find Similar Pack Items',
-      description: 'Find catalog gear similar to a specific item in a pack (semantic similarity).',
-      inputSchema: {
-        pack_id: z.string(),
-        item_id: z.string(),
-        limit: z.number().int().min(1).max(50).default(10),
-        threshold: z.number().min(0).max(1).optional().describe('Similarity threshold (0-1)'),
-      },
-      annotations: {
-        title: 'Find Similar Pack Items',
-        readOnlyHint: true,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-    },
-    async ({ pack_id, item_id, limit, threshold }) =>
-      call({
-        promise: agent.api.user
-          .packs({ packId: pack_id })
-          .items({ itemId: item_id })
-          .similar.get({
-            query: {
-              limit: String(limit),
-              ...(threshold !== undefined ? { threshold: String(threshold) } : {}),
-            },
-          }),
-        action: 'find similar items',
-        resourceHint: `item ${item_id}`,
-      }),
-  );
+  // TEMPORARILY DISABLED — semantic-similarity search is unstable right now.
+  // Re-enable when stable.
+  //
+  // tool<{ pack_id: string; item_id: string; limit: number; threshold?: number }>(
+  //   agent.server,
+  //   'packrat_similar_pack_items',
+  //   {
+  //     title: 'Find Similar Pack Items',
+  //     description: 'Find catalog gear similar to a specific item in a pack (semantic similarity).',
+  //     inputSchema: {
+  //       pack_id: z.string(),
+  //       item_id: z.string(),
+  //       limit: z.number().int().min(1).max(50).default(10),
+  //       threshold: z.number().min(0).max(1).optional().describe('Similarity threshold (0-1)'),
+  //     },
+  //     annotations: {
+  //       title: 'Find Similar Pack Items',
+  //       readOnlyHint: true,
+  //       idempotentHint: true,
+  //       openWorldHint: false,
+  //     },
+  //   },
+  //   async ({ pack_id, item_id, limit, threshold }) =>
+  //     call({
+  //       promise: agent.api.user
+  //         .packs({ packId: pack_id })
+  //         .items({ itemId: item_id })
+  //         .similar.get({
+  //           query: {
+  //             limit: String(limit),
+  //             ...(threshold !== undefined ? { threshold: String(threshold) } : {}),
+  //           },
+  //         }),
+  //       action: 'find similar items',
+  //       resourceHint: `item ${item_id}`,
+  //     }),
+  // );
 
   // ── Pack item suggestions ─────────────────────────────────────────────────
-
-  tool<{ pack_id: string; existing_catalog_item_ids: number[] }>(
-    agent.server,
-    'packrat_suggest_pack_items',
-    {
-      title: 'Suggest Pack Items',
-      description: 'Return catalog item suggestions for a pack based on the items already in it.',
-      inputSchema: {
-        pack_id: z.string(),
-        existing_catalog_item_ids: z.array(z.number().int()).default([]),
-      },
-      annotations: {
-        title: 'Suggest Pack Items',
-        readOnlyHint: true,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-    },
-    async ({ pack_id, existing_catalog_item_ids }) =>
-      call({
-        promise: agent.api.user
-          .packs({ packId: pack_id })
-          ['item-suggestions'].post({ existingCatalogItemIds: existing_catalog_item_ids }),
-        action: 'suggest pack items',
-        resourceHint: `pack ${pack_id}`,
-      }),
-  );
+  // TEMPORARILY DISABLED — embedding-backed suggestions are unstable right now.
+  // Re-enable when stable. Claude can suggest additions itself from the pack's
+  // existing items + keyword catalog search in the meantime.
+  //
+  // tool<{ pack_id: string; existing_catalog_item_ids: number[] }>(
+  //   agent.server,
+  //   'packrat_suggest_pack_items',
+  //   {
+  //     title: 'Suggest Pack Items',
+  //     description: 'Return catalog item suggestions for a pack based on the items already in it.',
+  //     inputSchema: {
+  //       pack_id: z.string(),
+  //       existing_catalog_item_ids: z.array(z.number().int()).default([]),
+  //     },
+  //     annotations: {
+  //       title: 'Suggest Pack Items',
+  //       readOnlyHint: true,
+  //       idempotentHint: true,
+  //       openWorldHint: false,
+  //     },
+  //   },
+  //   async ({ pack_id, existing_catalog_item_ids }) =>
+  //     call({
+  //       promise: agent.api.user
+  //         .packs({ packId: pack_id })
+  //         ['item-suggestions'].post({ existingCatalogItemIds: existing_catalog_item_ids }),
+  //       action: 'suggest pack items',
+  //       resourceHint: `pack ${pack_id}`,
+  //     }),
+  // );
 
   // ── Weight history ────────────────────────────────────────────────────────
 
