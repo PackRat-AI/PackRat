@@ -1631,6 +1631,109 @@ or annotation surfaces.
 
 ---
 
+## Local testing over Cloudflare quick tunnels
+
+Connecting the **Claude connector** (claude.ai / claude.com) to a locally-running
+MCP server requires the OAuth flow to be reachable from the public internet, so
+both the MCP worker **and** the API (which is the OAuth authorization server) must
+be exposed via `cloudflared` quick tunnels. Discovery, login, consent, and the
+token exchange all traverse these tunnels — a single stale URL or dead origin
+breaks the connect.
+
+### Topology
+
+```
+Claude connector ──HTTPS──▶ MCP tunnel ──▶ 127.0.0.1:8788 (packages/mcp, wrangler dev)
+                                │
+                                └─ advertises AS = API tunnel
+Claude connector ──HTTPS──▶ API tunnel ──▶ 127.0.0.1:8790 (packages/api, wrangler dev)
+                                           (login, /oauth2/authorize, consent, /oauth2/token, JWKS)
+```
+
+Both apps are `wrangler dev` and default to port **8787** — they MUST use
+different ports. This runbook uses **8790 for the API** and **8788 for the MCP**.
+
+### The four env vars that must all agree
+
+| File | Var | Points at | Consumed by |
+|---|---|---|---|
+| `packages/api/.dev.vars` | `BETTER_AUTH_URL` | API tunnel | Better Auth base URL |
+| `packages/api/.dev.vars` | `PACKRAT_API_URL` | API tunnel | `auth/index.ts` `baseURL`, issuer |
+| `packages/api/.dev.vars` | `PACKRAT_MCP_URL` | **MCP** tunnel | `auth/index.ts` `validAudiences` — **see pitfall #1** |
+| `packages/mcp/.dev.vars` | `PACKRAT_API_URL` | API tunnel | MCP → API client + JWKS issuer |
+| `packages/mcp/.dev.vars` | `MCP_PUBLIC_URL` | **MCP** tunnel | RS metadata `resource` + issuer |
+
+Wrangler does **not** hot-reload `.dev.vars` — restart the affected server after
+every edit.
+
+### Procedure (do this on every tunnel rotation — quick-tunnel URLs are ephemeral)
+
+```bash
+# 0. One-time-ish DB seeds (both idempotent — safe to re-run):
+cd packages/api
+bun run db:seed:oauth-clients                       # Claude client 'packrat-claude-mcp' (DCR is disabled)
+E2E_TEST_EMAIL=you@example.com E2E_TEST_PASSWORD='...' bun run db:seed:e2e-user   # a login
+
+# 1. Start both servers — pin ports AND inspector ports; bind 0.0.0.0 (pitfall #2 + #3)
+( cd packages/api && PORT=8790 bun run dev --ip 0.0.0.0 --inspector-port 9310 & )
+( cd packages/mcp && PORT=8788 bun run dev --ip 0.0.0.0 --inspector-port 9320 & )
+# wait until BOTH return 200 (the API takes ~25-30s to boot):
+#   curl http://127.0.0.1:8790/.well-known/oauth-authorization-server
+#   curl http://127.0.0.1:8788/.well-known/oauth-protected-resource
+
+# 2. Start tunnels — target 127.0.0.1, NEVER localhost (pitfall #2)
+cloudflared tunnel --url http://127.0.0.1:8790   # API  -> note the URL
+cloudflared tunnel --url http://127.0.0.1:8788   # MCP  -> note the URL
+
+# 3. Write all five vars (table above) to the two .dev.vars, then RESTART both servers.
+
+# 4. Verify the whole chain BEFORE handing the URL to the connector:
+API=<api-tunnel>; MCP=<mcp-tunnel>
+curl -s -o /dev/null -w '%{http_code}\n' "$API/.well-known/oauth-authorization-server"   # 200
+curl -s -o /dev/null -w '%{http_code}\n' "$API/api/auth/oauth2/authorize?response_type=code&client_id=packrat-claude-mcp&redirect_uri=https://claude.ai/api/mcp/auth_callback&scope=mcp:read&code_challenge=x&code_challenge_method=S256&state=t"  # 302
+curl -s -o /dev/null -w '%{http_code}\n' -X POST "$API/api/auth/sign-in/email" -H 'Content-Type: application/json' -d '{"email":"...","password":"..."}'   # 200
+curl -s -o /dev/null -w '%{http_code}\n' "$MCP/mcp"   # 401 (correct — triggers OAuth)
+curl -s "$MCP/.well-known/oauth-protected-resource"   # resource == MCP tunnel, authorization_servers == API tunnel
+```
+
+Connect the connector to **`<mcp-tunnel>/mcp`**. On a re-connect after any URL
+change, **delete and re-add** the connector so Claude re-runs discovery instead
+of reusing a cached (stale) authorize URL.
+
+### Pitfalls (each cost a debugging cycle — check these first)
+
+1. **Token exchange 400 `invalid_request` / audience** — the connector sends
+   `resource=<mcp-tunnel>/mcp` in `POST /oauth2/token`. `auth/index.ts`
+   `oauthProvider({ validAudiences })` only accepts prod (`mcp.packratai.com`),
+   `localhost:8788` (gated on `PACKRAT_API_URL` starting with `http://localhost`),
+   and `${PACKRAT_MCP_URL}/mcp`. Over a tunnel, none match unless **`PACKRAT_MCP_URL`
+   is set in `packages/api/.dev.vars`** to the live MCP tunnel. This is the API's
+   var for the MCP URL — distinct from the MCP worker's own `MCP_PUBLIC_URL`.
+
+2. **Tunnel 502 / `dial tcp [::1]:PORT: connection refused`** — `cloudflared`
+   resolved `localhost` to IPv6 `::1` but wrangler bound IPv4 only. Fix: start
+   the tunnel against `http://127.0.0.1:PORT` (not `localhost`) **and** start
+   wrangler with `--ip 0.0.0.0`. If the tunnel 502s but the process is alive,
+   confirm with `lsof -nP -iTCP:PORT -sTCP:LISTEN` — a stale "Ready" log line can
+   outlive a dead worker.
+
+3. **`Address already in use 127.0.0.1:922x`** on startup — wrangler's V8
+   inspector port (default 9229/9230) is held by an orphaned `workerd`. Give each
+   server its **own** `--inspector-port` (9310 / 9320 here) so they can't collide,
+   and clear orphans with `lsof -ti tcp:9229 | xargs kill -9` before restarting.
+
+4. **Do NOT `pkill -9 -f workerd`** to restart one server — the API and MCP share
+   the `workerd` binary, so it kills both. Target by port instead:
+   `pkill -9 -f "wrangler dev.*8790"` (then `lsof -ti tcp:8790 | xargs kill -9`).
+
+5. **`User not found` at login** — the login user isn't in *this* database. Seed
+   it with `db:seed:e2e-user` (idempotent; sets `emailVerified` + a `credential`
+   account). It is NOT a wrong-password error.
+
+6. **Connector shows `localhost:8797` (or any localhost) in the authorize URL** —
+   a stale connector registration cached from before the env vars were corrected.
+   Delete and re-add the connector.
+
 ## Common operations
 
 ### Deploy
