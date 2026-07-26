@@ -55,28 +55,27 @@ import { BEARER_REGEX, extractBearer, withCorrelationHeader } from './request-he
 import { registerResources } from './resources';
 import { getVisibleTools } from './scopes';
 import { verifyMcpToken } from './token-verify';
-import { registerAdminTools } from './tools/admin';
+// DISABLED — admin-gated tools are not shipped on the connector surface.
+// import { registerAdminTools } from './tools/admin';
 import { registerAiTools } from './tools/ai';
-// TEMPORARILY DISABLED (see init()) — AllTrails URL preview flaky/unstable.
+// DISABLED — AllTrails URL preview: upstream site 403s the OG scrape.
 // import { registerAlltrailsTools } from './tools/alltrails';
 import { registerAuthTools } from './tools/auth';
 import { registerCatalogTools } from './tools/catalog';
-// TEMPORARILY DISABLED (see init()) — feed tools flaky/unstable.
-// import { registerFeedTools } from './tools/feed';
+import { registerFeedTools } from './tools/feed';
 import { registerGuidesTools } from './tools/guides';
 import { registerKnowledgeTools } from './tools/knowledge';
 import { registerPackTools } from './tools/packs';
 import { registerPackTemplateTools } from './tools/packTemplates';
 import { registerSeasonTools } from './tools/seasons';
 import { registerTrailConditionTools } from './tools/trail-conditions';
-// TEMPORARILY DISABLED (see init()) — trail search/geometry flaky/unstable.
+// DISABLED — trail search/geometry: OSM_DATABASE_URL not provisioned (503).
 // import { registerTrailTools } from './tools/trails';
 import { registerTripTools } from './tools/trips';
 import { registerUploadTools } from './tools/upload';
 import { registerUserTools } from './tools/user';
-// TEMPORARILY RE-ENABLED for debugging (was disabled as flaky/unstable).
 import { registerWeatherTools } from './tools/weather';
-// TEMPORARILY DISABLED (see init()) — wildlife identification flaky/unstable.
+// DISABLED — wildlife identification: entitlements table missing → 500.
 // import { registerWildlifeTools } from './tools/wildlife';
 import type { AgentContext, Env, Props } from './types';
 
@@ -324,29 +323,31 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
     registerPackTemplateTools(this);
     registerCatalogTools(this);
     registerTripTools(this);
-    // TEMPORARILY RE-ENABLED for debugging (was disabled as flaky/unstable).
     registerWeatherTools(this);
     registerKnowledgeTools(this);
     registerTrailConditionTools(this);
-    // TEMPORARILY DISABLED — trail search/geometry (OSM). Re-enable when stable.
+    // DISABLED — trail search/geometry: OSM_DATABASE_URL not provisioned (503).
     // registerTrailTools(this);
-    // TEMPORARILY DISABLED — feed tools. Re-enable when stable.
-    // registerFeedTools(this);
+    registerFeedTools(this);
     registerSeasonTools(this);
-    // TEMPORARILY DISABLED — wildlife identification. Re-enable when stable.
+    // DISABLED — wildlife identification: entitlements table missing → 500.
     // registerWildlifeTools(this);
-    // TEMPORARILY DISABLED — AllTrails URL preview. Re-enable when stable.
+    // DISABLED — AllTrails URL preview: upstream site 403s the OG scrape.
     // registerAlltrailsTools(this);
     registerUploadTools(this);
     registerGuidesTools(this);
     registerAiTools(this);
 
     // ── Admin ──────────────────────────────────────────────────────────────
-    // Admin tools register as ordinary tools; visibility is decided by the
-    // post-init scope filter below. The session's granted scopes live in
-    // `(this.props as { scopes?: readonly string[] }).scopes` — set in the
-    // outer fetch wrapper from the verified JWT's `scope` claim.
-    registerAdminTools(this);
+    // DISABLED — admin-gated tools are intentionally NOT registered on the
+    // connector surface. The runtime scope filter would already hide them
+    // from non-admin sessions, but we don't ship them at all. This removes
+    // all `packrat_admin_*` tools; the other admin-classified tools
+    // (`packrat_execute_sql_query`, `packrat_get_database_schema`,
+    // `packrat_create_app_pack_template`,
+    // `packrat_generate_pack_template_from_url`) are disabled at their own
+    // registration sites in tools/ai.ts and tools/packTemplates.ts.
+    // registerAdminTools(this);
 
     // ── Resources + prompts ────────────────────────────────────────────────
     registerResources(this);

@@ -59,11 +59,13 @@ describe('packrat_create_feed_post', () => {
     expect(countCalls(calls, ['user', 'feed', 'post'])).toBe(1);
   });
 
-  it('defaults images to [] when omitted and still POSTs', async () => {
+  it('forwards multiple image keys (images is required, 1–10)', async () => {
+    // The tool's inputSchema now requires images.min(1).max(10) to mirror the
+    // API's CreatePostRequest (was optional + defaulted to [], which 400'd).
     const { agent, server, calls } = makeAgent();
     registerFeedTools(agent);
     const result = await getToolHandler(server, 'packrat_create_feed_post')(
-      { caption: 'No photos' },
+      { caption: 'Two photos', images: ['key-1.jpg', 'key-2.jpg'] },
       makeExtra(),
     );
 

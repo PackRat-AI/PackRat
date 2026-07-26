@@ -62,7 +62,8 @@ describe('registerPackTemplateTools — handler invocation', () => {
     expect((post?.args[0] as { isAppTemplate?: boolean })?.isAppTemplate).toBe(false);
   });
 
-  it('packrat_create_app_pack_template POSTs after PUBLISH confirmation', async () => {
+  // DISABLED — packrat_create_app_pack_template is admin-gated and not shipped.
+  it.skip('packrat_create_app_pack_template POSTs after PUBLISH confirmation', async () => {
     const { agent, server, calls } = makeAgent({
       resolve: { action: 'accept', content: { confirmation: 'PUBLISH' } },
     });
@@ -295,7 +296,8 @@ describe('packTemplates — optional fields omitted', () => {
 // ── Elicitation-declined paths (default cancel agent) ───────────────────────
 
 describe('packTemplates — elicitation declined', () => {
-  it('create_app_pack_template returns a structured error when cancelled', async () => {
+  // DISABLED — packrat_create_app_pack_template is admin-gated and not shipped.
+  it.skip('create_app_pack_template returns a structured error when cancelled', async () => {
     const { agent, server, calls } = makeAgent(); // default elicit → { action: 'cancel' }
     registerPackTemplateTools(agent);
     const result = await getToolHandler(server, 'packrat_create_app_pack_template')(
@@ -391,7 +393,8 @@ describe('packTemplates error paths — apiFail returns structured error', () =>
     expect((errorCodeOf(result.structuredContent) as string).length).toBeGreaterThan(0);
   });
 
-  it('create_app_pack_template (POST) surfaces an error envelope on accept+apiFail', async () => {
+  // DISABLED — packrat_create_app_pack_template is admin-gated and not shipped.
+  it.skip('create_app_pack_template (POST) surfaces an error envelope on accept+apiFail', async () => {
     const { agent, server } = makeAgent({
       resolve: { action: 'accept', content: { confirmation: 'PUBLISH' } },
       apiFail: true,
@@ -429,7 +432,8 @@ describe('packTemplates error paths — apiFail returns structured error', () =>
 // remaining three (mismatch / timeout / unsupported) through
 // create_app_pack_template, which routes every reason through both switches.
 
-describe('packTemplates — elicit-failure reason mapping', () => {
+// DISABLED — these exercise packrat_create_app_pack_template (admin-gated, not shipped).
+describe.skip('packTemplates — elicit-failure reason mapping', () => {
   it("maps 'accept' with a wrong confirmation to confirmation_mismatch", async () => {
     const { agent, server } = makeAgent({
       resolve: { action: 'accept', content: { confirmation: 'NOPE' } },
@@ -475,7 +479,8 @@ describe('packTemplates — elicit-failure reason mapping', () => {
 // always taken. Provide one here to cover the present branch on both gated
 // tools' audit paths.
 
-describe('packTemplates — getAuditContext provided', () => {
+// DISABLED — these exercise packrat_create_app_pack_template (admin-gated, not shipped).
+describe.skip('packTemplates — getAuditContext provided', () => {
   it('create_app_pack_template reads the supplied audit context (accept path)', async () => {
     const { agent, server, calls } = makeAgent({
       resolve: { action: 'accept', content: { confirmation: 'PUBLISH' } },
