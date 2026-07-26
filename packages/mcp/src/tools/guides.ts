@@ -59,7 +59,10 @@ export function registerGuidesTools(agent: AgentContext): void {
       },
     },
     async () =>
-      call({ promise: agent.api.user.guides.categories.get(), action: 'list guide categories' }),
+      call({
+        promise: agent.api.user.guides.categories.get(),
+        action: 'list guide categories',
+      }),
   );
 
   tool<{

@@ -319,7 +319,8 @@ describe('packrat_admin_delete_trail_condition_report (U10 elicitation)', () => 
 
 // ── packrat_create_app_pack_template (PUBLISH) ───────────────────────────────
 
-describe('packrat_create_app_pack_template (U10 elicitation)', () => {
+// DISABLED — packrat_create_app_pack_template is admin-gated and not shipped.
+describe.skip('packrat_create_app_pack_template (U10 elicitation)', () => {
   it("fires the POST only after the admin types 'PUBLISH'", async () => {
     const { agent, server, calls } = makeAgent({
       resolve: { action: 'accept', content: { confirmation: 'PUBLISH' } },
@@ -362,7 +363,9 @@ describe('packrat_create_app_pack_template (U10 elicitation)', () => {
 
 // ── packrat_generate_pack_template_from_url (GENERATE) ───────────────────────
 
-describe('packrat_generate_pack_template_from_url (U10 elicitation)', () => {
+// TEMPORARILY DISABLED — packrat_generate_pack_template_from_url (the
+// TikTok/YouTube generator) is not registered while it's unstable.
+describe.skip('packrat_generate_pack_template_from_url (U10 elicitation)', () => {
   it("fires the POST only after the admin types 'GENERATE'", async () => {
     const { agent, server, calls } = makeAgent({
       resolve: { action: 'accept', content: { confirmation: 'GENERATE' } },
@@ -398,8 +401,9 @@ describe('U10 catalog — every documented tool gates on a confirmation', () => 
     'packrat_admin_delete_pack',
     'packrat_admin_delete_catalog_item',
     'packrat_admin_delete_trail_condition_report',
-    'packrat_create_app_pack_template',
-    'packrat_generate_pack_template_from_url',
+    // DISABLED — packrat_create_app_pack_template is admin-gated and not shipped.
+    // TEMPORARILY DISABLED — packrat_generate_pack_template_from_url is not
+    // registered while unstable. Re-add alongside the tool.
   ] as const;
 
   it.each(
