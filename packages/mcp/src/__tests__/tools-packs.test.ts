@@ -202,9 +202,7 @@ describe('packrat_remove_pack_item', () => {
   });
 });
 
-// TEMPORARILY DISABLED — packrat_similar_pack_items is not registered while
-// semantic-similarity search is unstable. Re-enable alongside the tool.
-describe.skip('packrat_similar_pack_items', () => {
+describe('packrat_similar_pack_items', () => {
   it('invokes user.packs({packId}).items({itemId}).similar.get and returns text', async () => {
     const { agent, server, calls } = makeAgent();
     registerPackTools(agent);
@@ -218,9 +216,7 @@ describe.skip('packrat_similar_pack_items', () => {
   });
 });
 
-// TEMPORARILY DISABLED — packrat_suggest_pack_items is not registered while
-// embedding-backed suggestions are unstable. Re-enable alongside the tool.
-describe.skip('packrat_suggest_pack_items', () => {
+describe('packrat_suggest_pack_items', () => {
   it("invokes user.packs({packId})['item-suggestions'].post and returns text", async () => {
     const { agent, server, calls } = makeAgent();
     registerPackTools(agent);
@@ -430,8 +426,7 @@ describe('packrat_update_pack_item — optional fields omitted', () => {
   });
 });
 
-// TEMPORARILY DISABLED — see packrat_similar_pack_items above.
-describe.skip('packrat_similar_pack_items — threshold omitted', () => {
+describe('packrat_similar_pack_items — threshold omitted', () => {
   it('omits the threshold query param when not supplied', async () => {
     const { agent, server, calls } = makeAgent();
     registerPackTools(agent);

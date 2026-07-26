@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { call, clampLimit, nowIso, ok, PAGINATION_LIMIT_MAX, withNextOffset } from '../client';
+// TEMPORARY DEBUG — remove with debug-temp.ts.
+import { dbgUpstream, withDebug } from '../debug-temp';
 import { ItemCategory, PackCategory } from '../enums';
 import { GetPackOutputSchema, ListPacksOutputSchema } from '../output-schemas';
 import { tool } from '../registerTool';
@@ -420,75 +422,85 @@ export function registerPackTools(agent: AgentContext): void {
   );
 
   // ── Similar items for an item in a pack ───────────────────────────────────
-  // TEMPORARILY DISABLED — semantic-similarity search is unstable right now.
-  // Re-enable when stable.
-  //
-  // tool<{ pack_id: string; item_id: string; limit: number; threshold?: number }>(
-  //   agent.server,
-  //   'packrat_similar_pack_items',
-  //   {
-  //     title: 'Find Similar Pack Items',
-  //     description: 'Find catalog gear similar to a specific item in a pack (semantic similarity).',
-  //     inputSchema: {
-  //       pack_id: z.string(),
-  //       item_id: z.string(),
-  //       limit: z.number().int().min(1).max(50).default(10),
-  //       threshold: z.number().min(0).max(1).optional().describe('Similarity threshold (0-1)'),
-  //     },
-  //     annotations: {
-  //       title: 'Find Similar Pack Items',
-  //       readOnlyHint: true,
-  //       idempotentHint: true,
-  //       openWorldHint: false,
-  //     },
-  //   },
-  //   async ({ pack_id, item_id, limit, threshold }) =>
-  //     call({
-  //       promise: agent.api.user
-  //         .packs({ packId: pack_id })
-  //         .items({ itemId: item_id })
-  //         .similar.get({
-  //           query: {
-  //             limit: String(limit),
-  //             ...(threshold !== undefined ? { threshold: String(threshold) } : {}),
-  //           },
-  //         }),
-  //       action: 'find similar items',
-  //       resourceHint: `item ${item_id}`,
-  //     }),
-  // );
+  // TEMPORARILY RE-ENABLED for debugging (was disabled as flaky/unstable).
+
+  tool<{ pack_id: string; item_id: string; limit: number; threshold?: number }>(
+    agent.server,
+    'packrat_similar_pack_items',
+    {
+      title: 'Find Similar Pack Items',
+      description: 'Find catalog gear similar to a specific item in a pack (semantic similarity).',
+      inputSchema: {
+        pack_id: z.string(),
+        item_id: z.string(),
+        limit: z.number().int().min(1).max(50).default(10),
+        threshold: z.number().min(0).max(1).optional().describe('Similarity threshold (0-1)'),
+      },
+      annotations: {
+        title: 'Find Similar Pack Items',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    withDebug('packrat_similar_pack_items', async ({ pack_id, item_id, limit, threshold }) => {
+      dbgUpstream('packrat_similar_pack_items', {
+        label: 'GET user.packs({packId}).items({itemId}).similar',
+        payload: { pack_id, item_id, limit, threshold },
+      });
+      return call({
+        promise: agent.api.user
+          .packs({ packId: pack_id })
+          .items({ itemId: item_id })
+          .similar.get({
+            query: {
+              limit: String(limit),
+              ...(threshold !== undefined ? { threshold: String(threshold) } : {}),
+            },
+          }),
+        action: 'find similar items',
+        resourceHint: `item ${item_id}`,
+      });
+    }),
+  );
 
   // ── Pack item suggestions ─────────────────────────────────────────────────
-  // TEMPORARILY DISABLED — embedding-backed suggestions are unstable right now.
-  // Re-enable when stable. Claude can suggest additions itself from the pack's
-  // existing items + keyword catalog search in the meantime.
-  //
-  // tool<{ pack_id: string; existing_catalog_item_ids: number[] }>(
-  //   agent.server,
-  //   'packrat_suggest_pack_items',
-  //   {
-  //     title: 'Suggest Pack Items',
-  //     description: 'Return catalog item suggestions for a pack based on the items already in it.',
-  //     inputSchema: {
-  //       pack_id: z.string(),
-  //       existing_catalog_item_ids: z.array(z.number().int()).default([]),
-  //     },
-  //     annotations: {
-  //       title: 'Suggest Pack Items',
-  //       readOnlyHint: true,
-  //       idempotentHint: true,
-  //       openWorldHint: false,
-  //     },
-  //   },
-  //   async ({ pack_id, existing_catalog_item_ids }) =>
-  //     call({
-  //       promise: agent.api.user
-  //         .packs({ packId: pack_id })
-  //         ['item-suggestions'].post({ existingCatalogItemIds: existing_catalog_item_ids }),
-  //       action: 'suggest pack items',
-  //       resourceHint: `pack ${pack_id}`,
-  //     }),
-  // );
+  // TEMPORARILY RE-ENABLED for debugging (was disabled as flaky/unstable).
+
+  tool<{ pack_id: string; existing_catalog_item_ids: number[] }>(
+    agent.server,
+    'packrat_suggest_pack_items',
+    {
+      title: 'Suggest Pack Items',
+      description: 'Return catalog item suggestions for a pack based on the items already in it.',
+      inputSchema: {
+        pack_id: z.string(),
+        existing_catalog_item_ids: z.array(z.number().int()).default([]),
+      },
+      annotations: {
+        title: 'Suggest Pack Items',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    withDebug('packrat_suggest_pack_items', async ({ pack_id, existing_catalog_item_ids }) => {
+      dbgUpstream('packrat_suggest_pack_items', {
+        label: 'POST user.packs({packId}).item-suggestions',
+        payload: {
+          pack_id,
+          existing_catalog_item_ids,
+        },
+      });
+      return call({
+        promise: agent.api.user
+          .packs({ packId: pack_id })
+          ['item-suggestions'].post({ existingCatalogItemIds: existing_catalog_item_ids }),
+        action: 'suggest pack items',
+        resourceHint: `pack ${pack_id}`,
+      });
+    }),
+  );
 
   // ── Weight history ────────────────────────────────────────────────────────
 
@@ -595,18 +607,33 @@ export function registerPackTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async ({ pack_id, destination, trip_type, duration_days, start_date, end_date }) =>
-      call({
-        promise: agent.api.user.packs({ packId: pack_id })['gap-analysis'].post({
-          destination,
-          tripType: trip_type,
-          duration: duration_days,
-          startDate: start_date,
-          endDate: end_date,
-        }),
-        action: 'analyze pack gaps',
-        resourceHint: `pack ${pack_id}`,
-      }),
+    withDebug(
+      'packrat_analyze_pack_gaps',
+      async ({ pack_id, destination, trip_type, duration_days, start_date, end_date }) => {
+        dbgUpstream('packrat_analyze_pack_gaps', {
+          label: 'POST user.packs({packId}).gap-analysis',
+          payload: {
+            pack_id,
+            destination,
+            tripType: trip_type,
+            duration: duration_days,
+            startDate: start_date,
+            endDate: end_date,
+          },
+        });
+        return call({
+          promise: agent.api.user.packs({ packId: pack_id })['gap-analysis'].post({
+            destination,
+            tripType: trip_type,
+            duration: duration_days,
+            startDate: start_date,
+            endDate: end_date,
+          }),
+          action: 'analyze pack gaps',
+          resourceHint: `pack ${pack_id}`,
+        });
+      },
+    ),
   );
 
   // ── Image-based gear detection ───────────────────────────────────────────
@@ -635,13 +662,21 @@ export function registerPackTools(agent: AgentContext): void {
         openWorldHint: true,
       },
     },
-    async ({ image_key, match_limit }) =>
-      call({
+    withDebug('packrat_analyze_pack_image', async ({ image_key, match_limit }) => {
+      dbgUpstream('packrat_analyze_pack_image', {
+        label: 'POST user.packs.analyze-image',
+        payload: {
+          image: image_key,
+          matchLimit: match_limit,
+        },
+      });
+      return call({
         promise: agent.api.user.packs['analyze-image'].post({
           image: image_key,
           matchLimit: match_limit,
         }),
         action: 'analyze pack image',
-      }),
+      });
+    }),
   );
 }

@@ -74,8 +74,8 @@ import { registerTrailConditionTools } from './tools/trail-conditions';
 import { registerTripTools } from './tools/trips';
 import { registerUploadTools } from './tools/upload';
 import { registerUserTools } from './tools/user';
-// TEMPORARILY DISABLED (see init()) — weather tools flaky/unstable.
-// import { registerWeatherTools } from './tools/weather';
+// TEMPORARILY RE-ENABLED for debugging (was disabled as flaky/unstable).
+import { registerWeatherTools } from './tools/weather';
 // TEMPORARILY DISABLED (see init()) — wildlife identification flaky/unstable.
 // import { registerWildlifeTools } from './tools/wildlife';
 import type { AgentContext, Env, Props } from './types';
@@ -324,8 +324,8 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
     registerPackTemplateTools(this);
     registerCatalogTools(this);
     registerTripTools(this);
-    // TEMPORARILY DISABLED — flaky/unstable upstream; re-enable when stable.
-    // registerWeatherTools(this);
+    // TEMPORARILY RE-ENABLED for debugging (was disabled as flaky/unstable).
+    registerWeatherTools(this);
     registerKnowledgeTools(this);
     registerTrailConditionTools(this);
     // TEMPORARILY DISABLED — trail search/geometry (OSM). Re-enable when stable.
