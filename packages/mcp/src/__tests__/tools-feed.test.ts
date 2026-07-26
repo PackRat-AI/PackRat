@@ -45,7 +45,9 @@ describe('packrat_list_feed', () => {
   });
 });
 
-describe('packrat_create_feed_post', () => {
+// DISABLED — packrat_create_feed_post is not registered: it requires image
+// keys the connector can't produce (see tools/feed.ts). Re-enable with it.
+describe.skip('packrat_create_feed_post', () => {
   it('POSTs a new feed post and returns a text block', async () => {
     const { agent, server, calls } = makeAgent();
     registerFeedTools(agent);
