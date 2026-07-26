@@ -24,6 +24,8 @@ import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
 import { analyticsRoutes } from './analytics';
+import { adminFeatureAccessRoutes } from './featureAccess';
+import { adminFeatureFlagsRoutes } from './featureFlags';
 import { adminTrailsRoutes } from './trails';
 
 /**
@@ -794,4 +796,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     },
   )
   .use(analyticsRoutes)
-  .use(adminTrailsRoutes);
+  .use(adminTrailsRoutes)
+  .use(adminFeatureFlagsRoutes)
+  .use(adminFeatureAccessRoutes);

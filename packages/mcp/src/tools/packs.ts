@@ -604,39 +604,55 @@ export function registerPackTools(agent: AgentContext): void {
       }),
   );
 
-  // ── Image-based gear detection ───────────────────────────────────────────
-
-  tool<{ image_key: string; match_limit: number }>(
-    agent.server,
-    'packrat_analyze_pack_image',
-    {
-      title: 'Analyze Pack Image',
-      description:
-        'Submit a gear image (R2 key from packrat_upload_image_url) for item detection. Returns detected items with catalog matches.',
-      inputSchema: {
-        image_key: z.string().describe('R2 image key from a presigned upload'),
-        match_limit: z
-          .number()
-          .int()
-          .min(1)
-          .max(20)
-          .default(5)
-          .describe('Max catalog matches per detected item'),
-      },
-      annotations: {
-        title: 'Analyze Pack Image',
-        readOnlyHint: true,
-        idempotentHint: false,
-        openWorldHint: true,
-      },
-    },
-    async ({ image_key, match_limit }) =>
-      call({
-        promise: agent.api.user.packs['analyze-image'].post({
-          image: image_key,
-          matchLimit: match_limit,
-        }),
-        action: 'analyze pack image',
-      }),
-  );
+  // ── Image-based gear detection — DISABLED ─────────────────────────────────
+  // Not usable on the connector: it requires an R2 image key that only
+  // packrat_upload_image_url can mint, and a Claude.ai user's uploaded photo
+  // can never reach that upload flow. MCP tool *inputs* are JSON-only —
+  // ImageContent is valid only in tool *results*, and the model cannot
+  // re-emit image bytes it was shown (vision input is one-way). So there is
+  // no path for a user's photo to reach this tool. Confirmed against the MCP
+  // tools spec + python-sdk #499/#771. "Pack from image" belongs in the
+  // PackRat app (which has the photo + an auth'd session), not the connector.
+  //
+  // tool<{ image_key: string; match_limit: number }>(
+  //   agent.server,
+  //   'packrat_analyze_pack_image',
+  //   {
+  //     title: 'Analyze Pack Image',
+  //     description:
+  //       'Submit a gear image (R2 key from packrat_upload_image_url) for item detection. Returns detected items with catalog matches.',
+  //     inputSchema: {
+  //       image_key: z.string().describe('R2 image key from a presigned upload'),
+  //       match_limit: z
+  //         .number()
+  //         .int()
+  //         .min(1)
+  //         .max(20)
+  //         .default(5)
+  //         .describe('Max catalog matches per detected item'),
+  //     },
+  //     annotations: {
+  //       title: 'Analyze Pack Image',
+  //       readOnlyHint: true,
+  //       idempotentHint: false,
+  //       openWorldHint: true,
+  //     },
+  //   },
+  //   withDebug('packrat_analyze_pack_image', async ({ image_key, match_limit }) => {
+  //     dbgUpstream('packrat_analyze_pack_image', {
+  //       label: 'POST user.packs.analyze-image',
+  //       payload: {
+  //         image: image_key,
+  //         matchLimit: match_limit,
+  //       },
+  //     });
+  //     return call({
+  //       promise: agent.api.user.packs['analyze-image'].post({
+  //         image: image_key,
+  //         matchLimit: match_limit,
+  //       }),
+  //       action: 'analyze pack image',
+  //     });
+  //   }),
+  // );
 }

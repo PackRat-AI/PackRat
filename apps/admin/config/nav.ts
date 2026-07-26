@@ -7,6 +7,8 @@ import {
   type LucideIcon,
   Map as MapIcon,
   Package,
+  ToggleLeft,
+  Unlock,
   Users,
 } from 'lucide-react';
 
@@ -42,6 +44,16 @@ export const navItems: NavItem[] = [
     title: 'Trail Viewer',
     href: '/dashboard/trails',
     icon: MapIcon,
+  },
+  {
+    title: 'Feature Flags',
+    href: '/dashboard/feature-flags',
+    icon: ToggleLeft,
+  },
+  {
+    title: 'Entitlements',
+    href: '/dashboard/feature-access',
+    icon: Unlock,
   },
   {
     title: 'Platform Analytics',

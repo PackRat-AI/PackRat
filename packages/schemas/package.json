@@ -17,6 +17,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@packrat/config": "workspace:*",
     "@packrat/constants": "workspace:*",
     "@packrat/db": "workspace:*",
     "@packrat/guards": "workspace:*",

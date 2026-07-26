@@ -1,0 +1,172 @@
+name: Swift Staging Ad-Hoc
+
+# Builds a signed ad-hoc iOS .ipa of the Staging config (→ deployed dev API)
+# and publishes it as a GitHub PRE-RELEASE for QA. This is the Swift equivalent
+# of Expo's `preview` profile: a QA build on dev API, not production.
+#
+# Ad-hoc distribution is device-scoped: the provisioning profile embedded in the
+# secret must list every QA device UDID. Add a device → regenerate the profile
+# in the Apple Developer portal → update the IOS_ADHOC_PROVISIONING_PROFILE
+# secret. See apps/swift/docs/staging-adhoc.md for the full setup.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Pre-release tag (e.g. staging-2026.07.17-1). Defaults to staging-<run_number>."
+        required: false
+        type: string
+
+concurrency:
+  group: swift-staging-adhoc-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-adhoc:
+    name: Build & publish ad-hoc IPA
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -switch /Applications/Xcode.app
+          xcodebuild -version
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Generate Xcode project
+        run: bun swift
+
+      # ─── Import signing assets into a temporary keychain ──────────────────────
+      # The keychain is deleted in the always() cleanup step below so no secret
+      # material survives on the (ephemeral, but shared-fleet) runner.
+      - name: Import signing certificate & provisioning profile
+        env:
+          IOS_DIST_CERT_P12: ${{ secrets.IOS_DIST_CERT_P12 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_ADHOC_PROVISIONING_PROFILE: ${{ secrets.IOS_ADHOC_PROVISIONING_PROFILE }}
+        run: |
+          set -euo pipefail
+          if [ -z "$IOS_DIST_CERT_P12" ] || [ -z "$IOS_ADHOC_PROVISIONING_PROFILE" ]; then
+            echo "::error::Missing signing secrets. Set IOS_DIST_CERT_P12, IOS_DIST_CERT_PASSWORD and IOS_ADHOC_PROVISIONING_PROFILE. See apps/swift/docs/staging-adhoc.md."
+            exit 1
+          fi
+
+          KEYCHAIN_PATH="$RUNNER_TEMP/adhoc.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
+          CERT_PATH="$RUNNER_TEMP/dist-cert.p12"
+          PROFILE_PATH="$RUNNER_TEMP/adhoc.mobileprovision"
+
+          echo -n "$IOS_DIST_CERT_P12" | base64 --decode > "$CERT_PATH"
+          echo -n "$IOS_ADHOC_PROVISIONING_PROFILE" | base64 --decode > "$PROFILE_PATH"
+
+          # Create + unlock a dedicated keychain and put it on the search list.
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$IOS_DIST_CERT_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          # Allow codesign to use the key without an interactive prompt.
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+
+          # Install the provisioning profile where Xcode looks for it.
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+          UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" \
+            /dev/stdin <<< "$(security cms -D -i "$PROFILE_PATH")")
+          cp "$PROFILE_PATH" "$PROFILES_DIR/$UUID.mobileprovision"
+
+          {
+            echo "KEYCHAIN_PATH=$KEYCHAIN_PATH"
+            echo "PROVISIONING_PROFILE_UUID=$UUID"
+          } >> "$GITHUB_ENV"
+
+      - name: Resolve release tag
+        id: tag
+        run: |
+          TAG="${{ inputs.tag }}"
+          [ -z "$TAG" ] && TAG="staging-${{ github.run_number }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      # ─── Archive the Staging config ───────────────────────────────────────────
+      - name: Archive (Staging)
+        run: |
+          set -euo pipefail
+          cd apps/swift
+          xcodebuild archive \
+            -project PackRat.xcodeproj \
+            -scheme PackRat-iOS-Staging \
+            -configuration Staging \
+            -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/PackRat.xcarchive" \
+            -allowProvisioningUpdates \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="$PROVISIONING_PROFILE_UUID"
+
+      - name: Export ad-hoc IPA
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>ad-hoc</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.andrewbierman.packrat.swift</key>
+              <string>$PROVISIONING_PROFILE_UUID</string>
+            </dict>
+            <key>teamID</key><string>666HGMV2LU</string>
+            <key>compileBitcode</key><false/>
+            <key>stripSwiftSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/PackRat.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export"
+
+          IPA=$(ls "$RUNNER_TEMP/export"/*.ipa | head -1)
+          echo "IPA_PATH=$IPA" >> "$GITHUB_ENV"
+
+      - name: Publish GitHub pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "Staging Ad-Hoc ${{ steps.tag.outputs.tag }}"
+          prerelease: true
+          generate_release_notes: true
+          body: |
+            **Ad-hoc QA build** — targets the deployed **dev** API (`PACKRAT_ENV=dev`).
+
+            Installable only on devices whose UDID is registered in the ad-hoc
+            provisioning profile. To add a device, register its UDID in the Apple
+            Developer portal, regenerate the profile, and update the
+            `IOS_ADHOC_PROVISIONING_PROFILE` secret.
+          files: ${{ env.IPA_PATH }}
+
+      - name: Clean up keychain & profile
+        if: always()
+        run: |
+          security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+          rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/$PROVISIONING_PROFILE_UUID.mobileprovision" 2>/dev/null || true

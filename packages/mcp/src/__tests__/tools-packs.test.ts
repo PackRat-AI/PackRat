@@ -292,7 +292,9 @@ describe('packrat_analyze_pack_gaps', () => {
   });
 });
 
-describe('packrat_analyze_pack_image', () => {
+// DISABLED — packrat_analyze_pack_image is not registered: no connector path
+// for a user's photo to reach the tool (see tools/packs.ts). Re-enable with it.
+describe.skip('packrat_analyze_pack_image', () => {
   it("invokes user.packs['analyze-image'].post and returns text", async () => {
     const { agent, server, calls } = makeAgent();
     registerPackTools(agent);

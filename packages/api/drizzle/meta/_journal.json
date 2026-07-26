@@ -358,6 +358,13 @@
       "when": 1781241903101,
       "tag": "0049_even_lizard",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1784140912607,
+      "tag": "0050_oval_wind_dancer",
+      "breakpoints": true
     }
   ]
 }

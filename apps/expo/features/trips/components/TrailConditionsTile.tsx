@@ -1,7 +1,7 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { Alert, ListItem } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
-import { featureFlags } from 'expo-app/config';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
@@ -19,7 +19,8 @@ export function TrailConditionsTile() {
     router.push('/trail-conditions');
   };
 
-  if (!featureFlags.enableTrailConditions) return null;
+  const enableTrailConditions = useFeatureFlag('enableTrailConditions');
+  if (!enableTrailConditions) return null;
 
   return (
     <>

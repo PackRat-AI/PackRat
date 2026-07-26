@@ -1,10 +1,10 @@
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
-import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { TrailConditionReportCard } from 'expo-app/features/trail-conditions/components/TrailConditionReportCard';
 import { useTrailConditionReports } from 'expo-app/features/trail-conditions/hooks/useTrailConditionReports';
 import type { TrailConditionReport, TrailSurface } from 'expo-app/features/trail-conditions/types';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -62,7 +62,8 @@ export default function TrailConditionsScreen() {
     return reports.filter((r: TrailConditionReport) => r.surface === selectedSurface);
   }, [reports, selectedSurface]);
 
-  if (!featureFlags.enableTrailConditions) return null;
+  const enableTrailConditions = useFeatureFlag('enableTrailConditions');
+  if (!enableTrailConditions) return null;
 
   const filterBar = (
     <ScrollView

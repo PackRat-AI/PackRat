@@ -14,6 +14,7 @@ import { getPackTemplateItemDetailOptions } from 'expo-app/features/pack-templat
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { getPackDetailOptions } from 'expo-app/features/packs/utils/getPackDetailOptions';
 import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackItemDetailOptions';
+import { useRevenueCatUser } from 'expo-app/features/purchases';
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
@@ -33,6 +34,7 @@ export {
 export default function AppLayout() {
   const isLoading = useAuthInit();
   const isAuthedValue = use$(isAuthed);
+  useRevenueCatUser();
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const isLoadingGlobal = useAtomValue(isLoadingAtom);
@@ -171,20 +173,23 @@ export default function AppLayout() {
         <Stack.Screen
           name="weight-analysis/[id]"
           options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
+            presentation: 'card',
           }}
         />
         <Stack.Screen
           name="pack-categories/[id]"
           options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
+            presentation: 'card',
           }}
         />
         <Stack.Screen
           name="weather-alerts"
           options={{
+            ...getAppBarOptions(),
+            // Navigator-level header default so early loading states still show
+            // the proper large-title header. The screen's own <Stack.Screen>
+            // overrides this with the translated title once content mounts.
+            title: 'Weather Alerts',
             presentation: 'card',
             animation: 'default',
           }}
@@ -221,6 +226,11 @@ export default function AppLayout() {
         <Stack.Screen
           name="shared-packs"
           options={{
+            ...getAppBarOptions(),
+            // Navigator-level header default so early loading states still show
+            // the proper large-title header. The screen's own <Stack.Screen>
+            // overrides this with the translated title once content mounts.
+            title: 'Shared Packs',
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -289,6 +299,14 @@ export default function AppLayout() {
             getPackTemplateItemDetailOptions((route.params as { id: string })?.id)
           }
         />
+        <Stack.Screen
+          name="paywall"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
       </Stack>
     </>
   );
@@ -303,12 +321,10 @@ const TABS_OPTIONS = {
   headerShown: false,
 } as const;
 
-// MODALS - These functions accept translation function t
 const getSettingsOptions = (t: TranslationFunction) =>
   ({
-    presentation: 'modal',
-    animation: 'fade_from_bottom', // for android
     title: t('profile.settings'),
+    headerLargeTitle: true,
     headerRight: () => <ThemeToggle />,
   }) as const;
 

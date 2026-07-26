@@ -234,11 +234,10 @@ describe('U7 named-tool coverage (spot-check)', () => {
     'packrat_web_search',
     'packrat_admin_stats',
     'packrat_admin_hard_delete_user',
-    'packrat_execute_sql_query',
-    'packrat_get_database_schema',
+    // DISABLED (admin-gated / not shipped): packrat_execute_sql_query,
+    // packrat_get_database_schema, packrat_create_app_pack_template,
+    // packrat_generate_pack_template_from_url.
     'packrat_create_pack_template',
-    'packrat_create_app_pack_template',
-    'packrat_generate_pack_template_from_url',
     'packrat_preview_alltrails_url',
   ];
 

@@ -1,12 +1,12 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
-import { featureFlags } from 'expo-app/config';
 import {
   isLoadingAtom,
   needsReauthAtom,
   redirectToAtom,
 } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -38,6 +38,7 @@ export default function AuthIndexScreen() {
     showSkipLoginBtn,
   } = useLocalSearchParams<RouteParams>();
   const needsReauth = useAtomValue(needsReauthAtom);
+  const enableOAuth = useFeatureFlag('enableOAuth');
 
   const handleSkipLogin = async () => {
     await AsyncStorage.setItem('skipped_login', 'true');
@@ -111,7 +112,7 @@ export default function AuthIndexScreen() {
               </Button>
             </Link>
           )}
-          {featureFlags.enableOAuth && (
+          {enableOAuth && (
             <>
               <Button
                 variant="secondary"

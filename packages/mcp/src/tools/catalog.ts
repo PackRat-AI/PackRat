@@ -177,81 +177,81 @@ export function registerCatalogTools(agent: AgentContext): void {
       }),
   );
 
-  // ── Create a catalog item (user-submitted) ────────────────────────────────
-
-  tool<{
-    name: string;
-    description?: string;
-    brand?: string;
-    model?: string;
-    weight: number;
-    weight_unit: 'g' | 'oz' | 'kg' | 'lb';
-    sku: string;
-    categories?: string[];
-    images?: string[];
-    rating?: number;
-    product_url: string;
-  }>(
-    agent.server,
-    'packrat_create_catalog_item',
-    {
-      title: 'Create Catalog Item',
-      description:
-        'Submit a new gear item to the catalog. The API will embed and dedupe automatically. Use this for custom items not yet in the catalog.',
-      inputSchema: {
-        name: z.string().min(1),
-        description: z.string().optional(),
-        brand: z.string().optional(),
-        model: z.string().optional(),
-        // weight, weight_unit, product_url, sku are required by the catalog-create
-        // API schema (CreateCatalogItemRequestSchema): a catalog entry is a real
-        // product with a known weight, source URL, and stock-keeping unit.
-        weight: z.number().positive(),
-        weight_unit: z.enum(['g', 'oz', 'kg', 'lb']),
-        sku: z.string().describe('Stock-keeping unit / product identifier'),
-        categories: z.array(z.string()).optional(),
-        images: z.array(z.string()).optional(),
-        rating: z.number().min(0).max(5).optional(),
-        product_url: z.string().url(),
-      },
-      annotations: {
-        title: 'Create Catalog Item',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-    },
-    async ({
-      name,
-      description,
-      brand,
-      model,
-      weight,
-      weight_unit,
-      sku,
-      categories,
-      images,
-      rating,
-      product_url,
-    }) =>
-      call({
-        promise: agent.api.user.catalog.post({
-          name,
-          description,
-          brand,
-          model,
-          weight,
-          weightUnit: weight_unit,
-          sku,
-          categories,
-          images,
-          ratingValue: rating,
-          productUrl: product_url,
-        }),
-        action: 'create catalog item',
-      }),
-  );
+  // ── Create a catalog item (user-submitted) — DISABLED ─────────────────────
+  // Intentionally not shipped: end users should not be minting new catalog
+  // rows via the connector. Re-enable if user-submitted catalog entries
+  // become a supported flow.
+  //
+  // tool<{
+  //   name: string;
+  //   description?: string;
+  //   brand?: string;
+  //   model?: string;
+  //   weight: number;
+  //   weight_unit: 'g' | 'oz' | 'kg' | 'lb';
+  //   sku: string;
+  //   categories?: string[];
+  //   images?: string[];
+  //   rating?: number;
+  //   product_url: string;
+  // }>(
+  //   agent.server,
+  //   'packrat_create_catalog_item',
+  //   {
+  //     title: 'Create Catalog Item',
+  //     description:
+  //       'Submit a new gear item to the catalog. The API will embed and dedupe automatically. Use this for custom items not yet in the catalog.',
+  //     inputSchema: {
+  //       name: z.string().min(1),
+  //       description: z.string().optional(),
+  //       brand: z.string().optional(),
+  //       model: z.string().optional(),
+  //       weight: z.number().positive(),
+  //       weight_unit: z.enum(['g', 'oz', 'kg', 'lb']),
+  //       sku: z.string().describe('Stock-keeping unit / product identifier'),
+  //       categories: z.array(z.string()).optional(),
+  //       images: z.array(z.string()).optional(),
+  //       rating: z.number().min(0).max(5).optional(),
+  //       product_url: z.string().url(),
+  //     },
+  //     annotations: {
+  //       title: 'Create Catalog Item',
+  //       readOnlyHint: false,
+  //       destructiveHint: false,
+  //       idempotentHint: false,
+  //       openWorldHint: false,
+  //     },
+  //   },
+  //   async ({
+  //     name,
+  //     description,
+  //     brand,
+  //     model,
+  //     weight,
+  //     weight_unit,
+  //     sku,
+  //     categories,
+  //     images,
+  //     rating,
+  //     product_url,
+  //   }) =>
+  //     call({
+  //       promise: agent.api.user.catalog.post({
+  //         name,
+  //         description,
+  //         brand,
+  //         model,
+  //         weight,
+  //         weightUnit: weight_unit,
+  //         sku,
+  //         categories,
+  //         images,
+  //         ratingValue: rating,
+  //         productUrl: product_url,
+  //       }),
+  //       action: 'create catalog item',
+  //     }),
+  // );
 
   // ── Compare items (API-side path proposed; until then, multi-fetch) ───────
   // NOTE: this duplicates work the API could do in a single `/catalog/compare`

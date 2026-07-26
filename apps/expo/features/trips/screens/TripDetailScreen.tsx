@@ -1,8 +1,8 @@
 import { assertDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
-import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -22,6 +22,7 @@ export function TripDetailScreen() {
   const { t } = useTranslation();
 
   const [showConditionReport, setShowConditionReport] = useState(false);
+  const enableTrailConditions = useFeatureFlag('enableTrailConditions');
 
   // safe-cast: trip may be undefined before the store is hydrated; the guard at line ~38 handles
   // the undefined case and returns early, ensuring trip is non-null at render time below.
@@ -186,33 +187,31 @@ export function TripDetailScreen() {
           )}
 
           {/* Trail Condition Report Prompt */}
-          {featureFlags.enableTrailConditions &&
-            trip.endDate &&
-            new Date(trip.endDate) < new Date() && (
-              <View className="mb-6">
-                <Card className="rounded-xl bg-card border border-border overflow-hidden">
-                  <View className="p-4">
-                    <View className="flex-row items-center mb-2 gap-2">
-                      <Icon name="map-marker-outline" size={20} color={colors.primary} />
-                      <Text className="text-base font-semibold text-foreground">
-                        {t('trailConditions.reportConditionsTitle')}
-                      </Text>
-                    </View>
-                    <Text className="text-sm text-muted-foreground mb-3">
-                      {t('trailConditions.reportConditionsPrompt')}
+          {enableTrailConditions && trip.endDate && new Date(trip.endDate) < new Date() && (
+            <View className="mb-6">
+              <Card className="rounded-xl bg-card border border-border overflow-hidden">
+                <View className="p-4">
+                  <View className="flex-row items-center mb-2 gap-2">
+                    <Icon name="map-marker-outline" size={20} color={colors.primary} />
+                    <Text className="text-base font-semibold text-foreground">
+                      {t('trailConditions.reportConditionsTitle')}
                     </Text>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onPress={() => setShowConditionReport(true)}
-                      className="flex-row items-center gap-2"
-                    >
-                      <Text className="text-sm">{t('trailConditions.submitReport')}</Text>
-                    </Button>
                   </View>
-                </Card>
-              </View>
-            )}
+                  <Text className="text-sm text-muted-foreground mb-3">
+                    {t('trailConditions.reportConditionsPrompt')}
+                  </Text>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onPress={() => setShowConditionReport(true)}
+                    className="flex-row items-center gap-2"
+                  >
+                    <Text className="text-sm">{t('trailConditions.submitReport')}</Text>
+                  </Button>
+                </View>
+              </Card>
+            </View>
+          )}
         </View>
       </ScrollView>
 

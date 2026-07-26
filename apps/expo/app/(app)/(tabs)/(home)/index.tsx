@@ -8,7 +8,7 @@ import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
-import { appConfig, featureFlags } from 'expo-app/config';
+import { appConfig } from 'expo-app/config';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
 import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
 import { AIPacksTile } from 'expo-app/features/ai-packs/components/AIPacksTile';
@@ -32,6 +32,7 @@ import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTr
 import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
 import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
 import { WildlifeTile } from 'expo-app/features/wildlife/components/WildlifeTile';
+import { useFeatureFlags } from 'expo-app/hooks/useFeatureFlags';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useRouter } from 'expo-router';
@@ -166,6 +167,7 @@ export default function DashboardScreen() {
   const isFocused = useIsFocused();
   const { hasMinimumItems } = useHasMinimumInventory(20);
   const { announcementSeen } = useSeasonSuggestionsPrefs();
+  const featureFlags = useFeatureFlags();
   useEffect(() => {
     if (!isFocused || !hasMinimumItems || announcementSeen) return;
     const timer = setTimeout(() => {
@@ -198,31 +200,39 @@ export default function DashboardScreen() {
     [t],
   );
 
-  const dashboardLayout = useRef([
-    ...appConfig.dashboard.layout.base,
-    ...(featureFlags.enableTrips || featureFlags.enableTrailConditions
-      ? [appConfig.dashboard.layout.conditional.tripsOrTrailSpacer]
-      : []),
-    ...(featureFlags.enableTrips ? [appConfig.dashboard.layout.conditional.trips] : []),
-    ...(featureFlags.enableTrailConditions
-      ? [appConfig.dashboard.layout.conditional.trailConditions]
-      : []),
-    ...appConfig.dashboard.layout.weatherSection,
-    ...(featureFlags.enableTrips ? [appConfig.dashboard.layout.conditional.weatherAlerts] : []),
-    ...appConfig.dashboard.layout.gearSection,
-    ...(featureFlags.enableShoppingList
-      ? [appConfig.dashboard.layout.conditional.shoppingList]
-      : []),
-    ...(featureFlags.enableSharedPacks ? [appConfig.dashboard.layout.conditional.sharedPacks] : []),
-    ...(featureFlags.enablePackTemplates
-      ? [appConfig.dashboard.layout.conditional.packTemplates]
-      : []),
-    ...(featureFlags.enableFeed ? [appConfig.dashboard.layout.conditional.feed] : []),
-    ...appConfig.dashboard.layout.footerSection,
-    ...(featureFlags.enableWildlifeIdentification
-      ? [appConfig.dashboard.layout.conditional.wildlife]
-      : []),
-  ]).current;
+  // useMemo (not useRef) since featureFlags can change after mount once the
+  // server config resolves — the layout needs to react to that, unlike the
+  // old build-time-constant flags this replaced.
+  const dashboardLayout = useMemo(
+    () => [
+      ...appConfig.dashboard.layout.base,
+      ...(featureFlags.enableTrips || featureFlags.enableTrailConditions
+        ? [appConfig.dashboard.layout.conditional.tripsOrTrailSpacer]
+        : []),
+      ...(featureFlags.enableTrips ? [appConfig.dashboard.layout.conditional.trips] : []),
+      ...(featureFlags.enableTrailConditions
+        ? [appConfig.dashboard.layout.conditional.trailConditions]
+        : []),
+      ...appConfig.dashboard.layout.weatherSection,
+      ...(featureFlags.enableTrips ? [appConfig.dashboard.layout.conditional.weatherAlerts] : []),
+      ...appConfig.dashboard.layout.gearSection,
+      ...(featureFlags.enableShoppingList
+        ? [appConfig.dashboard.layout.conditional.shoppingList]
+        : []),
+      ...(featureFlags.enableSharedPacks
+        ? [appConfig.dashboard.layout.conditional.sharedPacks]
+        : []),
+      ...(featureFlags.enablePackTemplates
+        ? [appConfig.dashboard.layout.conditional.packTemplates]
+        : []),
+      ...(featureFlags.enableFeed ? [appConfig.dashboard.layout.conditional.feed] : []),
+      ...appConfig.dashboard.layout.footerSection,
+      ...(featureFlags.enableWildlifeIdentification
+        ? [appConfig.dashboard.layout.conditional.wildlife]
+        : []),
+    ],
+    [featureFlags],
+  );
 
   const filteredTiles = useMemo(() => {
     if (!searchValue.trim()) return [];

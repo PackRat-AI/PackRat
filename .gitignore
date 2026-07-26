@@ -42,6 +42,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .claude/settings.local.json
 .claude/worktrees/
 .claude/scheduled_tasks.lock
+CLAUDE.local.md
 .dev.vars
 .dev.vars.e2e
 .dev.vars*.bak.*
@@ -66,6 +67,13 @@ apps/swift/xcconfig/*.local.xcconfig
 apps/swift/PackRat.xcodeproj/
 apps/swift/*.xcworkspace/xcuserdata/
 apps/swift/DerivedData*/
+apps/swift/build/
+apps/swift/build.log
+apps/swift/upload.log
+# Signing material — never commit private keys / certs (fastlane cert output)
+apps/swift/*.p12
+apps/swift/*.cer
+apps/swift/*.certSigningRequest
 apps/swift/.build/
 apps/swift/.swiftpm/
 apps/swift/Package.resolved
