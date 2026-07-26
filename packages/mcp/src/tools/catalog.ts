@@ -1,7 +1,5 @@
 import { z } from 'zod';
 import { call, clampLimit, PAGINATION_LIMIT_MAX } from '../client';
-// TEMPORARY DEBUG — remove with debug-temp.ts.
-import { dbgUpstream, withDebug } from '../debug-temp';
 import { CatalogSortField, SortOrder } from '../enums';
 import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
@@ -69,7 +67,6 @@ export function registerCatalogTools(agent: AgentContext): void {
   );
 
   // ── Semantic/vector search ────────────────────────────────────────────────
-  // TEMPORARILY RE-ENABLED for debugging (was disabled as flaky/unstable).
 
   tool<{ query: string; limit: number }>(
     agent.server,
@@ -89,19 +86,11 @@ export function registerCatalogTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    withDebug('packrat_semantic_gear_search', async ({ query, limit }) => {
-      dbgUpstream('packrat_semantic_gear_search', {
-        label: 'GET user.catalog.vector-search',
-        payload: {
-          q: query,
-          limit,
-        },
-      });
-      return call({
+    async ({ query, limit }) =>
+      call({
         promise: agent.api.user.catalog['vector-search'].get({ query: { q: query, limit } }),
         action: 'semantic catalog search',
-      });
-    }),
+      }),
   );
 
   // ── Get single item ───────────────────────────────────────────────────────
@@ -132,7 +121,6 @@ export function registerCatalogTools(agent: AgentContext): void {
   );
 
   // ── Similar catalog items ─────────────────────────────────────────────────
-  // TEMPORARILY RE-ENABLED for debugging (was disabled as flaky/unstable).
 
   tool<{ item_id: number; limit: number; threshold?: number }>(
     agent.server,
@@ -152,16 +140,8 @@ export function registerCatalogTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    withDebug('packrat_similar_catalog_items', async ({ item_id, limit, threshold }) => {
-      dbgUpstream('packrat_similar_catalog_items', {
-        label: 'GET user.catalog({id}).similar',
-        payload: {
-          item_id,
-          limit,
-          threshold,
-        },
-      });
-      return call({
+    async ({ item_id, limit, threshold }) =>
+      call({
         promise: agent.api.user.catalog({ id: String(item_id) }).similar.get({
           query: {
             limit: String(limit),
@@ -170,8 +150,7 @@ export function registerCatalogTools(agent: AgentContext): void {
         }),
         action: 'find similar catalog items',
         resourceHint: `catalog item ${item_id}`,
-      });
-    }),
+      }),
   );
 
   // ── List categories ───────────────────────────────────────────────────────

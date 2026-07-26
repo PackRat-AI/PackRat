@@ -1,7 +1,5 @@
 import { z } from 'zod';
 import { call } from '../client';
-// TEMPORARY DEBUG — remove with debug-temp.ts.
-import { dbgUpstream, withDebug } from '../debug-temp';
 import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
@@ -26,18 +24,10 @@ export function registerSeasonTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    withDebug('packrat_get_season_suggestions', async ({ location, date }) => {
-      dbgUpstream('packrat_get_season_suggestions', {
-        label: 'POST user.season-suggestions',
-        payload: {
-          location,
-          date,
-        },
-      });
-      return call({
+    async ({ location, date }) =>
+      call({
         promise: agent.api.user['season-suggestions'].post({ location, date }),
         action: 'fetch season suggestions',
-      });
-    }),
+      }),
   );
 }

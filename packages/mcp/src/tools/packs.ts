@@ -1,7 +1,5 @@
 import { z } from 'zod';
 import { call, clampLimit, nowIso, ok, PAGINATION_LIMIT_MAX, withNextOffset } from '../client';
-// TEMPORARY DEBUG — remove with debug-temp.ts.
-import { dbgUpstream, withDebug } from '../debug-temp';
 import { ItemCategory, PackCategory } from '../enums';
 import { GetPackOutputSchema, ListPacksOutputSchema } from '../output-schemas';
 import { tool } from '../registerTool';
@@ -422,7 +420,6 @@ export function registerPackTools(agent: AgentContext): void {
   );
 
   // ── Similar items for an item in a pack ───────────────────────────────────
-  // TEMPORARILY RE-ENABLED for debugging (was disabled as flaky/unstable).
 
   tool<{ pack_id: string; item_id: string; limit: number; threshold?: number }>(
     agent.server,
@@ -443,12 +440,8 @@ export function registerPackTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    withDebug('packrat_similar_pack_items', async ({ pack_id, item_id, limit, threshold }) => {
-      dbgUpstream('packrat_similar_pack_items', {
-        label: 'GET user.packs({packId}).items({itemId}).similar',
-        payload: { pack_id, item_id, limit, threshold },
-      });
-      return call({
+    async ({ pack_id, item_id, limit, threshold }) =>
+      call({
         promise: agent.api.user
           .packs({ packId: pack_id })
           .items({ itemId: item_id })
@@ -460,12 +453,10 @@ export function registerPackTools(agent: AgentContext): void {
           }),
         action: 'find similar items',
         resourceHint: `item ${item_id}`,
-      });
-    }),
+      }),
   );
 
   // ── Pack item suggestions ─────────────────────────────────────────────────
-  // TEMPORARILY RE-ENABLED for debugging (was disabled as flaky/unstable).
 
   tool<{ pack_id: string; existing_catalog_item_ids: number[] }>(
     agent.server,
@@ -484,22 +475,14 @@ export function registerPackTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    withDebug('packrat_suggest_pack_items', async ({ pack_id, existing_catalog_item_ids }) => {
-      dbgUpstream('packrat_suggest_pack_items', {
-        label: 'POST user.packs({packId}).item-suggestions',
-        payload: {
-          pack_id,
-          existing_catalog_item_ids,
-        },
-      });
-      return call({
+    async ({ pack_id, existing_catalog_item_ids }) =>
+      call({
         promise: agent.api.user
           .packs({ packId: pack_id })
           ['item-suggestions'].post({ existingCatalogItemIds: existing_catalog_item_ids }),
         action: 'suggest pack items',
         resourceHint: `pack ${pack_id}`,
-      });
-    }),
+      }),
   );
 
   // ── Weight history ────────────────────────────────────────────────────────
@@ -607,33 +590,18 @@ export function registerPackTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    withDebug(
-      'packrat_analyze_pack_gaps',
-      async ({ pack_id, destination, trip_type, duration_days, start_date, end_date }) => {
-        dbgUpstream('packrat_analyze_pack_gaps', {
-          label: 'POST user.packs({packId}).gap-analysis',
-          payload: {
-            pack_id,
-            destination,
-            tripType: trip_type,
-            duration: duration_days,
-            startDate: start_date,
-            endDate: end_date,
-          },
-        });
-        return call({
-          promise: agent.api.user.packs({ packId: pack_id })['gap-analysis'].post({
-            destination,
-            tripType: trip_type,
-            duration: duration_days,
-            startDate: start_date,
-            endDate: end_date,
-          }),
-          action: 'analyze pack gaps',
-          resourceHint: `pack ${pack_id}`,
-        });
-      },
-    ),
+    async ({ pack_id, destination, trip_type, duration_days, start_date, end_date }) =>
+      call({
+        promise: agent.api.user.packs({ packId: pack_id })['gap-analysis'].post({
+          destination,
+          tripType: trip_type,
+          duration: duration_days,
+          startDate: start_date,
+          endDate: end_date,
+        }),
+        action: 'analyze pack gaps',
+        resourceHint: `pack ${pack_id}`,
+      }),
   );
 
   // ── Image-based gear detection — DISABLED ─────────────────────────────────

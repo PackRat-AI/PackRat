@@ -1,7 +1,5 @@
 import { z } from 'zod';
 import { call } from '../client';
-// TEMPORARY DEBUG — remove with debug-temp.ts.
-import { dbgUpstream, withDebug } from '../debug-temp';
 import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
@@ -32,18 +30,8 @@ export function registerGuidesTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    withDebug('packrat_list_guides', async ({ page, limit, category, sort_field, sort_order }) => {
-      dbgUpstream('packrat_list_guides', {
-        label: 'GET user.guides',
-        payload: {
-          page,
-          limit,
-          category,
-          sort_field,
-          sort_order,
-        },
-      });
-      return call({
+    async ({ page, limit, category, sort_field, sort_order }) =>
+      call({
         promise: agent.api.user.guides.get({
           query: {
             page,
@@ -53,8 +41,7 @@ export function registerGuidesTools(agent: AgentContext): void {
           },
         }),
         action: 'list guides',
-      });
-    }),
+      }),
   );
 
   tool<Record<string, never>>(
@@ -71,13 +58,11 @@ export function registerGuidesTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    withDebug('packrat_list_guide_categories', async () => {
-      dbgUpstream('packrat_list_guide_categories', { label: 'GET user.guides.categories' });
-      return call({
+    async () =>
+      call({
         promise: agent.api.user.guides.categories.get(),
         action: 'list guide categories',
-      });
-    }),
+      }),
   );
 
   tool<{
@@ -104,21 +89,11 @@ export function registerGuidesTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    withDebug('packrat_search_guides', async ({ query, page, limit, category }) => {
-      dbgUpstream('packrat_search_guides', {
-        label: 'GET user.guides.search',
-        payload: {
-          q: query,
-          page,
-          limit,
-          category,
-        },
-      });
-      return call({
+    async ({ query, page, limit, category }) =>
+      call({
         promise: agent.api.user.guides.search.get({ query: { q: query, page, limit, category } }),
         action: 'search guides',
-      });
-    }),
+      }),
   );
 
   tool<{ guide_id: string }>(
@@ -135,13 +110,11 @@ export function registerGuidesTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    withDebug('packrat_get_guide', async ({ guide_id }) => {
-      dbgUpstream('packrat_get_guide', { label: 'GET user.guides({id})', payload: { guide_id } });
-      return call({
+    async ({ guide_id }) =>
+      call({
         promise: agent.api.user.guides({ id: guide_id }).get(),
         action: 'get guide',
         resourceHint: `guide ${guide_id}`,
-      });
-    }),
+      }),
   );
 }

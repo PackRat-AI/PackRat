@@ -1,7 +1,5 @@
 import { z } from 'zod';
 import { call } from '../client';
-// TEMPORARY DEBUG — remove with debug-temp.ts.
-import { dbgUpstream, withDebug } from '../debug-temp';
 import { GetWeatherOutputSchema } from '../output-schemas';
 import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
@@ -33,18 +31,13 @@ export function registerWeatherTools(agent: AgentContext): void {
         openWorldHint: true,
       },
     },
-    withDebug('packrat_get_weather', async ({ location }) => {
-      dbgUpstream('packrat_get_weather', {
-        label: 'GET user.weather.by-name',
-        payload: { q: location },
-      });
-      return call({
+    async ({ location }) =>
+      call({
         promise: agent.api.user.weather['by-name'].get({ query: { q: location } }),
         action: 'fetch weather forecast',
         resourceHint: location,
         structured: true,
-      });
-    }),
+      }),
   );
 
   // ── Search weather location ───────────────────────────────────────────────
@@ -63,17 +56,12 @@ export function registerWeatherTools(agent: AgentContext): void {
         openWorldHint: true,
       },
     },
-    withDebug('packrat_search_weather_location', async ({ query }) => {
-      dbgUpstream('packrat_search_weather_location', {
-        label: 'GET user.weather.search',
-        payload: { q: query },
-      });
-      return call({
+    async ({ query }) =>
+      call({
         promise: agent.api.user.weather.search.get({ query: { q: query } }),
         action: 'search weather location',
         resourceHint: query,
-      });
-    }),
+      }),
   );
 
   // ── Search weather location by coordinates ────────────────────────────────
@@ -95,18 +83,13 @@ export function registerWeatherTools(agent: AgentContext): void {
         openWorldHint: true,
       },
     },
-    withDebug('packrat_search_weather_by_coordinates', async ({ latitude, longitude }) => {
-      dbgUpstream('packrat_search_weather_by_coordinates', {
-        label: 'GET user.weather.search-by-coordinates',
-        payload: { lat: latitude, lon: longitude },
-      });
-      return call({
+    async ({ latitude, longitude }) =>
+      call({
         promise: agent.api.user.weather['search-by-coordinates'].get({
           query: { lat: String(latitude), lon: String(longitude) },
         }),
         action: 'search weather by coordinates',
-      });
-    }),
+      }),
   );
 
   // ── Forecast by location id ───────────────────────────────────────────────
@@ -126,18 +109,11 @@ export function registerWeatherTools(agent: AgentContext): void {
         openWorldHint: true,
       },
     },
-    withDebug('packrat_get_weather_forecast', async ({ location_id }) => {
-      dbgUpstream('packrat_get_weather_forecast', {
-        label: 'GET user.weather.forecast',
-        payload: {
-          id: String(location_id),
-        },
-      });
-      return call({
+    async ({ location_id }) =>
+      call({
         promise: agent.api.user.weather.forecast.get({ query: { id: String(location_id) } }),
         action: 'get weather forecast',
         resourceHint: `location ${location_id}`,
-      });
-    }),
+      }),
   );
 }
