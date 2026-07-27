@@ -127,7 +127,7 @@
     "expo-symbols": "~56.0.6",
     "expo-system-ui": "~56.0.5",
     "expo-updates": "~56.0.18",
-    "expo-web-browser": "~56.0.5",
+    "expo-web-browser": "~57.0.2",
     "google-auth-library": "catalog:",
     "he": "^1.2.0",
     "i": "^0.3.7",
