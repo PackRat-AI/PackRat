@@ -5,7 +5,6 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as React from 'react';
 import { type FocusEvent, Pressable, TextInput, View, type ViewStyle } from 'react-native';
 import Animated, {
-  measure,
   useAnimatedRef,
   useAnimatedStyle,
   useDerivedValue,
@@ -47,39 +46,20 @@ function SearchInput({
     onChange: onChangeTextProp,
   });
 
+  // Estimated width only — never the live-measured Cancel Pressable width. @expo/ui's
+  // Host-wrapped Text reports a narrower intrinsic size to Yoga than a plain RN Text did (the
+  // old nativewindui version of this file used `measure(animatedRef)` here), which under-reserved
+  // paddingRight and closed the gap between the search box and the Cancel button.
   const rootStyle = useAnimatedStyle(() => {
-    if (_WORKLET) {
-      const measurement = measure(animatedRef);
-      return {
-        paddingRight: showCancelDerivedValue.value
-          ? withTiming(measurement?.width ?? cancelText.length * 11.2)
-          : withTiming(0),
-      };
-    }
     return {
       paddingRight: showCancelDerivedValue.value
-        ? withTiming(cancelText.length * 11.2)
+        ? withTiming(cancelText.length * 10)
         : withTiming(0),
     };
   });
+  // Same estimated-width-only rule as rootStyle above — kept in sync with it so the button
+  // slides to exactly where paddingRight reserved space for it.
   const cancelButtonStyle = useAnimatedStyle(() => {
-    if (_WORKLET) {
-      const measurement = measure(animatedRef);
-      return {
-        position: 'absolute',
-        right: 0,
-        opacity: showCancelDerivedValue.value ? withTiming(1) : withTiming(0),
-        transform: [
-          {
-            translateX: showCancelDerivedValue.value
-              ? withTiming(0)
-              : measurement?.width
-                ? withTiming(measurement.width)
-                : cancelText.length * 11.2,
-          },
-        ],
-      };
-    }
     return {
       position: 'absolute',
       right: 0,
@@ -88,7 +68,7 @@ function SearchInput({
         {
           translateX: showCancelDerivedValue.value
             ? withTiming(0)
-            : withTiming(cancelText.length * 11.2),
+            : withTiming(cancelText.length * 10),
         },
       ],
     };
