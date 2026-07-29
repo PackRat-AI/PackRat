@@ -73,7 +73,7 @@ function ContextMenu({
         onPressMenuItem={toOnPressMenuItem(onItemPress)}
         onPressMenuPreview={iosOnPressMenuPreview}
         shouldCleanupOnComponentWillUnmountForAuxPreview
-        previewConfig={getPreviewConfig(!!iosRenderPreview, iosPreviewConfig)}
+        previewConfig={getPreviewConfig({ hasPreview: !!iosRenderPreview, iosPreviewConfig })}
         renderPreview={iosRenderPreview}
         shouldPreventLongPressGestureFromPropagating
         lazyPreview={!!iosRenderPreview}
@@ -161,10 +161,13 @@ function toConfigItem(item: ContextItem): MenuElementConfig {
   };
 }
 
-function getPreviewConfig(
-  hasPreview: boolean,
-  iosPreviewConfig?: ContextMenuProps['iosPreviewConfig'],
-) {
+function getPreviewConfig({
+  hasPreview,
+  iosPreviewConfig,
+}: {
+  hasPreview: boolean;
+  iosPreviewConfig?: ContextMenuProps['iosPreviewConfig'];
+}) {
   if (!hasPreview) return iosPreviewConfig;
   if (!iosPreviewConfig) return PREVIEW_CONFIG;
   return { ...PREVIEW_CONFIG, ...iosPreviewConfig };

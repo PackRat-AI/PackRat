@@ -133,7 +133,13 @@ function shouldMatchContents(className: string | undefined): boolean {
  *   constraint and paragraph/note text wraps at that width instead of overflowing unwrapped.
  * An explicit sizing class (flex-1, w-*, ...) always wins over either default.
  */
-function textMatchContents(hostClassName: string | undefined, wrap: boolean): HostMatchContents {
+function textMatchContents({
+  hostClassName,
+  wrap,
+}: {
+  hostClassName: string | undefined;
+  wrap: boolean;
+}): HostMatchContents {
   const hasSizing = hostClassName
     ? hasExplicitSizing(hostClassName.split(WHITESPACE).filter(Boolean))
     : false;
@@ -167,7 +173,7 @@ function splitTextClassName({
     return {
       textStyle: {},
       hostClassName: undefined,
-      matchContents: textMatchContents(undefined, wrap),
+      matchContents: textMatchContents({ hostClassName: undefined, wrap }),
       needsExplicitWidth: wrap,
     };
   }
@@ -201,7 +207,7 @@ function splitTextClassName({
   return {
     textStyle,
     hostClassName,
-    matchContents: textMatchContents(hostClassName, wrap),
+    matchContents: textMatchContents({ hostClassName, wrap }),
     needsExplicitWidth: wrap && !hasExplicitSizing(hostTokens),
   };
 }
