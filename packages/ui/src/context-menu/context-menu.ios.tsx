@@ -90,8 +90,20 @@ function ContextMenu({
 
 export { ContextMenu };
 
+// react-native-ios-context-menu ships no .d.ts files at all (see the @ts-expect-error import
+// above — https://github.com/dominicstop/react-native-ios-context-menu/issues/129), so
+// OnPressMenuItemEvent's own nativeEvent param has no usable type. Declared locally from the
+// library's documented native event payload shape, matching the properties actually read below.
+type ContextMenuNativeEvent = {
+  actionKey: string;
+  actionTitle?: string;
+  actionSubtitle?: string;
+  menuState?: 'on' | 'off' | 'mixed';
+  menuAttributes?: string[];
+};
+
 function toOnPressMenuItem(onItemPress: ContextMenuProps['onItemPress']): OnPressMenuItemEvent {
-  return ({ nativeEvent }) => {
+  return ({ nativeEvent }: { nativeEvent: ContextMenuNativeEvent }) => {
     onItemPress?.({
       actionKey: nativeEvent.actionKey,
       title: nativeEvent.actionTitle,
