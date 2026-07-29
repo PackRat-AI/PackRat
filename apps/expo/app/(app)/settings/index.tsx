@@ -247,7 +247,7 @@ export default function SettingsScreen() {
                 className="flex-row items-center justify-between p-4"
                 onPress={handleManageSubscription}
               >
-                <Text className="font-medium" style={{ color: colors.primary }}>
+                <Text className="font-medium" textColor={colors.primary}>
                   Manage Subscription
                 </Text>
                 <Icon name="chevron-right" size={20} color={colors.grey} />
@@ -257,7 +257,7 @@ export default function SettingsScreen() {
                 className="flex-row items-center justify-between p-4"
                 onPress={() => router.push('/paywall')}
               >
-                <Text className="font-medium" style={{ color: colors.primary }}>
+                <Text className="font-medium" textColor={colors.primary}>
                   Upgrade to Pro
                 </Text>
                 <Icon name="chevron-right" size={20} color={colors.grey} />

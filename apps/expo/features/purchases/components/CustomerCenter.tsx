@@ -1,4 +1,5 @@
-import { Button, Text } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import RevenueCatUI from 'react-native-purchases-ui';
 
