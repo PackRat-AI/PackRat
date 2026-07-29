@@ -1,6 +1,6 @@
 {
   "name": "packrat-monorepo",
-  "version": "2.0.28",
+  "version": "2.1.0",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -92,6 +92,10 @@
     "elysia": "^1.4.0",
     "expo-sqlite": "~56.0.4",
     "react": "19.2.3"
+  },
+  "dependencies": {
+    "react-native-purchases": "^10.4.0",
+    "react-native-purchases-ui": "^10.4.0"
   },
   "devDependencies": {
     "@ast-grep/cli": "^0.43.0",

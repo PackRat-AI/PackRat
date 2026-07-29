@@ -812,6 +812,72 @@ export type NewPostComment = InferInsertModel<typeof postComments>;
 export type CommentLike = InferSelectModel<typeof commentLikes>;
 export type NewCommentLike = InferInsertModel<typeof commentLikes>;
 
+export const featureAccess = pgTable('feature_access', {
+  key: text('key').primaryKey(),
+  label: text('label').notNull(),
+  description: text('description'),
+  earlyAccessUntil: timestamp('early_access_until'),
+  releasedAt: timestamp('released_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export type FeatureAccess = InferSelectModel<typeof featureAccess>;
+export type NewFeatureAccess = InferInsertModel<typeof featureAccess>;
+
+// Stores only overrides — a missing key falls back to the coded default in
+// packages/config's FeatureFlag map. See packages/api's featureFlagsService.
+export const featureFlags = pgTable('feature_flags', {
+  key: text('key').primaryKey(),
+  enabled: boolean('enabled').notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export type FeatureFlagRow = InferSelectModel<typeof featureFlags>;
+export type NewFeatureFlagRow = InferInsertModel<typeof featureFlags>;
+
+// Per-user RevenueCat entitlement state, kept in sync by the RevenueCat webhook
+// (packages/api's revenuecatWebhook route). This is the server's source of
+// truth for `hasPro`: server-side gating resolves a viewer's Pro status from an
+// active, unexpired row here rather than trusting the device. One row per
+// (user, entitlement); the webhook upserts on purchase/renewal/expiry/etc.
+export const entitlements = pgTable(
+  'entitlements',
+  {
+    id: serial('id').primaryKey(),
+    // The app user id RevenueCat reports (our users.id when the user is
+    // identified). Kept as raw text so anonymous ids are still recordable.
+    rcAppUserId: text('rc_app_user_id').notNull(),
+    // FK to users.id when the RC app user id maps to a known account; null for
+    // anonymous/unidentified purchasers. Nullable + set null on delete so an
+    // account deletion never orphans or blocks webhook writes.
+    userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+    // RevenueCat entitlement identifier, e.g. 'PackRat Pro'.
+    entitlementId: text('entitlement_id').notNull(),
+    // Whether the entitlement is currently granted. Derived from the event type
+    // and `expiresAt`; a lapsed/expired entitlement is stored with isActive=false.
+    isActive: boolean('is_active').default(false).notNull(),
+    // When the entitlement expires (null for non-expiring/lifetime grants).
+    expiresAt: timestamp('expires_at'),
+    // 'APP_STORE' | 'PLAY_STORE' | 'STRIPE' | ... as reported by RevenueCat.
+    store: text('store'),
+    productId: text('product_id'),
+    // Original RevenueCat event id, for idempotent webhook handling / audit.
+    lastEventId: text('last_event_id'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('entitlements_app_user_entitlement_unique').on(table.rcAppUserId, table.entitlementId),
+    index('entitlements_user_id_idx').on(table.userId),
+  ],
+);
+
+export type Entitlement = InferSelectModel<typeof entitlements>;
+export type NewEntitlement = InferInsertModel<typeof entitlements>;
+
 // CapturedQuery is the per-query record stored in D1 metrics (packages/api/src/db/metricsDb.ts).
 // Defined here so both the API (queryMetrics.ts) and the D1 schema (packages/db/src/d1Schema.ts)
 // share the same type without a circular dependency.

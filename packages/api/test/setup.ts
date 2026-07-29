@@ -37,6 +37,7 @@ const testEnv = {
   ADMIN_USERNAME: 'admin',
   ADMIN_PASSWORD: 'admin-password',
   PACKRAT_API_KEY: 'test-api-key',
+  REVENUECAT_WEBHOOK_AUTH: 'test-revenuecat-webhook-secret',
 
   EMAIL_PROVIDER: 'resend',
   RESEND_API_KEY: 'key',

@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 // MARK: - App-wide user preferences stored in UserDefaults
 
@@ -8,6 +9,7 @@ final class AppPreferences: ObservableObject {
     @AppStorage("defaultAppWeightUnit") var defaultAppWeightUnit: AppWeightUnit = .grams
     @AppStorage("preferMetric") var preferMetric: Bool = true
     @AppStorage("temperatureUnit") var temperatureUnit: TemperatureUnit = .fahrenheit
+    @AppStorage("speedUnit") var speedUnit: SpeedUnit = .mph
     @AppStorage("accentColorName") var accentColorName: String = "blue"
     @AppStorage("apiBaseURL") var apiBaseURL: String = ""
 
@@ -22,12 +24,21 @@ final class AppPreferences: ObservableObject {
 // MARK: - Settings / Preferences window (Cmd+,)
 
 struct PreferencesView: View {
+    @Environment(AuthManager.self) private var authManager
     @AppStorage("defaultAppWeightUnit") private var defaultAppWeightUnit: AppWeightUnit = .grams
     @AppStorage("preferMetric") private var preferMetric: Bool = true
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
+    @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
     @AppStorage("apiBaseURL") private var apiBaseURL: String = ""
 
+    @State private var showingClearDataConfirm = false
+    @Environment(\.openURL) private var openURL
+    @State private var notificationsEnabled = false
+    @State private var notificationAuthStatus: UNAuthorizationStatus = .notDetermined
+
     var body: some View {
+        #if os(macOS)
+        // Fixed-size tabbed layout for the macOS Settings window (Cmd+,).
         TabView {
             generalTab
                 .tabItem { Label("General", systemImage: "gearshape") }
@@ -42,8 +53,36 @@ struct PreferencesView: View {
         }
         .padding(20)
         .frame(width: 460, height: 320)
+        .clearDataConfirmation(isPresented: $showingClearDataConfirm, onConfirm: clearAppData)
+        #else
+        // iOS: a single scrolling form pushed onto a navigation stack. The
+        // macOS tabs become grouped sections so all settings stay reachable
+        // on iPhone, where there is no dedicated Settings window.
+        Form {
+            generalSection
+            unitsSection
+            notificationSection
+            advancedSection
+            #if DEBUG
+            Section("Debug") {
+                NavigationLink("On-device AI") { OfflineAIView() }
+            }
+            #endif
+            aboutSection
+        }
+        .navigationTitle("Settings")
+        .clearDataConfirmation(isPresented: $showingClearDataConfirm, onConfirm: clearAppData)
+        .onAppear { Task { await refreshNotificationStatus() } }
+        #endif
     }
 
+    /// Android-style "Clear Data": wipes all local data including auth, then
+    /// returns the app to the auth gate (the user is signed out).
+    private func clearAppData() {
+        authManager.clearAllData()
+    }
+
+    #if os(macOS)
     #if DEBUG
     private var debugTab: some View {
         NavigationStack {
@@ -53,31 +92,98 @@ struct PreferencesView: View {
     #endif
 
     private var generalTab: some View {
-        Form {
-            Section("Temperature") {
-                Picker("Display temperature in", selection: $temperatureUnit) {
-                    ForEach(AppPreferences.TemperatureUnit.allCases, id: \.self) { unit in
-                        Text(unit.label).tag(unit)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-        }
-        .packRatFormStyle()
+        Form { generalSection }
+            .packRatFormStyle()
     }
 
     private var unitsTab: some View {
-        Form {
-            Section("Weight") {
-                Picker("Default weight unit", selection: $defaultAppWeightUnit) {
-                    ForEach(AppWeightUnit.allCases, id: \.self) { unit in
-                        Text(unit.rawValue).tag(unit)
-                    }
+        Form { unitsSection }
+            .packRatFormStyle()
+    }
+
+    private var advancedTab: some View {
+        Form { advancedSection }
+            .packRatFormStyle()
+    }
+    #endif
+
+    @ViewBuilder
+    private var generalSection: some View {
+        Section("Temperature") {
+            Picker("Display temperature in", selection: $temperatureUnit) {
+                ForEach(AppPreferences.TemperatureUnit.allCases, id: \.self) { unit in
+                    Text(unit.label).tag(unit)
                 }
-                Toggle("Prefer metric display", isOn: $preferMetric)
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    @ViewBuilder
+    private var notificationSection: some View {
+        Section("Notifications") {
+            if notificationAuthStatus == .denied {
+                HStack {
+                    Image(systemName: "bell.slash.fill").foregroundStyle(.secondary)
+                    Text("Notifications are blocked in Settings")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    #if os(iOS)
+                    Button("Open Settings") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            openURL(url)
+                        }
+                    }
+                    .font(.callout)
+                    #endif
+                }
+            } else {
+                Toggle("Push Notifications", isOn: $notificationsEnabled)
+                    .onChange(of: notificationsEnabled) { _, enabled in
+                        Task { await toggleNotifications(enabled) }
+                    }
             }
         }
-        .packRatFormStyle()
+    }
+
+    private func refreshNotificationStatus() async {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        notificationAuthStatus = settings.authorizationStatus
+        notificationsEnabled = settings.authorizationStatus == .authorized
+    }
+
+    private func toggleNotifications(_ enable: Bool) async {
+        let center = UNUserNotificationCenter.current()
+        if enable {
+            let status = await center.notificationSettings().authorizationStatus
+            if status == .notDetermined {
+                _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+            }
+        }
+        await refreshNotificationStatus()
+    }
+
+    @ViewBuilder
+    private var unitsSection: some View {
+        Section("Weight") {
+            Picker("Default weight unit", selection: $defaultAppWeightUnit) {
+                ForEach(AppWeightUnit.allCases, id: \.self) { unit in
+                    Text(unit.rawValue).tag(unit)
+                }
+            }
+            Toggle("Prefer metric display", isOn: $preferMetric)
+        }
+
+        Section("Wind & Distance") {
+            Picker("Wind & distance", selection: $speedUnit) {
+                ForEach(SpeedUnit.allCases, id: \.self) { unit in
+                    Text(unit.label).tag(unit)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
     }
 
     private var effectiveURL: String {
@@ -87,8 +193,11 @@ struct PreferencesView: View {
         return "http://localhost:8787"
     }
 
-    private var advancedTab: some View {
-        Form {
+    @ViewBuilder
+    private var advancedSection: some View {
+        // Developer-only backend controls. Hidden entirely in production so end
+        // users can't repoint the app at a dev/local API or wipe their data.
+        if APIClient.isNonProduction {
             Section("API Server") {
                 HStack {
                     ForEach(["local", "dev", "production"], id: \.self) { env in
@@ -113,19 +222,65 @@ struct PreferencesView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section {
-                Button("Reset All Preferences", role: .destructive) {
-                    resetDefaults()
+            Section("Developer") {
+                Button("Clear Data", role: .destructive) {
+                    showingClearDataConfirm = true
                 }
+                Text("Erases all local data — cache, preferences, and sign-in. Signs you out and resets the app.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
-        .packRatFormStyle()
+
+        Section {
+            Button("Reset All Preferences", role: .destructive) {
+                resetDefaults()
+            }
+        }
+
+        #if os(macOS)
+        aboutSection
+        #endif
+    }
+
+    @ViewBuilder
+    private var aboutSection: some View {
+        Section("About") {
+            LabeledContent(appName, value: appVersionString)
+        }
+    }
+
+    private var appName: String {
+        (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
+            ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String)
+            ?? "PackRat"
+    }
+
+    /// "v1.2.3 (45)" — short version + build number, matching the version
+    /// string the Expo Settings screen shows.
+    private var appVersionString: String {
+        let short = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "—"
+        let build = (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? ""
+        return build.isEmpty ? "v\(short)" : "v\(short) (\(build))"
     }
 
     private func resetDefaults() {
         defaultAppWeightUnit = .grams
         preferMetric = true
         temperatureUnit = .fahrenheit
+        speedUnit = .mph
         apiBaseURL = ""
+    }
+}
+
+private extension View {
+    /// Shared confirmation dialog for the destructive "Clear App Data" action.
+    func clearDataConfirmation(isPresented: Binding<Bool>, onConfirm: @escaping () -> Void) -> some View {
+        alert("Clear Data", isPresented: isPresented) {
+            Button("Cancel", role: .cancel) {}
+            Button("Clear Data", role: .destructive, action: onConfirm)
+        } message: {
+            Text("This erases all local data and signs you out. This cannot be undone.")
+        }
     }
 }

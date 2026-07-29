@@ -1,6 +1,6 @@
 {
   "name": "@packrat/mcp",
-  "version": "2.0.28",
+  "version": "2.1.0",
   "private": true,
   "description": "PackRat MCP Server — outdoor adventure planning via Model Context Protocol",
   "scripts": {

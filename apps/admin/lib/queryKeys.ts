@@ -28,6 +28,14 @@ export const queryKeys = {
       list: (params?: { q?: string; page?: number; limit?: number }) =>
         [...queryKeys.admin.catalog.all(), params] as const,
     },
+
+    featureFlags: {
+      all: () => [...queryKeys.admin.all(), 'featureFlags'] as const,
+    },
+
+    featureAccess: {
+      all: () => [...queryKeys.admin.all(), 'featureAccess'] as const,
+    },
   },
 
   platform: {

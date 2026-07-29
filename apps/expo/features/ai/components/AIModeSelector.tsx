@@ -2,7 +2,7 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
-import { featureFlags } from 'expo-app/config';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useAtomValue } from 'jotai';
@@ -18,7 +18,8 @@ export function AIModeSelector() {
   const modelStatus = useAtomValue(localModelStatusAtom);
   const sheetRef = React.useRef<BottomSheetModal>(null);
 
-  if (!featureFlags.enableLocalAI) return null;
+  const enableLocalAI = useFeatureFlag('enableLocalAI');
+  if (!enableLocalAI) return null;
 
   const isDownloading =
     modelStatus === 'downloading' || modelStatus === 'preparing' || modelStatus === 'checking';

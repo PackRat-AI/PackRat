@@ -10,12 +10,18 @@ final class UploadService: Sendable {
     init(api: APIClient = .shared) { self.api = api }
 
     struct PresignedURLResponse: Decodable {
-        let uploadUrl: String
+        let url: String
+        let objectKey: String
         let publicUrl: String
-        let key: String
     }
 
-    /// Fetches a presigned R2 upload URL, uploads the data, returns the public URL.
+    /// Fetches a presigned R2 upload URL, uploads the data, returns the object's
+    /// relative R2 key. The presign route's `publicUrl` field is derived from the
+    /// private S3-API presigned URL origin (packrat-bucket-*.r2.cloudflarestorage.com),
+    /// not the public R2.dev bucket domain, so it isn't actually fetchable — Expo
+    /// ignores it too (apps/expo/features/packs/utils/uploadImage.ts returns
+    /// remoteFileName, not data.publicUrl). Callers resolve the key to a fetchable
+    /// URL via APIClient.resolvedImageURL.
     func upload(data: Data, fileName: String, mimeType: String) async throws -> String {
         // 1. Get presigned URL from API
         let endpoint = Endpoint(.get, "/api/upload/presigned", query: [
@@ -25,7 +31,7 @@ final class UploadService: Sendable {
         let presigned: PresignedURLResponse = try await api.send(endpoint)
 
         // 2. PUT directly to R2 presigned URL (no auth header needed)
-        guard let uploadURL = URL(string: presigned.uploadUrl) else {
+        guard let uploadURL = URL(string: presigned.url) else {
             throw PackRatError.unknown
         }
         var request = URLRequest(url: uploadURL)
@@ -38,25 +44,29 @@ final class UploadService: Sendable {
             throw PackRatError.httpError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0, message: "Upload failed")
         }
 
-        return presigned.publicUrl
+        return presigned.objectKey
     }
 
     #if os(macOS)
-    func uploadImage(at url: URL) async throws -> String {
+    func uploadImage(at url: URL, userId: String) async throws -> String {
         let data = try Data(contentsOf: url)
         let ext = url.pathExtension.lowercased()
         let mimeType = ext == "png" ? "image/png" : "image/jpeg"
-        let fileName = "\(UUID().uuidString).\(ext)"
+        // The presign route requires the object key to start with `{userId}-`
+        // (packages/api/src/routes/upload.ts) — matches Expo's remoteFileName convention.
+        let fileName = "\(userId)-\(UUID().uuidString).\(ext)"
         return try await upload(data: data, fileName: fileName, mimeType: mimeType)
     }
     #endif
 
     #if os(iOS)
-    func uploadUIImage(_ image: UIImage, quality: CGFloat = 0.85) async throws -> String {
+    func uploadUIImage(_ image: UIImage, userId: String, quality: CGFloat = 0.85) async throws -> String {
         guard let data = image.jpegData(compressionQuality: quality) else {
             throw PackRatError.unknown
         }
-        let fileName = "\(UUID().uuidString).jpg"
+        // The presign route requires the object key to start with `{userId}-`
+        // (packages/api/src/routes/upload.ts) — matches Expo's remoteFileName convention.
+        let fileName = "\(userId)-\(UUID().uuidString).jpg"
         return try await upload(data: data, fileName: fileName, mimeType: "image/jpeg")
     }
     #endif

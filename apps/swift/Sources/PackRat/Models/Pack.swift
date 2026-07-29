@@ -82,6 +82,38 @@ enum AppWeightUnit: String, CaseIterable {
     var label: String { rawValue }
 }
 
+// Wind speed + distance display unit. Raw values match the Expo app's
+// `speedUnit` preference ('kmh' | 'mph') so the stored preference is portable.
+
+enum SpeedUnit: String, CaseIterable {
+    case kmh
+    case mph
+
+    /// Segmented-control / picker label.
+    var label: String {
+        switch self {
+        case .kmh: return "km/h"
+        case .mph: return "mph"
+        }
+    }
+
+    /// Formats a km/h value into the user's preferred unit.
+    func displayWindSpeed(_ kph: Double) -> String {
+        switch self {
+        case .mph: return "\(Int((kph * 0.621371).rounded())) mph"
+        case .kmh: return "\(Int(kph.rounded())) km/h"
+        }
+    }
+
+    /// Formats a km value into the user's preferred distance unit.
+    func displayDistance(_ km: Double) -> String {
+        switch self {
+        case .mph: return "\(Int((km * 0.621371).rounded())) mi"
+        case .kmh: return "\(Int(km.rounded())) km"
+        }
+    }
+}
+
 // MARK: - Gap Analysis
 
 struct GapAnalysisResult: Decodable, Sendable {

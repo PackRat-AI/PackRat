@@ -1,5 +1,7 @@
 export * from './aiService';
 export * from './catalogService';
+export * from './entitlementsService';
+export * from './featureAccessService';
 export * from './imageDetectionService';
 export * from './packItemService';
 export * from './packService';

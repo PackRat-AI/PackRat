@@ -22,12 +22,29 @@ export const WeatherAPILocationSchema = z.object({
   localtime: z.string().optional(),
 });
 
+/**
+ * Elysia's query parser splits a value containing a comma into an array
+ * (e.g. `?q=Bishop, California` → `['Bishop', ' California']`). A plain
+ * `z.string()` then rejects it with a 400 "Validation failed" before the
+ * handler runs — which breaks the very common "City, Region" phrasing.
+ *
+ * `queryString` accepts either a string or a string[] and normalizes to a
+ * single comma-joined string so the handler always sees a plain string and
+ * WeatherAPI receives the full location text (it accepts `Bishop,California`).
+ */
+const queryString = z
+  .union([z.string(), z.array(z.string())])
+  .transform((value) => (Array.isArray(value) ? value.join(',') : value));
+
 export const WeatherSearchQuerySchema = z.object({
-  q: z.string().optional(),
+  q: queryString.optional(),
 });
 
 export const WeatherByNameQuerySchema = z.object({
-  q: z.string().min(2),
+  // min length is enforced after normalization on the joined string.
+  q: queryString.refine((value) => value.length >= 2, {
+    message: 'q must be at least 2 characters',
+  }),
 });
 
 export const WeatherCoordinateQuerySchema = z.object({

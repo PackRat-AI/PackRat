@@ -34,7 +34,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
     const { addItemsToPack } = useBulkAddCatalogItems();
     const { trackRecentlyUsed } = useRecentlyUsedCatalogItems();
 
-    const handleAddFromPhoto = () => {
+    const handleAddFromPhoto = async () => {
       ref && !isFunction(ref) && ref.current?.close();
 
       if (!isAuthed.peek()) {
@@ -46,6 +46,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
           },
         });
       }
+
       const options = ['Take Photo', 'Choose from Library', 'Cancel'];
       const cancelButtonIndex = 2;
 
@@ -92,7 +93,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
       );
     };
 
-    const handleAddFromCatalog = () => {
+    const handleAddFromCatalog = async () => {
       ref && !isFunction(ref) && ref.current?.close();
 
       if (!isAuthed.peek()) {
@@ -104,6 +105,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
           },
         });
       }
+
       setIsCatalogModalVisible(true);
     };
 

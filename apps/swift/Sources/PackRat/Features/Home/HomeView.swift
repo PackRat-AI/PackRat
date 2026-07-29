@@ -89,22 +89,23 @@ struct HomeView: View {
 
     private var headerSection: some View {
         HStack(alignment: .center, spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(.tint.opacity(0.12))
-
-                if authManager.currentUser == nil {
+            if authManager.currentUser == nil {
+                ZStack {
+                    Circle()
+                        .fill(.tint.opacity(0.12))
                     Image(systemName: "person.crop.circle.fill")
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.tint)
                         .symbolRenderingMode(.hierarchical)
-                } else {
-                    Text(authManager.currentUser?.initials ?? "?")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.tint)
                 }
+                .frame(width: 44, height: 44)
+            } else {
+                AvatarView(
+                    url: authManager.currentUser?.avatarUrl,
+                    fallbackText: authManager.currentUser?.initials ?? "?",
+                    size: 44
+                )
             }
-            .frame(width: 44, height: 44)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(firstName.isEmpty ? greeting : "\(greeting), \(firstName)")
@@ -393,10 +394,13 @@ private struct SummaryActionButton: View {
 
     private var buttonLabel: some View {
         Button(action: action) {
-            Label(title, systemImage: symbol)
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
+            HStack(spacing: 6) {
+                Image(systemName: symbol)
+                Text(title)
+            }
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
         }
         .controlSize(.regular)
     }

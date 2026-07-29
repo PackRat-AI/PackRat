@@ -87,7 +87,7 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         PACKRAT_ENV: $(PACKRAT_ENV)
         SENTRY_DSN: $(SENTRY_DSN)
-        GOOGLE_IOS_CLIENT_ID: 993694750638-97t0vhfml04u2avrlbve22jbs9qcinbc.apps.googleusercontent.com
+        GOOGLE_IOS_CLIENT_ID: 993694750638-f2pbg3e5tkt2btn9eih6c8ah8igal55m.apps.googleusercontent.com
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         CFBundleURLTypes:
@@ -103,7 +103,7 @@ targets:
               - com.andrewbierman.packrat
           - CFBundleURLName: world.packrat.google
             CFBundleURLSchemes:
-              - com.googleusercontent.apps.993694750638-97t0vhfml04u2avrlbve22jbs9qcinbc
+              - com.googleusercontent.apps.993694750638-f2pbg3e5tkt2btn9eih6c8ah8igal55m
     dependencies:
       - package: Nuke
         product: NukeUI

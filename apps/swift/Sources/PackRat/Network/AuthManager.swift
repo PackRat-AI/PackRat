@@ -294,6 +294,26 @@ final class AuthManager {
         SentryConfig.clearUser()
     }
 
+    /// Android-style "Clear Data": wipes *everything* the app stores locally —
+    /// Keychain auth, the entire UserDefaults suite (session, preferences,
+    /// flags), and the URL/image caches — then resets auth state so the app
+    /// returns to the auth gate. The user is fully signed out, not just reset.
+    func clearAllData() {
+        KeychainService.shared.clearTokens()
+
+        // Wipe the whole persistent domain rather than enumerating keys, so
+        // nothing (prefs, feature toggles, cached user) survives.
+        if let bundleID = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: bundleID)
+        }
+
+        URLCache.shared.removeAllCachedResponses()
+
+        isGuest = false
+        currentUser = nil
+        SentryConfig.clearUser()
+    }
+
     // MARK: - Persistence
 
     private func persistUser(_ user: User) {

@@ -5,6 +5,8 @@ import type {
   ActiveUsers,
   ActivityPoint,
   AdminCatalogItem,
+  AdminFeatureAccessItem,
+  AdminFeatureFlagItem,
   AdminPackItem,
   AdminStats,
   AdminTrailConditionReport,
@@ -224,6 +226,88 @@ export async function updateCatalogItem({
   const { data, error } = await adminClient.catalog({ id: String(id) }).patch(body);
   if (error) throwOnError({ error });
   return unwrap({ data, name: 'updateCatalogItem' });
+}
+
+// ─── Feature Flags ────────────────────────────────────────────────────────────
+
+export type { AdminFeatureFlagItem };
+
+export async function getFeatureFlags(): Promise<AdminFeatureFlagItem[]> {
+  const { data, error } = await adminClient['feature-flags'].get();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'featureFlags' });
+}
+
+export async function upsertFeatureFlag({
+  key,
+  enabled,
+  description,
+}: {
+  key: string;
+  enabled: boolean;
+  description?: string | null;
+}): Promise<AdminFeatureFlagItem> {
+  const { data, error } = await adminClient['feature-flags']({ key }).put({
+    enabled,
+    description,
+  });
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'upsertFeatureFlag' });
+}
+
+export async function resetFeatureFlag(key: string): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient['feature-flags']({ key }).delete();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'resetFeatureFlag' });
+}
+
+// ─── Feature Access ───────────────────────────────────────────────────────────
+
+export type { AdminFeatureAccessItem };
+
+export async function getFeatureAccess(): Promise<AdminFeatureAccessItem[]> {
+  const { data, error } = await adminClient['feature-access'].get();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'featureAccess' });
+}
+
+export async function createFeatureAccessRow({
+  key,
+  label,
+  description,
+  earlyAccessUntil,
+}: {
+  key: string;
+  label: string;
+  description?: string | null;
+  earlyAccessUntil?: string | null;
+}): Promise<AdminFeatureAccessItem> {
+  const { data, error } = await adminClient['feature-access'].post({
+    key,
+    label,
+    description,
+    earlyAccessUntil,
+  });
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'createFeatureAccess' });
+}
+
+export async function updateFeatureAccessRow({
+  key,
+  body,
+}: {
+  key: string;
+  body: { label?: string; description?: string | null; earlyAccessUntil?: string | null };
+}): Promise<AdminFeatureAccessItem> {
+  const { data, error } = await adminClient['feature-access']({ key }).patch(body);
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'updateFeatureAccess' });
+}
+
+export async function deleteFeatureAccessRow(key: string): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient['feature-access']({ key }).delete();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'deleteFeatureAccess' });
 }
 
 // ─── Analytics — Platform ─────────────────────────────────────────────────────

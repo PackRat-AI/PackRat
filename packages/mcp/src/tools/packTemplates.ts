@@ -19,100 +19,91 @@
  */
 
 import { z } from 'zod';
-import { call, errResponse, nowIso } from '../client';
-import { type ConfirmReason, confirmAction } from '../elicit';
+import { call, nowIso } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
-import { audit, createLogger } from '../observability';
 import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
+// DISABLED with the two admin-gated template tools below (create_app_pack_template,
+// generate_pack_template_from_url). Restore these imports + the helper block when
+// those tools are re-enabled:
+//   import { errResponse } from '../client';
+//   import { type ConfirmReason, confirmAction } from '../elicit';
+//   import { audit, createLogger } from '../observability';
 
-/**
- * Structured error envelope for elicitation failures on the two
- * destructive/high-blast-radius template tools. Mirrors the helper of the
- * same name in `tools/admin.ts`; duplicated rather than centralised to
- * keep both files independently grep-able and avoid a circular-import
- * risk from `client.ts → elicit.ts → client.ts` if we hoisted it to
- * `client.ts`.
- */
-function elicitFailureResponse(reason: ConfirmReason) {
-  switch (reason) {
-    case 'cancelled':
-      return errResponse({
-        code: 'user_cancelled',
-        message: 'Action cancelled — confirmation not provided',
-        retryable: false,
-      });
-    case 'mismatch':
-      return errResponse({
-        code: 'confirmation_mismatch',
-        message: 'Action cancelled — the confirmation text did not match',
-        retryable: false,
-      });
-    case 'timeout':
-      return errResponse({
-        code: 'confirmation_timeout',
-        message: 'Confirmation prompt timed out before the user responded',
-        retryable: true,
-      });
-    case 'unsupported':
-      return errResponse({
-        code: 'elicitation_unsupported',
-        message: 'This tool requires user confirmation, which your MCP client does not support',
-        retryable: false,
-      });
-  }
-}
-
-/**
- * U15: per-template-tool audit context. Mirrors the helper of the same
- * name in `tools/admin.ts` (intentionally duplicated for the same
- * grep-ability reasons documented on `elicitFailureResponse` above).
- */
-function auditCtxFor(agent: AgentContext): {
-  logger: ReturnType<typeof createLogger>;
-  actor: { userId: string; scopes: readonly string[] };
-} {
-  const ctx = agent.getAuditContext?.() ?? { userId: '', scopes: [], correlationId: '' };
-  return {
-    logger: createLogger({ correlationId: ctx.correlationId }),
-    actor: { userId: ctx.userId, scopes: ctx.scopes },
-  };
-}
-
-function auditElicitDeclined(reason: ConfirmReason): { code: string; retryable: boolean } {
-  switch (reason) {
-    case 'cancelled':
-      return { code: 'user_cancelled', retryable: false };
-    case 'mismatch':
-      return { code: 'confirmation_mismatch', retryable: false };
-    case 'timeout':
-      return { code: 'confirmation_timeout', retryable: true };
-    case 'unsupported':
-      return { code: 'elicitation_unsupported', retryable: false };
-  }
-}
-
-// Structural subset of `McpToolResult` (client.ts) that `auditOutcome` reads.
-// Mirrors the post-SDK-1.29 shape: `isError` is `boolean`, `structuredContent`
-// is an open record. The error envelope is always written by `errResponse` /
-// `errMessage`, so the cast below is safe.
-type ToolResult = {
-  isError?: boolean;
-  structuredContent?: Record<string, unknown>;
-};
-
-function auditOutcome(result: ToolResult): {
-  outcome: 'success' | 'failure';
-  error?: { code: string; retryable: boolean };
-} {
-  if (result.isError === true) {
-    const e = result.structuredContent?.error as { code: string; retryable: boolean } | undefined;
-    return e
-      ? { outcome: 'failure', error: { code: e.code, retryable: e.retryable } }
-      : { outcome: 'failure' };
-  }
-  return { outcome: 'success' };
-}
+// DISABLED — elicitation/audit helpers for the two admin-gated template tools
+// (create_app_pack_template, generate_pack_template_from_url), both disabled
+// below. Restore this block together with those tools and their imports above.
+//
+// function elicitFailureResponse(reason: ConfirmReason) {
+//   switch (reason) {
+//     case 'cancelled':
+//       return errResponse({
+//         code: 'user_cancelled',
+//         message: 'Action cancelled — confirmation not provided',
+//         retryable: false,
+//       });
+//     case 'mismatch':
+//       return errResponse({
+//         code: 'confirmation_mismatch',
+//         message: 'Action cancelled — the confirmation text did not match',
+//         retryable: false,
+//       });
+//     case 'timeout':
+//       return errResponse({
+//         code: 'confirmation_timeout',
+//         message: 'Confirmation prompt timed out before the user responded',
+//         retryable: true,
+//       });
+//     case 'unsupported':
+//       return errResponse({
+//         code: 'elicitation_unsupported',
+//         message: 'This tool requires user confirmation, which your MCP client does not support',
+//         retryable: false,
+//       });
+//   }
+// }
+//
+// function auditCtxFor(agent: AgentContext): {
+//   logger: ReturnType<typeof createLogger>;
+//   actor: { userId: string; scopes: readonly string[] };
+// } {
+//   const ctx = agent.getAuditContext?.() ?? { userId: '', scopes: [], correlationId: '' };
+//   return {
+//     logger: createLogger({ correlationId: ctx.correlationId }),
+//     actor: { userId: ctx.userId, scopes: ctx.scopes },
+//   };
+// }
+//
+// function auditElicitDeclined(reason: ConfirmReason): { code: string; retryable: boolean } {
+//   switch (reason) {
+//     case 'cancelled':
+//       return { code: 'user_cancelled', retryable: false };
+//     case 'mismatch':
+//       return { code: 'confirmation_mismatch', retryable: false };
+//     case 'timeout':
+//       return { code: 'confirmation_timeout', retryable: true };
+//     case 'unsupported':
+//       return { code: 'elicitation_unsupported', retryable: false };
+//   }
+// }
+//
+// type ToolResult = {
+//   isError?: boolean;
+//   structuredContent?: Record<string, unknown>;
+// };
+//
+// function auditOutcome(result: ToolResult): {
+//   outcome: 'success' | 'failure';
+//   error?: { code: string; retryable: boolean };
+// } {
+//   if (result.isError === true) {
+//     const e = result.structuredContent?.error as { code: string; retryable: boolean } | undefined;
+//     return e
+//       ? { outcome: 'failure', error: { code: e.code, retryable: e.retryable } }
+//       : { outcome: 'failure' };
+//   }
+//   return { outcome: 'success' };
+// }
 
 export function registerPackTemplateTools(agent: AgentContext): void {
   // ── Templates ─────────────────────────────────────────────────────────────
@@ -208,93 +199,90 @@ export function registerPackTemplateTools(agent: AgentContext): void {
     },
   );
 
-  // ── Create app pack template (admin-only) ────────────────────────────────
-  // Same surface as `packrat_create_pack_template` but `is_app_template` is
-  // forced to `true`. Admin-gated via the `create_app_pack_template` entry
-  // in `EXPLICIT_ADMIN` in `scopes.ts` (the tool doesn't carry the
-  // `admin_` prefix so the prefix-based classifier can't pick it up).
-
-  tool<{
-    name: string;
-    description?: string;
-    category: PackCategory;
-    image?: string;
-    tags?: string[];
-  }>(
-    agent.server,
-    'packrat_create_app_pack_template',
-    {
-      title: 'Create App Pack Template (Admin)',
-      description:
-        'Create a curated app-level pack template visible to all users. Admin-only — requires the mcp:admin OAuth scope. Prompts for confirmation before creating (visible to every PackRat user). For personal templates use packrat_create_pack_template.',
-      inputSchema: {
-        name: z.string().min(1),
-        description: z.string().optional(),
-        category: z.nativeEnum(PackCategory),
-        image: z.string().optional(),
-        tags: z.array(z.string()).optional(),
-      },
-      annotations: {
-        title: 'Create App Pack Template (Admin)',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-    },
-    async ({ name, description, category, image, tags }, extra) => {
-      const { logger, actor } = auditCtxFor(agent);
-      // Target is the template name (no id yet — pre-create). The model can
-      // re-derive the created id from the response if it cares.
-      const target = { type: 'app_pack_template', id: name };
-      const confirm = await confirmAction({
-        agent,
-        extra,
-        opts: {
-          message:
-            `Confirm publish of app-wide pack template "${name}". ` +
-            `This is visible to every PackRat user and not easily unpublished. ` +
-            `Type PUBLISH to proceed:`,
-          expectedConfirmation: 'PUBLISH',
-        },
-      });
-      if (!confirm.confirmed) {
-        audit({
-          logger,
-          action: 'create_app_pack_template',
-          fields: {
-            actor,
-            target,
-            outcome: 'declined',
-            error: auditElicitDeclined(confirm.reason),
-          },
-        });
-        return elicitFailureResponse(confirm.reason);
-      }
-      const now = nowIso();
-      const result = await call({
-        promise: agent.api.user['pack-templates'].post({
-          id: crypto.randomUUID(),
-          name,
-          description,
-          category,
-          image,
-          tags,
-          isAppTemplate: true,
-          localCreatedAt: now,
-          localUpdatedAt: now,
-        }),
-        action: 'create app pack template',
-        requiresAdmin: true,
-      });
-      audit({
-        logger,
-        action: 'create_app_pack_template',
-        fields: { actor, target, ...auditOutcome(result) },
-      });
-      return result;
-    },
-  );
+  // ── Create app pack template (admin-only) — DISABLED ──────────────────────
+  // Admin-gated (ADMIN_OVERRIDES in scopes.ts); admin-gated tools are not
+  // shipped on the connector surface. Personal templates remain available via
+  // `packrat_create_pack_template`.
+  //
+  // tool<{
+  //   name: string;
+  //   description?: string;
+  //   category: PackCategory;
+  //   image?: string;
+  //   tags?: string[];
+  // }>(
+  //   agent.server,
+  //   'packrat_create_app_pack_template',
+  //   {
+  //     title: 'Create App Pack Template (Admin)',
+  //     description:
+  //       'Create a curated app-level pack template visible to all users. Admin-only — requires the mcp:admin OAuth scope. Prompts for confirmation before creating (visible to every PackRat user). For personal templates use packrat_create_pack_template.',
+  //     inputSchema: {
+  //       name: z.string().min(1),
+  //       description: z.string().optional(),
+  //       category: z.nativeEnum(PackCategory),
+  //       image: z.string().optional(),
+  //       tags: z.array(z.string()).optional(),
+  //     },
+  //     annotations: {
+  //       title: 'Create App Pack Template (Admin)',
+  //       readOnlyHint: false,
+  //       destructiveHint: false,
+  //       idempotentHint: false,
+  //       openWorldHint: false,
+  //     },
+  //   },
+  //   async ({ name, description, category, image, tags }, extra) => {
+  //     const { logger, actor } = auditCtxFor(agent);
+  //     const target = { type: 'app_pack_template', id: name };
+  //     const confirm = await confirmAction({
+  //       agent,
+  //       extra,
+  //       opts: {
+  //         message:
+  //           `Confirm publish of app-wide pack template "${name}". ` +
+  //           `This is visible to every PackRat user and not easily unpublished. ` +
+  //           `Type PUBLISH to proceed:`,
+  //         expectedConfirmation: 'PUBLISH',
+  //       },
+  //     });
+  //     if (!confirm.confirmed) {
+  //       audit({
+  //         logger,
+  //         action: 'create_app_pack_template',
+  //         fields: {
+  //           actor,
+  //           target,
+  //           outcome: 'declined',
+  //           error: auditElicitDeclined(confirm.reason),
+  //         },
+  //       });
+  //       return elicitFailureResponse(confirm.reason);
+  //     }
+  //     const now = nowIso();
+  //     const result = await call({
+  //       promise: agent.api.user['pack-templates'].post({
+  //         id: crypto.randomUUID(),
+  //         name,
+  //         description,
+  //         category,
+  //         image,
+  //         tags,
+  //         isAppTemplate: true,
+  //         localCreatedAt: now,
+  //         localUpdatedAt: now,
+  //       }),
+  //       action: 'create app pack template',
+  //       requiresAdmin: true,
+  //     });
+  //     audit({
+  //       logger,
+  //       action: 'create_app_pack_template',
+  //       fields: { actor, target, ...auditOutcome(result) },
+  //     });
+  //     return result;
+  //   },
+  // );
 
   tool<{
     template_id: string;
@@ -541,79 +529,79 @@ export function registerPackTemplateTools(agent: AgentContext): void {
   );
 
   // ── Generate from online content (admin-only on the API side) ─────────────
-  // U7 adds this tool to EXPLICIT_ADMIN in scopes.ts so the MCP-level
-  // surface matches what the API enforces — non-admin OAuth sessions don't
-  // see it in tools/list.
-
-  tool<{ content_url: string; is_app_template: boolean }>(
-    agent.server,
-    'packrat_generate_pack_template_from_url',
-    {
-      title: 'Generate Pack Template From URL (Admin)',
-      description:
-        'Generate a pack template from a TikTok or YouTube link. Admin-only — requires the mcp:admin OAuth scope; the server also gates this on the authenticated user having role ADMIN. Prompts for confirmation before fetching and processing the URL content.',
-      inputSchema: {
-        content_url: z.string().url(),
-        is_app_template: z.boolean().default(false),
-      },
-      annotations: {
-        title: 'Generate Pack Template From URL (Admin)',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: true,
-      },
-    },
-    async ({ content_url, is_app_template }, extra) => {
-      const { logger, actor } = auditCtxFor(agent);
-      // Target is the URL — bounded by the schema's `z.string().url()` and
-      // already known to the operator from the rest of the audit context.
-      // We deliberately do NOT log the LLM-fetched body or any derived
-      // template fields.
-      const target = { type: 'pack_template_source', id: content_url };
-      const confirm = await confirmAction({
-        agent,
-        extra,
-        opts: {
-          message:
-            `Confirm generate template from ${content_url}. ` +
-            `${is_app_template ? '(App-wide template — visible to every user.) ' : ''}` +
-            `The fetched content will be processed by an LLM and the resulting template will be created. ` +
-            `Type GENERATE to proceed:`,
-          expectedConfirmation: 'GENERATE',
-        },
-      });
-      if (!confirm.confirmed) {
-        audit({
-          logger,
-          action: 'generate_pack_template_from_url',
-          fields: {
-            actor,
-            target,
-            outcome: 'declined',
-            error: auditElicitDeclined(confirm.reason),
-          },
-        });
-        return elicitFailureResponse(confirm.reason);
-      }
-      const result = await call({
-        promise: agent.api.user['pack-templates']['generate-from-online-content'].post({
-          contentUrl: content_url,
-          isAppTemplate: is_app_template,
-        }),
-        action: 'generate pack template from URL',
-        requiresAdmin: true,
-      });
-      audit({
-        logger,
-        action: 'generate_pack_template_from_url',
-        fields: {
-          actor,
-          target,
-          ...auditOutcome(result),
-        },
-      });
-      return result;
-    },
-  );
+  // TEMPORARILY DISABLED — the TikTok/YouTube → template generator is
+  // unstable right now. Re-enable when stable. (Admin-only; gated by
+  // EXPLICIT_ADMIN in scopes.ts on the API side.)
+  //
+  // tool<{ content_url: string; is_app_template: boolean }>(
+  //   agent.server,
+  //   'packrat_generate_pack_template_from_url',
+  //   {
+  //     title: 'Generate Pack Template From URL (Admin)',
+  //     description:
+  //       'Generate a pack template from a TikTok or YouTube link. Admin-only — requires the mcp:admin OAuth scope; the server also gates this on the authenticated user having role ADMIN. Prompts for confirmation before fetching and processing the URL content.',
+  //     inputSchema: {
+  //       content_url: z.string().url(),
+  //       is_app_template: z.boolean().default(false),
+  //     },
+  //     annotations: {
+  //       title: 'Generate Pack Template From URL (Admin)',
+  //       readOnlyHint: false,
+  //       destructiveHint: false,
+  //       idempotentHint: false,
+  //       openWorldHint: true,
+  //     },
+  //   },
+  //   async ({ content_url, is_app_template }, extra) => {
+  //     const { logger, actor } = auditCtxFor(agent);
+  //     // Target is the URL — bounded by the schema's `z.string().url()` and
+  //     // already known to the operator from the rest of the audit context.
+  //     // We deliberately do NOT log the LLM-fetched body or any derived
+  //     // template fields.
+  //     const target = { type: 'pack_template_source', id: content_url };
+  //     const confirm = await confirmAction({
+  //       agent,
+  //       extra,
+  //       opts: {
+  //         message:
+  //           `Confirm generate template from ${content_url}. ` +
+  //           `${is_app_template ? '(App-wide template — visible to every user.) ' : ''}` +
+  //           `The fetched content will be processed by an LLM and the resulting template will be created. ` +
+  //           `Type GENERATE to proceed:`,
+  //         expectedConfirmation: 'GENERATE',
+  //       },
+  //     });
+  //     if (!confirm.confirmed) {
+  //       audit({
+  //         logger,
+  //         action: 'generate_pack_template_from_url',
+  //         fields: {
+  //           actor,
+  //           target,
+  //           outcome: 'declined',
+  //           error: auditElicitDeclined(confirm.reason),
+  //         },
+  //       });
+  //       return elicitFailureResponse(confirm.reason);
+  //     }
+  //     const result = await call({
+  //       promise: agent.api.user['pack-templates']['generate-from-online-content'].post({
+  //         contentUrl: content_url,
+  //         isAppTemplate: is_app_template,
+  //       }),
+  //       action: 'generate pack template from URL',
+  //       requiresAdmin: true,
+  //     });
+  //     audit({
+  //       logger,
+  //       action: 'generate_pack_template_from_url',
+  //       fields: {
+  //         actor,
+  //         target,
+  //         ...auditOutcome(result),
+  //       },
+  //     });
+  //     return result;
+  //   },
+  // );
 }
