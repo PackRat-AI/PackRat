@@ -1,4 +1,5 @@
 import { Button as ExpoButton, Host } from '@expo/ui';
+import { isString } from '@packrat/guards';
 import { cssInterop } from 'nativewind';
 import { Children, isValidElement, type ReactNode } from 'react';
 import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
@@ -48,10 +49,10 @@ function extractLabel(children: ReactNode): string | undefined {
   const kids = Children.toArray(children);
   if (kids.length !== 1) return undefined;
   const only = kids[0];
-  if (typeof only === 'string') return only;
+  if (isString(only)) return only;
   if (isValidElement(only) && only.type === Text) {
     const inner = (only.props as { children?: ReactNode }).children;
-    return typeof inner === 'string' ? inner : undefined;
+    return isString(inner) ? inner : undefined;
   }
   return undefined;
 }

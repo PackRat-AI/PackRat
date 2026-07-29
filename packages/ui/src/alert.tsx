@@ -1,3 +1,4 @@
+import { isNumber } from '@packrat/guards';
 import * as AlertDialogPrimitive from '@rn-primitives/alert-dialog';
 import { useAugmentedRef } from '@rn-primitives/hooks';
 import { Icon } from 'expo-app/components/Icon';
@@ -140,7 +141,7 @@ function Alert({
           >
             <AlertDialogPrimitive.Content>
               <Animated.View
-                style={typeof materialWidth === 'number' ? { width: materialWidth } : undefined}
+                style={isNumber(materialWidth) ? { width: materialWidth } : undefined}
                 entering={FadeInDown}
                 exiting={FadeOutDown}
                 className="bg-card min-w-72 max-w-xl rounded-3xl p-6 pt-7 shadow-xl"

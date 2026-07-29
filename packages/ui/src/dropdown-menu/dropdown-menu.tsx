@@ -1,3 +1,4 @@
+import { isNumber } from '@packrat/guards';
 import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
 import { useAugmentedRef } from '@rn-primitives/hooks';
 import { Icon } from 'expo-app/components/Icon';
@@ -270,7 +271,7 @@ function DropdownMenuItem(props: Omit<DropdownItem, 'loading'>) {
                 width: 22,
                 height: 22,
                 borderRadius:
-                  typeof props.image.cornerRadius === 'number' && props.image.cornerRadius > 0
+                  isNumber(props.image.cornerRadius) && props.image.cornerRadius > 0
                     ? props.image.cornerRadius / 4
                     : 0,
               }}

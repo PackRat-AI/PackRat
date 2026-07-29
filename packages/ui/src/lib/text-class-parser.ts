@@ -1,3 +1,4 @@
+import { isObject } from '@packrat/guards';
 import colors from 'tailwindcss/colors';
 
 // Matches expo-app/theme/colors.ts COLORS[colorScheme] shape.
@@ -91,7 +92,7 @@ function resolveTailwindPaletteColor(className: string): string | undefined {
   const [, family, shade] = match;
   if (!family || !shade) return undefined;
   const palette = (colors as TailwindPalette)[family as keyof TailwindPalette];
-  if (!palette || typeof palette !== 'object') return undefined;
+  if (!palette || !isObject(palette)) return undefined;
   return (palette as Record<string, string>)[shade];
 }
 

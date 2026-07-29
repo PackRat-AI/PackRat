@@ -1,3 +1,4 @@
+import { isString } from '@packrat/guards';
 import {
   FlashList,
   type FlashListProps,
@@ -72,7 +73,7 @@ function List<T extends ListDataItem>({
       contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
       renderItem={renderItemWithVariant({ renderItem, variant, data, sectionHeaderAsGap })}
       contentContainerClassName={cn(
-        variant === 'insets' && cn((!data || typeof data?.[0] !== 'string') && 'pt-4', 'ios:px-4'),
+        variant === 'insets' && cn((!data || !isString(data?.[0])) && 'pt-4', 'ios:px-4'),
         variant === 'full-width' &&
           cn(
             'ios:bg-card ios:dark:bg-background',
@@ -112,7 +113,7 @@ function List<T extends ListDataItem>({
 }
 
 function getItemType<T>(item: T) {
-  return typeof item === 'string' ? 'sectionHeader' : 'row';
+  return isString(item) ? 'sectionHeader' : 'row';
 }
 
 function renderItemWithVariant<T extends ListDataItem>({
@@ -133,8 +134,8 @@ function renderItemWithVariant<T extends ListDataItem>({
       ? renderItem({
           ...args,
           variant,
-          isFirstInSection: !previousItem || typeof previousItem === 'string',
-          isLastInSection: !nextItem || typeof nextItem === 'string',
+          isFirstInSection: !previousItem || isString(previousItem),
+          isLastInSection: !nextItem || isString(nextItem),
           sectionHeaderAsGap,
         })
       : null;
@@ -224,7 +225,7 @@ function ListItem<T extends ListDataItem>({
   disabled,
   ...props
 }: ListItemProps<T>) {
-  if (typeof item === 'string') {
+  if (isString(item)) {
     console.log(
       'list.tsx',
       'ListItem',
@@ -311,7 +312,7 @@ function ListSectionHeader<T extends ListDataItem>({
   sectionHeaderAsGap,
   ...props
 }: ListSectionHeaderProps<T>) {
-  if (typeof item !== 'string') {
+  if (!isString(item)) {
     console.log(
       'list.tsx',
       'ListSectionHeader',
@@ -360,7 +361,7 @@ function getStickyHeaderIndices<T extends ListDataItem>(data: T[]) {
   if (!data) return [];
   const indices: number[] = [];
   for (let i = 0; i < data.length; i++) {
-    if (typeof data[i] === 'string') {
+    if (isString(data[i])) {
       indices.push(i);
     }
   }

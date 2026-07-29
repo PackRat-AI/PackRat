@@ -1,3 +1,4 @@
+import { isNumber } from '@packrat/guards';
 import * as ContextMenuPrimitive from '@rn-primitives/context-menu';
 import { useAugmentedRef, useRelativePosition } from '@rn-primitives/hooks';
 import { Icon } from 'expo-app/components/Icon';
@@ -339,7 +340,7 @@ function ContextMenuItem(props: Omit<ContextItem, 'loading'>) {
                 width: 22,
                 height: 22,
                 borderRadius:
-                  typeof props.image.cornerRadius === 'number' && props.image.cornerRadius > 0
+                  isNumber(props.image.cornerRadius) && props.image.cornerRadius > 0
                     ? props.image.cornerRadius / 4
                     : 0,
               }}

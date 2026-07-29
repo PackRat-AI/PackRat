@@ -1,5 +1,6 @@
 import { ProgressView, Host as SwiftUIHost } from '@expo/ui/swift-ui';
 import { controlSize, tint } from '@expo/ui/swift-ui/modifiers';
+import { isString } from '@packrat/guards';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { cssInterop } from 'nativewind';
 import type { ComponentProps } from 'react';
@@ -31,7 +32,7 @@ type ActivityIndicatorProps = {
 function resolveControlSize(
   size: ActivityIndicatorSize,
 ): 'mini' | 'small' | 'regular' | 'large' | 'extraLarge' {
-  if (typeof size === 'string') return SIZE_TO_CONTROL_SIZE[size];
+  if (isString(size)) return SIZE_TO_CONTROL_SIZE[size];
   if (size <= 16) return 'mini';
   if (size <= 20) return 'small';
   return 'regular';

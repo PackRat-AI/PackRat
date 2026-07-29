@@ -746,6 +746,7 @@
       "dependencies": {
         "@expo/ui": "^56.0.9",
         "@gorhom/bottom-sheet": "^5.1.2",
+        "@packrat/guards": "workspace:*",
         "@rn-primitives/alert-dialog": "^1.1.0",
         "@rn-primitives/avatar": "^1.1.0",
         "@rn-primitives/checkbox": "^1.1.0",
