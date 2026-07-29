@@ -5,7 +5,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Pressable, TextInput, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from './button';
-import type { SearchInputProps, SearchInputRef } from './search-input-types';
+import type { SearchInputProps } from './search-input-types';
 
 // Plain RN composition — SearchInput never needed a Host bridge, ported directly. This is the
 // Android/default design (search-input.ios.tsx has iOS's animated cancel-button variant).
@@ -25,7 +25,7 @@ function SearchInput({
   ...props
 }: SearchInputProps) {
   const { colors } = useColorScheme();
-  const inputRef = useAugmentedRef({ ref: ref as SearchInputRef, methods: { focus, blur, clear } });
+  const inputRef = useAugmentedRef({ ref: ref ?? null, methods: { focus, blur, clear } });
   const [value = '', onChangeText] = useControllableState({
     prop: valueProp,
     defaultProp: valueProp ?? '',

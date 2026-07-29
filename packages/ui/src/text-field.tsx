@@ -71,7 +71,7 @@ function TextField({
   materialHideActionIcons,
   ...props
 }: TextFieldProps) {
-  const inputRef = useAugmentedRef({ ref: ref as TextFieldRef, methods: { focus, blur, clear } });
+  const inputRef = useAugmentedRef({ ref: ref ?? null, methods: { focus, blur, clear } });
   const [isFocused, setIsFocused] = React.useState(false);
 
   const [value = '', onChangeText] = useControllableState({

@@ -10,7 +10,7 @@ import Animated, {
   useDerivedValue,
   withTiming,
 } from 'react-native-reanimated';
-import type { SearchInputProps, SearchInputRef } from './search-input-types';
+import type { SearchInputProps } from './search-input-types';
 import { Text } from './text';
 
 // Plain RN composition — SearchInput never needed a Host bridge on iOS either. This is the
@@ -35,7 +35,7 @@ function SearchInput({
   ...props
 }: SearchInputProps) {
   const { colors } = useColorScheme();
-  const inputRef = useAugmentedRef({ ref: ref as SearchInputRef, methods: { focus, blur, clear } });
+  const inputRef = useAugmentedRef({ ref: ref ?? null, methods: { focus, blur, clear } });
   const [showCancel, setShowCancel] = React.useState(false);
   const showCancelDerivedValue = useDerivedValue(() => showCancel, [showCancel]);
   const animatedRef = useAnimatedRef();

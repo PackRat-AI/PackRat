@@ -91,8 +91,13 @@ function resolveTailwindPaletteColor(className: string): string | undefined {
   if (!match) return undefined;
   const [, family, shade] = match;
   if (!family || !shade) return undefined;
-  const palette = (colors as TailwindPalette)[family as keyof TailwindPalette];
+  // safe-cast: `family` is a regex capture group (arbitrary string), not statically known to be
+  // a real Tailwind color family — indexing widens it to the palette's key type on purpose;
+  // the isObject guard below is what actually makes this safe at runtime.
+  const palette = colors[family as keyof TailwindPalette];
   if (!palette || !isObject(palette)) return undefined;
+  // safe-cast: same reasoning as above, but for `shade` against the now-narrowed palette object —
+  // TS can't prove an arbitrary string key maps to `string`, only that the object shape allows it.
   return (palette as Record<string, string>)[shade];
 }
 

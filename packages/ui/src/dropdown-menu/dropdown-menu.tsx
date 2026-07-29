@@ -180,23 +180,17 @@ function DropdownMenuInnerContent({ items }: { items: (DropdownItem | DropdownSu
             </DropdownMenuPrimitive.Item>
           );
         }
-        if ((item as Partial<DropdownSubMenu>)?.items) {
-          const subMenu = item as DropdownSubMenu;
-          if (subMenu.items.length === 0) return null;
+        if ('items' in item) {
+          if (item.items.length === 0) return null;
           return (
-            <React.Fragment key={`${id}-${subMenu.title}-${index}`}>
-              <DropdownMenuSubMenu
-                title={subMenu.title}
-                subTitle={subMenu.subTitle}
-                items={subMenu.items}
-              />
+            <React.Fragment key={`${id}-${item.title}-${index}`}>
+              <DropdownMenuSubMenu title={item.title} subTitle={item.subTitle} items={item.items} />
             </React.Fragment>
           );
         }
-        const dropdownItem = item as DropdownItem;
         return (
-          <React.Fragment key={dropdownItem.actionKey}>
-            <DropdownMenuItem {...dropdownItem} />
+          <React.Fragment key={item.actionKey}>
+            <DropdownMenuItem {...item} />
           </React.Fragment>
         );
       })}

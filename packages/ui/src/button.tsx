@@ -31,8 +31,12 @@ const SIZE_STYLE: Record<ButtonSize, ViewStyle> = {
 };
 
 function resolveVariant(variant: ButtonVariant): 'filled' | 'outlined' | 'text' {
+  // `in` doesn't narrow a string-literal union by membership the way a discriminated object
+  // union does — ButtonVariant minus LegacyButtonVariant is exactly 'filled'|'outlined'|'text',
+  // which is what the `in` check on VARIANT_MAP's keys actually verifies at runtime.
   return variant in VARIANT_MAP
-    ? VARIANT_MAP[variant as LegacyButtonVariant]
+    ? // safe-cast: see function-level comment above
+      VARIANT_MAP[variant as LegacyButtonVariant]
     : (variant as 'filled' | 'outlined' | 'text');
 }
 

@@ -106,7 +106,7 @@ function ContextMenu({
 
   function onTriggerLongPress() {
     // biome-ignore lint/complexity/useMaxParams: RN core's View.measure callback signature, not ours to restructure
-    (rootRef.current as unknown as View)?.measure((_x, _y, width, height, pageX, pageY) => {
+    rootRef.current?.measure((_x, _y, width, height, pageX, pageY) => {
       setRootLayout({ height, width, pageX, pageY });
     });
   }
@@ -249,23 +249,17 @@ function ContextMenuInnerContent({ items }: { items: (ContextItem | ContextSubMe
             </ContextMenuPrimitive.Item>
           );
         }
-        if ((item as Partial<ContextSubMenu>)?.items) {
-          const subMenu = item as ContextSubMenu;
-          if (subMenu.items.length === 0) return null;
+        if ('items' in item) {
+          if (item.items.length === 0) return null;
           return (
-            <React.Fragment key={`${id}-${subMenu.title}-${index}`}>
-              <ContextMenuSubMenu
-                title={subMenu.title}
-                subTitle={subMenu.subTitle}
-                items={subMenu.items}
-              />
+            <React.Fragment key={`${id}-${item.title}-${index}`}>
+              <ContextMenuSubMenu title={item.title} subTitle={item.subTitle} items={item.items} />
             </React.Fragment>
           );
         }
-        const contextMenuItem = item as ContextItem;
         return (
-          <React.Fragment key={contextMenuItem.actionKey}>
-            <ContextMenuItem {...contextMenuItem} />
+          <React.Fragment key={item.actionKey}>
+            <ContextMenuItem {...item} />
           </React.Fragment>
         );
       })}
