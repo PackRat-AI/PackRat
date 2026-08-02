@@ -161,25 +161,30 @@ function Alert({
                       <Text
                         variant="title2"
                         className={cn(!!materialIcon && 'text-center', 'pb-4')}
+                        wrap
                       >
                         {title}
                       </Text>
                     </AlertDialogPrimitive.Title>
                     <AlertDialogPrimitive.Description asChild>
-                      <Text variant="subhead" className="pb-4 opacity-90">
+                      <Text variant="subhead" className="pb-4 opacity-90" wrap>
                         {message}
                       </Text>
                     </AlertDialogPrimitive.Description>
                   </>
                 ) : materialIcon ? (
                   <AlertDialogPrimitive.Title asChild>
-                    <Text variant="title2" className={cn(!!materialIcon && 'text-center', 'pb-4')}>
+                    <Text
+                      variant="title2"
+                      className={cn(!!materialIcon && 'text-center', 'pb-4')}
+                      wrap
+                    >
                       {title}
                     </Text>
                   </AlertDialogPrimitive.Title>
                 ) : (
                   <AlertDialogPrimitive.Title asChild>
-                    <Text variant="subhead" className="pb-4 opacity-90">
+                    <Text variant="subhead" className="pb-4 opacity-90" wrap>
                       {title}
                     </Text>
                   </AlertDialogPrimitive.Title>

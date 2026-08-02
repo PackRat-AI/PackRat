@@ -264,7 +264,7 @@ export function AddCatalogItemDetailsScreen() {
                   <Text className="text-sm font-medium text-foreground">
                     {t('catalog.consumable')}
                   </Text>
-                  <Text className="text-xs text-muted-foreground">
+                  <Text className="text-xs text-muted-foreground" wrap>
                     {t('catalog.consumableDescription')}
                   </Text>
                 </View>
@@ -274,7 +274,7 @@ export function AddCatalogItemDetailsScreen() {
               <View className="flex-row items-center justify-between">
                 <View>
                   <Text className="text-sm font-medium text-foreground">{t('catalog.worn')}</Text>
-                  <Text className="text-xs text-muted-foreground">
+                  <Text className="text-xs text-muted-foreground" wrap>
                     {t('catalog.wornDescription')}
                   </Text>
                 </View>

@@ -1,6 +1,6 @@
 ---
 started: 2026-06-14
-status: in-progress
+status: validated-ios-android-2026-08-02
 tracking: packages/ui/nativewindui/index.ts
 progress-cmd: bun check:migration
 ---
@@ -12,6 +12,10 @@ progress-cmd: bun check:migration
 NativeWindUI was chosen for native look and feel. Expo UI now provides that directly — via SwiftUI on iOS and Jetpack Compose on Android — without requiring a private GitHub Packages token, without type-breaking changes on every upstream release, and without wrapper opacity hiding platform bugs.
 
 ## Resolved: Text/Button Host + flex layout (Phase 3 unblocked)
+
+> **Superseded** — see "Android A/B validation against the pre-migration build" below. Neither
+> `Text` nor `Button` renders through `Host` any more, so the `matchContents`/`wrap` machinery
+> described here no longer exists. Kept for the history of why it was tried.
 
 `@expo/ui` Universal components (`Text`, `Button`, etc.) render through `Host` — a bridging container to a native SwiftUI/Jetpack Compose surface, not a plain RN view. `Host` itself extends full RN `ViewProps`, so it CAN participate in an RN flexbox tree — Yoga sizes the `Host` box, and everything inside is laid out by SwiftUI/Compose.
 
@@ -154,6 +158,126 @@ Also widened `Button`'s props with `accessibilityLabel` (alongside the `accessib
 Verified on-device (iOS): `trip/location-search.tsx` — pill-shaped search bar renders correctly with magnifying-glass icon, placeholder text, positioned above the map.
 
 **This closes the entire `packages/ui/nativewindui/index.ts` tracker — every originally-exported component is now ported to `packages/ui/src/`.** Next: the final removal phase (drop `@packrat-ai/nativewindui` from `package.json`, remove `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` from `bunfig.toml`/docs, delete the now-empty `packages/ui/nativewindui/` directory) — not started yet.
+
+## Android A/B validation against the pre-migration build (2026-08-02)
+
+The whole migration was finally diffed screen-by-screen against a real pre-migration build on a
+physical Android device (TECNO KL4). This was possible without rebuilding anything: the installed
+production APK `com.packratai.mobile` v2.1.0 (tag `a1b43629c`) still ships
+`@packrat-ai/nativewindui@2.2.1` and no `@expo/ui`, and none of the migration commits are
+ancestors of `main` — so it is a genuine baseline. The migrated side ran in the dev client off
+Metro. Two package ids, so both stay installed and you alternate between them.
+
+**Run Metro on a dedicated port** (`bun start --dev-client --port 8099` + `adb reverse tcp:8099
+tcp:8099`). The dev launcher discovers every Metro on the LAN and will happily attach to another
+agent's server on 8081; its NSD discovery also crashed outright with a `NoSuchElementException`
+when two were visible.
+
+Everything below was reproduced on-device, not inferred.
+
+### Root cause behind most of it: `Host` has no RN-side intrinsic size
+
+`@expo/ui`'s `Text`/`Button` render through `Host`, a bridge to a native SwiftUI/Compose surface.
+Any axis `Host` does not `matchContents` is sized purely by Yoga, and Yoga sees no content — so it
+collapses to zero. Normal RN text does `min(contentWidth, parentWidth)`; `Host` can only do
+"shrink to content" (may overflow the parent) or "stretch to parent" (needs a stretch context).
+**That one limitation produced the majority of the defects found**, and no single default fixes it
+because a component cannot know its parent's flex direction.
+
+### Fixed
+
+- **`apps/expo/tailwind.config.js` never included `packages/ui/src`.** It still listed the deleted
+  `@packrat-ai/nativewindui` path. NativeWind is content-glob driven, so ~76 classes used *only*
+  in `packages/ui/src` compiled to nothing: invisible Android `ListItem` separators, zero-size
+  checkboxes, `Form` sections with no spacing, and an alert dialog with no width constraint
+  (it rendered full-bleed). One-line fix, very wide blast radius. `screens/**` and
+  `features/**/utils` were also uncovered.
+- **`Button` is now a plain RN `Pressable`, not `@expo/ui`'s Button.** Three independent
+  on-device failures forced this, all from the `Host` limitation above: full-width CTAs
+  shrink-wrapped to their label; switching to vertical-only matching then collapsed buttons inside
+  a `flex-row` (the alert's "Got it" rendered one character per line); and on Android `@expo/ui`
+  hands `children` straight to a Compose composable, where the hosted RN view swallows the touch
+  so `onClick` never fires — **every `DropdownMenu` trigger was dead**, verified by instrumenting
+  `onPress` and seeing it never run. A `Pressable` has an intrinsic size and keeps touches, refs
+  and layout in the RN tree. This matches what the rest of this package already concluded.
+  Tradeoff: filled buttons no longer use native Material/SwiftUI button styling — they use the
+  app's brand tokens, which is what the pre-migration build looked like.
+- **`Button` now forwards `ref` and rest props.** `@rn-primitives` menu/dialog primitives inject a
+  ref through `Slot` and call `.measure()` on it to place their portal; dropping it left
+  `triggerPosition` null so `Portal` returned null. Also restores `role`/`accessibilityState`/
+  `nativeID`, which were being dropped on every menu row and alert title.
+- **`Text` no longer deletes nested inline elements.** `flattenToString` mapped every element
+  child to `''`, silently removing the Terms/Privacy link text on the consent screen, the address
+  on the OTP screen and the timestamp on chat read-receipts. It now recurses, and warns in dev
+  when it flattens something with an `onPress`/`href` (whose tap handler cannot survive —
+  `@expo/ui` `Text.children` is `string`-only, so a tappable inline segment must be hoisted out).
+- **`text-center` is no longer a no-op.** Aligning text inside a box shrink-wrapped to that same
+  text does nothing, so centered headings rendered flush-left (127 sites). A text-align class now
+  implies vertical-only matching plus a width, same as `wrap`.
+- **~214 silently-dropped typography classes now apply.** The parser routed anything it didn't
+  recognise onto `Host`'s `className`, where it can never reach native text. Added: `text-white`/
+  `text-black`, variant prefixes (`dark:`, `ios:`, `android:` — applied unconditionally, which
+  beats not at all), `tracking-*`/`leading-*` (both are supported by `UniversalTextStyle`),
+  arbitrary values (`text-[15px]`, `leading-[14px]`), opacity modifiers (`text-foreground/70`),
+  and `text-5xl`–`text-9xl`. Variant-prefixed *sizing* (`android:h-14`) is now detected too.
+- **`Text` derives `wrap` from `numberOfLines`.** `numberOfLines={2}` could never be reached
+  because the box was sized to the unwrapped single-line width. `list.tsx`/`card.tsx` already
+  encoded this locally; it now lives in `text.tsx`.
+- **`wrap` added to 40 prose call sites** (found by resolving each `t()` key against `en.json` and
+  filtering on string length, so short labels that should shrink-wrap were left alone). The
+  Settings "Wind & Distance" subtitle overlapping its SegmentedControl was one of these.
+- **Alert title/message now wrap**, and `tonal` is a distinct filled-muted Button variant again
+  rather than being folded into `outlined`.
+
+### `Text` is a plain RN `Text` too — `@expo/ui` is no longer used for either primitive
+
+Fixing `Button` removed one symptom; `Text` had the same root cause and was converted for the
+same reasons. That structurally eliminated the rest of the class rather than patching call sites:
+
+- `min(content, parent)` sizing is what real text does, so **`wrap` is no longer needed anywhere**
+  (the prop is kept, deprecated and inert, so the ~40 call sites still compile) and `text-center`
+  works without a width hack.
+- Nested children compose natively, so the **consent screen's Terms/Privacy links render and are
+  tappable again** (verified on-device) instead of being deleted by the string-flattening.
+- `numberOfLines` works natively.
+- NativeWind applies `className` directly, so `dark:` variants, opacity modifiers and arbitrary
+  values all work — the bespoke class parser is now only consulted to see *which* properties a
+  className already sets, so `variant`/`color` defaults only fill gaps rather than override.
+- The first Dashboard row no longer renders clipped under the large-title header: that was
+  `Host`'s async native measure reporting the wrong content height, and it went away with `Host`.
+
+One new bug this surfaced and fixed: a variant's `lineHeight` must not be kept when `className`
+overrides the font size (`text-3xl` on a default `body` left a 24px line box around 30px glyphs
+and clipped them top and bottom — seen on the iOS auth headline).
+
+**Only `ActivityIndicator` and `SegmentedControl` still touch `@expo/ui`.** In hindsight the
+`Host` bridge was never a good fit for primitives that have to participate in a flexbox layout.
+
+### Validated on-device
+
+Android (TECNO KL4) and iOS (iPhone 17 sim), both against the pre-migration baseline where one
+exists: auth screen, Dashboard, Profile, Settings (light + dark), Pack form, Create Trip, AI chat,
+conversations list, the category `DropdownMenu` (opens, all 9 items, selection applies), the
+Android `Alert` (inset card, wrapped message, horizontal buttons), the iOS native `Alert` via the
+now-working `show()`, the `Sheet` (AI Mode bottom sheet — previously never validated on any
+platform), and the consent screen's inline links.
+
+### Known remaining gaps
+
+- **`SearchInput`'s Android pill and `GapSuggestionRow`'s `MaskedView` shimmer are still
+  unvalidated.** Every reachable call site is behind authentication, a pack with items, or a
+  Google Maps view that crashes in this dev build (see below).
+- **`ContextMenu` has no reachable Android call site** — every consumer wraps it in a
+  `Platform.OS !== 'ios'` bypass, so `context-menu.tsx` (the `@rn-primitives` Android
+  implementation) never actually runs. Either delete it or give it a real consumer.
+- The dev build crashes with `IllegalStateException: API key not found` on any screen containing
+  a Google Map (Trips → Add Location). The JS env var is set; the native key in the installed APK
+  is not. Environment issue, not a migration one, but it blocks validating map-backed screens.
+- `alert.ios.tsx` still drops each button's `testID` (RN core's `Alert` has no such option, so
+  Maestro cannot target alert buttons on iOS) and degrades `login-password` prompts to a single
+  plain-text field.
+- Unrelated but blocking a clean checkout: `react-native-purchases`/`-ui` are declared `"*"` in
+  `apps/expo/package.json` but were not installed, so Metro could not bundle until `bun install`.
 
 ## Rules
 

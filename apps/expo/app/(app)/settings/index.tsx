@@ -196,7 +196,7 @@ export default function SettingsScreen() {
             <View className="flex-row items-center justify-between p-4">
               <View className="flex-1">
                 <Text className="font-medium">Wind & Distance</Text>
-                <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
                   {t('settings.windDistanceSubtitle')}
                 </Text>
               </View>
@@ -376,7 +376,7 @@ export default function SettingsScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium">Clear App Data</Text>
-                  <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
                     Wipes image cache and stored preferences
                   </Text>
                 </View>
@@ -396,7 +396,9 @@ export default function SettingsScreen() {
                   <Icon name="leaf" size={22} color={colors.primary} />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-medium">Reset Season Suggestions State</Text>
+                  <Text className="font-medium" wrap>
+                    Reset Season Suggestions State
+                  </Text>
                   <Text variant="footnote" className="mt-0.5 text-muted-foreground">
                     {`seen: ${announcementSeen} · opened: ${opened}`}
                   </Text>
@@ -412,7 +414,7 @@ export default function SettingsScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium">Refresh Feature Flags</Text>
-                  <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
                     Fetches flags & entitlements now, bypassing the 5-min cache
                   </Text>
                 </View>
@@ -427,7 +429,7 @@ export default function SettingsScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium">Paywall State</Text>
-                  <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
                     Inspect customerInfo & feature-access config live
                   </Text>
                 </View>

@@ -14,7 +14,14 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
-import { Dimensions, Platform, Pressable, View, type ViewStyle } from 'react-native';
+import {
+  Dimensions,
+  Platform,
+  Pressable,
+  type TextStyle,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   type AnimatedStyle,
@@ -225,7 +232,9 @@ const CONTEXT_MENU_ITEMS = [
 
 const TIME_STAMP_WIDTH = 96;
 
-const TEXT_STYLE: ViewStyle = {
+// Reserves room for the absolutely-positioned timestamp overlay. TextStyle now that
+// ListItem's titleStyle reaches the Text itself rather than a bridging Host box.
+const TEXT_STYLE: TextStyle = {
   paddingRight: TIME_STAMP_WIDTH,
 };
 

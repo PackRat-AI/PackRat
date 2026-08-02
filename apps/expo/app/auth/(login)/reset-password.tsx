@@ -314,7 +314,7 @@ export default function ResetPasswordScreen() {
                                       RE_HAS_SPECIAL.test(field.state.value) ? '#10B981' : '#9CA3AF'
                                     }
                                   />
-                                  <Text className="ml-1 text-xs text-gray-500">
+                                  <Text className="ml-1 text-xs text-gray-500" wrap>
                                     {t('auth.atLeast1Special')}
                                   </Text>
                                 </View>

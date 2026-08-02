@@ -349,7 +349,7 @@ export default function LocationSearchScreen() {
           ) : locationPermissionDenied ? (
             <>
               <Icon name="bell-outline" size={20} color={colors.destructive} />
-              <Text className="font-medium text-destructive">
+              <Text className="font-medium text-destructive" wrap>
                 {t('weather.locationPermissionRequired')}
               </Text>
             </>

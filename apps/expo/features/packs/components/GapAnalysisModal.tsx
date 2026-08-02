@@ -226,7 +226,9 @@ function SwapSheet({
             })
           ) : (
             <View className="items-center py-8">
-              <Text className="text-muted-foreground">No gear found for this suggestion.</Text>
+              <Text className="text-muted-foreground" wrap>
+                No gear found for this suggestion.
+              </Text>
             </View>
           )}
         </ScrollView>
@@ -346,7 +348,7 @@ function DevGapPanel({
         })}
       </View>
       <View className="mt-2 flex-row items-center justify-between">
-        <Text variant="footnote" className="text-muted-foreground">
+        <Text variant="footnote" className="text-muted-foreground" wrap>
           Skip auto-analyze (saves API credits)
         </Text>
         <TouchableOpacity

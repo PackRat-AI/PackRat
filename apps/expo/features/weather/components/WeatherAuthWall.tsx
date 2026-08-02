@@ -26,7 +26,7 @@ export function WeatherAuthWall() {
               style={Platform.select({ web: { width: 48, height: 48 } })}
             />
           </View>
-          <Text variant="title1" className="text-center">
+          <Text variant="title1" className="text-center" wrap>
             {t('weather.featuresRequireSignIn')}
           </Text>
         </View>

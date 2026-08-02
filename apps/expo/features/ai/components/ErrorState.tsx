@@ -60,7 +60,7 @@ export function ErrorState({ error, onRetry, onClear }: ErrorStateProps) {
         <View className="flex-1 flex-row items-center gap-2 pr-2">
           <Ionicons name="alert-circle-outline" size={24} color={colors.destructive} />
 
-          <Text variant="caption2" numberOfLines={2}>
+          <Text variant="caption2" numberOfLines={2} wrap>
             {t('errors.looksLikeError')}
           </Text>
         </View>

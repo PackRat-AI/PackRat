@@ -37,10 +37,20 @@ type AlertMethods = {
   prompt: (args: AlertProps & { prompt: NonNullable<AlertProps['prompt']> }) => void;
 };
 
-function AlertImpl({ ref }: AlertProps & { ref?: React.Ref<AlertMethods> }) {
-  React.useImperativeHandle(ref, () => ({
-    show: () => {},
-    alert: (args) => {
+function AlertImpl({ ref, ...props }: AlertProps & { ref?: React.Ref<AlertMethods> }) {
+  // `show()` presents the alert declared through this component's own props, which is how the
+  // Android/default implementation behaves. It used to be a no-op stub, so the three tiles that
+  // configure an <Alert title=... message=...> and call show() (PackCategoriesTile,
+  // WeightAnalysisTile, PackStatsTile) did nothing at all on iOS.
+  const propsRef = React.useRef(props);
+  propsRef.current = props;
+
+  React.useImperativeHandle(ref, () => {
+    function present(args: AlertProps) {
+      if (args.prompt) {
+        promptWith({ ...args, prompt: args.prompt });
+        return;
+      }
       RNAlert.alert(
         args.title,
         args.message,
@@ -50,8 +60,9 @@ function AlertImpl({ ref }: AlertProps & { ref?: React.Ref<AlertMethods> }) {
           onPress: () => b.onPress?.(''),
         })),
       );
-    },
-    prompt: (args) => {
+    }
+
+    function promptWith(args: AlertProps & { prompt: NonNullable<AlertProps['prompt']> }) {
       RNAlert.prompt(
         args.title,
         args.message,
@@ -60,11 +71,20 @@ function AlertImpl({ ref }: AlertProps & { ref?: React.Ref<AlertMethods> }) {
           style: b.style,
           onPress: (value?: string) => b.onPress?.(value ?? ''),
         })),
+        // RN core's prompt only offers plain-text/secure-text; 'login-password' (two fields) has
+        // no UIAlertController equivalent it exposes, so it degrades to a single plain field.
         args.prompt.type === 'secure-text' ? 'secure-text' : 'plain-text',
         args.prompt.defaultValue,
+        args.prompt.keyboardType,
       );
-    },
-  }));
+    }
+
+    return {
+      show: () => present(propsRef.current),
+      alert: present,
+      prompt: promptWith,
+    };
+  });
 
   return null;
 }

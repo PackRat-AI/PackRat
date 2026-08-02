@@ -1,12 +1,11 @@
-import type { UniversalTextStyle } from '@expo/ui';
-import { Text as ExpoText, Host } from '@expo/ui';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { cssInterop } from 'nativewind';
-import { Children, isValidElement } from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
+import {
+  Text as RNText,
+  type TextProps as RNTextProps,
+  type StyleProp,
+  type TextStyle,
+} from 'react-native';
 import { splitTextClassName } from './lib/text-class-parser';
-
-cssInterop(Host, { className: 'style' });
 
 type TextVariant =
   | 'largeTitle'
@@ -63,80 +62,77 @@ type TextProps = {
   color?: TextColor;
   /** Overrides the resolved theme/variant color (e.g. a fixed brand/status hex). */
   textColor?: string;
-  /** Escape hatch for arbitrary native text styling not covered by variant/color/className. */
-  textStyle?: UniversalTextStyle;
-  numberOfLines?: number;
+  /** Escape hatch for arbitrary text styling not covered by variant/color/className. */
+  textStyle?: StyleProp<TextStyle>;
   /**
-   * Set for paragraph/note/dynamic-length text that should wrap at its container's width
-   * (Host sizes only its height to content, keeping the parent's width constraint). Leave unset
-   * (default) for labels, badges, and headings that should shrink-wrap to their own text width —
-   * matching the old NativeWindUI Text's default behavior. Only matters when className has no
-   * explicit sizing (flex-1, w-*, h-*, ...), which always wins over either default.
+   * @deprecated No longer does anything and can be deleted from call sites.
+   *
+   * This existed because the old `@expo/ui`-backed implementation rendered through `Host`, a
+   * native bridge with no React Native-side intrinsic size: it could either shrink-wrap to its
+   * text (overflowing a narrow parent) or stretch to its parent, never `min(content, parent)`
+   * like real text. `wrap` picked between those. A plain RN `Text` just does the right thing, so
+   * the flag is inert — kept only so the ~40 call sites that pass it still compile.
    */
   wrap?: boolean;
-  /**
-   * NativeWind classes. Font-weight/size, text-align, and text-color utilities (font-medium,
-   * text-lg, text-center, text-muted-foreground, text-red-500, ...) are extracted and applied
-   * to the native text itself — Host's className interop only reaches the box, never the
-   * native-bridged text inside. Everything else (flex, margin, width, ...) stays on Host.
-   */
   className?: string;
-  style?: StyleProp<ViewStyle>;
-  testID?: string;
-};
+  style?: StyleProp<TextStyle>;
+} & Omit<RNTextProps, 'style' | 'children'>;
 
+/**
+ * A plain React Native `Text`, deliberately NOT `@expo/ui`'s Text.
+ *
+ * The `@expo/ui` version rendered through `Host` (a bridge to a native SwiftUI/Compose surface),
+ * which caused a long tail of layout bugs on-device because `Host` has no RN-side intrinsic size:
+ * centered headings rendered flush-left, `numberOfLines={2}` could never wrap, and prose
+ * overflowed its container unless the call site remembered an explicit `wrap`. It also could not
+ * render nested children (`children` was typed `string`), so inline links and styled segments —
+ * the consent screen's Terms/Privacy links, the OTP screen's email — were silently deleted.
+ *
+ * Plain RN `Text` fixes all of that structurally: Yoga sizes it as `min(content, parent)`, nested
+ * `<Text>` composes natively, and NativeWind applies `className` directly (including `dark:`
+ * variants, opacity modifiers and arbitrary values, which the bespoke class parser could not).
+ * `variant`/`color` remain as defaults that any conflicting `className` overrides.
+ */
 function Text({
   children,
   variant = 'body',
   color = 'primary',
   textColor,
   textStyle,
-  numberOfLines,
-  wrap = false,
+  wrap: _wrap,
   className,
   style,
-  testID,
+  ...rest
 }: TextProps) {
   const { colors } = useColorScheme();
-  const {
-    textStyle: classTextStyle,
-    hostClassName,
-    matchContents,
-    needsExplicitWidth,
-  } = splitTextClassName({ className, themeColors: colors, wrap });
-  // wrap needs a definite width to wrap against — matchContents:{vertical:true} alone only
-  // stops Host from shrink-wrapping, it doesn't give SwiftUI/Compose anything to wrap AT. A
-  // parent using `items-center` (cross-axis center, not the Yoga default `stretch`) never hands
-  // the Host a width, so without this the text renders one word per line at ~0 available width.
-  const resolvedStyle = needsExplicitWidth ? [{ width: '100%' as const }, style] : style;
+  // NativeWind merges className-derived styles before the `style` prop, so anything put in
+  // `style` would silently beat the call site's own classes. The parser is used here purely to
+  // see *which* text properties `className` already sets, so the variant/color defaults only
+  // fill in the gaps instead of overriding them.
+  const { textStyle: fromClassName } = splitTextClassName({
+    className,
+    themeColors: colors,
+    wrap: false,
+    baseFontSize: VARIANT_FONT_SIZE[variant],
+  });
+  const defaults: TextStyle = {
+    ...(fromClassName.fontSize === undefined && { fontSize: VARIANT_FONT_SIZE[variant] }),
+    // The variant's line height is only meaningful for the variant's own font size. If className
+    // resizes the text (e.g. `text-3xl` on a default `body`), keeping it would leave a line box
+    // shorter than the glyphs and visibly clip their tops and bottoms — seen on the iOS auth
+    // headline. Falling back to the platform's natural line height is correct there.
+    ...(fromClassName.lineHeight === undefined &&
+      fromClassName.fontSize === undefined && { lineHeight: VARIANT_LINE_HEIGHT[variant] }),
+    ...(fromClassName.fontWeight === undefined && { fontWeight: VARIANT_WEIGHT[variant] }),
+    ...((textColor !== undefined || fromClassName.color === undefined) && {
+      color: textColor ?? colors[COLOR_KEY[color]],
+    }),
+  };
   return (
-    <Host
-      matchContents={matchContents}
-      className={hostClassName}
-      style={resolvedStyle}
-      testID={testID}
-    >
-      <ExpoText
-        numberOfLines={numberOfLines}
-        textStyle={{
-          fontSize: VARIANT_FONT_SIZE[variant],
-          lineHeight: VARIANT_LINE_HEIGHT[variant],
-          fontWeight: VARIANT_WEIGHT[variant],
-          color: textColor ?? colors[COLOR_KEY[color]],
-          ...classTextStyle,
-          ...textStyle,
-        }}
-      >
-        {flattenToString(children)}
-      </ExpoText>
-    </Host>
+    <RNText className={className} style={[defaults, textStyle, style]} {...rest}>
+      {children}
+    </RNText>
   );
-}
-
-function flattenToString(children: React.ReactNode): string {
-  return Children.toArray(children)
-    .map((child) => (isValidElement(child) ? '' : String(child)))
-    .join('');
 }
 
 export { Text };

@@ -52,7 +52,7 @@ export function PackSelectionScreen() {
       <Text variant="title3" color="primary" className="mt-4 text-center">
         {t('catalog.noPacksAvailable')}
       </Text>
-      <Text variant="body" className="mb-4 text-center">
+      <Text variant="body" className="mb-4 text-center" wrap>
         {t('catalog.createPackMessage')}
       </Text>
       <Button onPress={handleCreatePack}>

@@ -1,27 +1,36 @@
-import { Button as ExpoButton, Host } from '@expo/ui';
 import { isString } from '@packrat/guards';
-import { cssInterop } from 'nativewind';
+import { cn } from 'expo-app/lib/cn';
 import { Children, isValidElement, type ReactNode } from 'react';
-import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
-import { shouldMatchContents } from './lib/text-class-parser';
+import {
+  type LayoutChangeEvent,
+  Pressable,
+  type StyleProp,
+  type View,
+  type ViewProps,
+  type ViewStyle,
+} from 'react-native';
 import { Text } from './text';
-
-cssInterop(Host, { className: 'style' });
 
 // Legacy NativeWindUI variant names, kept so call sites don't need rewriting.
 type LegacyButtonVariant = 'primary' | 'secondary' | 'tonal' | 'plain';
 type ButtonVariant = 'filled' | 'outlined' | 'text' | LegacyButtonVariant;
 type ButtonSize = 'none' | 'sm' | 'md' | 'lg' | 'icon';
 
-const VARIANT_MAP: Record<LegacyButtonVariant, 'filled' | 'outlined' | 'text'> = {
+/**
+ * The legacy names are kept as distinct styles rather than folded into the three @expo/ui
+ * variants. `tonal` in particular is a *filled* muted button in the pre-migration design (the
+ * auth screen's "Sign In"), which collapsing it to `outlined` visibly changed.
+ */
+type ResolvedVariant = 'filled' | 'outlined' | 'tonal' | 'text';
+
+const VARIANT_MAP: Record<LegacyButtonVariant, ResolvedVariant> = {
   primary: 'filled',
   secondary: 'outlined',
-  tonal: 'outlined',
+  tonal: 'tonal',
   plain: 'text',
 };
 
-// Approximates the old cva size classes (py/px) as a fixed style, since @expo/ui Button has
-// no size prop — only style's padding/width/height reach the Host box.
+// Approximates the old cva size classes (py/px) as a fixed style.
 const SIZE_STYLE: Record<ButtonSize, ViewStyle> = {
   none: {},
   sm: { paddingVertical: 4, paddingHorizontal: 10 },
@@ -30,25 +39,35 @@ const SIZE_STYLE: Record<ButtonSize, ViewStyle> = {
   icon: { width: 40, height: 40 },
 };
 
-function resolveVariant(variant: ButtonVariant): 'filled' | 'outlined' | 'text' {
+const PRESSED_STYLE: ViewStyle = { opacity: 0.7 };
+
+const BASE_CLASS = 'flex-row items-center justify-center rounded-full';
+
+const VARIANT_CLASS: Record<ResolvedVariant, string> = {
+  filled: `${BASE_CLASS} bg-primary`,
+  outlined: `${BASE_CLASS} border border-border`,
+  tonal: `${BASE_CLASS} bg-primary/10 dark:bg-primary/25`,
+  text: BASE_CLASS,
+};
+
+const LABEL_CLASS: Record<ResolvedVariant, string> = {
+  filled: 'text-primary-foreground font-medium',
+  outlined: 'text-foreground font-medium',
+  tonal: 'text-primary font-medium',
+  text: 'text-primary font-medium',
+};
+
+function resolveVariant(variant: ButtonVariant): ResolvedVariant {
   // `in` doesn't narrow a string-literal union by membership the way a discriminated object
   // union does — ButtonVariant minus LegacyButtonVariant is exactly 'filled'|'outlined'|'text',
-  // which is what the `in` check on VARIANT_MAP's keys actually verifies at runtime.
+  // all of which are also ResolvedVariant members; that is what the `in` check verifies at runtime.
   return variant in VARIANT_MAP
     ? // safe-cast: see function-level comment above
       VARIANT_MAP[variant as LegacyButtonVariant]
-    : (variant as 'filled' | 'outlined' | 'text');
+    : (variant as ResolvedVariant);
 }
 
-/**
- * Extracts a plain string label when `children` is exactly one `Text` (or raw string) with
- * only string content, so Button can use @expo/ui's `label` prop instead of nesting a Text's
- * own Host inside Button's Host. Two independent native-bridge Hosts can't correctly report
- * intrinsic size across that boundary — nesting them collapsed the button to near-zero size
- * with its label overflowing outside, confirmed on-device. Anything more complex (icon+text,
- * multiple children) falls through to `children` unchanged — still nested-Host-risky, a known
- * gap, but rare relative to the plain-text-label case this fixes.
- */
+/** Unwraps `<Button><Text>Save</Text></Button>` to the string `'Save'`. */
 function extractLabel(children: ReactNode): string | undefined {
   const kids = Children.toArray(children);
   if (kids.length !== 1) return undefined;
@@ -69,16 +88,47 @@ type ButtonProps = {
   size?: ButtonSize;
   disabled?: boolean;
   className?: string;
-  /** ANDROID ONLY on the old API — no @expo/ui equivalent (Host has no ripple-overflow root). Accepted and ignored. */
+  /** ANDROID ONLY on the old API — no equivalent here (no ripple-overflow root). Accepted and ignored. */
   androidRootClassName?: string;
-  accessible?: boolean;
-  accessibilityHint?: string;
-  accessibilityLabel?: string;
-  onLayout?: (event: LayoutChangeEvent) => void;
   style?: StyleProp<ViewStyle>;
-  testID?: string;
-};
+  onLayout?: (event: LayoutChangeEvent) => void;
+  /**
+   * Required by the `@rn-primitives` menu/dialog primitives: they inject a ref through `Slot` and
+   * call `.measure()` on it to position their portal. Dropping it left `triggerPosition` null and
+   * the portal never rendered — that is why the Android category DropdownMenu never opened.
+   */
+  ref?: React.Ref<View>;
+  /**
+   * Every other RN View prop (role, nativeID, accessibility*, aria-*, ...). `asChild` primitives
+   * inject role/accessibilityState/nativeID here, so these must reach the underlying view or
+   * screen readers announce menu rows as bare buttons with no checked/disabled state.
+   */
+} & Omit<ViewProps, 'style' | 'children' | 'onLayout' | 'ref'>;
 
+/**
+ * A plain React Native `Pressable`, deliberately NOT `@expo/ui`'s Button.
+ *
+ * @expo/ui's Button renders through `Host`, a bridge to a native SwiftUI/Compose surface. That
+ * turned out to be unworkable for this app's call sites, for three reasons found on-device:
+ *
+ * 1. **Sizing is unsolvable in the general case.** `Host` has no RN-side intrinsic size, so any
+ *    axis it doesn't `matchContents` collapses to zero. Matching both axes shrink-wraps every
+ *    full-width CTA to its label; matching only the vertical axis fixes those but collapses the
+ *    width of buttons in a `flex-row` (the alert's "Got it" rendered one character per line).
+ *    A component cannot know its parent's flex direction, so no single default is correct.
+ * 2. **Non-text children don't work on Android at all.** @expo/ui hands `children` straight to a
+ *    Compose composable; the hosted RN view then swallows the touch and Compose's `onClick` never
+ *    fires. Icon buttons rendered but were dead, which broke every DropdownMenu trigger.
+ * 3. **The label can't be styled.** @expo/ui's Button paints its own label from the platform
+ *    palette, so brand colors and per-variant label colors were silently dropped.
+ *
+ * A Pressable has an intrinsic size, keeps touches/refs/layout in the RN tree, and lets Yoga size
+ * it exactly like the NativeWindUI Button it replaces. This matches what the rest of this package
+ * already concluded — Alert, Sheet, Form, TextField, List, ContextMenu, DropdownMenu and Toolbar
+ * are all plain RN composition too. The tradeoff is that filled buttons no longer use the native
+ * Material/SwiftUI button styling; they use the app's own brand tokens, which is what the
+ * pre-migration build looked like.
+ */
 function Button({
   children,
   label,
@@ -87,37 +137,26 @@ function Button({
   size = 'md',
   disabled,
   className,
-  accessible,
-  accessibilityHint,
-  accessibilityLabel,
-  onLayout,
+  androidRootClassName: _androidRootClassName,
   style,
-  testID,
+  ...viewProps
 }: ButtonProps) {
+  const resolved = resolveVariant(variant);
   const resolvedLabel = label ?? extractLabel(children);
   return (
-    // matchContents only when className has no explicit sizing (flex-1, w-*, h-*, ...) — those
-    // need Yoga to size the box; everything else needs matchContents or it collapses to zero
-    // height (Host has no other size signal without a native-content-driven size).
-    <Host
-      matchContents={shouldMatchContents(className)}
-      className={className}
-      style={[SIZE_STYLE[size], style]}
-      accessible={accessible}
-      accessibilityHint={accessibilityHint}
-      accessibilityLabel={accessibilityLabel}
-      onLayout={onLayout}
-      testID={testID}
+    <Pressable
+      className={cn(VARIANT_CLASS[resolved], className)}
+      style={({ pressed }) => [SIZE_STYLE[size], pressed && PRESSED_STYLE, style]}
+      onPress={onPress}
+      disabled={disabled}
+      {...viewProps}
     >
-      <ExpoButton
-        label={resolvedLabel}
-        onPress={onPress}
-        variant={resolveVariant(variant)}
-        disabled={disabled}
-      >
-        {resolvedLabel === undefined ? children : undefined}
-      </ExpoButton>
-    </Host>
+      {resolvedLabel === undefined ? (
+        children
+      ) : (
+        <Text className={LABEL_CLASS[resolved]}>{resolvedLabel}</Text>
+      )}
+    </Pressable>
   );
 }
 

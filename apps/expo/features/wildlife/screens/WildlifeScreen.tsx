@@ -96,7 +96,7 @@ export function WildlifeScreen() {
           </View>
         ) : hasError ? (
           <View className="flex-1 items-center justify-center px-8">
-            <Text className="text-center text-destructive text-base">
+            <Text className="text-center text-destructive text-base" wrap>
               {t('wildlife.historyLoadError')}
             </Text>
           </View>

@@ -78,7 +78,9 @@ export const FeedScreen = () => {
       <View className="flex-1 items-center justify-center py-20 gap-4">
         <Icon name="image-multiple" size={64} color={colors.grey2} />
         <Text className="text-lg font-semibold text-center">{t('feed.noPosts')}</Text>
-        <Text className="text-sm text-muted-foreground text-center">{t('feed.beTheFirst')}</Text>
+        <Text className="text-sm text-muted-foreground text-center" wrap>
+          {t('feed.beTheFirst')}
+        </Text>
         <Button onPress={handleCreatePost} variant="primary">
           <Text>{t('feed.sharePhoto')}</Text>
         </Button>

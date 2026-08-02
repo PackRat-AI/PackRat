@@ -16,9 +16,9 @@ import {
   type PressableProps,
   type StyleProp,
   StyleSheet,
+  type TextStyle,
   View,
   type ViewProps,
-  type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from './text';
@@ -156,13 +156,13 @@ type ListItemProps<T extends ListDataItem> = PressableProps &
   ListRenderItemProps<T> & {
     androidRootClassName?: string;
     titleClassName?: string;
-    // Applied to Text's Host box (layout, e.g. padding to reserve space for an overlay), not
-    // the native text itself — the old API's TextStyle type was wider than what any real call
-    // site actually used (only layout properties like paddingRight, no typography overrides).
-    titleStyle?: StyleProp<ViewStyle>;
+    // Text is a plain RN Text again, so these reach the text itself and are TextStyle — matching
+    // the original NativeWindUI API. (They were narrowed to ViewStyle while Text rendered through
+    // an @expo/ui Host, where `style` only sized the bridging box.)
+    titleStyle?: StyleProp<TextStyle>;
     textNumberOfLines?: number;
     subTitleClassName?: string;
-    subTitleStyle?: StyleProp<ViewStyle>;
+    subTitleStyle?: StyleProp<TextStyle>;
     subTitleNumberOfLines?: number;
     textContentClassName?: string;
     leftView?: React.ReactNode;
@@ -252,7 +252,11 @@ function ListItem<T extends ListDataItem>({
         style={({ pressed }) => (pressed ? { opacity: 0.7 } : undefined)}
         {...props}
       >
-        {!!leftView && <View>{leftView}</View>}
+        {/* justify-center (column axis) keeps the icon/avatar centered against the text block.
+            The row is `flex-row` with no `items-center`, so these wrappers stretch to the full
+            row height and their content would otherwise sit pinned to the top — visible as soon
+            as the text column is more than one line tall. */}
+        {!!leftView && <View className="justify-center">{leftView}</View>}
         <View
           className={cn(
             'h-full flex-1 flex-row',
@@ -285,7 +289,7 @@ function ListItem<T extends ListDataItem>({
             )}
             {!!bottomView && bottomView}
           </View>
-          {!!rightView && <View>{rightView}</View>}
+          {!!rightView && <View className="justify-center">{rightView}</View>}
         </View>
       </Pressable>
       {!removeSeparator && Platform.OS !== 'ios' && !isLastInSection && (

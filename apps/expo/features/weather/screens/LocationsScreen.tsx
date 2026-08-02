@@ -218,7 +218,7 @@ function LocationsScreen() {
                 )}
 
                 <View className="mb-2">
-                  <Text className="text-xs text-muted-foreground">
+                  <Text className="text-xs text-muted-foreground" wrap>
                     {t('weather.longPressForOptions')}
                   </Text>
                 </View>

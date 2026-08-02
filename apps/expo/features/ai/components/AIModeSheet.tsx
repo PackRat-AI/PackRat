@@ -141,7 +141,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
             </View>
             <View className="flex-1">
               <Text className="font-medium">{t('ai.cloud')}</Text>
-              <Text variant="footnote" className="text-muted-foreground">
+              <Text variant="footnote" className="text-muted-foreground" wrap>
                 PackRat servers · requires internet
               </Text>
               {!isAuthenticated && (

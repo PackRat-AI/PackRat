@@ -57,7 +57,7 @@ export function SpeciesDetailScreen() {
       <>
         <Stack.Screen options={{ title: t('wildlife.speciesDetail') }} />
         <View className="flex-1 items-center justify-center p-8">
-          <Text className="text-center text-muted-foreground">
+          <Text className="text-center text-muted-foreground" wrap>
             {t('wildlife.historyLoadError')}
           </Text>
         </View>

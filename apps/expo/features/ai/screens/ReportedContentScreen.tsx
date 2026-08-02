@@ -73,7 +73,7 @@ export default function ReportedContentScreen() {
             </View>
           ) : error ? (
             <View className="flex-1 items-center justify-center p-4">
-              <Text className="text-center text-destructive">
+              <Text className="text-center text-destructive" wrap>
                 {t('ai.reportedContent.errorLoading')}
               </Text>
             </View>

@@ -72,7 +72,7 @@ export default function PackStatsScreen() {
                   );
                 })}
               </View>
-              <Text variant="footnote" className="mt-2 text-center text-muted-foreground">
+              <Text variant="footnote" className="mt-2 text-center text-muted-foreground" wrap>
                 {t('packs.packWeightOverMonths')}
               </Text>
             </>
@@ -81,7 +81,7 @@ export default function PackStatsScreen() {
               <Text variant="subhead" className="text-center font-medium">
                 No weight history yet
               </Text>
-              <Text variant="footnote" className="text-center text-muted-foreground">
+              <Text variant="footnote" className="text-center text-muted-foreground" wrap>
                 Add gear to your pack — your pack weight over time will appear here.
               </Text>
               <Button
@@ -124,7 +124,7 @@ export default function PackStatsScreen() {
                   </View>
                 ))}
               </View>
-              <Text variant="footnote" className="mt-2 text-center text-muted-foreground">
+              <Text variant="footnote" className="mt-2 text-center text-muted-foreground" wrap>
                 {t('packs.weightDistribution')}
               </Text>
             </>
@@ -133,7 +133,7 @@ export default function PackStatsScreen() {
               <Text variant="subhead" className="text-center font-medium">
                 No categorized items
               </Text>
-              <Text variant="footnote" className="text-center text-muted-foreground">
+              <Text variant="footnote" className="text-center text-muted-foreground" wrap>
                 Add items to your pack and assign categories to see weight distribution.
               </Text>
               <Button

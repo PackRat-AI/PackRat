@@ -76,7 +76,7 @@ function ListEmptyComponent() {
       <Text variant="title3" className="pb-1 text-center font-semibold">
         No Components Installed
       </Text>
-      <Text color="tertiary" variant="subhead" className="pb-1 text-center">
+      <Text color="tertiary" variant="subhead" className="pb-1 text-center" wrap>
         You can install any of the free components from the NativeWindUI website.
       </Text>
       <Pressable onPress={() => Linking.openURL('https://nativewindui.com')}>

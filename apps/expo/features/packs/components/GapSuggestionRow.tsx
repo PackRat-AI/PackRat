@@ -433,7 +433,7 @@ export function GapSuggestionRow({
               </View>
             </>
           ) : (
-            <Text className="text-xs text-muted-foreground italic">
+            <Text className="text-xs text-muted-foreground italic" wrap>
               No gear found for this suggestion
             </Text>
           )}

@@ -202,7 +202,7 @@ export function TripDetailScreen() {
                       {t('trailConditions.reportConditionsTitle')}
                     </Text>
                   </View>
-                  <Text className="text-sm text-muted-foreground mb-3">
+                  <Text className="text-sm text-muted-foreground mb-3" wrap>
                     {t('trailConditions.reportConditionsPrompt')}
                   </Text>
                   <Button

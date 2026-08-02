@@ -152,7 +152,7 @@ export function IdentificationScreen() {
 
         {/* Optional description for better offline matching */}
         <View className="mx-4 mb-4">
-          <Text className="text-sm font-medium text-foreground mb-1">
+          <Text className="text-sm font-medium text-foreground mb-1" wrap>
             {t('wildlife.describeSpecies')}
           </Text>
           <TextInput
