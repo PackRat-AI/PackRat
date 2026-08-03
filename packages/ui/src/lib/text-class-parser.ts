@@ -1,4 +1,5 @@
 import { isObject } from '@packrat/guards';
+import { Platform } from 'react-native';
 import colors from 'tailwindcss/colors';
 
 // Matches expo-app/theme/colors.ts COLORS[colorScheme] shape.
@@ -160,6 +161,29 @@ const VARIANT_PREFIX = /^(?:[a-z][a-z0-9-]*:)+/;
 
 function stripVariantPrefix(token: string): string {
   return token.replace(VARIANT_PREFIX, '');
+}
+
+const PLATFORM_VARIANTS = new Set(['ios', 'android', 'web']);
+
+/**
+ * True when a token is scoped to a platform we are not running on (`ios:text-foreground` on
+ * Android). Those must not be reported as styling this text.
+ *
+ * `Text` no longer renders through `Host`; it is a plain RN `Text`, and it uses this parser only
+ * to detect *which* properties `className` already sets so its variant/color defaults fill the
+ * gaps. Resolving a foreign-platform class therefore makes `Text` suppress its own themed color
+ * and hand responsibility to NativeWind — which correctly declines to apply an `ios:` class on
+ * Android. Nothing sets a color, RN falls back to black, and the label is invisible on a dark
+ * background. That is the "Continue with Google" label on the auth screen, measured on-device at
+ * standard deviation 0 across its own text rect.
+ */
+function isForeignPlatformToken(token: string): boolean {
+  const prefix = VARIANT_PREFIX.exec(token)?.[0];
+  if (!prefix) return false;
+  return prefix
+    .slice(0, -1)
+    .split(':')
+    .some((variant) => PLATFORM_VARIANTS.has(variant) && variant !== Platform.OS);
 }
 
 type ParsedValueToken =
@@ -342,11 +366,11 @@ function splitTextClassName({
   let pendingLineHeightRatio: number | undefined;
 
   for (const rawToken of className.split(WHITESPACE).filter(Boolean)) {
-    // NativeWind variant prefixes (dark:, ios:, android:, web:, active:, ...). The variant is
-    // resolved by NativeWind against Host's className, which never reaches the native text — so
-    // a prefixed typography class used to vanish. Strip the prefix and apply the base utility so
-    // the styling at least lands; a `dark:`/`ios:` variant then applies unconditionally rather
-    // than not at all, which is the strictly better failure mode for these.
+    // NativeWind variant prefixes (dark:, ios:, android:, web:, active:, ...). Non-platform
+    // variants are still applied unconditionally: NativeWind resolves them for real, and
+    // over-reporting a `dark:` colour only costs us a default we did not need. A *platform*
+    // variant for another platform is different — see isForeignPlatformToken.
+    if (isForeignPlatformToken(rawToken)) continue;
     const token = stripVariantPrefix(rawToken);
     if (token in FONT_WEIGHT) {
       textStyle.fontWeight = FONT_WEIGHT[token];
