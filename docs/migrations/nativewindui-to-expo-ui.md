@@ -324,6 +324,26 @@ Weight Analysis, Pack Categories, Pack Stats, PackRat AI chat, Search (+ results
 - The `Camping` filter chip clips at the right edge in **both** builds; it is a horizontal
   scroller, not a regression.
 
+### Invisible text: a foreign-platform class suppressing `Text`'s own colour
+
+Found by the user, not by either sweep. `<Text className="ios:text-foreground">` — the "Continue
+with Google" label on the auth screen — rendered black-on-black in dark mode on Android.
+
+The parser resolved `ios:text-foreground` unconditionally, so `Text` believed `className` already
+set a colour and skipped its own themed default; NativeWind then correctly declined to apply an
+`ios:` class on Android; nothing set a colour and RN fell back to black. The unconditional
+resolution was *right* while `Text` rendered through `Host` (className never reached the native
+text, so applying a prefixed class anyway beat dropping it). Once `Text` became a plain RN `Text`
+and the parser was demoted to detecting *which* properties `className` sets, the trade-off
+inverted: over-reporting now suppresses a correct default. Fixed by skipping tokens whose platform
+variant does not match `Platform.OS`. `ListSectionHeader` (`ios:text-muted-foreground`, no base
+colour) had the identical shape and is fixed by the same change.
+
+**Measure invisible text with standard deviation over the node's rect, not min..max range.** The
+label measured sd 0.0 against ~43 for a real rendering — but its *range* was the full 0..255,
+because one border pixel falls inside the rect. Checking `maxima` is what made an earlier pass
+wrongly conclude the label rendered fine. A short label in a wide box still clears sd 3.0.
+
 ### Two traps worth knowing before repeating this
 
 - **Metro dies on every source edit here** (`react-native-css-interop` → Metro's
