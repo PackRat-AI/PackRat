@@ -1,6 +1,6 @@
 ---
 started: 2026-06-14
-status: validated-ios-android-2026-08-02
+status: validated-ios-android-2026-08-03
 tracking: packages/ui/nativewindui/index.ts
 progress-cmd: bun check:migration
 ---
@@ -278,6 +278,62 @@ platform), and the consent screen's inline links.
   plain-text field.
 - Unrelated but blocking a clean checkout: `react-native-purchases`/`-ui` are declared `"*"` in
   `apps/expo/package.json` but were not installed, so Metro could not bundle until `bun install`.
+
+## Second Android A/B pass (2026-08-03)
+
+A second screen-by-screen pass over the same rig, this time reading the **accessibility tree's
+rects** alongside the screenshots rather than judging by eye. That is what caught the items below:
+all three had survived the first pass because they look plausible in a screenshot.
+
+Screens diffed: Dashboard, Packs list, pack card, Pack detail, Trips, Catalog, Profile, Settings,
+Weight Analysis, Pack Categories, Pack Stats, PackRat AI chat, Search (+ results), Create Pack.
+
+### Fixed in this pass
+
+- **`Button`'s `size` prop did nothing at all** — the single highest-impact defect found in either
+  pass, affecting 97 `size=` call sites plus the default `md` on every other button. Sizes were an
+  inline `style={({ pressed }) => [SIZE_STYLE[size], ...]}`, but NativeWind's `cssInterop` owns the
+  `style` prop on a `className`'d component and drops the **function form** Pressable needs, so the
+  whole array was silently discarded. Measured on-device (2x density): `size="icon"` buttons
+  rendered at the glyph's intrinsic ~20dp instead of 40dp, and content-sized `md` buttons had *no*
+  horizontal padding — "Add Item" on the pack detail screen was 142px wide around a 138px label, so
+  the rounded border cut into the glyphs. Now expressed as classes (`SIZE_CLASS`), which go through
+  the same pipeline as the variants; `cn` is `twMerge` so call sites still override.
+- **Press feedback never rendered**, on `Button` and `ListItem` both — it rode on the same dropped
+  style array. Now `active:opacity-70`.
+- **`SegmentedControl` painted from the platform palette.** It is one of the two components still
+  backed by `@expo/ui`, and no call site passed `tintColor`, so on Android it picked up Material
+  You's dynamic colour — a *brown* selected segment on the Settings unit switches, in an app whose
+  accent is blue everywhere else on that same screen. Now defaults to the theme's primary.
+
+### Verified equivalent, deliberately not changed
+
+- The pack card's `⋯` overflow menu sat 20px right and 19px up from baseline. This was a *symptom*
+  of the size bug, not a separate quirk: once `size="icon"` produced a real 40x40dp box, the glyph
+  landed at (616, 744) — the exact pixel the pre-migration build renders it at. Worth noting as a
+  reminder that small positional offsets are usually downstream of something structural.
+- `md` buttons are ~15dp horizontal / 9dp vertical padding vs the baseline's ~21dp / 9dp, so
+  content-sized buttons are a little tighter and 4dp shorter (the height delta comes from the
+  `body` variant's explicit `lineHeight: 24` vs the platform's natural 28dp, not from padding).
+  Legible, unclipped, correctly centred — left alone rather than pixel-matched.
+- Pack detail's action row *diverges in the migrated build's favour*: `className="flex-1"` on
+  "Ask AI" is honoured now, so the row fills the width and `⋯` sits at the right edge. The
+  pre-migration build left the buttons bunched left with dead space.
+- Android `SearchInput` renders identically to baseline (no pill/border in either) — this was
+  listed as unvalidated after the first pass.
+- The `Camping` filter chip clips at the right edge in **both** builds; it is a horizontal
+  scroller, not a regression.
+
+### Two traps worth knowing before repeating this
+
+- **Metro dies on every source edit here** (`react-native-css-interop` → Metro's
+  `DependencyGraph._onHasteChange`, `TypeError: ... reading 'addedFiles'` under Node 25). Fast
+  Refresh never lands and the next capture silently shows the *old* bundle. Restart Metro and
+  reload after each edit, and re-measure before concluding a fix did nothing.
+- **`screencap` races the renderer.** Screenshots taken right after navigation often show the
+  previous screen while `uiautomator dump` already shows the new one. When they disagree, trust the
+  dump. Blind tap-chains without verifying state produced several captures of the device home
+  screen before this was caught.
 
 ## Rules
 
