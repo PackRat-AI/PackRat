@@ -30,18 +30,34 @@ const VARIANT_MAP: Record<LegacyButtonVariant, ResolvedVariant> = {
   plain: 'text',
 };
 
-// Approximates the old cva size classes (py/px) as a fixed style.
-const SIZE_STYLE: Record<ButtonSize, ViewStyle> = {
-  none: {},
-  sm: { paddingVertical: 4, paddingHorizontal: 10 },
-  md: { paddingVertical: 8, paddingHorizontal: 14 },
-  lg: { paddingVertical: 10, paddingHorizontal: 20 },
-  icon: { width: 40, height: 40 },
+/**
+ * The old cva size classes, kept as classes rather than an inline `style`.
+ *
+ * They were briefly a `ViewStyle` lookup applied through `style`, which silently did nothing:
+ * NativeWind's `cssInterop` owns the `style` prop on a `className`'d component and drops the
+ * function form (`style={({ pressed }) => [...]}`) that Pressable needs for press feedback, so
+ * every size — including `icon`'s 40x40 — was discarded. On-device that left `size="icon"`
+ * buttons at their glyph's intrinsic ~20dp and gave content-sized `md` buttons no horizontal
+ * padding at all, so the rounded border cut into the label ("Add Item" on the pack detail screen).
+ *
+ * As classes they go through the same pipeline as the variants, and because `cn` is `twMerge` a
+ * call site's own `px-*`/`h-*` still overrides them.
+ */
+const SIZE_CLASS: Record<ButtonSize, string> = {
+  none: '',
+  sm: 'py-1 px-2.5',
+  md: 'py-2 px-3.5',
+  lg: 'py-2.5 px-5',
+  icon: 'h-10 w-10',
 };
 
-const PRESSED_STYLE: ViewStyle = { opacity: 0.7 };
-
-const BASE_CLASS = 'flex-row items-center justify-center rounded-full';
+/**
+ * Press feedback as a class, for the same reason the sizes are: it used to ride on the same
+ * dropped `style={({ pressed }) => [...]}` array as SIZE_STYLE, so it could not have been
+ * applied either. `active:` is NativeWind's binding for Pressable's pressed state; on-device a
+ * held button measures 0.70x the released frame's mean brightness, and identical on release.
+ */
+const BASE_CLASS = 'flex-row items-center justify-center rounded-full active:opacity-70';
 
 const VARIANT_CLASS: Record<ResolvedVariant, string> = {
   filled: `${BASE_CLASS} bg-primary`,
@@ -145,8 +161,8 @@ function Button({
   const resolvedLabel = label ?? extractLabel(children);
   return (
     <Pressable
-      className={cn(VARIANT_CLASS[resolved], className)}
-      style={({ pressed }) => [SIZE_STYLE[size], pressed && PRESSED_STYLE, style]}
+      className={cn(VARIANT_CLASS[resolved], SIZE_CLASS[size], className)}
+      style={style}
       onPress={onPress}
       disabled={disabled}
       {...viewProps}

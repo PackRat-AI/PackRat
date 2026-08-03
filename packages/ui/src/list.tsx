@@ -238,7 +238,11 @@ function ListItem<T extends ListDataItem>({
       <Pressable
         disabled={disabled || !isPressable(props)}
         unstable_pressDelay={100}
+        // `active:opacity-70` rather than `style={({ pressed }) => ...}`: NativeWind owns the
+        // `style` prop on a `className`'d component and drops the function form Pressable needs,
+        // so the press feedback silently never rendered. Same fix as @packrat/ui's Button.
         className={cn(
+          'active:opacity-70',
           itemVariants({
             variant,
             sectionHeaderAsGap,
@@ -249,7 +253,6 @@ function ListItem<T extends ListDataItem>({
           }),
           className,
         )}
-        style={({ pressed }) => (pressed ? { opacity: 0.7 } : undefined)}
         {...props}
       >
         {/* justify-center (column axis) keeps the icon/avatar centered against the text block.
