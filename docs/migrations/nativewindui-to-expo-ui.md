@@ -520,24 +520,24 @@ The earlier correction stands — **touches do fire** through `RNHostView`, so "
 fires" is not the blocker. Verified again with the real migrated `Card` on-device: an RN `Button` in
 the card footer incremented a counter to `TAPS 2`. Interactivity is genuinely solved.
 
-**Layout is the actual blocker, and it's a hard one.** `RNHostView` has exactly two sizing modes and
-a content-sized container needs both at once:
+**Layout is the actual blocker — but the mechanism below was wrong. See the correction under
+"SDK 57 migration pass" for what was actually ruled in and out.**
 
-- `matchContents` — the host sizes to the RN children, but Compose gives that subtree **no width
-  constraint**, so RN's flex layout collapses. Measured on-device: the `Button` lost its pill
-  background entirely, the title font collapsed, and text overflowed the card's right edge.
-- without it — "the host uses the size of the parent native view", so the RN tree gets a width, but
-  now the *card* has no intrinsic height and renders at **zero height** (nothing visible at all).
+The original (56.0.16-era) reading was that `RNHostView`'s two sizing modes are mutually exclusive
+for a content-sized container: `matchContents` leaves the RN subtree with no width constraint so flex
+collapses, and omitting it gives the card no intrinsic height so it renders at zero height.
+`matchContents` also cannot change after mount.
 
-`matchContents` also cannot change after mount, so it can't be resolved dynamically.
+Half of that survives re-testing on 57 (omitting `matchContents` does render nothing), but the
+`matchContents` half does **not** — see the correction. Do not cite this paragraph as the reason
+containers can't migrate.
 
-Decisive evidence that this isn't just us doing it wrong: **Expo's own `Card` documentation never
-puts RN children inside a `Card`.** Every example fills it with Compose primitives (`Text`,
-`Column`). `RNHostView` is documented against bottom sheets, where the sheet supplies both
-dimensions — which is exactly why the `bottom-sheet` drop-in works so well and `Card` does not.
+Expo's own `Card` documentation does only ever put Compose primitives (`Text`, `Column`) inside a
+`Card`, never RN children — that remains true and is a signal about intended usage, but it is not
+proof of impossibility.
 
-So `Card` was implemented, tested, and **reverted**. It is a pure-styling surface: migrating it buys
-a Material shadow in exchange for breaking every child's layout. Bad trade.
+`Card` was implemented, tested, and **reverted** — twice, on two different SDK versions, for reasons
+that turned out to be different each time.
 
 The same structural mismatch rules out the other containers, each for a concrete reason:
 
@@ -558,6 +558,43 @@ It is *not* currently a tool for wrapping arbitrary React Native subtrees in nat
 Until `RNHostView` can take a width constraint from the Compose parent while still reporting its
 content height, container migration means breaking layout — so the remaining containers stay RN by
 choice, not by oversight.
+
+## Correction: what actually blocks `Card` on SDK 57 (2026-08-04, second attempt)
+
+The 56-era explanation above was re-tested on `@expo/ui` 57.0.9 and is **wrong about the mechanism**.
+Isolated one variable at a time in the rig, on Android hardware:
+
+| Probe | Result |
+|---|---|
+| `matchContents` on both `Host` and `RNHostView`, child sized only by `flex: 1` | **Renders correctly.** Card is a real 624×129 box, the `flex-1` label wraps inside it, the trailing pill keeps its background. |
+| Same + an explicit numeric width on the child | Renders correctly. |
+| **No** `matchContents` on `RNHostView` | Zero height, nothing visible. (This half of the old claim holds.) |
+| NativeWind `className` vs inline `style` on hosted children | **Identical.** `cssInterop` reaches inside `RNHostView` fine. |
+| `BlurView` (`expo-blur`, a third-party native view, as `CardFooter` uses) hosted inside | Renders correctly. |
+
+So `matchContents` does **not** starve the subtree of a width constraint, `className` is not lost, and
+a nested native view is not the problem. Part of why the first attempt failed is version: the
+`Pressable`-in-`RNHostView` fix ([expo/expo#48131](https://github.com/expo/expo/issues/48131)) landed
+in **57.0.8**, and `RNHostView` now sets `layoutRoot: true` specifically so `measure()` reports the
+right coordinate space. The original Card test ran on 56.0.16, before any of that.
+
+**But the real `Card` still renders wrong on 57**, with a distinctive signature: collapsed font sizes,
+the footer `Button` losing its background, and — the useful clue — **no accessibility nodes at all**
+for the hosted subtree (`uiautomator` sees the old card's `Card Title`/`Action` nodes and nothing for
+the new one), even though pixels are painted. Ruled out along the way: dynamic component variable +
+spread props (rewritten as literal JSX tags per branch, no change).
+
+That points at something specific to the compound `Card`/`CardContent`/`CardFooter` composition rather
+than at `RNHostView`'s contract. It was reverted again rather than shipped half-understood.
+
+**If picking this up:** the isolated mechanisms all work, so bisect the compound structure — build up
+from the known-good probe (`Host matchContents` → `Card` → `RNHostView matchContents` → `View`
++ `className`) one Card part at a time until the a11y nodes disappear. The missing-node symptom is
+the fastest signal; `uiautomator dump` shows it immediately and doesn't race the renderer the way a
+screenshot does.
+
+**Unchanged and still correct:** the `TextField` blocker (`useNativeState` vs TanStack Form) and the
+`list` blocker (`FlashList` virtualization has no native equivalent) are independent of all this.
 
 ## Rules
 

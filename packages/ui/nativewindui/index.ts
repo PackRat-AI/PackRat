@@ -21,7 +21,8 @@
 // Phase 4 ✓ done — platform-specific wrappers → packages/ui/src/
 //   ActivityIndicator → loading-indicator.ios.tsx + .android.tsx (@expo/ui)
 //   Alert/AlertAnchor → alert.tsx (@rn-primitives/alert-dialog) + alert.ios.tsx (RN core Alert)
-//   Card → card.tsx (plain RN — a native Card cannot size RN children; see the migration doc)
+//   Card → card.tsx (plain RN — a native Card attempt renders wrong for reasons not yet pinned
+//     down; RNHostView sizing/className/BlurView were each ruled out. See the migration doc)
 //   SegmentedControl → segmented-control.tsx (@expo/ui community SegmentedControl)
 //   Checkbox → checkbox.android.tsx (@expo/ui M3 Checkbox); checkbox.tsx (@rn-primitives) on
 //     iOS/web — SwiftUI has no checkbox toggle style, only a switch
