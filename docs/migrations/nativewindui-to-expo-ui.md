@@ -514,6 +514,51 @@ native `EditText`/`UITextField`.
 
 Revisit only if `@expo/ui` grows a controlled `value: string` prop.
 
+### Containers: `RNHostView` works for touches but not for layout
+
+The earlier correction stands — **touches do fire** through `RNHostView`, so "`ComposeClick` never
+fires" is not the blocker. Verified again with the real migrated `Card` on-device: an RN `Button` in
+the card footer incremented a counter to `TAPS 2`. Interactivity is genuinely solved.
+
+**Layout is the actual blocker, and it's a hard one.** `RNHostView` has exactly two sizing modes and
+a content-sized container needs both at once:
+
+- `matchContents` — the host sizes to the RN children, but Compose gives that subtree **no width
+  constraint**, so RN's flex layout collapses. Measured on-device: the `Button` lost its pill
+  background entirely, the title font collapsed, and text overflowed the card's right edge.
+- without it — "the host uses the size of the parent native view", so the RN tree gets a width, but
+  now the *card* has no intrinsic height and renders at **zero height** (nothing visible at all).
+
+`matchContents` also cannot change after mount, so it can't be resolved dynamically.
+
+Decisive evidence that this isn't just us doing it wrong: **Expo's own `Card` documentation never
+puts RN children inside a `Card`.** Every example fills it with Compose primitives (`Text`,
+`Column`). `RNHostView` is documented against bottom sheets, where the sheet supplies both
+dimensions — which is exactly why the `bottom-sheet` drop-in works so well and `Card` does not.
+
+So `Card` was implemented, tested, and **reverted**. It is a pure-styling surface: migrating it buys
+a Material shadow in exchange for breaking every child's layout. Bad trade.
+
+The same structural mismatch rules out the other containers, each for a concrete reason:
+
+| Component | Native equivalent | Why not |
+|---|---|---|
+| `card` | `Card` | Content-sized surface wrapping arbitrary RN children — the sizing conflict above. Tested and reverted. |
+| `list` | `LazyColumn` | `list.tsx` is `FlashList`; there is no native equivalent for its virtualization/recycling API, and every item's content is arbitrary RN. |
+| `alert` (Android) | `AlertDialog` | Slots are Title/Text/Confirm/Dismiss/Icon only — no text input. `prompt()` is used for typed delete-account confirmation. iOS already renders a real `UIAlertController` via RN core. |
+| `form`, `toolbar` | — | Pure RN layout wrapping arbitrary children; same sizing conflict, no styling gain. |
+
+### Where this leaves the migration
+
+`@expo/ui` is the right tool for **leaf controls** (self-contained native widgets: switch, checkbox,
+slider, segmented control) and for **whole-surface drop-in replacements** (bottom sheet, picker,
+date picker, masked view) where the native component owns its own dimensions.
+
+It is *not* currently a tool for wrapping arbitrary React Native subtrees in native containers.
+Until `RNHostView` can take a width constraint from the Compose parent while still reporting its
+content height, container migration means breaking layout — so the remaining containers stay RN by
+choice, not by oversight.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.

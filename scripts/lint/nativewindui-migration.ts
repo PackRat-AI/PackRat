@@ -10,7 +10,7 @@
 //   0 — clean (no violations; progress printed to stdout)
 //   1 — violations found (direct imports bypassing adapter)
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = join(import.meta.dir, '..', '..');
@@ -62,16 +62,30 @@ console.log('──────────────────────�
 
 // ── 2. Scan for direct @packrat-ai/nativewindui imports (adapter bypass) ───
 
-const EXCLUDED = new Set(['node_modules', 'dist', 'build', '.expo', '.wrangler']);
+// `ios`/`android`/`Pods` hold generated native projects with no TS worth scanning, and Pods in
+// particular contains symlinked .xcframework directories that make a naive recursive walk loop
+// forever. Skipping them is both faster and what stops the stack overflow.
+const EXCLUDED = new Set([
+  'node_modules',
+  'dist',
+  'build',
+  '.expo',
+  '.wrangler',
+  'ios',
+  'android',
+  'Pods',
+]);
 
 function walk(dir: string): string[] {
   const results: string[] = [];
-  for (const entry of readdirSync(dir)) {
-    if (EXCLUDED.has(entry)) continue;
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (EXCLUDED.has(entry.name)) continue;
+    // Never traverse a symlink: following them can revisit an ancestor and recurse without end.
+    if (entry.isSymbolicLink()) continue;
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
       results.push(...walk(full));
-    } else if (/\.(ts|tsx)$/.test(entry)) {
+    } else if (/\.(ts|tsx)$/.test(entry.name)) {
       results.push(full);
     }
   }
