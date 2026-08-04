@@ -1,5 +1,5 @@
+import MaskedView from '@expo/ui/community/masked-view';
 import { Text } from '@packrat/ui/src/text';
-import MaskedView from '@react-native-masked-view/masked-view';
 import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
