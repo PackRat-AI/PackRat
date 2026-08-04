@@ -701,9 +701,63 @@ icon layer needs a name→source mapping or the icons get dropped; and `destruct
 - `state: { checked }` has no direct equivalent — check for a `MenuAction` checked/selected field before
   committing, or render the checkmark as an image.
 
-Left unbuilt in this pass because `alert` was the higher-value target (33 call sites vs the menus'
-combined smaller surface) and because the iOS `presentMenu` divergence needs a decision about whether
-to keep the method in the shared type at all.
+### Built, verified working, then reverted — the trigger regression is disqualifying
+
+`dropdown-menu.android.tsx` was implemented against `MenuView` and **the menu itself worked**:
+verified on-device via the rig's dropdown-menu route, tapping the trigger opened a real Material
+`DropdownMenu` with PackRat's own items (`Edit`, `Duplicate`, `Delete`) as real accessibility nodes.
+
+It was reverted because of what happens to the *trigger*. The real call sites pass
+`<Button size="icon" variant="plain">` wrapping an icon — and `size="icon"` is exactly the 40dp
+sizing a previous session had to fix after finding icon buttons rendering at 20dp. Putting that
+`Button` inside `MenuView`'s `RNHostView` loses its styling, so shipping this would resurrect a
+documented bug across all 5 call sites in exchange for a native menu surface. Bad trade, same
+judgement as `Card`.
+
+The implementation work is not wasted — the mapping and every decision below are recorded, so
+rebuilding it after the trigger issue is fixed is mechanical.
+
+**Open regression: the trigger loses its styling and its accessibility node.** In the rig the NEW
+column's trigger renders as bare text rather than the `Button`'s blue pill, and `uiautomator` shows a
+node for the OLD trigger but none for the NEW one. The cause is in `MenuView.android.tsx` itself,
+which wraps `children` in a `Pressable` inside an `RNHostView` with `accessible={false}` and
+`focusable={false}`:
+
+```
+// Mirror upstream `@react-native-menu/menu`, which intercepts touches
+// natively on a bare `ReactViewGroup`: no click sound, no focus
+// highlight, no extra a11y node — children declare their own role.
+```
+
+That is deliberate upstream ("children declare their own role"), so the fix belongs on our side: the
+trigger needs to declare its own `accessibilityRole="button"` and label, and the lost pill needs
+chasing separately — it is the same `RNHostView` child-styling question left open on `Card`, and the
+two are probably one bug.
+
+**The mapping, and the decisions each gap forced** — reuse these when rebuilding:
+
+- No `ref`. `DropdownMenuMethods` exposes `presentMenu`/`dismissMenu`, no call site uses either on a
+  `DropdownMenu`, and `MenuView`'s imperative open is a documented no-op on iOS — accepting the ref
+  would promise cross-platform behaviour the library doesn't provide.
+- `disabled`/`hidden` items are **filtered out** rather than rendered, because Android draws a
+  disabled item as an ordinary live row and its a11y node still reports `enabled="true"`.
+- `subTitle` is **appended to the title** (`"Title — Subtitle"`), because `MenuAction` has no subtitle
+  field at all. Losing the text silently would be worse than one line.
+- `destructive` maps to `titleColor: colors.destructive`, since Android applies no red tint.
+- Material icon *names* are dropped (only real image sources render); bitmap/remote `image` values
+  still pass through.
+- The `material*` positioning props are accepted and ignored — the native menu anchors itself. Same
+  contract those props already had on iOS. One call site passes `materialAlign`.
+
+`ContextMenu` is the same shape and the same `MenuView` target, deliberately left until the trigger
+regression is resolved — shipping it would multiply the same defect across a second component.
+
+**One shared root cause to chase.** The lost `Button` pill here and `Card`'s wrong rendering are both
+"RN child inside `RNHostView` loses its styling", and both show the same tell: no accessibility node
+for the hosted subtree. `MenuView` sets `accessible={false}` deliberately ("children declare their own
+role"), which is a hint the fix is ours — declare the role/label on the trigger — but it does not
+explain the lost pill. Solving that one bug likely unblocks `Card`, `ContextMenu` and `DropdownMenu`
+together, which makes it the highest-leverage remaining item in this migration.
 
 ## `Form` and `Toolbar`: checked against the library, no counterpart exists
 
