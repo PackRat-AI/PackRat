@@ -752,12 +752,29 @@ two are probably one bug.
 `ContextMenu` is the same shape and the same `MenuView` target, deliberately left until the trigger
 regression is resolved — shipping it would multiply the same defect across a second component.
 
-**One shared root cause to chase.** The lost `Button` pill here and `Card`'s wrong rendering are both
-"RN child inside `RNHostView` loses its styling", and both show the same tell: no accessibility node
-for the hosted subtree. `MenuView` sets `accessible={false}` deliberately ("children declare their own
-role"), which is a hint the fix is ours — declare the role/label on the trigger — but it does not
-explain the lost pill. Solving that one bug likely unblocks `Card`, `ContextMenu` and `DropdownMenu`
-together, which makes it the highest-leverage remaining item in this migration.
+**Correction — the "lost styling" was the rig, not `RNHostView`.** Chased with a five-variant probe
+that rendered the same target with one thing different each time. The decisive result: the **control
+variant, with no `Host` at all, was also unstyled**, while plain-RN children *inside* `RNHostView`
+(both `className` and inline `style`) rendered perfectly.
+
+So `@packrat/ui`'s `Button`/`Text` do not pick up their styling **in the nativewindui rig**, host or no
+host. Every styled button in earlier captures was `OldButton` from `@packrat-ai/nativewindui`; the
+`NewButton` from `@packrat/ui` has never rendered styled there. That invalidates the styling half of
+both the `Card` and `DropdownMenu` conclusions above — they were measuring a rig defect.
+
+What survives the correction:
+
+- `ListItem`'s **scroll** failure is unaffected — that was measured against a plain-RN control list on
+  the same screen, in the same rig, and the control scrolled.
+- `Card`'s missing-a11y-node symptom is unexplained either way and still needs its own answer.
+- `DropdownMenu`'s trigger **a11y** gap is real and separate: `MenuView` sets `accessible={false}`
+  deliberately ("children declare their own role"), so the fix is ours — declare
+  `accessibilityRole`/label on the trigger.
+
+**Do not re-derive component styling conclusions from this rig until that is fixed.** Verify styling in
+PackRat's own dev client, where the theme, `global.css`, and Tailwind content globs are the real ones.
+The rig remains valid for structure, gestures, accessibility nodes, and native behaviour — just not for
+whether a `@packrat/ui` component looks right.
 
 ## `Form` and `Toolbar`: checked against the library, no counterpart exists
 
