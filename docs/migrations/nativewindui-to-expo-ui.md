@@ -355,6 +355,60 @@ wrongly conclude the label rendered fine. A short label in a wide box still clea
   dump. Blind tap-chains without verifying state produced several captures of the device home
   screen before this was caught.
 
+## First side-by-side Android comparison in the test rig (2026-08-04)
+
+Previously the `nativewindui/apps/test-app` rig had only ever run on the iOS simulator: there was no
+`android/` project and the dev client had never been installed, so no Android old-vs-new comparison
+had actually rendered. Now it does — `Toggle` verified as the first component through it.
+
+### `Toggle` on Android: renders and behaves correctly
+
+Material 3 `Switch` via `@expo/ui/jetpack-compose`, side by side with the nativewindui original at
+identical props. Checked state is blue (`rgb(0, 112, 233)`, the theme's Android `primary`, so the
+app's accent survives instead of Material You's dynamic palette); unchecked is grey track with the
+thumb correctly shrunk and moved left. Tapping the new one flipped only its own label ON→OFF and
+left the old column untouched, so `onCheckedChange` fires and state is independent. This is direct
+evidence for the leaf-control thesis: `ComposeClick` works fine for a self-contained native control
+with no RN children — the failures documented above are specific to containers wrapping RN children.
+
+The M3 switch is visibly **larger** than RN's (104x96px box vs 94x54px, thumb noticeably bigger).
+That is correct M3 sizing, not a defect, but it does mean rows containing a toggle get slightly
+taller — worth watching on dense settings screens rather than assuming a drop-in swap.
+
+### The real cost: `@expo/ui` leaf controls expose no accessibility semantics
+
+The old `Toggle` produces an `android.widget.Switch` node with `checkable=true clickable=true
+checked=true`. The migrated one produces a bare `androidx.compose.ui.platform.ComposeView` with
+`checkable=false clickable=false` and **no child node at all** — the switch is invisible to the
+accessibility tree, so its state can't be read or asserted from outside the app.
+
+This is an `@expo/ui` limitation, not something the wrapper can fix: `SwitchProps` has no `testID`,
+`accessibilityLabel` or `accessibilityRole`, and there is no semantics/accessibility modifier in
+`jetpack-compose/modifiers`. `toggle-props.ts` already documents that `Host` accepts no `testID`.
+
+Two consequences to plan around:
+
+- **E2E**: Maestro/Playwright cannot select or assert a migrated leaf control directly. Assert on an
+  adjacent app-controlled node instead, or wrap the control in a `View` carrying the `testID`. This
+  applies to every leaf control on the list, not just `Toggle`.
+- **Accessibility**: TalkBack support is a genuine regression per migrated leaf. Worth confirming
+  against a screen reader before migrating the remaining leaves, and worth raising upstream.
+
+Because of this, prefer `uiautomator dump` + on-screen state (the `ON`/`OFF` label here) over
+node attributes when verifying migrated controls — the node attributes simply aren't there.
+
+### Rig gap this exposed: PackRat's deps don't resolve from outside its repo
+
+Bringing Android up surfaced three Metro failures, all one root cause: PackRat's source sits outside
+the test app's project root, so Metro's resolution never reaches PackRat's own `node_modules`. Fixed
+in `nativewindui@fce2767` (aliases for the sibling `@packrat/*` packages, a `resolveRequest` hook
+that retries via Node's resolver rooted in PackRat, and watching PackRat's `node_modules` so the
+resolved files can be hashed). Verified exactly one copy of `react` in the output bundle.
+
+Note `bun check:migration`'s "24/24, 100%" counts components moved off nativewindui, **not**
+components on `@expo/ui`. Only three are actually native today: `loading-indicator`,
+`segmented-control`, `toggle`.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.
