@@ -1,4 +1,4 @@
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';

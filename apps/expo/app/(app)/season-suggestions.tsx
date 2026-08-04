@@ -1,4 +1,4 @@
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { assertDefined } from '@packrat/guards';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Button } from '@packrat/ui/src/button';

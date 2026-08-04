@@ -1,55 +1,58 @@
 import {
-  BottomSheetBackdrop,
-  type BottomSheetBackdropProps,
   BottomSheetModal,
-} from '@gorhom/bottom-sheet';
+  BottomSheetView as ExpoBottomSheetView,
+} from '@expo/ui/community/bottom-sheet';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { cssInterop } from 'nativewind';
 import * as React from 'react';
 
-// Plain RN composition — Sheet never needed a Host bridge, it already wrapped
-// @gorhom/bottom-sheet (an actively-maintained RN library, not @expo/ui). Ported directly.
+/**
+ * `@expo/ui`'s sheet types are hand-written rather than extending RN's `ViewProps`, so NativeWind's
+ * global `className`→`style` augmentation never reaches them. These `cssInterop` calls make
+ * `className` work at runtime, and the widened types below tell TS the same — the pattern already
+ * used for `Host` in toggle.{ios,android}.tsx.
+ */
+cssInterop(ExpoBottomSheetView, { className: 'style' });
 
-function Sheet({
-  index = 0,
-  backgroundStyle,
-  style,
-  handleIndicatorStyle,
-  ref,
-  ...props
-}: React.ComponentPropsWithoutRef<typeof BottomSheetModal> & {
-  ref?: React.Ref<BottomSheetModal>;
-}) {
+type SheetViewProps = React.ComponentProps<typeof ExpoBottomSheetView> & { className?: string };
+
+/** Content wrapper for a `Sheet`. A pass-through view — the parent `Sheet` owns sizing. */
+const SheetView = ExpoBottomSheetView as (props: SheetViewProps) => React.ReactElement;
+
+type SheetProps = React.ComponentPropsWithoutRef<typeof BottomSheetModal> & {
+  ref?: React.Ref<React.ComponentRef<typeof BottomSheetModal>>;
+};
+
+/**
+ * Native bottom sheet — a real SwiftUI sheet on iOS and a Material 3 `ModalBottomSheet` on
+ * Android, via `@expo/ui`'s API-compatible replacement for `@gorhom/bottom-sheet`.
+ *
+ * `present()`, `dismiss()` and `onDismiss` keep the same contract as `@gorhom`'s
+ * `BottomSheetModal`, so call sites and `useSheetRef` need no changes.
+ *
+ * Three things the old wrapper passed are deliberately gone, because the native sheet owns them and
+ * supplying them had no effect: the custom `BottomSheetBackdrop`, `handleIndicatorStyle`, and the
+ * `style` border/radius. Safe-area insets go the same way — there are no `topInset`/`bottomInset`
+ * props here because the platform sheet already insets its own content.
+ *
+ * `backgroundStyle` is kept: Android maps it to the sheet background (iOS uses the system one).
+ */
+function Sheet({ index = 0, backgroundStyle, ref, ...props }: SheetProps) {
   const { colors } = useColorScheme();
-
-  const renderBackdrop = React.useCallback(
-    (backdropProps: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop {...backdropProps} disappearsOnIndex={-1} />
-    ),
-    [],
-  );
 
   return (
     <BottomSheetModal
       ref={ref}
       index={index}
       backgroundStyle={backgroundStyle ?? { backgroundColor: colors.card }}
-      style={
-        style ?? {
-          borderWidth: 1,
-          borderColor: colors.grey5,
-          borderTopStartRadius: 16,
-          borderTopEndRadius: 16,
-        }
-      }
-      handleIndicatorStyle={handleIndicatorStyle ?? { backgroundColor: colors.grey4 }}
-      backdropComponent={renderBackdrop}
       {...props}
     />
   );
 }
 
 function useSheetRef() {
-  return React.useRef<BottomSheetModal>(null);
+  return React.useRef<React.ComponentRef<typeof BottomSheetModal>>(null);
 }
 
-export { Sheet, useSheetRef };
+export { Sheet, SheetView, useSheetRef };
+export type { SheetProps, SheetViewProps };

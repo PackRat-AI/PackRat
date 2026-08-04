@@ -1,6 +1,5 @@
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
-import { Sheet } from '@packrat/ui/src/bottom-sheet';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
+import { Sheet, SheetView } from '@packrat/ui/src/bottom-sheet';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
@@ -40,9 +39,8 @@ export const SeasonSuggestionsUnlockSheet = React.forwardRef<
       enableDynamicSizing
       enablePanDownToClose
       backgroundStyle={{ backgroundColor: colors.card }}
-      handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
     >
-      <BottomSheetView className="px-6 pb-10">
+      <SheetView className="px-6 pb-10">
         <View className="mb-5 mt-2 items-center">
           <View className="h-16 w-16 items-center justify-center rounded-2xl bg-primary">
             <Icon
@@ -72,7 +70,7 @@ export const SeasonSuggestionsUnlockSheet = React.forwardRef<
             {t('seasons.maybeLater')}
           </Text>
         </Button>
-      </BottomSheetView>
+      </SheetView>
     </Sheet>
   );
 });

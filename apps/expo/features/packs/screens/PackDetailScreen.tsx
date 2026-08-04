@@ -1,6 +1,5 @@
-import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { isDefined } from '@packrat/guards';
-import { Sheet, useSheetRef } from '@packrat/ui/src/bottom-sheet';
+import { Sheet, SheetView, useSheetRef } from '@packrat/ui/src/bottom-sheet';
 import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
@@ -709,11 +708,9 @@ export function PackDetailScreen() {
         enableDynamicSizing
         enablePanDownToClose
         backgroundStyle={{ backgroundColor: colors.card }}
-        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
-        bottomInset={insets.bottom}
         onDismiss={handleBottomSheetDismiss}
       >
-        <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
+        <SheetView className="flex-1 px-4" style={{ flex: 1 }}>
           {/* Revamped consistent 2-column action layout */}
           <View className="flex-row flex-wrap -mx-1">
             {normalizedActions.map((action) => (
@@ -734,7 +731,7 @@ export function PackDetailScreen() {
               </View>
             ))}
           </View>
-        </BottomSheetView>
+        </SheetView>
       </Sheet>
 
       {/* Add Item Options Sheet */}

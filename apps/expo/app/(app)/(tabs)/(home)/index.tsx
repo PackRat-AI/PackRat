@@ -1,6 +1,6 @@
 'use client';
 
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { arrayIncludes, assertIsString, objectKeys } from '@packrat/guards';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import type { ListDataItem } from '@packrat/ui/src/list';

@@ -1,4 +1,4 @@
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomSheetScrollView } from '@expo/ui/community/bottom-sheet';
 import { keyIn } from '@packrat/guards';
 import { Sheet, useSheetRef } from '@packrat/ui/src/bottom-sheet';
 import { SelectableText } from '@packrat/ui/src/selectable-text';
@@ -203,7 +203,7 @@ export const ChatBubble = React.memo(function ChatBubble({
         </>
       )}
 
-      <Sheet ref={bottomSheetRef} snapPoints={['100%']} index={0} bottomInset={insets.bottom}>
+      <Sheet ref={bottomSheetRef} snapPoints={['100%']} index={0}>
         <BottomSheetScrollView className="flex-1 px-4" style={{ flex: 1 }}>
           <View>
             <Text variant="heading" className="text-center mb-6">

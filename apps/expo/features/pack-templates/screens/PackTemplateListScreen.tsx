@@ -1,4 +1,4 @@
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { SegmentedControl } from '@packrat/ui/src/segmented-control';

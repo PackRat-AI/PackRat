@@ -1,8 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { isFunction } from '@packrat/guards';
-import { Sheet } from '@packrat/ui/src/bottom-sheet';
+import { Sheet, SheetView } from '@packrat/ui/src/bottom-sheet';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { isAuthed } from 'expo-app/features/auth/store';
@@ -128,10 +127,8 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
           enableDynamicSizing={true}
           enablePanDownToClose
           backgroundStyle={{ backgroundColor: colors.card }}
-          handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
-          bottomInset={insets.bottom}
         >
-          <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
+          <SheetView className="flex-1 px-4" style={{ flex: 1 }}>
             <View className="gap-2 mb-4">
               <TouchableOpacity
                 testID={testIds.items.addManuallyOption}
@@ -173,7 +170,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
                 </View>
               </TouchableOpacity>
             </View>
-          </BottomSheetView>
+          </SheetView>
         </Sheet>
 
         <CatalogBrowserModal

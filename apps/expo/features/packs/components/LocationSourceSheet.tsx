@@ -1,6 +1,5 @@
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
-import { Sheet } from '@packrat/ui/src/bottom-sheet';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
+import { Sheet, SheetView } from '@packrat/ui/src/bottom-sheet';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -26,9 +25,8 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
         enablePanDownToClose
         onDismiss={onDismiss}
         backgroundStyle={{ backgroundColor: colors.card }}
-        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
       >
-        <BottomSheetView className="px-6 pb-14 pt-4">
+        <SheetView className="px-6 pb-14 pt-4">
           <Text variant="title3" className="mb-2 text-center font-semibold">
             {t('seasons.chooseLocation')}
           </Text>
@@ -77,7 +75,7 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
               </Text>
             </View>
           </View>
-        </BottomSheetView>
+        </SheetView>
       </Sheet>
     );
   },

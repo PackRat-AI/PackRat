@@ -1,5 +1,5 @@
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
+import { BottomSheetScrollView, BottomSheetTextInput } from '@expo/ui/community/bottom-sheet';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { isString, toRecordArray } from '@packrat/guards';
 import { Sheet } from '@packrat/ui/src/bottom-sheet';
@@ -106,10 +106,8 @@ export const LocationSearchSheet = React.forwardRef<BottomSheetModal, LocationSe
         snapPoints={['85%']}
         index={0}
         enablePanDownToClose
-        topInset={insets.top}
         onDismiss={onDismiss}
         backgroundStyle={{ backgroundColor: colors.card }}
-        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
       >
         {/* Fixed header */}
         <View>

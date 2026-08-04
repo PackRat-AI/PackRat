@@ -1,6 +1,5 @@
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
-import { Sheet } from '@packrat/ui/src/bottom-sheet';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
+import { Sheet, SheetView } from '@packrat/ui/src/bottom-sheet';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
@@ -47,12 +46,10 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
           ref={ref}
           enableDynamicSizing={true}
           enablePanDownToClose
-          bottomInset={insets.bottom}
           backgroundStyle={{ backgroundColor: colors.card }}
-          handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
           onDismiss={handleDismiss}
         >
-          <BottomSheetView className="flex-1 px-4 pb-6" style={{ flex: 1 }}>
+          <SheetView className="flex-1 px-4 pb-6" style={{ flex: 1 }}>
             <View className="mb-6">
               <Text className="text-lg font-semibold text-foreground mb-2">
                 {t('packTemplates.createTemplate')}
@@ -101,7 +98,7 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
                 <Icon name="chevron-right" size={20} color={colors.grey3} />
               </TouchableOpacity>
             )}
-          </BottomSheetView>
+          </SheetView>
         </Sheet>
 
         <OnlineContentImportModal

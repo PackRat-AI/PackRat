@@ -12,7 +12,7 @@
 // Phase 3 ✓ done — @expo/ui Universal → packages/ui/src/
 //   Text/Button/TextClassContext/textVariants/buttonVariants/buttonTextVariants → text.tsx, button.tsx
 //   List/ListItem/ListSectionHeader → list.tsx (plain RN — FlashList + View/Pressable/Text)
-//   Sheet/useSheetRef → bottom-sheet.tsx (@gorhom/bottom-sheet, plain RN)
+//   Sheet/useSheetRef → bottom-sheet.tsx (@expo/ui/community/bottom-sheet — native sheet)
 //   Form/FormSection/FormItem → form.tsx (plain RN)
 //   TextField → text-field.tsx + .ios.tsx (plain RN)
 //   Toggle → toggle.tsx (RN core Switch)

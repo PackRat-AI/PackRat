@@ -1,7 +1,6 @@
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { isFunction } from '@packrat/guards';
-import { Sheet } from '@packrat/ui/src/bottom-sheet';
+import { Sheet, SheetView } from '@packrat/ui/src/bottom-sheet';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuthState } from 'expo-app/features/auth/hooks/useAuthState';
@@ -122,9 +121,8 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
         enableDynamicSizing
         enablePanDownToClose
         backgroundStyle={{ backgroundColor: colors.card }}
-        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
       >
-        <BottomSheetView className="px-4 pb-8">
+        <SheetView className="px-4 pb-8">
           <Text variant="title3" className="mb-4 mt-2 text-center font-semibold">
             {t('ai.aiMode')}
           </Text>
@@ -193,7 +191,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
               </Text>
             </View>
           )}
-        </BottomSheetView>
+        </SheetView>
       </Sheet>
     );
   },
