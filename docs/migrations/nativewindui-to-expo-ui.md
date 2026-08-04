@@ -701,7 +701,42 @@ icon layer needs a name→source mapping or the icons get dropped; and `destruct
 - `state: { checked }` has no direct equivalent — check for a `MenuAction` checked/selected field before
   committing, or render the checkmark as an image.
 
-### Built, verified working, then reverted — the trigger regression is disqualifying
+### Second attempt with the low-level primitive: closer, one real defect left
+
+The earlier `MenuView` verdict was partly the rig defect (see the correction above) — but not entirely.
+Re-tested in **PackRat's own app** and the trigger question resolved cleanly:
+
+- A `@packrat/ui` `Button` trigger inside `MenuView` **keeps its styling** (the rig said otherwise; the
+  rig was wrong).
+- But it **never opens the menu**. `MenuView` wraps the trigger in its own `Pressable`, which on Android
+  claims the gesture, so a `Pressable` child never receives the tap. Measured: a bare `View` trigger
+  opened the menu; the identical `Button` did not. This is [documented upstream
+  behaviour](https://docs.expo.dev/versions/v56.0.0/sdk/ui/drop-in-replacements/menu/) with a
+  documented workaround — use the lower-level primitive.
+
+So it was rebuilt on `@expo/ui/jetpack-compose`'s controlled `DropdownMenu` (`expanded` +
+`onDismissRequest` + `Trigger`/`Items`), driving `expanded` from our own `Pressable`. That got much
+further than `MenuView` ever did, verified on-device:
+
+- Trigger keeps its styling **and** opens the menu (both `size="icon" variant="plain"` and `primary`).
+- All items render; `onClick` delivers the right `actionKey` (`edit`, `del`).
+- `destructive` renders a genuinely **red** label via `elementColors.textColor` — `MenuAction` had no
+  way to do this.
+- `disabled` renders **greyed out** via `enabled={false}` — also impossible with `MenuAction`.
+
+**The blocking defect: a disabled item still fires a selection.** Tapping the greyed-out item changed the
+result state to its `actionKey`. Three guards were tried — an in-handler `if (item.disabled) return`,
+moving that check before `setExpanded`, and finally giving disabled items a handler that closes over
+*nothing* but `setExpanded` — and the state still changed. Since the last variant holds no reference to
+`onItemPress` at all, the only consistent explanation is that `DropdownMenuItem`'s `onClick` is
+dispatched positionally against a native item list, so a disabled row triggers a neighbour's handler.
+
+That is a wrong-action-fired bug on menus whose real call sites include destructive items, which is
+strictly worse than the RN menu it would replace. Reverted. Everything above is recorded so a retry is
+mechanical: the next step is to check whether `DropdownMenuItem` needs a stable `key`/id the native side
+uses for dispatch, or to file it upstream.
+
+### Superseded: first attempt (MenuView), reverted on a trigger regression that was partly the rig
 
 `dropdown-menu.android.tsx` was implemented against `MenuView` and **the menu itself worked**:
 verified on-device via the rig's dropdown-menu route, tapping the trigger opened a real Material
