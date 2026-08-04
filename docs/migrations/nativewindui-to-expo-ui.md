@@ -375,27 +375,42 @@ The M3 switch is visibly **larger** than RN's (104x96px box vs 94x54px, thumb no
 That is correct M3 sizing, not a defect, but it does mean rows containing a toggle get slightly
 taller — worth watching on dense settings screens rather than assuming a drop-in swap.
 
-### The real cost: `@expo/ui` leaf controls expose no accessibility semantics
+### Accessibility semantics require `testID` — passing it is mandatory, not optional
 
-The old `Toggle` produces an `android.widget.Switch` node with `checkable=true clickable=true
-checked=true`. The migrated one produces a bare `androidx.compose.ui.platform.ComposeView` with
-`checkable=false clickable=false` and **no child node at all** — the switch is invisible to the
-accessibility tree, so its state can't be read or asserted from outside the app.
+A migrated leaf control that is given **no** `testID` renders as a bare
+`androidx.compose.ui.platform.ComposeView` with `checkable=false clickable=false` and **no child
+node at all** — invisible to both E2E and TalkBack. It is easy to mistake this for an `@expo/ui`
+limitation. It isn't; it's a missing prop.
 
-This is an `@expo/ui` limitation, not something the wrapper can fix: `SwitchProps` has no `testID`,
-`accessibilityLabel` or `accessibilityRole`, and there is no semantics/accessibility modifier in
-`jetpack-compose/modifiers`. `toggle-props.ts` already documents that `Host` accepts no `testID`.
+Pass `testID` and the control emits a real node with correct semantics. Verified on-device with
+`packages/ui`'s own `Toggle`:
 
-Two consequences to plan around:
+```
+resource-id="new_toggle"  class="android.view.View"
+checkable="true"  checked="true"  clickable="true"  focusable="true"
+```
 
-- **E2E**: Maestro/Playwright cannot select or assert a migrated leaf control directly. Assert on an
-  adjacent app-controlled node instead, or wrap the control in a `View` carrying the `testID`. This
-  applies to every leaf control on the list, not just `Toggle`.
-- **Accessibility**: TalkBack support is a genuine regression per migrated leaf. Worth confirming
-  against a screen reader before migrating the remaining leaves, and worth raising upstream.
+`checked` tracks state (flipping the control gives `checked="false"` alongside the `OFF` label), so
+it is both a usable E2E selector and correct accessibility semantics.
 
-Because of this, prefer `uiautomator dump` + on-screen state (the `ON`/`OFF` label here) over
-node attributes when verifying migrated controls — the node attributes simply aren't there.
+The two platforms expose it differently, which is the trap:
+
+- **Android** — a **compose modifier**, `modifiers={[testID('…')]}` from
+  `@expo/ui/jetpack-compose/modifiers`. Not a prop, so it is absent from `SwitchProps` and easy to
+  conclude doesn't exist. It was moved to modifiers in
+  [expo/expo#39155](https://github.com/expo/expo/pull/39155); Android support originally landed in
+  [#38005](https://github.com/expo/expo/pull/38005).
+- **iOS** — a plain `testID` **prop**, via `CommonViewModifierProps` ("Used to locate this view in
+  end-to-end tests"), added in [#37919](https://github.com/expo/expo/pull/37919).
+
+`jetpack-compose/modifiers` also has `semantics({ contentType })`, `toggleable(value, handler,
+{ role })` for making a whole row togglable with a `'switch'`/`'checkbox'` role, and
+`selectableGroup()`. SwiftUI has `accessibilityHidden`, `accessibilityIdentifier` and
+`accessibilityInputLabels` modifiers (SDK 56.0.16), plus `accessibilityAddTraits`/`RemoveTraits` and
+`accessibilityElement` in 57.0.3.
+
+**So: every migrated control must take and forward `testID`.** Treat a control that doesn't as an
+accessibility bug, not as an upstream constraint.
 
 ### Rig gap this exposed: PackRat's deps don't resolve from outside its repo
 

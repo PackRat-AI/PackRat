@@ -1,4 +1,5 @@
 import { Host as JCHost, Switch as JCSwitch } from '@expo/ui/jetpack-compose';
+import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { cssInterop } from 'nativewind';
 import type { ComponentProps } from 'react';
@@ -23,7 +24,7 @@ const Host = JCHost as (props: HostProps) => ReturnType<typeof JCHost>;
  * Unlike RN's `Switch` (which exposes only `trackColor`/`thumbColor`) M3's exposes the full colour
  * set, so the app's own accent survives instead of the platform's dynamic palette.
  */
-function Toggle({ value, onValueChange, disabled, className, style }: ToggleProps) {
+function Toggle({ value, onValueChange, disabled, className, style, testID }: ToggleProps) {
   const { colors } = useColorScheme();
   return (
     <Host matchContents className={className} style={style}>
@@ -31,6 +32,10 @@ function Toggle({ value, onValueChange, disabled, className, style }: ToggleProp
         value={value ?? false}
         enabled={!disabled}
         onCheckedChange={onValueChange}
+        // The compose modifier is what surfaces the control to the accessibility tree at all:
+        // without it the switch is a bare ComposeView with no child node, so it can neither be
+        // selected by E2E nor read by TalkBack. Verified on-device.
+        modifiers={testID ? [testIDModifier(testID)] : undefined}
         colors={{
           checkedTrackColor: colors.primary,
           checkedThumbColor: '#FFFFFF',

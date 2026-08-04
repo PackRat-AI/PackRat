@@ -11,7 +11,7 @@ import type { ToggleProps } from './toggle-props';
  * fallback rather than a stub. For a leaf control that is one small file shared by every screen —
  * which is exactly why leaf-level adoption is cheap where screen-level adoption is not.
  */
-function Toggle({ value, onValueChange, disabled, style }: ToggleProps) {
+function Toggle({ value, onValueChange, disabled, style, testID }: ToggleProps) {
   const { colors } = useColorScheme();
   return (
     <Switch
@@ -19,6 +19,7 @@ function Toggle({ value, onValueChange, disabled, style }: ToggleProps) {
       onValueChange={onValueChange}
       disabled={disabled}
       style={style}
+      testID={testID}
       trackColor={{ true: colors.primary, false: colors.grey }}
       thumbColor="#FFFFFF"
     />

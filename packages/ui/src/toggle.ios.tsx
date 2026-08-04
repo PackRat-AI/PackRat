@@ -19,7 +19,7 @@ const Host = SwiftUIHost as (props: HostProps) => ReturnType<typeof SwiftUIHost>
  * No `label` is passed: the call sites render their own RN `Text` beside the control, and a
  * SwiftUI label here would double it up.
  */
-function Toggle({ value, onValueChange, disabled, className, style }: ToggleProps) {
+function Toggle({ value, onValueChange, disabled, className, style, testID }: ToggleProps) {
   const { colors } = useColorScheme();
   return (
     <Host matchContents className={className} style={style}>
@@ -27,6 +27,8 @@ function Toggle({ value, onValueChange, disabled, className, style }: ToggleProp
         isOn={value ?? false}
         onIsOnChange={disabled ? undefined : onValueChange}
         modifiers={[tint(colors.primary)]}
+        // Plain prop on iOS (via CommonViewModifierProps), unlike Android's compose modifier.
+        testID={testID}
       />
     </Host>
   );
