@@ -14,15 +14,17 @@
 //   List/ListItem/ListSectionHeader → list.tsx (plain RN — FlashList + View/Pressable/Text)
 //   Sheet/useSheetRef → bottom-sheet.tsx (@expo/ui/community/bottom-sheet — native sheet)
 //   Form/FormSection/FormItem → form.tsx (plain RN)
-//   TextField → text-field.tsx + .ios.tsx (plain RN)
-//   Toggle → toggle.tsx (RN core Switch)
+//   TextField → text-field.tsx + .ios.tsx (plain RN — @expo/ui's TextField requires native
+//     observable state via useNativeState, incompatible with TanStack Form's controlled model)
+//   Toggle → toggle.{ios,android}.tsx (@expo/ui SwiftUI Toggle / M3 Switch), toggle.tsx (RN, web)
 //
 // Phase 4 ✓ done — platform-specific wrappers → packages/ui/src/
 //   ActivityIndicator → loading-indicator.ios.tsx + .android.tsx (@expo/ui)
 //   Alert/AlertAnchor → alert.tsx (@rn-primitives/alert-dialog) + alert.ios.tsx (RN core Alert)
-//   Card → card.tsx (plain RN)
+//   Card → card.tsx (plain RN — a native Card cannot size RN children; see the migration doc)
 //   SegmentedControl → segmented-control.tsx (@expo/ui community SegmentedControl)
-//   Checkbox → checkbox.tsx (@rn-primitives/checkbox)
+//   Checkbox → checkbox.android.tsx (@expo/ui M3 Checkbox); checkbox.tsx (@rn-primitives) on
+//     iOS/web — SwiftUI has no checkbox toggle style, only a switch
 //   ContextMenu/createContextItem/createContextSubMenu → context-menu/ (@rn-primitives/context-menu,
 //     react-native-ios-context-menu on iOS)
 //   DropdownMenu/createDropdownItem/createDropdownSubMenu → dropdown-menu/ (@rn-primitives/dropdown-menu,
