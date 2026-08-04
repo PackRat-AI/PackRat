@@ -596,6 +596,87 @@ screenshot does.
 **Unchanged and still correct:** the `TextField` blocker (`useNativeState` vs TanStack Form) and the
 `list` blocker (`FlashList` virtualization has no native equivalent) are independent of all this.
 
+## `ListItem`: named slots work, but a `Host` per row kills list scrolling (2026-08-04)
+
+`ListItem` looked like the strongest remaining candidate, because unlike `Card` it has a **defined
+children contract** — five named slots (`HeadlineContent`, `OverlineContent`, `SupportingContent`,
+`LeadingContent`, `TrailingContent`) that map directly onto our `title`/`subTitle`/`leftView`/
+`rightView`. That part delivered. Probed on Android with 200 rows in a `FlashList`:
+
+- Slots render correctly — headline, supporting text, and an RN `Pressable` in `TrailingContent`
+  (via `RNHostView`) keeping its own background.
+- **Accessibility nodes exist**: 10 `li_row_*` nodes in the `uiautomator` dump, which is more than
+  the `Card` attempt ever produced.
+- Taps on the trailing `Pressable` fire (counter went to 2).
+
+**But the list does not scroll.** Fifteen upward swipes left the viewport on rows 0–9; the plain-RN
+list on the neighbouring route scrolled normally under the identical gesture, so it is the row
+wrapper, not the probe. Wrapping each row in a Compose `Host` gives Compose the vertical drag and
+`FlashList` never sees it.
+
+This is consistent with documented platform behaviour rather than a bug we can prop our way out of:
+Android gives the parent scroll container gesture priority and Compose expects participants to opt
+into `nestedScroll`. Every upstream nested-scroll fix in `@expo/ui`'s changelog is scoped to
+`community/bottom-sheet` ([#46544](https://github.com/expo/expo/pull/46544),
+[#47197](https://github.com/expo/expo/pull/47197),
+[#47245](https://github.com/expo/expo/pull/47245)) — there is nothing for a `Host` used as a row
+inside an RN list, because that is not a shape the library targets.
+
+So `ListItem` joins `list` as RN-by-necessity, and for a sharper reason than before: it is not that
+the row can't be native, it's that **a native row inside an RN virtualized scroller breaks the
+scroller**. Revisit only if `@expo/ui` exposes `nestedScroll` participation on `Host`.
+
+## `AlertDialog`: works end to end (2026-08-04)
+
+Android `alert` is the one non-leaf component that **does** migrate. Probed on-device and verified
+all four behaviours:
+
+| Behaviour | Result |
+|---|---|
+| Renders as a real Material 3 dialog | ✅ correct scrim, rounded surface, M3 title/body typography |
+| `Title` / `Text` slots | ✅ real accessibility nodes (`Delete pack?`, `This cannot be undone.`) |
+| `ConfirmButton` / `DismissButton` callbacks | ✅ `RESULT confirmed` / `RESULT cancelled` |
+| `onDismissRequest` (back button) | ✅ `RESULT dismissed` |
+
+Why it succeeds where `ListItem` and `Card` failed: it has named slots **and** a dialog is not inside
+a scroller, so neither the bare-`children` problem nor the gesture conflict applies.
+
+**Two API gotchas cost time and are worth knowing:**
+
+1. `Button`'s press handler is **`onClick`**, not `onPress`. Passing `onPress` type-checks (it lands in
+   the props bag) and silently never fires.
+2. `Button`'s label must be a Compose **`<Text>`** child, not a bare string. With a bare string the
+   button renders as an unlabelled pill — no text, no a11y node — while remaining tappable. That
+   combination is easy to misread as "the dialog is broken".
+
+**Scope for the real migration:** only **one** `prompt()` call site exists in the whole app (typed
+delete-account confirmation). `AlertDialog` has no text-input slot, so the plan is native
+`AlertDialog` for the other 32 `alert` call sites and the RN implementation retained for that single
+`prompt()`. iOS already renders a real `UIAlertController` via RN core and needs no change.
+
+### The predictive rule this session produced
+
+Slots vs bare `children` predicts whether a native container will accept our content:
+
+- `ListItem` has **named slots** → content rendered, a11y nodes present, taps worked.
+- `Card` has bare `children?: ReactNode` and **no slots** → renders wrong, no a11y nodes.
+
+Read the native component's `children` contract *before* writing the wrapper. Both `Card` attempts
+would have been avoided by checking that one type. But slots are necessary, not sufficient —
+`ListItem` has them and still fails, on gestures rather than layout.
+
+**Full rule, in the order to check it:**
+
+1. **Does the native component have named slots?** Bare `children?: ReactNode` (`Card`) → don't.
+2. **Will the `Host` sit inside an RN scroller?** If yes (`ListItem` in a `FlashList`) → don't; the
+   `Host` takes the drag and the list stops scrolling.
+3. **Does the native component own its own dimensions?** A dialog, sheet, or leaf control does
+   (`AlertDialog`, `BottomSheet`, `Switch`) → migrate. A content-sized surface does not.
+
+By that rule the migration surface is: leaf controls ✅ done, whole-surface drop-ins ✅ done,
+`AlertDialog` ✅ proven viable, and `Card`/`list`/`form`/`toolbar`/`Text`/`Button`/`TextField`/`Avatar`
+correctly RN. That is the complete classification — not a backlog.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.
