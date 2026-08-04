@@ -673,6 +673,24 @@ assessed, because our menu is already data-driven rather than JSX-driven:
 That mapping is field-for-field, and unlike `Card` there is no arbitrary-RN-children problem — the menu
 content is native, built from a data tree.
 
+**Probed on-device (2026-08-04) — every mechanism our menu needs works:**
+
+| Check | Result |
+|---|---|
+| Trigger renders, opens a real Material `DropdownMenu` | ✅ |
+| All 6 actions render as real accessibility nodes | ✅ |
+| `onPressAction` delivers the id | ✅ `PRESSED edit` |
+| `subactions` submenu | ✅ `Sub one` / `Sub two` after tapping the parent |
+| `state: 'on'` → checkmark (our `state.checked`) | ✅ checkmark renders |
+| `image: 'trash'` (a bare Material icon name) | ❌ nothing renders — as expected |
+| `destructive: true` | ❌ no red tint on Android |
+| `disabled: true` | ⚠️ node reports `enabled="true"`; visually indistinguishable |
+
+Two concrete build tasks fall out of that: our `DropdownItem.icon` is `{ name: string }` (a Material
+icon name), but `MenuAction.image` needs an `SFSymbol` (iOS) or `ImageSourcePropType` (Android), so the
+icon layer needs a name→source mapping or the icons get dropped; and `destructive`/`disabled` need
+`titleColor` and a manual visual treatment because Android doesn't apply them.
+
 **Known gaps to design around before building it:**
 
 - `presentMenu()` is a **no-op on iOS** in `MenuView` (SwiftUI `Menu`/`ContextMenu` cannot be opened
@@ -686,6 +704,21 @@ content is native, built from a data tree.
 Left unbuilt in this pass because `alert` was the higher-value target (33 call sites vs the menus'
 combined smaller surface) and because the iOS `presentMenu` divergence needs a decision about whether
 to keep the method in the shared type at all.
+
+## `Form` and `Toolbar`: checked against the library, no counterpart exists
+
+Verified rather than assumed, so these are classified on evidence like the rest:
+
+- **`Form` / `FormSection` / `FormItem`** — `jetpack-compose` exports **no `Form` or `Section` at
+  all** (checked the built module list). `Form` itself is `<View className="gap-9">`; there is no
+  native counterpart to a spacing wrapper. SwiftUI has `Form`/`Section`, but they are a
+  settings-list container with their own row chrome, not a layout primitive for arbitrary fields.
+- **`Toolbar`** — the nearest candidate, `HorizontalFloatingToolbar`, takes bare
+  `children: React.ReactNode` (fails step 1 of the rule) **and** is a different widget: a floating
+  pill with a FAB slot, not the blurred bottom bar with left/right views that `toolbar.tsx` renders.
+
+Both stay React Native, and for the same underlying reason as `Card`: they are compositions we own,
+not controls the platform ships.
 
 ### The predictive rule this session produced
 
