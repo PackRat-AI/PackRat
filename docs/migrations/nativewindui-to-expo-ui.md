@@ -776,6 +776,24 @@ PackRat's own dev client, where the theme, `global.css`, and Tailwind content gl
 The rig remains valid for structure, gestures, accessibility nodes, and native behaviour — just not for
 whether a `@packrat/ui` component looks right.
 
+### `Card`, third attempt: progress, then a different wall
+
+With the rig defect understood, `Card` was rebuilt (shared `card-parts.tsx`, `matchContents` on both
+`Host` and `RNHostView`, literal JSX per variant, `OutlinedCard` for the flat+bordered case). Real
+progress: **all four child nodes now appear in the accessibility tree** (`Card Title`, description,
+content, `Action`), where every previous attempt produced none. The missing-a11y-node symptom — the one
+I had flagged as the shared tell — is solved by that structure.
+
+But the **native card surface itself does not render**: no background, no elevation, no rounded
+container. The children lay out correctly in the right order; the Compose `Card` around them is simply
+invisible. That is a *different* failure from either previous attempt, and it is the third distinct wall
+this component has produced.
+
+Reverted again. Three attempts, three different causes, one of which turned out to be my tooling. The
+honest read is that `Card` needs someone to bisect it from the working probe upward with fresh eyes, not
+another iteration from me in the same session — and that its value (a Material shadow) does not justify
+the depth of the hole. `packages/ui/src/card.tsx` stays RN.
+
 ## `Form` and `Toolbar`: checked against the library, no counterpart exists
 
 Verified rather than assumed, so these are classified on evidence like the rest:
