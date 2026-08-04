@@ -724,7 +724,28 @@ further than `MenuView` ever did, verified on-device:
   way to do this.
 - `disabled` renders **greyed out** via `enabled={false}` — also impossible with `MenuAction`.
 
-**The blocking defect: a disabled item still fires a selection.** Tapping the greyed-out item changed the
+**The blocking defect, now precisely characterised: `DropdownMenuItem`'s `enabled={false}` is
+presentation-only.** It greys the label but does not block the press.
+
+What was ruled out along the way, each measured on-device with unambiguous per-item keys and an
+append-only log:
+
+- **Not positional mis-dispatch.** With every item enabled, each row delivered exactly its own
+  `actionKey` (`Alpha`→`KEY_ALPHA`, Charlie's row→`KEY_CHARLIE_DISABLED`). Dispatch is correct.
+- **Not our guard.** `if (item.disabled) return` ran with `disabled=true` visible in the very payload
+  that got through — logically impossible unless the press never entered our closure.
+- **Not a stale bundle.** Grepped the served bundle for the guard, the new probe string, and the
+  platform file; all three present.
+- **Not a stale native callback.** Passing `onClick={undefined}` for disabled items — so
+  `DropdownMenuItem` forwards `onItemPressed: undefined` — still fired. Adding the disabled state to the
+  React `key` to force a remount still fired.
+
+Five independent fixes, one identical result: the press is handled natively regardless of the JS
+callback. That is an upstream defect in `@expo/ui`'s `DropdownMenuItemView`, not something `packages/ui`
+can work around — the only local mitigation would be to filter disabled items out of the menu entirely,
+which changes the UI contract (they should be visible-but-inert) rather than fixing it.
+
+Original framing, superseded by the above: Tapping the greyed-out item changed the
 result state to its `actionKey`. Three guards were tried — an in-handler `if (item.disabled) return`,
 moving that check before `setExpanded`, and finally giving disabled items a handler that closes over
 *nothing* but `setExpanded` — and the state still changed. Since the last variant holds no reference to
