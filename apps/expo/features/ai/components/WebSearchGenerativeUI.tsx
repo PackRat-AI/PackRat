@@ -10,7 +10,6 @@ import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Linking, Pressable, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ToolInvocation } from '../types';
 import { ToolCard } from './ToolCard';
 
@@ -49,7 +48,6 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
   const bottomSheetRef = useSheetRef();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
 
   const handleCardPress = () => {
     bottomSheetRef.current?.present();

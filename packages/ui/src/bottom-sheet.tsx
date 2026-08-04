@@ -36,8 +36,23 @@ type SheetProps = React.ComponentPropsWithoutRef<typeof BottomSheetModal> & {
  * props here because the platform sheet already insets its own content.
  *
  * `backgroundStyle` is kept: Android maps it to the sheet background (iOS uses the system one).
+ *
+ * `enablePanDownToClose` defaults to **true** here, unlike `@expo/ui`'s own `false`. The old wrapper
+ * passed a `BottomSheetBackdrop` to every sheet unconditionally, and that component's default
+ * `pressBehavior` is `'close'` — so every sheet in this app has always been dismissable by tapping
+ * outside it. `@expo/ui` folds that behaviour into this one prop (on Android it also gates the
+ * hardware back button and scrim tap), so leaving it at the library default silently traps the user
+ * in any sheet whose call site doesn't pass it and has no close button. Defaulting it on preserves
+ * the pre-migration contract; a call site that genuinely wants a non-dismissable sheet still opts
+ * out by passing `false` explicitly, because `...props` is spread after this.
  */
-function Sheet({ index = 0, backgroundStyle, ref, ...props }: SheetProps) {
+function Sheet({
+  index = 0,
+  backgroundStyle,
+  enablePanDownToClose = true,
+  ref,
+  ...props
+}: SheetProps) {
   const { colors } = useColorScheme();
 
   return (
@@ -45,6 +60,7 @@ function Sheet({ index = 0, backgroundStyle, ref, ...props }: SheetProps) {
       ref={ref}
       index={index}
       backgroundStyle={backgroundStyle ?? { backgroundColor: colors.card }}
+      enablePanDownToClose={enablePanDownToClose}
       {...props}
     />
   );

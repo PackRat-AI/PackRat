@@ -11,7 +11,7 @@ import { TanstackProvider } from './TanstackProvider';
 
 /**
  * Web Providers. Drops KeyboardProvider (no web support); keeps
- * BottomSheetModalProvider for inline BottomSheetView and ActionSheetProvider
+ * BottomSheetModalProvider for inline SheetView and ActionSheetProvider
  * for useActionSheet(). CustomActionSheet wraps its child in
  * React.Children.only — keep the direct child a single element.
  */

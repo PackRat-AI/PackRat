@@ -25,7 +25,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import { useMemo, useState } from 'react';
 import { Image, Platform, ScrollView, Share, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
@@ -81,7 +81,6 @@ export function PackDetailScreen() {
   const pack = (isOwnedByUser ? packFromStore : packFromApi) as Pack;
 
   const { colors } = useColorScheme();
-  const insets = useSafeAreaInsets();
 
   const bottomSheetRef = useSheetRef();
   const addItemActionsRef = useSheetRef();

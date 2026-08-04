@@ -10,6 +10,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationKeys } from 'expo-app/lib/i18n/types';
+import { testIds } from 'expo-app/lib/testIds';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -357,7 +358,11 @@ export default function ResetPasswordScreen() {
 
                 {/* Password visibility checkbox */}
                 <View className="mb-4 mt-2 flex-row items-center">
-                  <Checkbox checked={passwordVisible} onCheckedChange={setPasswordVisible} />
+                  <Checkbox
+                    checked={passwordVisible}
+                    onCheckedChange={setPasswordVisible}
+                    testID={testIds.auth.showPasswordCheckbox}
+                  />
                   <Text className="ml-2 text-sm text-gray-700">{t('auth.showPassword')}</Text>
                 </View>
               </FormSection>

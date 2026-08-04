@@ -16,7 +16,6 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useState } from 'react';
 import { TouchableOpacity, View, type ViewStyle } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ReportModal } from './ReportModal';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
 
@@ -43,7 +42,6 @@ export const ChatBubble = React.memo(function ChatBubble({
   const bottomSheetRef = useSheetRef();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
 
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
 

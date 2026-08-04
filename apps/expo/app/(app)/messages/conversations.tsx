@@ -11,6 +11,7 @@ import { Toolbar } from '@packrat/ui/src/toolbar';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { testIds } from 'expo-app/lib/testIds';
 import * as Haptics from 'expo-haptics';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
@@ -304,6 +305,7 @@ function MessageRow({
                   <Checkbox
                     checked={selectedMessages.includes(info.item.id)}
                     onCheckedChange={onCheckedChange}
+                    testID={testIds.messages.selectConversationCheckbox(info.item.id)}
                   />
                 )}
               </Animated.View>

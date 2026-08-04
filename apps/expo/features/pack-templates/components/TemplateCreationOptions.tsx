@@ -10,7 +10,6 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnlineContentImportModal } from './OnlineContentImportModal';
 
 type TemplateCreationOptionsProps = object;
@@ -24,7 +23,6 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
     const user = useUser();
     const isAdmin = user?.role === 'ADMIN';
     const [showOnlineContentModal, setShowOnlineContentModal] = useState(false);
-    const insets = useSafeAreaInsets();
 
     const { run, handleDismiss } = useBottomSheetAction(ref as React.RefObject<BottomSheetModal>);
 

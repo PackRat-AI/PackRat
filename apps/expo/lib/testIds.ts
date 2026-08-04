@@ -29,6 +29,12 @@ export const testIds = Object.freeze({
     passwordInputContainer: 'password-input-container',
     continueBtn: 'continue-button',
     signOutBtn: 'sign-out-button', // keep Maestro value
+    showPasswordCheckbox: 'auth:show-password-checkbox',
+  }),
+
+  // ── Messages ──────────────────────────────────────────────────────────────
+  messages: Object.freeze({
+    selectConversationCheckbox: (id: string | number) => `messages:select-conversation-${id}`,
   }),
 
   // ── Packs ─────────────────────────────────────────────────────────────────
