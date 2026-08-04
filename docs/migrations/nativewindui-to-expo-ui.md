@@ -459,6 +459,61 @@ Note `bun check:migration`'s "24/24, 100%" counts components moved off nativewin
 components on `@expo/ui`. Only three are actually native today: `loading-indicator`,
 `segmented-control`, `toggle`.
 
+## SDK 57 migration pass (2026-08-04)
+
+Upgraded to Expo SDK 57 (`@expo/ui` 57.0.9, RN 0.86.2) first, because the RN-children-in-Compose
+fixes the container work depends on landed in 56.0.17 and 57.x. `check-types` clean on the upgrade
+alone. `packages/ui` had pinned `@expo/ui` at `^56.0.9`, which silently held node_modules at 56.0.16
+even after `apps/expo` moved — both are now `~57.0.9`.
+
+### Drop-in replacements did most of the work
+
+`@expo/ui` ships eight [API-compatible replacements](https://docs.expo.dev/versions/latest/sdk/ui/drop-in-replacements/)
+for popular community libraries; the docs say *"Most migrations only require changing the import."*
+That held. Four packages removed from `package.json` outright:
+
+| Was | Now | Call sites |
+|---|---|---|
+| `@gorhom/bottom-sheet` | `@expo/ui/community/bottom-sheet` | 17 files |
+| `@react-native-community/datetimepicker` | `@expo/ui/community/datetime-picker` | 1 |
+| `@react-native-picker/picker` | `@expo/ui/community/picker` | 1 |
+| `@react-native-masked-view/masked-view` | `@expo/ui/community/masked-view` | 1 |
+
+`Sheet` is now a real SwiftUI sheet / Material 3 `ModalBottomSheet`, and `present()`/`dismiss()`/
+`onDismiss` keep `@gorhom`'s contract so no call site logic changed. Three prop groups were dropped
+because the native sheet owns them and passing them did nothing: the custom `BottomSheetBackdrop`,
+`handleIndicatorStyle` (9 sites), and the `style` border/radius. Safe-area `topInset`/`bottomInset`
+went too (7 sites) — the platform sheet insets its own content.
+
+Two pieces of scaffolding also became unnecessary: datetimepicker's config plugin (native code now
+comes from `@expo/ui`) and its metro web stub (`@expo/ui` ships a real `.web` implementation).
+
+`BottomSheetView` is re-exported as `SheetView` with `cssInterop` applied — `@expo/ui`'s sheet types
+are hand-written rather than extending `ViewProps`, so NativeWind's `className` augmentation doesn't
+reach them. Same fix as `Host` in `toggle.{ios,android}.tsx`.
+
+### `Checkbox`: Android only, deliberately
+
+`checkbox.android.tsx` is now the Material 3 `Checkbox`. **iOS stays on RN** — SwiftUI has no
+checkbox toggle style, only a switch, so routing iOS through `@expo/ui` would render every checkbox
+as a switch. A checkmark is also the iOS convention. Not a stopgap; the right end state.
+
+### `TextField`: deliberately NOT migrated
+
+The native `TextField` has all seven decoration slots we'd want (`Label`, `Placeholder`,
+`LeadingIcon`, `TrailingIcon`, `Prefix`, `Suffix`, `SupportingText`) — but it **does not accept a
+React string `value`**. State must live in native observable state via
+[`useNativeState`](https://docs.expo.dev/versions/latest/sdk/ui/jetpack-compose/usenativestate/),
+which deliberately bypasses the JS thread.
+
+That is a fundamental mismatch with TanStack Form, which is controlled-only by design. Of 34
+`<TextField>` call sites, 16 are controlled and 10 are wired to `field.state.value`. Migrating would
+mean replacing declarative form binding with imperative workarounds across those files, risking
+validation behaviour — and buying nothing visually, because RN's `TextInput` already renders a
+native `EditText`/`UITextField`.
+
+Revisit only if `@expo/ui` grows a controlled `value: string` prop.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.
