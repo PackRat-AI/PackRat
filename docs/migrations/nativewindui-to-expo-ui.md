@@ -412,6 +412,41 @@ The two platforms expose it differently, which is the trap:
 **So: every migrated control must take and forward `testID`.** Treat a control that doesn't as an
 accessibility bug, not as an upstream constraint.
 
+### Correction: containers **can** host interactive RN children (`RNHostView` works)
+
+The earlier note that containers "cannot" be migrated because `ComposeClick` never fires, and that
+the `RNHostView` bridge "was tried and did not fix it", **does not hold on `@expo/ui` 56.0.16**.
+
+Probed directly on-device: an RN `Pressable` inside a Compose `Column`, wrapped in `RNHostView`,
+receives every tap. Counters incremented 1→4 over three taps and 1→3 over two, with a pure-RN
+control alongside confirming taps weren't being double-counted. Both `matchContents` and
+`style={{ position: 'absolute' }}` variants worked, and the RN children rendered with their own
+styling intact inside the Compose parent.
+
+Why the earlier attempt probably failed: the Expo docs are explicit that the shadow node's style must
+match the Compose component's visual position — *"Misalignment causes hit-testing failures for
+interactive elements like `Pressable`"*. That's a fixable layout problem, not a hard limit. Note also
+that `matchContents` **cannot change after mount**, so it must be chosen correctly up front — a
+likely source of a "it just doesn't work" conclusion.
+
+Relevant upstream history (both repos are on 56.0.16):
+
+- `RNHostView` added for Android in [#43495](https://github.com/expo/expo/pull/43495) (56.0.0);
+  `RNHost` for iOS in [#40938](https://github.com/expo/expo/pull/40938) (55.0.12).
+- Touch fixes for RN children inside Compose landed in
+  [#46778](https://github.com/expo/expo/pull/46778) and
+  [#46805](https://github.com/expo/expo/pull/46805) (56.0.16) — i.e. *at* the installed version, so
+  an attempt made before it would legitimately have failed.
+- Further scroll/touch fixes in 56.0.17 ([#47245](https://github.com/expo/expo/pull/47245)) and
+  57.x, so upgrading is worth doing before concluding anything else is impossible.
+
+One real caveat, consistent with the `testID` finding above: RN children inside `RNHostView` expose
+**no** accessibility node of their own (only the pure-RN control did in the probe). So container
+migrations need explicit attention to a11y/E2E selectors, not just to whether touches land.
+
+**The leaf-vs-container split should therefore be re-tested, not assumed.** It is a version artefact,
+not an architectural boundary.
+
 ### Rig gap this exposed: PackRat's deps don't resolve from outside its repo
 
 Bringing Android up surfaced three Metro failures, all one root cause: PackRat's source sits outside
