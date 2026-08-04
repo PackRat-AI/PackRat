@@ -776,7 +776,30 @@ PackRat's own dev client, where the theme, `global.css`, and Tailwind content gl
 The rig remains valid for structure, gestures, accessibility nodes, and native behaviour — just not for
 whether a `@packrat/ui` component looks right.
 
-### `Card`, third attempt: progress, then a different wall
+### `Card`: SOLVED on the fourth attempt — `rootClassName` on the `Host` was the bug
+
+`card.android.tsx` is now a real Material 3 `Card`. Verified in **PackRat's own dev client** (not the
+rig): all four variants render correctly — default elevated surface with correct typography and a tonal
+`Action` pill, `shadow-none` flat, bordered+elevated, and the flat+bordered ToolCard shape with a
+`flex-1` label and a right-aligned `size="icon"` trailing button. Taps work in every variant
+(`TAPS 3` across two different cards).
+
+**The root cause of all three earlier failures: forwarding `rootClassName` to the `Host`.** `cssInterop`
+turns that className into a `style` on the `Host`, which fights `matchContents` and collapses the entire
+card to a hairline. Isolated on-device by bisecting the className itself — `shadow-none` alone, `border`
+alone, and the combined shape *all* collapsed, while the identical card with no `rootClassName`
+rendered perfectly. Not `matchContents`, not `RNHostView`, not `OutlinedCard`, not `elevation: 0`, not
+NativeWind reaching hosted children. One prop on one component.
+
+The className's *intent* is now read and mapped onto real Compose props (`elevation`, `border`,
+`colors.containerColor`) instead of being forwarded; `rootStyle` still passes through, since an explicit
+style means the caller is knowingly sizing the host. `OutlinedCard` is avoided — it collapsed to a
+hairline independently — in favour of a filled `Card` at zero elevation with an explicit border.
+
+Two lessons worth keeping: **verify styling in the real app, never the rig**, and when a native
+container misbehaves, **bisect the props you forward to it** before suspecting the bridge.
+
+### Superseded: third attempt notes
 
 With the rig defect understood, `Card` was rebuilt (shared `card-parts.tsx`, `matchContents` on both
 `Host` and `RNHostView`, literal JSX per variant, `OutlinedCard` for the flat+bordered case). Real
