@@ -930,6 +930,28 @@ By that rule the migration surface is: leaf controls ✅ done, whole-surface dro
 `AlertDialog` ✅ proven viable, and `Card`/`list`/`form`/`toolbar`/`Text`/`Button`/`TextField`/`Avatar`
 correctly RN. That is the complete classification — not a backlog.
 
+## `ContextMenu`: nothing to migrate on Android (2026-08-04)
+
+Built `context-menu.android.tsx` on the same primitive as the dropdown, then removed it — **no Android
+call site renders a context menu at all**:
+
+| Call site | Android behaviour |
+|---|---|
+| `messages/conversations.android.tsx:300` | Wrapped in `IosContextMenu`, which returns `<>{children}</>` when `Platform.OS !== 'ios'` |
+| `messages/chat.android.tsx:391,454` | `items={Platform.select({ ios: CONTEXT_MENU_ITEMS, default: [] })}` — empty array on Android |
+| `features/ai/components/ChatBubble.tsx:95` | The whole `<ContextMenu>` block is commented out |
+| `messages/chat.tsx`, `messages/conversations.tsx` | `.tsx` variants; Metro picks the `.android.tsx` files above on Android |
+
+So `ContextMenu` is an iOS-only surface in this app, and iOS already uses
+`react-native-ios-context-menu` (a real native menu). Adding a Compose implementation would render an
+empty native menu and — measured on-device — **steal the long-press** from screens that use it for
+something else: long-pressing a chat bubble currently enters selection mode and shows the reaction bar,
+which my `onLongPress` competed with.
+
+Left as-is deliberately. If Android ever needs a real context menu, `dropdown-menu.android.tsx` is the
+template: same primitive, `onLongPress` instead of `onPress`, plus a `useImperativeHandle` exposing
+`presentMenu`/`dismissMenu` (two call sites in `messages/chat.tsx` call `dismissMenu`).
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.
