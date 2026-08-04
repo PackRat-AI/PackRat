@@ -654,6 +654,39 @@ delete-account confirmation). `AlertDialog` has no text-input slot, so the plan 
 `AlertDialog` for the other 32 `alert` call sites and the RN implementation retained for that single
 `prompt()`. iOS already renders a real `UIAlertController` via RN core and needs no change.
 
+## `DropdownMenu` / `ContextMenu`: assessed as viable, not yet built
+
+`@expo/ui/community/menu` exports `MenuView`, a documented drop-in for `@react-native-menu/menu` that
+renders a real Material `DropdownMenu` on Android. It is the **best structural fit** of any container
+assessed, because our menu is already data-driven rather than JSX-driven:
+
+| Ours (`dropdown-menu/types.ts`) | `MenuAction` |
+|---|---|
+| `actionKey` | `id` (defaults to `title`) |
+| `title` / `subTitle` | `title` / `subtitle` |
+| `icon` | `image` + `imageColor` |
+| `destructive`, `disabled` | same |
+| nested `items` | `subactions` (+ `displayInline` for inline sections) |
+| `children` (trigger) | `children` (trigger) |
+| `onItemPress` | `onPressAction(e.nativeEvent.event)` |
+
+That mapping is field-for-field, and unlike `Card` there is no arbitrary-RN-children problem — the menu
+content is native, built from a data tree.
+
+**Known gaps to design around before building it:**
+
+- `presentMenu()` is a **no-op on iOS** in `MenuView` (SwiftUI `Menu`/`ContextMenu` cannot be opened
+  programmatically). Our type exposes it; only `dismissMenu?.()` is actually called, at two context-menu
+  sites in `messages/chat.tsx`, and it is already optional-chained.
+- On Android `MenuView.title` is unused (Material `DropdownMenu` has no title slot), and `subtitle`
+  renders as a leading icon rather than a second line.
+- `state: { checked }` has no direct equivalent — check for a `MenuAction` checked/selected field before
+  committing, or render the checkmark as an image.
+
+Left unbuilt in this pass because `alert` was the higher-value target (33 call sites vs the menus'
+combined smaller surface) and because the iOS `presentMenu` divergence needs a decision about whether
+to keep the method in the shared type at all.
+
 ### The predictive rule this session produced
 
 Slots vs bare `children` predicts whether a native container will accept our content:
