@@ -745,6 +745,25 @@ callback. That is an upstream defect in `@expo/ui`'s `DropdownMenuItemView`, not
 can work around — the only local mitigation would be to filter disabled items out of the menu entirely,
 which changes the UI contract (they should be visible-but-inert) rather than fixing it.
 
+**Reading the native source narrows it further, and rules out the obvious explanations.**
+`node_modules/@expo/ui/android/.../menu/DropdownMenuItem.kt` is correct on its face — it passes
+`enabled = props.enabled` straight into Compose's `DropdownMenuItem`, which *does* block clicks — and
+`ExpoUIModule.kt` wires `onItemPressed` per view. So the JS→native chain looks right, and the greyed
+label proves `enabled` reaches the *colour* path.
+
+Two theories checked and discarded rather than left as plausible-sounding leads:
+
+- **"The APK lacks `@expo/ui` native code."** No — `Toggle`, `Alert` and `Card` all use `@expo/ui`
+  native views on this same dev client and work. An APK/dex inspection that appeared to support this
+  was a broken shell pipeline, not evidence.
+- **"`DropdownMenuItemProps` is missing `@Field` on `enabled`."** No — `@OptimizedComposeProps`
+  classes deliberately don't use `@Field` (`ModalBottomSheetView` declares plain
+  `val skipPartiallyExpanded: Boolean = false` and our sheet works).
+
+So the defect is real and reproducible but its mechanism is still unidentified: `enabled` reaches the
+colour path and not the click path. That is the question to put upstream, with this repro: a
+`DropdownMenuItem` with `enabled={false}` and `onClick={undefined}` still dispatches `onItemPressed`.
+
 Original framing, superseded by the above: Tapping the greyed-out item changed the
 result state to its `actionKey`. Three guards were tried — an in-handler `if (item.disabled) return`,
 moving that check before `setExpanded`, and finally giving disabled items a handler that closes over
