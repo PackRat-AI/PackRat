@@ -952,38 +952,56 @@ Left as-is deliberately. If Android ever needs a real context menu, `dropdown-me
 template: same primitive, `onLongPress` instead of `onPress`, plus a `useImperativeHandle` exposing
 `presentMenu`/`dismissMenu` (two call sites in `messages/chat.tsx` call `dismissMenu`).
 
-## `Text` / `Button` retested on SDK 57 (2026-08-05) — all three blockers are gone
+## `Text` / `Button` on SDK 57 — sizing is solved, but `Host` can't carry a ref or a11y props
 
-Both were reverted before SDK 57, so they were rechecked. **All three original blockers no longer
-hold**, and the last one turned out to be my own misuse rather than a library limit:
+Sizing was the blocker everyone remembered, and it is gone (see the table below). Attempting the
+migration then surfaced a different, harder constraint, established from `@expo/ui`'s own source
+rather than from probing:
+
+**`Host` is `export function Host(props: HostProps)` — a plain function component with no
+`forwardRef`.** And `HostProps` is a closed list: `matchContents`, `onLayoutContent`,
+`useViewportSizeMeasurement`, `colorScheme`, `seedColor`, `layoutDirection`,
+`ignoreSafeAreaKeyboardInsets`, `children`, `style`, `pointerEvents`. The jetpack-compose `Host` does
+**not** extend RN's `ViewProps` (its `PrimitiveBaseProps` is just `{ modifiers? }`), so there is no
+`testID`, no `accessibilityRole`, no `aria-*`, and no way to attach a ref.
+
+That collides with two contracts `button.tsx` documents and satisfies today:
+
+1. **`ref` for `.measure()`.** The `@rn-primitives` menu/dialog primitives inject a ref through
+   `Slot` and call `.measure()` on it to position their portal. `button.tsx`'s own comment records
+   that dropping this left `triggerPosition` null and *"is why the Android category DropdownMenu never
+   opened"*. A `Host` cannot receive that ref.
+2. **Arbitrary `ViewProps` pass-through.** `asChild` primitives inject `role`,
+   `accessibilityState` and `nativeID`; without them *"screen readers announce menu rows as bare
+   buttons with no checked/disabled state"*. Four call sites wrap `Button` in `Link asChild`, which
+   clones the child and injects `onPress`.
+
+So `Button` stays RN — not for sizing, and not for lack of trying, but because the native surface has
+no ref and no accessibility props, and 196 call sites depend on both reaching the underlying view.
+Migrating it would trade a working, screen-reader-correct button for a native one that breaks menu
+positioning and a11y.
+
+`Text` is the same shape at 147 call sites: it forwards `numberOfLines`, `selectable`, `onLayout`
+and a11y props, none of which a `Host` accepts.
+
+### What *is* fixed on 57, for the record
 
 | Original blocker | Status |
 |---|---|
-| 3. Label can't take brand colours | **Fixed** — `colors={{ containerColor, contentColor }}` renders brand blue with a white label. |
-| 1a. Collapses in a `flex-row` (the alert's "Got it" rendered one character per line) | **Fixed** — two buttons side by side render correctly. |
-| 1b. Can't fill the parent's width | **Never a real limit.** It only fails with `<Host matchContents>`. |
+| Label can't take brand colours | **Fixed** — `colors={{ containerColor, contentColor }}`. |
+| Collapses in a `flex-row` | **Fixed** — two buttons side by side render correctly. |
+| Can't fill the parent's width | **Never a real limit** — only fails with `matchContents`. |
 
-The fix is the documented `Host` contract, which the earlier attempts ignored: **`matchContents` is for
-intrinsic sizing; use `style` when you need an explicit size.** Measured on-device, all full width and
-all tappable (`TAPS 3`):
+Measured on-device, all full width and tappable (`TAPS 3`): `<Host style={{ height: 56 }}>` works with
+or without `fillMaxWidth()`; `<Host matchContents>` + `fillMaxWidth()` is the only failing case.
 
-- `<Host style={{ width: '100%', height: 56 }}>` + `fillMaxWidth()` → full width ✅
-- `<Host style={{ height: 56 }}>` + `fillMaxWidth()` → full width ✅
-- `<Host style={{ height: 56 }}>`, **no modifier at all** → full width ✅
-- `<Host matchContents>` + `fillMaxWidth()` → shrink-wraps to the label ❌
+**The `Host` sizing rule, since it caused three false conclusions in this migration:** `matchContents`
+is for intrinsic sizing; use `style` when you need an explicit size. Never forward a `className` to a
+`Host` — `cssInterop` turns it into a `style` that fights `matchContents` (that was the `Card` bug).
+If a native component renders collapsed, suspect the `Host` props before the bridge.
 
-That is the same class of mistake as the `Card` bug (forwarding `rootClassName` to the `Host`): the
-`Host`'s sizing contract is the thing to get right, and `matchContents` is not a default to reach for.
-
-**So `Button` and `Text` are now genuinely migratable** — the blockers are cleared. The remaining work
-is real but mechanical: `Button` has 67 call sites mixing `w-full` CTAs, `size="icon"` rows and
-`flex-1` children, so the wrapper has to choose a `Host` sizing mode per case (explicit height +
-`fillMaxWidth` for CTAs, `matchContents` for icon buttons) rather than one default. `Text` has 147 call
-sites and needs its own pass. Neither is attempted here — this entry exists so the next session starts
-from "unblocked, needs a careful wrapper" instead of "reverted, don't bother".
-
-Corrects an earlier version of this section that reported 1b as still broken; that conclusion came
-from only ever testing the `matchContents` combination.
+**Revisit `Button`/`Text` if `Host` gains `forwardRef` and `ViewProps`.** That single upstream change
+is what blocks them; sizing no longer does.
 
 ## Rules
 
