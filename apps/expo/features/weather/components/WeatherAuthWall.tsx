@@ -3,7 +3,7 @@ import { Text } from '@packrat/ui/src/text';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, usePathname, useRouter } from 'expo-router';
-import { Image, Platform, View } from 'react-native';
+import { Image, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
@@ -16,7 +16,13 @@ export function WeatherAuthWall() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <Stack.Screen options={{ headerShown: false }} />
-      <View className="flex-1 px-6 py-8">
+      {/* Scrollable for the same reason as ProfileAuthWall: on a short screen the feature rows plus
+          the sign-in button exceed the viewport once the tab bar is accounted for, which left the
+          button clipped and unreachable. `flex-grow` keeps taller screens looking identical. */}
+      <ScrollView
+        contentContainerClassName="flex-grow px-6 py-8"
+        showsVerticalScrollIndicator={false}
+      >
         <View className="mb-8 items-center justify-center">
           <View className="bg-primary/10 mb-4 rounded-full p-6">
             <Image
@@ -58,11 +64,11 @@ export function WeatherAuthWall() {
           }
           size="lg"
           variant="primary"
-          className="mb-4 w-full"
+          className="mb-4 mt-auto w-full"
         >
           <Text className="font-medium">{t('weather.signIn')}</Text>
         </Button>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
