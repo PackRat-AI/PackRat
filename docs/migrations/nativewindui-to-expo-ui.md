@@ -952,6 +952,31 @@ Left as-is deliberately. If Android ever needs a real context menu, `dropdown-me
 template: same primitive, `onLongPress` instead of `onPress`, plus a `useImperativeHandle` exposing
 `presentMenu`/`dismissMenu` (two call sites in `messages/chat.tsx` call `dismissMenu`).
 
+## `Text` / `Button` retested on SDK 57 (2026-08-05) — still correctly RN
+
+Both were migrated and reverted before SDK 57, so they were worth rechecking once 57 fixed things
+that had blocked other components. Retested `Button` on-device against its three original blockers:
+
+| Original blocker | Status on 57 |
+|---|---|
+| 3. Label can't take brand colours | **Fixed.** `colors={{ containerColor, contentColor }}` renders brand blue with a white label. |
+| 1a. Collapses in a `flex-row` (the alert's "Got it" rendered one character per line) | **Fixed.** Two buttons side by side in a row render correctly. |
+| 1b. Can't fill its parent's width | **Still broken.** Both routes fail: `style={{ width: '100%' }}` on the `Host` shrink-wraps to the label, and the Compose-native `fillMaxWidth()` modifier on the `Button` does too — `matchContents` on the `Host` overrides it, and dropping `matchContents` gives zero height (proven while migrating `Card`). |
+
+Presses work in every variant (`TAPS 2`).
+
+**So `Button` stays RN**, but for a narrower reason than before: only full-width CTAs are impossible.
+That is not a niche case — `w-full` buttons are the primary action on the auth screens, the auth walls,
+and every form. A component used for both those and `size="icon"` rows can't be split by variant
+without leaking the native/RN distinction into every call site.
+
+`Text` was not separately retested: its revert reason was the same `Host` intrinsic-size problem plus
+the label-colour issue, and the sizing half is exactly what 1b shows is still unfixed. Worth one
+focused retest if `Host` ever gains a real intrinsic-size mode.
+
+Revisit both if `@expo/ui` adds a `Host` sizing mode that reports content height while filling
+available width — that single capability is what blocks `Button`, `Text`, and `ListItem` alike.
+
 ## Rules
 
 1. **`@expo/ui` is the primary source.** Every component gets its replacement from `@expo/ui` first.
