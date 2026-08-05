@@ -1,4 +1,4 @@
-# Beta testing: native Android controls
+# Native Android Controls — Beta Tester Guide & Test Plan
 
 **Build:** `feat/expo-ui-migration-sdk57` · **Platform: Android only** · Expo SDK 57
 
