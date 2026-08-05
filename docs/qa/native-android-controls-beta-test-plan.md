@@ -3,8 +3,7 @@
 Build `feat/expo-ui-migration-sdk57`, Android only, Expo SDK 57.
 
 A lot of PackRat's switches, dialogs, menus and pickers used to be hand-built to
-look like Android. Now they are the real Android ones. Same widgets your phone
-uses everywhere else.
+look like Android. Now they are the real Android ones.
 
 The app should do exactly what it did before. Only the look and feel of those
 controls changed.
@@ -15,7 +14,7 @@ trip dates, so a small failure here costs more than usual.
 
 ## What to check
 
-Go through whichever of these you normally use. The question each time is
+Go through as much screens as possible. The question each time is
 whether the control still does what it says.
 
 ### Bottom sheets, the panels that slide up
@@ -29,9 +28,6 @@ chat mode picker, pack template options.
 - If closing it was meant to do something, like deleting an item you just
   confirmed, did that actually happen?
 
-Start here. We found a bug during development where two sheets could not be
-closed at all, so this is the area most worth your time.
-
 ### Confirmation dialogs
 
 Sign-in and sign-up errors, deleting a pack, deleting your account, and the `⋯`
@@ -44,16 +40,6 @@ menus on the dashboard tiles (Weight Analysis, Gear Inventory, Pack Stats).
 - Deleting your account still asks you to type a confirmation. We did not touch
   that flow, but please try it if you have a test account to spare.
 
-### Overflow menus (`⋯` and `☰`)
-
-Messages screen (the `☰` at top left) and chat threads.
-
-- Tap it and the menu should appear anchored to the button.
-- Pick at least two items and check each one still does its job.
-- Tapping outside or pressing back should close it and do nothing else.
-- Some menu items show a `?` where an icon should be. The current release does
-  that too, so it is not new. We are tracking it separately. Skip reporting it.
-
 ### Switches, checkboxes and segmented buttons
 
 Settings (Display Units), notification preferences, weather alert preferences,
@@ -62,9 +48,8 @@ Templates.
 
 - The switches are visibly bigger than before. That is the standard Android
   size, so it is intended.
-- Flip one, leave the screen, come back. Did it remember?
-- Does the setting actually do anything?
-- Tap targets should still be easy to hit. Say so if any feel small or fiddly.
+- Flip one, leave the screen, come back and confirm that it persists.
+- Verify that the setting actually takes effect.
 
 ### Date picker
 
@@ -100,19 +85,4 @@ Tell us straight away about any of these:
 No need to report these, they are known:
 
 - Switches being bigger
-- `?` instead of an icon in overflow menus, which the current release also does
 - Dialogs and menus looking more Android-ish than before, which is the point
-
-## Notes
-
-This build is Android only. iPhone is unaffected.
-
-"Looks different" is usually correct here, since these controls are supposed to
-look like Android now. If something looks unfamiliar but works fine, mention it
-anyway and we will work out whether we meant it.
-
-When in doubt, report it. A duplicate report costs us nothing. A broken delete
-button reaching release costs a lot.
-
-The parts we need human eyes on are the ones automated tests are bad at. Does it
-feel right, and does it still do what you meant.
