@@ -23,11 +23,21 @@ type ButtonSize = 'none' | 'sm' | 'md' | 'lg' | 'icon';
  */
 type ResolvedVariant = 'filled' | 'outlined' | 'tonal' | 'text';
 
-const VARIANT_MAP: Record<LegacyButtonVariant, ResolvedVariant> = {
+/**
+ * Total map over every `ButtonVariant`, legacy and current, so resolving one is a plain lookup with
+ * no cast. `Record<ButtonVariant, ResolvedVariant>` makes TypeScript reject the file if a variant is
+ * ever added without a resolution, which an `in`-check plus two casts could not do.
+ */
+const VARIANT_MAP: Record<ButtonVariant, ResolvedVariant> = {
+  // legacy names, kept as distinct styles
   primary: 'filled',
   secondary: 'outlined',
   tonal: 'tonal',
   plain: 'text',
+  // current names resolve to themselves
+  filled: 'filled',
+  outlined: 'outlined',
+  text: 'text',
 };
 
 /**
@@ -74,13 +84,7 @@ const LABEL_CLASS: Record<ResolvedVariant, string> = {
 };
 
 function resolveVariant(variant: ButtonVariant): ResolvedVariant {
-  // `in` doesn't narrow a string-literal union by membership the way a discriminated object
-  // union does — ButtonVariant minus LegacyButtonVariant is exactly 'filled'|'outlined'|'text',
-  // all of which are also ResolvedVariant members; that is what the `in` check verifies at runtime.
-  return variant in VARIANT_MAP
-    ? // safe-cast: see function-level comment above
-      VARIANT_MAP[variant as LegacyButtonVariant]
-    : (variant as ResolvedVariant);
+  return VARIANT_MAP[variant];
 }
 
 /** Unwraps `<Button><Text>Save</Text></Button>` to the string `'Save'`. */
