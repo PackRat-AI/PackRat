@@ -959,11 +959,24 @@ migration then surfaced a different, harder constraint, established from `@expo/
 rather than from probing:
 
 **`Host` is `export function Host(props: HostProps)` — a plain function component with no
-`forwardRef`.** And `HostProps` is a closed list: `matchContents`, `onLayoutContent`,
-`useViewportSizeMeasurement`, `colorScheme`, `seedColor`, `layoutDirection`,
-`ignoreSafeAreaKeyboardInsets`, `children`, `style`, `pointerEvents`. The jetpack-compose `Host` does
-**not** extend RN's `ViewProps` (its `PrimitiveBaseProps` is just `{ modifiers? }`), so there is no
-`testID`, no `accessibilityRole`, no `aria-*`, and no way to attach a ref.
+`forwardRef`.** Checked against the upstream changelog for every version, not just the installed one:
+`forwardRef`/ref support has never been added to `Host` at any release. `HostProps` is a closed list
+(`matchContents`, `onLayoutContent`, `useViewportSizeMeasurement`, `colorScheme`, `seedColor`,
+`layoutDirection`, `ignoreSafeAreaKeyboardInsets`, `children`, `style`, `pointerEvents`) and the
+jetpack-compose `Host` does **not** extend RN's `ViewProps` — `PrimitiveBaseProps` is just
+`{ modifiers? }`.
+
+**Accessibility is available, but only through modifiers, and Android's set is much thinner than
+iOS's.** This is the nuance worth recording:
+
+| | jetpack-compose (Android) | swift-ui (iOS) |
+|---|---|---|
+| a11y modifiers | `semantics`, `testID`, `selectable`, `selectableGroup`, `toggleable` | `accessibilityLabel`, `accessibilityHint`, `accessibilityValue`, `accessibilityIdentifier`, `accessibilityHidden`, `accessibilityElement`, `accessibilityAddTraits`, `accessibilityRemoveTraits`, `accessibilityInputLabels` |
+
+Android's `semantics` takes only `{ contentType?: string }` — no label, no role. `selectable` and
+`toggleable` do carry a role, but the union is `radioButton | checkbox | switch | tab`, with **no
+`button`**. So an `@expo/ui` Button on Android cannot be given the label/role that `asChild`
+primitives inject and screen readers announce.
 
 That collides with two contracts `button.tsx` documents and satisfies today:
 
