@@ -68,7 +68,7 @@ Verified: `bun install` succeeds without `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` se
 - `wrap:true`'s `matchContents:{vertical:true}` only stops `Host` from shrink-wrapping — it doesn't give SwiftUI/Compose an actual width to wrap text against. A parent using `items-center` (cross-axis center, not Yoga's default `stretch`) never hands `Host` a width, so wrapped text with no explicit sizing class rendered **one word per line** instead of wrapping at the visible container's width. Fixed: `Text` now falls back to `style={{ width: '100%' }}` whenever `wrap` is set and `className` has no explicit `w-*`/`flex-1`-style sizing class (see `needsExplicitWidth` in `text-class-parser.ts`).
 - **Nesting a migrated `Text` inside a migrated `Button` breaks Button's sizing** — two independent `Host` native-bridge boundaries can't correctly report intrinsic size across each other. `<Button><Text>Label</Text></Button>` (the shape the codemod left everywhere, since `Button.label` was never used) collapsed the button to a near-zero-size blob with the label overflowing outside it. This affected most already-migrated Button call sites, not just ones with a specific size prop — the root cause is structural (nested Hosts), not a size/variant issue.
   **Fix**: `Button` now auto-extracts a plain string when `children` is exactly one `Text` (or raw string) with only string content, and passes it via `@expo/ui`'s `label` prop instead of nesting — see `extractLabel` in `button.tsx`. This resolves the dominant case with zero call-site rewrites.
-  **Known remaining gap**: icon+text or multi-child `Button` content still nests a `Host`-bridged child and is still nested-Host-risky — not yet fixed, not yet verified on-device. Before trusting any `Button` with non-plain-text children, verify it on a real device first.
+  **Multi-child `Button` content — now verified on iOS.** icon+text `Button`s still nest a `Host`-bridged child, so the nested-Host risk is structural and unchanged. But it does not actually manifest on iOS: three separate icon+text call sites render correctly on the iPhone 17 Pro simulator (iOS 26.4) — `season-suggestions.tsx`'s "Generate Season Suggestions" (leading sparkle icon), and auth's "Continue with Google" and "Continue with Apple" (leading brand icons). Correct height, centred content, icon and label on one line, no collapse. The `filled`/`outlined`/`text` variants all appeared in the same sweep. Android is a different Host implementation and is not covered by this result, so verify there separately.
 
 ## Resolved: TextField — no Host bridge, two platform files
 
@@ -112,7 +112,7 @@ A type-only gap in `@rn-primitives/hooks`' `useAugmentedRef`: its return type do
 
 18 call sites updated, all pure `Alert`/`AlertAnchor`/`AlertMethods` imports (no splitting needed).
 
-**On-device verification gap, accepted deliberately:** both platforms' `Alert` only appear after a user action (button press or, for the auth-flow error alerts, a failed form submission) — no deep-linkable "alert shown" state, and the mandated `xcrun simctl` deep-link+screenshot workflow can't type into fields or press buttons to trigger one. Typecheck and lint are clean. Risk is asymmetric by platform: iOS is essentially zero-risk (unmodified RN core native API); Android is a direct, unmodified port of already-shipped code using an already-installed primitive, same risk class as `Sheet`/`Form`. Both accepted on typecheck+lint given that profile — flagging here per the same standard as the `Sheet` gap above.
+**On-device verification gap, accepted deliberately:** both platforms' `Alert` only appear after a user action (button press or, for the auth-flow error alerts, a failed form submission) — no deep-linkable "alert shown" state, and the mandated `xcrun simctl` deep-link+screenshot workflow can't type into fields or press buttons to trigger one. Typecheck and lint are clean. Risk is asymmetric by platform: iOS is essentially zero-risk (unmodified RN core native API); Android is a direct, unmodified port of already-shipped code using an already-installed primitive, same risk class as `Sheet`/`Form`. Both accepted on typecheck+lint given that profile — flagging here per the same standard as the `Sheet` gap above. **iOS half of this gap is now closed** (2026-08-06): a failed login on the simulator presented a real native `UIAlertController` via `AlertAnchor`, correctly stacked above the iOS keychain prompt — see the iOS device verification pass below. Android's `alert.android.tsx` remains verified by typecheck and code inspection only.
 
 Phase 4 remaining: `ContextMenu`/`DropdownMenu` (unverified `RNHostView`/Trigger mechanism on iOS), `Toolbar` (no `@expo/ui` equivalent identified). Phase 2's `SearchInput` also still open.
 
@@ -1042,6 +1042,37 @@ affordance).
 
 The other ~188 `Button` uses are ordinary buttons taking a direct `onPress`, and would migrate
 without trouble. Sizing no longer blocks anything.
+
+## iOS device verification pass (2026-08-06)
+
+Everything the migration changes on iOS is now confirmed on hardware, not just by typecheck.
+iPhone 17 Pro simulator, iOS 26.4, `PackRatDev.app` (`com.andrewbierman.packrat.dev`) built from
+`feat/expo-ui-migration-sdk57` after `APP_VARIANT=development bunx expo prebuild --platform ios
+--clean` — the prebuild matters, because the pods were pinned at `ExpoUI 56.0.16` against JS on
+`57.0.9` and had to be brought forward.
+
+| Component | Result |
+|---|---|
+| `DateTimePicker` | Tapping Start Date on `/trip/new` opens the native compact SwiftUI date field, expands to the calendar popover, and writing back works: the row read `2026-08-14` and TanStack Form validation then fired on the untouched End Date. Matches the Android result exactly. |
+| `Sheet` | Presents with the native grabber, rounded corners and dimmed scrim; RN children inside render and lay out correctly. **Both dismiss gestures work** — backdrop tap and swipe-down — so the Android regression (a sheet that couldn't be closed) does not reproduce here. Sheet-to-sheet handoff works too: tapping "Search" inside the source sheet swapped to the search sheet at a taller detent with its `TextInput` auto-focused. |
+| `SegmentedControl` | Three instances on `/settings` render as native SwiftUI pickers with correct initial selection. Flipping Weight kg → lb slid the pill and fired `onIndexChange`; the value survived a cold app launch, so the Jotai write landed. |
+| `Toggle` | Nine SwiftUI `Toggle`s on `/weather-alert-preferences`, each with correct per-row on/off state and tint. Flipping High Wind Warnings off → on fired `onValueChange` and left every other row alone. |
+| `ActivityIndicator` | SwiftUI `ProgressView` renders and animates, and `size="small"` vs `"large"` map to visibly different `controlSize`s. `matchContents` sizes it intrinsically without collapsing. Verified via a temporary two-spinner probe on `/trail-conditions` (reverted). |
+| `Button` | Covered incidentally across every screen above — `filled`, `outlined` and `text` variants, plain-label and icon+text children. See the multi-child note earlier in this doc. |
+| `Alert` | Found by accident and worth recording: a failed login presented a real native `UIAlertController` ("Login Failed / Invalid email or password. / OK"), correctly stacked above the iOS keychain save prompt. `AlertAnchor` had not previously been checked on an iOS device. |
+
+Two notes for whoever drives the simulator next, both of which cost time here:
+
+- **Maestro cannot read this app's RN view hierarchy on iOS.** `assertVisible` and `tapOn: text`
+  see only status-bar strings, so every interaction has to be a percentage coordinate tap measured
+  off a screenshot. Re-measure after any layout shift — a stale coordinate produces a tap that
+  silently does nothing, which reads exactly like a broken component. That happened once here and
+  briefly looked like a `SegmentedControl` defect. Percentages must also be **integers**;
+  `"50%,91.7%"` throws `NumberFormatException`.
+- **`openLink` lands one flow late** when a modal is already presented, and the app's own URL
+  scheme is `exp+packrat://`, not `packrat-dev://` (read it from the built app's `Info.plist`).
+  `simctl` has no tap command, `idb` isn't installed, and AppleScript is blocked by assistive
+  access, so Maestro is the only workable driver.
 
 ## Rules
 
