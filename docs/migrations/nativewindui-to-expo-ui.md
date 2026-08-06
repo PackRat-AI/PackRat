@@ -1010,11 +1010,38 @@ or without `fillMaxWidth()`; `<Host matchContents>` + `fillMaxWidth()` is the on
 
 **The `Host` sizing rule, since it caused three false conclusions in this migration:** `matchContents`
 is for intrinsic sizing; use `style` when you need an explicit size. Never forward a `className` to a
-`Host` — `cssInterop` turns it into a `style` that fights `matchContents` (that was the `Card` bug).
-If a native component renders collapsed, suspect the `Host` props before the bridge.
+`Host`, because `cssInterop` turns it into a `style` that fights `matchContents` (that was the `Card`
+bug). If a native component renders collapsed, suspect the `Host` props before the bridge.
 
-**Revisit `Button`/`Text` if `Host` gains `forwardRef` and `ViewProps`.** That single upstream change
-is what blocks them; sizing no longer does.
+### Two separate upstream changes are needed, not one
+
+An earlier version of this section called it a single change. It is two, and they block different
+call sites:
+
+**1. `forwardRef` on `Host`.** Fixes the eight call sites that sit inside a slot which clones the
+child and attaches something to it:
+
+- Four menu triggers, where `@rn-primitives`' `Trigger` calls `.measure()` on the ref to set
+  `triggerPosition`, and also writes `node.open`/`node.close` onto it for the imperative API. Without
+  the ref the portal renders nothing, which is the failure `button.tsx` records for the Android
+  category DropdownMenu. Sites: `messages/conversations.tsx:164`,
+  `messages/conversations.android.tsx:135` and `:379`, `messages/chat.android.tsx:714`. Note the two
+  `.android.tsx` ones no longer go through the primitive, since `dropdown-menu.android.tsx` drives
+  `expanded` from its own `Pressable`; this path is live on iOS and web.
+- Four `Link asChild` buttons, where expo-router clones the child to inject `onPress`. Without it they
+  render and depress but navigate nowhere. Sites: `auth/index.tsx:113` and `:147`,
+  `auth/(login)/index.tsx:175`, `screens/ConsentWelcomeScreen.tsx:80`.
+
+**2. `HostProps` extending RN's `ViewProps`.** Independent of the ref. `asChild` primitives inject
+`role`, `accessibilityState` and `nativeID`, and `HostProps` is a closed list that accepts none of
+them, so screen readers lose the state they announce. This affects the three `packages/ui` components
+that render a `Button` themselves and pass a11y props through it: `alert.rn.tsx` (three buttons in the
+dialog action row, still the live path for iOS prompts, web, and any alert with more than two
+buttons), `toolbar.tsx` (`ToolbarCTA` and `ToolbarIcon`), and `search-input.tsx` (the cancel
+affordance).
+
+The other ~188 `Button` uses are ordinary buttons taking a direct `onPress`, and would migrate
+without trouble. Sizing no longer blocks anything.
 
 ## Rules
 
