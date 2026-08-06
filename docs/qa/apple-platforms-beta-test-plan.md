@@ -1,31 +1,30 @@
 # iPhone, Apple Watch and Mac: beta tester guide
 
-PackRat on Apple platforms. Three places to test: **iPhone**, **Mac**, and the
-**Apple Watch**.
+PackRat on iPhone, Mac and Apple Watch. Three places to test.
 
-iPhone and Mac come from TestFlight. The watch app is not on TestFlight yet, so
-it needs a Mac with Xcode — there are instructions further down. If you cannot
-do the watch part, say so and test the other two.
+All three come from TestFlight. Install the iPhone app, install the Mac app, and
+the watch app arrives with the iPhone one. The watch section explains how.
 
-The app should feel the same everywhere. Where it does not, that is what we want
-to hear about.
+The app should feel the same everywhere. It is worth
+reporting where it does not.
 
 ## Before you start
 
-Tell us the OS version you are on and which of the three you tested. When
-something breaks, we need to know where.
+Note the OS version you are on and which of the three you tested. Every report
+needs to say where it happened.
 
-Some screens are switched off in this build on purpose. If you do not see Feed,
-Shopping List, Wildlife, Trails or Pack Insights anywhere, that is expected and
-not a bug.
+This release covers packs, trips, weather, the assistant, the catalog, guides and
+gear inventory. Feed, Shopping List, Wildlife, Trails and Pack Insights are not
+part of it and do not appear on screen anywhere, so there is nothing to report
+there.
 
 ## iPhone
 
 TestFlight, iOS.
 
-Five tabs along the bottom: Home, Packs, Trips, Assistant, Profile. Some screens
-live inside Home rather than on the tab bar — Catalog, Templates, Trail
-Conditions, Guides, Gear Inventory and AI Packs are reached from there.
+Five tabs along the bottom: Home, Packs, Trips, Assistant, Profile. Catalog,
+Templates, Trail Conditions, Guides, Gear Inventory and AI Packs are not on the
+tab bar. Reach those from Home.
 
 ### Signing in
 
@@ -41,7 +40,8 @@ Conditions, Guides, Gear Inventory and AI Packs are reached from there.
 
 ### Packs
 
-This is the core of the app, so it gets the most attention.
+Packs get more attention here than anything else, because a wrong weight is the
+one bug a tester can catch that nobody else will.
 
 - Create a pack. Add several items with different weights.
 - Check the total and base weight are right. Do the arithmetic yourself once.
@@ -75,7 +75,7 @@ This is the core of the app, so it gets the most attention.
 - Send a long message, then a very short one.
 - Kill your connection mid-answer. It should recover, not hang.
 
-### Catalog, Guides, Gear Inventory
+### Catalog, guides and gear inventory
 
 - Search the catalog. Do results look sensible for what you typed?
 - Open an item. Is the detail screen complete, or are there empty fields?
@@ -87,7 +87,7 @@ This is the core of the app, so it gets the most attention.
 - Rotate the phone on a few screens.
 - Turn the text size up in iOS Settings, then come back. Is anything unreadable
   or clipped?
-- Dark mode.
+- Switch to dark mode and look over the screens again.
 - Background the app for ten minutes, come back. Where were you, and is the data
   still fresh?
 - Poor connection, not no connection. Two bars in a lift is where bugs live.
@@ -97,9 +97,9 @@ This is the core of the app, so it gets the most attention.
 TestFlight, macOS tab. It is a separate app from the iPhone one, so install it
 there.
 
-The Mac version has a sidebar down the left instead of tabs, and shows a list
-and a detail panel side by side. Everything from the iPhone list above is worth
-repeating here, but these are the parts that only exist on the Mac.
+The Mac version has a sidebar down the left instead of tabs, with a list and a
+detail panel side by side. Everything in the iPhone list above is worth trying
+here too. The sections below cover what only the Mac does.
 
 ### Windows
 
@@ -129,60 +129,55 @@ repeating here, but these are the parts that only exist on the Mac.
 
 ## Apple Watch
 
-Not on TestFlight yet, so this needs a Mac with Xcode and the repo checked out.
+The watch app comes with the iPhone app rather than as its own TestFlight entry.
+Install PackRat on the iPhone first, then open the Watch app on the phone, scroll
+to Available Apps, and install PackRat from there. Some watches pick it up on
+their own, in which case it is already on your wrist.
 
-In Xcode, open Window ▸ Devices and Simulators, and pair an Apple Watch
-simulator with an iPhone simulator. Then:
-
-```
-cd apps/swift
-bun scripts/watch-sync-smoke.ts
-```
-
-That builds both apps, installs them onto the pair, and checks a sync arrives.
-If it stops with "not visible after install attempts", tell us and stop there —
-that is a known problem on our side, not something you did.
+You need the iPhone app signed in before the watch shows anything. The watch has
+no login of its own. It reads what the phone sends it.
 
 The watch app has four screens. Scroll between them with the Digital Crown.
 
 ### Trail Ready
 
-- Before anything syncs it should say "Sync from iPhone". Not blank, not zeroes.
-- After a sync: pack name, base weight, a packed count like `3/12`, and the
+- Before your phone has sent anything it says "Sync from iPhone". Not blank, not
+  zeroes.
+- Once it syncs: pack name, base weight, a packed count like `3/12`, and the
   weather.
-- The bottom line says either "iPhone Nearby" or "Last Synced". Background the
-  iPhone simulator and confirm it changes.
+- The bottom line says either "iPhone Nearby" or "Last Synced". Walk away from
+  your phone, or turn its Bluetooth off, and confirm it changes.
 
 ### Checklist
 
-- With nothing synced it should say "No Items", not show an empty list.
-- Items should match the pack you synced, and "3 of 12 packed" should agree with
-  the toggles.
-- **Toggle an item, leave the screen, come back.** We think the toggle does not
-  stick and does not tell the phone. Confirming that is the single most useful
-  thing you can do on the watch.
+- With nothing synced it says "No Items" rather than showing an empty list.
+- Items match the pack on your phone, and "3 of 12 packed" agrees with the
+  toggles.
+- Toggle an item, leave the screen, come back. It should still be toggled. Then
+  check the same item on your phone, where it should be ticked too. This is the
+  most important thing on the watch, so try it a few times.
 
 ### Weather
 
 - Location, temperature and condition, matching the phone for the same trip.
-- With nothing synced it should show `--` rather than a wrong number.
+- With nothing synced it shows `--` rather than a wrong number.
 
 ### Trail Report
 
 - Pick a condition, type a note, tap Save Draft.
-- A green "Draft queued" should appear.
-- Leave the screen and come back. Is the draft still there?
-- Check the phone. Did the draft arrive?
-- Shut the iPhone simulator down and save another. It should queue, not lose
-  your note.
+- A green "Draft queued" appears.
+- Leave the screen and come back. The draft is still there.
+- Check the phone. The draft arrived.
+- Leave your phone behind, or turn it off, and save another. It queues and syncs
+  when the phone is back, rather than losing your note.
 
 ## Reporting
 
 One bug per post in the thread. What you did, what happened, what you expected
 instead. Include the OS version and whether it was iPhone, Mac or watch.
 
-Screenshots help everywhere. On the watch, a screenshot of the simulator window
-is fine.
+Screenshots help everywhere. On the watch, press the Digital Crown and the side
+button together to take one. It lands in your phone's photos.
 
-If something is merely annoying rather than broken, still tell us. Wrong weights,
-confusing wording and slow screens are all worth a post.
+Anything merely annoying rather than broken is still worth a post. A weight that
+comes out wrong counts, and so does a screen that takes too long.
