@@ -11,9 +11,11 @@ import { Alert as RNAlertFallback } from './alert.rn';
 /**
  * Material 3 `AlertDialog` for Android, replacing the `@rn-primitives/alert-dialog` composition.
  *
- * Verified on-device: real M3 dialog (correct scrim, surface, typography), `Title`/`Text` slots emit
- * real accessibility nodes, both button slots fire their callbacks, and `onDismissRequest` fires on
- * the hardware back button.
+ * Verified on-device (TECNO KL4, 2026-08-06, via `/admin/ai-packs` → "Generate Packs"): real M3
+ * dialog (correct scrim, surface, typography), `Title`/`Text` slots emit real accessibility nodes,
+ * both button slots fire their callbacks, and `onDismissRequest` fires on the hardware back button
+ * and is consumed by the dialog rather than the navigator. Material orders the slots itself —
+ * confirm right, cancel left — regardless of array order.
  *
  * This is the container shape that works — unlike `Card` it has **named slots**, and unlike
  * `ListItem` the dialog is not inside a scroller, so the `Host` never competes for a drag gesture.

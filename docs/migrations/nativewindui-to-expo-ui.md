@@ -112,7 +112,9 @@ A type-only gap in `@rn-primitives/hooks`' `useAugmentedRef`: its return type do
 
 18 call sites updated, all pure `Alert`/`AlertAnchor`/`AlertMethods` imports (no splitting needed).
 
-**On-device verification gap, accepted deliberately:** both platforms' `Alert` only appear after a user action (button press or, for the auth-flow error alerts, a failed form submission) — no deep-linkable "alert shown" state, and the mandated `xcrun simctl` deep-link+screenshot workflow can't type into fields or press buttons to trigger one. Typecheck and lint are clean. Risk is asymmetric by platform: iOS is essentially zero-risk (unmodified RN core native API); Android is a direct, unmodified port of already-shipped code using an already-installed primitive, same risk class as `Sheet`/`Form`. Both accepted on typecheck+lint given that profile — flagging here per the same standard as the `Sheet` gap above. **iOS half of this gap is now closed** (2026-08-06): a failed login on the simulator presented a real native `UIAlertController` via `AlertAnchor`, correctly stacked above the iOS keychain prompt — see the iOS device verification pass below. Android's `alert.android.tsx` remains verified by typecheck and code inspection only.
+**On-device verification gap, accepted deliberately:** both platforms' `Alert` only appear after a user action (button press or, for the auth-flow error alerts, a failed form submission) — no deep-linkable "alert shown" state, and the mandated `xcrun simctl` deep-link+screenshot workflow can't type into fields or press buttons to trigger one. Typecheck and lint are clean. Risk is asymmetric by platform: iOS is essentially zero-risk (unmodified RN core native API); Android is a direct, unmodified port of already-shipped code using an already-installed primitive, same risk class as `Sheet`/`Form`. Both accepted on typecheck+lint given that profile — flagging here per the same standard as the `Sheet` gap above.
+
+**Android half of this gap is now closed** (2026-08-06) — see the Android `AlertDialog` verification below. **The iOS half is still open**, and one earlier note in this doc claimed otherwise: a failed login on the iOS simulator does present a real `UIAlertController`, but `app/auth/(login)/index.tsx:57` calls RN core's `Alert.alert` directly, *not* `AlertAnchor`. That screenshot therefore proves RN core works, which was never in doubt, and says nothing about `alert.ios.tsx`. Since `alert.ios.tsx` is itself a thin pass-through to the same RN core API, the residual risk is close to zero — but it has not been observed on a device, and shouldn't be recorded as if it had.
 
 Phase 4 remaining: `ContextMenu`/`DropdownMenu` (unverified `RNHostView`/Trigger mechanism on iOS), `Toolbar` (no `@expo/ui` equivalent identified). Phase 2's `SearchInput` also still open.
 
@@ -1059,7 +1061,7 @@ iPhone 17 Pro simulator, iOS 26.4, `PackRatDev.app` (`com.andrewbierman.packrat.
 | `Toggle` | Nine SwiftUI `Toggle`s on `/weather-alert-preferences`, each with correct per-row on/off state and tint. Flipping High Wind Warnings off → on fired `onValueChange` and left every other row alone. |
 | `ActivityIndicator` | SwiftUI `ProgressView` renders and animates, and `size="small"` vs `"large"` map to visibly different `controlSize`s. `matchContents` sizes it intrinsically without collapsing. Verified via a temporary two-spinner probe on `/trail-conditions` (reverted). |
 | `Button` | Covered incidentally across every screen above — `filled`, `outlined` and `text` variants, plain-label and icon+text children. See the multi-child note earlier in this doc. |
-| `Alert` | Found by accident and worth recording: a failed login presented a real native `UIAlertController` ("Login Failed / Invalid email or password. / OK"), correctly stacked above the iOS keychain save prompt. `AlertAnchor` had not previously been checked on an iOS device. |
+| `Alert` | **Not actually covered** — a failed login did present a real `UIAlertController` ("Login Failed / Invalid email or password. / OK"), correctly stacked above the keychain save prompt, but that call site (`app/auth/(login)/index.tsx:57`) uses RN core's `Alert.alert` directly rather than the migrated `AlertAnchor`. `alert.ios.tsx` remains unobserved on a device. |
 
 Two notes for whoever drives the simulator next, both of which cost time here:
 
@@ -1073,6 +1075,38 @@ Two notes for whoever drives the simulator next, both of which cost time here:
   scheme is `exp+packrat://`, not `packrat-dev://` (read it from the built app's `Info.plist`).
   `simctl` has no tap command, `idb` isn't installed, and AppleScript is blocked by assistive
   access, so Maestro is the only workable driver.
+
+## Android `AlertDialog` + `LoadingIndicator` verification (2026-08-06)
+
+`AlertDialog` was the last `@expo/ui`-backed component with no device result. Verified on the TECNO
+KL4 (`com.packratai.mobile.dev`), triggered from `/admin/ai-packs` → "Generate Packs", which fires a
+two-button confirm through `alertRef.current?.alert(...)` and so routes to the Compose path rather
+than the RN fallback.
+
+- **Renders as a real M3 dialog** — correct surface tint, scrim, and typography. Title and message
+  slots both display.
+- **Both button slots fire.** Tapping the dismiss slot ("Cancel") closed the dialog and started no
+  generation, confirming `onClick` is wired (the documented trap is that `onPress` type-checks and
+  silently no-ops).
+- **Labels resolve**, so the "must be a Compose `<Text>` child" trap is satisfied — a bare string
+  would have produced tappable but unlabelled pills.
+- **`onDismissRequest` fires on hardware back**, and is consumed by the dialog rather than the
+  navigator: after back, the dialog's a11y nodes were gone and the screen was still `/admin/ai-packs`.
+- **Accessibility tree is correct** (`uiautomator dump`): title and message each emit a real
+  `TextView`; each button is a `clickable="true" focusable="true"` container wrapping an
+  `android.widget.Button` plus its label. Material also ordered the slots itself — confirm on the
+  right (x 336–627), cancel on the left (x 139–320) — despite the array being cancel-first.
+
+`LoadingIndicator` (Android's `loading-indicator.android.tsx`, a different component from iOS's
+`ProgressView`) was verified in the same pass: the Settings → AI Models row renders the M3
+indeterminate indicator beside "Downloading" once a model download starts. This surface is
+Android-only (`!isApple`), which is why iOS needed a temporary probe instead.
+
+**Both fallback branches remain unobserved, by construction.** `prompt()` and any >2-button alert
+delegate to `alert.rn.tsx`, and the only call site for either is the delete-account flow in
+`DeleteAccountButton.tsx` — auth-gated, and the device under test was signed out. Both are
+unconditional early-returns with no Compose branch to get wrong (`alert.android.tsx:60-63`), so
+there is no platform-specific behaviour left to observe there.
 
 ## Rules
 
