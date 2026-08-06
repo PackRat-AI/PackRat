@@ -1,7 +1,7 @@
 # Native platform controls: beta tester guide
 
 A lot of PackRat's switches, dialogs, menus, sheets and pickers used to be
-imitations. We built them ourselves to look like the ones your phone uses. Now
+custom replica to look like the ones your phone uses natively. Now
 they are the real ones, the same controls you get in your phone's own settings
 and its built-in apps.
 
@@ -10,12 +10,7 @@ controls changed.
 
 ## Where to spend your time
 
-Test both devices, but prioritize Android. We are rebuilding the iPhone app on
-Apple's own tools, so what you are testing here is becoming the Android app.
-Also the changes on iPhone are narrower, so a lighter pass is fine.
-
-Some things changed on Android and not on iPhone. If a checkbox or card looks
-identical on your iPhone, that is expected rather than a bug.
+Test both devices, but prioritize Android because we're moving the iPhone app to a new build soon. Also the changes on iPhone are narrower, so a lighter pass is fine.
 
 ## What to check
 
