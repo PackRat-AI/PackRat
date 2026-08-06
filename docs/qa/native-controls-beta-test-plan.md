@@ -3,24 +3,16 @@
 A lot of PackRat's switches, dialogs, menus, sheets and pickers used to be
 imitations. We built them ourselves to look like the ones your phone uses. Now
 they are the real ones, the same controls you get in your phone's own settings
-and in every other app.
+and its built-in apps.
 
 The app should do exactly what it did before. Only the look and feel of those
 controls changed.
 
 ## Where to spend your time
 
-Test both devices, but spend most of your time on Android.
-
-Two reasons. The smaller one is that most of this build landed on Android, so
-there is simply more that could have broken there. On iPhone the changes are
-narrower and a lighter pass is fine.
-
-The bigger one is where the app is headed. We are rebuilding the iPhone app on
-Apple's own tools, so the shared code you are testing here is on its way to
-being the Android app's foundation rather than something both phones borrow.
-Anything you catch on Android now gets fixed in the version we keep building on.
-The same bug found on iPhone lands in code we are replacing anyway.
+Test both devices, but prioritize Android. We are rebuilding the iPhone app on
+Apple's own tools, so what you are testing here is becoming the Android app.
+Also the changes on iPhone are narrower, so a lighter pass is fine.
 
 Some things changed on Android and not on iPhone. If a checkbox or card looks
 identical on your iPhone, that is expected rather than a bug.
