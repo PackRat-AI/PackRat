@@ -285,8 +285,8 @@ struct AddCatalogItemToPackSheet: View {
             try await packsViewModel.addItem(
                 to: packId,
                 name: item.displayName,
-                weight: item.weight,
-                weightUnit: item.weightUnit.rawValue,
+                weight: item.weight ?? 0,
+                weightUnit: item.weightUnit?.rawValue ?? WeightUnit.g.rawValue,
                 quantity: quantity,
                 category: item.categories?.first,
                 consumable: false,

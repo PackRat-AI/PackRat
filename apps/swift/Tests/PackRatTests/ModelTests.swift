@@ -223,6 +223,62 @@ struct CatalogItemTests {
         #expect(inStock.isInStock == true)
         #expect(outOfStock.isInStock == false)
     }
+
+    @Test("decodes Expo catalog rows with unknown weight")
+    func decodesNullableWeightFromSharedSchema() throws {
+        let json = """
+        {
+          "id": 42,
+          "name": "Imported Gear",
+          "productUrl": "https://example.com/imported",
+          "sku": "SCRAPY-42",
+          "weight": null,
+          "weightUnit": null,
+          "description": null,
+          "categories": ["Shelter"],
+          "images": null,
+          "brand": "PackRat",
+          "model": null,
+          "ratingValue": null,
+          "color": null,
+          "size": null,
+          "price": null,
+          "availability": "in_stock",
+          "seller": null,
+          "reviewCount": null,
+          "createdAt": "2026-08-07T00:00:00.000Z",
+          "updatedAt": "2026-08-07T00:00:00.000Z"
+        }
+        """.data(using: .utf8)!
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let item = try decoder.decode(CatalogItem.self, from: json)
+
+        #expect(item.weight == nil)
+        #expect(item.weightUnit == nil)
+        #expect(item.displayWeight == "")
+    }
+
+    @Test("catalog search response accepts shared API totalCount")
+    func catalogSearchResponseAcceptsTotalCount() throws {
+        let json = """
+        {
+          "items": [],
+          "totalCount": 12,
+          "page": 1,
+          "limit": 20,
+          "totalPages": 1
+        }
+        """.data(using: .utf8)!
+
+        let response = try JSONDecoder().decode(CatalogSearchResponse.self, from: json)
+
+        #expect(response.items.isEmpty)
+        #expect(response.total == 12)
+        #expect(response.page == 1)
+        #expect(response.limit == 20)
+    }
 }
 
 // MARK: - Enum decoding
