@@ -1,10 +1,16 @@
 #!/usr/bin/env bun
 /**
- * Archive the native Swift PackRat iOS app and upload it to TestFlight.
+ * Archive the native Swift PackRat app (iOS or macOS) and upload it to TestFlight.
  *
- * This targets a SEPARATE App Store Connect record from the production Expo
+ * iOS targets a SEPARATE App Store Connect record from the production Expo
  * app: bundle id `com.andrewbierman.packrat.swift`. Register that app record
  * in App Store Connect once before the first upload.
+ *
+ * macOS (--mac) targets the PRODUCTION record `com.andrewbierman.packrat` —
+ * the same one the Expo iPhone app ships from. A single record can host both
+ * an iOS and a macOS platform, so Mac testers get the build under TestFlight's
+ * macOS tab. The macOS platform must be added to that record in App Store
+ * Connect before the first Mac upload.
  *
  * Auth uses an Apple ID + app-specific password (no App Store Connect API key
  * required). Generate a password at appleid.apple.com -> Sign-In & Security ->
@@ -22,25 +28,46 @@
  *   --staging                Archive the Staging config (PACKRAT_ENV=dev) so the
  *                            TestFlight build targets the deployed DEV API instead
  *                            of production. Default (no flag) = Release/production.
+ *   --mac                    Archive the macOS app instead of iOS. Always Release
+ *                            (the macOS target has no Staging scheme), so this
+ *                            cannot be combined with --staging.
  *
  * Usage:
- *   bun apps/swift/scripts/upload-testflight.ts            # production
- *   bun apps/swift/scripts/upload-testflight.ts --staging  # dev API
+ *   bun apps/swift/scripts/upload-testflight.ts            # iOS, production
+ *   bun apps/swift/scripts/upload-testflight.ts --staging  # iOS, dev API
+ *   bun apps/swift/scripts/upload-testflight.ts --mac      # macOS, production
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const SWIFT_DIR = new URL('..', import.meta.url).pathname;
 const PROJECT = join(SWIFT_DIR, 'PackRat.xcodeproj');
-const BUNDLE_ID = 'com.andrewbierman.packrat.swift';
+
+// --mac archives the native macOS app instead of iOS. It ships under the
+// production `com.andrewbierman.packrat` App Store Connect record (the same
+// record the Expo iPhone app uses) — one record hosts both platforms, so Mac
+// testers find it under the macOS tab. iOS uploads still go to the separate
+// `.swift` record.
+const MAC = process.argv.includes('--mac');
+const BUNDLE_ID = MAC ? 'com.andrewbierman.packrat' : 'com.andrewbierman.packrat.swift';
 
 // --staging archives the Staging config (PACKRAT_ENV=dev) via the dedicated
 // scheme; the default archives PackRat-iOS (Release config → production).
+// The macOS target has no Staging scheme, so --mac always builds Release.
 const STAGING = process.argv.includes('--staging');
-const SCHEME = STAGING ? 'PackRat-iOS-Staging' : 'PackRat-iOS';
+if (MAC && STAGING) {
+  console.error('--staging is not supported with --mac (no macOS Staging scheme).');
+  process.exit(1);
+}
+const SCHEME = MAC ? 'PackRat-macOS' : STAGING ? 'PackRat-iOS-Staging' : 'PackRat-iOS';
 const CONFIGURATION = STAGING ? 'Staging' : 'Release';
+
+// TestFlight rejects simulator builds; macOS archives target the host arch.
+const DESTINATION = MAC ? 'generic/platform=macOS' : 'generic/platform=iOS';
+// altool's --type discriminates the delivery target; macOS uses `osx`.
+const ALTOOL_TYPE = MAC ? 'osx' : 'ios';
 
 function req(name: string): string {
   const v = process.env[name];
@@ -75,7 +102,7 @@ run('xcodebuild', [
   '-configuration',
   CONFIGURATION,
   '-destination',
-  'generic/platform=iOS',
+  DESTINATION,
   '-archivePath',
   archivePath,
   // Lets Xcode register the App IDs and generate provisioning profiles for
@@ -119,24 +146,38 @@ run('xcodebuild', [
 // 3. Upload to TestFlight via altool (app-specific-password auth).
 // `--asc-provider` (team short name) is required when the Apple ID belongs to
 // more than one team, so altool knows which one to deliver to.
-const ipa = join(exportDir, `${SCHEME}.ipa`);
+// A macOS app-store-connect export produces a signed .pkg installer; iOS
+// produces an .ipa. Resolve by extension rather than assuming the scheme name
+// matches the artifact name.
+const artifact = (() => {
+  const wanted = MAC ? '.pkg' : '.ipa';
+  const found = readdirSync(exportDir).find((f) => f.endsWith(wanted));
+  if (!found) {
+    console.error(`No ${wanted} found in ${exportDir}. Contents: ${readdirSync(exportDir)}`);
+    process.exit(1);
+  }
+  return join(exportDir, found);
+})();
+
 run('xcrun', [
   'altool',
   '--upload-app',
   '--type',
-  'ios',
+  ALTOOL_TYPE,
   '--file',
-  ipa,
+  artifact,
   '--username',
   appleId,
   '--password',
   appPassword,
+  // This Apple ID belongs to multiple teams, so altool needs the provider
+  // disambiguated. --asc-provider takes the team short name / team id.
   '--asc-provider',
   teamId,
 ]);
 
 console.log(
-  `\n✓ Uploaded build ${buildNumber} to TestFlight (${BUNDLE_ID}, ${CONFIGURATION}` +
-    `${STAGING ? ' → dev API' : ' → production'}).`,
+  `\n✓ Uploaded build ${buildNumber} to TestFlight (${MAC ? 'macOS' : 'iOS'}, ${BUNDLE_ID}, ` +
+    `${CONFIGURATION}${STAGING ? ' → dev API' : ' → production'}).`,
 );
 console.log('It will appear in App Store Connect after processing (usually 5-15 min).');
