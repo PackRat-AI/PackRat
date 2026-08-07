@@ -445,6 +445,7 @@ final class VisualScreenshotTests: XCTestCase {
         resetPhoneModalState(mode)
 
         captureTab("Packs", name: "\(prefix)-packs-before-new-pack")
+        resetPacksToMyPacksMode()
         tapAndCapture(identifier: "packs_new_pack_button", fallbackButton: "New Pack", name: "\(prefix)-new-pack-sheet")
 
         resetPhoneModalState(mode)
@@ -592,9 +593,7 @@ final class VisualScreenshotTests: XCTestCase {
     }
 
     private func captureTab(_ label: String, name: String, beforeCapture: (() -> Void)? = nil) {
-        let tab = app.tabBars.buttons[label]
-        XCTAssertTrue(tab.waitForExistence(timeout: 5), "Expected tab '\(label)' for screenshot \(name)")
-        tab.tap()
+        openPrimarySurface(label, screenshotName: name)
         beforeCapture?()
         capture(name)
     }
@@ -649,7 +648,7 @@ final class VisualScreenshotTests: XCTestCase {
                 smallScrollUp()
             }
         }
-        if let visibleCandidate, visibleCandidate.exists, visibleCandidate.isHittable {
+        if let visibleCandidate, visibleCandidate.exists {
             activate(visibleCandidate)
             verifyAndCapture()
             return
@@ -698,11 +697,67 @@ final class VisualScreenshotTests: XCTestCase {
     }
 
     private func openHomeForActionBaseline(name: String) {
-        let tab = app.tabBars.buttons["Home"]
-        XCTAssertTrue(tab.waitForExistence(timeout: 5), "Expected tab 'Home' for screenshot \(name)")
-        tab.tap()
+        openPrimarySurface("Home", screenshotName: name)
         resetActiveHomeSearchPresentation()
         capture(name)
+    }
+
+    private func openPrimarySurface(_ label: String, screenshotName: String) {
+        #if os(iOS)
+        if isPadVisualRun {
+            let sidebarButton = app.buttons["nav_\(label.lowercased().replacingOccurrences(of: " ", with: "_"))"]
+            if sidebarButton.waitForExistence(timeout: 3) {
+                activate(sidebarButton)
+                return
+            }
+        }
+
+        dismissKeyboardIfNeeded()
+
+        let tab = app.tabBars.buttons[label]
+        XCTAssertTrue(tab.waitForExistence(timeout: 5), "Expected tab '\(label)' for screenshot \(screenshotName)")
+        tapTabBarButton(tab)
+        #elseif os(macOS)
+        let identifier = "nav_\(label.lowercased().replacingOccurrences(of: " ", with: "_"))"
+        let sidebarButton = app.buttons[identifier]
+        if sidebarButton.waitForExistence(timeout: 3) {
+            activate(sidebarButton)
+            return
+        }
+
+        let sidebarText = app.staticTexts[label]
+        XCTAssertTrue(sidebarText.waitForExistence(timeout: 5), "Expected sidebar item '\(label)' for screenshot \(screenshotName)")
+        activate(sidebarText)
+        #endif
+    }
+
+    private func dismissKeyboardIfNeeded() {
+        #if os(iOS)
+        guard app.keyboards.firstMatch.exists else { return }
+        if app.buttons["Cancel"].exists {
+            app.buttons["Cancel"].tap()
+        }
+        if app.buttons["Close"].exists {
+            app.buttons["Close"].tap()
+        }
+        #endif
+    }
+
+    private func tapTabBarButton(_ element: XCUIElement) {
+        #if os(iOS)
+        let frame = element.frame
+        guard frame.width > 0, frame.height > 0 else {
+            activate(element)
+            return
+        }
+        let coordinate = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+            .withOffset(CGVector(dx: frame.midX, dy: frame.midY))
+        coordinate.tap()
+        Thread.sleep(forTimeInterval: 0.35)
+        coordinate.tap()
+        #else
+        activate(element)
+        #endif
     }
 
     private func replaceHomeSearchText(_ text: String, in searchField: XCUIElement) {
@@ -758,6 +813,13 @@ final class VisualScreenshotTests: XCTestCase {
 
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.91, dy: 0.105)).tap()
         #endif
+    }
+
+    private func resetPacksToMyPacksMode() {
+        let myPacks = app.buttons["packs_mode_my_packs"]
+        if myPacks.waitForExistence(timeout: 1), myPacks.isHittable {
+            myPacks.tap()
+        }
     }
 
     private func actionIsClearOfBottomBar(_ element: XCUIElement) -> Bool {

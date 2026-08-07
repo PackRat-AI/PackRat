@@ -19,12 +19,13 @@ final class WeatherViewModel {
     private let service: any WeatherServicing
     private var searchTask: Task<Void, Never>?
 
-    init(service: any WeatherServicing = WeatherService.shared) {
+    init(service: any WeatherServicing = WeatherService.shared, loadPersistedState: Bool = true) {
         self.service = service
         if VisualSampleData.isUITestFixturesEnabled {
             UserDefaults.standard.removeObject(forKey: savedLocationsKey)
             UserDefaults.standard.removeObject(forKey: activeLocationKey)
         }
+        guard loadPersistedState else { return }
         guard !VisualSampleData.isScreenshotCapture else { return }
         loadSavedLocations()
         if let active = savedLocations.first(where: { $0.id == UserDefaults.standard.integer(forKey: activeLocationKey) })

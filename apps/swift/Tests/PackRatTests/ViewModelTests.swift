@@ -152,7 +152,7 @@ struct TripsViewModelTests {
 struct WeatherViewModelTests {
     @Test("onSearchTextChanged clears results when empty")
     @MainActor func clearsResultsWhenEmpty() {
-        let vm = WeatherViewModel()
+        let vm = WeatherViewModel(loadPersistedState: false)
         vm.searchResults = [WeatherLocation(id: 1, name: "Denver", region: nil, country: nil, lat: nil, lon: nil)]
         vm.searchText = ""
         vm.onSearchTextChanged()
@@ -161,7 +161,7 @@ struct WeatherViewModelTests {
 
     @Test("searchText below 2 chars does not search")
     @MainActor func shortQuerySkipsSearch() {
-        let vm = WeatherViewModel()
+        let vm = WeatherViewModel(loadPersistedState: false)
         vm.searchText = "D"
         vm.onSearchTextChanged()
         #expect(vm.searchResults.isEmpty)
@@ -170,7 +170,7 @@ struct WeatherViewModelTests {
     @Test("selectLocation falls back to by-name forecast when id lookup fails")
     @MainActor func forecastFallsBackToByName() async {
         let service = FallbackWeatherService()
-        let vm = WeatherViewModel(service: service)
+        let vm = WeatherViewModel(service: service, loadPersistedState: false)
         let denver = WeatherLocation(
             id: 5419384,
             name: "Denver",
