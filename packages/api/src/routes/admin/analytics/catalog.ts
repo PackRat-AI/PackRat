@@ -4,7 +4,7 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import type { CatalogEtlWorkflowParams } from '@packrat/api/workflows/catalog-etl-workflow';
 import { type ChunkSpec, chunkCsvForR2 } from '@packrat/api/workflows/shared/chunkCsvForR2';
-import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/db';
+import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/db/schema';
 import {
   AdminErrorResponses,
   BrandRowSchema,

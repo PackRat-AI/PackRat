@@ -3,7 +3,6 @@ import { createPerplexityAIProvider } from '@packrat/api/utils/ai/provider';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { isFunction } from '@packrat/guards';
-import { generateText } from 'ai';
 
 interface SearchResult {
   answer: string;
@@ -35,6 +34,7 @@ export class AIService {
     });
 
     try {
+      const { generateText } = await import('ai');
       const resp = await generateText({
         model: perplexity(DEFAULT_MODELS.PERPLEXITY_SEARCH),
         system: WEB_SEARCH_SYSTEM_PROMPT,

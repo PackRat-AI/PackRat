@@ -34,7 +34,10 @@ const mocks = vi.hoisted(() => {
 vi.mock('@packrat/api/db', () => ({ createDb: mocks.createDb }));
 vi.mock('@packrat/api/utils/sentry', () => ({ captureApiException: mocks.captureApiException }));
 vi.mock('@packrat/db', () => ({ featureFlags: { key: 'key' } }));
-vi.mock('drizzle-orm', () => ({ eq: vi.fn((col, val) => ({ col, val })) }));
+vi.mock('drizzle-orm', () => ({
+  eq: vi.fn((col, val) => ({ col, val })),
+  relations: vi.fn(() => ({})),
+}));
 
 import { APP_CONFIG, FeatureFlag } from '@packrat/config';
 import {

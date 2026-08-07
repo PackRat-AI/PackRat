@@ -1,5 +1,6 @@
 import { createDb } from '@packrat/api/db';
 import { hashPassword } from '@packrat/api/utils/auth';
+import * as schema from '@packrat/db/schema';
 import {
   catalogItems,
   packItems,
@@ -7,8 +8,7 @@ import {
   packTemplateItems,
   packTemplates,
   type users,
-} from '@packrat/db';
-import * as schema from '@packrat/db/schema';
+} from '@packrat/db/schema';
 import { assertDefined } from '@packrat/guards';
 import type { InferInsertModel } from 'drizzle-orm';
 import { createFatCatalogItem, createTestCatalogItem } from '../fixtures/catalog-fixtures';

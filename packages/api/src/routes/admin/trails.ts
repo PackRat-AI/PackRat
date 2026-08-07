@@ -1,5 +1,5 @@
 import { createDb, createOsmDb } from '@packrat/api/db';
-import { trailConditionReports, users } from '@packrat/db';
+import { trailConditionReports, users } from '@packrat/db/schema';
 import { queryBoolean } from '@packrat/guards';
 import {
   AdminErrorResponses,

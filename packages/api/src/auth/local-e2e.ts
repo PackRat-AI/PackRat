@@ -19,6 +19,7 @@ export type LocalE2EUser = {
 export function isLocalE2EAuthEnabled(env: ValidatedEnv): boolean {
   const dbUrl = env.NEON_DATABASE_URL;
   return (
+    typeof dbUrl === 'string' &&
     (dbUrl.includes('127.0.0.1') || dbUrl.includes('localhost')) &&
     Boolean(env.E2E_TEST_EMAIL) &&
     Boolean(env.E2E_TEST_PASSWORD) &&

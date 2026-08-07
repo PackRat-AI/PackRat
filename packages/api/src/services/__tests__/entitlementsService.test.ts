@@ -31,6 +31,7 @@ vi.mock('drizzle-orm', () => ({
   gt: (col: unknown, val: unknown) => ({ gt: [col, val] }),
   isNull: (col: unknown) => ({ isNull: col }),
   or: (...conds: unknown[]) => ({ or: conds }),
+  relations: vi.fn(() => ({})),
 }));
 
 import {

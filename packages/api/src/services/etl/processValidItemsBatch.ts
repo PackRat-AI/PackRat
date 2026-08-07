@@ -2,7 +2,7 @@ import { createDbClient } from '@packrat/api/db';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { logger } from '@packrat/api/utils/logger';
-import { etlJobs, type NewCatalogItem } from '@packrat/db';
+import { etlJobs, type NewCatalogItem } from '@packrat/db/schema';
 import { isString } from '@packrat/guards';
 import { eq, sql } from 'drizzle-orm';
 import { CatalogService } from '../catalogService';

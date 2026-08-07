@@ -1,5 +1,5 @@
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { R2BucketService } from '@packrat/api/services/r2-bucket';
+import type { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { getEnv, isLocalE2EApiEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { asNumber, asString, isArray } from '@packrat/guards';
@@ -12,11 +12,23 @@ import {
   GuidesResponseSchema,
 } from '@packrat/schemas/guides';
 import { Elysia, NotFoundError, status } from 'elysia';
-import matter from 'gray-matter';
 import { z } from 'zod';
 
 const MDX_EXT_RE = /\.(mdx?|md)$/;
 const DASH_RE = /-/g;
+async function parseGuideMatter(content: string) {
+  const { default: matter } = await import('gray-matter');
+  return matter(content);
+}
+
+async function createGuidesBucket(): Promise<R2BucketService> {
+  const { R2BucketService } = await import('@packrat/api/services/r2-bucket');
+  return new R2BucketService({
+    env: getEnv(),
+    bucketType: 'guides',
+  });
+}
+
 const isLocalE2EGuidesEnv = () => {
   const { E2E_TEST_USER_ID, NEON_DATABASE_URL } = getEnv();
   return isLocalE2EApiEnv({
@@ -126,10 +138,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
           return GuidesResponseSchema.parse(paginateGuides({ items: guides, page, limit }));
         }
 
-        const bucket = new R2BucketService({
-          env: getEnv(),
-          bucketType: 'guides',
-        });
+        const bucket = await createGuidesBucket();
 
         const list = await bucket.list();
 
@@ -140,7 +149,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
               const response = await bucket.get(obj.key);
               if (response) {
                 const text = await response.text();
-                const { data } = matter(text);
+                const { data } = await parseGuideMatter(text);
                 frontmatter = data;
               }
             } catch (error) {
@@ -232,10 +241,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
           return GuideCategoriesResponseSchema.parse({ categories, count: categories.length });
         }
 
-        const bucket = new R2BucketService({
-          env: getEnv(),
-          bucketType: 'guides',
-        });
+        const bucket = await createGuidesBucket();
 
         const list = await bucket.list();
         const categoriesSet = new Set<string>();
@@ -245,7 +251,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
             const response = await bucket.get(obj.key);
             if (response) {
               const text = await response.text();
-              const { data } = matter(text);
+              const { data } = await parseGuideMatter(text);
               if (data.categories && Array.isArray(data.categories)) {
                 return data.categories as string[];
               }
@@ -317,10 +323,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
           });
         }
 
-        const bucket = new R2BucketService({
-          env: getEnv(),
-          bucketType: 'guides',
-        });
+        const bucket = await createGuidesBucket();
         const list = await bucket.list({ limit: 1000 });
 
         const searchResults = await Promise.all(
@@ -419,10 +422,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
           return GuideDetailSchema.parse(guide);
         }
 
-        const bucket = new R2BucketService({
-          env: getEnv(),
-          bucketType: 'guides',
-        });
+        const bucket = await createGuidesBucket();
 
         let key = `${id}.mdx`;
         let object = await bucket.get(key);
@@ -439,7 +439,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
         const headResult = await bucket.head(key);
         const metadata = headResult?.customMetadata || {};
         const rawContent = await object.text();
-        const { data: frontmatter, content } = matter(rawContent);
+        const { data: frontmatter, content } = await parseGuideMatter(rawContent);
 
         return GuideDetailSchema.parse({
           id,

@@ -2,9 +2,8 @@ import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv, isLocalE2EApiEnv } from '@packrat/api/utils/env-validation';
-import { type PackItem, packItems } from '@packrat/db';
+import { type PackItem, packItems } from '@packrat/db/schema';
 import { SeasonSuggestionsRequestSchema } from '@packrat/schemas/seasonSuggestions';
-import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -150,6 +149,7 @@ ${inventoryFormatted}`;
         cloudflareApiToken: CLOUDFLARE_API_TOKEN,
         cloudflareAiBinding: AI,
       });
+      const { generateObject } = await import('ai');
       const { object } = await generateObject({
         model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
         schema: z.object({

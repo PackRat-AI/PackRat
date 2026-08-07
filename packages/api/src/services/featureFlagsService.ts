@@ -1,7 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { APP_CONFIG, FeatureFlag } from '@packrat/config';
-import { featureFlags } from '@packrat/db';
+import { featureFlags } from '@packrat/db/schema';
 import { eq } from 'drizzle-orm';
 
 // All flag keys known to the codebase. Exported so the admin route can build

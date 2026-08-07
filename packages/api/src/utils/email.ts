@@ -1,5 +1,4 @@
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { Resend } from 'resend';
 
 export async function sendEmail({
   to,
@@ -11,6 +10,7 @@ export async function sendEmail({
   html: string;
 }): Promise<void> {
   const { RESEND_API_KEY, EMAIL_FROM } = getEnv();
+  const { Resend } = await import('resend');
   const resendClient = new Resend(RESEND_API_KEY);
 
   await resendClient.emails.send({

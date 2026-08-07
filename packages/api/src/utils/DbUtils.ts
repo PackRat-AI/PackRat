@@ -1,5 +1,5 @@
 import { createDb } from '@packrat/api/db';
-import { catalogItems, packs } from '@packrat/db';
+import { catalogItems, packs } from '@packrat/db/schema';
 import { and, arrayOverlaps, eq, inArray, type SQL, sql } from 'drizzle-orm';
 
 // Get pack details from the database

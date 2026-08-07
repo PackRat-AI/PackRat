@@ -1,7 +1,6 @@
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { type AIProvider, createAIProvider } from '@packrat/api/utils/ai/provider';
 import type { Env } from '@packrat/api/utils/env-validation';
-import { embed, embedMany } from 'ai';
 
 // ── Embedding text normalization ──────────────────────────────────────
 const NEWLINE = /\n/g;
@@ -55,6 +54,7 @@ export const generateEmbedding = async (
   }
 
   const aiProvider = createAIProvider(providerConfig);
+  const { embed } = await import('ai');
 
   const { embedding } = await embed({
     model: aiProvider.embedding(DEFAULT_MODELS.OPENAI_EMBEDDING),
@@ -84,6 +84,7 @@ export const generateManyEmbeddings = async (
   }
 
   const aiProvider = createAIProvider(providerConfig);
+  const { embedMany } = await import('ai');
 
   const { embeddings } = await embedMany({
     model: aiProvider.embedding(DEFAULT_MODELS.OPENAI_EMBEDDING),

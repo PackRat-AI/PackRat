@@ -1,5 +1,5 @@
 import type { ValidatedCatalogItem } from '@packrat/api/types/etl';
-import type { NewCatalogItem } from '@packrat/db';
+import type { NewCatalogItem } from '@packrat/db/schema';
 import { isNumber, isString } from '@packrat/guards';
 import type { ValidationError } from '@packrat/schemas/validation';
 

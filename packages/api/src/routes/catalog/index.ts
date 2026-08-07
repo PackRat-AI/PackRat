@@ -10,7 +10,7 @@ import { getEnv, isLocalE2EApiEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import type { CatalogEtlWorkflowParams } from '@packrat/api/workflows/catalog-etl-workflow';
 import { type ChunkSpec, chunkCsvForR2 } from '@packrat/api/workflows/shared/chunkCsvForR2';
-import { catalogItems, etlJobs, packItems } from '@packrat/db';
+import { catalogItems, etlJobs, packItems } from '@packrat/db/schema';
 import { isNumber, isObject, isString } from '@packrat/guards';
 import {
   CatalogCategoriesResponseSchema,

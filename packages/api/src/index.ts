@@ -36,7 +36,7 @@ import {
 import { captureApiException, record } from '@packrat/api/utils/sentry';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
 import { renderConsentPage, renderSignInPage } from '@packrat/consent-ui';
-import * as dbSchema from '@packrat/db';
+import * as dbSchema from '@packrat/db/schema';
 import { isString, toRecord, toString as toStr } from '@packrat/guards';
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';

@@ -183,7 +183,8 @@ const apiEnv = {
     nodeEnv.OPENAI_API_KEY ??
     (envFileVars.OPENAI_API_KEY === 'sk-test' ? 'sk-e2e-stub-local' : envFileVars.OPENAI_API_KEY),
   WEATHER_API_KEY: nodeEnv.WEATHER_API_KEY ?? 'weather-e2e-stub-local',
-  APPLE_PRIVATE_KEY: nodeEnv.APPLE_PRIVATE_KEY ?? '',
+  APPLE_PRIVATE_KEY:
+    nodeEnv.APPLE_PRIVATE_KEY ?? envFileVars.APPLE_PRIVATE_KEY ?? 'e2e-apple-private-key',
   PACKRAT_PG_POOL_MAX: nodeEnv.PACKRAT_PG_POOL_MAX ?? envFileVars.PACKRAT_PG_POOL_MAX ?? '50',
 };
 
