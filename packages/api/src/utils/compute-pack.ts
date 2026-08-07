@@ -3,7 +3,7 @@ import type {
   PackForWeights,
   PackItemForBreakdown,
   PackItemForWeights,
-} from '@packrat/db/schema';
+} from '@packrat/db/projections';
 import type { WeightUnit } from '@packrat/units';
 import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 

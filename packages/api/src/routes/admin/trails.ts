@@ -1,4 +1,5 @@
 import { createDb, createOsmDb } from '@packrat/api/db';
+import { firstQueryRow, queryRows } from '@packrat/api/db/queryRows';
 import { trailConditionReports, users } from '@packrat/db/schema';
 import { queryBoolean } from '@packrat/guards';
 import {
@@ -57,7 +58,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
           LIMIT ${limit + 1} OFFSET ${offset}
         `);
 
-        const rows = z.array(RouteSearchRowSchema).parse(result.rows);
+        const rows = z.array(RouteSearchRowSchema).parse(queryRows(result));
         const hasMore = rows.length > limit;
         const page = rows.slice(0, limit);
 
@@ -140,7 +141,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
           geojson: z.string().nullable(),
         });
 
-        const row = DetailRowSchema.nullable().parse(result.rows?.[0] ?? null);
+        const row = DetailRowSchema.nullable().parse(firstQueryRow(result) ?? null);
         if (!row) return status(404, { error: 'Trail not found' });
 
         let geometry: unknown = null;
@@ -206,7 +207,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
           WHERE osm_id = ${osmId}
         `);
 
-        const row = RouteSearchRowSchema.nullable().parse(result.rows?.[0] ?? null);
+        const row = RouteSearchRowSchema.nullable().parse(firstQueryRow(result) ?? null);
         if (!row) return status(404, { error: 'Trail not found' });
 
         return {

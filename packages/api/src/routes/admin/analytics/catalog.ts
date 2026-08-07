@@ -1,4 +1,5 @@
 import { createDb } from '@packrat/api/db';
+import { queryRows } from '@packrat/api/db/queryRows';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
@@ -491,7 +492,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         ]);
 
         return {
-          topErrors: rows.rows.map((r) => ({
+          topErrors: queryRows(rows).map((r) => ({
             field: r.field,
             reason: r.reason,
             count: r.count,
@@ -551,7 +552,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
 
         return {
           jobId: params.jobId,
-          errorBreakdown: breakdown.rows.map((r) => ({
+          errorBreakdown: queryRows(breakdown).map((r) => ({
             field: r.field,
             reason: r.reason,
             count: r.count,
@@ -861,7 +862,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           GROUP BY lpi.source, lj.last_id, lj.last_at
           ORDER BY lpi.source
         `);
-        const rows = (auditResult.rows ?? auditResult) as Array<{
+        const rows = queryRows(auditResult) as Array<{
           source: string;
           total_items: number;
           last_id: string | null;
