@@ -51,7 +51,11 @@ function wellKnownMetadataKind(pathname: string): 'openid' | 'authorization-serv
   return null;
 }
 
-async function handleLocalE2EAuth(request: Request, env: Env): Promise<Response | undefined> {
+async function handleLocalE2EAuth(input: {
+  request: Request;
+  env: Env;
+}): Promise<Response | undefined> {
+  const { request, env } = input;
   if (!isLocalE2EAuthEnabled(env)) return undefined;
 
   const url = new URL(request.url);
@@ -112,7 +116,7 @@ export default {
       const preflight = corsPreflightResponse(request);
       if (preflight) return preflight;
 
-      const localAuthResponse = await handleLocalE2EAuth(request, e);
+      const localAuthResponse = await handleLocalE2EAuth({ request, env: e });
       if (localAuthResponse) return addCorsHeaders({ request, response: localAuthResponse });
 
       const getAuth = await loadAuth();

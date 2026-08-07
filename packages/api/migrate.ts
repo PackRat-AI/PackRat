@@ -4,6 +4,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { neon, neonConfig } from '@neondatabase/serverless';
 import { nodeEnv } from '@packrat/env/node';
+import { safeJsonParse } from '@packrat/utils';
 import { drizzle as drizzleBunSQL } from 'drizzle-orm/bun-sql';
 import { migrate as migrateBunSQL } from 'drizzle-orm/bun-sql/migrator';
 import { drizzle } from 'drizzle-orm/neon-http';
@@ -37,9 +38,11 @@ const isStandardPostgresUrl = (url: string) => {
 };
 
 function expectedMigrationCount() {
-  const journal = JSON.parse(
+  const journal = safeJsonParse(
     readFileSync(join(__dirname, 'drizzle/meta/_journal.json'), 'utf8'),
-  ) as { entries?: unknown[] };
+  ) as {
+    entries?: unknown[];
+  };
   return journal.entries?.length ?? 0;
 }
 

@@ -10,6 +10,7 @@ import {
   CreateReportRequestSchema,
   UpdateReportStatusRequestSchema,
 } from '@packrat/schemas/chat';
+import { safeJsonStringify } from '@packrat/utils';
 import type { UIMessage } from 'ai';
 import { eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
@@ -28,17 +29,17 @@ function e2eChatStreamResponse() {
       const encoder = new TextEncoder();
       controller.enqueue(
         encoder.encode(
-          `data: ${JSON.stringify({ type: 'text-start', id: 'e2e-chat-response' })}\n\n`,
+          `data: ${safeJsonStringify({ type: 'text-start', id: 'e2e-chat-response' })}\n\n`,
         ),
       );
       controller.enqueue(
         encoder.encode(
-          `data: ${JSON.stringify({ type: 'text-delta', id: 'e2e-chat-response', delta: text })}\n\n`,
+          `data: ${safeJsonStringify({ type: 'text-delta', id: 'e2e-chat-response', delta: text })}\n\n`,
         ),
       );
       controller.enqueue(
         encoder.encode(
-          `data: ${JSON.stringify({ type: 'text-end', id: 'e2e-chat-response' })}\n\n`,
+          `data: ${safeJsonStringify({ type: 'text-end', id: 'e2e-chat-response' })}\n\n`,
         ),
       );
       controller.enqueue(encoder.encode('data: [DONE]\n\n'));
