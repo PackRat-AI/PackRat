@@ -14,9 +14,7 @@ Note the OS version you are on and which of the three you tested. Every report
 needs to say where it happened.
 
 This release covers packs, trips, weather, the assistant, the catalog, guides and
-gear inventory. Feed, Shopping List, Wildlife, Trails and Pack Insights are not
-part of it and do not appear on screen anywhere, so there is nothing to report
-there.
+gear inventory.
 
 ## iPhone
 
@@ -68,8 +66,8 @@ one bug a tester can catch that nobody else will.
   than coming back empty.
 - Save the trip, leave the screen, then open it again. The dates and location
   should have survived exactly as you set them.
-- Attach a pack to the trip if the screen offers it. The pack should then show up
-  on the trip.
+- Attach a pack to the trip using the Pack dropdown. It should show up on the trip
+  once you save.
 - Edit the trip, change the dates, and save again. Expect the new dates to stick.
 
 ### Weather
@@ -106,11 +104,10 @@ one bug a tester can catch that nobody else will.
 
 PackRat is meant to work without a connection. You should be able to open it on a
 trail with no signal and still get at your packs. This section matters as much as
-the rest of the iPhone list, so give it a proper go rather than a quick check.
+the rest of the iPhone list.
 
 - Use the app normally for a few minutes so it has something cached, then turn on
-  airplane mode and reopen it. Your packs and trips should still be listed rather
-  than showing empty screens or a spinner.
+  airplane mode and reopen it. Your packs and trips should still be listed and not show empty screens or a spinner.
 - Still in airplane mode, open a pack. Expect the items and weights to be there.
 - Create a new pack while offline, and add a couple of items. It should save and
   appear in your list straight away.
@@ -118,14 +115,13 @@ the rest of the iPhone list, so give it a proper go rather than a quick check.
   screen and come back.
 - Delete something offline. It should disappear and stay gone.
 - Turn airplane mode back off and give it a moment. Everything you did offline
-  should still be there, and the packs you made offline should sync up rather than
-  vanishing or turning into duplicates.
+  should still be there, and the packs you made offline should sync up and not
+  vanish or turn into duplicates.
 - Force quit while offline, then reopen with airplane mode still on. Expect your
   data to survive the restart.
-- Somewhere in the app there should be some sign that you are offline. Note
-  whether you can tell, and whether it clears once you reconnect.
-- Sign in fresh on a device with no cache, offline. The app should tell you it
-  cannot reach the network instead of hanging.
+- An orange banner reading "You're offline, showing cached data" should appear
+  across the top while you have no connection, and it should disappear once you
+  are back online.
 
 ### Things that break apps
 
@@ -236,11 +232,11 @@ The watch app has four screens. Scroll between them with the Digital Crown.
 
 ## Reporting
 
-One bug per post in the thread. What you did, what happened, what you expected
-instead. Include the OS version and whether it was iPhone, Mac or watch.
+One GitHub issue per bug. What you did, what happened, what you expected instead.
+Include the OS version and whether it was iPhone, Mac or watch.
 
 Screenshots help everywhere. On the watch, press the Digital Crown and the side
 button together to take one. It lands in your phone's photos.
 
-Anything merely annoying rather than broken is still worth a post. A weight that
+Anything merely annoying rather than broken is still worth an issue. A weight that
 comes out wrong counts, and so does a screen that takes too long.
