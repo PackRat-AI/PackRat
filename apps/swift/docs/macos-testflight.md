@@ -9,17 +9,58 @@ tab. (iOS builds of the Swift app go to a separate record,
 
 ## Uploading
 
+> **`upload-testflight.ts` has no macOS lane right now.** The script was
+> rewritten around iOS lanes (`--replacement` / `--side-by-side`) whose config
+> module is iOS-specific throughout — scheme selection,
+> `PACKRAT_IOS_BUNDLE_IDENTIFIER`, IPA verification. Adding a macOS lane means
+> extending `scripts/lib/testflight-config.ts`; until then, run the three steps
+> below by hand.
+
 ```bash
+# 1. Archive (Release; the macOS target has no Staging scheme)
+xcodebuild archive -project apps/swift/PackRat.xcodeproj \
+  -scheme PackRat-macOS -configuration Release \
+  -destination 'generic/platform=macOS' \
+  -archivePath /tmp/PackRat-mac.xcarchive \
+  -allowProvisioningUpdates \
+  CURRENT_PROJECT_VERSION=$(date +%s) DEVELOPMENT_TEAM=666HGMV2LU
+
+# 2. Export a signed .pkg using the manual-signing options below
+xcodebuild -exportArchive -archivePath /tmp/PackRat-mac.xcarchive \
+  -exportPath /tmp/PackRat-mac-export \
+  -exportOptionsPlist /tmp/ExportOptions-mac.plist
+
+# 3. Upload (--type osx; a macOS App Store export is a .pkg, not an .ipa)
 set -a && . apps/swift/.env.local && set +a
-bun apps/swift/scripts/upload-testflight.ts --mac
+xcrun altool --upload-app --type osx \
+  --file /tmp/PackRat-mac-export/PackRat-macOS.pkg \
+  --username "$APPLE_ID" --password "$APPLE_APP_PASSWORD" \
+  --asc-provider "$APPLE_TEAM_ID"
 ```
 
-`--mac` archives `generic/platform=macOS` via the `PackRat-macOS` scheme,
-exports a signed `.pkg`, and uploads with `altool --type osx`. It always builds
-Release — there is no macOS Staging scheme, so `--mac --staging` is rejected.
+`ExportOptions-mac.plist` — note `signingStyle` is **manual** (see below):
+
+```xml
+<plist version="1.0"><dict>
+  <key>method</key><string>app-store-connect</string>
+  <key>teamID</key><string>666HGMV2LU</string>
+  <key>destination</key><string>export</string>
+  <key>signingStyle</key><string>manual</string>
+  <key>signingCertificate</key><string>Apple Distribution</string>
+  <key>installerSigningCertificate</key><string>3rd Party Mac Developer Installer</string>
+  <key>provisioningProfiles</key>
+  <dict><key>com.andrewbierman.packrat</key><string>PackRat macOS App Store</string></dict>
+  <key>uploadSymbols</key><true/>
+</dict></plist>
+```
 
 Takes roughly 5 minutes to archive and export, plus 5–15 minutes of Apple-side
 processing before the build appears in TestFlight.
+
+`altool` can also authenticate with an App Store Connect API key
+(`--apiKey <id> --apiIssuer <uuid>`) instead of an Apple ID and app-specific
+password. The key must sit in one of `./private_keys`, `~/private_keys`,
+`~/.private_keys`, or `~/.appstoreconnect/private_keys`.
 
 ## Signing: why macOS uses manual signing
 
@@ -48,6 +89,29 @@ and add a macOS platform to an existing app record by POSTing a `MAC_OS`
 certificate with `security import` (use `openssl pkcs12 -export -legacy`; the
 modern default encryption fails macOS keychain import with a misleading
 "wrong password" error).
+
+## "The build uploaded but there's no macOS tab in TestFlight"
+
+A build can be `VALID` and still be invisible to testers. Check its beta state:
+
+```
+GET /v1/builds/<id>/buildBetaDetail?fields[buildBetaDetails]=internalBuildState,externalBuildState
+```
+
+`MISSING_EXPORT_COMPLIANCE` means Apple is waiting on the encryption question
+and hides the build until it's answered — TestFlight shows no macOS tab at all,
+with nothing to explain why. `project.yml` now sets
+`ITSAppUsesNonExemptEncryption: false` on the macOS target so this is answered
+at build time. To unblock a build that was already uploaded without it:
+
+```
+PATCH /v1/builds/<id>   {"data":{"type":"builds","id":"<id>",
+                          "attributes":{"usesNonExemptEncryption":false}}}
+```
+
+The state should flip to `IN_BETA_TESTING`. Internal groups get every build
+automatically — trying to POST an internal group to
+`/v1/builds/<id>/relationships/betaGroups` returns 422 and isn't needed.
 
 ## Two things that will get an upload rejected
 
