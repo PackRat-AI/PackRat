@@ -188,6 +188,9 @@ targets:
         CFBundleVersion: "1"
         NSPrincipalClass: NSApplication
         NSHighResolutionCapable: true
+        # Required for Mac App Store distribution — the build warns and Apple
+        # rejects submissions without a category.
+        LSApplicationCategoryType: public.app-category.travel
         PACKRAT_ENV: $(PACKRAT_ENV)
         SENTRY_DSN: $(SENTRY_DSN)
         NSAppTransportSecurity:
