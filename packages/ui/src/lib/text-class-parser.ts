@@ -212,7 +212,8 @@ function parseValueToken({
     const opacity = Number(token.slice(slash + 1));
     if (Number.isFinite(opacity) && opacity >= 0 && opacity <= 100) {
       const resolved = resolveColorToken({ token: base, themeColors });
-      if (resolved) return { kind: 'color', value: withAlpha(resolved, opacity / 100) };
+      if (resolved)
+        return { kind: 'color', value: withAlpha({ color: resolved, alpha: opacity / 100 }) };
     }
     return undefined;
   }
@@ -264,7 +265,7 @@ function resolveColorToken({
 const HEX_COLOR = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 /** Folds an alpha into a #rgb/#rrggbb color as 8-digit hex; passes anything else through. */
-function withAlpha(color: string, alpha: number): string {
+function withAlpha({ color, alpha }: { color: string; alpha: number }): string {
   const hex = color.match(HEX_COLOR);
   if (!hex?.[1]) return color;
   const full =
