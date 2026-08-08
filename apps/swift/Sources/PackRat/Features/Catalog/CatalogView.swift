@@ -121,25 +121,21 @@ struct CatalogItemRow: View {
                 Text(item.displayName)
                     .font(.headline)
                     .lineLimit(2)
-                HStack(spacing: 8) {
-                    if let brand = item.displayBrand {
-                        Text(brand).font(.caption.bold()).foregroundStyle(.tint)
-                    }
-                    if !item.displayWeight.isEmpty {
-                        Label(item.displayWeight, systemImage: "scalemass")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    if let price = item.displayPrice {
-                        Text(price).font(.caption.bold()).foregroundStyle(.green)
-                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                ViewThatFits(in: .horizontal) {
+                    metadataRow
+                    metadataFlow
                 }
                 if let cats = item.categories, !cats.isEmpty {
                     Text(cats.prefix(2).joined(separator: " · "))
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
                 }
             }
+            .layoutPriority(1)
 
-            Spacer()
+            Spacer(minLength: 8)
 
             VStack(alignment: .trailing, spacing: 4) {
                 if let rating = item.ratingValue, rating > 0 {
@@ -148,12 +144,15 @@ struct CatalogItemRow: View {
                         Text(String(format: "%.1f", rating))
                             .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                     }
+                    .fixedSize(horizontal: true, vertical: false)
                 }
                 if !item.isInStock {
                     Text("Out of Stock")
                         .font(.caption2).foregroundStyle(.red)
+                        .lineLimit(1)
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(.red.opacity(0.1), in: Capsule())
+                        .fixedSize(horizontal: true, vertical: false)
                 }
 
                 Button {
@@ -172,6 +171,41 @@ struct CatalogItemRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+    }
+
+    private var metadataRow: some View {
+        HStack(spacing: 8) {
+            metadataItems
+        }
+        .lineLimit(1)
+    }
+
+    private var metadataFlow: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            metadataItems
+        }
+    }
+
+    @ViewBuilder
+    private var metadataItems: some View {
+        if let brand = item.displayBrand {
+            Text(brand)
+                .font(.caption.bold())
+                .foregroundStyle(.tint)
+                .lineLimit(1)
+        }
+        if !item.displayWeight.isEmpty {
+            Label(item.displayWeight, systemImage: "scalemass")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        if let price = item.displayPrice {
+            Text(price)
+                .font(.caption.bold())
+                .foregroundStyle(.green)
+                .lineLimit(1)
+        }
     }
 }
 

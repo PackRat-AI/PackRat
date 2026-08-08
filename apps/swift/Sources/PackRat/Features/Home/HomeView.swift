@@ -111,10 +111,13 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(firstName.isEmpty ? greeting : "\(greeting), \(firstName)")
                     .font(.title2.bold())
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.86)
                     .accessibilityIdentifier("home_greeting")
                 Text("Here's your outdoor dashboard")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
 
             Spacer(minLength: 0)
@@ -141,11 +144,14 @@ struct HomeView: View {
                     Text(summaryTitle)
                         .font(.headline)
                         .foregroundStyle(.primary)
+                        .lineLimit(2)
                     Text(summarySubtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                .layoutPriority(1)
 
                 Spacer(minLength: 0)
             }
@@ -246,6 +252,8 @@ struct HomeView: View {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(value)
                     .font(.headline.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Text(label)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -404,6 +412,8 @@ private struct SummaryActionButton: View {
             HStack(spacing: 6) {
                 Image(systemName: symbol)
                 Text(title)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
             }
             .font(.subheadline.weight(.semibold))
             .frame(maxWidth: .infinity)
@@ -461,11 +471,13 @@ private struct HomeActionRow: View {
                     Text(action.title)
                         .font(.body)
                         .foregroundStyle(.primary)
+                        .lineLimit(1)
                     Text(action.subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
                 }
+                .layoutPriority(1)
 
                 Spacer(minLength: 8)
 
