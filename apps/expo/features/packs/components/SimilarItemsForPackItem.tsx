@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import { type SimilarItem, useSimilarPackItems } from 'expo-app/features/catalog/hooks';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';

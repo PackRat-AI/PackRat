@@ -35,7 +35,6 @@
     "check-types:tsgo": "bun scripts/check-types.ts --tsgo",
     "check-types-watch": "tsc --noEmit --watch",
     "clean": "bun run .github/scripts/clean.ts",
-    "configure:deps": "bun run .github/scripts/configure-deps.ts",
     "e2e:swift": "bun run apps/swift/scripts/run-e2e.ts",
     "e2e:swift:ios": "bun run apps/swift/scripts/run-e2e.ts ios-ui",
     "e2e:swift:ios-smoke": "bun run apps/swift/scripts/run-e2e.ts ios-smoke",
@@ -49,7 +48,6 @@
     "format": "biome format --write",
     "format:package-json": "bun scripts/format/sort-package-json.ts",
     "generate:openapi": "cd packages/api && bun scripts/generate-openapi.ts",
-    "preinstall": "bun run configure:deps",
     "postinstall": "bun run lefthook && bun run env && bun run portless:check && bun run --cwd packages/consent-ui build",
     "ios": "cd apps/expo && bun ios",
     "lefthook": "lefthook install",
@@ -90,10 +88,9 @@
     "web:screenshots": "bun run --cwd apps/expo screenshots:web"
   },
   "overrides": {
-    "@packrat-ai/nativewindui": "2.2.1",
     "@sinclair/typebox": "^0.34.15",
     "elysia": "^1.4.0",
-    "expo-sqlite": "~56.0.4",
+    "expo-sqlite": "~57.0.1",
     "react": "19.2.3"
   },
   "dependencies": {

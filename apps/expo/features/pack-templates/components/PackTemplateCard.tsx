@@ -1,6 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { isArray } from '@packrat/guards';
-import { Button, Text } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
@@ -117,7 +118,7 @@ export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
         </View>
 
         {template.description && (
-          <Text className="text-sm text-muted-foreground" numberOfLines={2}>
+          <Text className="text-sm text-muted-foreground" numberOfLines={2} wrap>
             {template.description}
           </Text>
         )}

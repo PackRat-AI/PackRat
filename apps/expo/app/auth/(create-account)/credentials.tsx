@@ -1,19 +1,16 @@
-import type { AlertMethods } from '@packrat/ui/nativewindui';
-import {
-  AlertAnchor,
-  Button,
-  Checkbox,
-  Form,
-  FormItem,
-  FormSection,
-  Text,
-  TextField,
-} from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/src/alert';
+import { AlertAnchor } from '@packrat/ui/src/alert';
+import { Button } from '@packrat/ui/src/button';
+import { Checkbox } from '@packrat/ui/src/checkbox';
+import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
+import { Text } from '@packrat/ui/src/text';
+import { TextField } from '@packrat/ui/src/text-field';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationKeys } from 'expo-app/lib/i18n/types';
+import { testIds } from 'expo-app/lib/testIds';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -359,7 +356,7 @@ export default function CredentialsScreen() {
                                       RE_HAS_SPECIAL.test(field.state.value) ? '#10B981' : '#9CA3AF'
                                     }
                                   />
-                                  <Text className="ml-1 text-xs text-gray-500">
+                                  <Text className="ml-1 text-xs text-gray-500" wrap>
                                     {t('auth.atLeast1Special')}
                                   </Text>
                                 </View>
@@ -402,7 +399,11 @@ export default function CredentialsScreen() {
 
                 {/* Password visibility checkbox */}
                 <View className="mb-4 mt-2 flex-row items-center">
-                  <Checkbox checked={passwordVisible} onCheckedChange={setPasswordVisible} />
+                  <Checkbox
+                    checked={passwordVisible}
+                    onCheckedChange={setPasswordVisible}
+                    testID={testIds.auth.showPasswordCheckbox}
+                  />
                   <Text className="ml-2 text-sm text-gray-700">{t('auth.showPassword')}</Text>
                 </View>
               </FormSection>

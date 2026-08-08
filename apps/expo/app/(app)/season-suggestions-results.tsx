@@ -1,5 +1,5 @@
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Text } from '@packrat/ui/src/text';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { PackItemImage } from 'expo-app/features/packs/components/PackItemImage';
@@ -185,7 +185,7 @@ function DevErrorPanel({ active, onSelect }: DevErrorPanelProps) {
               <Text
                 variant="footnote"
                 className="font-semibold"
-                style={{ color: isActive ? 'white' : colors.foreground }}
+                textColor={isActive ? 'white' : colors.foreground}
               >
                 {chip.label}
               </Text>
@@ -304,7 +304,11 @@ function ErrorCard({ error, onRetry, onGoBack, onGoToInventory, onSignIn }: Erro
       <Text variant="title3" className="mb-2 text-center font-semibold">
         {title}
       </Text>
-      <Text variant="subhead" className="mb-8 text-center leading-relaxed text-muted-foreground">
+      <Text
+        variant="subhead"
+        className="mb-8 text-center leading-relaxed text-muted-foreground"
+        wrap
+      >
         {body}
       </Text>
 
@@ -464,7 +468,7 @@ export default function SeasonSuggestionsResultsScreen() {
                     <Text variant="caption1" className="text-primary font-medium mb-1">
                       {suggestion.category}
                     </Text>
-                    <Text variant="body" className="text-muted-foreground mb-3">
+                    <Text variant="body" className="text-muted-foreground mb-3" wrap>
                       {suggestion.description}
                     </Text>
 

@@ -1,13 +1,9 @@
-import type { AlertMethods } from '@packrat/ui/nativewindui';
-import {
-  AlertAnchor,
-  Button,
-  Form,
-  FormItem,
-  FormSection,
-  Text,
-  TextField,
-} from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/src/alert';
+import { AlertAnchor } from '@packrat/ui/src/alert';
+import { Button } from '@packrat/ui/src/button';
+import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
+import { Text } from '@packrat/ui/src/text';
+import { TextField } from '@packrat/ui/src/text-field';
 import { useForm } from '@tanstack/react-form';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
@@ -99,7 +95,7 @@ export default function ForgotPasswordScreen() {
                 {t('auth.whatsYourEmail')}
               </Text>
             )}
-            <Text className="px-4 pt-2 text-center text-muted-foreground">
+            <Text className="px-4 pt-2 text-center text-muted-foreground" wrap>
               {t('auth.forgotPasswordMessage')}
             </Text>
           </View>

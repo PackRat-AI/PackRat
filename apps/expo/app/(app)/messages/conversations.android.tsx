@@ -1,19 +1,11 @@
 import { assertDefined } from '@packrat/guards';
-import {
-  Avatar,
-  AvatarFallback,
-  Button,
-  ContextMenu,
-  createContextItem,
-  createDropdownItem,
-  DropdownMenu,
-  List,
-  ListItem,
-  type ListRenderItemInfo,
-  Text,
-  Toolbar,
-  ToolbarCTA,
-} from '@packrat/ui/nativewindui';
+import { Avatar, AvatarFallback } from '@packrat/ui/src/avatar';
+import { Button } from '@packrat/ui/src/button';
+import { ContextMenu, createContextItem } from '@packrat/ui/src/context-menu';
+import { createDropdownItem, DropdownMenu } from '@packrat/ui/src/dropdown-menu';
+import { List, ListItem, type ListRenderItemInfo } from '@packrat/ui/src/list';
+import { Text } from '@packrat/ui/src/text';
+import { Toolbar, ToolbarCTA } from '@packrat/ui/src/toolbar';
 import { Portal } from '@rn-primitives/portal';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
@@ -36,7 +28,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ConversationsAndroidScreen() {
-  const { colors, isDarkColorScheme } = useColorScheme();
+  const { isDarkColorScheme } = useColorScheme();
   const [selectedMessages, setSelectedMessages] = React.useState<string[]>([]);
 
   const renderItem = React.useCallback(

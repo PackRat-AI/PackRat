@@ -1,23 +1,17 @@
 import { assertDefined } from '@packrat/guards';
-import {
-  Avatar,
-  AvatarFallback,
-  Button,
-  Checkbox,
-  ContextMenu,
-  createContextItem,
-  createDropdownItem,
-  DropdownMenu,
-  List,
-  ListItem,
-  type ListRenderItemInfo,
-  Text,
-  Toolbar,
-} from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Avatar, AvatarFallback } from '@packrat/ui/src/avatar';
+import { Button } from '@packrat/ui/src/button';
+import { Checkbox } from '@packrat/ui/src/checkbox';
+import { ContextMenu, createContextItem } from '@packrat/ui/src/context-menu';
+import { createDropdownItem, DropdownMenu } from '@packrat/ui/src/dropdown-menu';
+import { List, ListItem, type ListRenderItemInfo } from '@packrat/ui/src/list';
+import { Text } from '@packrat/ui/src/text';
+import { Toolbar } from '@packrat/ui/src/toolbar';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { testIds } from 'expo-app/lib/testIds';
 import * as Haptics from 'expo-haptics';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
@@ -239,6 +233,8 @@ const CONTEXT_MENU_ITEMS = [
 
 const TIME_STAMP_WIDTH = 96;
 
+// Reserves room for the absolutely-positioned timestamp overlay. TextStyle now that
+// ListItem's titleStyle reaches the Text itself rather than a bridging Host box.
 const TEXT_STYLE: TextStyle = {
   paddingRight: TIME_STAMP_WIDTH,
 };
@@ -309,6 +305,7 @@ function MessageRow({
                   <Checkbox
                     checked={selectedMessages.includes(info.item.id)}
                     onCheckedChange={onCheckedChange}
+                    testID={testIds.messages.selectConversationCheckbox(info.item.id)}
                   />
                 )}
               </Animated.View>

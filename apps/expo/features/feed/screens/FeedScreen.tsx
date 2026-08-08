@@ -1,5 +1,7 @@
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -76,7 +78,9 @@ export const FeedScreen = () => {
       <View className="flex-1 items-center justify-center py-20 gap-4">
         <Icon name="image-multiple" size={64} color={colors.grey2} />
         <Text className="text-lg font-semibold text-center">{t('feed.noPosts')}</Text>
-        <Text className="text-sm text-muted-foreground text-center">{t('feed.beTheFirst')}</Text>
+        <Text className="text-sm text-muted-foreground text-center" wrap>
+          {t('feed.beTheFirst')}
+        </Text>
         <Button onPress={handleCreatePost} variant="primary">
           <Text>{t('feed.sharePhoto')}</Text>
         </Button>

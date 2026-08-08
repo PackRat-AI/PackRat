@@ -1,14 +1,15 @@
+import { BottomSheetScrollView } from '@expo/ui/community/bottom-sheet';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import Fontisto from '@expo/vector-icons/Fontisto';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { Card, CardContent, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
+import { Sheet, useSheetRef } from '@packrat/ui/src/bottom-sheet';
+import { Card, CardContent } from '@packrat/ui/src/card';
+import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Linking, Pressable, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ToolInvocation } from '../types';
 import { ToolCard } from './ToolCard';
 
@@ -47,7 +48,6 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
   const bottomSheetRef = useSheetRef();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
 
   const handleCardPress = () => {
     bottomSheetRef.current?.present();
@@ -94,7 +94,7 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
             onPress={handleCardPress}
             icon={<Fontisto name="world-o" size={16} color={colors.foreground} />}
           />
-          <Sheet ref={bottomSheetRef} snapPoints={['85%']} bottomInset={insets.bottom}>
+          <Sheet ref={bottomSheetRef} snapPoints={['85%']}>
             <BottomSheetScrollView className="flex-1 px-4" style={{ flex: 1 }}>
               <View>
                 {/* Header */}

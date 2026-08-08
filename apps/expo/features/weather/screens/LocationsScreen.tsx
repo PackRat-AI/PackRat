@@ -1,6 +1,7 @@
-import { Button, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
 import { IosTransparentHeaderOverlapFix } from '@packrat/ui/src/ios-transparent-header-overlap-fix';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { SearchInput } from 'expo-app/components/SearchInput';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
@@ -160,7 +161,7 @@ function LocationsScreen() {
             </Text>
             <View className="bg-muted/30 items-center rounded-lg p-4">
               <Icon name="magnify-minus-outline" size={24} color={colors.grey2} />
-              <Text className="mt-2 text-muted-foreground">
+              <Text className="mt-2 text-muted-foreground" wrap>
                 {t('weather.noLocationsMatch', { query: searchQuery })}
               </Text>
               <View className="mt-4 flex-row">
@@ -217,7 +218,7 @@ function LocationsScreen() {
                 )}
 
                 <View className="mb-2">
-                  <Text className="text-xs text-muted-foreground">
+                  <Text className="text-xs text-muted-foreground" wrap>
                     {t('weather.longPressForOptions')}
                   </Text>
                 </View>
@@ -240,7 +241,7 @@ function LocationsScreen() {
                 <Text className="mt-4 text-center text-lg font-medium">
                   {t('weather.noSavedLocations')}
                 </Text>
-                <Text className="mb-4 mt-2 px-8 text-center text-sm text-muted-foreground">
+                <Text className="mb-4 mt-2 px-8 text-center text-sm text-muted-foreground" wrap>
                   {t('weather.noSavedLocationsDesc')}
                 </Text>
                 <Button variant="primary" onPress={handleAddLocation}>

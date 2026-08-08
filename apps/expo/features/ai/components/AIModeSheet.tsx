@@ -1,7 +1,7 @@
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { isFunction } from '@packrat/guards';
-import { Sheet, Text } from '@packrat/ui/nativewindui';
+import { Sheet, SheetView } from '@packrat/ui/src/bottom-sheet';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuthState } from 'expo-app/features/auth/hooks/useAuthState';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -121,9 +121,8 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
         enableDynamicSizing
         enablePanDownToClose
         backgroundStyle={{ backgroundColor: colors.card }}
-        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
       >
-        <BottomSheetView className="px-4 pb-8">
+        <SheetView className="px-4 pb-8">
           <Text variant="title3" className="mb-4 mt-2 text-center font-semibold">
             {t('ai.aiMode')}
           </Text>
@@ -140,7 +139,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
             </View>
             <View className="flex-1">
               <Text className="font-medium">{t('ai.cloud')}</Text>
-              <Text variant="footnote" className="text-muted-foreground">
+              <Text variant="footnote" className="text-muted-foreground" wrap>
                 PackRat servers · requires internet
               </Text>
               {!isAuthenticated && (
@@ -187,12 +186,12 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
           {showSlowDeviceWarning && (
             <View className="mt-3 flex-row items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950">
               <Icon name="alert-outline" size={16} color="#d97706" />
-              <Text variant="footnote" className="flex-1 text-amber-700 dark:text-amber-300">
+              <Text variant="footnote" className="flex-1 text-amber-700 dark:text-amber-300" wrap>
                 {t('ai.localInferenceSlowNote')}
               </Text>
             </View>
           )}
-        </BottomSheetView>
+        </SheetView>
       </Sheet>
     );
   },

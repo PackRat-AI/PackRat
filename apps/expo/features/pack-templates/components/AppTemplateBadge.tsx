@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Image, Platform, View } from 'react-native';
 

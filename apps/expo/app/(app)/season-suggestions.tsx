@@ -1,7 +1,8 @@
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { assertDefined } from '@packrat/guards';
-import { Button, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { LocationSearchSheet } from 'expo-app/features/packs/components/LocationSearchSheet';
@@ -118,7 +119,7 @@ export default function SeasonSuggestionsScreen() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
         <View className="py-6">
           <View className="mb-6">
-            <Text variant="body" className="text-muted-foreground">
+            <Text variant="body" className="text-muted-foreground" wrap>
               {t('seasons.personalizedRecommendations')}
             </Text>
           </View>

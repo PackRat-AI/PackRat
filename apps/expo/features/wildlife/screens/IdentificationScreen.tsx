@@ -1,5 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
@@ -150,7 +152,7 @@ export function IdentificationScreen() {
 
         {/* Optional description for better offline matching */}
         <View className="mx-4 mb-4">
-          <Text className="text-sm font-medium text-foreground mb-1">
+          <Text className="text-sm font-medium text-foreground mb-1" wrap>
             {t('wildlife.describeSpecies')}
           </Text>
           <TextInput
@@ -208,7 +210,7 @@ export function IdentificationScreen() {
                 <Text className="text-lg font-semibold text-center mb-2">
                   {t('wildlife.noResultsFound')}
                 </Text>
-                <Text className="text-center text-muted-foreground text-sm">
+                <Text className="text-center text-muted-foreground text-sm" wrap>
                   {t('wildlife.noResultsDescription')}
                 </Text>
               </View>

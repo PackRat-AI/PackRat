@@ -1,5 +1,6 @@
 import { assertDefined } from '@packrat/guards';
-import { Button, Text } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Burnt from 'burnt';
@@ -263,7 +264,7 @@ export function AddCatalogItemDetailsScreen() {
                   <Text className="text-sm font-medium text-foreground">
                     {t('catalog.consumable')}
                   </Text>
-                  <Text className="text-xs text-muted-foreground">
+                  <Text className="text-xs text-muted-foreground" wrap>
                     {t('catalog.consumableDescription')}
                   </Text>
                 </View>
@@ -273,7 +274,7 @@ export function AddCatalogItemDetailsScreen() {
               <View className="flex-row items-center justify-between">
                 <View>
                   <Text className="text-sm font-medium text-foreground">{t('catalog.worn')}</Text>
-                  <Text className="text-xs text-muted-foreground">
+                  <Text className="text-xs text-muted-foreground" wrap>
                     {t('catalog.wornDescription')}
                   </Text>
                 </View>

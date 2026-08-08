@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtom } from 'jotai';
@@ -57,7 +57,7 @@ export function SpeciesDetailScreen() {
       <>
         <Stack.Screen options={{ title: t('wildlife.speciesDetail') }} />
         <View className="flex-1 items-center justify-center p-8">
-          <Text className="text-center text-muted-foreground">
+          <Text className="text-center text-muted-foreground" wrap>
             {t('wildlife.historyLoadError')}
           </Text>
         </View>
@@ -121,7 +121,7 @@ export function SpeciesDetailScreen() {
             <Text className="text-sm font-semibold text-foreground mb-2 uppercase tracking-wide">
               {t('wildlife.description')}
             </Text>
-            <Text className="text-base text-foreground leading-6">
+            <Text wrap className="text-base text-foreground leading-6">
               {displaySpecies.description}
             </Text>
           </View>

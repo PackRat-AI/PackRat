@@ -1,6 +1,6 @@
 import { assertDefined } from '@packrat/guards';
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Text } from '@packrat/ui/src/text';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { useUserPackItems } from 'expo-app/features/packs/hooks/useUserPackItems';
 import type { PackItem } from 'expo-app/features/packs/types';

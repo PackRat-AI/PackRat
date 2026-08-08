@@ -1,7 +1,7 @@
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { IosTransparentHeaderOverlapFix } from '@packrat/ui/src/ios-transparent-header-overlap-fix';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
+import { Text } from '@packrat/ui/src/text';
 import { catalogGroupVariantsAtom } from 'expo-app/atoms/catalogGroupAtom';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
@@ -168,7 +168,7 @@ function CatalogItemsScreen() {
                     <Text className="mb-1 text-lg font-medium text-foreground">
                       {t('catalog.searchError')}
                     </Text>
-                    <Text className="text-center text-muted-foreground">
+                    <Text className="text-center text-muted-foreground" wrap>
                       {t('catalog.unableToSearch')}
                     </Text>
                   </>
@@ -180,7 +180,7 @@ function CatalogItemsScreen() {
                     <Text className="mb-1 text-lg font-medium text-foreground">
                       {t('catalog.noResults')}
                     </Text>
-                    <Text className="text-center text-muted-foreground">
+                    <Text className="text-center text-muted-foreground" wrap>
                       {t('catalog.tryAdjustingFilters')}
                     </Text>
                   </>
@@ -216,7 +216,7 @@ function CatalogItemsScreen() {
                   {t('catalog.scrollToLoadMore')}
                 </Text>
               ) : paginatedItems.length > 0 ? (
-                <Text className="text-center text-xs text-muted-foreground">
+                <Text className="text-center text-xs text-muted-foreground" wrap>
                   {t('catalog.endOfCatalog')}
                 </Text>
               ) : null}
@@ -255,7 +255,7 @@ function CatalogItemsScreen() {
                 <Text className="mb-1 text-lg font-medium text-foreground">
                   {t('catalog.noItemsFound')}
                 </Text>
-                <Text className="text-center text-muted-foreground">
+                <Text className="text-center text-muted-foreground" wrap>
                   {t('catalog.tryDifferentCategory')}
                 </Text>
               </>

@@ -1,4 +1,4 @@
-import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { View } from 'react-native';
 
 export function LoadingSpinnerScreen() {

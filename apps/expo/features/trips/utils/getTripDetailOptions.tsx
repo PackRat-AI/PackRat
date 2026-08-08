@@ -1,4 +1,4 @@
-import { Button } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
 import { useTripDetailsFromStore } from 'expo-app/features/trips/hooks/useTripDetailsFromStore';
