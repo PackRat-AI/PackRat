@@ -112,7 +112,29 @@ run('xcodebuild', [
   `DEVELOPMENT_TEAM=${teamId}`,
 ]);
 
-// 2. Export a signed .ipa for App Store distribution.
+// 2. Export a signed artifact for App Store distribution (.ipa on iOS, .pkg on macOS).
+//
+// macOS uses MANUAL signing. Automatic signing calls into Xcode's account
+// system, which fails with "No Accounts" / "No profiles were found" on a
+// machine that has certificates in the keychain but no Apple ID configured in
+// Xcode's GUI. Naming the profile and the two certificates explicitly keeps
+// the export headless. Prerequisites, all creatable via the App Store Connect
+// API (see docs/macos-testflight.md):
+//   - an Apple Distribution cert (signs the .app)
+//   - a 3rd Party Mac Developer Installer cert (signs the .pkg)
+//   - a MAC_APP_STORE profile named below, installed in
+//     ~/Library/Developer/Xcode/UserData/Provisioning Profiles/
+const MAC_PROFILE_NAME = 'PackRat macOS App Store';
+const signingBlock = MAC
+  ? `  <key>signingStyle</key><string>manual</string>
+  <key>signingCertificate</key><string>Apple Distribution</string>
+  <key>installerSigningCertificate</key><string>3rd Party Mac Developer Installer</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>${BUNDLE_ID}</key><string>${MAC_PROFILE_NAME}</string>
+  </dict>`
+  : '  <key>signingStyle</key><string>automatic</string>';
+
 const exportOptions = join(work, 'ExportOptions.plist');
 writeFileSync(
   exportOptions,
@@ -123,7 +145,7 @@ writeFileSync(
   <key>method</key><string>app-store-connect</string>
   <key>teamID</key><string>${teamId}</string>
   <key>destination</key><string>export</string>
-  <key>signingStyle</key><string>automatic</string>
+${signingBlock}
   <key>uploadSymbols</key><true/>
 </dict>
 </plist>

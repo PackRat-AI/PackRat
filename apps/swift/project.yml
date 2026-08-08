@@ -173,7 +173,10 @@ targets:
     sources:
       - Sources/PackRat
       - Sources/PackRatShared
-    resources:
+      # Must be a source, not a resource: as a resource the catalog is copied
+      # verbatim and actool never runs, so the app ships with no Assets.car and
+      # no .icns — App Store upload then fails with "Missing required icon"
+      # (90236). Matches how PackRat-iOS declares it.
       - Resources/Assets.xcassets
     entitlements:
       path: Resources/PackRat-macOS.entitlements
