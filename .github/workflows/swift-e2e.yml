@@ -35,6 +35,52 @@ on:
         required: false
         type: boolean
         default: false
+      ios_test_plan:
+        description: "iOS test depth for manual runs"
+        required: false
+        type: choice
+        default: sanity
+        options:
+          - sanity
+          - smoke
+          - full
+      api_environment:
+        description: "API target for manual runs"
+        required: false
+        type: choice
+        default: configured-secret
+        options:
+          - configured-secret
+          - local
+          - dev
+          - production
+      feature_flag_profile:
+        description: "Temporary Swift feature flag profile"
+        required: false
+        type: choice
+        default: default
+        options:
+          - default
+          - all-on
+          - all-off
+      run_testflight_preflight:
+        description: "Verify replacement TestFlight metadata without archiving"
+        required: false
+        type: boolean
+        default: false
+      run_testflight_archive_verification:
+        description: "Archive/export the replacement app on a Mac runner and verify the built binary metadata without uploading"
+        required: false
+        type: boolean
+        default: false
+      replacement_build_number:
+        description: "Swift replacement build number intended for upload"
+        required: false
+        type: string
+      current_app_store_build_number:
+        description: "Latest existing PackRat App Store/TestFlight build number"
+        required: false
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -52,6 +98,87 @@ env:
   PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
 
 jobs:
+  testflight-replacement-preflight:
+    name: TestFlight replacement preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'workflow_dispatch' && inputs.run_testflight_preflight
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Verify replacement TestFlight metadata
+        env:
+          BUILD_NUMBER: ${{ inputs.replacement_build_number }}
+          APP_STORE_CURRENT_BUILD_NUMBER: ${{ inputs.current_app_store_build_number }}
+        run: |
+          missing=()
+          [ -z "${BUILD_NUMBER:-}" ] && missing+=("replacement_build_number")
+          [ -z "${APP_STORE_CURRENT_BUILD_NUMBER:-}" ] && missing+=("current_app_store_build_number")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Required TestFlight preflight inputs missing: ${missing[*]}"
+            exit 1
+          fi
+          bun swift:testflight:preflight --replacement --production
+
+  testflight-replacement-archive:
+    name: TestFlight replacement archive verification
+    runs-on: [self-hosted, macOS, packrat-e2e]
+    timeout-minutes: 60
+    if: github.event_name == 'workflow_dispatch' && inputs.run_testflight_archive_verification
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Swift Xcode project
+        run: bun run swift
+
+      - name: Verify replacement archive/export metadata
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          BUILD_NUMBER: ${{ inputs.replacement_build_number }}
+          APP_STORE_CURRENT_BUILD_NUMBER: ${{ inputs.current_app_store_build_number }}
+        run: |
+          missing=()
+          [ -z "${APPLE_TEAM_ID:-}" ] && missing+=("APPLE_TEAM_ID")
+          [ -z "${BUILD_NUMBER:-}" ] && missing+=("replacement_build_number")
+          [ -z "${APP_STORE_CURRENT_BUILD_NUMBER:-}" ] && missing+=("current_app_store_build_number")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Required TestFlight archive verification inputs missing: ${missing[*]}"
+            exit 1
+          fi
+          bun apps/swift/scripts/upload-testflight.ts --replacement --production --verify-archive-only
+
   macos-ui:
     name: macOS Swift UI E2E
     runs-on: [self-hosted, macOS, packrat-e2e]
@@ -74,18 +201,55 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Resolve Swift E2E target
+        run: |
+          target="${{ inputs.api_environment || 'configured-secret' }}"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            target="dev"
+          fi
+          case "$target" in
+            configured-secret)
+              echo "PACKRAT_ENV=dev" >> "$GITHUB_ENV"
+              ;;
+            local)
+              echo "PACKRAT_ENV=local" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=" >> "$GITHUB_ENV"
+              ;;
+            dev)
+              echo "PACKRAT_ENV=dev" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=https://packrat-api-dev.orange-frost-d665.workers.dev" >> "$GITHUB_ENV"
+              ;;
+            production)
+              echo "PACKRAT_ENV=production" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=https://packrat-api.orange-frost-d665.workers.dev" >> "$GITHUB_ENV"
+              ;;
+          esac
+          echo "PACKRAT_SWIFT_FEATURE_FLAG_PROFILE=${{ inputs.feature_flag_profile || 'default' }}" >> "$GITHUB_ENV"
+
       - name: Verify Swift E2E secrets
         run: |
+          target="${{ inputs.api_environment || 'configured-secret' }}"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            target="dev"
+          fi
           missing=()
-          [ -z "${E2E_EMAIL:-}" ] && missing+=("E2E_TEST_EMAIL")
-          [ -z "${E2E_PASSWORD:-}" ] && missing+=("E2E_TEST_PASSWORD")
-          [ -z "${E2E_API_BASE_URL:-}" ] && missing+=("SWIFT_E2E_API_BASE_URL")
-          [ -z "${NEON_DATABASE_URL:-}" ] && missing+=("NEON_DEV_DATABASE_URL")
+          if [ "$target" != "local" ]; then
+            [ -z "${E2E_EMAIL:-}" ] && missing+=("E2E_TEST_EMAIL")
+            [ -z "${E2E_PASSWORD:-}" ] && missing+=("E2E_TEST_PASSWORD")
+          fi
+          if [ "$target" = "configured-secret" ] && [ -z "${E2E_API_BASE_URL:-}" ]; then
+            missing+=("SWIFT_E2E_API_BASE_URL")
+          fi
+          if [ "$target" != "local" ] && [ "$target" != "production" ] && [ -z "${NEON_DATABASE_URL:-}" ]; then
+            missing+=("NEON_DEV_DATABASE_URL")
+          fi
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::Required Swift E2E secrets missing: ${missing[*]}"
             exit 1
@@ -101,11 +265,16 @@ jobs:
         run: bun run swift
 
       - name: Seed E2E test user
+        if: ${{ (inputs.api_environment || 'configured-secret') != 'local' && (inputs.api_environment || 'configured-secret') != 'production' }}
         run: bun run --filter @packrat/api db:seed:e2e-user
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
           E2E_TEST_EMAIL: ${{ env.E2E_EMAIL }}
           E2E_TEST_PASSWORD: ${{ env.E2E_PASSWORD }}
+
+      - name: Verify deployed Swift auth
+        if: ${{ (inputs.api_environment || 'configured-secret') != 'local' }}
+        run: bun run apps/swift/scripts/verify-deployed-auth.ts
 
       - name: Run macOS Swift UI E2E
         run: |
@@ -159,6 +328,7 @@ jobs:
     timeout-minutes: 60
     if: >
       github.event_name == 'schedule' ||
+      github.event_name == 'pull_request' ||
       (github.event_name == 'workflow_dispatch' && inputs.run_ios_ui)
 
     steps:
@@ -174,18 +344,57 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Resolve Swift E2E target
+        run: |
+          target="${{ inputs.api_environment || 'configured-secret' }}"
+          if [ "${{ github.event_name }}" = "pull_request" ] ||
+             [ "${{ github.event_name }}" = "schedule" ]; then
+            target="dev"
+          fi
+          case "$target" in
+            configured-secret)
+              echo "PACKRAT_ENV=dev" >> "$GITHUB_ENV"
+              ;;
+            local)
+              echo "PACKRAT_ENV=local" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=" >> "$GITHUB_ENV"
+              ;;
+            dev)
+              echo "PACKRAT_ENV=dev" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=https://packrat-api-dev.orange-frost-d665.workers.dev" >> "$GITHUB_ENV"
+              ;;
+            production)
+              echo "PACKRAT_ENV=production" >> "$GITHUB_ENV"
+              echo "E2E_API_BASE_URL=https://packrat-api.orange-frost-d665.workers.dev" >> "$GITHUB_ENV"
+              ;;
+          esac
+          echo "PACKRAT_SWIFT_FEATURE_FLAG_PROFILE=${{ inputs.feature_flag_profile || 'default' }}" >> "$GITHUB_ENV"
+
       - name: Verify Swift E2E secrets
         run: |
+          target="${{ inputs.api_environment || 'configured-secret' }}"
+          if [ "${{ github.event_name }}" = "pull_request" ] ||
+             [ "${{ github.event_name }}" = "schedule" ]; then
+            target="dev"
+          fi
           missing=()
-          [ -z "${E2E_EMAIL:-}" ] && missing+=("E2E_TEST_EMAIL")
-          [ -z "${E2E_PASSWORD:-}" ] && missing+=("E2E_TEST_PASSWORD")
-          [ -z "${E2E_API_BASE_URL:-}" ] && missing+=("SWIFT_E2E_API_BASE_URL")
-          [ -z "${NEON_DATABASE_URL:-}" ] && missing+=("NEON_DEV_DATABASE_URL")
+          if [ "$target" != "local" ]; then
+            [ -z "${E2E_EMAIL:-}" ] && missing+=("E2E_TEST_EMAIL")
+            [ -z "${E2E_PASSWORD:-}" ] && missing+=("E2E_TEST_PASSWORD")
+          fi
+          if [ "$target" = "configured-secret" ] && [ -z "${E2E_API_BASE_URL:-}" ]; then
+            missing+=("SWIFT_E2E_API_BASE_URL")
+          fi
+          if [ "$target" != "local" ] && [ "$target" != "production" ] && [ -z "${NEON_DATABASE_URL:-}" ]; then
+            missing+=("NEON_DEV_DATABASE_URL")
+          fi
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::Required Swift E2E secrets missing: ${missing[*]}"
             exit 1
@@ -197,14 +406,38 @@ jobs:
         run: bun run swift
 
       - name: Seed E2E test user
+        if: ${{ (github.event_name == 'pull_request' || (inputs.api_environment || 'configured-secret') != 'local') && (inputs.api_environment || 'configured-secret') != 'production' }}
         run: bun run --filter @packrat/api db:seed:e2e-user
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
           E2E_TEST_EMAIL: ${{ env.E2E_EMAIL }}
           E2E_TEST_PASSWORD: ${{ env.E2E_PASSWORD }}
 
+      - name: Verify deployed Swift auth
+        if: ${{ github.event_name == 'pull_request' || (inputs.api_environment || 'configured-secret') != 'local' }}
+        run: bun run apps/swift/scripts/verify-deployed-auth.ts
+
+      - name: Boot iOS simulator
+        run: |
+          DEVICE_ID=$(xcrun simctl create Swift-E2E "iPhone 17" \
+            "$(xcrun simctl list runtimes -j | jq -r '.runtimes[] | select(.identifier | contains("iOS-")) | .identifier' | sort -V | tail -1)")
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID"
+          echo "IOS_SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
+
       - name: Run iOS Swift UI E2E
-        run: bun run e2e:swift:ios
+        run: |
+          plan="${{ inputs.ios_test_plan || 'full' }}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            plan="sanity"
+          fi
+          if [ "$plan" = "full" ]; then
+            bun run e2e:swift:ios
+          elif [ "$plan" = "smoke" ]; then
+            bun run e2e:swift:ios-smoke
+          else
+            bun run e2e:swift:ios-sanity
+          fi
 
       - name: Summarize iOS xcresult
         if: always()

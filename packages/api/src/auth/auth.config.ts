@@ -13,7 +13,7 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { oauthProvider } from '@better-auth/oauth-provider';
 import { neon } from '@neondatabase/serverless';
-import * as schema from '@packrat/db';
+import * as schema from '@packrat/db/schema';
 import { type BetterAuthPlugin, betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
 import { drizzle } from 'drizzle-orm/neon-http';

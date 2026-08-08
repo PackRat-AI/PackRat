@@ -34,16 +34,15 @@ public struct OfflineAIView: View {
     private var providerSection: some View {
         Section("Provider") {
             Toggle("Use real on-device LLM (MLX)", isOn: $useRealLocalLLM)
+                .disabled(true)
             LabeledContent("Active provider") {
-                Text(useRealLocalLLM ? "MLXLocalLLMProvider (stub)" : "MockLocalLLMProvider")
+                Text("MockLocalLLMProvider")
                     .font(.caption.monospaced())
                     .foregroundStyle(.secondary)
             }
-            if useRealLocalLLM {
-                Text("MLX provider is not yet wired. Submitting a prompt will surface a `notImplemented` error — this is expected until a follow-up PR adds the MLX dependency.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text("The MLX provider is not available in this build. Offline AI uses the local mock provider until model packaging and runtime loading are production-ready.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
             Text("Flag changes apply on next view appearance.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)

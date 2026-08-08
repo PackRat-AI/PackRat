@@ -1,9 +1,9 @@
 import { AIService, CatalogService, WeatherService } from '@packrat/api/services';
 import { executeSqlAiTool } from '@packrat/api/services/executeSqlAiTool';
-import { tool } from 'ai';
 import { z } from 'zod';
 
-export function createTools(userId: string) {
+export async function createTools(userId: string) {
+  const { tool } = await import('ai');
   const weatherService = new WeatherService();
   const catalogService = new CatalogService();
   const aiService = new AIService();

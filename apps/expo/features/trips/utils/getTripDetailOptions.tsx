@@ -7,6 +7,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { t } from 'expo-app/lib/i18n';
 import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Platform, Share, View } from 'react-native';
 import { useDeleteTrip } from '../hooks';
 
@@ -19,6 +20,7 @@ export function getTripDetailOptions(id: string) {
       const router = useRouter();
       const deleteTrip = useDeleteTrip();
       const trip = useTripDetailsFromStore(id);
+      const [isDeleting, setIsDeleting] = useState(false);
 
       const handleShare = async () => {
         if (!trip) return;
@@ -36,15 +38,25 @@ export function getTripDetailOptions(id: string) {
         }
       };
 
-      const deleteAndNavigate = () => {
-        deleteTrip(id);
-        if (router.canGoBack()) router.back();
+      const deleteAndNavigate = async () => {
+        if (isDeleting) return;
+        setIsDeleting(true);
+        try {
+          await deleteTrip(id);
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/trips');
+          }
+        } finally {
+          setIsDeleting(false);
+        }
       };
 
       const confirmDelete = () => {
         if (Platform.OS === 'web') {
           if (globalThis.confirm(t('trips.deleteTripConfirmation'))) {
-            deleteAndNavigate();
+            void deleteAndNavigate();
           }
           return;
         }
@@ -57,7 +69,9 @@ export function getTripDetailOptions(id: string) {
             {
               text: t('common.delete'),
               style: 'destructive',
-              onPress: deleteAndNavigate,
+              onPress: () => {
+                void deleteAndNavigate();
+              },
             },
           ],
         });
@@ -77,6 +91,7 @@ export function getTripDetailOptions(id: string) {
             testID={testIds.trips.deleteBtn}
             variant="plain"
             size="icon"
+            disabled={isDeleting}
             onPress={confirmDelete}
           >
             <Icon name="trash-can-outline" color={colors.grey2} />

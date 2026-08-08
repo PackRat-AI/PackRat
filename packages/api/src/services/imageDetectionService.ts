@@ -1,8 +1,7 @@
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import type { CatalogItem } from '@packrat/db';
-import { generateObject } from 'ai';
+import type { CatalogItem } from '@packrat/db/schema';
 import { z } from 'zod';
 import { CatalogService } from './catalogService';
 
@@ -72,6 +71,7 @@ export class ImageDetectionService {
       cloudflareAiBinding: AI,
     });
 
+    const { generateObject } = await import('ai');
     const { object } = await generateObject({
       model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       schema: imageAnalysisSchema,

@@ -12,8 +12,6 @@ import * as schema from '@packrat/db/schema';
 import { isFunction, isString } from '@packrat/guards';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { drizzle as drizzleServerless } from 'drizzle-orm/neon-serverless';
-import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
 
 const runtimeEnv = () =>
   (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
@@ -41,11 +39,23 @@ const isStandardPostgresUrl = (url: string) => {
   }
 };
 
-const pgPools = new Map<string, Pool>();
+const bunSqlClients = new Map<string, Bun.SQL>();
+type DrizzleBunSql = typeof import('drizzle-orm/bun-sql')['drizzle'];
+let cachedDrizzleBunSQL: DrizzleBunSql | undefined;
 
-const getPgPoolMax = () => {
-  const parsed = Number(runtimeEnv().PACKRAT_PG_POOL_MAX);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 5;
+export const preloadDbDrivers = async () => {
+  if (!cachedDrizzleBunSQL && 'Bun' in globalThis) {
+    cachedDrizzleBunSQL = (await import('drizzle-orm/bun-sql')).drizzle;
+  }
+};
+
+const loadDrizzleBunSQL = (): DrizzleBunSql => {
+  if (!cachedDrizzleBunSQL) {
+    throw new Error(
+      'Bun SQL driver was not preloaded before creating a local Postgres connection.',
+    );
+  }
+  return cachedDrizzleBunSQL;
 };
 
 const shouldUseNeonWsProxy = (url: string) => {
@@ -145,24 +155,16 @@ export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHtt
       return withTagging(drizzleServerless(neonPool, { schema }));
     }
 
-    let pool = pgPools.get(url);
-    if (!pool) {
-      const newPool = new Pool({
-        connectionString: url,
-        max: getPgPoolMax(),
-        // idleTimeoutMillis: 0 prevents pg.Pool from calling setTimeout().unref(),
-        // which is not supported in the Cloudflare Workers runtime (miniflare).
-        idleTimeoutMillis: 0,
-        connectionTimeoutMillis: 10000,
-      });
-      newPool.on('error', () => {
-        pgPools.delete(url);
-      });
-      pgPools.set(url, newPool);
-      pool = newPool;
+    if (!('Bun' in globalThis) || !Bun.SQL) {
+      throw new Error('Standard PostgreSQL URLs require the Bun SQL runtime.');
     }
-    instrumentPool(pool);
-    return withTagging(drizzlePg(pool, { schema }));
+
+    let sql = bunSqlClients.get(url);
+    if (!sql) {
+      sql = new Bun.SQL(url);
+      bunSqlClients.set(url, sql);
+    }
+    return withTagging(loadDrizzleBunSQL()(sql, { schema }));
   }
   if (useNeonHttp) {
     const fn = instrumentNeonFn(neon(url));

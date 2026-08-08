@@ -13,14 +13,11 @@ import { createHash } from 'node:crypto';
  *   E2E_EMAIL
  *   E2E_PASSWORD
  *
- * How credentials reach the test runner:
- *   xcodebuild reads the scheme's TestAction EnvironmentVariables when
- *   launching XCTRunner. We inject E2E_EMAIL/E2E_PASSWORD into that block
- *   in the .xcscheme XML before invoking xcodebuild test. The scheme is
- *   regenerated from project.yml on every `bun swift`, so this edit is
- *   ephemeral and safe.
+ * Credentials reach the test runner through xcodebuild build-setting overrides,
+ * which populate the UITests bundle Info.plist keys declared in project.yml.
+ * The app receives the same values through launchEnvironment in AppUITestCase.
  */
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   anyOf,
@@ -32,6 +29,7 @@ import {
   oneOrMore,
 } from 'magic-regexp';
 import { ArgsError, parseArgs } from './lib/args';
+import { ensureLocalE2EAPI } from './lib/e2e-api';
 import { listBootedIOS } from './lib/simctl';
 import { formatSummaryLine, readSummary, XcResultError } from './lib/xcresult';
 
@@ -87,102 +85,28 @@ if (!E2E_EMAIL || !E2E_PASSWORD) {
   process.exit(1);
 }
 const PACKRAT_ENV = process.env.PACKRAT_ENV || 'local';
-const localE2ESessionToken = deriveLocalE2ESessionToken();
-const uiTestEmail = process.env.E2E_TEST_EMAIL ?? E2E_EMAIL;
-const uiTestPassword = process.env.E2E_TEST_PASSWORD ?? E2E_PASSWORD;
 
 if (!existsSync(SCHEME_PATH)) {
   console.error(`❌ Scheme not found at ${SCHEME_PATH} — run 'bun swift' first`);
   process.exit(1);
 }
 
-// ── Inject credentials into scheme ───────────────────────────────────────────
+const localAPI = await ensureLocalE2EAPI({ packratEnv: PACKRAT_ENV, env: process.env });
+loadEnvFile(resolve(REPO_ROOT, 'packages/api/.dev.vars.e2e'), true);
 
-function escapeXml(s: string): string {
-  return Array.from(s, (char) => {
-    if (char === '&') return '&amp;';
-    if (char === '<') return '&lt;';
-    if (char === '>') return '&gt;';
-    if (char === '"') return '&quot;';
-    if (char === "'") return '&apos;';
-    return char;
-  }).join('');
-}
+const localE2ESessionToken = deriveLocalE2ESessionToken();
+const allowLoginSeed = PACKRAT_ENV === 'local' || PACKRAT_ENV === 'dev-local';
+const uiTestEmail = process.env.E2E_TEST_EMAIL ?? E2E_EMAIL;
+const uiTestPassword = process.env.E2E_TEST_PASSWORD ?? E2E_PASSWORD;
 
 function deriveLocalE2ESessionToken(): string | undefined {
-  const dbUrl = process.env.NEON_DATABASE_URL ?? '';
-  const secret = process.env.BETTER_AUTH_SECRET;
+  if (PACKRAT_ENV !== 'local' && PACKRAT_ENV !== 'dev-local') return undefined;
+  const secret = process.env.BETTER_AUTH_SECRET ?? 'e2e-better-auth-secret-at-least-32-chars';
   const email = process.env.E2E_TEST_EMAIL?.toLowerCase();
   const userId = process.env.E2E_TEST_USER_ID;
-  if (!(dbUrl.includes('127.0.0.1') || dbUrl.includes('localhost'))) return undefined;
-  if (!secret || !email || !userId) return undefined;
+  if (!email || !userId) return undefined;
   const digest = createHash('sha256').update([secret, email, userId].join(':')).digest('hex');
   return `e2e-local.${digest}`;
-}
-
-type SchemeEnv = {
-  email: string;
-  password: string;
-  sessionToken?: string;
-  userId?: string;
-};
-
-function environmentVariableXml(key: string, value: string): string {
-  return [
-    '         <EnvironmentVariable',
-    `            key = "${escapeXml(key)}"`,
-    `            value = "${escapeXml(value)}"`,
-    '            isEnabled = "YES">',
-    '         </EnvironmentVariable>',
-  ].join('\n');
-}
-
-function injectScheme({ email, password, sessionToken, userId }: SchemeEnv): void {
-  let content = readFileSync(SCHEME_PATH, 'utf8');
-
-  // Strip any prior EnvironmentVariables block (idempotent re-runs).
-  content = removeEnvironmentVariablesBlock(content);
-
-  // Force TestAction to use its own env vars rather than inheriting from Run.
-  content = content.replace(
-    'shouldUseLaunchSchemeArgsEnv = "YES"',
-    'shouldUseLaunchSchemeArgsEnv = "NO"',
-  );
-
-  const variables = [
-    environmentVariableXml('E2E_EMAIL', email),
-    environmentVariableXml('E2E_PASSWORD', password),
-    environmentVariableXml('PACKRAT_E2E_EMAIL', uiTestEmail),
-    environmentVariableXml('PACKRAT_E2E_PASSWORD', uiTestPassword),
-  ];
-  if (sessionToken)
-    variables.push(environmentVariableXml('PACKRAT_E2E_SESSION_TOKEN', sessionToken));
-  if (userId) variables.push(environmentVariableXml('PACKRAT_E2E_USER_ID', userId));
-
-  const block = [
-    '      <EnvironmentVariables>',
-    ...variables,
-    '      </EnvironmentVariables>',
-    '',
-  ].join('\n');
-
-  // Insert before </TestAction>.
-  content = content.replace('   </TestAction>', `${block}   </TestAction>`);
-
-  writeFileSync(SCHEME_PATH, content);
-}
-
-function removeEnvironmentVariablesBlock(content: string): string {
-  let output = content;
-  while (true) {
-    const start = output.indexOf('<EnvironmentVariables>');
-    if (start === -1) return output;
-    const end = output.indexOf('</EnvironmentVariables>', start);
-    if (end === -1) return output;
-    const removalStart = output.lastIndexOf('\n', start);
-    const removalEnd = end + '</EnvironmentVariables>'.length;
-    output = `${output.slice(0, removalStart === -1 ? start : removalStart)}${output.slice(removalEnd)}`;
-  }
 }
 
 // ── Pick destination ─────────────────────────────────────────────────────────
@@ -221,14 +145,6 @@ try {
 
 // ── Run xcodebuild ───────────────────────────────────────────────────────────
 
-injectScheme({
-  email: E2E_EMAIL,
-  password: E2E_PASSWORD,
-  sessionToken: localE2ESessionToken,
-  userId: process.env.E2E_TEST_USER_ID,
-});
-console.log('✓ Injected E2E credentials into scheme');
-
 const dest = pickDestination();
 const resultBundle = allocateResultBundle();
 console.log(`→ Destination: ${dest}`);
@@ -256,6 +172,7 @@ const args = [
   `PACKRAT_E2E_PASSWORD=${uiTestPassword}`,
   `PACKRAT_E2E_SESSION_TOKEN=${localE2ESessionToken ?? ''}`,
   `PACKRAT_E2E_USER_ID=${process.env.E2E_TEST_USER_ID ?? ''}`,
+  `PACKRAT_E2E_ALLOW_LOGIN_SEED=${allowLoginSeed ? '1' : '0'}`,
   `PACKRAT_ENV=${PACKRAT_ENV}`,
 ];
 
@@ -278,43 +195,46 @@ function redactSecrets(output: string): string {
   return redacted;
 }
 
-const resultStatus = await new Promise<number | null>((resolve) => {
-  const child = spawn('xcodebuild', args, {
-    cwd: SWIFT_DIR,
-    env: process.env,
-  });
-
-  child.stdout.on('data', (chunk) => {
-    process.stdout.write(redactSecrets(chunk.toString()));
-  });
-  child.stderr.on('data', (chunk) => {
-    process.stderr.write(redactSecrets(chunk.toString()));
-  });
-  child.on('close', (code) => resolve(code));
-});
-
-const result = {
-  status: resultStatus,
-};
-
-// xcodebuild test exits non-zero on test failure but the result bundle is still valid;
-// always try to summarize, then propagate the original exit code.
+let exitStatus = 1;
 try {
-  const summary = readSummary(resultBundle);
-  console.log('');
-  console.log(formatSummaryLine(summary));
-  if (summary.failingTests.length > 0) {
-    console.log('  Failing tests:');
-    for (const t of summary.failingTests) {
-      console.log(`    • ${t.identifier}`);
+  const resultStatus = await new Promise<number | null>((resolve, reject) => {
+    const child = spawn('xcodebuild', args, {
+      cwd: SWIFT_DIR,
+      env: process.env,
+    });
+
+    child.stdout.on('data', (chunk) => {
+      process.stdout.write(redactSecrets(chunk.toString()));
+    });
+    child.stderr.on('data', (chunk) => {
+      process.stderr.write(redactSecrets(chunk.toString()));
+    });
+    child.once('error', reject);
+    child.on('close', (code) => resolve(code));
+  });
+  exitStatus = resultStatus ?? 1;
+
+  // xcodebuild test exits non-zero on test failure but the result bundle is still valid;
+  // always try to summarize, then propagate the original exit code.
+  try {
+    const summary = readSummary(resultBundle);
+    console.log('');
+    console.log(formatSummaryLine(summary));
+    if (summary.failingTests.length > 0) {
+      console.log('  Failing tests:');
+      for (const t of summary.failingTests) {
+        console.log(`    • ${t.identifier}`);
+      }
+    }
+  } catch (err) {
+    if (err instanceof XcResultError) {
+      console.error(`⚠️  ${err.message}`);
+    } else {
+      throw err;
     }
   }
-} catch (err) {
-  if (err instanceof XcResultError) {
-    console.error(`⚠️  ${err.message}`);
-  } else {
-    throw err;
-  }
+} finally {
+  await localAPI.stop();
 }
 
-process.exit(result.status ?? 1);
+process.exit(exitStatus);

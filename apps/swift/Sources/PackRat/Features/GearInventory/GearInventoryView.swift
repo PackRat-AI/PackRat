@@ -75,12 +75,28 @@ struct GearInventoryView: View {
         .searchable(text: $searchText, prompt: "Search gear")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Picker("Sort", selection: $sortOrder) {
+                Menu {
                     ForEach(SortOrder.allCases, id: \.self) { order in
-                        Text(order.rawValue).tag(order)
+                        Button {
+                            sortOrder = order
+                        } label: {
+                            Label(
+                                order.rawValue,
+                                systemImage: order == sortOrder ? "checkmark" : "circle"
+                            )
+                        }
                     }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(sortOrder.rawValue)
+                        Image(systemName: "arrow.up.arrow.down")
+                    }
+                    .font(.subheadline)
+                    .fixedSize()
                 }
-                .pickerStyle(.menu)
+                .accessibilityIdentifier("gear_inventory_sort")
+                .accessibilityLabel("Sort gear inventory")
+                .accessibilityValue(sortOrder.rawValue)
             }
         }
         .task { await appState.packsVM.load(context: modelContext) }

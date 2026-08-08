@@ -1,6 +1,6 @@
 import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { commentLikes, postComments, postLikes, posts, users } from '@packrat/db';
+import { commentLikes, postComments, postLikes, posts, users } from '@packrat/db/schema';
 import {
   CreateCommentRequestSchema,
   CreatePostRequestSchema,

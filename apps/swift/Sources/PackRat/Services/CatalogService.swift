@@ -12,15 +12,22 @@ final class CatalogService: Sendable {
             "page": "\(page)",
             "limit": "\(limit)",
         ])
-        // Handle both wrapped and unwrapped responses
-        if let wrapped = try? await api.send(endpoint, as: CatalogSearchResponse.self) {
-            return wrapped.items
-        }
-        return try await api.send(endpoint)
+        let data = try await api.sendData(endpoint)
+        return try decodeCatalogItems(from: data)
     }
 
     func semanticSearch(query: String, limit: Int = 10) async throws -> [CatalogItem] {
-        let endpoint = Endpoint(.get, "/api/catalog/search", query: ["q": query, "limit": "\(limit)"])
-        return try await api.send(endpoint)
+        let endpoint = Endpoint(.get, "/api/catalog/vector-search", query: ["q": query, "limit": "\(limit)"])
+        let data = try await api.sendData(endpoint)
+        return try decodeCatalogItems(from: data)
+    }
+
+    private func decodeCatalogItems(from data: Data) throws -> [CatalogItem] {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        if let wrapped = try? decoder.decode(CatalogSearchResponse.self, from: data) {
+            return wrapped.items
+        }
+        return try decoder.decode([CatalogItem].self, from: data)
     }
 }

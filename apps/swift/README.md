@@ -1,4 +1,4 @@
-# PackRat Swift Testing
+# PackRat Native Testing
 
 The generated Xcode project is not committed. Regenerate it after changing
 `project.yml`:
@@ -19,6 +19,7 @@ mkdir -p /Volumes/CrucialX10/tmp/andrewbierman
 ```sh
 bun run test:swift:runner
 bun run test:swift:unit
+bun run e2e:swift:ios-sanity
 bun run e2e:swift:ios-smoke
 bun run e2e:swift:ios
 bun run e2e:swift:mac
@@ -29,10 +30,15 @@ bun run e2e:swift:mac-ui
 `e2e:swift` defaults to iOS UI tests for compatibility with the original
 runner. All Xcode result bundles are written under `apps/swift/TestResults/`.
 
+Sanity mode is the fastest TestFlight-style loading check:
+
+- `e2e:swift:ios-sanity`: iOS launch, guest entry, real login, and primary tabs.
+
 Smoke modes are intentionally small PR gates:
 
 - `e2e:swift:mac-smoke`: macOS login, sidebar navigation, and pack create/add-item.
-- `e2e:swift:ios-smoke`: iOS login, tab navigation, and pack create.
+- `e2e:swift:ios-smoke`: iOS auth, guest persistence, feature gating, navigation,
+  search/filter/explore entry points, and weather entry.
 
 Full modes are the platform confidence gates:
 
@@ -70,6 +76,68 @@ Swift E2E CI is defined in `.github/workflows/swift-e2e.yml`.
   and a GitHub step summary generated with `xcresulttool`.
 
 See `docs/ci/swift-e2e-runner.md` for self-hosted Mac runner setup.
+
+## TestFlight Identity
+
+The Swift iOS app defaults to the replacement identity for the existing Expo/App
+Store listing:
+
+- iOS: `com.andrewbierman.packrat`, display name `PackRat`
+- watchOS companion: `com.andrewbierman.packrat.watchkitapp`
+
+That is the only identity that validates a seamless update for existing testers.
+The upload tooling still supports an explicit side-by-side lane for unusual
+parallel QA builds, but it must be requested intentionally with `--side-by-side`;
+iOS treats that as a separate app with separate install, keychain, and app
+container state.
+
+Upload commands require an explicit lane so we do not accidentally target the
+wrong App Store Connect record:
+
+```sh
+APP_STORE_CURRENT_BUILD_NUMBER=2026071801 BUILD_NUMBER=2026071802 \
+  bun swift:testflight:preflight --replacement --production
+bun apps/swift/scripts/upload-testflight.ts --replacement --dry-run
+bun apps/swift/scripts/upload-testflight.ts --replacement --verify-archive-only
+bun apps/swift/scripts/upload-testflight.ts --replacement
+bun apps/swift/scripts/upload-testflight.ts --side-by-side --staging
+```
+
+`--staging` uses the Staging build config (`PACKRAT_ENV=dev`). Without it, the
+script archives Release (`PACKRAT_ENV=production`).
+
+Use `--dry-run` before a real upload to verify the lane, bundle id, display
+name, build configuration, API environment, and Xcode archive overrides without
+requiring Apple credentials or running Xcode.
+
+Use `--verify-archive-only` on a self-hosted Mac signing runner before a real
+replacement upload when you want TestFlight-level confidence without shipping a
+build. It archives, exports, and inspects the built app/IPA metadata for the
+replacement bundle ids, display name, build number, production `PACKRAT_ENV`,
+and embedded watch companion linkage, then exits before upload. The hosted
+GitHub macOS runners do not have a signed-in Apple account or provisioning
+profiles, so the manual archive verification job runs on the same
+`self-hosted`, `macOS`, `packrat-e2e` runner used for Mac app UI automation.
+
+Use `swift:testflight:preflight` before the replacement upload when validating a
+seamless update. It fails unless the resolved archive is the existing Expo
+listing (`com.andrewbierman.packrat`, `PackRat`), Release/production, and has a
+strictly greater build number than `APP_STORE_CURRENT_BUILD_NUMBER`. Real
+`--replacement` uploads enforce the same check before reading Apple credentials
+or archiving.
+
+The same check is available from the manual **Swift E2E Tests** GitHub workflow:
+enable `run_testflight_preflight`, then provide `replacement_build_number` and
+`current_app_store_build_number`. That verifies the replacement metadata without
+archiving or uploading.
+
+The manual **Swift E2E Tests** workflow can also run
+`run_testflight_archive_verification` with the same build-number inputs. That
+uses a macOS runner to archive/export and verify the actual binary metadata
+without uploading to TestFlight. The **Swift Visual Screenshots** workflow
+defaults to production real-auth screenshots so the recurring contact sheets do
+not accidentally prove only local seeded behavior; choose `local` explicitly for
+fixture-backed visual review.
 
 ## Data Isolation
 

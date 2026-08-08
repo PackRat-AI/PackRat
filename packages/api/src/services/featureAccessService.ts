@@ -1,7 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { hasFeatureAccess } from '@packrat/config';
-import { type FeatureAccess, featureAccess } from '@packrat/db';
+import { type FeatureAccess, featureAccess } from '@packrat/db/schema';
 import { eq } from 'drizzle-orm';
 
 /**

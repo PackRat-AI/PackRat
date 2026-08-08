@@ -1,16 +1,12 @@
 #!/usr/bin/env bun
 /**
- * Archive the native Swift PackRat app (iOS or macOS) and upload it to TestFlight.
+ * Archive the native Swift PackRat iOS app and upload it to TestFlight.
  *
- * iOS targets a SEPARATE App Store Connect record from the production Expo
- * app: bundle id `com.andrewbierman.packrat.swift`. Register that app record
- * in App Store Connect once before the first upload.
- *
- * macOS (--mac) targets the PRODUCTION record `com.andrewbierman.packrat` —
- * the same one the Expo iPhone app ships from. A single record can host both
- * an iOS and a macOS platform, so Mac testers get the build under TestFlight's
- * macOS tab. The macOS platform must be added to that record in App Store
- * Connect before the first Mac upload.
+ * Choose the App Store Connect lane explicitly:
+ *   --replacement   existing Expo/App Store listing (`com.andrewbierman.packrat`,
+ *                   display name `PackRat`) for true TestFlight update testing.
+ *   --side-by-side  separate Swift beta listing (`com.andrewbierman.packrat.swift`,
+ *                   display name `PackRat Swift`) for parallel beta installs.
  *
  * Auth uses an Apple ID + app-specific password (no App Store Connect API key
  * required). Generate a password at appleid.apple.com -> Sign-In & Security ->
@@ -19,126 +15,204 @@
  * Required env (put in apps/swift/.env.local, gitignored):
  *   APPLE_ID                 your Apple ID email
  *   APPLE_APP_PASSWORD       app-specific password (xxxx-xxxx-xxxx-xxxx)
- *   APPLE_TEAM_ID            the team that owns the record (e.g. 7WV9JYCW55)
+ *   APPLE_TEAM_ID            Apple Developer Team ID used for signing
  *
  * Optional env:
+ *   APPLE_ASC_PROVIDER       App Store Connect provider short name for altool;
+ *                            defaults to APPLE_TEAM_ID when omitted
  *   BUILD_NUMBER             CFBundleVersion for this upload (default: timestamp)
+ *   MARKETING_VERSION        CFBundleShortVersionString for this upload
+ *                            (default: Swift minor bump 2.1.0)
+ *   APP_STORE_CURRENT_BUILD_NUMBER
+ *                            Required for --replacement uploads; latest existing
+ *                            PackRat App Store/TestFlight build number.
  *
  * Flags:
+ *   --replacement            Archive for the existing Expo/App Store iOS listing.
+ *   --side-by-side           Archive for the separate Swift beta listing.
  *   --staging                Archive the Staging config (PACKRAT_ENV=dev) so the
- *                            TestFlight build targets the deployed DEV API instead
- *                            of production. Default (no flag) = Release/production.
- *   --mac                    Archive the macOS app instead of iOS. Always Release
- *                            (the macOS target has no Staging scheme), so this
- *                            cannot be combined with --staging.
+ *                            build targets the deployed DEV API instead of production.
+ *   --production             Optional clarity flag; Release/production is the default
+ *                            API profile when --staging is absent.
+ *   --dry-run                Print the resolved archive identity/settings and exit
+ *                            before reading Apple credentials or running Xcode.
+ *   --verify-archive-only    Archive, export, inspect binary metadata, then exit
+ *                            before reading Apple ID upload credentials.
  *
  * Usage:
- *   bun apps/swift/scripts/upload-testflight.ts            # iOS, production
- *   bun apps/swift/scripts/upload-testflight.ts --staging  # iOS, dev API
- *   bun apps/swift/scripts/upload-testflight.ts --mac      # macOS, production
+ *   bun apps/swift/scripts/upload-testflight.ts --replacement
+ *   bun apps/swift/scripts/upload-testflight.ts --replacement --dry-run
+ *   bun apps/swift/scripts/upload-testflight.ts --replacement --verify-archive-only
+ *   bun apps/swift/scripts/upload-testflight.ts --side-by-side --staging
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { nodeEnv } from '@packrat/env/node';
+import { safeJsonStringify } from '@packrat/utils';
+import { verifyTestFlightArchive, verifyTestFlightIPA } from './lib/testflight-binary';
+import {
+  parseTestFlightUploadConfig,
+  TestFlightConfigError,
+  type TestFlightUploadConfig,
+  verifyTestFlightReplacementReadiness,
+  xcodeArchiveOverrides,
+} from './lib/testflight-config';
+import { findExportedIPA } from './lib/testflight-export';
 
 const SWIFT_DIR = new URL('..', import.meta.url).pathname;
 const PROJECT = join(SWIFT_DIR, 'PackRat.xcodeproj');
+const HELP = process.argv.includes('--help') || process.argv.includes('-h');
+const VERIFY_ARCHIVE_ONLY = process.argv.includes('--verify-archive-only');
 
-// --mac archives the native macOS app instead of iOS. It ships under the
-// production `com.andrewbierman.packrat` App Store Connect record (the same
-// record the Expo iPhone app uses) — one record hosts both platforms, so Mac
-// testers find it under the macOS tab. iOS uploads still go to the separate
-// `.swift` record.
-const MAC = process.argv.includes('--mac');
-const BUNDLE_ID = MAC ? 'com.andrewbierman.packrat' : 'com.andrewbierman.packrat.swift';
-
-// --staging archives the Staging config (PACKRAT_ENV=dev) via the dedicated
-// scheme; the default archives PackRat-iOS (Release config → production).
-// The macOS target has no Staging scheme, so --mac always builds Release.
-const STAGING = process.argv.includes('--staging');
-if (MAC && STAGING) {
-  console.error('--staging is not supported with --mac (no macOS Staging scheme).');
-  process.exit(1);
+function usage(): string {
+  return [
+    'Usage:',
+    '  bun apps/swift/scripts/upload-testflight.ts --replacement [--production|--staging] [--dry-run]',
+    '  bun apps/swift/scripts/upload-testflight.ts --replacement [--production|--staging] --verify-archive-only',
+    '  bun apps/swift/scripts/upload-testflight.ts --side-by-side [--production|--staging] [--dry-run]',
+    '',
+    'Lanes:',
+    '  --replacement   Existing Expo/App Store listing: com.andrewbierman.packrat, PackRat.',
+    '  --side-by-side  Separate Swift beta listing: com.andrewbierman.packrat.swift, PackRat Swift.',
+  ].join('\n');
 }
-const SCHEME = MAC ? 'PackRat-macOS' : STAGING ? 'PackRat-iOS-Staging' : 'PackRat-iOS';
-const CONFIGURATION = STAGING ? 'Staging' : 'Release';
 
-// TestFlight rejects simulator builds; macOS archives target the host arch.
-const DESTINATION = MAC ? 'generic/platform=macOS' : 'generic/platform=iOS';
-// altool's --type discriminates the delivery target; macOS uses `osx`.
-const ALTOOL_TYPE = MAC ? 'osx' : 'ios';
+if (HELP) {
+  console.log(usage());
+  process.exit(0);
+}
 
-function req(name: string): string {
-  const v = process.env[name];
+let uploadConfig: TestFlightUploadConfig;
+try {
+  uploadConfig = parseTestFlightUploadConfig({
+    argv: process.argv.slice(2),
+    env: { BUILD_NUMBER: nodeEnv.BUILD_NUMBER, MARKETING_VERSION: nodeEnv.MARKETING_VERSION },
+  });
+} catch (error) {
+  if (error instanceof TestFlightConfigError) {
+    console.error(`${error.message}\n\n${usage()}`);
+    process.exit(1);
+  }
+  throw error;
+}
+
+function printPreflight(input: {
+  config: TestFlightUploadConfig;
+  teamId?: string;
+  ascProvider?: string;
+}) {
+  const {
+    config,
+    teamId = '<APPLE_TEAM_ID>',
+    ascProvider = '<APPLE_ASC_PROVIDER or APPLE_TEAM_ID>',
+  } = input;
+  const archiveOverrides = xcodeArchiveOverrides({ config, teamId });
+  console.log(
+    safeJsonStringify({
+      lane: config.lane,
+      bundleId: config.bundleId,
+      watchBundleId: config.watchBundleId,
+      companionBundleId: config.companionBundleId,
+      displayName: config.displayName,
+      scheme: config.scheme,
+      configuration: config.configuration,
+      apiEnvironment: config.apiEnvironment,
+      marketingVersion: config.marketingVersion,
+      buildNumber: config.buildNumber,
+      ascProvider,
+      archiveOverrides,
+    }),
+  );
+}
+
+if (uploadConfig.dryRun) {
+  printPreflight({ config: uploadConfig, ascProvider: nodeEnv.APPLE_ASC_PROVIDER });
+  process.exit(0);
+}
+
+function req(input: { name: 'APPLE_ID' | 'APPLE_APP_PASSWORD' | 'APPLE_TEAM_ID' }): string {
+  const v = nodeEnv[input.name];
   if (!v) {
-    console.error(`Missing required env var: ${name}. See script header.`);
+    console.error(`Missing required env var: ${input.name}. See script header.`);
     process.exit(1);
   }
   return v;
 }
 
-const appleId = req('APPLE_ID');
-const appPassword = req('APPLE_APP_PASSWORD');
-const teamId = req('APPLE_TEAM_ID');
-const buildNumber = process.env.BUILD_NUMBER ?? String(Math.floor(Date.now() / 1000));
+if (nodeEnv.BUILD_NUMBER) {
+  uploadConfig = { ...uploadConfig, buildNumber: nodeEnv.BUILD_NUMBER };
+}
+
+if (uploadConfig.lane === 'replacement') {
+  const readiness = verifyTestFlightReplacementReadiness({
+    config: uploadConfig,
+    currentAppStoreBuildNumber: nodeEnv.APP_STORE_CURRENT_BUILD_NUMBER,
+    requireCurrentAppStoreBuildNumber: true,
+  });
+  if (!readiness.ok) {
+    for (const error of readiness.errors)
+      console.error(`Replacement TestFlight preflight failed: ${error}`);
+    process.exit(1);
+  }
+}
+
+const teamId = req({ name: 'APPLE_TEAM_ID' });
+const appleId = VERIFY_ARCHIVE_ONLY ? undefined : req({ name: 'APPLE_ID' });
+const appPassword = VERIFY_ARCHIVE_ONLY ? undefined : req({ name: 'APPLE_APP_PASSWORD' });
+const ascProvider = nodeEnv.APPLE_ASC_PROVIDER ?? teamId;
+printPreflight({ config: uploadConfig, teamId, ascProvider });
 
 const work = mkdtempSync(join(tmpdir(), 'packrat-tf-'));
 const archivePath = join(work, 'PackRat.xcarchive');
 const exportDir = join(work, 'export');
 
-function run(cmd: string, args: string[]) {
-  // Redact the app-specific password: this log line is routinely piped to a
-  // file or pasted into a bug report, and altool takes the secret as a plain
-  // argv value.
-  const shown = args.map((a, i) => (args[i - 1] === '--password' ? '<redacted>' : a));
-  console.log(`\n$ ${cmd} ${shown.join(' ')}`);
+function run(input: { cmd: string; args: string[] }) {
+  const { cmd, args } = input;
+  console.log(`\n$ ${cmd} ${args.join(' ')}`);
   execFileSync(cmd, args, { stdio: 'inherit' });
 }
 
+function verifyBinary(input: {
+  label: string;
+  result: ReturnType<typeof verifyTestFlightArchive>;
+}) {
+  const { label, result } = input;
+  if (!result.ok) {
+    for (const error of result.errors) console.error(`${label} verification failed: ${error}`);
+    process.exit(1);
+  }
+  console.log(`✓ Verified ${label} metadata (${result.iosApp}, ${result.watchApp})`);
+}
+
 // 1. Archive for a real device (TestFlight cannot accept a simulator build).
-run('xcodebuild', [
-  'archive',
-  '-project',
-  PROJECT,
-  '-scheme',
-  SCHEME,
-  '-configuration',
-  CONFIGURATION,
-  '-destination',
-  DESTINATION,
-  '-archivePath',
-  archivePath,
-  // Lets Xcode register the App IDs and generate provisioning profiles for
-  // the (new) bundle ids on the fly, using the signed-in account.
-  '-allowProvisioningUpdates',
-  `CURRENT_PROJECT_VERSION=${buildNumber}`,
-  `DEVELOPMENT_TEAM=${teamId}`,
-]);
+run({
+  cmd: 'xcodebuild',
+  args: [
+    'archive',
+    '-project',
+    PROJECT,
+    '-scheme',
+    uploadConfig.scheme,
+    '-configuration',
+    uploadConfig.configuration,
+    '-destination',
+    'generic/platform=iOS',
+    '-archivePath',
+    archivePath,
+    // Lets Xcode register the App IDs and generate provisioning profiles for
+    // the (new) bundle ids on the fly, using the signed-in account.
+    '-allowProvisioningUpdates',
+    ...xcodeArchiveOverrides({ config: uploadConfig, teamId }),
+  ],
+});
+verifyBinary({
+  label: 'TestFlight archive',
+  result: verifyTestFlightArchive({ archivePath, config: uploadConfig }),
+});
 
-// 2. Export a signed artifact for App Store distribution (.ipa on iOS, .pkg on macOS).
-//
-// macOS uses MANUAL signing. Automatic signing calls into Xcode's account
-// system, which fails with "No Accounts" / "No profiles were found" on a
-// machine that has certificates in the keychain but no Apple ID configured in
-// Xcode's GUI. Naming the profile and the two certificates explicitly keeps
-// the export headless. Prerequisites, all creatable via the App Store Connect
-// API (see docs/macos-testflight.md):
-//   - an Apple Distribution cert (signs the .app)
-//   - a 3rd Party Mac Developer Installer cert (signs the .pkg)
-//   - a MAC_APP_STORE profile named below, installed in
-//     ~/Library/Developer/Xcode/UserData/Provisioning Profiles/
-const MAC_PROFILE_NAME = 'PackRat macOS App Store';
-const signingBlock = MAC
-  ? `  <key>signingStyle</key><string>manual</string>
-  <key>signingCertificate</key><string>Apple Distribution</string>
-  <key>installerSigningCertificate</key><string>3rd Party Mac Developer Installer</string>
-  <key>provisioningProfiles</key>
-  <dict>
-    <key>${BUNDLE_ID}</key><string>${MAC_PROFILE_NAME}</string>
-  </dict>`
-  : '  <key>signingStyle</key><string>automatic</string>';
-
+// 2. Export a signed .ipa for App Store distribution.
 const exportOptions = join(work, 'ExportOptions.plist');
 writeFileSync(
   exportOptions,
@@ -149,61 +223,63 @@ writeFileSync(
   <key>method</key><string>app-store-connect</string>
   <key>teamID</key><string>${teamId}</string>
   <key>destination</key><string>export</string>
-${signingBlock}
+  <key>signingStyle</key><string>automatic</string>
   <key>uploadSymbols</key><true/>
 </dict>
 </plist>
 `,
 );
 
-run('xcodebuild', [
-  '-exportArchive',
-  '-archivePath',
-  archivePath,
-  '-exportPath',
-  exportDir,
-  '-exportOptionsPlist',
-  exportOptions,
-  // Export also needs to generate the App Store distribution profiles for the
-  // new bundle ids on the fly.
-  '-allowProvisioningUpdates',
-]);
+run({
+  cmd: 'xcodebuild',
+  args: [
+    '-exportArchive',
+    '-archivePath',
+    archivePath,
+    '-exportPath',
+    exportDir,
+    '-exportOptionsPlist',
+    exportOptions,
+    // Export also needs to generate the App Store distribution profiles for the
+    // new bundle ids on the fly.
+    '-allowProvisioningUpdates',
+  ],
+});
 
 // 3. Upload to TestFlight via altool (app-specific-password auth).
 // `--asc-provider` (team short name) is required when the Apple ID belongs to
 // more than one team, so altool knows which one to deliver to.
-// A macOS app-store-connect export produces a signed .pkg installer; iOS
-// produces an .ipa. Resolve by extension rather than assuming the scheme name
-// matches the artifact name.
-const artifact = (() => {
-  const wanted = MAC ? '.pkg' : '.ipa';
-  const found = readdirSync(exportDir).find((f) => f.endsWith(wanted));
-  if (!found) {
-    console.error(`No ${wanted} found in ${exportDir}. Contents: ${readdirSync(exportDir)}`);
-    process.exit(1);
-  }
-  return join(exportDir, found);
-})();
+const ipa = findExportedIPA(exportDir);
+verifyBinary({
+  label: 'TestFlight IPA',
+  result: verifyTestFlightIPA({ ipaPath: ipa, config: uploadConfig }),
+});
 
-run('xcrun', [
-  'altool',
-  '--upload-app',
-  '--type',
-  ALTOOL_TYPE,
-  '--file',
-  artifact,
-  '--username',
-  appleId,
-  '--password',
-  appPassword,
-  // This Apple ID belongs to multiple teams, so altool needs the provider
-  // disambiguated. --asc-provider takes the team short name / team id.
-  '--asc-provider',
-  teamId,
-]);
+if (VERIFY_ARCHIVE_ONLY) {
+  console.log('\n✓ Archive/export verification passed; skipping TestFlight upload.');
+  process.exit(0);
+}
+
+run({
+  cmd: 'xcrun',
+  args: [
+    'altool',
+    '--upload-app',
+    '--type',
+    'ios',
+    '--file',
+    ipa,
+    '--username',
+    appleId ?? '',
+    '--password',
+    appPassword ?? '',
+    '--asc-provider',
+    ascProvider,
+  ],
+});
 
 console.log(
-  `\n✓ Uploaded build ${buildNumber} to TestFlight (${MAC ? 'macOS' : 'iOS'}, ${BUNDLE_ID}, ` +
-    `${CONFIGURATION}${STAGING ? ' → dev API' : ' → production'}).`,
+  `\n✓ Uploaded build ${uploadConfig.buildNumber} to TestFlight (${uploadConfig.bundleId}, ${uploadConfig.displayName}, ${uploadConfig.configuration}` +
+    `${uploadConfig.staging ? ' -> dev API' : ' -> production'}, ${uploadConfig.lane}).`,
 );
 console.log('It will appear in App Store Connect after processing (usually 5-15 min).');

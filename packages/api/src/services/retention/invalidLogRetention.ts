@@ -6,7 +6,7 @@
 import { createDbClient } from '@packrat/api/db';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { record } from '@packrat/api/utils/sentry';
-import { invalidItemLogs } from '@packrat/db';
+import { invalidItemLogs } from '@packrat/db/schema';
 import { inArray, lt, sql } from 'drizzle-orm';
 
 const DEFAULT_RETENTION_DAYS = 90;

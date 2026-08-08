@@ -1,6 +1,7 @@
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { R2BucketService } from '@packrat/api/services/r2-bucket';
-import { getEnv } from '@packrat/api/utils/env-validation';
+import type { R2BucketService } from '@packrat/api/services/r2-bucket';
+import { getEnv, isLocalE2EApiEnv } from '@packrat/api/utils/env-validation';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import { asNumber, asString, isArray } from '@packrat/guards';
 import {
   GuideCategoriesResponseSchema,
@@ -10,13 +11,78 @@ import {
   GuidesQuerySchema,
   GuidesResponseSchema,
 } from '@packrat/schemas/guides';
+import { Elysia, NotFoundError, status } from 'elysia';
+import { z } from 'zod';
 
 const MDX_EXT_RE = /\.(mdx?|md)$/;
 const DASH_RE = /-/g;
+async function parseGuideMatter(content: string) {
+  const { default: matter } = await import('gray-matter');
+  return matter(content);
+}
 
-import { Elysia, NotFoundError, status } from 'elysia';
-import matter from 'gray-matter';
-import { z } from 'zod';
+async function createGuidesBucket(): Promise<R2BucketService> {
+  const { R2BucketService } = await import('@packrat/api/services/r2-bucket');
+  return new R2BucketService({
+    env: getEnv(),
+    bucketType: 'guides',
+  });
+}
+
+const isLocalE2EGuidesEnv = () => {
+  const { E2E_TEST_USER_ID, NEON_DATABASE_URL } = getEnv();
+  return isLocalE2EApiEnv({
+    databaseUrl: NEON_DATABASE_URL,
+    e2eUserId: E2E_TEST_USER_ID,
+    requireE2EUser: true,
+  });
+};
+
+const localE2EGuides = [
+  {
+    id: 'e2e-layering-for-shoulder-season',
+    key: 'e2e-layering-for-shoulder-season.mdx',
+    title: 'Layering for Shoulder Season',
+    category: 'skills',
+    categories: ['skills', 'clothing'],
+    description: 'How to tune warmth, rain protection, and ventilation for variable trail days.',
+    author: 'PackRat',
+    readingTime: 6,
+    difficulty: 'beginner',
+    content:
+      'Shoulder season trips work best with a breathable base layer, active insulation, rain protection, and a dry sleep layer. Keep the rain shell and headlamp easy to reach.',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'e2e-lightweight-weekend-pack',
+    key: 'e2e-lightweight-weekend-pack.mdx',
+    title: 'Lightweight Weekend Pack',
+    category: 'packing',
+    categories: ['packing', 'backpacking'],
+    description: 'A compact framework for balancing comfort, safety, and low carried weight.',
+    author: 'PackRat',
+    readingTime: 5,
+    difficulty: 'intermediate',
+    content:
+      'Start with shelter, sleep, water, food, layers, navigation, and repair. Cut duplicate comfort items only after essentials are covered.',
+    createdAt: '2026-01-02T00:00:00.000Z',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+  },
+];
+
+function paginateGuides<T>(input: { items: T[]; page: number; limit: number }) {
+  const { items, page, limit } = input;
+  const totalCount = items.length;
+  const offset = (page - 1) * limit;
+  return {
+    items: items.slice(offset, offset + limit),
+    totalCount,
+    page,
+    limit,
+    totalPages: Math.ceil(totalCount / limit),
+  };
+}
 
 export const guidesRoutes = new Elysia({ prefix: '/guides' })
   .model({
@@ -54,10 +120,25 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
           : undefined;
 
       try {
-        const bucket = new R2BucketService({
-          env: getEnv(),
-          bucketType: 'guides',
-        });
+        if (isLocalE2EGuidesEnv()) {
+          let guides = localE2EGuides.map(({ content: _content, ...guide }) => guide);
+          if (category) {
+            guides = guides.filter(
+              (guide) => guide.category === category || guide.categories.includes(category),
+            );
+          }
+          guides.sort((a, b) => {
+            if (!sort) return a.title.localeCompare(b.title);
+            const aValue = String(a[sort.field as keyof typeof a]);
+            const bValue = String(b[sort.field as keyof typeof b]);
+            return sort.order === 'asc'
+              ? aValue.localeCompare(bValue)
+              : bValue.localeCompare(aValue);
+          });
+          return GuidesResponseSchema.parse(paginateGuides({ items: guides, page, limit }));
+        }
+
+        const bucket = await createGuidesBucket();
 
         const list = await bucket.list();
 
@@ -68,7 +149,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
               const response = await bucket.get(obj.key);
               if (response) {
                 const text = await response.text();
-                const { data } = matter(text);
+                const { data } = await parseGuideMatter(text);
                 frontmatter = data;
               }
             } catch (error) {
@@ -131,6 +212,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
           totalPages,
         });
       } catch (error) {
+        captureApiException({ error, operation: 'guides.list' });
         console.error('Error listing guides:', error);
         throw error;
       }
@@ -152,10 +234,14 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
     '/categories',
     async () => {
       try {
-        const bucket = new R2BucketService({
-          env: getEnv(),
-          bucketType: 'guides',
-        });
+        if (isLocalE2EGuidesEnv()) {
+          const categories = [
+            ...new Set(localE2EGuides.flatMap((guide) => guide.categories)),
+          ].sort();
+          return GuideCategoriesResponseSchema.parse({ categories, count: categories.length });
+        }
+
+        const bucket = await createGuidesBucket();
 
         const list = await bucket.list();
         const categoriesSet = new Set<string>();
@@ -165,7 +251,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
             const response = await bucket.get(obj.key);
             if (response) {
               const text = await response.text();
-              const { data } = matter(text);
+              const { data } = await parseGuideMatter(text);
               if (data.categories && Array.isArray(data.categories)) {
                 return data.categories as string[];
               }
@@ -186,6 +272,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
         const categories = Array.from(categoriesSet).sort();
         return GuideCategoriesResponseSchema.parse({ categories, count: categories.length });
       } catch (error) {
+        captureApiException({ error, operation: 'guides.categories' });
         console.error('Error getting guide categories:', error);
         throw error;
       }
@@ -212,10 +299,31 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
       const searchQuery = q.toLowerCase();
 
       try {
-        const bucket = new R2BucketService({
-          env: getEnv(),
-          bucketType: 'guides',
-        });
+        if (isLocalE2EGuidesEnv()) {
+          const guides = localE2EGuides
+            .filter(
+              (guide) =>
+                !category || guide.category === category || guide.categories.includes(category),
+            )
+            .map((guide) => {
+              let score = 0;
+              if (guide.title.toLowerCase().includes(searchQuery)) score += 10;
+              if (guide.description.toLowerCase().includes(searchQuery)) score += 5;
+              if (guide.content.toLowerCase().includes(searchQuery)) score += 1;
+              const { content: _content, ...summary } = guide;
+              return score > 0 ? { ...summary, score } : null;
+            })
+            .filter((guide): guide is NonNullable<typeof guide> => guide !== null)
+            .sort((a, b) => b.score - a.score)
+            .map(({ score: _score, ...guide }) => guide);
+
+          return GuideSearchResponseSchema.parse({
+            ...paginateGuides({ items: guides, page, limit }),
+            query: q,
+          });
+        }
+
+        const bucket = await createGuidesBucket();
         const list = await bucket.list({ limit: 1000 });
 
         const searchResults = await Promise.all(
@@ -285,6 +393,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
           query: q,
         });
       } catch (error) {
+        captureApiException({ error, operation: 'guides.search' });
         console.error('Error searching guides:', error);
         throw error;
       }
@@ -307,10 +416,13 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
       const { id } = params;
 
       try {
-        const bucket = new R2BucketService({
-          env: getEnv(),
-          bucketType: 'guides',
-        });
+        if (isLocalE2EGuidesEnv()) {
+          const guide = localE2EGuides.find((candidate) => candidate.id === id);
+          if (!guide) throw new NotFoundError('Guide not found');
+          return GuideDetailSchema.parse(guide);
+        }
+
+        const bucket = await createGuidesBucket();
 
         let key = `${id}.mdx`;
         let object = await bucket.get(key);
@@ -327,7 +439,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
         const headResult = await bucket.head(key);
         const metadata = headResult?.customMetadata || {};
         const rawContent = await object.text();
-        const { data: frontmatter, content } = matter(rawContent);
+        const { data: frontmatter, content } = await parseGuideMatter(rawContent);
 
         return GuideDetailSchema.parse({
           id,
@@ -344,6 +456,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
           updatedAt: object.uploaded.toISOString(),
         });
       } catch (error) {
+        captureApiException({ error, operation: 'guides.detail' });
         console.error('Error fetching guide:', error);
         throw error;
       }

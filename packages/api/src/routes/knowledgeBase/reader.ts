@@ -1,6 +1,4 @@
-import { Readability } from '@mozilla/readability';
 import { Elysia, status } from 'elysia';
-import { parseHTML } from 'linkedom';
 import { z } from 'zod';
 
 // \u2500\u2500 HTML \u2192 Markdown conversion patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -92,6 +90,10 @@ export const readerRoutes = new Elysia({ prefix: '/reader' }).post(
 
       const html = await response.text();
 
+      const [{ Readability }, { parseHTML }] = await Promise.all([
+        import('@mozilla/readability'),
+        import('linkedom'),
+      ]);
       const { window } = parseHTML(html);
       const reader = new Readability(window.document);
       const article = reader.parse();

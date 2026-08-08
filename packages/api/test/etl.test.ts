@@ -3,7 +3,7 @@ import { CatalogService } from '@packrat/api/services';
 import { processCatalogETL } from '@packrat/api/services/etl/processCatalogEtl';
 import { processValidItemsBatch } from '@packrat/api/services/etl/processValidItemsBatch';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
-import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/db';
+import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/db/schema';
 import { count, eq } from 'drizzle-orm';
 import { describe, expect, it, vi } from 'vitest';
 

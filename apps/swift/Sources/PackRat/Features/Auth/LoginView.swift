@@ -35,6 +35,9 @@ struct LoginView: View {
 
                     SecureField("Password", text: $password)
                         .textContentType(.password)
+                        #if os(iOS)
+                        .submitLabel(.go)
+                        #endif
                         .onSubmit { submit() }
                         .padding(.horizontal, 14)
                         .padding(.vertical, 12)
@@ -43,7 +46,7 @@ struct LoginView: View {
                 .authGroupedSurface()
 
                 if let error {
-                    InlineErrorView(message: error)
+                    LoginInlineErrorView(message: error)
                 }
 
                 VStack(spacing: 12) {
@@ -75,49 +78,51 @@ struct LoginView: View {
                     .foregroundStyle(.tint)
                     .font(.callout)
 
-                VStack(spacing: 10) {
-                    HStack(spacing: 12) {
-                        Divider()
-                        Text("Or continue with")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                        Divider()
-                    }
+                if AppFeatureFlags.enableOAuth {
+                    VStack(spacing: 10) {
+                        HStack(spacing: 12) {
+                            Divider()
+                            Text("Or continue with")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                            Divider()
+                        }
 
-                    #if os(iOS)
-                    Button {
-                        signInWithGoogle()
-                    } label: {
-                        Label("Continue with Google", systemImage: "g.circle")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-                    .disabled(isLoading)
-                    .accessibilityIdentifier("auth_google")
+                        #if os(iOS)
+                        Button {
+                            signInWithGoogle()
+                        } label: {
+                            Label("Continue with Google", systemImage: "g.circle")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .disabled(isLoading)
+                        .accessibilityIdentifier("auth_google")
 
-                    SignInWithAppleButton(.continue) { request in
-                        request.requestedScopes = [.fullName, .email]
-                    } onCompletion: { result in
-                        signInWithApple(result)
+                        SignInWithAppleButton(.continue) { request in
+                            request.requestedScopes = [.fullName, .email]
+                        } onCompletion: { result in
+                            signInWithApple(result)
+                        }
+                        .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                        .frame(height: 44)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .disabled(isLoading)
+                        .accessibilityIdentifier("auth_apple")
+                        #else
+                        Button {
+                            error = "Google sign-in is available in the iOS app. Use email sign-in on macOS for now."
+                        } label: {
+                            Label("Continue with Google", systemImage: "g.circle")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .accessibilityIdentifier("auth_google")
+                        #endif
                     }
-                    .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                    .frame(height: 44)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .disabled(isLoading)
-                    .accessibilityIdentifier("auth_apple")
-                    #else
-                    Button {
-                        error = "Google sign-in is available in the iOS app. Use email sign-in on macOS for now."
-                    } label: {
-                        Label("Continue with Google", systemImage: "g.circle")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-                    .accessibilityIdentifier("auth_google")
-                    #endif
                 }
             }
         }
@@ -174,6 +179,26 @@ struct LoginView: View {
         }
     }
     #endif
+}
+
+private struct LoginInlineErrorView: View {
+    let message: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .foregroundStyle(.red)
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(3)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .accessibilityIdentifier("login_error")
+    }
 }
 
 @ViewBuilder

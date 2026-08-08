@@ -1,7 +1,27 @@
 import SwiftUI
 
+enum WeatherTemperatureDisplay {
+    static func format(
+        celsius: Double?,
+        fahrenheit: Double?,
+        unit: AppPreferences.TemperatureUnit
+    ) -> String {
+        let value: Double?
+        switch unit {
+        case .celsius:
+            value = celsius ?? fahrenheit.map { ($0 - 32) * 5 / 9 }
+        case .fahrenheit:
+            value = fahrenheit ?? celsius.map { ($0 * 9 / 5) + 32 }
+        }
+
+        guard let value else { return "—" }
+        return "\(Int(value.rounded()))\(unit.label)"
+    }
+}
+
 struct ForecastRow: View {
     let day: ForecastDay
+    let temperatureUnit: AppPreferences.TemperatureUnit
 
     var body: some View {
         HStack(spacing: 12) {
@@ -33,14 +53,24 @@ struct ForecastRow: View {
                         .foregroundStyle(.blue)
                 }
 
-                Text(String(format: "%.0f°", day.day?.maxtempF ?? 0))
+                Text(WeatherTemperatureDisplay.format(
+                    celsius: day.day?.maxtempC,
+                    fahrenheit: day.day?.maxtempF,
+                    unit: temperatureUnit
+                ))
                     .font(.callout.bold())
-                    .frame(width: 36, alignment: .trailing)
+                    .frame(width: 44, alignment: .trailing)
+                    .accessibilityIdentifier("weather_forecast_high_\(day.id)")
 
-                Text(String(format: "%.0f°", day.day?.mintempF ?? 0))
+                Text(WeatherTemperatureDisplay.format(
+                    celsius: day.day?.mintempC,
+                    fahrenheit: day.day?.mintempF,
+                    unit: temperatureUnit
+                ))
                     .font(.callout)
                     .foregroundStyle(.secondary)
-                    .frame(width: 36, alignment: .trailing)
+                    .frame(width: 44, alignment: .trailing)
+                    .accessibilityIdentifier("weather_forecast_low_\(day.id)")
             }
         }
         .padding(.horizontal)

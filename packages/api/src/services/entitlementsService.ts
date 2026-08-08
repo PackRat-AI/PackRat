@@ -1,7 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { PACKRAT_PRO_ENTITLEMENT } from '@packrat/config';
-import { entitlements } from '@packrat/db';
+import { entitlements } from '@packrat/db/schema';
 import { asNumber, asString, isArray, isString } from '@packrat/guards';
 import { and, eq, gt, isNull, or } from 'drizzle-orm';
 

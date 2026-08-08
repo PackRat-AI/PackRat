@@ -34,7 +34,7 @@ import {
   queryMetricsAls,
 } from '@packrat/api/utils/queryMetrics';
 import { record } from '@packrat/api/utils/sentry';
-import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/db';
+import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/db/schema';
 import { toRecord } from '@packrat/guards';
 import { safeJsonParse } from '@packrat/utils';
 import { parse } from 'csv-parse';

@@ -1,6 +1,6 @@
 import { createDb } from '@packrat/api/db';
 import { hashPassword } from '@packrat/api/utils/auth';
-import { type User, users } from '@packrat/db';
+import { type User, users } from '@packrat/db/schema';
 import { eq } from 'drizzle-orm';
 
 export type CreateUserInput = {

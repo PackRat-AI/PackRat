@@ -13,7 +13,7 @@ import { oauthProvider } from '@better-auth/oauth-provider';
 import { generateAppleClientSecret, verifyPasswordCompat } from '@packrat/api/auth/auth.helpers';
 import { createConnection } from '@packrat/api/db';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
-import * as schema from '@packrat/db';
+import * as schema from '@packrat/db/schema';
 import { isObject } from '@packrat/guards';
 import { safeJsonParse } from '@packrat/utils';
 import { type BetterAuthPlugin, betterAuth } from 'better-auth';

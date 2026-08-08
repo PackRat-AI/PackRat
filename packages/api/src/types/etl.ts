@@ -1,4 +1,4 @@
-import type { NewCatalogItem } from '@packrat/db';
+import type { NewCatalogItem } from '@packrat/db/schema';
 import type { ValidationError } from '@packrat/schemas/validation';
 
 export interface ValidatedCatalogItem {

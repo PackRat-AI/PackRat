@@ -1,4 +1,3 @@
-import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createDb } from '@packrat/api/db';
 import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
 import { ImageDetectionService, PackService } from '@packrat/api/services';
@@ -21,7 +20,7 @@ import {
   packItems,
   packs,
   packWeightHistory,
-} from '@packrat/db';
+} from '@packrat/db/schema';
 import { AnalyzeImageRequestSchema } from '@packrat/schemas/imageDetection';
 import {
   AddPackItemBodySchema,
@@ -258,6 +257,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         }
 
         const { PACKRAT_BUCKET_R2_BUCKET_NAME, PACKRAT_BUCKET } = getEnv();
+        const { GetObjectCommand } = await import('@aws-sdk/client-s3');
         const command = new GetObjectCommand({
           Bucket: PACKRAT_BUCKET_R2_BUCKET_NAME,
           Key: image,

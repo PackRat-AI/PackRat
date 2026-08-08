@@ -1,4 +1,4 @@
-import type { catalogItems } from '@packrat/db';
+import type { catalogItems } from '@packrat/db/schema';
 import type { InferInsertModel } from 'drizzle-orm';
 
 /**

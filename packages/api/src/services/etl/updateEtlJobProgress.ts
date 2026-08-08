@@ -1,6 +1,6 @@
 import { createDbClient } from '@packrat/api/db';
 import type { Env } from '@packrat/api/utils/env-validation';
-import { etlJobs } from '@packrat/db';
+import { etlJobs } from '@packrat/db/schema';
 import { eq, sql } from 'drizzle-orm';
 
 export async function updateEtlJobProgress({
