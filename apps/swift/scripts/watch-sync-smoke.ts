@@ -20,9 +20,8 @@ type SimulatorPair = {
 const REPO_ROOT = resolve(import.meta.dir, '../../..');
 const SWIFT_DIR = resolve(REPO_ROOT, 'apps/swift');
 const ARTIFACT_DIR = resolve(REPO_ROOT, 'artifacts/screenshots-latest');
-const IOS_BUNDLE_ID = nodeEnv.PACKRAT_IOS_BUNDLE_ID ?? 'com.andrewbierman.packrat.swift';
-const WATCH_BUNDLE_ID =
-  nodeEnv.PACKRAT_WATCH_BUNDLE_ID ?? 'com.andrewbierman.packrat.swift.watchkitapp';
+const IOS_BUNDLE_ID = nodeEnv.PACKRAT_IOS_BUNDLE_ID ?? 'com.andrewbierman.packrat';
+const WATCH_BUNDLE_ID = nodeEnv.PACKRAT_WATCH_BUNDLE_ID ?? 'com.andrewbierman.packrat.watchkitapp';
 const KNOWN_IOS_BUNDLE_IDS = ['com.andrewbierman.packrat', 'com.andrewbierman.packrat.swift'];
 const KNOWN_WATCH_BUNDLE_IDS = [
   'com.andrewbierman.packrat.watchkitapp',

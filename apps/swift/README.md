@@ -1,4 +1,4 @@
-# PackRat Swift Testing
+# PackRat Native Testing
 
 The generated Xcode project is not committed. Regenerate it after changing
 `project.yml`:
@@ -77,20 +77,21 @@ Swift E2E CI is defined in `.github/workflows/swift-e2e.yml`.
 
 See `docs/ci/swift-e2e-runner.md` for self-hosted Mac runner setup.
 
-## TestFlight Lanes
+## TestFlight Identity
 
-The Swift iOS app has two TestFlight identities:
+The Swift iOS app defaults to the replacement identity for the existing Expo/App
+Store listing:
 
-- Replacement beta: `com.andrewbierman.packrat`, display name `PackRat`. This is
-  the existing Expo/App Store listing and is the only lane that can validate a
-  seamless update for existing testers. Its embedded watchOS companion uses
-  `com.andrewbierman.packrat.watchkitapp`.
-- Side-by-side beta: `com.andrewbierman.packrat.swift`, display name
-  `PackRat Swift`. This is useful for parallel Swift QA, but iOS treats it as a
-  separate app with separate install, keychain, and app container state. Its
-  embedded watchOS companion uses `com.andrewbierman.packrat.swift.watchkitapp`.
+- iOS: `com.andrewbierman.packrat`, display name `PackRat`
+- watchOS companion: `com.andrewbierman.packrat.watchkitapp`
 
-Upload commands require an explicit lane so we do not accidentally test the
+That is the only identity that validates a seamless update for existing testers.
+The upload tooling still supports an explicit side-by-side lane for unusual
+parallel QA builds, but it must be requested intentionally with `--side-by-side`;
+iOS treats that as a separate app with separate install, keychain, and app
+container state.
+
+Upload commands require an explicit lane so we do not accidentally target the
 wrong App Store Connect record:
 
 ```sh
