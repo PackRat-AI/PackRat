@@ -88,14 +88,12 @@ one bug a tester can catch that nobody else will.
   should actually address what you asked.
 - Ask it to add something to one of your packs, then go and look at the pack. The
   item should really be there.
-- Send it a long rambling message, and then a very short one. Expect a reasonable
-  reply to both.
 - Cut your connection while it is mid-answer. It should recover or tell you what
   happened, rather than hanging on a spinner.
 
 ### Catalog, guides and gear inventory
 
-- Search the catalog for something you own. The results should be recognisably
+- Search the catalog for something. The results should be recognisably
   related to what you typed.
 - Open one of the items. Expect the detail screen to be filled in rather than
   showing blank fields where information is missing.
@@ -103,6 +101,31 @@ one bug a tester can catch that nobody else will.
   weight.
 - Read one of the guides from top to bottom. Expect none of the text to be cut off
   or overlapping.
+
+### Offline
+
+PackRat is meant to work without a connection. You should be able to open it on a
+trail with no signal and still get at your packs. This section matters as much as
+the rest of the iPhone list, so give it a proper go rather than a quick check.
+
+- Use the app normally for a few minutes so it has something cached, then turn on
+  airplane mode and reopen it. Your packs and trips should still be listed rather
+  than showing empty screens or a spinner.
+- Still in airplane mode, open a pack. Expect the items and weights to be there.
+- Create a new pack while offline, and add a couple of items. It should save and
+  appear in your list straight away.
+- Edit an existing pack offline. Expect the change to stick when you leave the
+  screen and come back.
+- Delete something offline. It should disappear and stay gone.
+- Turn airplane mode back off and give it a moment. Everything you did offline
+  should still be there, and the packs you made offline should sync up rather than
+  vanishing or turning into duplicates.
+- Force quit while offline, then reopen with airplane mode still on. Expect your
+  data to survive the restart.
+- Somewhere in the app there should be some sign that you are offline. Note
+  whether you can tell, and whether it clears once you reconnect.
+- Sign in fresh on a device with no cache, offline. The app should tell you it
+  cannot reach the network instead of hanging.
 
 ### Things that break apps
 
@@ -112,8 +135,7 @@ one bug a tester can catch that nobody else will.
 ## Mac
 
 This one lives under the macOS tab in TestFlight. It is a separate app from the
-iPhone one, so you install it there rather than expecting it to come along with
-the phone build.
+iPhone one, so it has to be installed there.
 
 The Mac version has a sidebar down the left instead of tabs, with a list and a
 detail panel side by side. Everything in the iPhone list above is worth trying
@@ -142,6 +164,19 @@ here too. The sections below cover what only the Mac does.
 - Press Escape with a sheet or dialog open. It should close.
 - Try the keyboard shortcuts the menus advertise. Each one should do what the menu
   says it does.
+
+### Offline on the Mac
+
+The Mac keeps its own cache, separate from your phone, so it is worth running the
+offline checks here as well as on iPhone.
+
+- Turn Wi-Fi off from the menu bar and reopen the app. Your packs and trips should
+  still be there.
+- Create and edit a pack with Wi-Fi off, then turn it back on. Expect your changes
+  to survive and sync up.
+- Have the app open on the Mac and your phone at once, make a change offline on
+  one of them, then bring both back online. Expect them to agree with each other
+  afterwards rather than one quietly overwriting the other.
 
 ### Two screens at once
 
