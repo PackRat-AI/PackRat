@@ -232,11 +232,6 @@ The watch app has four screens. Scroll between them with the Digital Crown.
 
 ## Reporting
 
-One GitHub issue per bug. What you did, what happened, what you expected instead.
-Include the OS version and whether it was iPhone, Mac or watch.
+Reports go to GitHub issues as usual. To take a screenshot on the watch, press the Digital Crown and the side button together. It lands in your phone's photos.
 
-Screenshots help everywhere. On the watch, press the Digital Crown and the side
-button together to take one. It lands in your phone's photos.
-
-Anything merely annoying rather than broken is still worth an issue. A weight that
-comes out wrong counts, and so does a screen that takes too long.
+Anything merely annoying rather than broken is still worth reporting.
