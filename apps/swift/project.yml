@@ -194,6 +194,10 @@ targets:
         # Required for Mac App Store distribution — the build warns and Apple
         # rejects submissions without a category.
         LSApplicationCategoryType: public.app-category.travel
+        # Without this, an uploaded build sits at MISSING_EXPORT_COMPLIANCE and
+        # never appears in TestFlight — the macOS tab simply stays absent. The
+        # app only uses standard HTTPS, which is exempt. Matches PackRat-iOS.
+        ITSAppUsesNonExemptEncryption: false
         PACKRAT_ENV: $(PACKRAT_ENV)
         SENTRY_DSN: $(SENTRY_DSN)
         NSAppTransportSecurity:
