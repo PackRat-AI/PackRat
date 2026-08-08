@@ -183,18 +183,25 @@ private struct WatchTrailReportView: View {
         NavigationStack {
             List {
                 Section {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label(trail.title, systemImage: "figure.hiking")
-                            .font(.headline)
-                            .lineLimit(2)
-                        if connectivity.lastDraft != nil {
-                            Label("Draft queued", systemImage: "checkmark.circle.fill")
-                                .font(.caption)
-                                .foregroundStyle(.green)
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Label(trail.title, systemImage: "figure.hiking")
+                                .font(.subheadline.weight(.semibold))
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.85)
+                            Spacer(minLength: 4)
+                            if connectivity.lastDraft != nil {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.caption)
+                                    .accessibilityLabel("Draft queued")
+                            }
                         }
+                        .foregroundStyle(connectivity.lastDraft == nil ? Color.primary : Color.green)
+
                         WatchMetricRow(title: "Condition", value: trail.conditionText, symbol: "leaf")
                         WatchMetricRow(title: "Hazards", value: "\(trail.hazardCount)", symbol: "exclamationmark.triangle")
                     }
+                    .padding(.vertical, 2)
                 }
 
                 Section("Condition") {
@@ -243,10 +250,13 @@ private struct WatchMetricRow: View {
                 .foregroundStyle(.tint)
                 .frame(width: 18)
             Text(title)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
             Spacer()
             Text(value)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .font(.caption)
     }
