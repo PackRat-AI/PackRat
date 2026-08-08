@@ -12,7 +12,7 @@ execution: code
 
 ## Goal Capsule
 
-- **Objective:** Bring the Swift iOS, iPad, macOS, and Watch surfaces to launch-readiness confidence as a seamless update path from the Expo app by syncing current branches, generating fresh screenshot evidence, running full Swift QA, and fixing any launch-blocking defects found.
+- **Objective:** Bring the Swift iOS, iPad, macOS, and Watch surfaces to launch-readiness confidence as a seamless update path from the Expo app by syncing current branches, generating fresh screenshot evidence, proving Expo-to-Swift data compatibility, running full Swift QA, requesting Mikibo review, and fixing any launch-blocking defects found.
 - **Authority:** Expo production behavior remains the parity baseline; open Swift/mobile GitHub issues and live screenshot evidence override stale prior confidence claims; native SwiftUI/AppKit expectations govern UI polish.
 - **Execution profile:** Audit latest branches and PRs, preserve existing uncommitted Swift tester fixes, run screenshot and E2E coverage across Apple targets, inspect failures/screenshots manually, fix real bugs with focused tests, then commit/PR/watch CI.
 - **Stop conditions:** Stop only for unavailable credentials/signing infrastructure, a failing local toolchain that cannot build Apple targets, or a product decision needed to choose between Expo parity and a new Swift-native behavior.
@@ -37,6 +37,7 @@ Prior Swift readiness work improved the app substantially, but repeated tester f
 - R1. The working branch is synced against the latest intended base branch and all relevant open Swift/TestFlight/mobile PRs and issues are reviewed before declaring readiness.
 - R2. Existing uncommitted Swift tester-fix work is preserved, understood, and either incorporated into this readiness branch or deliberately isolated with a clear reason.
 - R3. PR metadata and versioning must not contradict the app binaries, TestFlight replacement settings, or Expo baseline version.
+- R3a. Mikibo review is explicitly requested on the active Swift launch PR before readiness is claimed.
 
 #### Screenshots and Manual Review
 
@@ -49,6 +50,7 @@ Prior Swift readiness work improved the app substantially, but repeated tester f
 - R7. Swift iOS and macOS smoke/full or equivalent UI E2E suites run against the local deterministic API where possible.
 - R8. Core features are testable end to end: auth/guest entry, home navigation/search, packs/trips/items CRUD, catalog add flow, templates, weather, season suggestions, trail conditions, chat/AI fallback, settings/preferences, offline/local-first behavior, and platform-specific Watch sync smoke.
 - R9. Tests must verify behavior rather than hiding defects through overly broad retries, weak assertions, or fixture states that mask real deployed failures.
+- R9a. Shared API/schema fixtures that were produced by, or remain compatible with, the Expo app must decode and render in Swift without losing core user data such as packs, trips, pack items, catalog items, weights, locations, weather, and AI responses.
 
 #### Launch Readiness
 
@@ -81,6 +83,7 @@ Prior Swift readiness work improved the app substantially, but repeated tester f
 - AE3. Given the Swift app is intended to replace the Expo listing, when TestFlight preflight runs, then replacement bundle IDs, version/build, archive overrides, and display metadata align with that release path.
 - AE4. Given the local deterministic API is available, when iOS and macOS E2E flows run, then auth/guest and core CRUD/AI/weather flows are asserted with feature-specific expectations.
 - AE5. Given some repo-wide tickets remain outside this Swift launch scope, when the final report is written, then they are named as residuals rather than implied solved.
+- AE6. Given a real Expo-era API payload or shared-schema fixture, when Swift model decoding and screenshot data-state tests run, then the same user data appears in Swift UI states without replacement-bundle migration breakage.
 
 ### Scope Boundaries
 
@@ -136,16 +139,17 @@ Start by making branch and diff state explicit, because existing uncommitted Swi
 
 ## Implementation Units
 
-### U1. Branch, PR, and issue audit
+### U1. Branch, PR, issue, and reviewer audit
 
 - **Goal:** Establish the current launch-readiness baseline and avoid working from stale branch assumptions.
-- **Requirements:** R1, R2, R3; KTD3.
+- **Requirements:** R1, R2, R3, R3a; KTD3.
 - **Files:** `docs/plans/2026-08-06-001-swift-launch-readiness-qa-plan.md`, PR metadata, issue metadata, and any branch notes added to the PR body.
 - **Approach:** Inspect current branch, uncommitted diff, open PRs, recent merged Swift branches, and open Swift/mobile/TestFlight issues. Decide whether to continue on `codex/swift-beta-tester-readiness`, switch to another branch, or create a new branch from the latest base.
 - **Test scenarios:**
   1. Covers AE1. Existing uncommitted files are listed before any edits.
   2. Covers R1. Open Swift/mobile PRs and issues are summarized with scope classification.
   3. Covers R3. Version/build metadata is checked against Expo and TestFlight scripts.
+  4. Covers R3a. Mikibo review is requested on the active launch PR.
 - **Verification:** Branch state and issue scope are included in the final report and, when code changes ship, the PR description.
 
 ### U2. Swift build, script, and release metadata verification
@@ -175,7 +179,7 @@ Start by making branch and diff state explicit, because existing uncommitted Swi
 ### U4. Full Swift E2E and core feature QA
 
 - **Goal:** Exercise launch-critical behavior beyond unit tests.
-- **Requirements:** R7, R8, R9.
+- **Requirements:** R7, R8, R9, R9a.
 - **Files:** `apps/swift/Tests/PackRatUITests`, `apps/swift/Tests/PackRatMacUITests`, `apps/swift/Tests/PackRatTests`, `apps/swift/scripts/run-e2e.ts`, `apps/swift/scripts/run-e2e-macos.ts`, and deterministic API routes under `packages/api/src`.
 - **Approach:** Run iOS smoke/full or targeted equivalent, iPad-capable screenshot/UITest paths, macOS smoke/full or targeted equivalent, Swift unit tests, and Watch sync smoke. Where full runs are too slow or flaky, identify the exact failing test and rerun targeted after fixes.
 - **Test scenarios:**
@@ -183,6 +187,7 @@ Start by making branch and diff state explicit, because existing uncommitted Swi
   2. Packs/trips/items CRUD and catalog add flows work with deterministic test data.
   3. Weather, season suggestions, trail conditions, and chat/AI flows show data/fallback states correctly.
   4. Settings/preferences and offline/local-first paths survive relaunch and network-disabled conditions.
+  5. Expo/shared-schema payloads decode through Swift models and render populated data-state screenshots without falling into empty/error placeholders.
 - **Verification:** `bun test:swift:unit`, `bun e2e:swift:ios-smoke`, `bun e2e:swift:ios`, `bun e2e:swift:mac-smoke`, `bun e2e:swift:mac-ui`, and `bun swift:watch-sync-smoke` pass or residual blockers are filed.
 
 ### U5. Fix launch-blocking defects with regression coverage
@@ -218,9 +223,11 @@ Start by making branch and diff state explicit, because existing uncommitted Swi
 ## Definition of Done
 
 - Latest branch, PR, and issue state has been checked and summarized.
+- Mikibo review has been requested on the active Swift launch PR.
 - Existing uncommitted Swift tester fixes are preserved and either shipped or separated.
 - Fresh screenshots/contact sheets exist for supported iPhone, iPad, macOS, and Watch states.
 - Screenshots have been manually reviewed and any visible launch blockers are fixed or filed.
+- Expo/shared-schema data compatibility is verified by tests and visible populated Swift screenshots.
 - Swift script, unit, iOS E2E, macOS E2E, and Watch smoke gates have passed or produced named blockers.
 - TestFlight replacement metadata is consistent with the intended seamless Expo update path.
 - Any code changes have focused regression coverage and do not weaken assertions to pass tests.

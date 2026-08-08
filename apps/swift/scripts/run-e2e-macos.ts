@@ -22,7 +22,7 @@ import { createHash } from 'node:crypto';
  *   - Scheme is PackRat-macOS, destination is platform=macOS.
  *   - Different test-plan name space (macOS-Smoke / macOS-Full instead of iOS-*).
  */
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   anyOf,
@@ -122,17 +122,6 @@ function assertAutomationModeAvailable(): void {
   }
 }
 
-function escapeXml(s: string): string {
-  return Array.from(s, (char) => {
-    if (char === '&') return '&amp;';
-    if (char === '<') return '&lt;';
-    if (char === '>') return '&gt;';
-    if (char === '"') return '&quot;';
-    if (char === "'") return '&apos;';
-    return char;
-  }).join('');
-}
-
 function deriveLocalE2ESessionToken(): string | undefined {
   if (PACKRAT_ENV !== 'local' && PACKRAT_ENV !== 'dev-local') return undefined;
   const secret = process.env.BETTER_AUTH_SECRET ?? 'e2e-better-auth-secret-at-least-32-chars';
@@ -141,65 +130,6 @@ function deriveLocalE2ESessionToken(): string | undefined {
   if (!email || !userId) return undefined;
   const digest = createHash('sha256').update([secret, email, userId].join(':')).digest('hex');
   return `e2e-local.${digest}`;
-}
-
-type SchemeEnv = {
-  email: string;
-  password: string;
-  sessionToken?: string;
-  userId?: string;
-  allowLoginSeed: boolean;
-};
-
-function environmentVariableXml(key: string, value: string): string {
-  return [
-    '         <EnvironmentVariable',
-    `            key = "${escapeXml(key)}"`,
-    `            value = "${escapeXml(value)}"`,
-    '            isEnabled = "YES">',
-    '         </EnvironmentVariable>',
-  ].join('\n');
-}
-
-function injectScheme({ email, password, sessionToken, userId, allowLoginSeed }: SchemeEnv): void {
-  let content = readFileSync(SCHEME_PATH, 'utf8');
-  content = removeEnvironmentVariablesBlock(content);
-  content = content.replace(
-    'shouldUseLaunchSchemeArgsEnv = "YES"',
-    'shouldUseLaunchSchemeArgsEnv = "NO"',
-  );
-  const variables = [
-    environmentVariableXml('E2E_EMAIL', email),
-    environmentVariableXml('E2E_PASSWORD', password),
-    environmentVariableXml('PACKRAT_E2E_EMAIL', uiTestEmail),
-    environmentVariableXml('PACKRAT_E2E_PASSWORD', uiTestPassword),
-    environmentVariableXml('PACKRAT_E2E_ALLOW_LOGIN_SEED', allowLoginSeed ? '1' : '0'),
-  ];
-  if (sessionToken)
-    variables.push(environmentVariableXml('PACKRAT_E2E_SESSION_TOKEN', sessionToken));
-  if (userId) variables.push(environmentVariableXml('PACKRAT_E2E_USER_ID', userId));
-
-  const block = [
-    '      <EnvironmentVariables>',
-    ...variables,
-    '      </EnvironmentVariables>',
-    '',
-  ].join('\n');
-  content = content.replace('   </TestAction>', `${block}   </TestAction>`);
-  writeFileSync(SCHEME_PATH, content);
-}
-
-function removeEnvironmentVariablesBlock(content: string): string {
-  let output = content;
-  while (true) {
-    const start = output.indexOf('<EnvironmentVariables>');
-    if (start === -1) return output;
-    const end = output.indexOf('</EnvironmentVariables>', start);
-    if (end === -1) return output;
-    const removalStart = output.lastIndexOf('\n', start);
-    const removalEnd = end + '</EnvironmentVariables>'.length;
-    output = `${output.slice(0, removalStart === -1 ? start : removalStart)}${output.slice(removalEnd)}`;
-  }
 }
 
 function allocateResultBundle(): string {
@@ -236,14 +166,6 @@ try {
   throw err;
 }
 
-injectScheme({
-  email: E2E_EMAIL,
-  password: E2E_PASSWORD,
-  sessionToken: localE2ESessionToken,
-  userId: process.env.E2E_TEST_USER_ID,
-  allowLoginSeed,
-});
-console.log('✓ Injected E2E credentials into PackRat-macOS scheme');
 assertAutomationModeAvailable();
 
 const resultBundle = allocateResultBundle();

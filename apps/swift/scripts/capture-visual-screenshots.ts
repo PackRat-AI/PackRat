@@ -97,10 +97,7 @@ const SECRET_BUILD_SETTING_RE = createRegExp(
   oneOrMore(charNotIn(' \t\n\r')),
   [globalFlag],
 );
-const E2E_LOCAL_TOKEN_RE = createRegExp(exactly('e2e-local.'), oneOrMore(charIn('A-F0-9')), [
-  globalFlag,
-  caseInsensitive,
-]);
+const E2E_LOCAL_TOKEN_RE = /e2e-local\.[A-Fa-f0-9]+/g;
 const XCODEBUILD_TIMEOUT_MS = durationFromEnv('PACKRAT_VISUAL_XCODEBUILD_TIMEOUT_MS', 30 * 60_000);
 const XCRESULT_EXPORT_TIMEOUT_MS = durationFromEnv('PACKRAT_XCRESULT_EXPORT_TIMEOUT_MS', 90_000);
 const AUTOMATION_MODE_TIMEOUT_MS = 10_000;
@@ -1218,7 +1215,7 @@ async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestR
     };
     await launchWatchRouteWithRetry({ deviceId, appPath, env });
 
-    await sleep(4_000);
+    await sleep(route.name === '00-watch-dashboard.png' ? 10_000 : 4_000);
     const tmpScreenshot = resolve('/tmp', `packrat-watch-${Date.now()}-${route.name}`);
     runChecked({
       command: 'xcrun',
