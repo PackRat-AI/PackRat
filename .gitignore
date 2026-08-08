@@ -89,3 +89,8 @@ apps/swift/Generated/
 
 # portless (local-dev proxy; state lives in ~/.portless, this is defensive)
 .portless/
+
+# App Store Connect API keys. altool searches ./private_keys for AuthKey_*.p8,
+# so a key dropped there for an upload must never be committable.
+private_keys/
+*.p8

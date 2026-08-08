@@ -88,7 +88,11 @@ const archivePath = join(work, 'PackRat.xcarchive');
 const exportDir = join(work, 'export');
 
 function run(cmd: string, args: string[]) {
-  console.log(`\n$ ${cmd} ${args.join(' ')}`);
+  // Redact the app-specific password: this log line is routinely piped to a
+  // file or pasted into a bug report, and altool takes the secret as a plain
+  // argv value.
+  const shown = args.map((a, i) => (args[i - 1] === '--password' ? '<redacted>' : a));
+  console.log(`\n$ ${cmd} ${shown.join(' ')}`);
   execFileSync(cmd, args, { stdio: 'inherit' });
 }
 
