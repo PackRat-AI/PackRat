@@ -24,6 +24,12 @@
   //
   // Optional vars:
   //   MCP_FEATURE_FLAGS            — comma-separated flag names enabled at boot
+  //   OPENAI_APPS_CHALLENGE_TOKEN  — domain-verification token from the OpenAI
+  //                                  Apps connector form; served as text/plain
+  //                                  at /.well-known/openai-apps-challenge.
+  //                                  Set via `wrangler secret put` so it can be
+  //                                  rotated without a code change. The route
+  //                                  404s when this is unset.
   //
   // The deploy identifier surfaced on /status comes from the
   // `version_metadata` binding below (CF_VERSION_METADATA) — injected by the
