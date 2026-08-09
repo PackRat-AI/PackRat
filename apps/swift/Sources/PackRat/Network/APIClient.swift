@@ -245,12 +245,16 @@ actor APIClient {
 
     private func validateStatus(_ response: URLResponse, data: Data) throws {
         guard let http = response as? HTTPURLResponse else { throw PackRatError.unknown }
+        if (200...299).contains(http.statusCode) { return }
+
+        let message = (try? JSONDecoder().decode(APIErrorBody.self, from: data))?.displayMessage
+
         switch http.statusCode {
-        case 200...299: return
-        case 401: throw PackRatError.unauthorized
-        case 404: throw PackRatError.notFound
+        // A 401 on a sign-in attempt means "wrong credentials", not "your
+        // session expired" — keep the server's wording when it gave us one.
+        case 401 where message == nil: throw PackRatError.unauthorized
+        case 404 where message == nil: throw PackRatError.notFound
         default:
-            let message = (try? JSONDecoder().decode(APIErrorBody.self, from: data))?.error
             throw PackRatError.httpError(statusCode: http.statusCode, message: message)
         }
     }
@@ -270,6 +274,22 @@ actor APIClient {
     }
 }
 
-private struct APIErrorBody: Decodable {
+/// Error bodies come in two shapes:
+///   - Better Auth (`/api/auth/**`): `{"message": "...", "code": "..."}`
+///   - Elysia routes:                `{"error": "..."}`
+/// Decoding only `error` silently dropped every Better Auth message, so auth
+/// failures surfaced as a generic "could not be loaded" banner.
+struct APIErrorBody: Decodable {
     let error: String?
+    let message: String?
+    let code: String?
+
+    /// Prefer the human-readable text; fall back to the machine code so an
+    /// unrecognised body still says something specific.
+    var displayMessage: String? {
+        if let message, !message.isEmpty { return message }
+        if let error, !error.isEmpty { return error }
+        if let code, !code.isEmpty { return code }
+        return nil
+    }
 }

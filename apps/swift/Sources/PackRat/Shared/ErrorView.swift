@@ -25,7 +25,7 @@ struct InlineErrorView: View {
         HStack(spacing: 6) {
             Image(systemName: presentation.inlineSystemImage)
                 .foregroundStyle(presentation.inlineColor)
-            Text(presentation.description)
+            Text(presentation.inlineDescription(forRawMessage: message))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -189,6 +189,49 @@ struct FriendlyErrorPresentation {
         } else {
             self = .temporarilyUnavailable
         }
+    }
+
+    /// Inline copy for a raw error string.
+    ///
+    /// The keyword buckets above are meant for infrastructure failures, where a
+    /// reassuring canned sentence beats a raw `NSURLErrorDomain` dump. But an
+    /// actionable server message ("User already exists. Use another email.")
+    /// matches no bucket and used to fall through to the generic
+    /// `temporarilyUnavailable` copy — telling users the service was broken when
+    /// they simply needed to pick a different email. Show those verbatim.
+    func inlineDescription(forRawMessage rawMessage: String) -> String {
+        guard isGenericFallback else { return description }
+
+        let trimmed = rawMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+        return FriendlyErrorPresentation.isPresentableToUser(trimmed) ? trimmed : description
+    }
+
+    /// True when the keyword matcher found no specific bucket for the message.
+    private var isGenericFallback: Bool {
+        accessibilityIdentifier == FriendlyErrorPresentation.temporarilyUnavailable.accessibilityIdentifier
+    }
+
+    /// A message is safe to show verbatim when it reads like a sentence written
+    /// for a person, rather than a decoding dump or an opaque error domain.
+    private static func isPresentableToUser(_ message: String) -> Bool {
+        guard !message.isEmpty, message.count <= 160 else { return false }
+
+        let lowered = message.lowercased()
+        let leakyMarkers = [
+            "error domain",
+            "codingkey",
+            "debugdescription",
+            "keynotfound",
+            "typemismatch",
+            "valuenotfound",
+            "datacorrupted",
+            "the operation couldn’t be completed",
+            "the operation couldn't be completed",
+            "<binary>",
+            "{",
+            "}",
+        ]
+        return !leakyMarkers.contains { lowered.contains($0) }
     }
 
     private init(
