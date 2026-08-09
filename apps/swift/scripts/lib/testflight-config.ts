@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { isString, toRecord } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 
 export type TestFlightLane = 'side-by-side' | 'replacement';
 
@@ -49,16 +51,20 @@ const REPLACEMENT_WATCH_BUNDLE_ID = 'com.andrewbierman.packrat.watchkitapp';
  */
 function readMonorepoVersion(): string {
   const rootPackageJsonPath = join(__dirname, '../../../../package.json');
-  const parsed: unknown = JSON.parse(readFileSync(rootPackageJsonPath, 'utf-8'));
-  if (typeof parsed !== 'object' || parsed === null || !('version' in parsed)) {
+  // strict: a malformed root package.json must fail loudly here rather than
+  // fall through to the version check as an unparsed string.
+  const parsed = toRecord(
+    safeJsonParse(readFileSync(rootPackageJsonPath, 'utf-8'), { strict: true }),
+  );
+  if (!('version' in parsed)) {
     throw new TestFlightConfigError(
       `Root package.json at ${rootPackageJsonPath} has no "version" field; cannot resolve the Swift marketing version.`,
     );
   }
-  const { version } = parsed as { version: unknown };
-  if (typeof version !== 'string' || version.trim() === '') {
+  const { version } = parsed;
+  if (!isString(version) || version.trim() === '') {
     throw new TestFlightConfigError(
-      `Root package.json "version" must be a non-empty string, got ${JSON.stringify(version)}.`,
+      `Root package.json "version" must be a non-empty string, got ${safeJsonStringify(parsed.version)}.`,
     );
   }
   return version;
