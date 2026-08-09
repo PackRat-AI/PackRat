@@ -1,4 +1,4 @@
-import { isString } from '@packrat/guards';
+import { isString, toRecord } from '@packrat/guards';
 import { cn } from 'expo-app/lib/cn';
 import { Children, isValidElement, type ReactNode } from 'react';
 import {
@@ -100,10 +100,6 @@ const STYLING_PROPS = Object.freeze([
   'style',
 ] as const);
 
-type TextStylingProps = { children?: ReactNode } & {
-  [K in (typeof STYLING_PROPS)[number]]?: unknown;
-};
-
 /**
  * Unwraps `<Button><Text>Save</Text></Button>` to the string `'Save'`, so an unstyled label can be
  * repainted with the button's own per-variant `LABEL_CLASS`.
@@ -126,7 +122,7 @@ function extractLabel(children: ReactNode): string | undefined {
   const only = kids[0];
   if (isString(only)) return only;
   if (isValidElement(only) && only.type === Text) {
-    const props = only.props as TextStylingProps;
+    const props = toRecord(only.props);
     if (STYLING_PROPS.some((prop) => props[prop] !== undefined)) return undefined;
     return isString(props.children) ? props.children : undefined;
   }
