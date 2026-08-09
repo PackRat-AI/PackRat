@@ -22,7 +22,8 @@
  *                            defaults to APPLE_TEAM_ID when omitted
  *   BUILD_NUMBER             CFBundleVersion for this upload (default: timestamp)
  *   MARKETING_VERSION        CFBundleShortVersionString for this upload
- *                            (default: Swift minor bump 2.1.0)
+ *                            (default: the monorepo version from the root
+ *                            package.json, which `bun bump` owns)
  *   APP_STORE_CURRENT_BUILD_NUMBER
  *                            Required for --replacement uploads; latest existing
  *                            PackRat App Store/TestFlight build number.

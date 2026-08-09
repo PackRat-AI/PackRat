@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 export type TestFlightLane = 'side-by-side' | 'replacement';
 
 export type TestFlightUploadConfig = {
@@ -38,7 +41,28 @@ const SIDE_BY_SIDE_BUNDLE_ID = 'com.andrewbierman.packrat.swift';
 const REPLACEMENT_BUNDLE_ID = 'com.andrewbierman.packrat';
 const SIDE_BY_SIDE_WATCH_BUNDLE_ID = 'com.andrewbierman.packrat.swift.watchkitapp';
 const REPLACEMENT_WATCH_BUNDLE_ID = 'com.andrewbierman.packrat.watchkitapp';
-const SWIFT_MARKETING_VERSION = '2.1.0';
+/**
+ * The Swift marketing version tracks the monorepo version in the root
+ * `package.json`, which `bun bump` owns. Reading it here instead of hardcoding a
+ * constant keeps this script, `apps/swift/project.yml`, and the monorepo version
+ * from drifting apart across releases.
+ */
+function readMonorepoVersion(): string {
+  const rootPackageJsonPath = join(__dirname, '../../../../package.json');
+  const parsed: unknown = JSON.parse(readFileSync(rootPackageJsonPath, 'utf-8'));
+  if (typeof parsed !== 'object' || parsed === null || !('version' in parsed)) {
+    throw new TestFlightConfigError(
+      `Root package.json at ${rootPackageJsonPath} has no "version" field; cannot resolve the Swift marketing version.`,
+    );
+  }
+  const { version } = parsed as { version: unknown };
+  if (typeof version !== 'string' || version.trim() === '') {
+    throw new TestFlightConfigError(
+      `Root package.json "version" must be a non-empty string, got ${JSON.stringify(version)}.`,
+    );
+  }
+  return version;
+}
 
 export function parseTestFlightUploadConfig(input: {
   argv: readonly string[];
@@ -61,7 +85,7 @@ export function parseTestFlightUploadConfig(input: {
   }
 
   const lane: TestFlightLane = replacement ? 'replacement' : 'side-by-side';
-  const marketingVersion = env.MARKETING_VERSION ?? SWIFT_MARKETING_VERSION;
+  const marketingVersion = env.MARKETING_VERSION ?? readMonorepoVersion();
   const buildNumber = env.BUILD_NUMBER ?? String(Math.floor(Date.now() / 1000));
 
   return {

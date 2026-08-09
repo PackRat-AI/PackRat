@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   parseTestFlightUploadConfig,
@@ -5,6 +7,15 @@ import {
   verifyTestFlightReplacementReadiness,
   xcodeArchiveOverrides,
 } from '../lib/testflight-config';
+
+// The default marketing version is derived from the monorepo version so a
+// `bun bump` cannot silently desync the Swift TestFlight uploads. Read it here
+// too rather than hardcoding, so these tests survive the next bump.
+const monorepoVersion = (
+  JSON.parse(readFileSync(resolve(__dirname, '../../../../package.json'), 'utf-8')) as {
+    version: string;
+  }
+).version;
 
 describe('parseTestFlightUploadConfig', () => {
   it('requires an explicit TestFlight lane', () => {
@@ -38,7 +49,7 @@ describe('parseTestFlightUploadConfig', () => {
       watchBundleId: 'com.andrewbierman.packrat.swift.watchkitapp',
       companionBundleId: 'com.andrewbierman.packrat.swift',
       displayName: 'PackRat Swift',
-      marketingVersion: '2.1.0',
+      marketingVersion: monorepoVersion,
       buildNumber: '123',
       apiEnvironment: 'production',
     });
@@ -60,12 +71,12 @@ describe('parseTestFlightUploadConfig', () => {
       watchBundleId: 'com.andrewbierman.packrat.watchkitapp',
       companionBundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
-      marketingVersion: '2.1.0',
+      marketingVersion: monorepoVersion,
       buildNumber: '456',
       apiEnvironment: 'production',
     });
     expect(xcodeArchiveOverrides({ config, teamId: 'TEAM123' })).toEqual([
-      'MARKETING_VERSION=2.1.0',
+      `MARKETING_VERSION=${monorepoVersion}`,
       'CURRENT_PROJECT_VERSION=456',
       'DEVELOPMENT_TEAM=TEAM123',
       'PACKRAT_IOS_BUNDLE_IDENTIFIER=com.andrewbierman.packrat',
@@ -106,7 +117,7 @@ describe('parseTestFlightUploadConfig', () => {
       dryRun: true,
       bundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
-      marketingVersion: '2.1.0',
+      marketingVersion: monorepoVersion,
       apiEnvironment: 'production',
       buildNumber: '101',
     });

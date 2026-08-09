@@ -69,6 +69,28 @@ try {
   console.error(`❌ Failed to update app.config.ts:`, error);
 }
 
+// Update the Swift project's MARKETING_VERSION for every target (iOS, macOS,
+// watchOS). The Swift app ships to the same App Store record as the Expo build,
+// so its marketing version must track the monorepo version — otherwise the next
+// TestFlight upload collides with an already-released version.
+const swiftProjectPath = join(process.cwd(), 'apps/swift/project.yml');
+const RE_MARKETING_VERSION = /MARKETING_VERSION:\s*"[^"]*"/g;
+try {
+  const content = readFileSync(swiftProjectPath, 'utf-8');
+  const matches = content.match(RE_MARKETING_VERSION)?.length ?? 0;
+  if (matches === 0) {
+    console.error(
+      `❌ No MARKETING_VERSION entries found in ${swiftProjectPath}; Swift version NOT bumped. Update it by hand before uploading to TestFlight.`,
+    );
+  } else {
+    const updated = content.replace(RE_MARKETING_VERSION, `MARKETING_VERSION: "${newVersion}"`);
+    writeFileSync(swiftProjectPath, updated);
+    console.log(`✅ Updated ${swiftProjectPath} (${matches} target(s))`);
+  }
+} catch (error) {
+  console.error(`❌ Failed to update project.yml:`, error);
+}
+
 // Commit and tag as last step
 try {
   await $`git add .`;

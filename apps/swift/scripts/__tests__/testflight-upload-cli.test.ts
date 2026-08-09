@@ -1,9 +1,14 @@
 import { execFileSync, spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { env as currentEnv } from 'node:process';
 import { describe, expect, it } from 'vitest';
 
 const repoRoot = resolve(__dirname, '../../../..');
+// Derived, not hardcoded — see the note in testflight-config.test.ts.
+const monorepoVersion = (
+  JSON.parse(readFileSync(resolve(repoRoot, 'package.json'), 'utf-8')) as { version: string }
+).version;
 const script = resolve(repoRoot, 'apps/swift/scripts/upload-testflight.ts');
 const verifyScript = resolve(repoRoot, 'apps/swift/scripts/verify-testflight-replacement.ts');
 
@@ -20,12 +25,12 @@ describe('upload-testflight CLI', () => {
       lane: 'replacement',
       bundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
-      marketingVersion: '2.1.0',
+      marketingVersion: monorepoVersion,
       buildNumber: '2026071801',
       apiEnvironment: 'production',
       ascProvider: 'PackRatProvider',
     });
-    expect(preflight.archiveOverrides).toContain('MARKETING_VERSION=2.1.0');
+    expect(preflight.archiveOverrides).toContain(`MARKETING_VERSION=${monorepoVersion}`);
     expect(preflight.archiveOverrides).toContain('CURRENT_PROJECT_VERSION=2026071801');
   });
 
@@ -46,7 +51,7 @@ describe('upload-testflight CLI', () => {
       bundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
       apiEnvironment: 'production',
-      marketingVersion: '2.1.0',
+      marketingVersion: monorepoVersion,
       buildNumber: '2026071802',
       currentAppStoreBuildNumber: '2026071801',
       ok: true,
