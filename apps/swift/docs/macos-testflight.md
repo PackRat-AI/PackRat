@@ -16,10 +16,22 @@ tab. (iOS builds of the Swift app go to a separate record,
 > extending `scripts/lib/testflight-config.ts`; until then, run the three steps
 > below by hand.
 
+Pick the API the build should talk to:
+
+| Scheme | Config | `PACKRAT_ENV` | API |
+|---|---|---|---|
+| `PackRat-macOS` | Release | `production` | `packrat-api...` |
+| `PackRat-macOS-Staging` | Staging | `dev` | `packrat-api-dev...` |
+
+Beta testers usually want **Staging** — a Release build writes their packs and
+trips into the production database. Both schemes use the same bundle id
+(`com.andrewbierman.packrat`), so whichever you upload last is the build testers
+get on the macOS tab.
+
 ```bash
-# 1. Archive (Release; the macOS target has no Staging scheme)
+# 1. Archive (swap the scheme/config pair from the table above)
 xcodebuild archive -project apps/swift/PackRat.xcodeproj \
-  -scheme PackRat-macOS -configuration Release \
+  -scheme PackRat-macOS-Staging -configuration Staging \
   -destination 'generic/platform=macOS' \
   -archivePath /tmp/PackRat-mac.xcarchive \
   -allowProvisioningUpdates \
