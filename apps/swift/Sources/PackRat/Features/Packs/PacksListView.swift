@@ -12,6 +12,7 @@ struct PacksListView: View {
     @State private var publicPacks: [Pack] = []
     @State private var isLoadingPublic = false
     @State private var packPendingDeletion: Pack?
+    @State private var showingDeleteConfirmation = false
     @State private var deleteError: String?
     @Environment(\.modelContext) private var modelContext
     #if os(iOS)
@@ -96,23 +97,6 @@ struct PacksListView: View {
         .sheet(isPresented: $showingCreateSheet) {
             PackFormView(viewModel: viewModel)
         }
-        .confirmationDialog(
-            "Delete \(packPendingDeletion?.name ?? "Pack")?",
-            isPresented: Binding(
-                get: { packPendingDeletion != nil },
-                set: { if !$0 { packPendingDeletion = nil } }
-            ),
-            titleVisibility: .visible,
-            presenting: packPendingDeletion
-        ) { pack in
-            Button("Delete", role: .destructive) {
-                deletePack(pack)
-            }
-            .accessibilityIdentifier("pack_delete_confirm_button")
-            Button("Cancel", role: .cancel) { packPendingDeletion = nil }
-        } message: { pack in
-            Text("\"\(pack.name)\" and its \(pack.itemCount) item\(pack.itemCount == 1 ? "" : "s") will be deleted. This cannot be undone.")
-        }
         .alert(
             "Couldn't Delete Pack",
             isPresented: Binding(
@@ -196,14 +180,14 @@ struct PacksListView: View {
                     #endif
                     if !isExplore {
                         Button("Delete", systemImage: "trash", role: .destructive) {
-                            packPendingDeletion = pack
+                            requestDelete(pack)
                         }
                     }
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     if !isExplore {
                         Button("Delete", systemImage: "trash", role: .destructive) {
-                            packPendingDeletion = pack
+                            requestDelete(pack)
                         }
                         .accessibilityIdentifier("pack_delete_button_\(pack.id)")
                     }
@@ -215,6 +199,35 @@ struct PacksListView: View {
                 }
         }
         .accessibilityIdentifier(isExplore ? "packs_public_list" : "packs_list")
+        // Buttons must be bare `Button`s: applying a modifier such as
+        // `.accessibilityIdentifier` wraps one in `ModifiedContent`, which the
+        // alert builder no longer treats as an alert action — the alert then
+        // degrades into a clipped popover with the extra buttons dropped.
+        // Matches the working sign-out alert in ProfileView.
+        .alert(deletePackAlertTitle, isPresented: $showingDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                if let pack = packPendingDeletion { deletePack(pack) }
+            }
+            Button("Cancel", role: .cancel) { packPendingDeletion = nil }
+        } message: {
+            Text(deletePackAlertMessage)
+        }
+    }
+
+    private var deletePackAlertTitle: String {
+        "Delete \(packPendingDeletion?.name ?? "Pack")?"
+    }
+
+    private var deletePackAlertMessage: String {
+        guard let pack = packPendingDeletion else { return "" }
+        let count = pack.itemCount
+        return "\"\(pack.name)\" and its \(count) item\(count == 1 ? "" : "s") will be deleted. This cannot be undone."
+    }
+
+    /// Captures the row that requested deletion, then presents the alert.
+    private func requestDelete(_ pack: Pack) {
+        packPendingDeletion = pack
+        showingDeleteConfirmation = true
     }
 
     // MARK: - Delete

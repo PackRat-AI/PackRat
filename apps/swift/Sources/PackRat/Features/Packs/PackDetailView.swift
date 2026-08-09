@@ -17,6 +17,7 @@ struct PackDetailView: View {
     @State private var dropTargetCategory: String?
     @State private var triggerShare = false
     @State private var itemPendingDeletion: PackItem?
+    @State private var showingDeleteConfirmation = false
     @Environment(\.modelContext) private var modelContext
 
     private var currentPack: Pack {
@@ -50,7 +51,7 @@ struct PackDetailView: View {
                                 PackItemRow(item: item) {
                                     editingItem = item
                                 } onDelete: {
-                                    itemPendingDeletion = item
+                                    requestDelete(item)
                                 } onDetail: {
                                     detailItem = item
                                 }
@@ -136,22 +137,16 @@ struct PackDetailView: View {
         .sheet(isPresented: $showingGapAnalysis) {
             GapAnalysisSheet(pack: currentPack, service: viewModel.service)
         }
-        .confirmationDialog(
-            "Delete \(itemPendingDeletion?.name ?? "Item")?",
-            isPresented: Binding(
-                get: { itemPendingDeletion != nil },
-                set: { if !$0 { itemPendingDeletion = nil } }
-            ),
-            titleVisibility: .visible,
-            presenting: itemPendingDeletion
-        ) { item in
+        // See PacksListView: alert actions must be bare `Button`s — a modifier
+        // on one wraps it in `ModifiedContent` and the alert degrades into a
+        // clipped popover with buttons dropped.
+        .alert(deleteItemAlertTitle, isPresented: $showingDeleteConfirmation) {
             Button("Delete", role: .destructive) {
-                deleteItem(item)
+                if let item = itemPendingDeletion { deleteItem(item) }
             }
-            .accessibilityIdentifier("pack_item_delete_confirm_button")
             Button("Cancel", role: .cancel) { itemPendingDeletion = nil }
-        } message: { item in
-            Text("\"\(item.name)\" will be removed from this pack. This cannot be undone.")
+        } message: {
+            Text(deleteItemAlertMessage)
         }
         .navigationDestination(isPresented: $showingWeightAnalysis) {
             PackWeightAnalysisView(pack: currentPack)
@@ -166,6 +161,21 @@ struct PackDetailView: View {
                 triggerShare = false
             }
         }
+    }
+
+    private var deleteItemAlertTitle: String {
+        "Delete \(itemPendingDeletion?.name ?? "Item")?"
+    }
+
+    private var deleteItemAlertMessage: String {
+        guard let item = itemPendingDeletion else { return "" }
+        return "\"\(item.name)\" will be removed from this pack. This cannot be undone."
+    }
+
+    /// Captures the row that requested deletion, then presents the alert.
+    private func requestDelete(_ item: PackItem) {
+        itemPendingDeletion = item
+        showingDeleteConfirmation = true
     }
 
     private func deleteItem(_ item: PackItem) {
