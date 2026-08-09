@@ -46,10 +46,14 @@ struct PackRatApp: App {
                 .environment(authManager)
         }
 
+        // These windows host the same detail views as the main window, so they
+        // can queue writes on their own. Flush from here too — a standalone
+        // window may be the only one the user has open.
         WindowGroup("Pack", id: "pack", for: String.self) { $packId in
             if let id = packId {
                 PackWindowView(packId: id)
                     .environment(authManager)
+                    .flushesPendingWrites()
             }
         }
         .modelContainer(PersistenceController.shared.container)
@@ -59,6 +63,7 @@ struct PackRatApp: App {
             if let id = tripId {
                 TripWindowView(tripId: id)
                     .environment(authManager)
+                    .flushesPendingWrites()
             }
         }
         .modelContainer(PersistenceController.shared.container)
