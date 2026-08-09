@@ -431,6 +431,18 @@ schemes:
       config: Debug
     archive:
       config: Release
+  # Mirrors PackRat-iOS-Staging: archives the Staging config so the build talks
+  # to the deployed DEV API (PACKRAT_ENV=dev) instead of production. Lets a
+  # macOS TestFlight build go to beta testers without writing to the production
+  # database.
+  PackRat-macOS-Staging:
+    build:
+      targets:
+        PackRat-macOS: all
+    run:
+      config: Staging
+    archive:
+      config: Staging
   PackRat-Watch:
     build:
       targets:
