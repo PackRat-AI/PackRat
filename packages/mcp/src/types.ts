@@ -114,6 +114,14 @@ export interface Env {
    */
   MCP_PUBLIC_URL?: string;
   /**
+   * Domain-verification token issued by the OpenAI Apps connector form. When
+   * set, the worker serves it as `text/plain` at
+   * `/.well-known/openai-apps-challenge` so OpenAI can verify we control this
+   * hostname. Supplied as a secret/var rather than hardcoded so the token can
+   * be rotated without a code change; when unset the route 404s.
+   */
+  OPENAI_APPS_CHALLENGE_TOKEN?: string;
+  /**
    * Workers Rate Limiting binding (U14). Configured under the
    * `rate_limiting` block in `packages/mcp/wrangler.jsonc` with a 60/60s
    * budget. Keyed `${props.userId}:${toolName}` per-call so per-user/
