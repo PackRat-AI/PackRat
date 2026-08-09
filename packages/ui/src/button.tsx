@@ -1,4 +1,4 @@
-import { isString } from '@packrat/guards';
+import { isString, toRecord } from '@packrat/guards';
 import { cn } from 'expo-app/lib/cn';
 import { Children, isValidElement, type ReactNode } from 'react';
 import {
@@ -87,15 +87,44 @@ function resolveVariant(variant: ButtonVariant): ResolvedVariant {
   return VARIANT_MAP[variant];
 }
 
-/** Unwraps `<Button><Text>Save</Text></Button>` to the string `'Save'`. */
+/**
+ * The `Text` props that carry visual intent. Any one of them present means the call site styled its
+ * own label, so `extractLabel` must not unwrap and repaint it.
+ */
+const STYLING_PROPS = Object.freeze([
+  'className',
+  'variant',
+  'color',
+  'textColor',
+  'textStyle',
+  'style',
+] as const);
+
+/**
+ * Unwraps `<Button><Text>Save</Text></Button>` to the string `'Save'`, so an unstyled label can be
+ * repainted with the button's own per-variant `LABEL_CLASS`.
+ *
+ * A `<Text>` that carries **its own styling props is deliberately left alone**. Unwrapping is
+ * lossy — it keeps the string and throws the element away — so restyling a label the call site had
+ * already styled silently reverses an explicit intent.
+ *
+ * The profile screen's sign-out button was exactly this bug. Its child looks like a ternary, but a
+ * JSX ternary evaluates to a *single element* before React sees it, so `Children.toArray` returns
+ * one child and every gate below passed: `<Text className="text-destructive">Log Out</Text>` was
+ * flattened to `'Log Out'` and re-rendered with `filled`'s `text-primary-foreground` (#FFFFFF).
+ * The call site's `className="bg-card"` also beats `bg-primary` under `twMerge`, so the pill was
+ * white too — white-on-white, an empty rounded rectangle at the right size with no visible glyphs.
+ * Bailing out here lets the call site's own `<Text>` render, in `destructive` red as intended.
+ */
 function extractLabel(children: ReactNode): string | undefined {
   const kids = Children.toArray(children);
   if (kids.length !== 1) return undefined;
   const only = kids[0];
   if (isString(only)) return only;
   if (isValidElement(only) && only.type === Text) {
-    const inner = (only.props as { children?: ReactNode }).children;
-    return isString(inner) ? inner : undefined;
+    const props = toRecord(only.props);
+    if (STYLING_PROPS.some((prop) => props[prop] !== undefined)) return undefined;
+    return isString(props.children) ? props.children : undefined;
   }
   return undefined;
 }

@@ -17,7 +17,18 @@ function CardContent({
   return (
     <>
       {Platform.OS === 'ios' && (
-        <BlurView intensity={iosBlurIntensity} className={iosBlurClassName} />
+        <BlurView
+          intensity={iosBlurIntensity}
+          // `absolute inset-0` is load-bearing, not cosmetic. This blur is a *background fill*
+          // behind the content, but it has no children, so laid out in flow it is still a real
+          // flex child of `Card`'s `justify-end` column: Yoga gives it a share of the cross-axis
+          // and it displaces the siblings after it. On the catalog card that pushed the content
+          // block down until the last description line and the whole footer ran past the card's
+          // `overflow-hidden` edge — the description clipped mid-line and the weight row was
+          // sliced in half. Taking it out of flow makes it paint behind the content, which is
+          // what a background blur is supposed to do.
+          className={cn('absolute inset-0', iosBlurClassName)}
+        />
       )}
       <View className={cn('ios:px-5 gap-1.5 px-4 py-4', className)} {...props} />
     </>
