@@ -24,6 +24,7 @@ struct TripFormView: View {
     @State private var isLoading = false
     @State private var error: String?
     @State private var showingLocationSearch = false
+    @FocusState private var isInputFocused: Bool
 
     private var isEditing: Bool { existingTrip != nil }
     private var isValid: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -40,9 +41,13 @@ struct TripFormView: View {
             Form {
                 Section("Details") {
                     TextField("Name", text: $name)
+                        .focused($isInputFocused)
+                        .submitLabel(.done)
+                        .onSubmit { isInputFocused = false }
                         .accessibilityIdentifier("trip_name")
                     TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
+                        .focused($isInputFocused)
                         .accessibilityIdentifier("trip_description")
                 }
 
@@ -114,6 +119,7 @@ struct TripFormView: View {
                 Section("Notes") {
                     TextField("Notes", text: $notes, axis: .vertical)
                         .lineLimit(4, reservesSpace: true)
+                        .focused($isInputFocused)
                         .accessibilityIdentifier("trip_notes")
                 }
 
@@ -122,6 +128,8 @@ struct TripFormView: View {
                 }
             }
             .packRatFormStyle()
+            .dismissesKeyboardOnScroll()
+            .keyboardDoneButton(isFocused: $isInputFocused)
             .navigationTitle(isEditing ? "Edit Trip" : "Plan Trip")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
