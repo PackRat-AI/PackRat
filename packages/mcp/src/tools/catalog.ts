@@ -47,6 +47,7 @@ export function registerCatalogTools(agent: AgentContext): void {
       annotations: {
         title: 'Search Gear Catalog',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -82,6 +83,7 @@ export function registerCatalogTools(agent: AgentContext): void {
       annotations: {
         title: 'Semantic Gear Search',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -108,6 +110,7 @@ export function registerCatalogTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Catalog Item',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -136,6 +139,7 @@ export function registerCatalogTools(agent: AgentContext): void {
       annotations: {
         title: 'Find Similar Catalog Items',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -166,6 +170,7 @@ export function registerCatalogTools(agent: AgentContext): void {
       annotations: {
         title: 'List Gear Categories',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -270,6 +275,7 @@ export function registerCatalogTools(agent: AgentContext): void {
       annotations: {
         title: 'Compare Gear Items',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },

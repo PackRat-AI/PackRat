@@ -44,6 +44,7 @@ export function registerAuthTools(agent: AgentContext): void {
       annotations: {
         title: 'Who Am I',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },

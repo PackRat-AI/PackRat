@@ -41,6 +41,7 @@ export function registerPackTools(agent: AgentContext): void {
       annotations: {
         title: 'List My Packs',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -83,6 +84,7 @@ export function registerPackTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Pack',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -232,6 +234,7 @@ export function registerPackTools(agent: AgentContext): void {
       annotations: {
         title: 'List Pack Items',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -256,6 +259,7 @@ export function registerPackTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Pack Item',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -436,6 +440,7 @@ export function registerPackTools(agent: AgentContext): void {
       annotations: {
         title: 'Find Similar Pack Items',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -471,6 +476,7 @@ export function registerPackTools(agent: AgentContext): void {
       annotations: {
         title: 'Suggest Pack Items',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -497,6 +503,7 @@ export function registerPackTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Pack Weight History',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -547,6 +554,7 @@ export function registerPackTools(agent: AgentContext): void {
       annotations: {
         title: 'Analyze Pack Weight',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -586,6 +594,7 @@ export function registerPackTools(agent: AgentContext): void {
       annotations: {
         title: 'Analyze Pack Gaps',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -634,6 +643,7 @@ export function registerPackTools(agent: AgentContext): void {
   //     annotations: {
   //       title: 'Analyze Pack Image',
   //       readOnlyHint: true,
+  //       destructiveHint: false,
   //       idempotentHint: false,
   //       openWorldHint: true,
   //     },
