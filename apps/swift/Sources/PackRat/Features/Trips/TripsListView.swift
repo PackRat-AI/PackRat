@@ -16,7 +16,7 @@ struct TripsListView: View {
 
     var body: some View {
         Group {
-            if viewModel.isLoading && viewModel.trips.isEmpty {
+            if viewModel.isLoading && viewModel.trips.isEmpty && !viewModel.isCacheLoaded {
                 ProgressView("Loading trips…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.trips.isEmpty {
                 ErrorView(error, retry: { await viewModel.load(context: modelContext) })
@@ -42,7 +42,6 @@ struct TripsListView: View {
                 Button("Plan Trip", systemImage: "plus") { showingCreateSheet = true }
                     .accessibilityIdentifier("trips_plan_trip_button")
                     .keyboardShortcut("n", modifiers: [.command, .shift])
-                    .accessibilityIdentifier("plan_trip_button")
             }
         }
         .task { await viewModel.load(context: modelContext) }
@@ -129,26 +128,52 @@ struct TripsListView: View {
 }
 
 private struct TripRowView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     let trip: Trip
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(trip.name).font(.headline)
-            HStack(spacing: 10) {
-                if let loc = trip.location?.name {
-                    Label(loc, systemImage: "mappin")
-                        .font(.caption).foregroundStyle(.secondary)
+            Text(trip.name)
+                .font(.headline)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+            if horizontalSizeClass == .compact {
+                VStack(alignment: .leading, spacing: 3) {
+                    metadataItems
                 }
-                if !trip.dateRange.isEmpty {
-                    Label(trip.dateRange, systemImage: "calendar")
-                        .font(.caption).foregroundStyle(.secondary)
+                .lineLimit(1)
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 10) {
+                        metadataItems
+                    }
+                    VStack(alignment: .leading, spacing: 3) {
+                        metadataItems
+                    }
                 }
-                if trip.packId != nil {
-                    Label("Pack linked", systemImage: "backpack")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
+                .lineLimit(1)
             }
         }
         .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private var metadataItems: some View {
+        if let loc = trip.location?.name {
+            Label(loc, systemImage: "mappin")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        if !trip.dateRange.isEmpty {
+            Label(trip.dateRange, systemImage: "calendar")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        if trip.packId != nil {
+            Label("Pack linked", systemImage: "backpack")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 }

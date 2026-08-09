@@ -39,9 +39,11 @@ struct ChatView: View {
         }
         .navigationTitle("AI Assistant")
         .toolbar {
-            ToolbarItem(placement: .automatic) {
-                Button("Clear", systemImage: "trash") { viewModel.clearHistory() }
-                    .disabled(!authManager.isAuthenticated || viewModel.messages.count <= 1)
+            if authManager.isAuthenticated {
+                ToolbarItem(placement: .automatic) {
+                    Button("Clear", systemImage: "trash") { viewModel.clearHistory() }
+                        .disabled(viewModel.messages.count <= 1)
+                }
             }
         }
         .keyboardDoneButton(isFocused: $isInputFocused)
@@ -207,6 +209,9 @@ struct MessageBubble: View {
             insertion: .move(edge: isUser ? .trailing : .leading).combined(with: .opacity),
             removal: .opacity
         ))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(message.content.isEmpty ? (isUser ? "User message" : "Assistant is typing") : message.content)
+        .accessibilityIdentifier(isUser ? "chat_message_user" : "chat_message_assistant")
     }
 
     @ViewBuilder

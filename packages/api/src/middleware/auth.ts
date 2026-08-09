@@ -1,4 +1,3 @@
-import { getAuth } from '@packrat/api/auth';
 import { getLocalE2EUserFromRequest } from '@packrat/api/auth/local-e2e';
 import { resolveMcpBearerUser } from '@packrat/api/auth/mcp-token';
 import { isValidApiKey } from '@packrat/api/utils/auth';
@@ -14,6 +13,11 @@ export type AuthUser = {
   email: string;
   name: string;
 };
+
+async function loadAuth() {
+  const { getAuth } = await import('@packrat/api/auth');
+  return getAuth;
+}
 
 /**
  * Elysia macro that enforces Better Auth session authentication.
@@ -37,6 +41,7 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
         return { user };
       }
 
+      const getAuth = await loadAuth();
       const auth = await getAuth(env);
 
       let session: Awaited<ReturnType<typeof auth.api.getSession>>;
@@ -95,6 +100,7 @@ export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).macro(
       const localUser = await getLocalE2EUserFromRequest(env, request);
       if (localUser) return status(403, { error: 'Forbidden' });
 
+      const getAuth = await loadAuth();
       const auth = await getAuth(env);
 
       let session: Awaited<ReturnType<typeof auth.api.getSession>>;

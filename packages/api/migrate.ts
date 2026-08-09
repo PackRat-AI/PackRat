@@ -1,13 +1,14 @@
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { neon, neonConfig } from '@neondatabase/serverless';
 import { nodeEnv } from '@packrat/env/node';
+import { safeJsonParse } from '@packrat/utils';
+import { drizzle as drizzleBunSQL } from 'drizzle-orm/bun-sql';
+import { migrate as migrateBunSQL } from 'drizzle-orm/bun-sql/migrator';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { migrate } from 'drizzle-orm/neon-http/migrator';
-import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
-import { migrate as migratePg } from 'drizzle-orm/node-postgres/migrator';
-import { Client } from 'pg';
 import WebSocket from 'ws';
 
 // Required for Neon serverless driver to work in Node.js
@@ -17,6 +18,7 @@ neonConfig.webSocketConstructor = WebSocket;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const STANDARD_POSTGRES_MIGRATION_ATTEMPTS = 3;
+const STANDARD_POSTGRES_MIGRATION_SETTLE_TIMEOUT_MS = 120_000;
 
 // Check if we're using a standard PostgreSQL URL (for tests) vs Neon URL
 // Import the utility function from src/db/index.ts since it's defined there
@@ -35,21 +37,71 @@ const isStandardPostgresUrl = (url: string) => {
   }
 };
 
+function expectedMigrationCount() {
+  const journal = safeJsonParse(
+    readFileSync(join(__dirname, 'drizzle/meta/_journal.json'), 'utf8'),
+  ) as {
+    entries?: unknown[];
+  };
+  return journal.entries?.length ?? 0;
+}
+
+async function appliedMigrationCount(url: string) {
+  const sql = new Bun.SQL(url);
+  try {
+    const rows = await sql<{ count: number }[]>`
+      select count(*)::int as count
+      from drizzle.__drizzle_migrations
+    `;
+    return Number(rows[0]?.count ?? 0);
+  } catch {
+    return 0;
+  } finally {
+    await sql.close().catch(() => undefined);
+  }
+}
+
+async function waitForPostgresMigrationLedger(input: {
+  url: string;
+  expectedCount: number;
+  timeoutMs: number;
+}) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < input.timeoutMs) {
+    if ((await appliedMigrationCount(input.url)) >= input.expectedCount) return;
+    await sleep(1000);
+  }
+  throw new Error(
+    `PostgreSQL migration ledger did not reach ${input.expectedCount} entries within ${
+      input.timeoutMs / 1000
+    }s.`,
+  );
+}
+
 async function runPostgresMigrations(url: string) {
   let lastError: unknown;
+  const expectedCount = expectedMigrationCount();
 
   for (let attempt = 1; attempt <= STANDARD_POSTGRES_MIGRATION_ATTEMPTS; attempt += 1) {
-    const client = new Client({ connectionString: url });
+    const sql = new Bun.SQL(url);
 
     try {
-      await client.connect();
-      const db = drizzlePg(client);
-      await migratePg(db, { migrationsFolder: join(__dirname, 'drizzle') });
-      await client.end();
+      const db = drizzleBunSQL(sql);
+      const migration = migrateBunSQL(db, { migrationsFolder: join(__dirname, 'drizzle') });
+      migration.catch(() => undefined);
+      await Promise.race([
+        migration,
+        waitForPostgresMigrationLedger({
+          url,
+          expectedCount,
+          timeoutMs: STANDARD_POSTGRES_MIGRATION_SETTLE_TIMEOUT_MS,
+        }),
+      ]);
+      await sql.close();
       return;
     } catch (error) {
       lastError = error;
-      await client.end().catch(() => undefined);
+      await sql.close().catch(() => undefined);
 
       const message = error instanceof Error ? error.message : String(error);
       if (attempt === STANDARD_POSTGRES_MIGRATION_ATTEMPTS) {

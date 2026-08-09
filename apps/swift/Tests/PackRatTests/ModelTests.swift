@@ -223,6 +223,293 @@ struct CatalogItemTests {
         #expect(inStock.isInStock == true)
         #expect(outOfStock.isInStock == false)
     }
+
+    @Test("decodes Expo catalog rows with unknown weight")
+    func decodesNullableWeightFromSharedSchema() throws {
+        let json = """
+        {
+          "id": 42,
+          "name": "Imported Gear",
+          "productUrl": "https://example.com/imported",
+          "sku": "SCRAPY-42",
+          "weight": null,
+          "weightUnit": null,
+          "description": null,
+          "categories": ["Shelter"],
+          "images": null,
+          "brand": "PackRat",
+          "model": null,
+          "ratingValue": null,
+          "color": null,
+          "size": null,
+          "price": null,
+          "availability": "in_stock",
+          "seller": null,
+          "reviewCount": null,
+          "createdAt": "2026-08-07T00:00:00.000Z",
+          "updatedAt": "2026-08-07T00:00:00.000Z"
+        }
+        """.data(using: .utf8)!
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let item = try decoder.decode(CatalogItem.self, from: json)
+
+        #expect(item.weight == nil)
+        #expect(item.weightUnit == nil)
+        #expect(item.displayWeight == "")
+    }
+
+    @Test("catalog search response accepts shared API totalCount")
+    func catalogSearchResponseAcceptsTotalCount() throws {
+        let json = """
+        {
+          "items": [],
+          "totalCount": 12,
+          "page": 1,
+          "limit": 20,
+          "totalPages": 1
+        }
+        """.data(using: .utf8)!
+
+        let response = try JSONDecoder().decode(CatalogSearchResponse.self, from: json)
+
+        #expect(response.items.isEmpty)
+        #expect(response.total == 12)
+        #expect(response.page == 1)
+        #expect(response.limit == 20)
+    }
+}
+
+// MARK: - Expo/shared API compatibility
+
+@Suite("Expo shared API payload compatibility")
+struct ExpoSharedPayloadCompatibilityTests {
+    private var decoder: JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return decoder
+    }
+
+    @Test("decodes representative Expo-era user data used by the Swift update")
+    func decodesRepresentativeExpoUserData() throws {
+        let payload = """
+        {
+          "user": {
+            "id": "019f7b5f-e2e0-7000-9000-packrat000001",
+            "email": "tester@example.com",
+            "name": "Taylor Hiker",
+            "firstName": "Taylor",
+            "lastName": "Hiker",
+            "role": "USER",
+            "emailVerified": true,
+            "avatarUrl": null,
+            "createdAt": "2026-08-08T00:00:00.000Z",
+            "updatedAt": "2026-08-08T00:00:00.000Z"
+          },
+          "pack": {
+            "id": "pack-expo-1",
+            "userId": "019f7b5f-e2e0-7000-9000-packrat000001",
+            "name": "Expo Weekend Pack",
+            "description": "Existing mobile user pack",
+            "category": "backpacking",
+            "isPublic": false,
+            "image": null,
+            "tags": ["weekend", "qa"],
+            "templateId": null,
+            "deleted": false,
+            "isAIGenerated": false,
+            "totalWeight": 2380,
+            "baseWeight": 1920,
+            "wornWeight": 300,
+            "consumableWeight": 160,
+            "createdAt": "2026-08-08T00:00:00.000Z",
+            "updatedAt": "2026-08-08T00:00:00.000Z",
+            "items": [
+              {
+                "id": "item-expo-1",
+                "packId": "pack-expo-1",
+                "name": "Rain Shell",
+                "description": null,
+                "weight": 210,
+                "weightUnit": "g",
+                "quantity": 1,
+                "category": "clothing",
+                "consumable": false,
+                "worn": true,
+                "image": null,
+                "notes": "Existing Expo item",
+                "catalogItemId": 7001,
+                "userId": "019f7b5f-e2e0-7000-9000-packrat000001",
+                "deleted": false,
+                "isAIGenerated": false,
+                "templateItemId": null,
+                "createdAt": "2026-08-08T00:00:00.000Z",
+                "updatedAt": "2026-08-08T00:00:00.000Z"
+              }
+            ]
+          },
+          "trip": {
+            "id": "trip-expo-1",
+            "name": "Indian Peaks Loop",
+            "description": "Synced from existing mobile data",
+            "notes": "Watch weather before Pawnee Pass",
+            "location": {
+              "latitude": 40.083,
+              "longitude": -105.585,
+              "name": "Brainard Lake Recreation Area"
+            },
+            "startDate": "2026-09-05T00:00:00.000Z",
+            "endDate": "2026-09-07T00:00:00.000Z",
+            "userId": "019f7b5f-e2e0-7000-9000-packrat000001",
+            "packId": "pack-expo-1",
+            "deleted": false,
+            "createdAt": "2026-08-08T00:00:00.000Z",
+            "updatedAt": "2026-08-08T00:00:00.000Z"
+          },
+          "template": {
+            "id": "template-expo-1",
+            "userId": "019f7b5f-e2e0-7000-9000-packrat000001",
+            "name": "Weekend Backpacking",
+            "description": "Saved template",
+            "category": "backpacking",
+            "image": null,
+            "tags": ["saved"],
+            "isAppTemplate": false,
+            "contentSource": "user",
+            "createdAt": "2026-08-08T00:00:00.000Z",
+            "updatedAt": "2026-08-08T00:00:00.000Z",
+            "items": [
+              {
+                "id": "template-item-expo-1",
+                "packTemplateId": "template-expo-1",
+                "name": "Headlamp",
+                "weight": 85,
+                "weightUnit": "g",
+                "quantity": 1,
+                "category": "lighting",
+                "consumable": false,
+                "worn": false,
+                "notes": null
+              }
+            ]
+          },
+          "catalog": {
+            "items": [
+              {
+                "id": 9001,
+                "name": "Imported Catalog Item",
+                "productUrl": "https://example.com/catalog/imported",
+                "sku": "EXPO-CATALOG-1",
+                "weight": null,
+                "weightUnit": null,
+                "description": "ETL row without weight metadata",
+                "categories": ["Shelter"],
+                "images": null,
+                "brand": "PackRat",
+                "model": null,
+                "ratingValue": null,
+                "color": null,
+                "size": null,
+                "price": null,
+                "availability": "in_stock",
+                "seller": null,
+                "reviewCount": null
+              }
+            ],
+            "totalCount": 1,
+            "page": 1,
+            "limit": 20
+          },
+          "weather": {
+            "location": { "id": 5582371, "name": "Boulder", "region": "Colorado", "country": "United States", "lat": 40.02, "lon": -105.27 },
+            "current": {
+              "temp_f": 72,
+              "temp_c": 22.2,
+              "feelslike_f": 72,
+              "feelslike_c": 22.2,
+              "humidity": 35,
+              "wind_mph": 8,
+              "wind_kph": 12.9,
+              "condition": { "text": "Sunny", "icon": null, "code": 1000 }
+            },
+            "forecast": { "forecastday": [] },
+            "alerts": { "alert": [] }
+          },
+          "trailReport": {
+            "id": "trail-expo-1",
+            "trailName": "Pawnee Pass",
+            "trailRegion": "Indian Peaks Wilderness",
+            "surface": "mixed",
+            "overallCondition": "good",
+            "hazards": ["afternoon storms"],
+            "waterCrossings": 2,
+            "waterCrossingDifficulty": "moderate",
+            "notes": "Snow lingering above treeline",
+            "photos": [],
+            "userId": "019f7b5f-e2e0-7000-9000-packrat000001",
+            "tripId": "trip-expo-1",
+            "deleted": false,
+            "createdAt": "2026-08-08T00:00:00.000Z",
+            "updatedAt": "2026-08-08T00:00:00.000Z"
+          },
+          "season": {
+            "suggestions": [
+              {
+                "name": "Windy Alpine Add-ons",
+                "description": "Extra warmth and weather protection",
+                "category": "backpacking",
+                "tags": ["alpine"],
+                "items": [
+                  {
+                    "name": "Warm hat",
+                    "description": null,
+                    "weight": 55,
+                    "weightUnit": "g",
+                    "quantity": 1,
+                    "category": "clothing",
+                    "consumable": false,
+                    "worn": true,
+                    "image": null,
+                    "notes": null,
+                    "catalogItemId": null
+                  }
+                ]
+              }
+            ],
+            "totalInventoryItems": 1,
+            "location": "Boulder, CO",
+            "season": "fall"
+          }
+        }
+        """.data(using: .utf8)!
+
+        let snapshot = try decoder.decode(ExpoPayloadSnapshot.self, from: payload)
+
+        #expect(snapshot.user.id == snapshot.pack.userId)
+        #expect(snapshot.user.displayName == "Taylor Hiker")
+        #expect(snapshot.pack.activeItems.count == 1)
+        #expect(snapshot.pack.activeItems.first?.catalogItemId == 7001)
+        #expect(snapshot.trip.packId == snapshot.pack.id)
+        #expect(snapshot.trip.location?.name == "Brainard Lake Recreation Area")
+        #expect(snapshot.template.itemCount == 1)
+        #expect(snapshot.catalog.items.first?.displayWeight == "")
+        #expect(snapshot.catalog.total == 1)
+        #expect(snapshot.weather.current?.condition?.sfSymbol == "sun.max")
+        #expect(snapshot.trailReport.hazards == ["afternoon storms"])
+        #expect(snapshot.season.suggestions.first?.items?.first?.name == "Warm hat")
+    }
+
+    private struct ExpoPayloadSnapshot: Decodable {
+        let user: User
+        let pack: Pack
+        let trip: Trip
+        let template: PackTemplate
+        let catalog: CatalogSearchResponse
+        let weather: WeatherForecastResponse
+        let trailReport: TrailConditionReport
+        let season: SeasonSuggestionsResponse
+    }
 }
 
 // MARK: - Enum decoding

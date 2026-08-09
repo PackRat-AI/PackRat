@@ -221,10 +221,10 @@ Test fixtures must seed users through `userService.createUser`. Do not write new
 
 ### Pattern 5 — Swift visual E2E catalog
 
-The native Swift apps have a visual catalog runner that drives `VisualScreenshotTests` on iOS and macOS, exports every named screenshot, validates the required surface matrix, and renders contact sheets for review.
+The native Swift apps have a visual catalog runner that drives `VisualScreenshotTests` on iOS, iPad, and macOS, captures the watchOS companion, exports every named screenshot, validates the required surface matrix, and renders contact sheets for review.
 
 ```bash
-# Full iOS + macOS visual pass. Requires E2E credentials.
+# Full iOS + iPad + macOS + watchOS visual pass. Requires E2E credentials.
 bun swift:screenshots --out artifacts/screenshots
 
 # Platform-specific runs while iterating.
@@ -245,7 +245,7 @@ The runner writes:
 
 Screenshot fixture data must stay behind `PACKRAT_VISUAL_SCREENSHOTS` / `PACKRAT_VISUAL_SAMPLE_DATA` or explicit visual-test launch arguments. Production fallback and offline states should use honest empty or unsynced copy, not realistic dummy packs, trips, or weather that could be mistaken for user data.
 
-CI runs the same catalog through `.github/workflows/swift-visual.yml` on a nightly schedule and by manual dispatch. The workflow uploads the contact sheets and visual `.xcresult` bundles as `swift-visual-screenshots`. macOS visual runs require Automation Mode to be available on the runner; locally, run `automationmodetool enable-automationmode-without-authentication` once before leaving the suite unattended.
+CI runs the same catalog through `.github/workflows/swift-visual.yml` on a nightly schedule and by manual dispatch. The default `all` platform run covers iOS, iPad, macOS, and watchOS; `both` remains a legacy alias for the same full spread. The workflow uploads the contact sheets and visual `.xcresult` bundles as `swift-visual-screenshots`. watchOS screenshots are simulator-captured and do not produce an `.xcresult` bundle. macOS visual runs require Automation Mode to be available on the runner; locally, run `automationmodetool enable-automationmode-without-authentication` once before leaving the suite unattended.
 
 ---
 
@@ -291,7 +291,7 @@ bun test:scripts
 # Swift native apps
 bun swift                 # regenerate the Xcode project after project.yml or source tree changes
 bun test:swift:scripts    # TypeScript helper tests for simctl/xcresult/script parsing
-bun swift:screenshots     # visual E2E catalog for iOS + macOS
+bun swift:screenshots     # visual E2E catalog for iOS + iPad + macOS + watchOS
 ```
 
 Coverage reports for each workspace:

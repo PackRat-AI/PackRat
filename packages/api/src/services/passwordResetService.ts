@@ -1,8 +1,7 @@
-import { hashPassword } from '@better-auth/utils/password';
 import { createDb } from '@packrat/api/db';
-import { timingSafeEqual } from '@packrat/api/utils/auth';
+import { hashPassword, timingSafeEqual } from '@packrat/api/utils/auth';
 import { sendPasswordResetEmail } from '@packrat/api/utils/email';
-import { account, users, verification } from '@packrat/db';
+import { account, users, verification } from '@packrat/db/schema';
 import { and, eq, gt } from 'drizzle-orm';
 
 const OTP_LENGTH = 6;

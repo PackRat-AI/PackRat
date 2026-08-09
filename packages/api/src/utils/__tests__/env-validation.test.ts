@@ -130,7 +130,9 @@ describe('env-validation', () => {
       const result = apiEnvSchema.safeParse(makeRawEnv({ OPENAI_API_KEY: undefined }));
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.message).toContain('Required');
+        expect(result.error.issues).toEqual([
+          expect.objectContaining({ path: ['OPENAI_API_KEY'] }),
+        ]);
       }
     });
 
@@ -140,7 +142,9 @@ describe('env-validation', () => {
       );
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.message).toContain('Required');
+        expect(result.error.issues).toEqual([
+          expect.objectContaining({ path: ['GOOGLE_GENERATIVE_AI_API_KEY'] }),
+        ]);
       }
     });
 

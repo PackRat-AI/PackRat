@@ -1,7 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { captureApiException } from '@packrat/api/utils/sentry';
-import { users } from '@packrat/db';
+import { users } from '@packrat/db/schema';
 import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
   GetPreferencesResponseSchema,

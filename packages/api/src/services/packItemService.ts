@@ -1,5 +1,5 @@
 import { createDb } from '@packrat/api/db';
-import { packItems } from '@packrat/db';
+import { packItems } from '@packrat/db/schema';
 import { and, eq } from 'drizzle-orm';
 
 export class PackItemService {

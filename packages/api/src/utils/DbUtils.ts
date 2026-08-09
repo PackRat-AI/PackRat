@@ -1,5 +1,6 @@
 import { createDb } from '@packrat/api/db';
-import { catalogItems, packs } from '@packrat/db';
+import { queryRows } from '@packrat/api/db/queryRows';
+import { catalogItems, packs } from '@packrat/db/schema';
 import { and, arrayOverlaps, eq, inArray, type SQL, sql } from 'drizzle-orm';
 
 // Get pack details from the database
@@ -101,7 +102,7 @@ export async function getSchemaInfo() {
     `;
     const result = await db.tag('utils.getSchemaInfo').execute(sql.raw(schemaQuery));
 
-    return result.rows
+    return queryRows(result)
       .map((row) => `${row.table_name} (\n      ${row.columns}\n    );`)
       .join('\n\n');
   } catch (error) {

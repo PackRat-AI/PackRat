@@ -1,4 +1,4 @@
-import type { NewCatalogItem } from '@packrat/db';
+import type { NewCatalogItem } from '@packrat/db/schema';
 import { isString } from '@packrat/guards';
 import { AvailabilitySchema, WeightUnitSchema } from '@packrat/schemas/constants';
 import { safeJsonParse } from '@packrat/utils';

@@ -50,6 +50,7 @@ struct PackTemplateFormView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .accessibilityIdentifier("template_category")
                 }
                 if let error {
                     InlineErrorView(message: error).listRowBackground(Color.clear)

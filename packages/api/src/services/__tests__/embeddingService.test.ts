@@ -136,6 +136,20 @@ describe('embeddingService', () => {
       expect(first).toHaveLength(1536);
       expect(first).toEqual(second);
     });
+
+    it('returns deterministic embeddings for the local sk-test key', async () => {
+      const { embed } = await import('ai');
+      const mockEmbed = embed as ReturnType<typeof vi.fn>;
+
+      const result = await generateEmbedding({
+        ...baseParams,
+        openAiApiKey: 'sk-test',
+        value: 'local e2e item',
+      });
+
+      expect(result).toHaveLength(1536);
+      expect(mockEmbed).not.toHaveBeenCalled();
+    });
   });
 
   describe('generateManyEmbeddings', () => {

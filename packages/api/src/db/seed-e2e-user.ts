@@ -6,22 +6,17 @@
  *     bun run packages/api/src/db/seed-e2e-user.ts
  *
  * Re-running is safe: if the user exists, the password hash and
- * `emailVerified=true` flag are refreshed via `db.update` (drizzle-seed
- * has no UPDATE primitive); otherwise the user is created via the
- * `drizzle-seed` `.refine()` API so this seeder shares the same tool
- * surface as the other prod-config seeders. Every column is fixed via
- * `f.default()` because drizzle-seed generates a random value for any
- * column not listed in `.refine()`.
+ * `emailVerified=true` flag are refreshed via `db.update`; otherwise the
+ * user is created via a direct insert so this script avoids package-export
+ * differences in local E2E runtimes.
  */
 
 import { neon, neonConfig } from '@neondatabase/serverless';
 import * as schema from '@packrat/db/schema';
 import { nodeEnv } from '@packrat/env/node';
 import { eq } from 'drizzle-orm';
+import { type BunSQLDatabase, drizzle as drizzleBunSQL } from 'drizzle-orm/bun-sql';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
-import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { seed } from 'drizzle-seed';
-import { Client } from 'pg';
 import WebSocket from 'ws';
 import { hashPassword } from '../utils/auth';
 
@@ -50,14 +45,13 @@ async function seedE2EUser(): Promise<void> {
 
   const normalizedEmail = email.toLowerCase();
 
-  type SeedDatabase = NodePgDatabase<typeof schema> | NeonHttpDatabase<typeof schema>;
+  type SeedDatabase = BunSQLDatabase<typeof schema> | NeonHttpDatabase<typeof schema>;
   let db: SeedDatabase;
-  let pgClient: Client | undefined;
+  let sql: Bun.SQL | undefined;
 
   if (isStandardPostgresUrl(dbUrl)) {
-    pgClient = new Client({ connectionString: dbUrl });
-    await pgClient.connect();
-    db = drizzlePg(pgClient, { schema });
+    sql = new Bun.SQL(dbUrl);
+    db = drizzleBunSQL(sql, { schema });
   } else {
     db = drizzle(neon(dbUrl), { schema });
   }
@@ -84,28 +78,19 @@ async function seedE2EUser(): Promise<void> {
     } else {
       userId = crypto.randomUUID();
       const now = new Date();
-      await seed(db, { users: schema.users }).refine((f) => ({
-        users: {
-          count: 1,
-          columns: {
-            id: f.default({ defaultValue: userId }),
-            name: f.default({ defaultValue: 'E2E Automation' }),
-            email: f.default({ defaultValue: normalizedEmail }),
-            emailVerified: f.default({ defaultValue: true }),
-            image: f.default({ defaultValue: null }),
-            role: f.default({ defaultValue: 'USER' }),
-            banned: f.default({ defaultValue: false }),
-            banReason: f.default({ defaultValue: null }),
-            banExpires: f.default({ defaultValue: null }),
-            firstName: f.default({ defaultValue: 'E2E' }),
-            lastName: f.default({ defaultValue: 'Automation' }),
-            avatarUrl: f.default({ defaultValue: null }),
-            passwordHash: f.default({ defaultValue: passwordHash }),
-            createdAt: f.default({ defaultValue: now }),
-            updatedAt: f.default({ defaultValue: now }),
-          },
-        },
-      }));
+      await db.insert(schema.users).values({
+        id: userId,
+        name: 'E2E Automation',
+        email: normalizedEmail,
+        emailVerified: true,
+        role: 'USER',
+        banned: false,
+        firstName: 'E2E',
+        lastName: 'Automation',
+        passwordHash,
+        createdAt: now,
+        updatedAt: now,
+      });
       console.log(`E2E user created: ${normalizedEmail} (id=${userId})`);
     }
 
@@ -113,8 +98,6 @@ async function seedE2EUser(): Promise<void> {
 
     // Upsert the credential account row that better-auth looks up during sign-in.
     // better-auth sets accountId = user.id for the 'credential' provider.
-    // (drizzle-seed has no upsert; this requires onConflictDoUpdate so we use
-    // db.insert directly here rather than drizzle-seed's refine path.)
     await db
       .insert(schema.account)
       .values({
@@ -189,7 +172,7 @@ async function seedE2EUser(): Promise<void> {
       .onConflictDoNothing({ target: schema.catalogItems.sku });
     console.log('E2E catalog fixtures ensured');
   } finally {
-    await pgClient?.end();
+    await sql?.close();
   }
 }
 
