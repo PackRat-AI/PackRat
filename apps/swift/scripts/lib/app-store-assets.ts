@@ -39,7 +39,7 @@ export type ImageInspector = (path: string) => ImageInfo;
 const PIXEL_WIDTH_RE = /pixelWidth:\s*([0-9.]+)/;
 const PIXEL_HEIGHT_RE = /pixelHeight:\s*([0-9.]+)/;
 const HAS_ALPHA_RE = /hasAlpha:\s*(yes|no)/;
-const ICON_SIZE_RE = /^(\d+)x(\d+)$/;
+const ICON_SIZE_RE = /^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)$/;
 const ICON_SCALE_RE = /^(\d+)x$/;
 
 export function parseSipsImageInfo(output: string): ImageInfo {

@@ -1,5 +1,5 @@
 import { parseCatalogJson, parseFaqs, parsePrice, parseWeight } from '@packrat/api/utils/csv-utils';
-import type { NewCatalogItem } from '@packrat/db';
+import type { NewCatalogItem } from '@packrat/db/schema';
 import { isNumber, isObject, isString, toStringRecord } from '@packrat/guards';
 import { AvailabilitySchema, WeightUnitSchema } from '@packrat/schemas/constants';
 import { safeJsonParse } from '@packrat/utils';

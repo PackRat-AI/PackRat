@@ -1,6 +1,8 @@
-import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { isDefined } from '@packrat/guards';
-import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
+import { Sheet, SheetView, useSheetRef } from '@packrat/ui/src/bottom-sheet';
+import { Button } from '@packrat/ui/src/button';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { Text } from '@packrat/ui/src/text';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { devSkipAutoAnalyzeAtom } from 'expo-app/atoms/devAtoms';
@@ -23,7 +25,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import { useMemo, useState } from 'react';
 import { Image, Platform, ScrollView, Share, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
@@ -79,7 +81,6 @@ export function PackDetailScreen() {
   const pack = (isOwnedByUser ? packFromStore : packFromApi) as Pack;
 
   const { colors } = useColorScheme();
-  const insets = useSafeAreaInsets();
 
   const bottomSheetRef = useSheetRef();
   const addItemActionsRef = useSheetRef();
@@ -493,7 +494,9 @@ export function PackDetailScreen() {
           </View>
 
           {pack.description && (
-            <Text className="mb-4 text-muted-foreground">{pack.description}</Text>
+            <Text wrap className="mb-4 text-muted-foreground">
+              {pack.description}
+            </Text>
           )}
 
           <View className="mb-4 flex-row justify-between">
@@ -704,11 +707,9 @@ export function PackDetailScreen() {
         enableDynamicSizing
         enablePanDownToClose
         backgroundStyle={{ backgroundColor: colors.card }}
-        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
-        bottomInset={insets.bottom}
         onDismiss={handleBottomSheetDismiss}
       >
-        <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
+        <SheetView className="flex-1 px-4" style={{ flex: 1 }}>
           {/* Revamped consistent 2-column action layout */}
           <View className="flex-row flex-wrap -mx-1">
             {normalizedActions.map((action) => (
@@ -729,7 +730,7 @@ export function PackDetailScreen() {
               </View>
             ))}
           </View>
-        </BottomSheetView>
+        </SheetView>
       </Sheet>
 
       {/* Add Item Options Sheet */}

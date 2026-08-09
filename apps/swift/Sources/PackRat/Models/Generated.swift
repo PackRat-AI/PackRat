@@ -168,8 +168,8 @@ struct CatalogItem: Codable, Identifiable, Sendable {
     let name: String
     let productUrl: String
     let sku: String
-    let weight: Double
-    let weightUnit: WeightUnit
+    let weight: Double?
+    let weightUnit: WeightUnit?
     let description: String?
     let categories: [String]?
     let images: [String]?

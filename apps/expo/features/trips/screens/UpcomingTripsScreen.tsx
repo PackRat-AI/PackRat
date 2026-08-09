@@ -1,5 +1,5 @@
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -48,7 +48,7 @@ function EmptyState({ onPlanTrip }: { onPlanTrip: () => void }) {
         <Text variant="title3" className="font-semibold text-foreground">
           {t('trips.noUpcomingTrips')}
         </Text>
-        <Text variant="subhead" className="text-center text-muted-foreground">
+        <Text variant="subhead" className="text-center text-muted-foreground" wrap>
           {t('trips.noUpcomingTripsDesc')}
         </Text>
       </View>

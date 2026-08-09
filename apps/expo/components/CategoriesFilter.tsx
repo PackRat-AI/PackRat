@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { decodeHtmlEntities } from 'expo-app/lib/utils/decodeHtmlEntities';
 import { ScrollView, TouchableOpacity, View } from 'react-native';

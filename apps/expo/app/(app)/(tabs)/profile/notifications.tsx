@@ -1,4 +1,7 @@
-import { Button, Form, FormItem, FormSection, Text, Toggle } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
+import { Text } from '@packrat/ui/src/text';
+import { Toggle } from '@packrat/ui/src/toggle';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -79,7 +82,7 @@ export default function NotificationsScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium">{t('profile.weatherAlerts')}</Text>
-                  <Text variant="caption1" className="text-muted-foreground">
+                  <Text variant="caption1" className="text-muted-foreground" wrap>
                     {t('profile.weatherAlertsNotif')}
                   </Text>
                 </View>

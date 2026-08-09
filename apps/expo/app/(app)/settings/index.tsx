@@ -1,4 +1,6 @@
-import { ActivityIndicator, SegmentedControl, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { SegmentedControl } from '@packrat/ui/src/segmented-control';
+import { Text } from '@packrat/ui/src/text';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
@@ -194,7 +196,7 @@ export default function SettingsScreen() {
             <View className="flex-row items-center justify-between p-4">
               <View className="flex-1">
                 <Text className="font-medium">Wind & Distance</Text>
-                <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
                   {t('settings.windDistanceSubtitle')}
                 </Text>
               </View>
@@ -245,7 +247,7 @@ export default function SettingsScreen() {
                 className="flex-row items-center justify-between p-4"
                 onPress={handleManageSubscription}
               >
-                <Text className="font-medium" style={{ color: colors.primary }}>
+                <Text className="font-medium" textColor={colors.primary}>
                   Manage Subscription
                 </Text>
                 <Icon name="chevron-right" size={20} color={colors.grey} />
@@ -255,7 +257,7 @@ export default function SettingsScreen() {
                 className="flex-row items-center justify-between p-4"
                 onPress={() => router.push('/paywall')}
               >
-                <Text className="font-medium" style={{ color: colors.primary }}>
+                <Text className="font-medium" textColor={colors.primary}>
                   Upgrade to Pro
                 </Text>
                 <Icon name="chevron-right" size={20} color={colors.grey} />
@@ -329,7 +331,7 @@ export default function SettingsScreen() {
                           <Text
                             variant="footnote"
                             className="font-medium"
-                            style={{ color: colors.primary }}
+                            textColor={colors.primary}
                           >
                             Download
                           </Text>
@@ -374,7 +376,7 @@ export default function SettingsScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium">Clear App Data</Text>
-                  <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
                     Wipes image cache and stored preferences
                   </Text>
                 </View>
@@ -394,7 +396,9 @@ export default function SettingsScreen() {
                   <Icon name="leaf" size={22} color={colors.primary} />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-medium">Reset Season Suggestions State</Text>
+                  <Text className="font-medium" wrap>
+                    Reset Season Suggestions State
+                  </Text>
                   <Text variant="footnote" className="mt-0.5 text-muted-foreground">
                     {`seen: ${announcementSeen} · opened: ${opened}`}
                   </Text>
@@ -410,7 +414,7 @@ export default function SettingsScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium">Refresh Feature Flags</Text>
-                  <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
                     Fetches flags & entitlements now, bypassing the 5-min cache
                   </Text>
                 </View>
@@ -425,7 +429,7 @@ export default function SettingsScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium">Paywall State</Text>
-                  <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
                     Inspect customerInfo & feature-access config live
                   </Text>
                 </View>

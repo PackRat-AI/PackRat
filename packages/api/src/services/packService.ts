@@ -4,8 +4,7 @@ import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { setQueryTag } from '@packrat/api/utils/queryMetrics';
 import { PACK_CATEGORIES } from '@packrat/constants';
-import { type NewPack, type NewPackItem, packItems, packs } from '@packrat/db';
-import { generateObject } from 'ai';
+import { type NewPack, type NewPackItem, packItems, packs } from '@packrat/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { computePackWeights } from '../utils/compute-pack';
@@ -152,6 +151,7 @@ export class PackService {
       cloudflareAiBinding: AI,
     });
 
+    const { generateObject } = await import('ai');
     const { object } = await generateObject({
       model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       output: 'array',

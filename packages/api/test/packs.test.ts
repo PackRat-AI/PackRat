@@ -1,7 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import { PackService } from '@packrat/api/services/packService';
-import type { Pack } from '@packrat/db';
-import { packItems, packs } from '@packrat/db';
+import type { Pack } from '@packrat/db/schema';
+import { packItems, packs } from '@packrat/db/schema';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {

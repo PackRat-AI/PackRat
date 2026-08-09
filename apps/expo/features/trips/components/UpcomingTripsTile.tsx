@@ -1,4 +1,5 @@
-import { ListItem, Text } from '@packrat/ui/nativewindui';
+import { ListItem } from '@packrat/ui/src/list';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';

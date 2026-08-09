@@ -1,5 +1,6 @@
-import { Avatar, AvatarFallback, AvatarImage, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/src/avatar';
+import { Text } from '@packrat/ui/src/text';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack } from 'expo-router';
@@ -180,7 +181,7 @@ export default function SharedPacksScreen() {
       <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.sharedPacks') }} />
       <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
         <View className="p-4">
-          <Text variant="subhead" className="mb-2 text-muted-foreground">
+          <Text variant="subhead" className="mb-2 text-muted-foreground" wrap>
             {t('packs.collaborateOnPacks')}
           </Text>
         </View>
@@ -195,16 +196,18 @@ export default function SharedPacksScreen() {
           <Text variant="heading" className="mb-2 font-semibold">
             {t('packs.sharingBenefits')}
           </Text>
-          <Text variant="body" className="mb-2">
+          <Text variant="body" className="mb-2" wrap>
             {t('packs.distributeGroupGear')}
           </Text>
-          <Text variant="body" className="mb-2">
+          <Text variant="body" className="mb-2" wrap>
             {t('packs.sharingBenefit1')}
           </Text>
-          <Text variant="body" className="mb-2">
+          <Text variant="body" className="mb-2" wrap>
             {t('packs.sharingBenefit2')}
           </Text>
-          <Text variant="body">{t('packs.sharingBenefit3')}</Text>
+          <Text variant="body" wrap>
+            {t('packs.sharingBenefit3')}
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>

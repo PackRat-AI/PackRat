@@ -1,11 +1,8 @@
-import {
-  ActivityIndicator,
-  Alert,
-  type AlertMethods,
-  Button,
-  Text,
-} from '@packrat/ui/nativewindui';
+import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
@@ -132,7 +129,9 @@ export function AIPacksScreen() {
       </View>
 
       <View className="items-center justify-center p-8">
-        <Text className="text-center text-muted-foreground mt-2">{t('ai.useFormAbove')}</Text>
+        <Text className="text-center text-muted-foreground mt-2" wrap>
+          {t('ai.useFormAbove')}
+        </Text>
       </View>
 
       <Alert title="" buttons={[]} ref={alertRef} />

@@ -1,4 +1,6 @@
-import { Button, Text, useSheetRef } from '@packrat/ui/nativewindui';
+import { useSheetRef } from '@packrat/ui/src/bottom-sheet';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
@@ -95,7 +97,9 @@ export function PackTemplateDetailScreen() {
           </View>
 
           {packTemplate.description && (
-            <Text className="mb-4 text-muted-foreground">{packTemplate.description}</Text>
+            <Text className="mb-4 text-muted-foreground" wrap>
+              {packTemplate.description}
+            </Text>
           )}
 
           <View className="mb-4 flex-row justify-between">

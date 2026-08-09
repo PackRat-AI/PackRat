@@ -1,11 +1,21 @@
 {
   "name": "@packrat/ui",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "scripts": {
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@packrat-ai/nativewindui": "2.2.1"
+    "@expo/ui": "~57.0.9",
+    "@packrat/guards": "workspace:*",
+    "@rn-primitives/alert-dialog": "^1.1.0",
+    "@rn-primitives/avatar": "^1.1.0",
+    "@rn-primitives/checkbox": "^1.1.0",
+    "@rn-primitives/context-menu": "^1.1.0",
+    "@rn-primitives/dropdown-menu": "^1.1.0",
+    "@rn-primitives/hooks": "^1.1.0",
+    "react-native-ios-context-menu": "^3.2.1",
+    "react-native-uitextview": "^1.1.4",
+    "tailwindcss": "catalog:"
   }
 }

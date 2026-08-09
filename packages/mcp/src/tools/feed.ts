@@ -19,6 +19,7 @@ export function registerFeedTools(agent: AgentContext): void {
       annotations: {
         title: 'List Feed Posts',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -75,6 +76,7 @@ export function registerFeedTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Feed Post',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -152,6 +154,7 @@ export function registerFeedTools(agent: AgentContext): void {
       annotations: {
         title: 'List Feed Comments',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },

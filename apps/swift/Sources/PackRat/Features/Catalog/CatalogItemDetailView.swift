@@ -49,15 +49,14 @@ struct CatalogItemDetailView: View {
     private var imageCarousel: some View {
         let images = item.images ?? []
         if images.isEmpty {
-            Rectangle()
-                .fill(.fill.secondary)
+            CatalogArtwork(item: item, iconSize: 48)
                 .frame(height: 260)
-                .overlay { Image(systemName: "photo").font(.largeTitle).foregroundStyle(.tertiary) }
+                .clipShape(Rectangle())
         } else {
             TabView(selection: $selectedImageIndex) {
                 ForEach(Array(images.enumerated()), id: \.offset) { index, url in
                     RemoteImage(url: url, contentMode: .fit) {
-                        Rectangle().fill(.fill.secondary)
+                        CatalogArtwork(item: item, iconSize: 48)
                     }
                     .frame(height: 260)
                     .tag(index)

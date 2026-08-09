@@ -1,5 +1,12 @@
 import { createDb } from '@packrat/api/db';
-import { catalogItems, packs, posts, trailConditionReports, trips, users } from '@packrat/db';
+import {
+  catalogItems,
+  packs,
+  posts,
+  trailConditionReports,
+  trips,
+  users,
+} from '@packrat/db/schema';
 import {
   ActiveUsersSchema,
   ActivityPointSchema,

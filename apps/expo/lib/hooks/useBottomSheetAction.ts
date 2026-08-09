@@ -1,9 +1,9 @@
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { useCallback, useRef } from 'react';
 
 export function useBottomSheetAction(sheetRef: React.RefObject<BottomSheetModal | null>) {
   // useRef instead of useState so handleDismiss always reads the latest value.
-  // @gorhom/bottom-sheet captures the onDismiss callback reference when the
+  // The sheet captures the onDismiss callback reference when the
   // close animation begins — before a setState re-render has been committed.
   // A state-based pending would still be null in that captured closure, causing
   // the action to silently no-op on the first tap and only fire on the second

@@ -50,10 +50,8 @@ vi.mock('@packrat/api/utils/email', () => ({
   sendPasswordResetEmail: mocks.sendPasswordResetEmail,
 }));
 vi.mock('@packrat/api/utils/auth', () => ({
-  timingSafeEqual: mocks.timingSafeEqual,
-}));
-vi.mock('@better-auth/utils/password', () => ({
   hashPassword: mocks.hashPassword,
+  timingSafeEqual: mocks.timingSafeEqual,
 }));
 vi.mock('@packrat/db', () => ({
   users: {},
@@ -64,6 +62,7 @@ vi.mock('drizzle-orm', () => ({
   and: vi.fn(),
   eq: vi.fn(),
   gt: vi.fn(),
+  relations: vi.fn(() => ({})),
 }));
 
 import { requestPasswordReset, verifyOtpAndResetPassword } from '../passwordResetService';

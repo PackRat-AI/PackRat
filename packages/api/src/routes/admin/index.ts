@@ -1,12 +1,11 @@
 import { cors } from '@elysiajs/cors';
-import { getAuth } from '@packrat/api/auth';
 import { resolveMcpBearerUser } from '@packrat/api/auth/mcp-token';
 import { createDb } from '@packrat/api/db';
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
-import { catalogItems, packs, users } from '@packrat/db';
+import { catalogItems, packs, users } from '@packrat/db/schema';
 import { assertAllDefined, queryBoolean } from '@packrat/guards';
 import {
   AdminCatalogListSchema,
@@ -38,6 +37,11 @@ const BETTER_AUTH_GUARD_TIMEOUT_MS = 5000;
 const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 const ADMIN_JWT_ISSUER = 'packrat-api';
 const ADMIN_JWT_AUDIENCE = 'packrat-admin';
+
+async function loadAuth() {
+  const { getAuth } = await import('@packrat/api/auth');
+  return getAuth;
+}
 
 function checkAdminCredentials({
   username,
@@ -115,6 +119,7 @@ async function verifyBetterAuthAdmin(request: Request): Promise<boolean> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), BETTER_AUTH_GUARD_TIMEOUT_MS);
   try {
+    const getAuth = await loadAuth();
     const auth = await getAuth(env);
     // Run the session lookup in a Promise.race against the timeout so a
     // slow/hanging Neon-backed Better Auth doesn't block the guard.

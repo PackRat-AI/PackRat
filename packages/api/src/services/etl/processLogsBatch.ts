@@ -2,7 +2,7 @@ import { createDbClient } from '@packrat/api/db';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { logger } from '@packrat/api/utils/logger';
 import { record } from '@packrat/api/utils/sentry';
-import { invalidItemLogs, type NewInvalidItemLog } from '@packrat/db';
+import { invalidItemLogs, type NewInvalidItemLog } from '@packrat/db/schema';
 import { updateEtlJobProgress } from './updateEtlJobProgress';
 
 export async function processLogsBatch({

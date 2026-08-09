@@ -27,19 +27,10 @@ Each surviving root override and why it's load-bearing:
 
 - **`react`** — React must resolve to a single copy across React Native, the web apps, and admin. `react-dom`, `react-native`, and essentially every UI library pull `react` transitively; two copies produce "invalid hook call" failures. The override forces one version across all those transitive requirers — a job `catalog:` (direct declarations only) cannot do. Removable once a single transitive `react` is guaranteed without forcing.
 
-`@packrat-ai/nativewindui` remains override-governed because it is the shared
-mobile UI surface and its transitive React Native peer graph must stay aligned
-with the Expo SDK pin. Remove the override only after the wrapper package and
-Expo app can consume the same upstream range without forcing.
-
 The block below is the **authoritative, machine-checked** form of the registry. The `check:overrides` lint parses the single fenced ```json block that follows this heading. Contract: keys are the exact package names that appear in root `overrides`; each value has non-empty `reason` and `removeWhen` string fields. Keep this block in sync with the root `overrides` block — adding an override without a matching entry here (or vice versa) fails the lint.
 
 ```json
 {
-  "@packrat-ai/nativewindui": {
-    "reason": "Forces one NativeWind UI version across the Expo app, @packrat/ui wrapper, and transitive peer graph while the migration off direct nativewindui imports is still in progress.",
-    "removeWhen": "All app imports route through @packrat/ui wrappers and the upstream package range works with the pinned Expo SDK without forcing."
-  },
   "@sinclair/typebox": {
     "reason": "Pins the Elysia/OpenAPI transitive schema package to a version compatible with the API route typing and generated OpenAPI surface.",
     "removeWhen": "Elysia and its plugins converge on a compatible typebox range without an override."

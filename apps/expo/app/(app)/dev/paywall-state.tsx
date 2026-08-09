@@ -1,5 +1,5 @@
 import { isInEarlyAccess, PACKRAT_PRO_ENTITLEMENT } from '@packrat/config';
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { useConnectivity } from 'expo-app/features/purchases/hooks/useConnectivity';
 import { useCustomerInfo } from 'expo-app/features/purchases/hooks/useCustomerInfo';
 import { useFeatureAccessConfig } from 'expo-app/features/purchases/hooks/useFeatureAccess';

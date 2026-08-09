@@ -32,7 +32,9 @@ const WEB_STUBS = {
   'expo-secure-store': 'mocks/expo-secure-store.ts',
   // Keyboard utilities — on web the software keyboard doesn't overlay content
   'react-native-keyboard-controller': 'mocks/react-native-keyboard-controller.tsx',
-  '@react-native-community/datetimepicker': 'mocks/react-native-community-datetimepicker.tsx',
+  // No entry for a date/time picker: @expo/ui/community/datetime-picker ships its own .web
+  // implementation, so it needs no shim (unlike @react-native-community/datetimepicker, which it
+  // replaced).
   // expo-file-system throws UnavailabilityError on web; stub all ops as no-ops
   'expo-file-system/legacy': 'mocks/expo-file-system-legacy.ts',
 };

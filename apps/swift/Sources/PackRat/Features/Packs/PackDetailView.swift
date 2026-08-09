@@ -1,6 +1,7 @@
 import SwiftUI
 import Charts
 import Collections
+import SwiftData
 
 struct PackDetailView: View {
     let pack: Pack
@@ -15,6 +16,9 @@ struct PackDetailView: View {
     @State private var error: String?
     @State private var dropTargetCategory: String?
     @State private var triggerShare = false
+    @State private var itemPendingDeletion: PackItem?
+    @State private var showingDeleteConfirmation = false
+    @Environment(\.modelContext) private var modelContext
 
     private var currentPack: Pack {
         viewModel.packs.first { $0.id == pack.id } ?? pack
@@ -47,13 +51,7 @@ struct PackDetailView: View {
                                 PackItemRow(item: item) {
                                     editingItem = item
                                 } onDelete: {
-                                    Task {
-                                        do {
-                                    try await viewModel.deleteItem(item.id, from: currentPack.id)
-                                        } catch {
-                                            self.error = error.localizedDescription
-                                        }
-                                    }
+                                    requestDelete(item)
                                 } onDetail: {
                                     detailItem = item
                                 }
@@ -139,6 +137,17 @@ struct PackDetailView: View {
         .sheet(isPresented: $showingGapAnalysis) {
             GapAnalysisSheet(pack: currentPack, service: viewModel.service)
         }
+        // See PacksListView: alert actions must be bare `Button`s — a modifier
+        // on one wraps it in `ModifiedContent` and the alert degrades into a
+        // clipped popover with buttons dropped.
+        .alert(deleteItemAlertTitle, isPresented: $showingDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                if let item = itemPendingDeletion { deleteItem(item) }
+            }
+            Button("Cancel", role: .cancel) { itemPendingDeletion = nil }
+        } message: {
+            Text(deleteItemAlertMessage)
+        }
         .navigationDestination(isPresented: $showingWeightAnalysis) {
             PackWeightAnalysisView(pack: currentPack)
         }
@@ -150,6 +159,33 @@ struct PackDetailView: View {
                 NSPasteboard.general.setString(url.absoluteString, forType: .string)
                 #endif
                 triggerShare = false
+            }
+        }
+    }
+
+    private var deleteItemAlertTitle: String {
+        "Delete \(itemPendingDeletion?.name ?? "Item")?"
+    }
+
+    private var deleteItemAlertMessage: String {
+        guard let item = itemPendingDeletion else { return "" }
+        return "\"\(item.name)\" will be removed from this pack. This cannot be undone."
+    }
+
+    /// Captures the row that requested deletion, then presents the alert.
+    private func requestDelete(_ item: PackItem) {
+        itemPendingDeletion = item
+        showingDeleteConfirmation = true
+    }
+
+    private func deleteItem(_ item: PackItem) {
+        itemPendingDeletion = nil
+        Task {
+            do {
+                try await viewModel.deleteItem(item.id, from: currentPack.id, context: modelContext)
+                error = nil
+            } catch {
+                self.error = error.localizedDescription
             }
         }
     }

@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct HomeView: View {
+    var onOpenAssistant: (() -> Void)?
+
     @Environment(AppState.self) private var appState
     @Environment(AuthManager.self) private var authManager
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -110,10 +112,13 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(firstName.isEmpty ? greeting : "\(greeting), \(firstName)")
                     .font(.title2.bold())
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.86)
                     .accessibilityIdentifier("home_greeting")
                 Text("Here's your outdoor dashboard")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
 
             Spacer(minLength: 0)
@@ -140,11 +145,14 @@ struct HomeView: View {
                     Text(summaryTitle)
                         .font(.headline)
                         .foregroundStyle(.primary)
+                        .lineLimit(2)
                     Text(summarySubtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                .layoutPriority(1)
 
                 Spacer(minLength: 0)
             }
@@ -245,6 +253,8 @@ struct HomeView: View {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(value)
                     .font(.headline.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Text(label)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -307,7 +317,13 @@ struct HomeView: View {
             ) { appState.navItem = .packs },
             HomeAction(title: "Trips", subtitle: upcomingTripsSubtitle, symbol: "map.fill", color: .green) { appState.navItem = .trips },
             HomeAction(title: "Weather", subtitle: "Forecasts & alerts", symbol: "cloud.sun.fill", color: .cyan) { appState.navItem = .weather },
-            HomeAction(title: "AI Assistant", subtitle: "Ask about gear & trips", symbol: "bubble.left.and.text.bubble.right", color: .purple) { appState.navItem = .chat },
+            HomeAction(title: "AI Assistant", subtitle: "Ask about gear & trips", symbol: "bubble.left.and.text.bubble.right", color: .purple) {
+                if let onOpenAssistant {
+                    onOpenAssistant()
+                } else {
+                    appState.navItem = .chat
+                }
+            },
             HomeAction(title: "AI Packs", subtitle: "Generate pack ideas", symbol: "sparkles", color: .purple) { appState.navItem = .aiPacks },
             HomeAction(title: "Gear Inventory", subtitle: inventorySubtitle, symbol: "shippingbox.fill", color: .orange) { appState.navItem = .gearInventory },
             HomeAction(title: "Season Suggestions", subtitle: "AI-powered packing tips", symbol: "leaf.fill", color: .mint) { showingSeasonSuggestions = true },
@@ -397,6 +413,8 @@ private struct SummaryActionButton: View {
             HStack(spacing: 6) {
                 Image(systemName: symbol)
                 Text(title)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
             }
             .font(.subheadline.weight(.semibold))
             .frame(maxWidth: .infinity)
@@ -454,11 +472,13 @@ private struct HomeActionRow: View {
                     Text(action.title)
                         .font(.body)
                         .foregroundStyle(.primary)
+                        .lineLimit(1)
                     Text(action.subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
                 }
+                .layoutPriority(1)
 
                 Spacer(minLength: 8)
 

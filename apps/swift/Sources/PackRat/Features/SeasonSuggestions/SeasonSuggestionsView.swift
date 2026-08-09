@@ -9,9 +9,13 @@ final class SeasonSuggestionsService: Sendable {
     init(api: APIClient = .shared) { self.api = api }
 
     func getSuggestions(location: String, date: String) async throws -> SeasonSuggestionsResponse {
+        if VisualSampleData.isEnabled {
+            return VisualSampleData.seasonSuggestions(location: location)
+        }
+
         let endpoint = Endpoint(
             .post,
-            "/api/season-suggestions",
+            "/api/season-suggestions/",
             body: ["location": location, "date": date]
         )
         return try await api.send(endpoint)
@@ -109,6 +113,7 @@ struct SeasonSuggestionsView: View {
                 TextField("e.g. Yosemite, Pacific Crest Trail…", text: $viewModel.location)
                     .submitLabel(.go)
                     .onSubmit { Task { await viewModel.load() } }
+                    .accessibilityIdentifier("season_suggestions_location")
             } header: {
                 Text("Destination")
             } footer: {
@@ -127,6 +132,7 @@ struct SeasonSuggestionsView: View {
                 } label: {
                     Label("Get Suggestions", systemImage: "sparkles")
                 }
+                .accessibilityIdentifier("season_suggestions_submit")
                 .disabled(viewModel.location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isLoading)
             }
         }
@@ -164,6 +170,7 @@ struct SeasonSuggestionsView: View {
                 }
             }
         }
+        .accessibilityIdentifier("season_suggestions_results")
         #if os(iOS)
         .listStyle(.insetGrouped)
         #endif

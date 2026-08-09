@@ -7,7 +7,7 @@ import {
   catalogItemEtlJobs,
   catalogItems,
   type NewCatalogItem,
-} from '@packrat/db';
+} from '@packrat/db/schema';
 import {
   and,
   asc,

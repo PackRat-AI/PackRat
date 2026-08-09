@@ -10,6 +10,7 @@ import UIKit
 final class AuthManager {
     var currentUser: User?
     var isGuest = false
+    var isRestoringSession = false
     var isAuthenticated: Bool { currentUser != nil }
     var canUseApp: Bool { isAuthenticated || isGuest }
 
@@ -25,11 +26,13 @@ final class AuthManager {
             UserDefaults.standard.removeObject(forKey: "current_user")
             UserDefaults.standard.removeObject(forKey: skippedLoginKey)
         }
-        if ProcessInfo.processInfo.arguments.contains("--seed-e2e-auth") {
+        if ProcessInfo.processInfo.arguments.contains("--seed-e2e-auth"),
+           Self.e2eLoginSeedAllowed {
             seedE2EAuthenticatedUser()
             return
         }
         loadStoredUser()
+        restoreStoredSessionIfNeeded()
     }
 
     // MARK: - Auth Actions
@@ -40,6 +43,9 @@ final class AuthManager {
     /// braces guarantee for tests / mock transports.
     func login(email: String, password: String) async throws {
         if seedE2ELoginIfAllowed(email: email, password: password) {
+            await MainActor.run {
+                finishSeededE2ELogin()
+            }
             return
         }
 
@@ -335,6 +341,32 @@ final class AuthManager {
         SentryConfig.setUser(id: user.id, email: user.email)
     }
 
+    private func restoreStoredSessionIfNeeded() {
+        guard currentUser == nil,
+              !isGuest,
+              KeychainService.shared.sessionToken != nil
+        else {
+            return
+        }
+
+        isRestoringSession = true
+        Task {
+            do {
+                try await refreshProfile()
+            } catch PackRatError.unauthorized {
+                await MainActor.run {
+                    signOut()
+                }
+            } catch {
+                // Preserve the token for transient network failures. The app
+                // can still recover on the next launch or explicit refresh.
+            }
+            await MainActor.run {
+                isRestoringSession = false
+            }
+        }
+    }
+
     private func seedE2EAuthenticatedUser() {
         let environment = ProcessInfo.processInfo.environment
         let email = environment["PACKRAT_E2E_EMAIL"] ?? "e2e@packrat.test"
@@ -351,9 +383,10 @@ final class AuthManager {
             updatedAt: nil
         )
 
-        KeychainService.shared.saveSessionToken(
-            environment["PACKRAT_E2E_SESSION_TOKEN"] ?? "packrat-e2e-session"
-        )
+        let sessionToken = environment["PACKRAT_E2E_SESSION_TOKEN"]
+            .flatMap { $0.isEmpty ? nil : $0 }
+            ?? "packrat-e2e-session"
+        KeychainService.shared.saveSessionToken(sessionToken)
         persistUser(user)
         isGuest = false
         currentUser = user
@@ -363,6 +396,7 @@ final class AuthManager {
     private func seedE2ELoginIfAllowed(email: String, password: String) -> Bool {
         let environment = ProcessInfo.processInfo.environment
         guard ProcessInfo.processInfo.arguments.contains("--allow-e2e-login-seed"),
+              Self.e2eLoginSeedAllowed,
               let expectedEmail = environment["PACKRAT_E2E_EMAIL"],
               let expectedPassword = environment["PACKRAT_E2E_PASSWORD"],
               email.caseInsensitiveCompare(expectedEmail) == .orderedSame,
@@ -371,8 +405,16 @@ final class AuthManager {
             return false
         }
 
-        seedE2EAuthenticatedUser()
         return true
+    }
+
+    private func finishSeededE2ELogin() {
+        seedE2EAuthenticatedUser()
+    }
+
+    private static var e2eLoginSeedAllowed: Bool {
+        let value = ProcessInfo.processInfo.environment["PACKRAT_E2E_ALLOW_LOGIN_SEED"] ?? ""
+        return value == "1" || value.caseInsensitiveCompare("true") == .orderedSame
     }
 }
 
