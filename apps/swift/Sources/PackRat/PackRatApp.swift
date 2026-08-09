@@ -28,6 +28,7 @@ struct PackRatApp: App {
         WindowGroup {
             AuthGateView()
                 .environment(authManager)
+                .flushesPendingWrites()
         }
         .modelContainer(PersistenceController.shared.container)
         #if os(macOS)

@@ -11,7 +11,10 @@ final class TripService: Sendable {
         return try await api.send(endpoint)
     }
 
+    /// `id` is caller-supplied so an offline-created trip keeps the same identity
+    /// when the outbox replays its create against the server.
     func createTrip(
+        id: String = UUID().uuidString.lowercased(),
         name: String,
         description: String? = nil,
         startDate: Date? = nil,
@@ -22,7 +25,7 @@ final class TripService: Sendable {
     ) async throws -> Trip {
         let now = Date.iso8601Now()
         let body = CreateTripRequest(
-            id: UUID().uuidString.lowercased(),
+            id: id,
             name: name,
             description: description,
             location: location,

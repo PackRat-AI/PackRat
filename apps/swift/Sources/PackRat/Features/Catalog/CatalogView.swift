@@ -1,5 +1,6 @@
 import SwiftUI
 import NukeUI
+import SwiftData
 
 struct CatalogView: View {
     @Environment(AppState.self) private var appState
@@ -254,6 +255,7 @@ struct AddCatalogItemToPackSheet: View {
     let item: CatalogItem
     let packsViewModel: PacksViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     @State private var selectedPackId: String?
     @State private var quantity = 1
@@ -325,7 +327,8 @@ struct AddCatalogItemToPackSheet: View {
                 category: item.categories?.first,
                 consumable: false,
                 worn: false,
-                notes: nil
+                notes: nil,
+                context: modelContext
             )
             success = true
             Task {
