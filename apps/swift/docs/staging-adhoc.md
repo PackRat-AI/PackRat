@@ -43,9 +43,9 @@ provisioning profile can install the build.
 |---|---|
 | `IOS_DIST_CERT_P12` | base64 of an Apple **Distribution** certificate + private key exported as `.p12` |
 | `IOS_DIST_CERT_PASSWORD` | the password you set when exporting the `.p12` |
-| `IOS_ADHOC_PROVISIONING_PROFILE` | base64 of an **ad-hoc** `.mobileprovision` for `com.andrewbierman.packrat.swift`, listing QA device UDIDs |
+| `IOS_ADHOC_PROVISIONING_PROFILE` | base64 of an **ad-hoc** `.mobileprovision` for `com.andrewbierman.packrat`, listing QA device UDIDs |
 
-Team ID `666HGMV2LU` and bundle id `com.andrewbierman.packrat.swift` are hard-coded in
+Team ID `666HGMV2LU` and bundle id `com.andrewbierman.packrat` are hard-coded in
 the workflow's export options — update them there if they change.
 
 Both the cert and the profile are created **fresh** here (an admin on the Apple
@@ -75,7 +75,7 @@ fastlane run cert \
 #    devices → writes a .mobileprovision.
 fastlane run sigh \
   adhoc:true \
-  app_identifier:com.andrewbierman.packrat.swift \
+  app_identifier:com.andrewbierman.packrat \
   team_id:666HGMV2LU \
   output_path:./signing
 ```
@@ -97,7 +97,7 @@ Portal home: **developer.apple.com/account → Certificates, Identifiers &
 Profiles**. Left menu has **Certificates · Identifiers · Devices · Profiles**.
 
 1. **Devices** → **＋** → register each QA device (name + UDID).
-2. **Identifiers** → confirm an App ID for `com.andrewbierman.packrat.swift`
+2. **Identifiers** → confirm an App ID for `com.andrewbierman.packrat`
    exists; if not, **＋** → App IDs → App → Explicit bundle id → Register.
 3. **Certificates** → **＋** → **Apple Distribution** → follow the CSR steps
    (Keychain Access → Certificate Assistant → Request a Certificate from a CA),
@@ -105,9 +105,9 @@ Profiles**. Left menu has **Certificates · Identifiers · Devices · Profiles**
    In **Keychain Access**, find the cert, expand it, select **both** the cert and
    its private key → right-click → **Export 2 items** → save as `.p12` (set a
    password = `IOS_DIST_CERT_PASSWORD`).
-4. **Profiles** → **＋** → **Ad Hoc** → App ID `com.andrewbierman.packrat.swift`
+4. **Profiles** → **＋** → **Ad Hoc** → App ID `com.andrewbierman.packrat`
    → select the distribution cert from step 3 → check every registered device →
-   name it `PackRat Swift Ad Hoc` → **Generate** → **Download**.
+   name it `PackRat Ad Hoc` → **Generate** → **Download**.
 
 Encode both:
 

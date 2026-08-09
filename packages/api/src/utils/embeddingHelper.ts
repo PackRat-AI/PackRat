@@ -1,4 +1,4 @@
-import type { CatalogItem, PackItem } from '@packrat/db';
+import type { CatalogItem, PackItem } from '@packrat/db/schema';
 import { isObject, isString } from '@packrat/guards';
 
 type ItemForEmbedding = Partial<CatalogItem> | Partial<PackItem>;

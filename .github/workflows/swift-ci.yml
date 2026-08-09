@@ -27,6 +27,7 @@ jobs:
   build-and-smoke:
     name: ${{ matrix.scheme }} (smoke)
     runs-on: macos-15
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -70,24 +71,47 @@ jobs:
             "$(xcrun simctl list runtimes -j | jq -r '.runtimes[] | select(.identifier | contains("iOS-")) | .identifier' | sort -V | tail -1)")
           xcrun simctl boot "$DEVICE_ID"
           xcrun simctl bootstatus "$DEVICE_ID"
+          echo "IOS_SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
 
       - name: Run ${{ matrix.plan }} test plan
+        timeout-minutes: 35
         env:
           E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
         run: |
+          set -o pipefail
           cd apps/swift
           # Use signing-bypass on macOS so CI can build/test without a Mac Development cert
-          # provisioned for the runner. iOS Simulator never needs signing.
-          if [ "${{ matrix.scheme }}" = "PackRat-macOS" ]; then
-            CODE_SIGN_ARGS=(CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_ALLOWED=NO)
+          # provisioned for the runner. iOS Simulator never needs signing, but
+          # it does need the same PACKRAT_E2E_* build settings as the local
+          # wrapper so smoke auth does not depend on repository secrets.
+          if [ "${{ matrix.scheme }}" = "PackRat-iOS" ]; then
+            E2E_EMAIL="${E2E_EMAIL:-e2e@packrattest.local}"
+            E2E_PASSWORD="${E2E_PASSWORD:-E2eTestPass123!}"
+            CODE_SIGN_ARGS=(
+              "PACKRAT_E2E_EMAIL=${E2E_EMAIL}"
+              "PACKRAT_E2E_PASSWORD=${E2E_PASSWORD}"
+              "PACKRAT_E2E_ALLOW_LOGIN_SEED=1"
+              "PACKRAT_ENV=local"
+            )
           else
-            CODE_SIGN_ARGS=()
+            CODE_SIGN_ARGS=(
+              CODE_SIGN_STYLE=Manual
+              DEVELOPMENT_TEAM=
+              CODE_SIGN_IDENTITY=-
+              CODE_SIGNING_ALLOWED=YES
+              CODE_SIGNING_REQUIRED=NO
+            )
           fi
+          DESTINATION="${{ matrix.destination }}"
+          if [ "${{ matrix.scheme }}" = "PackRat-iOS" ]; then
+            DESTINATION="platform=iOS Simulator,id=${IOS_SIMULATOR_ID}"
+          fi
+          echo "Testing ${{ matrix.scheme }} on ${DESTINATION}"
 
           xcodebuild test \
             -scheme "${{ matrix.scheme }}" \
-            -destination "${{ matrix.destination }}" \
+            -destination "${DESTINATION}" \
             -testPlan "${{ matrix.plan }}" \
             -resultBundlePath "/tmp/${{ matrix.scheme }}-smoke.xcresult" \
             -quiet \
@@ -100,7 +124,12 @@ jobs:
           if [ -d "/tmp/${{ matrix.scheme }}-smoke.xcresult" ]; then
             xcrun xcresulttool get test-results summary \
               --path "/tmp/${{ matrix.scheme }}-smoke.xcresult" --compact \
+              | tee "/tmp/${{ matrix.scheme }}-smoke-summary.json" \
               | jq '{ result, totalTestCount, passedTests, failedTests, skippedTests, expectedFailures }' || true
+            if [ -f "/tmp/${{ matrix.scheme }}-smoke-summary.json" ]; then
+              jq -e '.result == "Passed" and (.failedTests // 0) == 0' \
+                "/tmp/${{ matrix.scheme }}-smoke-summary.json" >/dev/null
+            fi
           fi
 
       - name: Upload xcresult on failure

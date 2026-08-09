@@ -7,9 +7,12 @@ module.exports = {
   content: [
     './app/**/*.{js,jsx,ts,tsx}',
     './components/**/*.{js,jsx,ts,tsx}',
-    './features/**/components/**/*.{js,jsx,ts,tsx}',
-    './features/**/screens/**/*.{js,jsx,ts,tsx}',
-    '../../node_modules/@packrat-ai/nativewindui/**/*.{js,jsx,ts,tsx}',
+    './screens/**/*.{js,jsx,ts,tsx}',
+    './features/**/*.{js,jsx,ts,tsx}',
+    // The shared UI package owns every migrated component (NativeWindUI → @expo/ui). Its
+    // class strings live outside apps/expo, so without this glob NativeWind never emits
+    // rules for classes used *only* there and they silently resolve to nothing at runtime.
+    '../../packages/ui/src/**/*.{js,jsx,ts,tsx}',
   ],
   presets: [require('nativewind/preset')],
   theme: {

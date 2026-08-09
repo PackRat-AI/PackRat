@@ -8,7 +8,7 @@ extension CatalogItem {
     var displayBrand: String? { brand?.nilIfEmpty }
 
     var displayWeight: String {
-        guard weight > 0 else { return "" }
+        guard let weight, weight > 0, let weightUnit else { return "" }
         return String(format: "%.0f %@", weight, weightUnit.rawValue)
     }
 
@@ -23,16 +23,25 @@ extension CatalogItem {
 // MARK: - Search response with flexible decoding
 // The search endpoint may return {items, page, limit, total} or a plain array.
 
-struct CatalogSearchResponse: Codable, Sendable {
+struct CatalogSearchResponse: Decodable, Sendable {
     let items: [CatalogItem]
     let total: Int?
     let page: Int?
     let limit: Int?
 
+    private enum CodingKeys: String, CodingKey {
+        case items
+        case total
+        case totalCount
+        case page
+        case limit
+    }
+
     init(from decoder: Decoder) throws {
         if let container = try? decoder.container(keyedBy: CodingKeys.self) {
             items = (try? container.decode([CatalogItem].self, forKey: .items)) ?? []
-            total = try? container.decodeIfPresent(Int.self, forKey: .total)
+            total = (try? container.decodeIfPresent(Int.self, forKey: .total))
+                ?? (try? container.decodeIfPresent(Int.self, forKey: .totalCount))
             page  = try? container.decodeIfPresent(Int.self, forKey: .page)
             limit = try? container.decodeIfPresent(Int.self, forKey: .limit)
         } else if let arr = try? [CatalogItem](from: decoder) {

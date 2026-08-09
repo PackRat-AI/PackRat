@@ -1,7 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import type { AuthUser } from '@packrat/api/middleware/auth';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
-import { users } from '@packrat/db';
+import { users } from '@packrat/db/schema';
 import { isString } from '@packrat/guards';
 import { eq } from 'drizzle-orm';
 import { createRemoteJWKSet, jwtVerify } from 'jose';

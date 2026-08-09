@@ -145,7 +145,7 @@ export default (): ExpoConfig =>
       {
         name: getAppName(),
         slug: 'packrat',
-        version: '2.1.0',
+        version: '2.2.0',
         scheme: 'packrat',
         web: {
           bundler: 'metro',
@@ -187,7 +187,6 @@ export default (): ExpoConfig =>
             'react-native-maps',
             { iosGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY },
           ],
-          '@react-native-community/datetimepicker',
           '@sentry/react-native',
           'expo-status-bar',
           ['expo-splash-screen', { image: './assets/splash.png' }],

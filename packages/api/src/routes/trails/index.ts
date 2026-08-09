@@ -1,4 +1,5 @@
 import { createOsmDb } from '@packrat/api/db';
+import { firstQueryRow, queryRows } from '@packrat/api/db/queryRows';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { stitchRouteGeometry } from '@packrat/api/services/trails';
 import { captureApiException } from '@packrat/api/utils/sentry';
@@ -74,7 +75,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           LIMIT ${limit + 1} OFFSET ${offset}
         `);
 
-        const rows = z.array(RouteSearchRowSchema).parse(result.rows);
+        const rows = z.array(RouteSearchRowSchema).parse(queryRows(result));
         const hasMore = rows.length > limit;
         const page = rows.slice(0, limit);
 
@@ -157,7 +158,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           WHERE osm_id = ${osmId}
         `);
 
-        const row = RouteDetailRowSchema.nullable().parse(result.rows?.[0] ?? null);
+        const row = RouteDetailRowSchema.nullable().parse(firstQueryRow(result) ?? null);
         if (!row) return status(404, { error: 'Trail not found' });
 
         let geometry: unknown = null;
@@ -233,7 +234,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           WHERE osm_id = ${osmId}
         `);
 
-        const row = RouteSearchRowSchema.nullable().parse(result.rows?.[0] ?? null);
+        const row = RouteSearchRowSchema.nullable().parse(firstQueryRow(result) ?? null);
         if (!row) return status(404, { error: 'Trail not found' });
 
         return {

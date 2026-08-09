@@ -89,3 +89,10 @@ apps/swift/Generated/
 
 # portless (local-dev proxy; state lives in ~/.portless, this is defensive)
 .portless/
+
+# Defensive: `bun expo <subcommand>` (e.g. `bun expo prebuild`) resolves to the expo binary
+# directly instead of the root "expo" script when extra args are passed, running from repo
+# root instead of apps/expo — generates a stray Xcode project here. Always cd into apps/expo
+# (or use `bun ios`/`bun android`) instead of `bun expo <subcommand>`.
+/ios/
+/android/

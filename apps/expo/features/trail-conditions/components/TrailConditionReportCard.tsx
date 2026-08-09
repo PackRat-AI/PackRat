@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { View } from 'react-native';
 import type { TrailConditionReport, TrailSurface, WaterCrossingDifficulty } from '../types';
@@ -110,7 +110,7 @@ export function TrailConditionReportCard({ report }: TrailConditionReportCardPro
         )}
 
         {report.notes ? (
-          <Text variant="body" className="text-foreground">
+          <Text variant="body" className="text-foreground" wrap>
             {report.notes}
           </Text>
         ) : null}

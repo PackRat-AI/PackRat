@@ -51,4 +51,25 @@ struct DeepLinkTests {
         let url = URL(string: "com.andrewbierman.packrat://oauth-callback")!
         #expect(DeepLink.parse(url) == .unknown(url))
     }
+
+    @MainActor
+    @Test("applies parsed links to native navigation state")
+    func appliesLinksToNavigationState() {
+        let state = AppState()
+
+        #expect(state.apply(.pack(id: "pack-1")))
+        #expect(state.navItem == .packs)
+        #expect(state.selectedPackId == "pack-1")
+
+        #expect(state.apply(.trip(id: "trip-1")))
+        #expect(state.navItem == .trips)
+        #expect(state.selectedTripId == "trip-1")
+
+        #expect(state.apply(.weather))
+        #expect(state.navItem == .weather)
+
+        let unknown = URL(string: "packrat://unknown")!
+        #expect(!state.apply(.unknown(unknown)))
+        #expect(state.navItem == .weather)
+    }
 }

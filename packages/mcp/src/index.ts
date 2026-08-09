@@ -34,6 +34,10 @@
  *   GET  /favicon.ico                            → embedded favicon for
  *                                                  Anthropic's domain-ownership
  *                                                  probe.
+ *   GET  /.well-known/openai-apps-challenge      → OpenAI Apps domain
+ *                                                  verification token (from
+ *                                                  OPENAI_APPS_CHALLENGE_TOKEN;
+ *                                                  404 when unset).
  *   *    /mcp[/...]                              → JWT-gated; delegated to the
  *                                                  PackRatMCP Durable Object.
  *   *    *                                       → 404.
@@ -449,6 +453,21 @@ export default {
     }
     if (url.pathname === '/favicon.ico') {
       return withCorrelationHeader({ response: faviconResponse(), correlationId });
+    }
+    // OpenAI Apps domain verification: serve the connector-form-issued token
+    // as plain text so OpenAI can confirm we control this hostname. The token
+    // comes from an env binding (never hardcoded) so it can be rotated without
+    // a code change; when the binding is unset we 404 rather than serving an
+    // empty body, so an unconfigured environment fails closed and visibly.
+    if (url.pathname === '/.well-known/openai-apps-challenge') {
+      const token = env.OPENAI_APPS_CHALLENGE_TOKEN;
+      const response = token
+        ? new Response(token, {
+            status: 200,
+            headers: { 'content-type': 'text/plain; charset=utf-8' },
+          })
+        : Response.json({ error: 'Not Found' }, { status: 404 });
+      return withCorrelationHeader({ response, correlationId });
     }
 
     // ── 3. /mcp — JWT-gated protected resource ───────────────────────────────

@@ -1,5 +1,5 @@
 import { assertDefined } from '@packrat/guards';
-import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { useTripDetailsFromStore } from 'expo-app/features/trips/hooks/useTripDetailsFromStore';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';

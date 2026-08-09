@@ -54,8 +54,8 @@ final class PacksViewModel {
             let cachedPacks = cached.compactMap { $0.toPack() }
             if !cachedPacks.isEmpty {
                 packs = cachedPacks
-                isCacheLoaded = true
             }
+            isCacheLoaded = true
         }
 
         isLoading = packs.isEmpty

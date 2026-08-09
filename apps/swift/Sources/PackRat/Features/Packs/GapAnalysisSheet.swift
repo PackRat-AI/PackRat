@@ -11,6 +11,7 @@ struct GapAnalysisSheet: View {
     @State private var result: GapAnalysisResult?
     @State private var isLoading = false
     @State private var error: String?
+    @FocusState private var isInputFocused: Bool
 
     private let tripTypes = ["hiking", "backpacking", "camping", "climbing", "winter", "desert"]
 
@@ -47,6 +48,9 @@ struct GapAnalysisSheet: View {
         Form {
             Section("Trip Context") {
                 TextField("Destination", text: $destination)
+                    .focused($isInputFocused)
+                    .submitLabel(.done)
+                    .onSubmit { isInputFocused = false }
                 Picker("Trip Type", selection: $tripType) {
                     Text("Any").tag("")
                     ForEach(tripTypes, id: \.self) { type in
@@ -57,6 +61,7 @@ struct GapAnalysisSheet: View {
                     #if os(iOS)
                     .keyboardType(.numberPad)
                     #endif
+                    .focused($isInputFocused)
             }
 
             Section {
@@ -75,6 +80,8 @@ struct GapAnalysisSheet: View {
             }
         }
         .packRatFormStyle()
+        .dismissesKeyboardOnScroll()
+        .keyboardDoneButton(isFocused: $isInputFocused)
     }
 
     // MARK: - Result

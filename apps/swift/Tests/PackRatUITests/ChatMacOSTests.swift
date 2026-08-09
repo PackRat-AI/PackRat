@@ -55,7 +55,7 @@ final class ChatMacOSTests: AppUITestCase {
 
         // User bubble should show "Hi"
         XCTAssertTrue(
-            app.staticTexts["Hi"].waitForExistence(timeout: 5),
+            waitForElement(identifier: "chat_message_user", containing: "Hi", timeout: 5),
             "User message bubble must appear after sending"
         )
 
@@ -65,6 +65,11 @@ final class ChatMacOSTests: AppUITestCase {
         }
         let exp = XCTNSPredicateExpectation(predicate: inputCleared, object: nil)
         _ = XCTWaiter.wait(for: [exp], timeout: 8)
+
+        XCTAssertTrue(
+            waitForElement(identifier: "chat_message_assistant", containing: "three essential items", timeout: 15),
+            "Assistant response must stream back deterministic E2E content"
+        )
     }
 
     func testClearChatHistoryButton() {

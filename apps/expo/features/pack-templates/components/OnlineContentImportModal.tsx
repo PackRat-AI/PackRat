@@ -1,4 +1,6 @@
-import { ActivityIndicator, Text, TextField } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { Text } from '@packrat/ui/src/text';
+import { TextField } from '@packrat/ui/src/text-field';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -116,7 +118,7 @@ export function OnlineContentImportModal({ visible, onClose }: TikTokImportModal
             {/* Content */}
             <View className="flex-1 px-4 py-6">
               <View className="mb-6">
-                <Text className="text-base text-muted-foreground leading-6 mb-4">
+                <Text className="text-base text-muted-foreground leading-6 mb-4" wrap>
                   {t('packTemplates.onlineContentImportDescription')}
                 </Text>
               </View>

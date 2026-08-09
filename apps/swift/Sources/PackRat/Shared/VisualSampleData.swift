@@ -68,6 +68,63 @@ enum VisualSampleData {
         Array(Set(guides.compactMap(\.category))).sorted()
     }
 
+    static func seasonSuggestions(location: String) -> SeasonSuggestionsResponse {
+        SeasonSuggestionsResponse(
+            suggestions: [
+                SeasonSuggestion(
+                    name: "Shoulder Season Overnight",
+                    description: "Balanced kit for \(location) with warmth, rain protection, and reliable camp basics.",
+                    category: "backpacking",
+                    tags: ["shoulder season", "overnight"],
+                    items: [
+                        SeasonSuggestionItem(
+                            name: "Rain shell",
+                            description: "Waterproof layer for shoulder-season weather.",
+                            weight: 210,
+                            weightUnit: "g",
+                            quantity: 1,
+                            category: "clothing",
+                            consumable: false,
+                            worn: false,
+                            image: nil,
+                            notes: "Keep this accessible for changing weather.",
+                            catalogItemId: nil
+                        ),
+                        SeasonSuggestionItem(
+                            name: "Headlamp",
+                            description: "Reliable lighting for short autumn daylight.",
+                            weight: 85,
+                            weightUnit: "g",
+                            quantity: 1,
+                            category: "lighting",
+                            consumable: false,
+                            worn: false,
+                            image: nil,
+                            notes: "Pack fresh batteries before leaving.",
+                            catalogItemId: nil
+                        ),
+                        SeasonSuggestionItem(
+                            name: "Warm layer",
+                            description: "Insulating layer for cool evenings and exposed breaks.",
+                            weight: 320,
+                            weightUnit: "g",
+                            quantity: 1,
+                            category: "clothing",
+                            consumable: false,
+                            worn: true,
+                            image: nil,
+                            notes: "Wear or keep near the top of the pack.",
+                            catalogItemId: nil
+                        ),
+                    ]
+                ),
+            ],
+            totalInventoryItems: 3,
+            location: location,
+            season: "fall"
+        )
+    }
+
     static func catalogItems(matching query: String) -> [CatalogItem] {
         let allItems = [
             CatalogItem(

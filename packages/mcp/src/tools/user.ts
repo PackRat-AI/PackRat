@@ -16,6 +16,7 @@ export function registerUserTools(agent: AgentContext): void {
       annotations: {
         title: 'Get My Profile',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },

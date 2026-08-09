@@ -32,7 +32,7 @@ struct PacksListView: View {
             categoryFilterBar
 
             Group {
-                if viewModel.isLoading && viewModel.packs.isEmpty && !isExplore {
+                if viewModel.isLoading && viewModel.packs.isEmpty && !viewModel.isCacheLoaded && !isExplore {
                     ProgressView("Loading packs…").frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = viewModel.error, viewModel.packs.isEmpty, !isExplore {
                     ErrorView(error, retry: { await viewModel.load(context: modelContext) })
@@ -72,7 +72,6 @@ struct PacksListView: View {
                     Button("New Pack", systemImage: "plus") { showingCreateSheet = true }
                         .accessibilityIdentifier("packs_new_pack_button")
                         .keyboardShortcut("n", modifiers: .command)
-                        .accessibilityIdentifier("new_pack_button")
                 }
                 if viewModel.isLoading || isLoadingPublic {
                     ProgressView().controlSize(.small)
@@ -248,8 +247,11 @@ private struct PackRowView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(pack.name).font(.headline)
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(pack.name)
+                    .font(.headline)
+                    .lineLimit(2)
+                    .layoutPriority(1)
                 Spacer()
                 if let total = pack.totalWeight, total > 0 {
                     Text(pack.formattedWeight(total))
@@ -258,6 +260,7 @@ private struct PackRowView: View {
                         .padding(.horizontal, 7)
                         .padding(.vertical, 2)
                         .background(.fill.tertiary, in: Capsule())
+                        .fixedSize(horizontal: true, vertical: false)
                 }
             }
             HStack(spacing: 8) {
@@ -265,14 +268,17 @@ private struct PackRowView: View {
                     Label(cat.label, systemImage: cat.symbol)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
                 Text("\(pack.itemCount) item\(pack.itemCount == 1 ? "" : "s")")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
                 if pack.isPublic == true {
                     Image(systemName: "globe").font(.caption2).foregroundStyle(.tint)
                 }
             }
+            .lineLimit(1)
         }
         .padding(.vertical, 2)
     }

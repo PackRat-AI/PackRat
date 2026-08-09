@@ -1,4 +1,5 @@
-import { Button, Text } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { AIModeSelector } from 'expo-app/features/ai/components/AIModeSelector';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

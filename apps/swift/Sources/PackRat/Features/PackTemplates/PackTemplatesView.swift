@@ -8,11 +8,14 @@ struct PackTemplatesListView: View {
     @Bindable var viewModel: PackTemplatesViewModel
     @Binding var selectedId: String?
     var packsVM: PacksViewModel = PacksViewModel()
+    var showsGuestLimitInList = true
     @Environment(AuthManager.self) private var authManager
     @State private var showingNewTemplate = false
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    private var isCompact: Bool { horizontalSizeClass == .compact }
+    private var isCompact: Bool {
+        horizontalSizeClass == .compact && UIDevice.current.userInterfaceIdiom == .phone
+    }
     #else
     private var isCompact: Bool { false }
     #endif
@@ -20,40 +23,35 @@ struct PackTemplatesListView: View {
     var body: some View {
         Group {
             if !authManager.isAuthenticated {
-                #if os(macOS)
-                Color.clear
-                #else
-                GuestLimitedView(
-                    "Templates Require an Account",
-                    subtitle: "Pack templates sync with your account so they can be reused across devices.",
-                    systemImage: "doc.on.doc"
-                )
-                #endif
+                if showsGuestLimitInList {
+                    GuestLimitedView(
+                        "Templates Require an Account",
+                        subtitle: "Pack templates sync with your account so they can be reused across devices.",
+                        systemImage: "doc.on.doc"
+                    )
+                } else {
+                    Color.clear
+                }
             } else if viewModel.isLoading && viewModel.templates.isEmpty {
                 ProgressView("Loading templates…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.templates.isEmpty {
                 ErrorView(error, retry: { await viewModel.load() })
-            } else if viewModel.templates.isEmpty {
-                EmptyStateView(
-                    "No Templates Yet",
-                    subtitle: "Templates let you quickly populate a pack with a standard gear list",
-                    systemImage: "doc.on.doc"
-                )
             } else {
                 templateList
             }
         }
         .navigationTitle("Pack Templates")
-        .searchable(text: $viewModel.searchText, prompt: "Search templates")
+        .packTemplateSearchable(text: $viewModel.searchText)
         .task { if authManager.isAuthenticated && viewModel.templates.isEmpty { await viewModel.load() } }
         .refreshable { if authManager.isAuthenticated { await viewModel.load() } }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("New Template", systemImage: "plus") {
-                    showingNewTemplate = true
+            if authManager.isAuthenticated {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("New Template", systemImage: "plus") {
+                        showingNewTemplate = true
+                    }
+                    .accessibilityIdentifier("templates_new_template_button")
                 }
-                .accessibilityIdentifier("templates_new_template_button")
-                .disabled(!authManager.isAuthenticated)
             }
         }
         .sheet(isPresented: $showingNewTemplate) {
@@ -65,7 +63,23 @@ struct PackTemplatesListView: View {
 
     private var templateList: some View {
         List(selection: $selectedId) {
-            if !viewModel.officialTemplates.isEmpty {
+            if viewModel.filteredTemplates.isEmpty {
+                Section {
+                    if viewModel.searchText.isEmpty {
+                        EmptyStateView(
+                            "No Templates Yet",
+                            subtitle: "Templates let you quickly populate a pack with a standard gear list",
+                            systemImage: "doc.on.doc",
+                            actionLabel: "New Template",
+                            action: { showingNewTemplate = true }
+                        )
+                    } else {
+                        ContentUnavailableView.search(text: viewModel.searchText)
+                    }
+                }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            } else if !viewModel.officialTemplates.isEmpty {
                 Section("Official") {
                     ForEach(viewModel.officialTemplates) { t in
                         templateRow(t)
@@ -102,6 +116,21 @@ struct PackTemplatesListView: View {
         }
         .tag(template.id)
         .accessibilityIdentifier("template_row_\(template.id)")
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func packTemplateSearchable(text: Binding<String>) -> some View {
+        #if os(iOS)
+        self.searchable(
+            text: text,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search templates"
+        )
+        #else
+        self.searchable(text: text, prompt: "Search templates")
+        #endif
     }
 }
 

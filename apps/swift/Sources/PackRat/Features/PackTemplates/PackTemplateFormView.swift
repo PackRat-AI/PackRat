@@ -16,6 +16,7 @@ struct PackTemplateFormView: View {
     @State private var category: String
     @State private var isSaving = false
     @State private var error: String?
+    @FocusState private var isInputFocused: Bool
 
     private var isEditing: Bool { existingTemplate != nil }
 
@@ -33,9 +34,13 @@ struct PackTemplateFormView: View {
             Form {
                 Section("Template") {
                     TextField("Name", text: $name)
+                        .focused($isInputFocused)
+                        .submitLabel(.done)
+                        .onSubmit { isInputFocused = false }
                         .accessibilityIdentifier("template_name")
                     TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(2...4)
+                        .focused($isInputFocused)
                         .accessibilityIdentifier("template_description")
                 }
                 Section("Category") {
@@ -45,12 +50,15 @@ struct PackTemplateFormView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .accessibilityIdentifier("template_category")
                 }
                 if let error {
                     InlineErrorView(message: error).listRowBackground(Color.clear)
                 }
             }
             .packRatFormStyle()
+            .dismissesKeyboardOnScroll()
+            .keyboardDoneButton(isFocused: $isInputFocused)
             .navigationTitle(isEditing ? "Edit Template" : "New Template")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

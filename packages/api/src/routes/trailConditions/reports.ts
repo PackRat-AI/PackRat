@@ -1,8 +1,8 @@
 import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { captureApiException } from '@packrat/api/utils/sentry';
-import type { NewTrailConditionReport } from '@packrat/db';
-import { trailConditionReports } from '@packrat/db';
+import type { NewTrailConditionReport } from '@packrat/db/schema';
+import { trailConditionReports } from '@packrat/db/schema';
 import {
   CreateTrailConditionReportRequestSchema,
   UpdateTrailConditionReportRequestSchema,

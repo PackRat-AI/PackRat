@@ -1,4 +1,5 @@
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
+import { isString } from '@packrat/guards';
 
 const bearerPrefixRegex = /^Bearer\s+/i;
 
@@ -19,6 +20,7 @@ export type LocalE2EUser = {
 export function isLocalE2EAuthEnabled(env: ValidatedEnv): boolean {
   const dbUrl = env.NEON_DATABASE_URL;
   return (
+    isString(dbUrl) &&
     (dbUrl.includes('127.0.0.1') || dbUrl.includes('localhost')) &&
     Boolean(env.E2E_TEST_EMAIL) &&
     Boolean(env.E2E_TEST_PASSWORD) &&

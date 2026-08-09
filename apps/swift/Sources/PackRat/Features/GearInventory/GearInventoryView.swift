@@ -75,12 +75,28 @@ struct GearInventoryView: View {
         .searchable(text: $searchText, prompt: "Search gear")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Picker("Sort", selection: $sortOrder) {
+                Menu {
                     ForEach(SortOrder.allCases, id: \.self) { order in
-                        Text(order.rawValue).tag(order)
+                        Button {
+                            sortOrder = order
+                        } label: {
+                            Label(
+                                order.rawValue,
+                                systemImage: order == sortOrder ? "checkmark" : "circle"
+                            )
+                        }
                     }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(sortOrder.rawValue)
+                        Image(systemName: "arrow.up.arrow.down")
+                    }
+                    .font(.subheadline)
+                    .fixedSize()
                 }
-                .pickerStyle(.menu)
+                .accessibilityIdentifier("gear_inventory_sort")
+                .accessibilityLabel("Sort gear inventory")
+                .accessibilityValue(sortOrder.rawValue)
             }
         }
         .task { await appState.packsVM.load(context: modelContext) }
@@ -90,7 +106,7 @@ struct GearInventoryView: View {
     private var inventoryList: some View {
         List {
             Section {
-                HStack(spacing: 16) {
+                HStack(spacing: 10) {
                     statChip(value: "\(allItems.count)", label: "Items", symbol: "archivebox.fill")
                     statChip(value: formattedWeight(totalWeight), label: "Total", symbol: "scalemass.fill")
                     statChip(value: "\(appState.packsVM.packs.count)", label: "Packs", symbol: "backpack.fill")
@@ -116,10 +132,13 @@ struct GearInventoryView: View {
                     .foregroundStyle(Color.accentColor)
                 Text(value)
                     .font(.subheadline.bold())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
             }
             Text(label)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
@@ -141,33 +160,50 @@ private struct GearItemRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(item.name)
                     .font(.body)
+                    .lineLimit(2)
+                    .layoutPriority(1)
                 Spacer()
                 if item.weightInGrams > 0 {
                     Text(formattedWeight(item.weightInGrams * Double(item.quantity)))
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
             }
-            HStack(spacing: 8) {
-                if let cat = item.category {
-                    Label(cat.capitalized, systemImage: "tag")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    metadataItems
                 }
-                Label(item.packName, systemImage: "backpack")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                if item.quantity > 1 {
-                    Text("×\(item.quantity)")
-                        .font(.caption2.bold())
-                        .foregroundStyle(Color.accentColor)
+                VStack(alignment: .leading, spacing: 2) {
+                    metadataItems
                 }
             }
         }
         .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private var metadataItems: some View {
+        if let cat = item.category {
+            Label(cat.capitalized, systemImage: "tag")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        Label(item.packName, systemImage: "backpack")
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+        if item.quantity > 1 {
+            Text("×\(item.quantity)")
+                .font(.caption2.bold())
+                .foregroundStyle(Color.accentColor)
+                .lineLimit(1)
+        }
     }
 
     private func formattedWeight(_ grams: Double) -> String {

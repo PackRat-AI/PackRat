@@ -1,13 +1,9 @@
 import { isString } from '@packrat/guards';
-import {
-  Avatar,
-  AvatarFallback,
-  Button,
-  ContextMenu,
-  createDropdownItem,
-  DropdownMenu,
-  Text,
-} from '@packrat/ui/nativewindui';
+import { Avatar, AvatarFallback } from '@packrat/ui/src/avatar';
+import { Button } from '@packrat/ui/src/button';
+import { ContextMenu } from '@packrat/ui/src/context-menu';
+import { createDropdownItem, DropdownMenu } from '@packrat/ui/src/dropdown-menu';
+import { Text } from '@packrat/ui/src/text';
 import { Portal } from '@rn-primitives/portal';
 import { FlashList } from '@shopify/flash-list';
 import { Icon } from 'expo-app/components/Icon';

@@ -1,4 +1,5 @@
 import type { createOsmDb } from '@packrat/api/db';
+import { firstQueryRow } from '@packrat/api/db/queryRows';
 import type { OsmMember } from '@packrat/schemas/trails';
 import { safeJsonParse } from '@packrat/utils';
 import { sql } from 'drizzle-orm';
@@ -49,7 +50,7 @@ export async function stitchRouteGeometry({
   const row = z
     .object({ geojson: z.string().nullable() })
     .nullable()
-    .parse(result.rows?.[0] ?? null);
+    .parse(firstQueryRow(result) ?? null);
   if (!row?.geojson) return null;
 
   try {

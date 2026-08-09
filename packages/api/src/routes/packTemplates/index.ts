@@ -4,7 +4,7 @@ import { CatalogService } from '@packrat/api/services/catalogService';
 import { createGoogleAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { setQueryTag } from '@packrat/api/utils/queryMetrics';
-import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/db';
+import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/db/schema';
 import { assertDefined } from '@packrat/guards';
 import {
   AIPackAnalysisSchema,
@@ -15,7 +15,6 @@ import {
   UpdatePackTemplateRequestSchema,
 } from '@packrat/schemas/packTemplates';
 import { safeJsonStringify } from '@packrat/utils';
-import { generateObject } from 'ai';
 import { and, eq, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { fetchTranscript } from 'youtube-transcript';
@@ -314,6 +313,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
           throw new Error('No content found in TikTok post (no images or video)');
         }
 
+        const { generateObject } = await import('ai');
         const { object: analysis } = await generateObject({
           model: google('gemini-3-flash-preview'),
           schema: AIPackAnalysisSchema,

@@ -1,7 +1,6 @@
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { generateObject } from 'ai';
 import { z } from 'zod';
 
 const SPECIES_IDENTIFICATION_SYSTEM_PROMPT = `You are an expert naturalist and wildlife biologist specializing in plant and animal identification.
@@ -75,6 +74,7 @@ export class WildlifeIdentificationService {
     });
 
     try {
+      const { generateObject } = await import('ai');
       const { object } = await generateObject({
         model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
         schema: identificationResponseSchema,

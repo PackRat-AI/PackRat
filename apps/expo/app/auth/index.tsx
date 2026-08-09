@@ -1,5 +1,8 @@
-import type { AlertMethods } from '@packrat/ui/nativewindui';
-import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/src/alert';
+import { AlertAnchor } from '@packrat/ui/src/alert';
+import { Button } from '@packrat/ui/src/button';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { Text } from '@packrat/ui/src/text';
 import {
   isLoadingAtom,
   needsReauthAtom,
@@ -100,7 +103,7 @@ export default function AuthIndexScreen() {
               </>
             )}
             {showSignInCopy && (
-              <Text className="pt-4 text-center text-muted-foreground">
+              <Text className="pt-4 text-center text-muted-foreground" wrap>
                 {t('auth.signInMessage')}
               </Text>
             )}

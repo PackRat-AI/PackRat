@@ -1,4 +1,5 @@
 import { createReadOnlyDb } from '@packrat/api/db';
+import { firstQueryRow, queryRows } from '@packrat/api/db/queryRows';
 import { sql } from 'drizzle-orm';
 
 /**
@@ -95,7 +96,7 @@ export class DbMetricsService {
         current_database() AS name,
         pg_database_size(current_database())::text AS size_bytes
     `);
-    const row = rows.rows[0];
+    const row = firstQueryRow(rows);
     return {
       name: row?.name ?? 'unknown',
       sizeBytes: Number(row?.size_bytes ?? 0),
@@ -110,7 +111,7 @@ export class DbMetricsService {
       FROM pg_stat_database
       WHERE datname = current_database()
     `);
-    return rows.rows[0]?.stats_reset ?? null;
+    return firstQueryRow(rows)?.stats_reset ?? null;
   }
 
   private async fetchTables(): Promise<TableMetrics[]> {
@@ -168,7 +169,7 @@ export class DbMetricsService {
       ORDER BY pg_total_relation_size(c.oid) DESC
     `);
 
-    return rows.rows.map((r) => ({
+    return queryRows(rows).map((r) => ({
       name: r.name,
       estimatedRows: Number(r.est_rows),
       heapBytes: Number(r.heap_bytes),
@@ -213,7 +214,7 @@ export class DbMetricsService {
       ORDER BY pg_relation_size(s.indexrelid) DESC
     `);
 
-    return rows.rows.map((r) => ({
+    return queryRows(rows).map((r) => ({
       table: r.table,
       name: r.name,
       bytes: Number(r.bytes),

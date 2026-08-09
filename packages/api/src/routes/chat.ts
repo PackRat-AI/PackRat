@@ -4,20 +4,14 @@ import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { apiAddBreadcrumb, captureApiException } from '@packrat/api/utils/sentry';
-import { reportedContent } from '@packrat/db';
+import { reportedContent } from '@packrat/db/schema';
 import {
   ChatRequestSchema,
   CreateReportRequestSchema,
   UpdateReportStatusRequestSchema,
 } from '@packrat/schemas/chat';
-import {
-  convertToModelMessages,
-  createUIMessageStream,
-  createUIMessageStreamResponse,
-  stepCountIs,
-  streamText,
-  type UIMessage,
-} from 'ai';
+import { safeJsonStringify } from '@packrat/utils';
+import type { UIMessage } from 'ai';
 import { eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -25,7 +19,40 @@ import { DEFAULT_MODELS } from '../utils/ai/models';
 import { getSchemaInfo } from '../utils/DbUtils';
 
 const isE2EStubOpenAiKey = (openAiApiKey: string | undefined) =>
-  openAiApiKey?.startsWith('sk-e2e-stub-') === true;
+  openAiApiKey === 'sk-test' || openAiApiKey?.startsWith('sk-e2e-stub-') === true;
+
+function e2eChatStreamResponse() {
+  const text =
+    'For this e2e pack, three essential items are a shelter, a sleep system, and water treatment.';
+  const stream = new ReadableStream({
+    start(controller) {
+      const encoder = new TextEncoder();
+      controller.enqueue(
+        encoder.encode(
+          `data: ${safeJsonStringify({ type: 'text-start', id: 'e2e-chat-response' })}\n\n`,
+        ),
+      );
+      controller.enqueue(
+        encoder.encode(
+          `data: ${safeJsonStringify({ type: 'text-delta', id: 'e2e-chat-response', delta: text })}\n\n`,
+        ),
+      );
+      controller.enqueue(
+        encoder.encode(
+          `data: ${safeJsonStringify({ type: 'text-end', id: 'e2e-chat-response' })}\n\n`,
+        ),
+      );
+      controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+      controller.close();
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache',
+    },
+  });
+}
 
 export const chatRoutes = new Elysia({ prefix: '/chat' })
   .model({
@@ -63,7 +90,6 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         speedUnit,
       } = typedBody;
 
-      const tools = createTools(user.userId);
       const schemaInfo = await getSchemaInfo();
 
       let systemPrompt = `
@@ -118,25 +144,10 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       }
 
       if (isE2EStubOpenAiKey(OPENAI_API_KEY)) {
-        return createUIMessageStreamResponse({
-          stream: createUIMessageStream({
-            originalMessages: messages,
-            execute: ({ writer }) => {
-              const id = 'e2e-chat-response';
-              writer.write({ type: 'text-start', id });
-              writer.write({
-                type: 'text-delta',
-                id,
-                delta:
-                  'For this e2e pack, three essential items are a shelter, a sleep system, and water treatment.',
-              });
-              writer.write({ type: 'text-end', id });
-              writer.write({ type: 'finish', finishReason: 'stop' });
-            },
-          }),
-        });
+        return e2eChatStreamResponse();
       }
 
+      const tools = await createTools(user.userId);
       const aiProvider = createAIProvider({
         openAiApiKey: OPENAI_API_KEY,
         provider: AI_PROVIDER,
@@ -170,6 +181,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         },
       });
 
+      const { convertToModelMessages, stepCountIs, streamText } = await import('ai');
       const result = streamText({
         model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
         system: systemPrompt,

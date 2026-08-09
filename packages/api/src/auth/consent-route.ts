@@ -26,7 +26,7 @@ import { getAuth } from '@packrat/api/auth';
 import { createDb } from '@packrat/api/db';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { type OAuthClientRecord, renderConsentPage, renderSignInPage } from '@packrat/consent-ui';
-import * as dbSchema from '@packrat/db';
+import * as dbSchema from '@packrat/db/schema';
 import { isString, toRecord, toString as toStr } from '@packrat/guards';
 import { eq } from 'drizzle-orm';
 import { Elysia } from 'elysia';

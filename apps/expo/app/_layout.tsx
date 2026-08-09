@@ -8,7 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
 import { clientEnvs } from '@packrat/env/expo-client';
-import { Alert, type AlertMethods } from '@packrat/ui/nativewindui';
+import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import * as Sentry from '@sentry/react-native';
 import { configureRevenueCat } from 'expo-app/features/purchases';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
