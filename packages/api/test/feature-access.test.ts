@@ -1,6 +1,6 @@
 import { createDbClient } from '@packrat/api/db';
 import { canAccessFeature } from '@packrat/api/services';
-import { featureAccess } from '@packrat/db';
+import { featureAccess } from '@packrat/db/schema';
 import { describe, expect, it } from 'vitest';
 import { app } from '../src/index';
 

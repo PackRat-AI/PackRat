@@ -1,5 +1,5 @@
 import { use$ } from '@legendapp/state/react';
-import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
 import {
   isLoadingAtom,

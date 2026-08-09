@@ -14,7 +14,7 @@
  * which the unit-test pool can't provide.
  */
 
-import { oauthAccessToken, oauthClient, oauthConsent, oauthRefreshToken } from '@packrat/db';
+import { oauthAccessToken, oauthClient, oauthConsent, oauthRefreshToken } from '@packrat/db/schema';
 import { describe, expect, it } from 'vitest';
 
 describe('OAuth provider schema (@packrat/db)', () => {

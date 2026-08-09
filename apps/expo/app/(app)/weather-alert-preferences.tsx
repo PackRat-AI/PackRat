@@ -1,5 +1,7 @@
-import { Form, FormItem, FormSection, Text, Toggle } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
+import { Text } from '@packrat/ui/src/text';
+import { Toggle } from '@packrat/ui/src/toggle';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -85,7 +87,7 @@ export default function WeatherAlertPreferencesScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium">{t('weather.weatherNotifications')}</Text>
-                  <Text variant="caption1" className="text-muted-foreground">
+                  <Text variant="caption1" className="text-muted-foreground" wrap>
                     {t('weather.weatherNotificationsDesc')}
                   </Text>
                 </View>
@@ -102,7 +104,7 @@ export default function WeatherAlertPreferencesScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium">{t('weather.locationMonitoring')}</Text>
-                  <Text variant="caption1" className="text-muted-foreground">
+                  <Text variant="caption1" className="text-muted-foreground" wrap>
                     {t('weather.locationMonitoringDesc')}
                   </Text>
                 </View>
@@ -143,7 +145,7 @@ export default function WeatherAlertPreferencesScreen() {
                       >
                         {t(`weather.${key}` as never)}
                       </Text>
-                      <Text variant="caption1" className="text-muted-foreground">
+                      <Text variant="caption1" className="text-muted-foreground" wrap>
                         {t(`weather.${key}Desc` as never)}
                       </Text>
                     </View>

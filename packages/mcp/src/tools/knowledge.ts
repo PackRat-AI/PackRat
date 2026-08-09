@@ -20,6 +20,7 @@ export function registerKnowledgeTools(agent: AgentContext): void {
       annotations: {
         title: 'Search Outdoor Knowledge Base',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -44,6 +45,7 @@ export function registerKnowledgeTools(agent: AgentContext): void {
       annotations: {
         title: 'Extract URL Content',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: false,
         openWorldHint: true,
       },

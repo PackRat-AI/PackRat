@@ -16,6 +16,7 @@ struct PackTemplateItemFormView: View {
     @State private var notes: String
     @State private var isSaving = false
     @State private var error: String?
+    @FocusState private var isInputFocused: Bool
 
     private var isEditing: Bool { existingItem != nil }
     private let weightUnits = ["g", "kg", "lb", "oz"]
@@ -39,8 +40,12 @@ struct PackTemplateItemFormView: View {
             Form {
                 Section("Item") {
                     TextField("Name", text: $name)
+                        .focused($isInputFocused)
+                        .submitLabel(.done)
+                        .onSubmit { isInputFocused = false }
                     TextField("Notes", text: $notes, axis: .vertical)
                         .lineLimit(2...3)
+                        .focused($isInputFocused)
                 }
                 Section("Weight & Quantity") {
                     LabeledContent("Weight") {
@@ -51,6 +56,7 @@ struct PackTemplateItemFormView: View {
                             #if os(iOS)
                             .keyboardType(.decimalPad)
                             #endif
+                            .focused($isInputFocused)
                         Picker("Unit", selection: $weightUnit) {
                             ForEach(weightUnits, id: \.self) { u in Text(u).tag(u) }
                         }
@@ -62,6 +68,9 @@ struct PackTemplateItemFormView: View {
                 }
                 Section {
                     TextField("Category", text: $category)
+                        .focused($isInputFocused)
+                        .submitLabel(.done)
+                        .onSubmit { isInputFocused = false }
                     Toggle("Worn", isOn: $worn)
                     Toggle("Consumable", isOn: $consumable)
                 } header: {
@@ -74,6 +83,8 @@ struct PackTemplateItemFormView: View {
                 }
             }
             .packRatFormStyle()
+            .dismissesKeyboardOnScroll()
+            .keyboardDoneButton(isFocused: $isInputFocused)
             .navigationTitle(isEditing ? "Edit Item" : "Add Item")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

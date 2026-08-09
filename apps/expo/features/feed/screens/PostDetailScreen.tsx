@@ -1,4 +1,5 @@
-import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -121,7 +122,11 @@ export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps)
 
       {/* Post info */}
       <View className="px-4 py-3">
-        {post.caption && <Text className="text-base mb-3">{post.caption}</Text>}
+        {post.caption && (
+          <Text wrap className="text-base mb-3">
+            {post.caption}
+          </Text>
+        )}
 
         {/* Like row */}
         <View className="flex-row items-center gap-4">

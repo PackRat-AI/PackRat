@@ -78,12 +78,12 @@ final class PackTemplateTests: AppUITestCase {
         goToTab("Templates")
         waitFor(app.buttons["New Template"]).tap()
 
-        // Category picker should be visible
+        selectTemplateCategory("Backpacking")
         XCTAssertTrue(
-            app.buttons.matching(NSPredicate(format: "label CONTAINS 'Category'")).firstMatch
+            app.buttons.matching(NSPredicate(format: "label CONTAINS 'Backpacking'")).firstMatch
                 .waitForExistence(timeout: 5)
-            || app.staticTexts["Category"].waitForExistence(timeout: 2),
-            "Category picker must be visible in template form"
+            || app.staticTexts["Backpacking"].waitForExistence(timeout: 2),
+            "Selected template category must be reflected in the form"
         )
         app.buttons["Cancel"].tap()
     }
@@ -118,6 +118,22 @@ final class PackTemplateTests: AppUITestCase {
             NSPredicate(format: "label BEGINSWITH '\(name)'")
         ).firstMatch
         waitFor(row, timeout: 5)
+    }
+
+    private func selectTemplateCategory(_ category: String) {
+        let picker = app.buttons["template_category"].firstMatch
+        let fallbackPicker = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Category'")).firstMatch
+        let targetPicker = picker.waitForExistence(timeout: 2) ? picker : fallbackPicker
+        waitFor(targetPicker, timeout: 5, message: "Template category picker must be visible")
+        targetPicker.tap()
+
+        let option = app.buttons[category].firstMatch
+        let optionText = app.staticTexts[category].firstMatch
+        if option.waitForExistence(timeout: 5) {
+            option.tap()
+        } else {
+            waitFor(optionText, timeout: 5, message: "Template category option '\(category)' must be visible").tap()
+        }
     }
 
     private func cleanupTemplate(named name: String) {

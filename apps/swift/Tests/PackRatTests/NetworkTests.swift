@@ -37,6 +37,49 @@ struct KeychainServiceTests {
         #expect(keychain.sessionToken == "second")
         keychain.clearTokens()
     }
+
+    @Test("reads and migrates Expo Better Auth session cookie")
+    func readsAndMigratesExpoBetterAuthCookie() {
+        keychain.saveLegacyExpoCookieForTesting("""
+        {"better-auth.session_token":{"value":"legacy-session-token"}}
+        """)
+
+        #expect(keychain.sessionToken == "legacy-session-token")
+
+        keychain.clearLegacyExpoCookieForTesting()
+        #expect(keychain.sessionToken == "legacy-session-token")
+        keychain.clearTokens()
+    }
+
+    @Test("reads Expo secure Better Auth session cookie")
+    func readsExpoSecureBetterAuthCookie() {
+        keychain.saveLegacyExpoCookieForTesting("""
+        {"__Secure-better-auth.session_token":{"value":"secure-legacy-session-token"}}
+        """)
+
+        #expect(keychain.sessionToken == "secure-legacy-session-token")
+        keychain.clearTokens()
+    }
+
+    @Test("ignores invalid Expo cookie payload")
+    func ignoresInvalidExpoCookiePayload() {
+        keychain.saveLegacyExpoCookieForTesting("""
+        {"better-auth.session_token":{"value":""}}
+        """)
+
+        #expect(keychain.sessionToken == nil)
+        keychain.clearTokens()
+    }
+
+    @Test("clearTokens removes Expo Better Auth cookie")
+    func clearTokensRemovesExpoCookie() {
+        keychain.saveLegacyExpoCookieForTesting("""
+        {"better-auth.session_token":{"value":"legacy-session-token"}}
+        """)
+
+        keychain.clearTokens()
+        #expect(keychain.sessionToken == nil)
+    }
 }
 
 // MARK: - APIEndpoint / Endpoint builder

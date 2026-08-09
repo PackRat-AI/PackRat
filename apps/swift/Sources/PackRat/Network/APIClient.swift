@@ -100,6 +100,14 @@ actor APIClient {
         return try await execute(request, as: T.self)
     }
 
+    func sendData(_ endpoint: some APIEndpoint) async throws -> Data {
+        let request = try buildRequest(endpoint, sessionToken: KeychainService.shared.sessionToken)
+        let (data, response) = try await dataWithTransientRetry(for: request)
+        captureSessionTokenIfPresent(response)
+        try validateStatus(response, data: data)
+        return data
+    }
+
     func sendDiscarding(_ endpoint: some APIEndpoint) async throws {
         let request = try buildRequest(endpoint, sessionToken: KeychainService.shared.sessionToken)
         let (data, response) = try await dataWithTransientRetry(for: request)
@@ -247,7 +255,7 @@ actor APIClient {
         guard let http = response as? HTTPURLResponse else { throw PackRatError.unknown }
         if (200...299).contains(http.statusCode) { return }
 
-        let message = (try? JSONDecoder().decode(APIErrorBody.self, from: data))?.displayMessage
+        let message = APIErrorBody.decodeMessage(from: data)
 
         switch http.statusCode {
         // A 401 on a sign-in attempt means "wrong credentials", not "your
@@ -285,11 +293,17 @@ struct APIErrorBody: Decodable {
     let code: String?
 
     /// Prefer the human-readable text; fall back to the machine code so an
-    /// unrecognised body still says something specific.
+    /// unrecognised body still says something specific. Empty strings are
+    /// treated as absent so `{"message":""}` falls through rather than
+    /// surfacing a blank banner.
     var displayMessage: String? {
         if let message, !message.isEmpty { return message }
         if let error, !error.isEmpty { return error }
         if let code, !code.isEmpty { return code }
         return nil
+    }
+
+    static func decodeMessage(from data: Data) -> String? {
+        (try? JSONDecoder().decode(Self.self, from: data))?.displayMessage
     }
 }

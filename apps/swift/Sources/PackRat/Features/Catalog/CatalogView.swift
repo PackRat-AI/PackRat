@@ -3,12 +3,19 @@ import NukeUI
 
 struct CatalogView: View {
     @Environment(AppState.self) private var appState
+    @Environment(AuthManager.self) private var authManager
 
     var body: some View {
         @Bindable var vm = appState.catalogVM
 
         return Group {
-            if vm.isLoading && vm.items.isEmpty {
+            if !authManager.isAuthenticated {
+                GuestLimitedView(
+                    "Catalog Requires an Account",
+                    subtitle: "Gear search syncs with PackRat's catalog service. Local packs and trips still work in guest mode.",
+                    systemImage: "magnifyingglass"
+                )
+            } else if vm.isLoading && vm.items.isEmpty {
                 ProgressView("Searching gear…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = vm.error {
                 ErrorView(error, retry: { await vm.search(reset: true) })
@@ -42,8 +49,16 @@ struct CatalogView: View {
         #else
         .searchable(text: $vm.searchText, prompt: "Search tents, packs, sleeping bags…")
         #endif
-        .onChange(of: vm.searchText) { vm.onSearchTextChanged() }
-        .onSubmit(of: .search) { Task { await vm.search(reset: true) } }
+        .onChange(of: vm.searchText) {
+            if authManager.isAuthenticated {
+                vm.onSearchTextChanged()
+            }
+        }
+        .onSubmit(of: .search) {
+            if authManager.isAuthenticated {
+                Task { await vm.search(reset: true) }
+            }
+        }
         .toolbar {
             if vm.isLoading && !vm.items.isEmpty {
                 ToolbarItem(placement: .secondaryAction) {
@@ -98,9 +113,7 @@ struct CatalogItemRow: View {
     private var rowContent: some View {
         HStack(spacing: 12) {
             RemoteImage(url: item.primaryImage, contentMode: .fill, cornerRadius: 8) {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(.fill.secondary)
-                    .overlay { Image(systemName: "photo").foregroundStyle(.tertiary) }
+                CatalogArtwork(item: item)
             }
             .frame(width: 56, height: 56)
 
@@ -108,25 +121,21 @@ struct CatalogItemRow: View {
                 Text(item.displayName)
                     .font(.headline)
                     .lineLimit(2)
-                HStack(spacing: 8) {
-                    if let brand = item.displayBrand {
-                        Text(brand).font(.caption.bold()).foregroundStyle(.tint)
-                    }
-                    if !item.displayWeight.isEmpty {
-                        Label(item.displayWeight, systemImage: "scalemass")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    if let price = item.displayPrice {
-                        Text(price).font(.caption.bold()).foregroundStyle(.green)
-                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                ViewThatFits(in: .horizontal) {
+                    metadataRow
+                    metadataFlow
                 }
                 if let cats = item.categories, !cats.isEmpty {
                     Text(cats.prefix(2).joined(separator: " · "))
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
                 }
             }
+            .layoutPriority(1)
 
-            Spacer()
+            Spacer(minLength: 8)
 
             VStack(alignment: .trailing, spacing: 4) {
                 if let rating = item.ratingValue, rating > 0 {
@@ -135,12 +144,15 @@ struct CatalogItemRow: View {
                         Text(String(format: "%.1f", rating))
                             .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                     }
+                    .fixedSize(horizontal: true, vertical: false)
                 }
                 if !item.isInStock {
                     Text("Out of Stock")
                         .font(.caption2).foregroundStyle(.red)
+                        .lineLimit(1)
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(.red.opacity(0.1), in: Capsule())
+                        .fixedSize(horizontal: true, vertical: false)
                 }
 
                 Button {
@@ -159,6 +171,80 @@ struct CatalogItemRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+    }
+
+    private var metadataRow: some View {
+        HStack(spacing: 8) {
+            metadataItems
+        }
+        .lineLimit(1)
+    }
+
+    private var metadataFlow: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            metadataItems
+        }
+    }
+
+    @ViewBuilder
+    private var metadataItems: some View {
+        if let brand = item.displayBrand {
+            Text(brand)
+                .font(.caption.bold())
+                .foregroundStyle(.tint)
+                .lineLimit(1)
+        }
+        if !item.displayWeight.isEmpty {
+            Label(item.displayWeight, systemImage: "scalemass")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        if let price = item.displayPrice {
+            Text(price)
+                .font(.caption.bold())
+                .foregroundStyle(.green)
+                .lineLimit(1)
+        }
+    }
+}
+
+struct CatalogArtwork: View {
+    let item: CatalogItem
+    var iconSize: CGFloat = 22
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(tint.opacity(0.14))
+            .overlay {
+                Image(systemName: symbol)
+                    .font(.system(size: iconSize, weight: .semibold))
+                    .foregroundStyle(tint)
+            }
+            .accessibilityHidden(true)
+    }
+
+    private var symbol: String {
+        let category = item.categories?.first?.lowercased() ?? ""
+        if category.contains("tent") || category.contains("shelter") { return "tent" }
+        if category.contains("pack") || category.contains("backpack") { return "backpack" }
+        if category.contains("sleep") || category.contains("bag") || category.contains("quilt") { return "moon.zzz" }
+        if category.contains("water") || category.contains("filter") || category.contains("hydration") { return "drop" }
+        if category.contains("cook") || category.contains("food") || category.contains("kitchen") { return "fork.knife" }
+        if category.contains("cloth") || category.contains("jacket") || category.contains("rain") { return "tshirt" }
+        if category.contains("light") || category.contains("lamp") { return "flashlight.on.fill" }
+        if category.contains("safety") || category.contains("first aid") { return "cross.case" }
+        return "mountain.2"
+    }
+
+    private var tint: Color {
+        let category = item.categories?.first?.lowercased() ?? ""
+        if category.contains("water") || category.contains("filter") || category.contains("hydration") { return .cyan }
+        if category.contains("cook") || category.contains("food") || category.contains("kitchen") { return .orange }
+        if category.contains("safety") || category.contains("first aid") { return .red }
+        if category.contains("sleep") || category.contains("bag") || category.contains("quilt") { return .indigo }
+        if category.contains("cloth") || category.contains("jacket") || category.contains("rain") { return .teal }
+        return .blue
     }
 }
 
@@ -233,8 +319,8 @@ struct AddCatalogItemToPackSheet: View {
             try await packsViewModel.addItem(
                 to: packId,
                 name: item.displayName,
-                weight: item.weight,
-                weightUnit: item.weightUnit.rawValue,
+                weight: item.weight ?? 0,
+                weightUnit: item.weightUnit?.rawValue ?? WeightUnit.g.rawValue,
                 quantity: quantity,
                 category: item.categories?.first,
                 consumable: false,

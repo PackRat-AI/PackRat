@@ -1,5 +1,5 @@
 import { assertDefined } from '@packrat/guards';
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -51,7 +51,9 @@ export function PackTemplateItemDetailScreen() {
           <Text className="mb-3 text-muted-foreground">{item.category}</Text>
 
           {item.description && (
-            <Text className="mb-4 text-muted-foreground">{item.description}</Text>
+            <Text className="mb-4 text-muted-foreground" wrap>
+              {item.description}
+            </Text>
           )}
 
           <View className="mb-4 flex-row justify-between">
@@ -104,7 +106,9 @@ export function PackTemplateItemDetailScreen() {
           {itemHasNotes && (
             <View className="mt-2">
               <Text className="mb-1 text-xs text-muted-foreground">{t('packTemplates.notes')}</Text>
-              <Text className="text-foreground">{itemNotes}</Text>
+              <Text className="text-foreground" wrap>
+                {itemNotes}
+              </Text>
             </View>
           )}
         </View>

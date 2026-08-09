@@ -1,7 +1,7 @@
 import { join } from 'node:path';
+import { preloadDbDrivers } from '@packrat/api/db';
 import { nodeEnv } from '@packrat/env/node';
 import { Miniflare } from 'miniflare';
-import worker from '../src/e2e-worker';
 
 const port = Number(nodeEnv.PORT ?? 8787);
 
@@ -10,6 +10,7 @@ const kvPersist =
 
 const noop = async () => {};
 
+console.log(`Preparing PackRat e2e API on port ${port}...`);
 const miniflare = new Miniflare({
   script: 'export default { fetch() { return new Response("ok") } }',
   modules: true,
@@ -17,7 +18,9 @@ const miniflare = new Miniflare({
   kvPersist,
   logRequests: false,
 });
+console.log('Loading PackRat e2e AUTH_KV namespace...');
 const authKv = await miniflare.getKVNamespace('AUTH_KV');
+console.log('PackRat e2e AUTH_KV namespace loaded.');
 
 const bucket = {
   get: async () => null,
@@ -53,6 +56,14 @@ const ctx = {
   waitUntil: () => {},
   passThroughOnException: () => {},
 };
+
+console.log('Preloading PackRat e2e DB drivers...');
+await preloadDbDrivers();
+console.log('PackRat e2e DB drivers loaded.');
+
+console.log('Loading PackRat e2e worker...');
+const { default: worker } = await import('../src/e2e-worker');
+console.log('PackRat e2e worker loaded.');
 
 Bun.serve({
   port,

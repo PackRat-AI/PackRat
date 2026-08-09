@@ -29,7 +29,10 @@ const mocks = vi.hoisted(() => {
 vi.mock('@packrat/api/db', () => ({ createDb: mocks.createDb }));
 vi.mock('@packrat/api/utils/auth', () => ({ hashPassword: mocks.hashPassword }));
 vi.mock('@packrat/db', () => ({ users: { email: 'email', id: 'id' } }));
-vi.mock('drizzle-orm', () => ({ eq: vi.fn() }));
+vi.mock('drizzle-orm', () => ({
+  eq: vi.fn(),
+  relations: vi.fn(() => ({})),
+}));
 
 import { UserService } from '../userService';
 
@@ -69,7 +72,7 @@ describe('UserService', () => {
       await service.findByEmail('ALICE@EXAMPLE.COM');
       // UserService calls eq(users.email, email.toLowerCase()), which is called with the lowercased value
       const { eq } = await import('drizzle-orm');
-      const { users } = await import('@packrat/db');
+      const { users } = await import('@packrat/db/schema');
       expect(vi.mocked(eq)).toHaveBeenCalledWith(users.email, 'alice@example.com');
     });
   });

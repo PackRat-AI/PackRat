@@ -1,4 +1,6 @@
-import { Avatar, AvatarFallback, AvatarImage, ListItem, Text } from '@packrat/ui/nativewindui';
+import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/src/avatar';
+import { ListItem } from '@packrat/ui/src/list';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

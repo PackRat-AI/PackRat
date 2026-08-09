@@ -1,5 +1,6 @@
 import { EvilIcons, Ionicons } from '@expo/vector-icons';
-import { Card, CardContent, Text } from '@packrat/ui/nativewindui';
+import { Card, CardContent } from '@packrat/ui/src/card';
+import { Text } from '@packrat/ui/src/text';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Pressable, View } from 'react-native';
@@ -32,10 +33,10 @@ export function ErrorState({ error, onRetry, onClear }: ErrorStateProps) {
               {t('errors.contextOverflow.title')}
             </Text>
           </View>
-          <Text variant="caption1" className="text-muted-foreground">
+          <Text variant="caption1" className="text-muted-foreground" wrap>
             {t('errors.contextOverflow.description')}
           </Text>
-          <Text variant="caption1" className="text-muted-foreground">
+          <Text variant="caption1" className="text-muted-foreground" wrap>
             {t('errors.contextOverflow.hint')}
           </Text>
           {onClear && (
@@ -59,7 +60,7 @@ export function ErrorState({ error, onRetry, onClear }: ErrorStateProps) {
         <View className="flex-1 flex-row items-center gap-2 pr-2">
           <Ionicons name="alert-circle-outline" size={24} color={colors.destructive} />
 
-          <Text variant="caption2" numberOfLines={2}>
+          <Text variant="caption2" numberOfLines={2} wrap>
             {t('errors.looksLikeError')}
           </Text>
         </View>

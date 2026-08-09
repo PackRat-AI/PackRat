@@ -118,6 +118,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       annotations: {
         title: 'List Pack Templates',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -136,6 +137,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Pack Template',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -366,6 +368,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       annotations: {
         title: 'List Pack Template Items',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },

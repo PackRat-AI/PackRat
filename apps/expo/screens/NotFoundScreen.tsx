@@ -1,5 +1,5 @@
 'use client';
-import { Button } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';

@@ -16,15 +16,16 @@ final class WeatherViewModel {
     var searchError: String?
     var forecastError: String?
 
-    private let service: WeatherService
+    private let service: any WeatherServicing
     private var searchTask: Task<Void, Never>?
 
-    init(service: WeatherService = .shared) {
+    init(service: any WeatherServicing = WeatherService.shared, loadPersistedState: Bool = true) {
         self.service = service
         if VisualSampleData.isUITestFixturesEnabled {
             UserDefaults.standard.removeObject(forKey: savedLocationsKey)
             UserDefaults.standard.removeObject(forKey: activeLocationKey)
         }
+        guard loadPersistedState else { return }
         guard !VisualSampleData.isScreenshotCapture else { return }
         loadSavedLocations()
         if let active = savedLocations.first(where: { $0.id == UserDefaults.standard.integer(forKey: activeLocationKey) })
@@ -106,15 +107,15 @@ final class WeatherViewModel {
         searchResults = []
         searchText = ""
         UserDefaults.standard.set(location.id, forKey: activeLocationKey)
-        await loadForecast(for: location.id)
+        await loadForecast(for: location)
     }
 
-    func loadForecast(for locationId: Int) async {
+    func loadForecast(for location: WeatherLocation) async {
         if (VisualSampleData.isEnabled || VisualSampleData.isUITestFixturesEnabled),
-           let location = selectedLocation ?? VisualSampleData.weatherLocations.first(where: { $0.id == locationId }) {
+           let selected = selectedLocation ?? VisualSampleData.weatherLocations.first(where: { $0.id == location.id }) {
             isLoadingForecast = false
             forecastError = nil
-            forecast = VisualSampleData.weatherForecast(for: location)
+            forecast = VisualSampleData.weatherForecast(for: selected)
             return
         }
 
@@ -128,14 +129,18 @@ final class WeatherViewModel {
         forecastError = nil
         defer { isLoadingForecast = false }
         do {
-            forecast = try await service.getForecast(locationId: locationId)
+            forecast = try await service.getForecast(locationId: location.id)
         } catch {
-            forecastError = error.localizedDescription
+            do {
+                forecast = try await service.getForecast(query: location.displayName)
+            } catch {
+                forecastError = error.localizedDescription
+            }
         }
     }
 
     func refresh() async {
-        guard let id = selectedLocation?.id else { return }
-        await loadForecast(for: id)
+        guard let location = selectedLocation else { return }
+        await loadForecast(for: location)
     }
 }

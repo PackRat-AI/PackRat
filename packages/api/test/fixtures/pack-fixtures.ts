@@ -1,4 +1,4 @@
-import type { packItems, packs } from '@packrat/db';
+import type { packItems, packs } from '@packrat/db/schema';
 import type { InferInsertModel } from 'drizzle-orm';
 
 type PackOverrides = Partial<InferInsertModel<typeof packs>> & { userId: string };

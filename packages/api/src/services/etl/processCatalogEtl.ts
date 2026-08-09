@@ -2,7 +2,7 @@ import { createDbClient } from '@packrat/api/db';
 import { mapCsvRowToItem } from '@packrat/api/utils/csv-utils';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { isJsonlFile, mapJsonRowToItem } from '@packrat/api/utils/json-utils';
-import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/db';
+import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/db/schema';
 import { toRecord } from '@packrat/guards';
 import { safeJsonParse } from '@packrat/utils';
 import { parse } from 'csv-parse';

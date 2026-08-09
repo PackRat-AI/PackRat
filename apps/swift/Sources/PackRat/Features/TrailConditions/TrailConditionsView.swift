@@ -5,11 +5,14 @@ import SwiftUI
 struct TrailConditionsListView: View {
     @Bindable var viewModel: TrailConditionsViewModel
     @Binding var selectedId: String?
+    var showsGuestLimitInList = true
     @Environment(AuthManager.self) private var authManager
     @State private var showingSubmitSheet = false
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    private var isCompact: Bool { horizontalSizeClass == .compact }
+    private var isCompact: Bool {
+        horizontalSizeClass == .compact && UIDevice.current.userInterfaceIdiom == .phone
+    }
     #else
     private var isCompact: Bool { false }
     #endif
@@ -17,15 +20,15 @@ struct TrailConditionsListView: View {
     var body: some View {
         Group {
             if !authManager.isAuthenticated {
-                #if os(macOS)
-                Color.clear
-                #else
-                GuestLimitedView(
-                    "Trail Reports Require an Account",
-                    subtitle: "Community trail conditions are shared through your PackRat account.",
-                    systemImage: "figure.hiking"
-                )
-                #endif
+                if showsGuestLimitInList {
+                    GuestLimitedView(
+                        "Trail Reports Require an Account",
+                        subtitle: "Community trail conditions are shared through your PackRat account.",
+                        systemImage: "figure.hiking"
+                    )
+                } else {
+                    Color.clear
+                }
             } else if viewModel.isLoading && viewModel.reports.isEmpty {
                 ProgressView("Loading reports…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.reports.isEmpty {
@@ -45,10 +48,11 @@ struct TrailConditionsListView: View {
         .navigationTitle("Trail Conditions")
         .searchable(text: $viewModel.searchText, prompt: "Search trails")
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Submit Report", systemImage: "plus") { showingSubmitSheet = true }
-                    .accessibilityIdentifier("trail_conditions_submit_report_button")
-                    .disabled(!authManager.isAuthenticated)
+            if authManager.isAuthenticated {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Submit Report", systemImage: "plus") { showingSubmitSheet = true }
+                        .accessibilityIdentifier("trail_conditions_submit_report_button")
+                }
             }
         }
         .task { if authManager.isAuthenticated && viewModel.reports.isEmpty { await viewModel.load() } }
@@ -246,6 +250,7 @@ struct SubmitTrailConditionView: View {
     @State private var notes = ""
     @State private var isSubmitting = false
     @State private var error: String?
+    @FocusState private var isInputFocused: Bool
 
     private let hazardOptions = ["Downed trees", "Muddy sections", "Ice", "High water", "Rock slides", "Wildlife", "Washed out trail"]
     private var isValid: Bool { !trailName.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -255,8 +260,14 @@ struct SubmitTrailConditionView: View {
             Form {
                 Section("Trail") {
                     TextField("Trail", text: $trailName)
+                        .focused($isInputFocused)
+                        .submitLabel(.done)
+                        .onSubmit { isInputFocused = false }
                         .accessibilityIdentifier("trail_report_name")
                     TextField("Region", text: $trailRegion)
+                        .focused($isInputFocused)
+                        .submitLabel(.done)
+                        .onSubmit { isInputFocused = false }
                         .accessibilityIdentifier("trail_report_region")
                 }
                 Section("Conditions") {
@@ -284,11 +295,14 @@ struct SubmitTrailConditionView: View {
                 Section("Notes") {
                     TextField("Describe conditions in detail…", text: $notes, axis: .vertical)
                         .lineLimit(4, reservesSpace: true)
+                        .focused($isInputFocused)
                         .accessibilityIdentifier("trail_report_notes")
                 }
                 if let error { Section { InlineErrorView(message: error) } }
             }
             .packRatFormStyle()
+            .dismissesKeyboardOnScroll()
+            .keyboardDoneButton(isFocused: $isInputFocused)
             .navigationTitle("Submit Report")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

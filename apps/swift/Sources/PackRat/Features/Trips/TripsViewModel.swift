@@ -66,8 +66,8 @@ final class TripsViewModel {
             let cachedTrips = cached.compactMap { $0.toTrip() }
             if !cachedTrips.isEmpty {
                 trips = cachedTrips
-                isCacheLoaded = true
             }
+            isCacheLoaded = true
         }
 
         isLoading = trips.isEmpty

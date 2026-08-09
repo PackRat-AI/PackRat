@@ -9,6 +9,9 @@ struct PackRatWatchApp: App {
             WatchRootView()
                 .environment(connectivity)
                 .task {
+                    guard ProcessInfo.processInfo.environment["PACKRAT_WATCH_DISABLE_CONNECTIVITY"] != "1" else {
+                        return
+                    }
                     connectivity.activate()
                 }
         }
@@ -20,6 +23,8 @@ private struct WatchRootView: View {
 
     var body: some View {
         switch ProcessInfo.processInfo.environment["PACKRAT_WATCH_SCREENSHOT_ROUTE"] {
+        case "dashboard":
+            TrailReadyView(snapshot: connectivity.snapshot, isPhoneReachable: connectivity.isPhoneReachable)
         case "checklist":
             WatchChecklistView(pack: connectivity.snapshot.pack)
         case "weather":
@@ -74,6 +79,7 @@ private struct TrailReadyView: View {
                             Text(tripSubtitle)
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
+                                .lineLimit(2)
                                 .fixedSize(horizontal: false, vertical: true)
 
                             Divider()
@@ -84,11 +90,7 @@ private struct TrailReadyView: View {
                                 value: "\(snapshot.pack.packedItemCount)/\(snapshot.pack.totalItemCount)",
                                 symbol: "backpack"
                             )
-                            WatchMetricRow(
-                                title: "Weather",
-                                value: "\(snapshot.weather.temperatureText) \(snapshot.weather.conditionText)",
-                                symbol: snapshot.weather.symbolName
-                            )
+                            WatchMetricRow(title: "Weather", value: snapshot.weather.temperatureText, symbol: snapshot.weather.symbolName)
                         }
                     }
                 } else {
@@ -115,7 +117,7 @@ private struct TrailReadyView: View {
         guard let trip = snapshot.trip else {
             return "Quick wrist access for the next pack, weather, and trail notes."
         }
-        return [trip.name, trip.locationName, trip.dateText]
+        return [trip.locationName, trip.dateText]
             .compactMap { $0 }
             .joined(separator: " - ")
     }
@@ -181,18 +183,25 @@ private struct WatchTrailReportView: View {
         NavigationStack {
             List {
                 Section {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label(trail.title, systemImage: "figure.hiking")
-                            .font(.headline)
-                            .lineLimit(2)
-                        if connectivity.lastDraft != nil {
-                            Label("Draft queued", systemImage: "checkmark.circle.fill")
-                                .font(.caption)
-                                .foregroundStyle(.green)
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Label(trail.title, systemImage: "figure.hiking")
+                                .font(.subheadline.weight(.semibold))
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.85)
+                            Spacer(minLength: 4)
+                            if connectivity.lastDraft != nil {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.caption)
+                                    .accessibilityLabel("Draft queued")
+                            }
                         }
+                        .foregroundStyle(connectivity.lastDraft == nil ? Color.primary : Color.green)
+
                         WatchMetricRow(title: "Condition", value: trail.conditionText, symbol: "leaf")
                         WatchMetricRow(title: "Hazards", value: "\(trail.hazardCount)", symbol: "exclamationmark.triangle")
                     }
+                    .padding(.vertical, 2)
                 }
 
                 Section("Condition") {
@@ -241,10 +250,13 @@ private struct WatchMetricRow: View {
                 .foregroundStyle(.tint)
                 .frame(width: 18)
             Text(title)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
             Spacer()
             Text(value)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .font(.caption)
     }

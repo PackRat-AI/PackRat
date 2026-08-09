@@ -55,5 +55,34 @@ final class SeasonSuggestionsMacOSTests: AppUITestCase {
 
         app.buttons["Done"].tapIfExists()
     }
+
+    func testGetSuggestionsReturnsDeterministicResults() {
+        goToSidebar("Home")
+
+        let tile = app.buttons["home_action_seasonsuggestions"]
+        guard tile.waitForExistence(timeout: 8) else {
+            XCTFail("Season Suggestions tile not found on Home")
+            return
+        }
+        tile.click()
+
+        let locationField = app.textFields["season_suggestions_location"]
+        waitFor(locationField, timeout: 5, message: "Season Suggestions location field must be visible")
+        locationField.click()
+        locationField.typeText("Yosemite")
+
+        let getButton = app.buttons["season_suggestions_submit"]
+        waitFor(getButton, timeout: 5)
+        XCTAssertTrue(getButton.isEnabled, "Get Suggestions must enable when location is entered")
+        getButton.click()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["season_suggestions_results"].waitForExistence(timeout: 20)
+            || app.staticTexts["Shoulder Season Overnight"].waitForExistence(timeout: 2),
+            "Season Suggestions must render deterministic E2E results"
+        )
+
+        app.buttons["Done"].tapIfExists()
+    }
 }
 #endif

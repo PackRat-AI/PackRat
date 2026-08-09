@@ -105,6 +105,7 @@ struct ResetPasswordView: View {
     @State private var confirmPassword = ""
     @State private var isLoading = false
     @State private var error: String?
+    @FocusState private var isInputFocused: Bool
 
     private var passwordsMismatch: Bool {
         !confirmPassword.isEmpty && password != confirmPassword
@@ -126,6 +127,7 @@ struct ResetPasswordView: View {
                         #if os(iOS)
                         .keyboardType(.numberPad)
                         #endif
+                        .focused($isInputFocused)
                         .onChange(of: code) { _, newValue in
                             code = String(newValue.filter(\.isNumber).prefix(6))
                         }
@@ -181,6 +183,7 @@ struct ResetPasswordView: View {
                     .accessibilityIdentifier("reset_password_back")
             }
         }
+        .keyboardDoneButton(isFocused: $isInputFocused)
     }
 
     private var header: some View {
