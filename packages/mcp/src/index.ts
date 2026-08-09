@@ -55,9 +55,11 @@ import { BEARER_REGEX, extractBearer, withCorrelationHeader } from './request-he
 import { registerResources } from './resources';
 import { getVisibleTools } from './scopes';
 import { verifyMcpToken } from './token-verify';
-import { registerAdminTools } from './tools/admin';
+// DISABLED — admin-gated tools are not shipped on the connector surface.
+// import { registerAdminTools } from './tools/admin';
 import { registerAiTools } from './tools/ai';
-import { registerAlltrailsTools } from './tools/alltrails';
+// DISABLED — AllTrails URL preview: upstream site 403s the OG scrape.
+// import { registerAlltrailsTools } from './tools/alltrails';
 import { registerAuthTools } from './tools/auth';
 import { registerCatalogTools } from './tools/catalog';
 import { registerFeedTools } from './tools/feed';
@@ -67,12 +69,14 @@ import { registerPackTools } from './tools/packs';
 import { registerPackTemplateTools } from './tools/packTemplates';
 import { registerSeasonTools } from './tools/seasons';
 import { registerTrailConditionTools } from './tools/trail-conditions';
-import { registerTrailTools } from './tools/trails';
+// DISABLED — trail search/geometry: OSM_DATABASE_URL not provisioned (503).
+// import { registerTrailTools } from './tools/trails';
 import { registerTripTools } from './tools/trips';
 import { registerUploadTools } from './tools/upload';
 import { registerUserTools } from './tools/user';
 import { registerWeatherTools } from './tools/weather';
-import { registerWildlifeTools } from './tools/wildlife';
+// DISABLED — wildlife identification: entitlements table missing → 500.
+// import { registerWildlifeTools } from './tools/wildlife';
 import type { AgentContext, Env, Props } from './types';
 
 export type { Env };
@@ -322,21 +326,28 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
     registerWeatherTools(this);
     registerKnowledgeTools(this);
     registerTrailConditionTools(this);
-    registerTrailTools(this);
+    // DISABLED — trail search/geometry: OSM_DATABASE_URL not provisioned (503).
+    // registerTrailTools(this);
     registerFeedTools(this);
     registerSeasonTools(this);
-    registerWildlifeTools(this);
-    registerAlltrailsTools(this);
+    // DISABLED — wildlife identification: entitlements table missing → 500.
+    // registerWildlifeTools(this);
+    // DISABLED — AllTrails URL preview: upstream site 403s the OG scrape.
+    // registerAlltrailsTools(this);
     registerUploadTools(this);
     registerGuidesTools(this);
     registerAiTools(this);
 
     // ── Admin ──────────────────────────────────────────────────────────────
-    // Admin tools register as ordinary tools; visibility is decided by the
-    // post-init scope filter below. The session's granted scopes live in
-    // `(this.props as { scopes?: readonly string[] }).scopes` — set in the
-    // outer fetch wrapper from the verified JWT's `scope` claim.
-    registerAdminTools(this);
+    // DISABLED — admin-gated tools are intentionally NOT registered on the
+    // connector surface. The runtime scope filter would already hide them
+    // from non-admin sessions, but we don't ship them at all. This removes
+    // all `packrat_admin_*` tools; the other admin-classified tools
+    // (`packrat_execute_sql_query`, `packrat_get_database_schema`,
+    // `packrat_create_app_pack_template`,
+    // `packrat_generate_pack_template_from_url`) are disabled at their own
+    // registration sites in tools/ai.ts and tools/packTemplates.ts.
+    // registerAdminTools(this);
 
     // ── Resources + prompts ────────────────────────────────────────────────
     registerResources(this);

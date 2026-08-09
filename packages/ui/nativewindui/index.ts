@@ -1,64 +1,39 @@
-// NativeWindUI → Expo UI migration tracker
+// NativeWindUI → Expo UI migration tracker — COMPLETE
 //
-// Each export line is one component still backed by @packrat-ai/nativewindui.
-// Delete a line when its packages/ui/src/ replacement lands.
-// When this file is empty: remove @packrat-ai/nativewindui from package.json
-// and drop PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN from bunfig.toml.
+// Every component originally exported from this file has been ported to packages/ui/src/.
+// @packrat-ai/nativewindui has been removed from packages/ui/package.json and apps/expo's
+// direct dependency; PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN has been dropped from bunfig.toml.
 //
-// Run `bun check:migration` for per-phase progress.
-// Full plan: docs/migrations/nativewindui-to-expo-ui.md
+// Full history: docs/migrations/nativewindui-to-expo-ui.md
 //
 // Phase 1 ✓ done — useColorScheme → expo-app/lib/hooks/useColorScheme, cn → expo-app/lib/cn
-// Phase 2 — LargeTitleHeader/SearchInput → Stack.Screen + headerSearchBarOptions
-//   LargeTitleHeader ✓ done
-//   SearchInput — reverted, pending re-migration
-export { SearchInput } from '@packrat-ai/nativewindui'; //   uses → headerSearchBarOptions
-export type { SearchInputProps, SearchInputRef } from '@packrat-ai/nativewindui';
+// Phase 2 ✓ done — LargeTitleHeader → Stack.Screen; SearchInput → packages/ui/src/search-input.tsx + .ios.tsx
 //
-// Phase 3 — @expo/ui Universal → packages/ui/src/
-export { Text, TextClassContext, textVariants } from '@packrat-ai/nativewindui'; // 114 uses → @expo/ui Universal Text
-export { Button, buttonVariants, buttonTextVariants } from '@packrat-ai/nativewindui'; //  49 uses → @expo/ui Universal Button
-export type { ButtonProps } from '@packrat-ai/nativewindui';
-export {
-  ListItem,
-  List,
-  ListSectionHeader,
-  getStickyHeaderIndices,
-} from '@packrat-ai/nativewindui'; //  22 uses → @expo/ui Universal ListItem + List
-export type {
-  ListDataItem,
-  ListItemProps,
-  ListProps,
-  ListRef,
-  ListRenderItemInfo,
-  ListSectionHeaderProps,
-} from '@packrat-ai/nativewindui';
-export { Sheet, useSheetRef } from '@packrat-ai/nativewindui'; //  16 uses → @expo/ui Universal BottomSheet
-export { Form, FormSection, FormItem } from '@packrat-ai/nativewindui'; //  24 uses → @expo/ui Universal FieldGroup + SwiftUI Form
-export { TextField } from '@packrat-ai/nativewindui'; //   9 uses → @expo/ui Universal TextInput
-export type { TextFieldProps, TextFieldRef } from '@packrat-ai/nativewindui';
-export { Toggle } from '@packrat-ai/nativewindui'; //   1 use  → @expo/ui Universal Switch
+// Phase 3 ✓ done — @expo/ui Universal → packages/ui/src/
+//   Text/Button/TextClassContext/textVariants/buttonVariants/buttonTextVariants → text.tsx, button.tsx
+//   List/ListItem/ListSectionHeader → list.tsx (plain RN — FlashList + View/Pressable/Text)
+//   Sheet/useSheetRef → bottom-sheet.tsx (@expo/ui/community/bottom-sheet — native sheet)
+//   Form/FormSection/FormItem → form.tsx (plain RN)
+//   TextField → text-field.tsx + .ios.tsx (plain RN — @expo/ui's TextField requires native
+//     observable state via useNativeState, incompatible with TanStack Form's controlled model)
+//   Toggle → toggle.{ios,android}.tsx (@expo/ui SwiftUI Toggle / M3 Switch), toggle.tsx (RN, web)
 //
-// Phase 4 — @expo/ui platform-specific wrappers (.ios.tsx + .android.tsx) in packages/ui/src/
-export { ActivityIndicator } from '@packrat-ai/nativewindui'; //  22 uses → ProgressView (iOS) + LoadingIndicator (Android)
-export { Alert, AlertAnchor } from '@packrat-ai/nativewindui'; //  14 uses → @expo/ui SwiftUI Alert + JC AlertDialog
-export type { AlertMethods } from '@packrat-ai/nativewindui'; //  14 uses
-export {
-  Card,
-  CardContent,
-  CardTitle,
-  CardBadge,
-  CardDescription,
-  CardFooter,
-  CardImage,
-  CardSubtitle,
-} from '@packrat-ai/nativewindui'; //   8 uses → JC Card (Android) + custom View (iOS)
-export { SegmentedControl } from '@packrat-ai/nativewindui'; //   3 uses → @expo/ui community SegmentedControl
-export { Checkbox } from '@packrat-ai/nativewindui'; //   3 uses → @expo/ui Universal Checkbox
-export { ContextMenu, createContextItem, createContextSubMenu } from '@packrat-ai/nativewindui'; //   multiple uses → SwiftUI ContextMenu + JC DropdownMenu
-export type { ContextMenuMethods } from '@packrat-ai/nativewindui';
-export { DropdownMenu, createDropdownItem, createDropdownSubMenu } from '@packrat-ai/nativewindui'; //   multiple uses → @expo/ui DropdownMenu
-export { Toolbar, ToolbarCTA, ToolbarIcon } from '@packrat-ai/nativewindui'; //   multiple uses → platform-specific Toolbar
+// Phase 4 ✓ done — platform-specific wrappers → packages/ui/src/
+//   ActivityIndicator → loading-indicator.ios.tsx + .android.tsx (@expo/ui)
+//   Alert/AlertAnchor → alert.tsx (@rn-primitives/alert-dialog) + alert.ios.tsx (RN core Alert)
+//   Card → card.tsx (plain RN — a native Card attempt renders wrong for reasons not yet pinned
+//     down; RNHostView sizing/className/BlurView were each ruled out. See the migration doc)
+//   SegmentedControl → segmented-control.tsx (@expo/ui community SegmentedControl)
+//   Checkbox → checkbox.android.tsx (@expo/ui M3 Checkbox); checkbox.tsx (@rn-primitives) on
+//     iOS/web — SwiftUI has no checkbox toggle style, only a switch
+//   ContextMenu/createContextItem/createContextSubMenu → context-menu/ (@rn-primitives/context-menu,
+//     react-native-ios-context-menu on iOS)
+//   DropdownMenu/createDropdownItem/createDropdownSubMenu → dropdown-menu/ (@rn-primitives/dropdown-menu,
+//     react-native-ios-context-menu on iOS)
+//   Toolbar/ToolbarCTA/ToolbarIcon → toolbar.tsx (expo-blur)
 //
-// Phase 5 — no @expo/ui equivalent
-export { Avatar, AvatarFallback, AvatarImage } from '@packrat-ai/nativewindui'; //   6 uses → @rn-primitives/avatar
+// Phase 5 ✓ done — no @expo/ui equivalent
+//   Avatar → avatar.tsx (@rn-primitives/avatar)
+//   selectable/uiTextView text → selectable-text.tsx (react-native-uitextview directly — the
+//     same underlying native module the old package used for this feature; no @expo/ui
+//     equivalent exists on any platform for text selection)

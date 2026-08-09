@@ -138,7 +138,9 @@ describe('packrat_list_gear_categories', () => {
   });
 });
 
-describe('packrat_create_catalog_item', () => {
+// DISABLED — packrat_create_catalog_item is not shipped (users shouldn't mint
+// catalog rows via the connector). Re-enable alongside the tool.
+describe.skip('packrat_create_catalog_item', () => {
   it('POSTs a new catalog item and returns a text block', async () => {
     const { agent, server, calls } = makeAgent();
     registerCatalogTools(agent);

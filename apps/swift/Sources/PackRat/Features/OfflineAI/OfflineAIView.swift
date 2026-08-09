@@ -10,6 +10,7 @@ import SwiftUI
 public struct OfflineAIView: View {
     @State private var viewModel: OfflineAIViewModel
     @Default(.useRealLocalLLM) private var useRealLocalLLM
+    @FocusState private var isInputFocused: Bool
 
     @MainActor
     public init(viewModel: OfflineAIViewModel? = nil) {
@@ -23,6 +24,8 @@ public struct OfflineAIView: View {
             responseSection
         }
         .packRatFormStyle()
+        .dismissesKeyboardOnScroll()
+        .keyboardDoneButton(isFocused: $isInputFocused)
         .navigationTitle("Offline AI (Debug)")
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -54,6 +57,7 @@ public struct OfflineAIView: View {
             TextField("Ask anything…", text: $viewModel.prompt, axis: .vertical)
                 .lineLimit(2 ... 5)
                 .textFieldStyle(.roundedBorder)
+                .focused($isInputFocused)
                 .disabled(viewModel.isGenerating)
 
             HStack {

@@ -7,6 +7,7 @@ struct ComposePostView: View {
 
     @State private var caption = ""
     @State private var error: String?
+    @FocusState private var isInputFocused: Bool
 
     private var canPost: Bool {
         !caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && caption.count <= 500
@@ -27,6 +28,7 @@ struct ComposePostView: View {
                                 .font(.body)
                                 .frame(minHeight: 140)
                                 .scrollContentBackground(.hidden)
+                                .focused($isInputFocused)
                                 .accessibilityIdentifier("feed_compose_caption")
 
                             if caption.isEmpty {
@@ -56,6 +58,7 @@ struct ComposePostView: View {
                 }
             }
             .packRatFormStyle()
+            .keyboardDoneButton(isFocused: $isInputFocused)
             .navigationTitle("New Post")
             #if os(macOS)
             .navigationSubtitle(authManager.currentUser?.displayName ?? "")

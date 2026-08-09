@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

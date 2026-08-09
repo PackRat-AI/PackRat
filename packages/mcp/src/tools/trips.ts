@@ -42,6 +42,7 @@ export function registerTripTools(agent: AgentContext): void {
       annotations: {
         title: 'List My Trips',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -76,6 +77,7 @@ export function registerTripTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Trip',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },

@@ -1,6 +1,6 @@
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
-import { Sheet, Text } from '@packrat/ui/nativewindui';
+import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
+import { Sheet, SheetView } from '@packrat/ui/src/bottom-sheet';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
@@ -10,7 +10,6 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnlineContentImportModal } from './OnlineContentImportModal';
 
 type TemplateCreationOptionsProps = object;
@@ -24,7 +23,6 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
     const user = useUser();
     const isAdmin = user?.role === 'ADMIN';
     const [showOnlineContentModal, setShowOnlineContentModal] = useState(false);
-    const insets = useSafeAreaInsets();
 
     const { run, handleDismiss } = useBottomSheetAction(ref as React.RefObject<BottomSheetModal>);
 
@@ -46,17 +44,15 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
           ref={ref}
           enableDynamicSizing={true}
           enablePanDownToClose
-          bottomInset={insets.bottom}
           backgroundStyle={{ backgroundColor: colors.card }}
-          handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
           onDismiss={handleDismiss}
         >
-          <BottomSheetView className="flex-1 px-4 pb-6" style={{ flex: 1 }}>
+          <SheetView className="flex-1 px-4 pb-6" style={{ flex: 1 }}>
             <View className="mb-6">
               <Text className="text-lg font-semibold text-foreground mb-2">
                 {t('packTemplates.createTemplate')}
               </Text>
-              <Text className="text-sm text-muted-foreground leading-5">
+              <Text className="text-sm text-muted-foreground leading-5" wrap>
                 {t('packTemplates.chooseCreationMethod')}
               </Text>
             </View>
@@ -73,7 +69,7 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
                 <Text className="text-base font-semibold text-foreground mb-1">
                   {t('packTemplates.createFromScratch')}
                 </Text>
-                <Text className="text-sm text-muted-foreground">
+                <Text className="text-sm text-muted-foreground" wrap>
                   {t('packTemplates.createFromScratchDescription')}
                 </Text>
               </View>
@@ -93,14 +89,14 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
                   <Text className="text-base font-semibold text-foreground mb-1">
                     {t('packTemplates.importFromOnlineContent')}
                   </Text>
-                  <Text className="text-sm text-muted-foreground">
+                  <Text className="text-sm text-muted-foreground" wrap>
                     {t('packTemplates.importFromOnlineContentDescription')}
                   </Text>
                 </View>
                 <Icon name="chevron-right" size={20} color={colors.grey3} />
               </TouchableOpacity>
             )}
-          </BottomSheetView>
+          </SheetView>
         </Sheet>
 
         <OnlineContentImportModal

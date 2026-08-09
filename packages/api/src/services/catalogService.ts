@@ -348,34 +348,38 @@ export class CatalogService {
     // `distance < 0.9` is equivalent to the previous `similarity > 0.1`.
     const vectorWhere = and(isNotNull(catalogItems.embedding), sql`${distance} < 0.9`);
 
-    const [items, vectorTotalCountResult] = await Promise.all([
-      this.db
-        .tag('catalog.vectorSearch')
-        .select({
-          ...columnsToSelect,
-          similarity,
-        })
-        .from(catalogItems)
-        .where(vectorWhere)
-        .orderBy(distance) // ASC; HNSW-eligible
-        .limit(limit)
-        .offset(offset),
-      this.db
-        .tag('catalog.vectorSearchCount')
-        .select({
-          totalCount: count(),
-        })
-        .from(catalogItems)
-        .where(vectorWhere),
-    ]);
-    const totalCount = vectorTotalCountResult[0]?.totalCount ?? 0;
+    // We deliberately do NOT run an exact `count(*)` over the match set here.
+    // That count has no LIMIT/ORDER BY, so HNSW can't serve it — the planner
+    // falls back to a Seq Scan computing cosine distance for ALL ~1.79M
+    // catalog rows, which takes ~125s and 524s the request at the CF edge.
+    // For a top-N semantic search the exact match total is also near-useless
+    // (distance < 0.9 matches most of the catalog). We fetch one extra row
+    // (`limit + 1`) so we can report a truthful `nextOffset`/`hasMore` from
+    // the page itself, at HNSW speed.
+    const rows = await this.db
+      .tag('catalog.vectorSearch')
+      .select({
+        ...columnsToSelect,
+        similarity,
+      })
+      .from(catalogItems)
+      .where(vectorWhere)
+      .orderBy(distance) // ASC; HNSW-eligible
+      .limit(limit + 1)
+      .offset(offset);
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
 
     return {
       items,
-      total: Number(totalCount),
+      // `total` is a lower bound (rows seen through this page), not an exact
+      // catalog-wide match count — see the comment above on why the exact
+      // count is intentionally not computed.
+      total: offset + items.length,
       limit,
       offset,
-      nextOffset: offset + limit,
+      nextOffset: hasMore ? offset + limit : offset + items.length,
     };
   }
 

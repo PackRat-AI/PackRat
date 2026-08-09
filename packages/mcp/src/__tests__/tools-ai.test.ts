@@ -30,7 +30,8 @@ describe('registerAiTools — handler invocation', () => {
     expect(hasCall(calls, { verb: 'get', segments: ['user', 'ai', 'web-search'] })).toBe(true);
   });
 
-  it('packrat_execute_sql_query POSTs user/ai/execute-sql with query + limit', async () => {
+  // DISABLED — packrat_execute_sql_query is admin-gated and not shipped.
+  it.skip('packrat_execute_sql_query POSTs user/ai/execute-sql with query + limit', async () => {
     const { agent, server, calls } = makeAgent();
     registerAiTools(agent);
     const result = await getToolHandler(server, 'packrat_execute_sql_query')(
@@ -48,7 +49,8 @@ describe('registerAiTools — handler invocation', () => {
     expect((post?.args[0] as { query?: string; limit?: number })?.limit).toBe(25);
   });
 
-  it('packrat_get_database_schema GETs user/ai/db-schema', async () => {
+  // DISABLED — packrat_get_database_schema is admin-gated and not shipped.
+  it.skip('packrat_get_database_schema GETs user/ai/db-schema', async () => {
     const { agent, server, calls } = makeAgent();
     registerAiTools(agent);
     const result = await getToolHandler(server, 'packrat_get_database_schema')({}, makeExtra());

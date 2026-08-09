@@ -19,6 +19,7 @@ struct PackItemFormView: View {
     @State private var notes = ""
     @State private var isLoading = false
     @State private var error: String?
+    @FocusState private var isInputFocused: Bool
 
     private var isEditing: Bool { existingItem != nil }
     private var isValid: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -55,6 +56,9 @@ struct PackItemFormView: View {
             Section("Item") {
                 TextField("Name", text: $name)
                     .textContentType(.name)
+                    .focused($isInputFocused)
+                    .submitLabel(.done)
+                    .onSubmit { isInputFocused = false }
                     .accessibilityIdentifier("pack_item_name")
 
                 Picker("Category", selection: $category) {
@@ -74,6 +78,7 @@ struct PackItemFormView: View {
                             #if os(iOS)
                             .keyboardType(.decimalPad)
                             #endif
+                            .focused($isInputFocused)
                             .accessibilityIdentifier("item_weight")
 
                         Picker("Unit", selection: $weightUnit) {
@@ -101,6 +106,7 @@ struct PackItemFormView: View {
             Section("Notes") {
                 TextField("Notes", text: $notes, axis: .vertical)
                     .lineLimit(3, reservesSpace: true)
+                    .focused($isInputFocused)
                     .accessibilityIdentifier("pack_item_notes")
             }
 
@@ -111,6 +117,8 @@ struct PackItemFormView: View {
             }
         }
         .packRatFormStyle()
+        .dismissesKeyboardOnScroll()
+        .keyboardDoneButton(isFocused: $isInputFocused)
     }
 
     private func prefill() {

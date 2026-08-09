@@ -193,7 +193,16 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
 
     socialProviders: {
       google: {
-        clientId: env.GOOGLE_CLIENT_ID ?? '',
+        // iOS native Google Sign-In requests an id token whose `aud` claim is the
+        // iOS OAuth client ID, distinct from the web client ID. Google client IDs
+        // are bound to a single bundle ID, so the Swift app (a separate Xcode
+        // target with its own bundle ID) needs its own client ID too — accept
+        // all three audiences.
+        clientId: [
+          env.GOOGLE_CLIENT_ID,
+          env.GOOGLE_IOS_CLIENT_ID,
+          env.GOOGLE_IOS_SWIFT_CLIENT_ID,
+        ].filter((id): id is string => Boolean(id)),
         clientSecret: env.GOOGLE_CLIENT_SECRET ?? '',
       },
       // Always register Apple when clientId is present so the native id-token
@@ -201,7 +210,9 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       // verifies against Apple's public JWKS; the secret is only used for the
       // web OAuth redirect flow).
       // audience covers all EAS build variants — Apple puts the bundle ID in
-      // the `aud` claim, which differs per variant (.dev, .preview, base).
+      // the `aud` claim, which differs per variant (.dev, .preview, base) — plus
+      // the native Swift app's distinct bundle ID, which is a separate Xcode
+      // target and not an EAS build variant of the Expo app.
       ...(env.APPLE_CLIENT_ID
         ? {
             apple: {
@@ -212,6 +223,7 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
                 env.APPLE_CLIENT_ID,
                 `${env.APPLE_CLIENT_ID}.dev`,
                 `${env.APPLE_CLIENT_ID}.preview`,
+                ...(env.APPLE_SWIFT_CLIENT_ID ? [env.APPLE_SWIFT_CLIENT_ID] : []),
               ],
             },
           }
@@ -268,9 +280,11 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       //    `scopes_supported` in the AS metadata.
       //  - `validAudiences`: RFC 8707 — `/oauth2/authorize` rejects any
       //    `resource` parameter not in this list with 400 invalid_request.
-      //  - `allowDynamicClientRegistration: false` + Claude pre-registered
-      //    via packages/api/src/db/seed-claude-oauth-client.ts — DCR is
-      //    closed because we know our connector clients ahead of time.
+      //  - `allowDynamicClientRegistration: true` (+ unauthenticated) so the
+      //    Claude connector can self-register; see the security note at the
+      //    option below. The pre-registered client seeded by
+      //    packages/api/src/db/seed-claude-oauth-client.ts still works and is
+      //    kept as the preferred path if DCR is closed again.
       //  - `consentPage`: points at `/oauth/consent` (mounted in the worker
       //    fetch handler in src/index.ts). The consent page server-side
       //    filters `mcp:admin` from non-admin grants and POSTs the reduced
@@ -298,8 +312,28 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
             audiences.push(`${env.PACKRAT_MCP_URL.replace(TRAILING_SLASH_RE, '')}/mcp`);
           return audiences;
         })(),
-        allowDynamicClientRegistration: false,
-        allowUnauthenticatedClientRegistration: false,
+        // DCR enabled so the Claude connector can self-register instead of
+        // requiring Anthropic to pre-provision our static client_id (the
+        // "Anthropic-held client credentials" listing path needs a manual
+        // coordination step on their side).
+        //
+        // `allowUnauthenticatedClientRegistration` must ALSO be true: the
+        // plugin gates POST /oauth2/register on `session || allowUnauth...`,
+        // and Anthropic registers server-to-server with no PackRat session.
+        //
+        // SECURITY NOTE: this opens client registration to anyone. A hostile
+        // registrant can choose its own redirect_uri and client display
+        // metadata (name/icon/tos/policy are rendered on our consent screen),
+        // which is a phishing vector: a user could be shown a legitimate-looking
+        // PackRat consent page and approve a token that is delivered to an
+        // attacker-controlled URI. PKCE does not mitigate this, because the
+        // attacker IS the registered client. Mitigations that remain in force:
+        // per-user consent, audience-bound tokens, and the consent page's
+        // server-side filtering of `mcp:admin` for non-admin users — that
+        // filter is now load-bearing. Revisit (and prefer the static
+        // pre-registered client) once directory listing no longer requires it.
+        allowDynamicClientRegistration: true,
+        allowUnauthenticatedClientRegistration: true,
         consentPage: '/oauth/consent',
         loginPage: '/api/auth/sign-in',
       }),

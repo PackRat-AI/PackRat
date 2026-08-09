@@ -1,7 +1,7 @@
 'use client';
 
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Text } from '@packrat/ui/src/text';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeightAnalysis';
 import { cn } from 'expo-app/lib/cn';
@@ -82,7 +82,7 @@ export default function WeightAnalysisScreen() {
           <Text variant="heading" className="mb-2 font-semibold">
             {t('packs.weightBreakdown')}
           </Text>
-          <Text variant="subhead" className="mb-4 text-muted-foreground">
+          <Text variant="subhead" className="mb-4 text-muted-foreground" wrap>
             {t('packs.detailedAnalysis')}
           </Text>
         </View>
@@ -116,7 +116,7 @@ export default function WeightAnalysisScreen() {
                     <View>
                       <Text>{item.name}</Text>
                       {item.notes && (
-                        <Text variant="footnote" className="text-muted-foreground">
+                        <Text variant="footnote" className="text-muted-foreground" wrap>
                           {item.notes}
                         </Text>
                       )}
@@ -132,7 +132,9 @@ export default function WeightAnalysisScreen() {
         ))}
 
         {!data.categories.length && (
-          <Text className="px-8 text-center">{t('packs.addItemsForBreakdown')}</Text>
+          <Text className="px-8 text-center" wrap>
+            {t('packs.addItemsForBreakdown')}
+          </Text>
         )}
       </ScrollView>
     </SafeAreaView>

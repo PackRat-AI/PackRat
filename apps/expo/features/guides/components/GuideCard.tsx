@@ -1,4 +1,5 @@
-import { Card, CardContent, CardTitle, Text } from '@packrat/ui/nativewindui';
+import { Card, CardContent, CardTitle } from '@packrat/ui/src/card';
+import { Text } from '@packrat/ui/src/text';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { TouchableOpacity, View } from 'react-native';
@@ -26,7 +27,11 @@ export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
               {guide.difficulty && <Text variant="footnote">{guide.difficulty}</Text>}
               <CardTitle className="text-lg font-semibold mb-1">{guide.title}</CardTitle>
               {guide.description && (
-                <Text className="text-sm text-gray-600 dark:text-gray-400 mb-2" numberOfLines={2}>
+                <Text
+                  className="text-sm text-gray-600 dark:text-gray-400 mb-2"
+                  numberOfLines={2}
+                  wrap
+                >
                   {guide.description}
                 </Text>
               )}

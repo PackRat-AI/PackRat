@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ideation: Confidently Validating the @expo/ui Migration</title>
+<style>
+  :root {
+    --bg: #fbfaf8;
+    --surface: #ffffff;
+    --surface-2: #f4f2ee;
+    --ink: #1c1a17;
+    --ink-2: #55504a;
+    --ink-3: #857f77;
+    --border: #e5e1da;
+    --accent: #9a5b2e;
+    --accent-soft: #f6ece2;
+    --accent-text: #7c481f;
+    --ok: #2f6d4f;
+    --ok-soft: #e6f1ea;
+    --warn: #9a6a1c;
+    --warn-soft: #f6eddb;
+    --info: #3a5d86;
+    --info-soft: #e7eef6;
+    --radius: 10px;
+    --measure: 72ch;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16150f;
+      --surface: #1f1e17;
+      --surface-2: #262419;
+      --ink: #f0ece3;
+      --ink-2: #c3bcaf;
+      --ink-3: #8f887b;
+      --border: #35322a;
+      --accent: #d69a63;
+      --accent-soft: #2c2318;
+      --accent-text: #e3ac74;
+      --ok: #6fbf95;
+      --ok-soft: #1a2a20;
+      --warn: #d5a552;
+      --warn-soft: #2b2415;
+      --info: #82a8d6;
+      --info-soft: #172433;
+    }
+  }
+  :root[data-theme="dark"] {
+      --bg: #16150f; --surface: #1f1e17; --surface-2: #262419;
+      --ink: #f0ece3; --ink-2: #c3bcaf; --ink-3: #8f887b; --border: #35322a;
+      --accent: #d69a63; --accent-soft: #2c2318; --accent-text: #e3ac74;
+      --ok: #6fbf95; --ok-soft: #1a2a20; --warn: #d5a552; --warn-soft: #2b2415;
+      --info: #82a8d6; --info-soft: #172433;
+  }
+  :root[data-theme="light"] {
+      --bg: #fbfaf8; --surface: #ffffff; --surface-2: #f4f2ee;
+      --ink: #1c1a17; --ink-2: #55504a; --ink-3: #857f77; --border: #e5e1da;
+      --accent: #9a5b2e; --accent-soft: #f6ece2; --accent-text: #7c481f;
+      --ok: #2f6d4f; --ok-soft: #e6f1ea; --warn: #9a6a1c; --warn-soft: #f6eddb;
+      --info: #3a5d86; --info-soft: #e7eef6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin-inline: auto; padding: 3rem 1.5rem 5rem; }
+  p, li { max-width: var(--measure); }
+  h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 0.5rem; letter-spacing: -0.02em; }
+  h2 { font-size: 1.5rem; margin: 3rem 0 1rem; letter-spacing: -0.01em; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  h3 { font-size: 1.2rem; margin: 0 0 0.3rem; letter-spacing: -0.01em; }
+  a { color: var(--accent-text); text-underline-offset: 2px; }
+  code { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); padding: 0.1em 0.4em; border-radius: 5px; }
+  .eyebrow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-text); font-weight: 700; }
+  .lede { font-size: 1.12rem; color: var(--ink-2); max-width: var(--measure); }
+  .meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; margin: 1.2rem 0 0; font-size: 0.85rem; color: var(--ink-3); }
+  .meta strong { color: var(--ink-2); font-weight: 600; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.8rem; margin: 2rem 0; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; }
+  .stat .n { font-size: 1.7rem; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+  .stat .l { font-size: 0.8rem; color: var(--ink-3); margin-top: 0.35rem; }
+  section { }
+  .ground { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem 1.6rem; }
+  .ground h3 { margin-top: 1.3rem; font-size: 1rem; }
+  .ground h3:first-child { margin-top: 0; }
+  .axes { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; }
+  .axes li { display: flex; gap: 0.7rem; align-items: baseline; max-width: none; padding: 0.7rem 0.9rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .axes .tag { font-family: var(--mono); font-size: 0.75rem; font-weight: 700; color: var(--accent-text); background: var(--accent-soft); padding: 0.15em 0.5em; border-radius: 5px; white-space: nowrap; }
+  .jump { display: flex; flex-wrap: wrap; gap: 0.4rem 0.6rem; padding: 1rem 1.1rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 1.6rem; font-size: 0.88rem; }
+  .jump a { text-decoration: none; }
+  .jump a:hover { text-decoration: underline; }
+  article.idea { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem 1.7rem; margin: 1.1rem 0; }
+  .idea-head { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+  .idchip { font-family: var(--mono); font-weight: 700; font-size: 0.85rem; background: var(--accent-soft); color: var(--accent-text); padding: 0.2em 0.6em; border-radius: 6px; }
+  .idea-head h3 { flex: 1; min-width: 60%; }
+  .pills { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.2rem 0 0.9rem; }
+  .pill { font-size: 0.73rem; font-weight: 600; padding: 0.22em 0.6em; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--ink-2); }
+  .pill.axis { background: var(--info-soft); color: var(--info); border-color: transparent; }
+  .pill.conf-high { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+  .pill.conf-med { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .pill.cx { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; }
+  .field { margin: 0.7rem 0; }
+  .field .lab { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); font-weight: 700; display: block; margin-bottom: 0.15rem; }
+  .basis { border-left: 3px solid var(--border); padding-left: 0.9rem; }
+  .basis .tagk { font-family: var(--mono); font-size: 0.75rem; font-weight: 700; color: var(--accent-text); }
+  figure { margin: 1.2rem 0; padding: 0; }
+  figure svg { display: block; width: 100%; height: auto; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); }
+  figcaption { font-size: 0.8rem; color: var(--ink-3); margin-top: 0.4rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+  td.num { font-family: var(--mono); color: var(--ink-3); white-space: nowrap; }
+  .overflow { overflow-x: auto; }
+  footer.composition-signal { margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--ink-3); }
+  .svg-label { font-family: var(--sans); font-size: 13px; fill: var(--ink); }
+  .svg-sub { font-family: var(--sans); font-size: 11px; fill: var(--ink-2); }
+  .svg-mono { font-family: var(--mono); font-size: 11px; fill: var(--ink-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="eyebrow">Ideation · Compound Engineering</span>
+  <h1>Confidently Validating the @expo/ui Migration</h1>
+  <p class="lede">You've migrated the mobile app off <code>@packrat/ui/nativewindui</code> onto <code>@expo/ui</code> / rn-primitives and built a structural layout auditor. These are the strongest directions to turn "one screen looks fine" into "the whole app is provably free of layout, alignment, and collapse regressions" — on both platforms, and permanently.</p>
+
+  <div class="meta">
+    <span><strong>Date:</strong> <time datetime="2026-08-03">2026-08-03</time></span>
+    <span><strong>Topic:</strong> expo-ui-migration-validation</span>
+    <span><strong>Focus:</strong> no breaking layout / misalignment / UI bugs</span>
+    <span><strong>Mode:</strong> repo-grounded</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="n">~60+</div><div class="l">rendered screens in the app</div></div>
+    <div class="stat"><div class="n">~10</div><div class="l">covered by Maestro flows today</div></div>
+    <div class="stat"><div class="n">5</div><div class="l">layout rules already implemented</div></div>
+    <div class="stat"><div class="n">0</div><div class="l">CI jobs running the auditor</div></div>
+  </div>
+
+  <section>
+    <h2 id="grounding">Codebase Context</h2>
+    <div class="ground">
+      <h3>Where the migration stands</h3>
+      <p>Import-level migration is <strong>effectively complete</strong>: <code>nativewindui</code> survives only in comments (<code>apps/expo/polyfills.ts</code>, <code>demo/index.tsx</code>) and <code>@packrat/ui</code> is the active barrel (~398 import lines). The remaining risk is not stray imports — it is <em>layout regression</em> introduced by the swap.</p>
+
+      <h3>The bug class this migration produced</h3>
+      <p>Every real defect encoded in <code>scripts/lint/__tests__/layout-audit.test.ts</code> passed typecheck, Biome, and the full unit suite — that is the bar. They share one root cause: the <code>@expo/ui</code> <code>&lt;Host&gt;</code> bridge and NativeWind class compilation change how children are measured and sized.</p>
+      <ul>
+        <li><strong>Collapse:</strong> a "Continue with Google" label escaped a Button collapsed to zero by a nested Host bridge; a checkbox whose <code>h-[18px]/w-[18px]</code> never compiled rendered at 0×0.</li>
+        <li><strong>Overlap:</strong> ListItem title and subtitle rendered on top of each other before the Host bridge was dropped.</li>
+        <li><strong>Misalignment:</strong> Dashboard tile icons pinned to the top of their row instead of sharing the label's vertical center.</li>
+        <li><strong>Measurement drift:</strong> the SearchInput iOS Cancel-button gap — Host-wrapped <code>Text</code> reports a narrower intrinsic size to Yoga, so <code>measure()</code> under-reserved space. Only visible in the <em>focused</em> state.</li>
+      </ul>
+
+      <h3>The validation surface that exists</h3>
+      <p>The two halves aren't connected yet. <strong>Maestro</strong> (28 flows, both iOS+Android in <code>.github/workflows/e2e-tests.yml</code>) already navigates ~10 real screens past the auth wall using stable <code>testID</code>s from <code>apps/expo/lib/testIds.ts</code> — but only asserts presence/text. <strong><code>scripts/layout-audit.ts</code></strong> (373 lines) judges structural sanity off the <code>agent-device</code> accessibility-tree geometry — but only sees whatever screen is currently up, and is wired into no CI job. A <strong>Playwright</strong> web harness already does visual regression (<code>apps/expo/playwright/visual.spec.ts</code>); mobile has no equivalent.</p>
+
+      <h3>External signal</h3>
+      <p>The a11y-tree geometry approach is a recognized practice (Playwright ARIA-snapshot lineage; iOS A11yUITests precedent) that fills the deterministic-structure gap flaky pixel diffs leave open. Critically, the <code>expo-ui</code> changelog carries <em>breaking</em> Host layout fixes as recently as SDK 57 (mid-2026): Host intrinsic-sizing (56.0.10), iOS Host centering-instead-of-top-aligning (57.0.0), matchContents layout-shift inside RN Screens (56.0.16). This bug class <strong>recurs on every SDK bump</strong> — validation is an ongoing regression guard, not a one-time gate. The field's confidence recipe converges on: golden-screen catalog + structural CI assertions + staged rollout with crash/layout telemetry.</p>
+
+      <h3>Constraints that shape the ideas</h3>
+      <ul>
+        <li><strong>agent-device:</strong> one session per device; you switch apps by re-<code>open</code>ing, not two sessions.</li>
+        <li><strong>Reachability ceiling:</strong> all <code>(app)/**</code> routes sit behind an auth guard; a bare deep-link/<code>simctl</code> driver cannot pass login, OAuth (external browser, unautomatable), or button-opened modals without real gesture input. Maestro <em>can</em> — hence pairing them.</li>
+        <li><strong>A/B rig:</strong> the pre-migration NativeWindUI APK (<code>com.packratai.mobile</code>) and the migrated dev client (<code>com.packratai.mobile.dev</code>) both live on the TECNO KL4 as a same-device baseline — but guest demo data is server-session-scoped, so list-screen data parity is unreliable.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="axes">Topic Axes</h2>
+    <ul class="axes">
+      <li><span class="tag">A1</span><span><strong>Auditor engine</strong> — the rules themselves, false-negatives/positives, and the deliberate no-baseline choice.</span></li>
+      <li><span class="tag">A2</span><span><strong>Screen coverage</strong> — reaching all ~60 screens past the auth, param, and gesture walls.</span></li>
+      <li><span class="tag">A3</span><span><strong>Interactive &amp; stateful states</strong> — bugs invisible on first static render (focus, scroll, press, empty vs full).</span></li>
+      <li><span class="tag">A4</span><span><strong>Cross-platform parity</strong> — the iOS SwiftUI Host vs the Android Compose Host render differently.</span></li>
+      <li><span class="tag">A5</span><span><strong>CI &amp; rollout confidence</strong> — wiring, gating, staged rollout, and telemetry.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="ideas">Ranked Ideas</h2>
+    <nav class="jump" aria-label="Jump to idea">
+      <a href="#i1">1. Maestro-driven audit sweep</a>
+      <a href="#i2">2. Gate CI on the auditor</a>
+      <a href="#i3">3. Golden-screen catalog route</a>
+      <a href="#i4">4. Interactive-state audit</a>
+      <a href="#i5">5. iOS↔Android parity assertion</a>
+      <a href="#i6">6. Yoga intrinsic-size probe</a>
+      <a href="#i7">7. A/B differential audit</a>
+    </nav>
+
+    <!-- IDEA 1 -->
+    <article class="idea" id="i1">
+      <div class="idea-head"><span class="idchip">1</span><h3>Maestro-driven audit sweep — drive to each screen, then audit it</h3></div>
+      <div class="pills">
+        <span class="pill axis">A2 · screen coverage</span>
+        <span class="pill conf-high">Confidence 90%</span>
+        <span class="pill cx">Complexity Medium</span>
+      </div>
+      <p>The single highest-leverage move: join the two halves you already have. Extend the Maestro suite so that at each meaningful screen it reaches, it triggers an <code>agent-device snapshot</code> and pipes it through <code>layout-audit.ts</code>. Maestro solves the reachability problem (it logs in, taps through modals, fills forms, uses stable testIDs); the auditor solves the judgment problem. A thin harness sits between them: after each Maestro checkpoint, capture the snapshot and run the audit; any <code>error</code>-severity finding fails the flow.</p>
+
+      <figure>
+        <svg viewBox="0 0 900 210" role="img" aria-label="Maestro drives to a screen, a snapshot is captured, and the auditor judges it; errors fail the flow.">
+          <rect x="20" y="70" width="150" height="66" rx="8" fill="var(--info-soft)" stroke="var(--info)"/>
+          <text x="95" y="98" text-anchor="middle" class="svg-label">Maestro flow</text>
+          <text x="95" y="117" text-anchor="middle" class="svg-sub">login · tap · testID</text>
+
+          <rect x="230" y="70" width="150" height="66" rx="8" fill="var(--surface)" stroke="var(--border)"/>
+          <text x="305" y="98" text-anchor="middle" class="svg-label">Screen is up</text>
+          <text x="305" y="117" text-anchor="middle" class="svg-sub">past the auth wall</text>
+
+          <rect x="440" y="70" width="170" height="66" rx="8" fill="var(--surface)" stroke="var(--border)"/>
+          <text x="525" y="93" text-anchor="middle" class="svg-label">agent-device</text>
+          <text x="525" y="112" text-anchor="middle" class="svg-mono">snapshot --json</text>
+
+          <rect x="670" y="70" width="150" height="66" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="745" y="93" text-anchor="middle" class="svg-label">layout-audit.ts</text>
+          <text x="745" y="112" text-anchor="middle" class="svg-sub">5 geometry rules</text>
+
+          <line x1="170" y1="103" x2="226" y2="103" stroke="var(--ink-3)" stroke-width="1.5" marker-end="url(#ar1)"/>
+          <line x1="380" y1="103" x2="436" y2="103" stroke="var(--ink-3)" stroke-width="1.5" marker-end="url(#ar1)"/>
+          <line x1="610" y1="103" x2="666" y2="103" stroke="var(--ink-3)" stroke-width="1.5" marker-end="url(#ar1)"/>
+
+          <rect x="600" y="165" width="220" height="34" rx="6" fill="var(--surface-2)" stroke="var(--border)"/>
+          <text x="710" y="187" text-anchor="middle" class="svg-mono">error → exit 1 → fail flow</text>
+          <line x1="745" y1="136" x2="745" y2="163" stroke="var(--ink-3)" stroke-width="1.5" marker-end="url(#ar1)"/>
+
+          <text x="95" y="45" text-anchor="middle" class="svg-sub">reaches the screen</text>
+          <text x="745" y="45" text-anchor="middle" class="svg-sub">judges the screen</text>
+          <defs><marker id="ar1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--ink-3)"/></marker></defs>
+        </svg>
+        <figcaption>The auditor already ingests <code>agent-device snapshot --json</code> — Maestro just supplies the screen it can't reach on its own.</figcaption>
+      </figure>
+
+      <div class="field"><span class="lab">Basis</span><div class="basis"><span class="tagk">direct:</span> <code>scripts/layout-audit.ts:330</code> already shells out to <code>agent-device snapshot --json --session &lt;name&gt;</code> and exits non-zero on error. <code>login-flow.yaml:157/193/221</code> shows Maestro already drives login via stable testIDs on both platforms in <code>e2e-tests.yml</code>. The two systems consume/produce compatible artifacts today; nothing new needs inventing.</div></div>
+      <div class="field"><span class="lab">Rationale</span><p>Every other idea depends on reaching screens, and Maestro is the only tool in the repo that gets past the auth/gesture/param walls. This turns your ~10 covered flows into ~10 <em>audited</em> flows for near-zero marginal cost, and gives every future flow a free layout check. It is the backbone the rest of the set plugs into.</p></div>
+      <div class="field"><span class="lab">Downsides</span><p>Coupling audit to Maestro inherits Maestro's flakiness and its ~10-screen ceiling (idea 3 addresses the ceiling). Snapshot timing matters — capture before animations settle and you get false collapse/offscreen findings. Needs a clean "checkpoint" convention in flows so you're not auditing mid-transition.</p></div>
+    </article>
+
+    <!-- IDEA 2 -->
+    <article class="idea" id="i2">
+      <div class="idea-head"><span class="idchip">2</span><h3>Gate CI on the auditor — make a layout regression fail the build</h3></div>
+      <div class="pills">
+        <span class="pill axis">A5 · CI &amp; rollout</span>
+        <span class="pill conf-high">Confidence 92%</span>
+        <span class="pill cx">Complexity Small</span>
+      </div>
+      <p>The auditor is a standalone script referenced by no workflow. Wire it into the existing <code>e2e-tests.yml</code> device jobs (<code>ios-e2e</code>, <code>android-e2e</code>) so its non-zero exit fails the run, and upload the <code>--json</code> output as a CI artifact next to the Maestro failure captures. Add a <code>bun layout:audit</code> script to <code>package.json</code> so it's a first-class, discoverable command like <code>check:casts</code>.</p>
+      <div class="field"><span class="lab">Basis</span><div class="basis"><span class="tagk">direct:</span> the auditor's own header — <em>"Exits non-zero if any <code>error</code>-severity finding is present, so it can gate CI"</em> (<code>scripts/layout-audit.ts:17</code>) — states this is the intended use, and grep found <strong>no</strong> workflow reference to it. <code>e2e-tests.yml</code> already boots simulators/emulators and uploads artifacts from <code>~/.maestro/tests/</code>, so the slot exists.</div></div>
+      <div class="field"><span class="lab">Rationale</span><p>An auditor nobody runs catches nothing. This is the cheapest idea with the highest floor — it converts the tool from "a thing you remember to run" into a standing invariant, and because the Host bug class recurs on every SDK bump, the gate keeps paying out long after this migration closes.</p></div>
+      <div class="field"><span class="lab">Downsides</span><p>A gate is only as good as its coverage — gating on ~10 screens can read as "the app is validated" when 50 screens are unchecked (call the gap out explicitly; the auditor already groups findings so a systemic issue reads as one). Tune severity thresholds first on real captures or you'll land a flaky red gate and erode trust in it.</p></div>
+    </article>
+
+    <!-- IDEA 3 -->
+    <article class="idea" id="i3">
+      <div class="idea-head"><span class="idchip">3</span><h3>Golden-screen catalog — one route that renders every migrated component in known states</h3></div>
+      <div class="pills">
+        <span class="pill axis">A2 · screen coverage</span>
+        <span class="pill conf-high">Confidence 85%</span>
+        <span class="pill cx">Complexity Medium</span>
+      </div>
+      <p>Maestro-sweep coverage tops out at whatever flows exist (~10 of 60 screens, and the gaps — weather, wildlife, feed, gear-inventory, settings, paywall — have no testIDs). Instead of chasing every screen, build a single dev-only <code>app/(app)/dev/component-catalog</code> route that renders every migrated <code>@packrat/ui</code> component in its known-risky states: a Button (the collapse case), a checkbox at <code>h-[18px]</code> (the class-compile case), a ListItem with title+subtitle (the overlap case), an icon+label row (the misalignment case), plus empty/long/RTL variants. One deep-linkable screen, no auth needed, audited every run.</p>
+
+      <figure>
+        <svg viewBox="0 0 900 250" role="img" aria-label="Comparison of chasing 60 real screens versus one catalog route exercising every component in known states.">
+          <text x="215" y="30" text-anchor="middle" class="svg-label">Chase real screens</text>
+          <text x="685" y="30" text-anchor="middle" class="svg-label">One catalog route</text>
+          <line x1="450" y1="45" x2="450" y2="235" stroke="var(--border)" stroke-width="1" stroke-dasharray="4 4"/>
+
+          <!-- left: scattered coverage -->
+          <g>
+            <rect x="40" y="55" width="80" height="40" rx="5" fill="var(--ok-soft)" stroke="var(--ok)"/>
+            <rect x="130" y="55" width="80" height="40" rx="5" fill="var(--surface-2)" stroke="var(--border)"/>
+            <rect x="220" y="55" width="80" height="40" rx="5" fill="var(--ok-soft)" stroke="var(--ok)"/>
+            <rect x="310" y="55" width="80" height="40" rx="5" fill="var(--surface-2)" stroke="var(--border)"/>
+            <rect x="40" y="105" width="80" height="40" rx="5" fill="var(--surface-2)" stroke="var(--border)"/>
+            <rect x="130" y="105" width="80" height="40" rx="5" fill="var(--ok-soft)" stroke="var(--ok)"/>
+            <rect x="220" y="105" width="80" height="40" rx="5" fill="var(--surface-2)" stroke="var(--border)"/>
+            <rect x="310" y="105" width="80" height="40" rx="5" fill="var(--surface-2)" stroke="var(--border)"/>
+            <rect x="40" y="155" width="80" height="40" rx="5" fill="var(--surface-2)" stroke="var(--border)"/>
+            <rect x="130" y="155" width="80" height="40" rx="5" fill="var(--surface-2)" stroke="var(--border)"/>
+            <rect x="220" y="155" width="80" height="40" rx="5" fill="var(--ok-soft)" stroke="var(--ok)"/>
+            <rect x="310" y="155" width="80" height="40" rx="5" fill="var(--surface-2)" stroke="var(--border)"/>
+            <text x="215" y="222" text-anchor="middle" class="svg-sub">~10 audited · 50 behind auth/testID gaps</text>
+          </g>
+
+          <!-- right: one dense route -->
+          <g>
+            <rect x="560" y="55" width="250" height="140" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/>
+            <text x="685" y="78" text-anchor="middle" class="svg-mono">/dev/component-catalog</text>
+            <rect x="575" y="90" width="105" height="22" rx="4" fill="var(--surface)" stroke="var(--border)"/><text x="627" y="105" text-anchor="middle" class="svg-sub">Button ∅-collapse</text>
+            <rect x="690" y="90" width="105" height="22" rx="4" fill="var(--surface)" stroke="var(--border)"/><text x="742" y="105" text-anchor="middle" class="svg-sub">checkbox 18px</text>
+            <rect x="575" y="118" width="105" height="22" rx="4" fill="var(--surface)" stroke="var(--border)"/><text x="627" y="133" text-anchor="middle" class="svg-sub">title+subtitle</text>
+            <rect x="690" y="118" width="105" height="22" rx="4" fill="var(--surface)" stroke="var(--border)"/><text x="742" y="133" text-anchor="middle" class="svg-sub">icon+label row</text>
+            <rect x="575" y="146" width="105" height="22" rx="4" fill="var(--surface)" stroke="var(--border)"/><text x="627" y="161" text-anchor="middle" class="svg-sub">long / empty</text>
+            <rect x="690" y="146" width="105" height="22" rx="4" fill="var(--surface)" stroke="var(--border)"/><text x="742" y="161" text-anchor="middle" class="svg-sub">RTL variant</text>
+            <text x="685" y="222" text-anchor="middle" class="svg-sub">every component · known states · no auth</text>
+          </g>
+        </svg>
+        <figcaption>The catalog trades "did we happen to walk past the bug" for "we deliberately render the bug's exact conditions, every run."</figcaption>
+      </figure>
+
+      <div class="field"><span class="lab">Basis</span><div class="basis"><span class="tagk">external:</span> the field's convergent pattern — Storybook/Preview-driven "every variant becomes a test" (Sherlo, Chromatic-RN, Emerge Tools reusing Xcode/AS Previews). <span class="tagk">direct:</span> your <code>layout-audit.test.ts</code> already enumerates the exact failure states worth rendering — the catalog is those fixtures promoted from unit-test JSON to a live screen the auditor sees on-device.</div></div>
+      <div class="field"><span class="lab">Rationale</span><p>Decouples coverage from flow-writing effort and from the auth wall entirely (a dev route is deep-linkable). It targets the migration's actual risk surface — components, not screens — so one route covers what dozens of feature screens would only incidentally exercise. It's also the natural home for the states in idea 4.</p></div>
+      <div class="field"><span class="lab">Downsides</span><p>A catalog proves the component renders correctly <em>in isolation</em>; it can't catch a regression caused by a specific parent's flex context on a real screen (that's what idea 1 is for — the two are complementary, not substitutes). Needs discipline to keep current as components change, or it rots into a false "all green."</p></div>
+    </article>
+
+    <!-- IDEA 4 -->
+    <article class="idea" id="i4">
+      <div class="idea-head"><span class="idchip">4</span><h3>Interactive-state audit — snapshot after focus, scroll, and press, not just first render</h3></div>
+      <div class="pills">
+        <span class="pill axis">A3 · interactive states</span>
+        <span class="pill conf-high">Confidence 84%</span>
+        <span class="pill cx">Complexity Medium</span>
+      </div>
+      <p>The SearchInput Cancel-gap bug was <em>invisible on first render</em> — it only appeared once the field was focused and the Cancel button animated in. A static snapshot of the initial screen would have passed it clean. Extend the sweep (idea 1) and the catalog (idea 3) to capture snapshots at defined interaction checkpoints: after focusing each text input, after opening each sheet/modal, after scrolling a list to its end, and in empty-vs-populated states. Audit each captured state.</p>
+      <div class="field"><span class="lab">Basis</span><div class="basis"><span class="tagk">direct:</span> commit <code>6ff1f2dc2</code> — <em>"@expo/ui's Host-wrapped Text reports a narrower intrinsic size to Yoga than a plain RN Text did, so <code>measure(animatedRef)</code> under-reserved the paddingRight/translateX space for the Cancel button, closing the gap"</em>. This defect is structurally undetectable without driving the interaction first.</div></div>
+      <div class="field"><span class="lab">Rationale</span><p>It closes the biggest blind spot in a geometry auditor: state. Layout bugs from a component swap disproportionately live in dynamic states (a Host that mis-measures on focus, a sheet that consumes the wrong amount of space, a list row that collapses only when recycled). Without this, a green audit gives false confidence precisely where <code>@expo/ui</code> is weakest.</p></div>
+      <div class="field"><span class="lab">Downsides</span><p>Multiplies snapshot count per screen and raises timing-sensitivity (must wait for animations to settle — the same false-positive risk as idea 1, amplified). Defining the "interesting states" per screen is manual curation; over-specify and it's brittle, under-specify and you miss the SearchInput-class bug it exists to catch.</p></div>
+    </article>
+
+    <!-- IDEA 5 -->
+    <article class="idea" id="i5">
+      <div class="idea-head"><span class="idchip">5</span><h3>iOS ↔ Android parity assertion — audit both Hosts, diff the findings</h3></div>
+      <div class="pills">
+        <span class="pill axis">A4 · cross-platform parity</span>
+        <span class="pill conf-med">Confidence 78%</span>
+        <span class="pill cx">Complexity Medium</span>
+      </div>
+      <p><code>@expo/ui</code> bridges to <em>SwiftUI on iOS and Jetpack Compose on Android</em> — two entirely different native layout engines behind one JS API. The changelog's "iOS Host was centering content instead of top-aligning" (57.0.0) is exactly a bug that appears on one platform and not the other. Run the audit sweep on both the iOS simulator and Android emulator (both already boot in <code>e2e-tests.yml</code>), then assert not just that each passes, but that the same screen produces the <em>same structural verdict</em> on both — a finding present on one platform only is itself a signal.</p>
+      <div class="field"><span class="lab">Basis</span><div class="basis"><span class="tagk">external:</span> expo-ui CHANGELOG 57.0.0 (#47561), a breaking fix for iOS-Host-specific vertical alignment — a documented instance of the exact one-platform-only divergence class. <span class="tagk">direct:</span> the repo already carries platform-split files (<code>messages/chat.android.tsx</code>, <code>packages/ui/.../search-input.ios.tsx</code>) and runs both <code>ios-e2e</code> and <code>android-e2e</code> jobs, so both surfaces are already in CI.</div></div>
+      <div class="field"><span class="lab">Rationale</span><p>Single-platform validation would have shipped the 57.0.0 centering bug to iOS users while Android looked fine. A parity diff catches divergence that neither platform's own pass/fail would flag, and it's the only idea that directly addresses the two-native-engines reality of <code>@expo/ui</code>.</p></div>
+      <div class="field"><span class="lab">Downsides</span><p>The a11y trees are genuinely different shapes across platforms (different node types, wrappers), so a naive node-by-node diff is noisy — parity must be asserted on the <em>rules</em> (does each platform pass the same 5 checks) and coarse geometry, not raw tree equality. Some divergence is legitimate platform adaptation, so this produces signal to review, not a hard gate, at first.</p></div>
+    </article>
+
+    <!-- IDEA 6 -->
+    <article class="idea" id="i6">
+      <div class="idea-head"><span class="idchip">6</span><h3>Yoga intrinsic-size probe — a targeted rule for the Host measurement bug</h3></div>
+      <div class="pills">
+        <span class="pill axis">A1 · auditor engine</span>
+        <span class="pill conf-med">Confidence 72%</span>
+        <span class="pill cx">Complexity Medium</span>
+      </div>
+      <p>The five current rules catch <em>consequences</em> (clip, overlap, collapse, misalign) but not the SearchInput <em>cause</em>: a Host-wrapped element reporting a wrong intrinsic size to Yoga, which then silently under- or over-reserves space around it without any element clipping or overlapping. Add a rule that flags the signature — a Host-bridged node whose reported rect is materially smaller than the union of its own children's rects, or a text node whose width is inconsistent with its glyph count at its font size. This makes the auditor catch the measurement-drift class directly, on a static snapshot, instead of relying on idea 4 to surface it interactively.</p>
+      <div class="field"><span class="lab">Basis</span><div class="basis"><span class="tagk">direct:</span> commit <code>6ff1f2dc2</code> names the mechanism precisely — Host-wrapped Text under-reports intrinsic size to Yoga. <span class="tagk">reasoned:</span> the auditor already computes per-node rects and parent/child links (<code>buildTree</code>, <code>auditClipping</code>); a "child union exceeds parent's reported intrinsic size" check reuses that machinery. The signature — a container measuring smaller than its own contents demand — is detectable from the geometry you already have.</div></div>
+      <div class="field"><span class="lab">Rationale</span><p>Turns the subtlest, most-likely-to-recur bug class into a first-class static check rather than something you can only catch if you happened to script the right interaction. Because Host intrinsic-sizing is the exact thing the SDK keeps changing (56.0.10 was a breaking fix here), a dedicated rule is durable leverage across upgrades.</p></div>
+      <div class="field"><span class="lab">Downsides</span><p>Hardest rule to get right — intrinsic-size mismatch has legitimate causes (padding, absolute positioning, overflow-scroll), so the false-positive risk is real; it likely ships as a <code>warn</code>, not an <code>error</code>, until tuned. The glyph-width heuristic is font-dependent and fragile. Lower confidence than the sweep/gate/catalog trio because it's a genuine research-y detection problem.</p></div>
+    </article>
+
+    <!-- IDEA 7 -->
+    <article class="idea" id="i7">
+      <div class="idea-head"><span class="idchip">7</span><h3>A/B differential audit — audit the pre-migration APK and the migrated build on the same device</h3></div>
+      <div class="pills">
+        <span class="pill axis">A1 · auditor engine</span>
+        <span class="pill conf-med">Confidence 68%</span>
+        <span class="pill cx">Complexity Large</span>
+      </div>
+      <p>The auditor deliberately doesn't diff a baseline — "is this screen structurally sane," not "does it match." That's the right default, but it can't catch a regression the audit rules don't already know to look for (a 6px spacing shift that clips nothing, an alignment that's "sane" but different from before). You already have both builds on the TECNO KL4. Run the audit on the pre-migration NativeWindUI APK and the migrated dev client at the same screens, and diff the two <em>finding sets</em> (and coarse geometry) — anything the baseline passed that the migration flags, or vice versa, is a migration-caused delta.</p>
+      <div class="field"><span class="lab">Basis</span><div class="basis"><span class="tagk">direct:</span> the A/B rig memory — the pre-migration prod APK (<code>com.packratai.mobile</code>) and migrated dev client (<code>com.packratai.mobile.dev</code>) are both installed on the KL4 as a genuine same-device baseline, alternated via <code>agent-device open &lt;pkg&gt; --session qa</code>. <span class="tagk">external:</span> "snapshot before/after the migration" is the canonical design-system-migration validation technique.</div></div>
+      <div class="field"><span class="lab">Rationale</span><p>This is the only idea that answers "did the migration change anything," as opposed to "is the result sane" — the difference between a regression guard and a sanity check. For the migration <em>specifically</em> (a bounded, one-time event with a real baseline available), a differential pass gives confidence no ruleset alone can.</p></div>
+      <div class="field"><span class="lab">Downsides</span><p>Highest cost and the shakiest footing: data parity is unreliable (guest demo data is server-session-scoped per the rig memory), so list screens won't line up and the diff is noisy exactly where content differs. The baseline is a one-time asset — once the pre-migration APK is gone, this can't be re-run, so it's a burst effort during the migration window, not a standing practice. Best scoped to static, content-stable screens (auth, settings, the catalog route from idea 3).</p></div>
+    </article>
+  </section>
+
+  <section>
+    <h2 id="rejected">Rejection Summary</h2>
+    <div class="overflow">
+    <table>
+      <thead><tr><th class="num">#</th><th>Idea</th><th>Reason cut</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>Pixel/screenshot snapshot testing as the primary method (Percy, react-native-owl)</td><td>Duplicates the auditor's job with a flakier tool; pixel diffs choke on font AA and device variance — the exact flakiness the structural approach was chosen to avoid. Reserve pixel diffs for style, not structure.</td></tr>
+        <tr><td class="num">2</td><td>Adopt Maestro's new <code>assertScreenshot</code> / a hosted visual-diff service (Sherlo, Chromatic-RN)</td><td>Better handled as a brainstorm variant later, not now — Chromatic-RN is preview-only (not GA as of mid-2026) and all add a baseline+approval workflow the team hasn't opted into. The auditor already covers the structural gap; revisit if style regressions become the pain.</td></tr>
+        <tr><td class="num">3</td><td>Rewrite the auditor as native XCUITest/Espresso a11y assertions</td><td>Too expensive relative to value — throws away a working 373-line cross-platform tool to gain little; the a11y-tree geometry approach is already the recognized practice.</td></tr>
+        <tr><td class="num">4</td><td>Manual "screenshot every screen and eyeball it" QA pass</td><td>Not actionable as <em>confidence</em> — it's a spot check that doesn't scale to 60 screens or survive the next SDK bump; the whole point is to move past eyeballing.</td></tr>
+        <tr><td class="num">5</td><td>Wrap every <code>measure()</code> call site in a typed intrinsic-size helper</td><td>Fixes forward but doesn't <em>validate</em> — it's an implementation change to the app, not a way to gain confidence the migration is clean. Belongs in a code-quality pass, not this validation effort.</td></tr>
+        <tr><td class="num">6</td><td>Feature-flag each migrated component for instant rollback</td><td>Duplicates prior ideation (the June migration-strategy doc, idea 4) and addresses rollout mechanics, not validation; migration is import-complete so per-component flags are moot now.</td></tr>
+        <tr><td class="num">7</td><td>Crash-telemetry-only rollout gate (ship, watch Sentry)</td><td>Below the bar for this focus — layout/alignment bugs rarely crash (all four documented bugs rendered without throwing), so a crash gate is blind to exactly this class. Layout telemetry could complement, but crash-only can't.</td></tr>
+        <tr><td class="num">8</td><td>Abandon / defer <code>@expo/ui</code> until it stabilizes</td><td>Subject-replacement — the migration is done; the ask is to validate it, not to reverse it.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <footer class="composition-signal">Composed 2026-08-03 by ce-ideate — repo-grounded ideation on validating the @expo/ui migration. Grounding: <code>scripts/layout-audit.ts</code>, its test fixtures, the e2e/Maestro surface, and the A/B-rig + iOS-sim project memories. Critique ran in a single context (no independent verifier dispatched) — confidence reflects that.</footer>
+
+</div>
+</body>
+</html>

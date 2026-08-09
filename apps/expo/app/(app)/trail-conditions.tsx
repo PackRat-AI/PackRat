@@ -1,5 +1,6 @@
-import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { Text } from '@packrat/ui/src/text';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { TrailConditionReportCard } from 'expo-app/features/trail-conditions/components/TrailConditionReportCard';
 import { useTrailConditionReports } from 'expo-app/features/trail-conditions/hooks/useTrailConditionReports';
@@ -105,7 +106,7 @@ export default function TrailConditionsScreen() {
   const listHeader = (
     <>
       <View className="p-4 pb-0">
-        <Text variant="subhead" className="mb-2 text-muted-foreground">
+        <Text variant="subhead" className="mb-2 text-muted-foreground" wrap>
           {t('trailConditions.subtitle')}
         </Text>
       </View>
@@ -116,7 +117,7 @@ export default function TrailConditionsScreen() {
   const listFooter = (
     <View className="mx-4 my-2 mb-6 rounded-lg bg-card p-4">
       <View className="rounded-md bg-muted p-3 dark:bg-gray-50/10">
-        <Text variant="footnote" className="text-muted-foreground">
+        <Text variant="footnote" className="text-muted-foreground" wrap>
           {t('trailConditions.disclaimer')}
         </Text>
       </View>
@@ -133,19 +134,19 @@ export default function TrailConditionsScreen() {
     </View>
   ) : error ? (
     <View className="mx-4 mb-3 rounded-xl bg-card p-4">
-      <Text variant="body" className="text-center text-muted-foreground">
+      <Text variant="body" className="text-center text-muted-foreground" wrap>
         {t('trailConditions.loadError')}
       </Text>
     </View>
   ) : selectedSurface !== 'all' ? (
     <View className="mx-4 mb-3 rounded-xl bg-card p-8">
-      <Text variant="body" className="text-center text-muted-foreground">
+      <Text variant="body" className="text-center text-muted-foreground" wrap>
         {t('trailConditions.noResults')}
       </Text>
     </View>
   ) : (
     <View className="mx-4 mb-3 rounded-xl bg-card p-8">
-      <Text variant="body" className="text-center text-muted-foreground">
+      <Text variant="body" className="text-center text-muted-foreground" wrap>
         {t('trailConditions.noReports')}
       </Text>
       <Pressable

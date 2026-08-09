@@ -19,6 +19,7 @@ export function registerFeedTools(agent: AgentContext): void {
       annotations: {
         title: 'List Feed Posts',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -27,30 +28,43 @@ export function registerFeedTools(agent: AgentContext): void {
       call({ promise: agent.api.user.feed.get({ query: { page, limit } }), action: 'list feed' }),
   );
 
-  tool<{ caption: string; images?: string[] }>(
-    agent.server,
-    'packrat_create_feed_post',
-    {
-      title: 'Create Feed Post',
-      description: 'Create a feed post with a caption and optional image keys.',
-      inputSchema: {
-        caption: z.string().min(1),
-        images: z.array(z.string()).optional(),
-      },
-      annotations: {
-        title: 'Create Feed Post',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-    },
-    async ({ caption, images }) =>
-      call({
-        promise: agent.api.user.feed.post({ caption, images: images ?? [] }),
-        action: 'create feed post',
-      }),
-  );
+  // ── Create feed post — DISABLED ───────────────────────────────────────────
+  // The API's CreatePostRequest requires images.min(1).max(10), but the only
+  // way to obtain an R2 image key is packrat_upload_image_url, now disabled
+  // (a Claude.ai user can't complete the out-of-band PUT — see upload.ts).
+  // So a connector user can never satisfy this tool. Feed reads, comments, and
+  // likes don't need images and stay enabled. Re-enable together with a viable
+  // connector image-ingestion path.
+  //
+  // tool<{ caption: string; images: string[] }>(
+  //   agent.server,
+  //   'packrat_create_feed_post',
+  //   {
+  //     title: 'Create Feed Post',
+  //     description:
+  //       'Create a feed post with a caption and 1–10 image keys (from packrat_upload_image_url). At least one image is required.',
+  //     inputSchema: {
+  //       caption: z.string().min(1),
+  //       images: z
+  //         .array(z.string())
+  //         .min(1)
+  //         .max(10)
+  //         .describe('1–10 R2 image keys; at least one is required'),
+  //     },
+  //     annotations: {
+  //       title: 'Create Feed Post',
+  //       readOnlyHint: false,
+  //       destructiveHint: false,
+  //       idempotentHint: false,
+  //       openWorldHint: false,
+  //     },
+  //   },
+  //   async ({ caption, images }) =>
+  //     call({
+  //       promise: agent.api.user.feed.post({ caption, images }),
+  //       action: 'create feed post',
+  //     }),
+  // );
 
   tool<{ post_id: string }>(
     agent.server,
@@ -62,6 +76,7 @@ export function registerFeedTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Feed Post',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -139,6 +154,7 @@ export function registerFeedTools(agent: AgentContext): void {
       annotations: {
         title: 'List Feed Comments',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },

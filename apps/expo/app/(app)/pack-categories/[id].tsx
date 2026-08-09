@@ -1,5 +1,5 @@
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Text } from '@packrat/ui/src/text';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
@@ -77,7 +77,7 @@ export default function PackCategoriesScreen() {
       {categories.length ? (
         <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
           <View className="p-4">
-            <Text variant="subhead" className="mb-2 text-muted-foreground">
+            <Text variant="subhead" className="mb-2 text-muted-foreground" wrap>
               {t('packs.organizeGear')}
             </Text>
           </View>
@@ -90,7 +90,9 @@ export default function PackCategoriesScreen() {
         </ScrollView>
       ) : (
         <View className="flex-1 items-center justify-center">
-          <Text className="text-center">{t('packs.noCategorizedItems')}</Text>
+          <Text className="text-center" wrap>
+            {t('packs.noCategorizedItems')}
+          </Text>
         </View>
       )}
     </>

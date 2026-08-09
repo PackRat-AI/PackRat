@@ -1,5 +1,5 @@
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -96,7 +96,7 @@ export function WildlifeScreen() {
           </View>
         ) : hasError ? (
           <View className="flex-1 items-center justify-center px-8">
-            <Text className="text-center text-destructive text-base">
+            <Text className="text-center text-destructive text-base" wrap>
               {t('wildlife.historyLoadError')}
             </Text>
           </View>
@@ -123,7 +123,7 @@ export function WildlifeScreen() {
             <Text className="text-xl font-semibold text-center mb-2">
               {t('wildlife.noIdentifications')}
             </Text>
-            <Text className="text-center text-muted-foreground text-base">
+            <Text className="text-center text-muted-foreground text-base" wrap>
               {t('wildlife.noIdentificationsDescription')}
             </Text>
           </View>

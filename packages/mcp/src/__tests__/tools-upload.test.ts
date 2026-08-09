@@ -18,7 +18,9 @@ function endsWith(call: ApiCall, segments: string[]): boolean {
   return tail.length === segments.length && tail.every((seg, i) => seg === segments[i]);
 }
 
-describe('packrat_upload_image_url', () => {
+// DISABLED — packrat_upload_image_url is not registered: image ingestion is
+// not viable on the connector (see tools/upload.ts). Re-enable with the tool.
+describe.skip('packrat_upload_image_url', () => {
   it('GETs user.upload.presigned with the stringified size query', async () => {
     const { agent, server, calls } = makeAgent();
     registerUploadTools(agent);

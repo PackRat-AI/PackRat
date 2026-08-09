@@ -1,5 +1,5 @@
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { BottomSheetModalProvider } from '@expo/ui/community/bottom-sheet';
 import { PortalHost } from '@rn-primitives/portal';
 import { ErrorBoundary } from 'expo-app/components/initial/ErrorBoundary';
 import 'expo-app/utils/polyfills';

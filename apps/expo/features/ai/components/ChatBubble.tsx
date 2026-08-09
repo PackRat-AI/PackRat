@@ -1,6 +1,8 @@
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomSheetScrollView } from '@expo/ui/community/bottom-sheet';
 import { keyIn } from '@packrat/guards';
-import { Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
+import { Sheet, useSheetRef } from '@packrat/ui/src/bottom-sheet';
+import { SelectableText } from '@packrat/ui/src/selectable-text';
+import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import type { ToolUIPart, UIMessage } from 'ai';
 import * as Burnt from 'burnt';
@@ -14,7 +16,6 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useState } from 'react';
 import { TouchableOpacity, View, type ViewStyle } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ReportModal } from './ReportModal';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
 
@@ -41,7 +42,6 @@ export const ChatBubble = React.memo(function ChatBubble({
   const bottomSheetRef = useSheetRef();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
 
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
 
@@ -201,7 +201,7 @@ export const ChatBubble = React.memo(function ChatBubble({
         </>
       )}
 
-      <Sheet ref={bottomSheetRef} snapPoints={['100%']} index={0} bottomInset={insets.bottom}>
+      <Sheet ref={bottomSheetRef} snapPoints={['100%']} index={0}>
         <BottomSheetScrollView className="flex-1 px-4" style={{ flex: 1 }}>
           <View>
             <Text variant="heading" className="text-center mb-6">
@@ -209,7 +209,7 @@ export const ChatBubble = React.memo(function ChatBubble({
             </Text>
 
             <View className="mb-6">
-              <Text selectable>
+              <SelectableText selectable>
                 {isAI
                   ? formatAIResponse(
                       item.parts
@@ -221,7 +221,7 @@ export const ChatBubble = React.memo(function ChatBubble({
                       .filter((part) => part.type === 'text')
                       .map((part) => part.text)
                       .join('\n')}
-              </Text>
+              </SelectableText>
             </View>
           </View>
         </BottomSheetScrollView>

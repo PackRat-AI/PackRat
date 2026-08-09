@@ -1,4 +1,6 @@
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/src/button';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { Text } from '@packrat/ui/src/text';
 import { devSkipAutoAnalyzeAtom } from 'expo-app/atoms/devAtoms';
 import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
@@ -224,7 +226,9 @@ function SwapSheet({
             })
           ) : (
             <View className="items-center py-8">
-              <Text className="text-muted-foreground">No gear found for this suggestion.</Text>
+              <Text className="text-muted-foreground" wrap>
+                No gear found for this suggestion.
+              </Text>
             </View>
           )}
         </ScrollView>
@@ -335,7 +339,7 @@ function DevGapPanel({
               <Text
                 variant="footnote"
                 className="font-semibold"
-                style={{ color: isActive ? 'white' : colors.foreground }}
+                textColor={isActive ? 'white' : colors.foreground}
               >
                 {chip.label}
               </Text>
@@ -344,7 +348,7 @@ function DevGapPanel({
         })}
       </View>
       <View className="mt-2 flex-row items-center justify-between">
-        <Text variant="footnote" className="text-muted-foreground">
+        <Text variant="footnote" className="text-muted-foreground" wrap>
           Skip auto-analyze (saves API credits)
         </Text>
         <TouchableOpacity
@@ -356,7 +360,7 @@ function DevGapPanel({
           <Text
             variant="footnote"
             className="font-semibold"
-            style={{ color: skipAutoAnalyze ? 'white' : colors.foreground }}
+            textColor={skipAutoAnalyze ? 'white' : colors.foreground}
           >
             {skipAutoAnalyze ? 'ON' : 'OFF'}
           </Text>
@@ -498,7 +502,7 @@ export function GapAnalysisModal({
         {/* Header */}
         <View className="flex-row items-center justify-between border-b border-border p-4">
           <View className="flex-1">
-            <Text variant="footnote" className="uppercase text-xs" style={{ color: colors.grey2 }}>
+            <Text variant="footnote" className="uppercase text-xs" textColor={colors.grey2}>
               {t('packs.gapAnalysis')}
             </Text>
             <Text numberOfLines={1}>{pack.name}</Text>
@@ -554,7 +558,7 @@ export function GapAnalysisModal({
               <Pressable onPress={() => setActiveControlIndex(null)}>
                 <View>
                   {analysis.summary && (
-                    <Text className="mb-4 px-1 text-sm text-muted-foreground">
+                    <Text wrap className="mb-4 px-1 text-sm text-muted-foreground">
                       {analysis.summary}
                     </Text>
                   )}
@@ -588,7 +592,7 @@ export function GapAnalysisModal({
                 <Text className="mt-4 text-center font-medium text-foreground">
                   {t('packs.packLooksComplete')}
                 </Text>
-                <Text className="mt-2 text-center text-sm text-muted-foreground">
+                <Text className="mt-2 text-center text-sm text-muted-foreground" wrap>
                   {t('packs.noSignificantGaps')}
                 </Text>
               </View>

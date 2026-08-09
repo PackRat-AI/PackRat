@@ -4,9 +4,18 @@ import MarkdownUI
 struct ChatView: View {
     @Environment(AuthManager.self) private var authManager
     @Bindable var viewModel: ChatViewModel
+    @FocusState private var isInputFocused: Bool
 
     private var showSuggestions: Bool {
         authManager.isAuthenticated && viewModel.messages.count <= 1 && !viewModel.isStreaming
+    }
+
+    /// Sends the message and drops the keyboard, so the reply is not hidden
+    /// behind it. The composer is multi-line (`axis: .vertical`), so Return
+    /// inserts a newline and never dismisses on its own.
+    private func send() {
+        isInputFocused = false
+        viewModel.sendMessage()
     }
 
     var body: some View {
@@ -37,6 +46,7 @@ struct ChatView: View {
                 }
             }
         }
+        .keyboardDoneButton(isFocused: $isInputFocused)
     }
 
     // MARK: - Message List
@@ -64,6 +74,7 @@ struct ChatView: View {
                     proxy.scrollTo(viewModel.messages.last?.id, anchor: .bottom)
                 }
             }
+            .dismissesKeyboardOnScroll()
             .onChange(of: viewModel.messages.last?.content) {
                 proxy.scrollTo(viewModel.messages.last?.id, anchor: .bottom)
             }
@@ -109,7 +120,7 @@ struct ChatView: View {
                 ForEach(Self.suggestions, id: \.0) { label, prompt in
                     Button {
                         viewModel.inputText = prompt
-                        viewModel.sendMessage()
+                        send()
                     } label: {
                         Text(label)
                             .font(.caption.bold())
@@ -134,14 +145,16 @@ struct ChatView: View {
             #if os(macOS)
             TextField("Ask about gear, trips, packing...", text: $viewModel.inputText)
                 .textFieldStyle(.roundedBorder)
-                .onSubmit { viewModel.sendMessage() }
+                .focused($isInputFocused)
+                .onSubmit { send() }
                 .accessibilityIdentifier("chat_input")
             #else
             TextField("Ask about gear, trips, packing…", text: $viewModel.inputText, axis: .vertical)
                 .textFieldStyle(.plain)
                 .lineLimit(1...5)
                 .padding(.vertical, 8)
-                .onSubmit { viewModel.sendMessage() }
+                .focused($isInputFocused)
+                .onSubmit { send() }
                 .accessibilityIdentifier("chat_input")
             #endif
 
@@ -156,7 +169,7 @@ struct ChatView: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("chat_cancel")
                 } else {
-                    Button(action: viewModel.sendMessage) {
+                    Button(action: send) {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.title2)
                             .foregroundStyle(viewModel.canSend ? Color.accentColor : Color.secondary)

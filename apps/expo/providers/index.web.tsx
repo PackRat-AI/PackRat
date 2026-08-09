@@ -1,5 +1,5 @@
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { BottomSheetModalProvider } from '@expo/ui/community/bottom-sheet';
 import { PortalHost } from '@rn-primitives/portal';
 import { ErrorBoundary } from 'expo-app/components/initial/ErrorBoundary';
 import type { ReactNode } from 'react';
@@ -11,7 +11,7 @@ import { TanstackProvider } from './TanstackProvider';
 
 /**
  * Web Providers. Drops KeyboardProvider (no web support); keeps
- * BottomSheetModalProvider for inline BottomSheetView and ActionSheetProvider
+ * BottomSheetModalProvider for inline SheetView and ActionSheetProvider
  * for useActionSheet(). CustomActionSheet wraps its child in
  * React.Children.only — keep the direct child a single element.
  */

@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { type SimilarItem, useSimilarCatalogItems } from 'expo-app/features/catalog/hooks';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';

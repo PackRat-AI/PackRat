@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/src/text';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { Markdown } from 'expo-app/components/Markdown';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -88,7 +88,9 @@ export const GuideDetailScreen = () => {
       </View>
 
       {guide.description && (
-        <Text className="text-gray-600 dark:text-gray-400 mb-2 text-base">{guide.description}</Text>
+        <Text className="text-gray-600 dark:text-gray-400 mb-2 text-base" wrap>
+          {guide.description}
+        </Text>
       )}
 
       <Markdown>{guide.content || ''}</Markdown>

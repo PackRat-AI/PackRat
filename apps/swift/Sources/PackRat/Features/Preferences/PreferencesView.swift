@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 // MARK: - App-wide user preferences stored in UserDefaults
 
@@ -31,6 +32,9 @@ struct PreferencesView: View {
     @AppStorage("apiBaseURL") private var apiBaseURL: String = ""
 
     @State private var showingClearDataConfirm = false
+    @Environment(\.openURL) private var openURL
+    @State private var notificationsEnabled = false
+    @State private var notificationAuthStatus: UNAuthorizationStatus = .notDetermined
 
     var body: some View {
         #if os(macOS)
@@ -57,6 +61,7 @@ struct PreferencesView: View {
         Form {
             generalSection
             unitsSection
+            notificationSection
             advancedSection
             #if DEBUG
             Section("Debug") {
@@ -67,6 +72,7 @@ struct PreferencesView: View {
         }
         .navigationTitle("Settings")
         .clearDataConfirmation(isPresented: $showingClearDataConfirm, onConfirm: clearAppData)
+        .onAppear { Task { await refreshNotificationStatus() } }
         #endif
     }
 
@@ -111,6 +117,52 @@ struct PreferencesView: View {
             }
             .pickerStyle(.segmented)
         }
+    }
+
+    @ViewBuilder
+    private var notificationSection: some View {
+        Section("Notifications") {
+            if notificationAuthStatus == .denied {
+                HStack {
+                    Image(systemName: "bell.slash.fill").foregroundStyle(.secondary)
+                    Text("Notifications are blocked in Settings")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    #if os(iOS)
+                    Button("Open Settings") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            openURL(url)
+                        }
+                    }
+                    .font(.callout)
+                    #endif
+                }
+            } else {
+                Toggle("Push Notifications", isOn: $notificationsEnabled)
+                    .onChange(of: notificationsEnabled) { _, enabled in
+                        Task { await toggleNotifications(enabled) }
+                    }
+            }
+        }
+    }
+
+    private func refreshNotificationStatus() async {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        notificationAuthStatus = settings.authorizationStatus
+        notificationsEnabled = settings.authorizationStatus == .authorized
+    }
+
+    private func toggleNotifications(_ enable: Bool) async {
+        let center = UNUserNotificationCenter.current()
+        if enable {
+            let status = await center.notificationSettings().authorizationStatus
+            if status == .notDetermined {
+                _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+            }
+        }
+        await refreshNotificationStatus()
     }
 
     @ViewBuilder
