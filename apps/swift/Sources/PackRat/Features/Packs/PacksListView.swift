@@ -11,6 +11,8 @@ struct PacksListView: View {
     @State private var selectedCategory: PackCategory? = nil
     @State private var publicPacks: [Pack] = []
     @State private var isLoadingPublic = false
+    @State private var packPendingDeletion: Pack?
+    @State private var deleteError: String?
     @Environment(\.modelContext) private var modelContext
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -95,6 +97,34 @@ struct PacksListView: View {
         .sheet(isPresented: $showingCreateSheet) {
             PackFormView(viewModel: viewModel)
         }
+        .confirmationDialog(
+            "Delete \(packPendingDeletion?.name ?? "Pack")?",
+            isPresented: Binding(
+                get: { packPendingDeletion != nil },
+                set: { if !$0 { packPendingDeletion = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: packPendingDeletion
+        ) { pack in
+            Button("Delete", role: .destructive) {
+                deletePack(pack)
+            }
+            .accessibilityIdentifier("pack_delete_confirm_button")
+            Button("Cancel", role: .cancel) { packPendingDeletion = nil }
+        } message: { pack in
+            Text("\"\(pack.name)\" and its \(pack.itemCount) item\(pack.itemCount == 1 ? "" : "s") will be deleted. This cannot be undone.")
+        }
+        .alert(
+            "Couldn't Delete Pack",
+            isPresented: Binding(
+                get: { deleteError != nil },
+                set: { if !$0 { deleteError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { deleteError = nil }
+        } message: {
+            Text(deleteError ?? "")
+        }
         .navigationDestination(isPresented: $showingRecentPacks) {
             RecentPacksView(packs: viewModel.packs)
         }
@@ -167,8 +197,16 @@ struct PacksListView: View {
                     #endif
                     if !isExplore {
                         Button("Delete", systemImage: "trash", role: .destructive) {
-                            Task { try? await viewModel.deletePack(pack.id) }
+                            packPendingDeletion = pack
                         }
+                    }
+                }
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    if !isExplore {
+                        Button("Delete", systemImage: "trash", role: .destructive) {
+                            packPendingDeletion = pack
+                        }
+                        .accessibilityIdentifier("pack_delete_button_\(pack.id)")
                     }
                 }
                 .task {
@@ -178,6 +216,20 @@ struct PacksListView: View {
                 }
         }
         .accessibilityIdentifier(isExplore ? "packs_public_list" : "packs_list")
+    }
+
+    // MARK: - Delete
+
+    private func deletePack(_ pack: Pack) {
+        packPendingDeletion = nil
+        Task {
+            do {
+                try await viewModel.deletePack(pack.id, context: modelContext)
+                if selectedId == pack.id { selectedId = nil }
+            } catch {
+                deleteError = error.localizedDescription
+            }
+        }
     }
 
     // MARK: - Public Packs

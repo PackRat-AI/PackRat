@@ -1,6 +1,7 @@
 import SwiftUI
 import Charts
 import Collections
+import SwiftData
 
 struct PackDetailView: View {
     let pack: Pack
@@ -15,6 +16,8 @@ struct PackDetailView: View {
     @State private var error: String?
     @State private var dropTargetCategory: String?
     @State private var triggerShare = false
+    @State private var itemPendingDeletion: PackItem?
+    @Environment(\.modelContext) private var modelContext
 
     private var currentPack: Pack {
         viewModel.packs.first { $0.id == pack.id } ?? pack
@@ -47,13 +50,7 @@ struct PackDetailView: View {
                                 PackItemRow(item: item) {
                                     editingItem = item
                                 } onDelete: {
-                                    Task {
-                                        do {
-                                    try await viewModel.deleteItem(item.id, from: currentPack.id)
-                                        } catch {
-                                            self.error = error.localizedDescription
-                                        }
-                                    }
+                                    itemPendingDeletion = item
                                 } onDetail: {
                                     detailItem = item
                                 }
@@ -139,6 +136,23 @@ struct PackDetailView: View {
         .sheet(isPresented: $showingGapAnalysis) {
             GapAnalysisSheet(pack: currentPack, service: viewModel.service)
         }
+        .confirmationDialog(
+            "Delete \(itemPendingDeletion?.name ?? "Item")?",
+            isPresented: Binding(
+                get: { itemPendingDeletion != nil },
+                set: { if !$0 { itemPendingDeletion = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: itemPendingDeletion
+        ) { item in
+            Button("Delete", role: .destructive) {
+                deleteItem(item)
+            }
+            .accessibilityIdentifier("pack_item_delete_confirm_button")
+            Button("Cancel", role: .cancel) { itemPendingDeletion = nil }
+        } message: { item in
+            Text("\"\(item.name)\" will be removed from this pack. This cannot be undone.")
+        }
         .navigationDestination(isPresented: $showingWeightAnalysis) {
             PackWeightAnalysisView(pack: currentPack)
         }
@@ -150,6 +164,18 @@ struct PackDetailView: View {
                 NSPasteboard.general.setString(url.absoluteString, forType: .string)
                 #endif
                 triggerShare = false
+            }
+        }
+    }
+
+    private func deleteItem(_ item: PackItem) {
+        itemPendingDeletion = nil
+        Task {
+            do {
+                try await viewModel.deleteItem(item.id, from: currentPack.id, context: modelContext)
+                error = nil
+            } catch {
+                self.error = error.localizedDescription
             }
         }
     }

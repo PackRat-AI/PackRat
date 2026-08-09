@@ -73,12 +73,15 @@ final class PackService: Sendable {
             worn: worn,
             notes: notes
         )
-        let endpoint = Endpoint(.put, "/api/packs/\(packId)/items/\(itemId)", body: body)
+        // Item routes are keyed by item ID alone — `/api/packs/items/:itemId`,
+        // not nested under the pack. `packId` stays in the signature because
+        // callers use it to locate the item in local state.
+        let endpoint = Endpoint(.patch, "/api/packs/items/\(itemId)", body: body)
         return try await api.send(endpoint)
     }
 
     func deleteItem(_ itemId: String, from packId: String) async throws {
-        let endpoint = Endpoint(.delete, "/api/packs/\(packId)/items/\(itemId)")
+        let endpoint = Endpoint(.delete, "/api/packs/items/\(itemId)")
         try await api.sendDiscarding(endpoint)
     }
 
