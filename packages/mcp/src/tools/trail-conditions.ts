@@ -21,6 +21,7 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Trail Condition Reports',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -51,6 +52,7 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       annotations: {
         title: 'List My Trail Reports',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },

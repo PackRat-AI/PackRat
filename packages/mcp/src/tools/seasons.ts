@@ -20,6 +20,7 @@ export function registerSeasonTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Season Suggestions',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },

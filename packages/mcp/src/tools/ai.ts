@@ -17,6 +17,7 @@ export function registerAiTools(agent: AgentContext): void {
       annotations: {
         title: 'Web Search',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: false,
         openWorldHint: true,
       },
@@ -47,6 +48,7 @@ export function registerAiTools(agent: AgentContext): void {
   //     annotations: {
   //       title: 'Execute Read-Only SQL Query',
   //       readOnlyHint: true,
+  //       destructiveHint: false,
   //       idempotentHint: true,
   //       openWorldHint: false,
   //     },
@@ -72,6 +74,7 @@ export function registerAiTools(agent: AgentContext): void {
   //     annotations: {
   //       title: 'Get Database Schema',
   //       readOnlyHint: true,
+  //       destructiveHint: false,
   //       idempotentHint: true,
   //       openWorldHint: false,
   //     },

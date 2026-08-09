@@ -26,6 +26,7 @@ export function registerGuidesTools(agent: AgentContext): void {
       annotations: {
         title: 'List Outdoor Guides',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -54,6 +55,7 @@ export function registerGuidesTools(agent: AgentContext): void {
       annotations: {
         title: 'List Guide Categories',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -85,6 +87,7 @@ export function registerGuidesTools(agent: AgentContext): void {
       annotations: {
         title: 'Search Outdoor Guides',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -106,6 +109,7 @@ export function registerGuidesTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Guide',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
