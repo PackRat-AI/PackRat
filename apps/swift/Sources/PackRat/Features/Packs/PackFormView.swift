@@ -14,6 +14,7 @@ struct PackFormView: View {
     @State private var isPublic = false
     @State private var isLoading = false
     @State private var error: String?
+    @FocusState private var isInputFocused: Bool
 
     private var isEditing: Bool { existingPack != nil }
     private var isValid: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -28,9 +29,13 @@ struct PackFormView: View {
             Form {
                 Section("Details") {
                     TextField("Name", text: $name)
+                        .focused($isInputFocused)
+                        .submitLabel(.done)
+                        .onSubmit { isInputFocused = false }
                         .accessibilityIdentifier("pack_name")
                     TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
+                        .focused($isInputFocused)
                         .accessibilityIdentifier("pack_description")
                 }
 
@@ -58,6 +63,8 @@ struct PackFormView: View {
                 }
             }
             .packRatFormStyle()
+            .dismissesKeyboardOnScroll()
+            .keyboardDoneButton(isFocused: $isInputFocused)
             .navigationTitle(isEditing ? "Edit Pack" : "New Pack")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

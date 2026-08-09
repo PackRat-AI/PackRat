@@ -174,6 +174,7 @@ private struct AddShoppingItemSheet: View {
     @State private var category = ""
     @State private var notes = ""
     @State private var priceText = ""
+    @FocusState private var isInputFocused: Bool
 
     private let categories = ["Shelter", "Sleep", "Clothing", "Navigation", "Food", "Water", "Safety", "Tools", "Electronics", "Other"]
 
@@ -182,6 +183,9 @@ private struct AddShoppingItemSheet: View {
             Form {
                 Section("Item") {
                     TextField("Name", text: $name)
+                        .focused($isInputFocused)
+                        .submitLabel(.done)
+                        .onSubmit { isInputFocused = false }
                     Picker("Category", selection: $category) {
                         Text("None").tag("")
                         ForEach(categories, id: \.self) { cat in
@@ -197,12 +201,16 @@ private struct AddShoppingItemSheet: View {
                             #if os(iOS)
                             .keyboardType(.decimalPad)
                             #endif
+                            .focused($isInputFocused)
                     }
                     TextField("Notes", text: $notes, axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
+                        .focused($isInputFocused)
                 }
             }
             .packRatFormStyle()
+            .dismissesKeyboardOnScroll()
+            .keyboardDoneButton(isFocused: $isInputFocused)
             .navigationTitle("Add Item")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
