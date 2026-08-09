@@ -226,7 +226,8 @@ struct PackDetailView: View {
                         category: category == "Uncategorized" ? nil : category,
                         consumable: item.consumable,
                         worn: item.worn,
-                        notes: item.notes
+                        notes: item.notes,
+                        context: modelContext
                     )
                 } catch {
                     self.error = error.localizedDescription
