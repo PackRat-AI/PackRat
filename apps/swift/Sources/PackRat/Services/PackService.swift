@@ -14,10 +14,12 @@ final class PackService: Sendable {
         return try await api.send(endpoint)
     }
 
-    func createPack(name: String, description: String? = nil, category: String? = nil, isPublic: Bool = false) async throws -> Pack {
+    /// `id` is caller-supplied so an offline-created pack keeps the same identity
+    /// when the outbox replays its create against the server.
+    func createPack(id: String = UUID().uuidString.lowercased(), name: String, description: String? = nil, category: String? = nil, isPublic: Bool = false) async throws -> Pack {
         let now = Date.iso8601Now()
         let body = CreatePackRequest(
-            id: UUID().uuidString.lowercased(),
+            id: id,
             name: name,
             description: description,
             category: category,
@@ -46,9 +48,9 @@ final class PackService: Sendable {
         try await api.sendDiscarding(endpoint)
     }
 
-    func addItem(to packId: String, name: String, weight: Double? = nil, weightUnit: String? = nil, quantity: Int? = nil, category: String? = nil, consumable: Bool? = nil, worn: Bool? = nil, notes: String? = nil) async throws -> PackItem {
+    func addItem(to packId: String, id: String = UUID().uuidString.lowercased(), name: String, weight: Double? = nil, weightUnit: String? = nil, quantity: Int? = nil, category: String? = nil, consumable: Bool? = nil, worn: Bool? = nil, notes: String? = nil) async throws -> PackItem {
         let body = CreatePackItemRequest(
-            id: UUID().uuidString.lowercased(),
+            id: id,
             name: name,
             weight: weight,
             weightUnit: weightUnit,
