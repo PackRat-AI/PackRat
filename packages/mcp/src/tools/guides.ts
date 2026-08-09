@@ -1,5 +1,11 @@
 import { z } from 'zod';
 import { call } from '../client';
+import {
+  GetGuideOutputSchema,
+  ListGuideCategoriesOutputSchema,
+  ListGuidesOutputSchema,
+  SearchGuidesOutputSchema,
+} from '../output-schemas';
 import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
@@ -23,6 +29,7 @@ export function registerGuidesTools(agent: AgentContext): void {
         sort_field: z.enum(['title', 'category', 'createdAt', 'updatedAt']).optional(),
         sort_order: z.enum(['asc', 'desc']).optional(),
       },
+      outputSchema: ListGuidesOutputSchema.shape,
       annotations: {
         title: 'List Outdoor Guides',
         readOnlyHint: true,
@@ -41,6 +48,7 @@ export function registerGuidesTools(agent: AgentContext): void {
           },
         }),
         action: 'list guides',
+        structured: true,
       }),
   );
 
@@ -51,6 +59,7 @@ export function registerGuidesTools(agent: AgentContext): void {
       title: 'List Guide Categories',
       description: 'List all guide categories.',
       inputSchema: {},
+      outputSchema: ListGuideCategoriesOutputSchema.shape,
       annotations: {
         title: 'List Guide Categories',
         readOnlyHint: true,
@@ -62,6 +71,7 @@ export function registerGuidesTools(agent: AgentContext): void {
       call({
         promise: agent.api.user.guides.categories.get(),
         action: 'list guide categories',
+        structured: true,
       }),
   );
 
@@ -82,6 +92,7 @@ export function registerGuidesTools(agent: AgentContext): void {
         limit: z.number().int().min(1).max(50).default(20),
         category: z.string().optional(),
       },
+      outputSchema: SearchGuidesOutputSchema.shape,
       annotations: {
         title: 'Search Outdoor Guides',
         readOnlyHint: true,
@@ -93,6 +104,7 @@ export function registerGuidesTools(agent: AgentContext): void {
       call({
         promise: agent.api.user.guides.search.get({ query: { q: query, page, limit, category } }),
         action: 'search guides',
+        structured: true,
       }),
   );
 
@@ -103,6 +115,7 @@ export function registerGuidesTools(agent: AgentContext): void {
       title: 'Get Guide',
       description: 'Get a specific guide by ID. Returns MDX/Markdown content.',
       inputSchema: { guide_id: z.string() },
+      outputSchema: GetGuideOutputSchema.shape,
       annotations: {
         title: 'Get Guide',
         readOnlyHint: true,
@@ -114,6 +127,7 @@ export function registerGuidesTools(agent: AgentContext): void {
       call({
         promise: agent.api.user.guides({ id: guide_id }).get(),
         action: 'get guide',
+        structured: true,
         resourceHint: `guide ${guide_id}`,
       }),
   );

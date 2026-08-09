@@ -31,23 +31,34 @@
  *   packrat_admin_stats         → AdminStatsSchema
  *   packrat_admin_analytics_*   → schemas-package analytics shapes
  *
- * Tier 2 deferral list — tools whose API response shape is loosely typed
- * by Eden Treaty / not currently modeled in `@packrat/schemas`. These
- * tools emit text-only output today and are tracked in
- * `docs/mcp/runbook.md` under "U8 output envelopes → Tier 2 deferral":
+ * Tier 2 lift (this change): these tools now declare an `outputSchema`,
+ * reusing shapes already modeled in `@packrat/schemas`:
  *
- *   - all of `packs.items.*` create/update/delete payloads
- *   - catalog vector-search responses
- *   - feed/trail-conditions/guides/knowledge handlers
- *   - admin list endpoints whose Treaty inferred type loses the array
- *     element shape after the response coercion
+ *   packrat_search_gear_catalog    → CatalogItemsResponseSchema
+ *   packrat_get_catalog_item       → CatalogItemSchema
+ *   packrat_semantic_gear_search   → catalog rows + `similarity`
+ *   packrat_similar_catalog_items  → catalog rows + `similarity`
+ *   packrat_list_pack_items        → list-of-PackItem with nextOffset
+ *   packrat_get_pack_item          → PackItemSchema
+ *   packrat_list_guides            → GuidesResponseSchema
+ *   packrat_search_guides          → GuideSearchResponseSchema
+ *   packrat_get_guide              → GuideDetailSchema
+ *   packrat_list_guide_categories  → GuideCategoriesResponseSchema
  *
- * The intent is that a follow-up unit derives the missing schemas from
- * the API route definitions and lifts those tools to Tier 1.
+ * Still text-only (shape not modeled, or Treaty loses the element type):
+ * pack/template/trip write payloads, feed, trail-conditions, knowledge,
+ * season suggestions.
  */
 
 import { AdminStatsSchema } from '@packrat/schemas/admin';
-import { PackSchema, PackWithItemsSchema } from '@packrat/schemas/packs';
+import { CatalogItemSchema, CatalogItemsResponseSchema } from '@packrat/schemas/catalog';
+import {
+  GuideCategoriesResponseSchema,
+  GuideDetailSchema,
+  GuideSearchResponseSchema,
+  GuidesResponseSchema,
+} from '@packrat/schemas/guides';
+import { PackItemSchema, PackSchema, PackWithItemsSchema } from '@packrat/schemas/packs';
 import { TripSchema } from '@packrat/schemas/trips';
 import { UserSchema } from '@packrat/schemas/users';
 import { z } from 'zod';
@@ -133,6 +144,52 @@ export const GetWeatherOutputSchema = z
     forecast: z.unknown().optional(),
   })
   .passthrough();
+
+// ── Tier 2 → Tier 1 lift ─────────────────────────────────────────────────────
+// The tools below were previously text-only (see the "Tier 2 deferral list"
+// in the module docstring). Their API response shapes ARE modeled in
+// `@packrat/schemas`, so per this file's reuse policy we re-export those
+// rather than re-deriving them here.
+
+/** `packrat_search_gear_catalog` — paginated catalog page. */
+export const SearchGearCatalogOutputSchema = CatalogItemsResponseSchema;
+
+/** `packrat_get_catalog_item` — a single catalog row. */
+export const GetCatalogItemOutputSchema = CatalogItemSchema;
+
+/**
+ * `packrat_semantic_gear_search` / `packrat_similar_catalog_items` — vector
+ * search returns catalog rows with a cosine `similarity` score attached, and
+ * the service drops the 1536-dim `embedding` column from the projection.
+ * `.passthrough()` keeps validation from failing if the service adds a field.
+ */
+export const CatalogSimilarityOutputSchema = z
+  .object({
+    items: z.array(CatalogItemSchema.extend({ similarity: z.number() }).passthrough()),
+    total: z.number().int().optional(),
+    limit: z.number().int().optional(),
+    offset: z.number().int().optional(),
+    nextOffset: z.number().int().nullable().optional(),
+  })
+  .passthrough();
+
+/** `packrat_list_pack_items` — the API returns a bare array; we wrap it. */
+export const ListPackItemsOutputSchema = paginatedWithNextOffset(PackItemSchema);
+
+/** `packrat_get_pack_item` — a single pack item row. */
+export const GetPackItemOutputSchema = PackItemSchema;
+
+/** `packrat_list_guides` — paginated guides page. */
+export const ListGuidesOutputSchema = GuidesResponseSchema;
+
+/** `packrat_search_guides` — same page shape plus the echoed query. */
+export const SearchGuidesOutputSchema = GuideSearchResponseSchema;
+
+/** `packrat_get_guide` — a single guide including its MDX/Markdown body. */
+export const GetGuideOutputSchema = GuideDetailSchema;
+
+/** `packrat_list_guide_categories` — the category list plus a count. */
+export const ListGuideCategoriesOutputSchema = GuideCategoriesResponseSchema;
 
 /** `packrat_admin_stats` — re-export of the API's admin stats schema. */
 export const AdminStatsOutputSchema = AdminStatsSchema;

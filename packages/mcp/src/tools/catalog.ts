@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { call, clampLimit, PAGINATION_LIMIT_MAX } from '../client';
 import { CatalogSortField, SortOrder } from '../enums';
+import {
+  CatalogSimilarityOutputSchema,
+  GetCatalogItemOutputSchema,
+  SearchGearCatalogOutputSchema,
+} from '../output-schemas';
 import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
@@ -44,6 +49,7 @@ export function registerCatalogTools(agent: AgentContext): void {
         sort_by: z.nativeEnum(CatalogSortField).optional(),
         sort_order: z.nativeEnum(SortOrder).default(SortOrder.Asc),
       },
+      outputSchema: SearchGearCatalogOutputSchema.shape,
       annotations: {
         title: 'Search Gear Catalog',
         readOnlyHint: true,
@@ -63,6 +69,7 @@ export function registerCatalogTools(agent: AgentContext): void {
           },
         }),
         action: 'search catalog',
+        structured: true,
       }),
   );
 
@@ -79,6 +86,7 @@ export function registerCatalogTools(agent: AgentContext): void {
         query: z.string().min(3),
         limit: z.number().int().min(1).max(30).default(8),
       },
+      outputSchema: CatalogSimilarityOutputSchema.shape,
       annotations: {
         title: 'Semantic Gear Search',
         readOnlyHint: true,
@@ -90,6 +98,7 @@ export function registerCatalogTools(agent: AgentContext): void {
       call({
         promise: agent.api.user.catalog['vector-search'].get({ query: { q: query, limit } }),
         action: 'semantic catalog search',
+        structured: true,
       }),
   );
 
@@ -105,6 +114,7 @@ export function registerCatalogTools(agent: AgentContext): void {
       inputSchema: {
         item_id: z.number().int().describe('The catalog item ID'),
       },
+      outputSchema: GetCatalogItemOutputSchema.shape,
       annotations: {
         title: 'Get Catalog Item',
         readOnlyHint: true,
@@ -117,6 +127,7 @@ export function registerCatalogTools(agent: AgentContext): void {
         promise: agent.api.user.catalog({ id: String(item_id) }).get(),
         action: 'get catalog item',
         resourceHint: `catalog item ${item_id}`,
+        structured: true,
       }),
   );
 
@@ -133,6 +144,7 @@ export function registerCatalogTools(agent: AgentContext): void {
         limit: z.number().int().min(1).max(50).default(10),
         threshold: z.number().min(0).max(1).optional(),
       },
+      outputSchema: CatalogSimilarityOutputSchema.shape,
       annotations: {
         title: 'Find Similar Catalog Items',
         readOnlyHint: true,
@@ -150,6 +162,7 @@ export function registerCatalogTools(agent: AgentContext): void {
         }),
         action: 'find similar catalog items',
         resourceHint: `catalog item ${item_id}`,
+        structured: true,
       }),
   );
 
