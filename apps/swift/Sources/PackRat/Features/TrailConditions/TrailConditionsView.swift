@@ -246,6 +246,7 @@ struct SubmitTrailConditionView: View {
     @State private var notes = ""
     @State private var isSubmitting = false
     @State private var error: String?
+    @FocusState private var isInputFocused: Bool
 
     private let hazardOptions = ["Downed trees", "Muddy sections", "Ice", "High water", "Rock slides", "Wildlife", "Washed out trail"]
     private var isValid: Bool { !trailName.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -255,8 +256,14 @@ struct SubmitTrailConditionView: View {
             Form {
                 Section("Trail") {
                     TextField("Trail", text: $trailName)
+                        .focused($isInputFocused)
+                        .submitLabel(.done)
+                        .onSubmit { isInputFocused = false }
                         .accessibilityIdentifier("trail_report_name")
                     TextField("Region", text: $trailRegion)
+                        .focused($isInputFocused)
+                        .submitLabel(.done)
+                        .onSubmit { isInputFocused = false }
                         .accessibilityIdentifier("trail_report_region")
                 }
                 Section("Conditions") {
@@ -284,11 +291,14 @@ struct SubmitTrailConditionView: View {
                 Section("Notes") {
                     TextField("Describe conditions in detail…", text: $notes, axis: .vertical)
                         .lineLimit(4, reservesSpace: true)
+                        .focused($isInputFocused)
                         .accessibilityIdentifier("trail_report_notes")
                 }
                 if let error { Section { InlineErrorView(message: error) } }
             }
             .packRatFormStyle()
+            .dismissesKeyboardOnScroll()
+            .keyboardDoneButton(isFocused: $isInputFocused)
             .navigationTitle("Submit Report")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
