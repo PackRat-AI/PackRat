@@ -114,12 +114,12 @@ struct TripsListView: View {
             Divider()
             #endif
             Button("Delete", systemImage: "trash", role: .destructive) {
-                Task { try? await viewModel.deleteTrip(trip.id, context: modelContext) }
+                Task { await viewModel.deleteTrip(trip.id, context: modelContext) }
             }
         }
         .swipeActions(edge: .trailing) {
             Button(role: .destructive) {
-                Task { try? await viewModel.deleteTrip(trip.id, context: modelContext) }
+                Task { await viewModel.deleteTrip(trip.id, context: modelContext) }
             } label: {
                 Label("Delete", systemImage: "trash")
             }

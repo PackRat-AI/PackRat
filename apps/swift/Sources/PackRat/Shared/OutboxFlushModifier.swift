@@ -11,7 +11,13 @@ private struct OutboxFlushModifier: ViewModifier {
     private var isConnected: Bool { NetworkMonitor.shared.isConnected }
 
     func body(content: Content) -> some View {
-        content
+        VStack(spacing: 0) {
+            // Queued and failed writes are otherwise invisible: an offline write
+            // succeeds locally and replays silently, so a server rejection would
+            // never reach the user.
+            PendingWritesBanner()
+            content
+        }
             .task {
                 outbox.refreshCounts(modelContext)
                 await outbox.flush(context: modelContext)

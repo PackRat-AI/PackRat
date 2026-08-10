@@ -55,6 +55,26 @@ struct APIErrorBodyTests {
         let body = try decode(#"{"message":"","error":"","code":"RATE_LIMITED"}"#)
         #expect(body.displayMessage == "RATE_LIMITED")
     }
+
+    @Test("treats whitespace-only strings as absent")
+    func whitespaceOnlyIgnored() throws {
+        // A blank message used to win over the later fields, which suppressed the
+        // 401/404 fallback in validateStatus and rendered an empty banner.
+        let body = try decode(#"{"message":"   ","error":"\n\t","code":"RATE_LIMITED"}"#)
+        #expect(body.displayMessage == "RATE_LIMITED")
+    }
+
+    @Test("returns nil when every field is blank")
+    func allBlankFieldsYieldNil() throws {
+        let body = try decode(#"{"message":"  ","error":"","code":"   "}"#)
+        #expect(body.displayMessage == nil)
+    }
+
+    @Test("trims surrounding whitespace from a real message")
+    func trimsRealMessage() throws {
+        let body = try decode(#"{"message":"  Password too short  "}"#)
+        #expect(body.displayMessage == "Password too short")
+    }
 }
 
 // MARK: - Inline error copy

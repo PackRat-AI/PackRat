@@ -41,6 +41,15 @@ final class PendingMutation {
     /// response. Failed mutations stay in the store for the UI to surface rather
     /// than being dropped silently.
     var failed: Bool
+    /// Earliest time this mutation may be replayed again.
+    ///
+    /// `flush` runs on launch, on every connectivity change, and on every foreground —
+    /// events a user can trigger several times a second. Without a persisted floor, a
+    /// brief server outage would burn the whole retry budget in seconds and mark the
+    /// write permanently failed. Defaults to `.distantPast` so a freshly queued
+    /// mutation is eligible immediately, and so rows written by earlier builds
+    /// (which lack the column) migrate in as ready rather than never-eligible.
+    var nextAttemptAt: Date = Date.distantPast
 
     init(
         id: String = UUID().uuidString,
@@ -61,6 +70,7 @@ final class PendingMutation {
         self.attemptCount = 0
         self.lastError = nil
         self.failed = false
+        self.nextAttemptAt = .distantPast
     }
 
     var entityType: OutboxEntityType? { OutboxEntityType(rawValue: entityTypeRaw) }

@@ -292,15 +292,21 @@ struct APIErrorBody: Decodable {
     let message: String?
     let code: String?
 
+    /// Nil unless `value` has non-whitespace content. A blank string is as absent as
+    /// a missing key: `InlineErrorView` trims before rendering, so `{"message":"  "}`
+    /// would otherwise suppress the 401/404 fallback and show the generic banner.
+    private static func nonBlank(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
     /// Prefer the human-readable text; fall back to the machine code so an
-    /// unrecognised body still says something specific. Empty strings are
+    /// unrecognised body still says something specific. Blank strings are
     /// treated as absent so `{"message":""}` falls through rather than
-    /// surfacing a blank banner.
+    /// surfacing an empty banner.
     var displayMessage: String? {
-        if let message, !message.isEmpty { return message }
-        if let error, !error.isEmpty { return error }
-        if let code, !code.isEmpty { return code }
-        return nil
+        Self.nonBlank(message) ?? Self.nonBlank(error) ?? Self.nonBlank(code)
     }
 
     static func decodeMessage(from data: Data) -> String? {

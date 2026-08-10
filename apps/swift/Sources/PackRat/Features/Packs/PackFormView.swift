@@ -108,7 +108,8 @@ struct PackFormView: View {
                         context: modelContext
                     )
                 } else {
-                    try await viewModel.createPack(
+                    // Create never throws — offline writes queue for replay.
+                    await viewModel.createPack(
                         name: name.trimmingCharacters(in: .whitespaces),
                         description: description.isEmpty ? nil : description,
                         category: category.isEmpty ? nil : category,

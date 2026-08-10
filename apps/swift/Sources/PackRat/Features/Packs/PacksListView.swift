@@ -235,12 +235,10 @@ struct PacksListView: View {
     private func deletePack(_ pack: Pack) {
         packPendingDeletion = nil
         Task {
-            do {
-                try await viewModel.deletePack(pack.id, context: modelContext)
-                if selectedId == pack.id { selectedId = nil }
-            } catch {
-                deleteError = error.localizedDescription
-            }
+            // Deleting never fails at the call site — an unreachable server queues the
+            // delete for replay. Failures surface via the pending-writes banner.
+            await viewModel.deletePack(pack.id, context: modelContext)
+            if selectedId == pack.id { selectedId = nil }
         }
     }
 

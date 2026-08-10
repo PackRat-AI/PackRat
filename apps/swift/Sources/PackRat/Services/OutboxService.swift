@@ -1,6 +1,9 @@
 import Foundation
 import Observation
+import OSLog
 import SwiftData
+
+private let logger = Logger(subsystem: "com.packrat.app", category: "outbox")
 
 /// Drains queued offline writes to the server.
 ///
@@ -55,6 +58,17 @@ final class OutboxService {
     ) {
         guard let context else { return }
 
+        // A create or update with no payload can never replay — `decode` would throw
+        // `missingPayload` on flush and the write would be marked failed. That only
+        // happens if `encode` failed, which is already logged; refuse the row here so
+        // the queue never carries a mutation that is guaranteed to fail.
+        if operation != .delete, payload == nil {
+            logger.error(
+                "Refusing to queue \(operation.rawValue, privacy: .public) for \(entityType.rawValue, privacy: .public) with no payload"
+            )
+            return
+        }
+
         let existing = pendingMutations(for: entityId, context: context)
 
         switch operation {
@@ -63,6 +77,13 @@ final class OutboxService {
             // create + delete cancel out entirely.
             if existing.contains(where: { $0.operation == .create }) {
                 for mutation in existing { context.delete(mutation) }
+                // The parent never reached the server, so its queued children can
+                // never land either — their creates would replay against an id the
+                // server has no record of and be marked terminal. Drop them with the
+                // parent instead of surfacing failures for a pack the user deleted.
+                for child in childMutations(of: entityId, context: context) {
+                    context.delete(child)
+                }
                 saveAndRefresh(context)
                 return
             }
@@ -115,8 +136,9 @@ final class OutboxService {
             refreshCounts(context)
         }
 
+        let now = Date()
         var descriptor = FetchDescriptor<PendingMutation>(
-            predicate: #Predicate { !$0.failed }
+            predicate: #Predicate { !$0.failed && $0.nextAttemptAt <= now }
         )
         descriptor.sortBy = [SortDescriptor(\.createdAt, order: .forward)]
         let queued = (try? context.fetch(descriptor)) ?? []
@@ -131,12 +153,20 @@ final class OutboxService {
             case .success:
                 context.delete(mutation)
                 didSync = true
-            case .retry(let message):
-                mutation.attemptCount += 1
+            case .retry(let message, let chargesAttempt):
                 mutation.lastError = message
-                if mutation.attemptCount >= Self.maxAttempts {
-                    mutation.failed = true
+                // An expired session isn't the write's fault, so it doesn't spend the
+                // budget — otherwise a few foregrounds during a signed-out spell would
+                // permanently fail a write that only needed a re-auth.
+                if chargesAttempt {
+                    mutation.attemptCount += 1
+                    if mutation.attemptCount >= Self.maxAttempts {
+                        mutation.failed = true
+                    }
                 }
+                mutation.nextAttemptAt = Self.backoffDate(
+                    attemptCount: mutation.attemptCount, from: Date()
+                )
             case .terminal(let message):
                 mutation.attemptCount += 1
                 mutation.lastError = message
@@ -145,6 +175,15 @@ final class OutboxService {
             try? context.save()
         }
         return didSync
+    }
+
+    /// When a retried mutation becomes eligible again: 2s, 4s, 8s, 16s, 32s.
+    ///
+    /// Keyed off `attemptCount`, so an auth retry (which doesn't spend an attempt)
+    /// still waits its current tier instead of spinning on every foreground.
+    static func backoffDate(attemptCount: Int, from date: Date) -> Date {
+        let exponent = min(max(attemptCount, 1), maxAttempts)
+        return date.addingTimeInterval(pow(2.0, Double(exponent)))
     }
 
     /// Clears mutations that gave up, after the user has acknowledged them.
@@ -167,10 +206,12 @@ final class OutboxService {
 
     // MARK: - Replay
 
-    private enum Outcome {
+    enum Outcome: Equatable {
         case success
-        /// Transport-level failure — worth another attempt later.
-        case retry(String)
+        /// Transport-level failure — worth another attempt later. `chargesAttempt` is
+        /// false when the failure says nothing about the write itself (an expired
+        /// session), so it shouldn't consume the retry budget.
+        case retry(String, chargesAttempt: Bool = true)
         /// Server rejected the payload; retrying can't fix it.
         case terminal(String)
     }
@@ -276,13 +317,23 @@ final class OutboxService {
     }
 
     /// Decides whether a replay failure is worth retrying.
-    private func classify(_ error: Error, operation: OutboxOperation) -> Outcome {
+    func classify(_ error: Error, operation: OutboxOperation) -> Outcome {
         switch error {
         case PackRatError.httpError(let statusCode, let message):
             // The server already agrees with our intent.
             if operation == .delete, statusCode == 404 { return .success }
             if operation == .create, statusCode == 409 { return .success }
-            // 4xx means the request itself is wrong — retrying can't fix it.
+            // 401 can arrive as a raw status rather than `.unauthorized` when the body
+            // carries a message. Either way it's a session problem, not a bad payload.
+            if statusCode == 401 {
+                return .retry(message ?? "Sign-in required to sync", chargesAttempt: false)
+            }
+            // Rate limiting and request timeout are transient despite being 4xx —
+            // the payload is fine, the server just wants us to come back later.
+            if statusCode == 429 || statusCode == 408 {
+                return .retry(message ?? "Server is busy (\(statusCode))")
+            }
+            // Any other 4xx means the request itself is wrong — retrying can't fix it.
             if (400...499).contains(statusCode) {
                 return .terminal(message ?? "Server rejected the change (\(statusCode))")
             }
@@ -291,8 +342,9 @@ final class OutboxService {
         case PackRatError.notFound:
             return operation == .delete ? .success : .terminal("The item no longer exists on the server")
         case PackRatError.unauthorized:
-            // Keep queued: the write should survive a re-auth.
-            return .retry("Sign-in required to sync")
+            // Keep queued: the write should survive a re-auth, and waiting on the user
+            // to sign back in must not spend the retry budget.
+            return .retry("Sign-in required to sync", chargesAttempt: false)
         case PackRatError.decodingError:
             return .terminal("Could not read the server response")
         default:
@@ -303,6 +355,14 @@ final class OutboxService {
     private func decode<T: Decodable>(_ data: Data?) throws -> T {
         guard let data else { throw PackRatError.decodingError(OutboxError.missingPayload) }
         return try JSONDecoder().decode(T.self, from: data)
+    }
+
+    /// Queued mutations belonging to `parentId` — pack items under their pack.
+    private func childMutations(of parentId: String, context: ModelContext) -> [PendingMutation] {
+        let descriptor = FetchDescriptor<PendingMutation>(
+            predicate: #Predicate { $0.parentId == parentId && !$0.failed }
+        )
+        return (try? context.fetch(descriptor)) ?? []
     }
 
     private func pendingMutations(for entityId: String, context: ModelContext) -> [PendingMutation] {
@@ -325,7 +385,19 @@ enum OutboxError: Error {
 
 extension OutboxService {
     /// Convenience for encoding a payload at the call site.
+    ///
+    /// The payload types are plain `Codable` structs, so this should never fail. If it
+    /// somehow does, log it rather than returning a silent `nil` — `enqueue` refuses a
+    /// payload-less create/update, so a swallowed error here would otherwise drop the
+    /// user's write with nothing to diagnose.
     static func encode<T: Encodable>(_ value: T) -> Data? {
-        try? JSONEncoder().encode(value)
+        do {
+            return try JSONEncoder().encode(value)
+        } catch {
+            logger.error(
+                "Failed to encode outbox payload for \(String(describing: T.self), privacy: .public): \(error.localizedDescription, privacy: .public)"
+            )
+            return nil
+        }
     }
 }
