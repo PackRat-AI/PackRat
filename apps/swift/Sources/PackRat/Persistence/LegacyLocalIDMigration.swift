@@ -33,19 +33,34 @@ enum LegacyLocalIDMigration {
     /// Drops every cached pack, pack item, and trip still keyed on a `local-` id,
     /// along with any queued mutation that targets one. Runs at most once per install.
     ///
+    /// The flag is only set after a scan that completed — a failed fetch leaves it
+    /// clear so the next launch tries again. Setting it unconditionally would strand
+    /// the legacy rows on disk forever, which is the exact state this removes.
+    ///
     /// Idempotent regardless of the flag — a second run simply finds nothing.
     static func runIfNeeded(context: ModelContext?, defaults: UserDefaults = .standard) {
         guard let context, !defaults.bool(forKey: defaultsKey) else { return }
-        run(context: context)
-        defaults.set(true, forKey: defaultsKey)
+        if run(context: context) != nil {
+            defaults.set(true, forKey: defaultsKey)
+        }
     }
 
     /// The migration itself, without the run-once gate. Exposed for tests.
+    ///
+    /// Returns the number of rows removed, or `nil` if any fetch failed — in which
+    /// case the scan is incomplete and must not be recorded as done.
     @discardableResult
-    static func run(context: ModelContext) -> Int {
+    static func run(context: ModelContext) -> Int? {
+        guard let packs = try? context.fetch(FetchDescriptor<CachedPack>()),
+              let trips = try? context.fetch(FetchDescriptor<CachedTrip>()),
+              let mutations = try? context.fetch(FetchDescriptor<PendingMutation>())
+        else {
+            logger.error("Legacy local- id scan failed to read the store; will retry next launch")
+            return nil
+        }
+
         var removed = 0
 
-        let packs = (try? context.fetch(FetchDescriptor<CachedPack>())) ?? []
         for pack in packs where isLegacy(pack.id) {
             context.delete(pack)
             removed += 1
@@ -57,7 +72,6 @@ enum LegacyLocalIDMigration {
         // without re-encoding every cached pack; the next successful `load` overwrites
         // that pack's cache from the server anyway.
 
-        let trips = (try? context.fetch(FetchDescriptor<CachedTrip>())) ?? []
         for trip in trips where isLegacy(trip.id) {
             context.delete(trip)
             removed += 1
@@ -65,7 +79,6 @@ enum LegacyLocalIDMigration {
 
         // Queued writes against a legacy id can only ever fail. Drop them too, so the
         // user isn't left with failed pending writes they can't act on.
-        let mutations = (try? context.fetch(FetchDescriptor<PendingMutation>())) ?? []
         for mutation in mutations
         where isLegacy(mutation.entityId) || mutation.parentId.map(isLegacy) == true {
             context.delete(mutation)

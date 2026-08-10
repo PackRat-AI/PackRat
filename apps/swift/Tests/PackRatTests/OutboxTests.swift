@@ -78,16 +78,24 @@ struct OutboxClassifyTests {
 @Suite("OutboxService backoff")
 @MainActor
 struct OutboxBackoffTests {
+    // Delays carry up to 25% jitter, so each tier spans [base, base * 1.25].
+    private func expectedRange(base: Double) -> ClosedRange<Double> {
+        base...(base * 1.25)
+    }
+
     @Test("delay grows with each attempt")
     func delayGrows() {
         let now = Date(timeIntervalSince1970: 1_000_000)
-        let first = OutboxService.backoffDate(attemptCount: 1, from: now)
-        let second = OutboxService.backoffDate(attemptCount: 2, from: now)
-        let third = OutboxService.backoffDate(attemptCount: 3, from: now)
+        let first = OutboxService.backoffDate(attemptCount: 1, from: now).timeIntervalSince(now)
+        let second = OutboxService.backoffDate(attemptCount: 2, from: now).timeIntervalSince(now)
+        let third = OutboxService.backoffDate(attemptCount: 3, from: now).timeIntervalSince(now)
 
-        #expect(first.timeIntervalSince(now) == 2)
-        #expect(second.timeIntervalSince(now) == 4)
-        #expect(third.timeIntervalSince(now) == 8)
+        #expect(expectedRange(base: 2).contains(first))
+        #expect(expectedRange(base: 4).contains(second))
+        #expect(expectedRange(base: 8).contains(third))
+        // Tiers stay ordered despite jitter: 2 * 1.25 < 4, 4 * 1.25 < 8.
+        #expect(first < second)
+        #expect(second < third)
     }
 
     @Test("a zero attempt count still waits, so an auth retry can't spin")
@@ -95,21 +103,68 @@ struct OutboxBackoffTests {
         // An auth failure doesn't increment attemptCount. Without a floor the mutation
         // would be eligible again on the very next foreground.
         let now = Date(timeIntervalSince1970: 1_000_000)
-        #expect(OutboxService.backoffDate(attemptCount: 0, from: now).timeIntervalSince(now) == 2)
+        let delay = OutboxService.backoffDate(attemptCount: 0, from: now).timeIntervalSince(now)
+        #expect(expectedRange(base: 2).contains(delay))
     }
 
     @Test("delay is capped at the retry ceiling")
     func delayIsCapped() {
         let now = Date(timeIntervalSince1970: 1_000_000)
-        let capped = OutboxService.backoffDate(attemptCount: 99, from: now)
-        let atMax = OutboxService.backoffDate(attemptCount: OutboxService.maxAttempts, from: now)
-        #expect(capped == atMax)
+        let ceiling = pow(2.0, Double(OutboxService.maxAttempts))
+        // Beyond maxAttempts the tier stops growing, jitter aside.
+        let capped = OutboxService.backoffDate(attemptCount: 99, from: now).timeIntervalSince(now)
+        #expect(expectedRange(base: ceiling).contains(capped))
+    }
+
+    @Test("jitter spreads a burst of same-tier retries")
+    func jitterSpreadsRetries() {
+        // Without jitter every write failed by one outage becomes eligible at the same
+        // instant and the next flush replays the whole queue at once.
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let delays = Set((0..<50).map {
+            _ in OutboxService.backoffDate(attemptCount: 3, from: now).timeIntervalSince(now)
+        })
+        #expect(delays.count > 1)
     }
 
     @Test("a new mutation is eligible immediately")
     func freshMutationIsEligible() {
         let mutation = PendingMutation(entityType: .pack, entityId: "p1", operation: .delete)
         #expect(mutation.nextAttemptAt == .distantPast)
+    }
+}
+
+// MARK: - Parent/child ordering
+
+@Suite("OutboxService child deferral")
+@MainActor
+struct OutboxChildDeferralTests {
+    @Test("a child waits while its parent create is unsent")
+    func childDefersToBlockedParent() {
+        // Sending the item before the pack exists server-side draws a 404, which
+        // classify marks terminal — a transient parent failure would otherwise
+        // permanently fail the child.
+        let child = PendingMutation(
+            entityType: .packItem, entityId: "item-1", operation: .create,
+            parentId: "pack-1"
+        )
+        #expect(OutboxService.shouldDefer(child, blockedParents: ["pack-1"]))
+    }
+
+    @Test("a child proceeds once its parent is no longer blocked")
+    func childProceedsWhenParentLanded() {
+        let child = PendingMutation(
+            entityType: .packItem, entityId: "item-1", operation: .create,
+            parentId: "pack-1"
+        )
+        #expect(!OutboxService.shouldDefer(child, blockedParents: []))
+        #expect(!OutboxService.shouldDefer(child, blockedParents: ["pack-2"]))
+    }
+
+    @Test("a parentless mutation is never deferred")
+    func parentlessNeverDefers() {
+        let pack = PendingMutation(entityType: .pack, entityId: "pack-1", operation: .create)
+        #expect(!OutboxService.shouldDefer(pack, blockedParents: ["pack-1"]))
     }
 }
 
@@ -247,6 +302,34 @@ struct OutboxEnqueueTests {
         }
         #expect(decoded?.name == "Second")
     }
+
+    @Test("an update folds into a queued create")
+    func updateFoldsIntoCreate() throws {
+        let context = try makeContext()
+        let outbox = OutboxService()
+
+        // Decides whether an offline-created entity reaches the server with its final
+        // values in one request, rather than as a create followed by an update.
+        outbox.enqueue(
+            entityType: .pack, entityId: "pack-1", operation: .create,
+            payload: payload(), context: context
+        )
+        outbox.enqueue(
+            entityType: .pack, entityId: "pack-1", operation: .update,
+            payload: OutboxService.encode(PackMutationPayload(
+                name: "Renamed", description: nil, category: nil, isPublic: false
+            )),
+            context: context
+        )
+
+        let remaining = mutations(context)
+        #expect(remaining.count == 1)
+        #expect(remaining.first?.operation == .create)
+        let decoded = remaining.first?.payload.flatMap {
+            try? JSONDecoder().decode(PackMutationPayload.self, from: $0)
+        }
+        #expect(decoded?.name == "Renamed")
+    }
 }
 
 // MARK: - Legacy local id migration
@@ -338,5 +421,29 @@ struct LegacyLocalIDMigrationTests {
         try context.save()
         LegacyLocalIDMigration.runIfNeeded(context: context, defaults: defaults)
         #expect(((try? context.fetch(FetchDescriptor<CachedPack>())) ?? []).count == 1)
+    }
+
+    @Test("a completed scan reports a count rather than nil")
+    func completedScanReportsCount() throws {
+        // runIfNeeded gates the completion flag on this being non-nil, so a scan that
+        // read the store must be distinguishable from one that couldn't.
+        let context = try makeContext()
+        context.insert(CachedPack(from: makePack(id: "local-old-pack")))
+        try context.save()
+
+        #expect(LegacyLocalIDMigration.run(context: context) != nil)
+    }
+
+    @Test("the flag is not set when nothing was scanned yet")
+    func flagUnsetBeforeFirstRun() throws {
+        let context = try makeContext()
+        let defaults = UserDefaults(suiteName: "LegacyLocalIDMigrationTests-\(UUID().uuidString)")!
+        context.insert(CachedPack(from: makePack(id: "local-old-pack")))
+        try context.save()
+
+        #expect(!defaults.bool(forKey: "legacyLocalIDMigrationCompleted"))
+        LegacyLocalIDMigration.runIfNeeded(context: context, defaults: defaults)
+        // Set only after the scan completed, so a failed read retries next launch.
+        #expect(defaults.bool(forKey: "legacyLocalIDMigrationCompleted"))
     }
 }

@@ -144,10 +144,29 @@ final class OutboxService {
         let queued = (try? context.fetch(descriptor)) ?? []
         guard !queued.isEmpty else { return false }
 
+        // Entity ids whose queued create has not landed this pass. A child sent before
+        // its parent exists server-side gets a 404, which `classify` marks terminal —
+        // so a transient parent failure would permanently fail the child.
+        var blockedParents = Set<String>()
+
         var didSync = false
         for mutation in queued {
             // Connectivity can drop mid-drain; stop and keep the rest queued.
             guard NetworkMonitor.shared.isConnected else { break }
+
+            if Self.shouldDefer(mutation, blockedParents: blockedParents) {
+                // Hold the child until the parent create succeeds. Match the parent's
+                // schedule rather than charging the child an attempt for someone
+                // else's failure.
+                if let parent = queued.first(where: {
+                    $0.entityId == mutation.parentId && $0.operation == .create
+                }) {
+                    mutation.nextAttemptAt = parent.nextAttemptAt
+                }
+                try? context.save()
+                continue
+            }
+
             let outcome = await apply(mutation)
             switch outcome {
             case .success:
@@ -167,23 +186,40 @@ final class OutboxService {
                 mutation.nextAttemptAt = Self.backoffDate(
                     attemptCount: mutation.attemptCount, from: Date()
                 )
+                if mutation.operation == .create { blockedParents.insert(mutation.entityId) }
             case .terminal(let message):
                 mutation.attemptCount += 1
                 mutation.lastError = message
                 mutation.failed = true
+                if mutation.operation == .create { blockedParents.insert(mutation.entityId) }
             }
             try? context.save()
         }
         return didSync
     }
 
-    /// When a retried mutation becomes eligible again: 2s, 4s, 8s, 16s, 32s.
+    /// Whether `mutation` must wait because the parent it belongs to has a queued
+    /// create that hasn't reached the server in this pass.
+    ///
+    /// Sending a child first draws a 404, which `classify` marks terminal — so a
+    /// transient parent failure would otherwise permanently fail the child.
+    static func shouldDefer(_ mutation: PendingMutation, blockedParents: Set<String>) -> Bool {
+        guard let parentId = mutation.parentId else { return false }
+        return blockedParents.contains(parentId)
+    }
+
+    /// When a retried mutation becomes eligible again: roughly 2s, 4s, 8s, 16s, 32s.
     ///
     /// Keyed off `attemptCount`, so an auth retry (which doesn't spend an attempt)
     /// still waits its current tier instead of spinning on every foreground.
+    ///
+    /// Up to 25% jitter is added on top. Without it every write failed by the same
+    /// outage becomes eligible at the same instant, and the next flush replays the
+    /// whole queue in one burst against a server that was just struggling.
     static func backoffDate(attemptCount: Int, from date: Date) -> Date {
         let exponent = min(max(attemptCount, 1), maxAttempts)
-        return date.addingTimeInterval(pow(2.0, Double(exponent)))
+        let base = pow(2.0, Double(exponent))
+        return date.addingTimeInterval(base + Double.random(in: 0...(base * 0.25)))
     }
 
     /// Clears mutations that gave up, after the user has acknowledged them.
