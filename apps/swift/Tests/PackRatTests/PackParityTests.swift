@@ -288,6 +288,40 @@ struct AnalyzeImageRequestTests {
     }
 }
 
+// MARK: - Catalog category display names
+
+@Suite("catalogCategoryDisplayName")
+struct CatalogCategoryDisplayNameTests {
+    /// Scraped categories arrive with HTML entities intact. Plain `.capitalized`
+    /// renders "hike &amp; camp" as the visibly broken "Hike &Amp; Camp".
+    @Test("decodes &amp; instead of capitalizing it")
+    func decodesAmpersand() {
+        #expect("hike &amp; camp".catalogCategoryDisplayName == "Hike & Camp")
+    }
+
+    @Test("title-cases plain categories")
+    func titleCasesPlain() {
+        #expect("sleeping bags".catalogCategoryDisplayName == "Sleeping Bags")
+        #expect("footwear".catalogCategoryDisplayName == "Footwear")
+    }
+
+    @Test("decodes the other entities that occur in catalog data")
+    func decodesOtherEntities() {
+        #expect("men&#39;s".catalogCategoryDisplayName == "Men's")
+        #expect("a &lt; b".catalogCategoryDisplayName == "A < B")
+    }
+
+    @Test("leaves acronyms uppercase")
+    func preservesAcronyms() {
+        #expect("UL gear".catalogCategoryDisplayName == "UL Gear")
+    }
+
+    @Test("empty string stays empty")
+    func emptyStaysEmpty() {
+        #expect("".catalogCategoryDisplayName == "")
+    }
+}
+
 // MARK: - Catalog linkage on created pack items
 
 @Suite("CreatePackItemRequest catalog linkage")

@@ -205,7 +205,7 @@ struct PackCatalogBrowserSheet: View {
                     viewModel.selectCategory(nil)
                 }
                 ForEach(viewModel.categories, id: \.self) { category in
-                    chip(label: category.capitalized, isSelected: viewModel.selectedCategory == category) {
+                    chip(label: category.catalogCategoryDisplayName, isSelected: viewModel.selectedCategory == category) {
                         viewModel.selectCategory(
                             viewModel.selectedCategory == category ? nil : category
                         )
