@@ -177,7 +177,9 @@ struct PackDetailView: View {
                         .accessibilityIdentifier("pack_detail_done_packing")
                 }
             } else {
-                ToolbarItem(placement: .primaryAction) {
+                // One group rather than two separate ToolbarItems — these two
+                // controls belong together and a group states that directly.
+                ToolbarItemGroup(placement: .primaryAction) {
                     // A plain pull-down Menu: one tap opens it, every option is
                     // visible. Deliberately *not* a `primaryAction` menu — that
                     // variant hides the extra choices behind a long press, which
@@ -202,21 +204,14 @@ struct PackDetailView: View {
                         }
                         .accessibilityIdentifier("pack_detail_add_from_catalog")
                     } label: {
+                        // .iconOnly matches the More menu below, so the two
+                        // toolbar controls are declared consistently.
                         Label("Add Item", systemImage: "plus")
+                            .labelStyle(.iconOnly)
                     }
                     .accessibilityIdentifier("pack_detail_add_item_button")
-                }
-                // ⌘I still goes straight to the manual form. Putting the
-                // shortcut on the Menu itself would just open the menu, which
-                // is a regression for keyboard and Mac users — so it lives on a
-                // hidden button instead.
-                ToolbarItem(placement: .automatic) {
-                    Button("Add Item Manually") { showingAddItemSheet = true }
-                        .keyboardShortcut("i", modifiers: .command)
-                        .hidden()
-                        .accessibilityHidden(true)
-                }
-                ToolbarItem(placement: .primaryAction) {
+                    .accessibilityLabel("Add Item")
+
                     Menu {
                         Button("Ask AI", systemImage: "sparkles") {
                             showingAskAI = true
@@ -313,6 +308,18 @@ struct PackDetailView: View {
         }
         .navigationDestination(isPresented: $showingWeightAnalysis) {
             PackWeightAnalysisView(pack: currentPack)
+        }
+        // ⌘I opens the manual add form directly. It can't live on the Add Item
+        // toolbar Menu — the shortcut would merely open the menu — and a
+        // `.hidden()` toolbar button still reserves its layout footprint. A
+        // zero-size background button carries the shortcut without occupying
+        // space in the bar.
+        .background {
+            Button("Add Item Manually") { showingAddItemSheet = true }
+                .keyboardShortcut("i", modifiers: .command)
+                .frame(width: 0, height: 0)
+                .opacity(0)
+                .accessibilityHidden(true)
         }
         .focusedSceneValue(\.sharePackAction, $triggerShare)
         .onChange(of: triggerShare) { _, new in

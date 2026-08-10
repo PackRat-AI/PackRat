@@ -288,6 +288,35 @@ struct AnalyzeImageRequestTests {
     }
 }
 
+// MARK: - Catalog browser search feedback
+
+@Suite("PackCatalogBrowserViewModel search state")
+@MainActor
+struct PackCatalogBrowserSearchStateTests {
+    /// The loader has to appear on the keystroke, not when the request starts —
+    /// the 400ms debounce sits in between, and covering only the request leaves
+    /// typing with no feedback at all.
+    @Test("typing marks the view as searching immediately")
+    func typingSetsSearchingBeforeDebounce() {
+        let viewModel = PackCatalogBrowserViewModel()
+        #expect(viewModel.isSearching == false)
+
+        viewModel.searchText = "tent"
+        viewModel.onSearchTextChanged()
+
+        // Synchronous check: no awaiting, so this is the debounce window.
+        #expect(viewModel.isSearching)
+    }
+
+    @Test("changing category also shows the loader")
+    func categoryChangeSetsSearching() {
+        let viewModel = PackCatalogBrowserViewModel()
+        viewModel.selectCategory("shelter")
+        #expect(viewModel.isSearching)
+        #expect(viewModel.selectedCategory == "shelter")
+    }
+}
+
 // MARK: - Catalog category display names
 
 @Suite("catalogCategoryDisplayName")

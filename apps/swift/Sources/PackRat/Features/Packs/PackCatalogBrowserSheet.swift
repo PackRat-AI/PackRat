@@ -17,6 +17,10 @@ final class PackCatalogBrowserViewModel {
     /// Catalog id → quantity. Presence means selected.
     var selection: [Int: Int] = [:]
     var isLoading = false
+    /// True from the keystroke until fresh results land, spanning the debounce.
+    /// Distinct from `isLoading`, which only covers the request itself and so
+    /// leaves the first 400ms with no feedback at all.
+    var isSearching = false
     var isAdding = false
     var error: String?
     var hasLoadedOnce = false
@@ -54,8 +58,13 @@ final class PackCatalogBrowserViewModel {
     /// Debounced search. Unlike the catalog tab, an empty query is a valid
     /// browse (show popular gear) rather than a no-op, so the pack flow always
     /// has something on screen to pick from.
+    ///
+    /// `isSearching` flips immediately rather than when the request starts, so
+    /// the debounce window is covered too — otherwise typing looks like nothing
+    /// is happening for 400ms and then the list silently swaps underneath you.
     func onSearchTextChanged() {
         searchTask?.cancel()
+        isSearching = true
         searchTask = Task {
             try? await Task.sleep(for: .milliseconds(400))
             guard !Task.isCancelled else { return }
@@ -65,6 +74,7 @@ final class PackCatalogBrowserViewModel {
 
     func selectCategory(_ category: String?) {
         selectedCategory = category
+        isSearching = true
         Task { await load(reset: true) }
     }
 
@@ -88,7 +98,12 @@ final class PackCatalogBrowserViewModel {
         guard hasMore || reset else { return }
         isLoading = true
         error = nil
-        defer { isLoading = false }
+        defer {
+            isLoading = false
+            // Only a reset (search / category change) ends a search — paging
+            // to the next page must not clear it.
+            if reset { isSearching = false }
+        }
         do {
             let results = try await service.browse(
                 query: searchText.isEmpty ? nil : searchText,
@@ -235,7 +250,7 @@ struct PackCatalogBrowserSheet: View {
 
     @ViewBuilder
     private var resultsList: some View {
-        if viewModel.isLoading && viewModel.items.isEmpty {
+        if (viewModel.isLoading || viewModel.isSearching) && viewModel.items.isEmpty {
             ProgressView("Loading gear…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = viewModel.error, viewModel.items.isEmpty {
@@ -261,7 +276,10 @@ struct PackCatalogBrowserSheet: View {
                     )
                     .task { await viewModel.loadMoreIfNeeded(currentItem: item) }
                 }
-                if viewModel.isLoading {
+                // Paging spinner at the foot of the list. Only while appending —
+                // a search replaces the list, and its spinner belongs on top of
+                // the stale results, not below the fold.
+                if viewModel.isLoading && !viewModel.isSearching {
                     HStack {
                         Spacer()
                         ProgressView()
@@ -271,6 +289,19 @@ struct PackCatalogBrowserSheet: View {
             }
             .listStyle(.plain)
             .accessibilityIdentifier("pack_catalog_results_list")
+            // While a new search is in flight the visible rows are stale, so
+            // fade them and float a spinner over the top. Without this, typing
+            // looks like nothing happened until the list silently swaps.
+            .opacity(viewModel.isSearching ? 0.35 : 1)
+            .allowsHitTesting(!viewModel.isSearching)
+            .overlay {
+                if viewModel.isSearching {
+                    ProgressView()
+                        .controlSize(.large)
+                        .accessibilityIdentifier("pack_catalog_searching")
+                }
+            }
+            .animation(.easeInOut(duration: 0.15), value: viewModel.isSearching)
         }
     }
 
