@@ -178,6 +178,14 @@ struct PackDetailView: View {
                 }
             } else {
                 ToolbarItem(placement: .primaryAction) {
+                    // A plain pull-down Menu: one tap opens it, every option is
+                    // visible. Deliberately *not* a `primaryAction` menu — that
+                    // variant hides the extra choices behind a long press, which
+                    // nothing on screen advertises, so most users would only ever
+                    // find "Add Manually". Expo shows the same three in a bottom
+                    // sheet; a pull-down menu is the iOS-idiomatic equivalent
+                    // (cf. AIPacksView, which swaps Expo's alert for
+                    // .confirmationDialog on the same reasoning).
                     Menu {
                         Button("Add Manually", systemImage: "square.and.pencil") {
                             showingAddItemSheet = true
@@ -195,14 +203,18 @@ struct PackDetailView: View {
                         .accessibilityIdentifier("pack_detail_add_from_catalog")
                     } label: {
                         Label("Add Item", systemImage: "plus")
-                    } primaryAction: {
-                        // Tapping (rather than long-pressing) keeps the old
-                        // one-tap manual-add behaviour that the UI tests and
-                        // muscle memory both rely on.
-                        showingAddItemSheet = true
                     }
                     .accessibilityIdentifier("pack_detail_add_item_button")
-                    .keyboardShortcut("i", modifiers: .command)
+                }
+                // ⌘I still goes straight to the manual form. Putting the
+                // shortcut on the Menu itself would just open the menu, which
+                // is a regression for keyboard and Mac users — so it lives on a
+                // hidden button instead.
+                ToolbarItem(placement: .automatic) {
+                    Button("Add Item Manually") { showingAddItemSheet = true }
+                        .keyboardShortcut("i", modifiers: .command)
+                        .hidden()
+                        .accessibilityHidden(true)
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Menu {

@@ -81,15 +81,15 @@ the **Expected result** (what should happen). Report anything different.
 
 **A1 — The Add Item menu has three choices**
 - Setup: Open one of your packs.
-- Steps: **Press and hold** the **+ (Add Item)** button in the top right.
-- Expected: A menu appears with exactly three options: **Add Manually**, **Scan Items
-  from Photo**, and **Add from Catalog**.
+- Steps: **Tap** the **+ (Add Item)** button in the top right.
+- Expected: A menu drops down with exactly three options: **Add Manually**, **Scan Items
+  from Photo**, and **Add from Catalog**. One normal tap — you should never have to press
+  and hold to find these.
 
-**A2 — A quick tap still adds by hand** 
-- Setup: On a pack.
-- Steps: **Tap** the **+** button normally (don't hold it).
-- Expected: The **Add Item** form opens straight away — the same one you've always used.
-  It should *not* make you pick from a menu first.
+**A2 — Adding by hand still works**
+- Setup: On the open Add Item menu.
+- Steps: Tap **Add Manually**.
+- Expected: The **Add Item** form opens — the same one you've always used.
 
 **A3 — The More menu has the new tools**
 - Setup: On a pack.
@@ -145,7 +145,7 @@ the **Expected result** (what should happen). Report anything different.
 
 **C1 — Browse without searching** 📸 *screenshot required*
 - Setup: On a pack.
-- Steps: Press and hold **+** → **Add from Catalog**.
+- Steps: Tap **+** → **Add from Catalog**.
 - Expected: A sheet titled **Add from Catalog** opens **already showing gear** — you
   shouldn't have to search first to see anything. There's a search box and a row of
   category buttons. Screenshot it.
@@ -208,7 +208,7 @@ the **Expected result** (what should happen). Report anything different.
 
 **D1 — The starting screen explains itself**
 - Setup: On a pack.
-- Steps: Press and hold **+** → **Scan Items from Photo**.
+- Steps: Tap **+** → **Scan Items from Photo**.
 - Expected: A sheet titled **Scan Items** explaining what to do, with a **Choose Photo**
   button.
 
@@ -391,8 +391,9 @@ the **Expected result** (what should happen). Report anything different.
 - **The AI can be wrong.** We're testing whether it can *see your actual pack contents*,
   not whether its advice is perfect. Bad advice about real items = interesting. Confident
   talk about gear you don't own = a bug worth reporting.
-- **A quick tap on + is meant to skip the menu** and go straight to the manual form.
-  That's deliberate.
+- **The + button always opens a menu**, even though "Add Manually" is the most common
+  choice. That's deliberate — it keeps all three ways of adding gear visible instead of
+  hiding two of them behind a gesture.
 
 ---
 
