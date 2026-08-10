@@ -3,3 +3,11 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Demo recordings linked from the Claude / OpenAI connector submissions.
+# Serve inline so a reviewer can play the video in-browser instead of
+# downloading it, and cache hard since the filenames are versioned by content.
+/demo/*
+  Content-Type: video/mp4
+  Content-Disposition: inline
+  Cache-Control: public, max-age=31536000, immutable
