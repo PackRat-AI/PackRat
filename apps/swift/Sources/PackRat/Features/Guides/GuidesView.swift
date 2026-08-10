@@ -198,7 +198,7 @@ struct GuidesView: View {
             if !viewModel.categories.isEmpty {
                 Section {
                     categoryBar
-                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                         .listRowSeparator(.hidden)
                 }
             }
