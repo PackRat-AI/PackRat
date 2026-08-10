@@ -1,7 +1,8 @@
-import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
 import { IosTransparentHeaderOverlapFix } from '@packrat/ui/src/ios-transparent-header-overlap-fix';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
+import { Text } from '@packrat/ui/src/text';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -29,6 +30,8 @@ export const GuidesListScreen = () => {
   const {
     data: guidesData,
     isLoading: isLoadingGuides,
+    isError: isErrorGuides,
+    error: guidesError,
     refetch: refetchGuides,
     fetchNextPage: fetchNextPageGuides,
     hasNextPage: hasNextPageGuides,
@@ -43,6 +46,8 @@ export const GuidesListScreen = () => {
   const {
     data: searchData,
     isLoading: isSearching,
+    isError: isErrorSearch,
+    error: searchError,
     refetch: refetchSearch,
     fetchNextPage: fetchNextPageSearch,
     hasNextPage: hasNextPageSearch,
@@ -58,6 +63,8 @@ export const GuidesListScreen = () => {
   const isSearchMode = searchQuery.length > 0;
   const data = isSearchMode ? searchData : guidesData;
   const isLoading = isSearchMode ? isSearching : isLoadingGuides;
+  const isError = isSearchMode ? isErrorSearch : isErrorGuides;
+  const error = isSearchMode ? searchError : guidesError;
   const refetch = isSearchMode ? refetchSearch : refetchGuides;
   const fetchNextPage = isSearchMode ? fetchNextPageSearch : fetchNextPageGuides;
   const hasNextPage = isSearchMode ? hasNextPageSearch : hasNextPageGuides;
@@ -102,17 +109,40 @@ export const GuidesListScreen = () => {
   };
 
   const renderEmpty = () => {
+    if (isLoading) {
+      return (
+        <View className="flex-1 items-center justify-center p-8">
+          <ActivityIndicator color={colors.primary} size="large" />
+        </View>
+      );
+    }
+
+    // A failed request leaves `guides` empty too. Without this branch the list
+    // renders "No guides available", which reads as "there is no content" when
+    // the real problem is that the fetch failed (offline, expired session, 5xx).
+    if (isError) {
+      return (
+        <View className="flex-1 items-center justify-center p-8">
+          <Text className="mb-2 text-lg font-medium text-foreground">
+            {t('guides.failedToLoadGuides')}
+          </Text>
+          <Text className="mb-6 text-center text-muted-foreground">
+            {error?.message || t('guides.pleaseTryAgain')}
+          </Text>
+          <Button variant="secondary" onPress={() => refetch()}>
+            <Text>{t('guides.tryAgain')}</Text>
+          </Button>
+        </View>
+      );
+    }
+
     return (
       <View className="flex-1 items-center justify-center p-8">
-        {isLoading ? (
-          <ActivityIndicator color={colors.primary} size="large" />
-        ) : (
-          <Text className="text-center text-gray-500 dark:text-gray-400">
-            {isSearchMode
-              ? t('guides.noGuidesFound', { query: searchQuery })
-              : t('guides.noGuidesAvailable')}
-          </Text>
-        )}
+        <Text className="text-center text-gray-500 dark:text-gray-400">
+          {isSearchMode
+            ? t('guides.noGuidesFound', { query: searchQuery })
+            : t('guides.noGuidesAvailable')}
+        </Text>
       </View>
     );
   };
@@ -152,13 +182,7 @@ export const GuidesListScreen = () => {
             </View>
           ) : null
         }
-        ListEmptyComponent={
-          <View className="flex-1 items-center justify-center p-8">
-            <Text className="text-center text-gray-500 dark:text-gray-400">
-              {t('guides.noGuidesFound', { query: searchQuery })}
-            </Text>
-          </View>
-        }
+        ListEmptyComponent={renderEmpty()}
         ListFooterComponent={
           isFetchingNextPageSearch ? (
             <View className="py-4">
