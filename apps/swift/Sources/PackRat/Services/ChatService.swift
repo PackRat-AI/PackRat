@@ -1,7 +1,13 @@
 import Foundation
 
 protocol ChatServicing: Sendable {
-    func sendMessage(messages: [ChatMessage]) async -> AsyncThrowingStream<String, Error>
+    func sendMessage(messages: [ChatMessage], context: ChatContext) async -> AsyncThrowingStream<String, Error>
+}
+
+extension ChatServicing {
+    func sendMessage(messages: [ChatMessage]) async -> AsyncThrowingStream<String, Error> {
+        await sendMessage(messages: messages, context: .general)
+    }
 }
 
 final class ChatService: ChatServicing {
@@ -10,8 +16,8 @@ final class ChatService: ChatServicing {
 
     init(api: APIClient = .shared) { self.api = api }
 
-    func sendMessage(messages: [ChatMessage]) async -> AsyncThrowingStream<String, Error> {
-        let endpoint = Endpoint(.post, "/api/chat", body: ChatRequest(messages: messages))
+    func sendMessage(messages: [ChatMessage], context: ChatContext = .general) async -> AsyncThrowingStream<String, Error> {
+        let endpoint = Endpoint(.post, "/api/chat", body: ChatRequest(messages: messages, context: context))
         return await api.stream(endpoint)
     }
 }

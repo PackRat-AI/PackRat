@@ -48,7 +48,7 @@ final class PackService: Sendable {
         try await api.sendDiscarding(endpoint)
     }
 
-    func addItem(to packId: String, id: String = UUID().uuidString.lowercased(), name: String, weight: Double? = nil, weightUnit: String? = nil, quantity: Int? = nil, category: String? = nil, consumable: Bool? = nil, worn: Bool? = nil, notes: String? = nil) async throws -> PackItem {
+    func addItem(to packId: String, id: String = UUID().uuidString.lowercased(), name: String, weight: Double? = nil, weightUnit: String? = nil, quantity: Int? = nil, category: String? = nil, consumable: Bool? = nil, worn: Bool? = nil, notes: String? = nil, catalogItemId: Int? = nil, image: String? = nil) async throws -> PackItem {
         let body = CreatePackItemRequest(
             id: id,
             name: name,
@@ -58,7 +58,9 @@ final class PackService: Sendable {
             category: category,
             consumable: consumable,
             worn: worn,
-            notes: notes
+            notes: notes,
+            catalogItemId: catalogItemId,
+            image: image
         )
         let endpoint = Endpoint(.post, "/api/packs/\(packId)/items", body: body)
         return try await api.send(endpoint)

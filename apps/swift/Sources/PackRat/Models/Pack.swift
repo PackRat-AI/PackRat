@@ -168,6 +168,38 @@ struct CreatePackItemRequest: Encodable {
     let consumable: Bool?
     let worn: Bool?
     let notes: String?
+    /// Links the pack item back to the catalog product it came from. Nil for
+    /// hand-entered items. Without it the server can't relate a packed item to
+    /// its catalog entry (prices, similar-item lookups).
+    let catalogItemId: Int?
+    /// R2 object key or absolute URL for the item's image.
+    let image: String?
+
+    init(
+        id: String,
+        name: String,
+        weight: Double? = nil,
+        weightUnit: String? = nil,
+        quantity: Int? = nil,
+        category: String? = nil,
+        consumable: Bool? = nil,
+        worn: Bool? = nil,
+        notes: String? = nil,
+        catalogItemId: Int? = nil,
+        image: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.weight = weight
+        self.weightUnit = weightUnit
+        self.quantity = quantity
+        self.category = category
+        self.consumable = consumable
+        self.worn = worn
+        self.notes = notes
+        self.catalogItemId = catalogItemId
+        self.image = image
+    }
 }
 
 struct UpdatePackItemRequest: Encodable {

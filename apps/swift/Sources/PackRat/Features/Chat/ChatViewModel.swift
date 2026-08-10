@@ -9,15 +9,24 @@ final class ChatViewModel {
     var isStreaming = false
     var error: String?
 
+    /// What this conversation is scoped to. Sent on every request so the server
+    /// can attach pack context to the system prompt.
+    let context: ChatContext
+
     private let service: any ChatServicing
     private var streamingTask: Task<Void, Never>?
 
-    init(service: any ChatServicing = ChatService.shared) {
+    init(service: any ChatServicing = ChatService.shared, context: ChatContext = .general) {
         self.service = service
-        messages.append(ChatMessage(
-            role: .assistant,
-            content: "Hi! I'm your PackRat AI assistant. I can help you plan trips, build packing lists, research gear, and answer questions about outdoor adventures. What are you working on?"
-        ))
+        self.context = context
+        messages.append(ChatMessage(role: .assistant, content: Self.greeting(for: context)))
+    }
+
+    private static func greeting(for context: ChatContext) -> String {
+        if let packName = context.packName {
+            return "Ask me anything about “\(packName)” — what's missing, how to cut weight, or whether it suits your trip."
+        }
+        return "Hi! I'm your PackRat AI assistant. I can help you plan trips, build packing lists, research gear, and answer questions about outdoor adventures. What are you working on?"
     }
 
     var canSend: Bool { !inputText.trimmingCharacters(in: .whitespaces).isEmpty && !isStreaming }
@@ -39,7 +48,7 @@ final class ChatViewModel {
             defer { isStreaming = false }
             do {
                 let history = Array(messages.dropLast())
-                for try await chunk in await service.sendMessage(messages: history) {
+                for try await chunk in await service.sendMessage(messages: history, context: context) {
                     guard let data = chunk.data(using: .utf8),
                           let parsed = try? JSONDecoder().decode(UIStreamChunk.self, from: data)
                     else { continue }
@@ -85,7 +94,9 @@ final class ChatViewModel {
         messages.removeAll()
         messages.append(ChatMessage(
             role: .assistant,
-            content: "Chat cleared. What can I help you with?"
+            content: context.packName == nil
+                ? "Chat cleared. What can I help you with?"
+                : Self.greeting(for: context)
         ))
     }
 

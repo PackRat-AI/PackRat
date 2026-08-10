@@ -38,10 +38,53 @@ struct ChatMessage: Identifiable, Sendable {
 struct ChatRequest: Encodable {
     let messages: [ChatUIMessage]
     let date: String
+    let contextType: String?
+    let packId: String?
+    let itemId: String?
 
-    init(messages: [ChatMessage]) {
+    init(messages: [ChatMessage], context: ChatContext = .general) {
         self.messages = messages.map { ChatUIMessage(from: $0) }
         self.date = ISO8601DateFormatter().string(from: Date())
+        self.contextType = context.contextType
+        self.packId = context.packId
+        self.itemId = context.itemId
+    }
+}
+
+/// What the conversation is scoped to.
+///
+/// The server reads `contextType` + `packId` to decide whether to append the
+/// "helping with a pack with ID: …, use the getPackDetails tool" instruction to
+/// the system prompt (packages/api/src/routes/chat.ts). Note the chat route's
+/// body schema is `z.any()` — there is no server-side validation, so a wrong or
+/// missing field silently degrades to a generic chat rather than erroring.
+/// Keep this field set aligned with Expo's (apps/expo/app/(app)/ai-chat.tsx).
+enum ChatContext: Equatable, Sendable {
+    case general
+    case pack(id: String, name: String)
+    case item(id: String)
+
+    var contextType: String {
+        switch self {
+        case .general: return "general"
+        case .pack:    return "pack"
+        case .item:    return "item"
+        }
+    }
+
+    var packId: String? {
+        if case .pack(let id, _) = self { return id }
+        return nil
+    }
+
+    var itemId: String? {
+        if case .item(let id) = self { return id }
+        return nil
+    }
+
+    var packName: String? {
+        if case .pack(_, let name) = self { return name }
+        return nil
     }
 }
 
