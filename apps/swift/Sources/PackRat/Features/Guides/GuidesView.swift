@@ -178,24 +178,18 @@ struct GuidesView: View {
     }
 
     private var categoryBar: some View {
-        HStack {
-            Picker("Category", selection: $viewModel.selectedCategory) {
-                Label("All", systemImage: "line.3.horizontal.decrease.circle")
-                    .tag(nil as String?)
-                ForEach(viewModel.categories, id: \.self) { cat in
-                    Label(cat.capitalized, systemImage: "tag")
-                        .tag(Optional(cat))
-                }
+        // A .menu Picker already renders its own label and the selected value,
+        // so no trailing Text — that duplicated the selection a third time.
+        Picker("Category", selection: $viewModel.selectedCategory) {
+            Label("All", systemImage: "line.3.horizontal.decrease.circle")
+                .tag(nil as String?)
+            ForEach(viewModel.categories, id: \.self) { cat in
+                Label(cat.capitalized, systemImage: "tag")
+                    .tag(Optional(cat))
             }
-            .pickerStyle(.menu)
-            .accessibilityIdentifier("guides_category_filter")
-
-            Spacer()
-
-            Text(viewModel.selectedCategory?.capitalized ?? "All")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
         }
+        .pickerStyle(.menu)
+        .accessibilityIdentifier("guides_category_filter")
         .padding(.vertical, 2)
     }
 
