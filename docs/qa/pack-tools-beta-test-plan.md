@@ -1,467 +1,211 @@
-# Pack Tools (iOS) — Beta Tester Guide & Test Plan
-
-Thanks for helping test the new pack tools! This guide walks you through everything to
-try and how to report what you find. **You don't need to be technical** — every step is
-something you can see and tap on your phone. If a step doesn't match what you see,
-that's exactly the kind of thing we want to hear about.
-
-> This is a **separate plan** from the PackRat Pro subscription guide
-> (`revenuecat-beta-test-plan.md`). You don't need to have done that one first, and
-> nothing here involves buying anything.
-
----
-
-## 1. What you're testing
-
-Four new tools inside a pack on the **iPhone app**. Until now you could only add gear to
-a pack by typing it in by hand. Now there are three ways to add it and a way to tick it
-off as you pack your bag:
-
-| Tool | What it does |
-|---|---|
-| **Ask AI** | Chat about *this specific pack* — what's missing, how to cut weight |
-| **Add from Catalog** | Search our gear catalog and add several items at once |
-| **Scan Items from Photo** | Photograph your gear laid out; the app identifies it |
-| **Start Packing** | Tick items off as you put them in your bag, with a progress bar |
-
-These already exist in the Android/React Native app. This round is about the **iPhone
-(Swift) app**, where they are brand new — so treat everything here as untested.
-
-Your job: go through the tests, try to trip things up (tap fast, cancel halfway, go
-offline), and tell us what you saw.
-
----
-
-## 2. Before you start (one-time setup)
-
-1. **Install the app.** Tap the build link we sent you, install it, and open it.
-2. **Sign in to PackRat.** Use the test account we gave you, or create your own.
-   Most of these tools need an account — see the note in Section 5.
-3. **Make a pack with real gear in it.** Go to **Packs → New Pack**, then add at least
-   **6–8 items** by hand across a few categories (shelter, sleep, clothing, kitchen).
-   Several tests need a pack that isn't nearly empty.
-4. **Have a gear photo ready.** For the scanning tests, take a photo of some real gear
-   laid out on the floor or a bed — items spread out, not piled up, in good light.
-   4–6 recognisable things is ideal (tent, jacket, water bottle, stove, headtorch).
-   Save it to your camera roll before you start.
-5. **Note your device.** At the top of your report, write your phone model and its
-   software version (e.g. "iPhone 13, iOS 18.1").
-
-> 💡 Nothing here costs money and nothing is permanent — you can delete any test pack
-> afterwards.
-
----
-
-## 3. How to report each test
-
-For every test, copy this table into your report and fill it in:
-
-| Field | Your answer |
-|---|---|
-| Test ID | (e.g. C3) |
-| Result | Pass / Fail / Blocked / N-A |
-| What you saw | (short description) |
-| Screenshot | (attach one) |
-| Device / OS | (e.g. iPhone 13, iOS 18.1) |
-| Notes | (anything else) |
-
-- **Please attach a screenshot on every failure**, and on **every screen the AI or the
-  photo scanner produces** (even when it passes — we want to see what it said).
-- "Blocked" means you couldn't even attempt the test (e.g. the app crashed before you got
-  there). "N-A" means the test doesn't apply to your build.
-
----
-
-## 4. The tests
-
-Each test lists a **Setup** (the situation you should be in), the **Steps** to take, and
-the **Expected result** (what should happen). Report anything different.
-
-### A. Finding the new tools
-
-**A1 — The Add Item menu has three choices**
-- Setup: Open one of your packs.
-- Steps: **Tap** the **+ (Add Item)** button in the top right.
-- Expected: A menu drops down with exactly three options: **Add Manually**, **Scan Items
-  from Photo**, and **Add from Catalog**. One normal tap — you should never have to press
-  and hold to find these.
-
-**A2 — Adding by hand still works**
-- Setup: On the open Add Item menu.
-- Steps: Tap **Add Manually**.
-- Expected: The **Add Item** form opens — the same one you've always used.
-
-**A3 — The More menu has the new tools**
-- Setup: On a pack.
-- Steps: Tap the **⋯ (More)** button in the top right.
-- Expected: The menu starts with **Ask AI** and **Start Packing**, followed by the
-  existing Weight Analysis, Gap Analysis, and Edit Pack.
-
-**A4 — Packing is unavailable on an empty pack**
-- Setup: Create a brand-new pack and add **no** items.
-- Steps: Open **⋯ (More)**.
-- Expected: **Start Packing** is greyed out and can't be tapped. **Ask AI** is still
-  available.
-
-### B. Ask AI
-
-**B1 — It knows which pack you're in** 📸 *screenshot required*
-- Setup: On a pack that has gear in it.
-- Steps: Open **⋯ → Ask AI**.
-- Expected: A chat screen titled **Ask AI** opens. Your **pack's name** appears as the
-  heading, and the greeting mentions that pack by name. Screenshot this.
-
-**B2 — The suggested questions are about your pack**
-- Setup: On the Ask AI screen.
-- Steps: Look at the row of grey suggestion buttons above the text box.
-- Expected: They are pack-specific — things like **"What's missing?"**, **"Cut weight"**,
-  **"Heaviest items"** — not generic ones like "Ultralight tips" or "3-day hike gear".
-
-**B3 — It can actually see your gear** 📸 *screenshot required*
-- Setup: On the Ask AI screen for a pack with several items.
-- Steps: Tap **"Heaviest items"** and wait for the full reply.
-- Expected: The reply names **actual items from your pack** with roughly the right
-  weights. This is the most important test on the page — if it answers in generalities
-  and never names your gear, mark it **Fail** and screenshot the whole reply.
-
-**B4 — Ask your own question**
-- Setup: On the Ask AI screen.
-- Steps: Type something specific, e.g. *"Am I ready for rain?"*, and send.
-- Expected: A relevant answer that refers to your pack's contents.
-
-**B5 — Each pack has its own conversation**
-- Setup: Have a chat in Pack A, then close it.
-- Steps: Open a **different** pack → **⋯ → Ask AI**.
-- Expected: A fresh conversation greeting **Pack B** by name. Pack A's messages are
-  **not** carried over.
-
-**B6 — The general assistant still works**
-- Setup: Leave the pack entirely.
-- Steps: Tap the **Assistant** tab at the bottom of the screen.
-- Expected: The normal assistant, titled **AI Assistant**, with the general suggestions
-  ("Ultralight tips", etc.). It should be unaffected by anything above.
-
-### C. Add from Catalog
-
-**C1 — Browse without searching** 📸 *screenshot required*
-- Setup: On a pack.
-- Steps: Tap **+** → **Add from Catalog**.
-- Expected: A sheet titled **Add from Catalog** opens **already showing gear** — you
-  shouldn't have to search first to see anything. There's a search box and a row of
-  category buttons. Screenshot it.
-
-**C2 — Category names are written properly**
-- Setup: On the catalog sheet.
-- Steps: Read the category buttons, scrolling sideways through all of them.
-- Expected: They read like normal English — **"Hike & Camp"**, **"Footwear"**. Report
-  anything showing raw code such as `&Amp;`, `&amp;`, or `&#39;`.
-
-**C3 — Search finds things**
-- Setup: On the catalog sheet.
-- Steps: Type **tent** and wait a moment (it searches on its own after you stop typing).
-- Expected: The list updates to tents. You shouldn't need to press Return.
-
-**C4 — Filter by category**
-- Setup: On the catalog sheet.
-- Steps: Tap a category button, then tap the same one again.
-- Expected: First tap narrows the list to that category; second tap clears the filter.
-
-**C5 — Select several items at once**
-- Setup: On the catalog sheet.
-- Steps: Tap **three** different items (tap the row, not the small stepper).
-- Expected: Each shows a blue tick, a bar at the bottom says **"3 selected"**, and the
-  top-right button reads **Add (3)**.
-
-**C6 — Change how many of something**
-- Setup: With at least one item selected.
-- Steps: On a selected row, use the **Quantity** +/− stepper.
-- Expected: The number changes and won't go below 1.
-
-**C7 — Clear the selection**
-- Setup: With several items selected.
-- Steps: Tap **Clear** in the bottom bar.
-- Expected: All ticks clear, the bottom bar disappears, and **Add** greys out.
-
-**C8 — Add them to the pack**
-- Setup: With 2–3 items selected.
-- Steps: Tap **Add (n)**.
-- Expected: The sheet closes, a brief message says how many were added, and the new items
-  appear in your pack. The pack's **total weight goes up**.
-
-**C9 — Quantity is respected**
-- Setup: Add a single item with the quantity set to **3**.
-- Expected: The item appears in the pack showing **×3**.
-
-**C10 — Cancel adds nothing**
-- Setup: On the catalog sheet with items selected.
-- Steps: Tap **Cancel**.
-- Expected: The sheet closes and your pack is **unchanged**.
-
-**C11 — Scrolling loads more**
-- Setup: On the catalog sheet with no search text.
-- Steps: Scroll to the bottom of the list.
-- Expected: More gear loads automatically. Report any **duplicate items** appearing.
-
-### D. Scan Items from Photo
-
-> Use the gear photo you prepared in setup.
-
-**D1 — The starting screen explains itself**
-- Setup: On a pack.
-- Steps: Tap **+** → **Scan Items from Photo**.
-- Expected: A sheet titled **Scan Items** explaining what to do, with a **Choose Photo**
-  button.
-
-**D2 — It identifies your gear** 📸 *screenshot required*
-- Setup: On the Scan Items sheet.
-- Steps: Tap **Choose Photo**, pick your gear photo, and wait.
-- Expected: A spinner saying it's looking for gear, then a list of detected items.
-  Screenshot the results **next to** (or alongside) your original photo so we can judge
-  accuracy. Tell us how many it got right, missed, or invented.
-
-**D3 — Everything starts ticked**
-- Setup: On the results list.
-- Expected: Every detected item already has a blue tick, and the top-right button shows
-  the full count, e.g. **Add (5)**.
-
-**D4 — Untick what you don't want**
-- Setup: On the results list.
-- Steps: Tap a couple of items to untick them.
-- Expected: The ticks clear and the **Add (n)** count drops to match.
-
-**D5 — Select All / Select None**
-- Setup: On the results list.
-- Steps: Tap the **Select None** / **Select All** button in the list header, twice.
-- Expected: It clears everything, then re-selects everything, and the label swaps between
-  the two each time.
-
-**D6 — Matched vs unmatched items are marked**
-- Setup: On the results list.
-- Expected: Items we recognised show a **blue link line** with a catalog product and its
-  weight. Items we didn't show an **orange "No catalog match — weight not set"**. Both
-  are normal; we want to know the rough split.
-
-**D7 — Add them to the pack**
-- Setup: With a few items ticked.
-- Steps: Tap **Add (n)**.
-- Expected: The sheet closes, a message confirms how many were added, and they appear in
-  the pack. Unmatched ones will show **0 g** — that's expected, you'd set the weight
-  yourself later.
-
-**D8 — A photo with no gear in it**
-- Setup: On the Scan Items sheet.
-- Steps: Choose a photo with no gear at all (a landscape, a pet, a wall).
-- Expected: A friendly **"No Gear Detected"** screen offering to try another photo. It
-  must **not** crash, hang forever, or add nonsense to your pack.
-
-**D9 — Trying again needs a new photo**
-- Setup: After any scan.
-- Steps: Tap **Try Another Photo** and pick a different image.
-- Expected: It analyses the new photo normally. (Behind the scenes each photo can only be
-  analysed once — so this is worth confirming.)
-
-**D10 — Cancel mid-scan**
-- Setup: Start a scan and tap **Cancel** while the spinner is still going.
-- Expected: The sheet closes cleanly and nothing is added to your pack.
-
-### E. Start Packing
-
-**E1 — Entering packing mode** 📸 *screenshot required*
-- Setup: On a pack with several items.
-- Steps: Tap **⋯ → Start Packing**.
-- Expected: The screen changes: a progress card at the top reading **"0 of N packed / 0%"**,
-  a row of **All / Unpacked / Packed** buttons, a **circle** beside every item, a
-  **Done** button top-right, and a bottom bar with **Reset** and **Mark All Packed**.
-  The weight charts are hidden while packing. Screenshot it.
-
-**E2 — Reset starts disabled**
-- Setup: Just entered packing mode with nothing ticked.
-- Expected: **Reset** is greyed out.
-
-**E3 — Tick items off**
-- Setup: In packing mode.
-- Steps: Tap two or three items.
-- Expected: Each gets a filled blue tick and **fades slightly**. The counter and
-  percentage go up, and the progress bar grows.
-
-**E4 — Untick an item**
-- Setup: With items ticked.
-- Steps: Tap a ticked item again.
-- Expected: It un-ticks and the count goes back down.
-
-**E5 — The Packed filter**
-- Setup: In packing mode with some items ticked.
-- Steps: Tap **Packed**.
-- Expected: Only ticked items remain on screen, and the per-category counts update to
-  match.
-
-**E6 — The Unpacked filter**
-- Steps: Tap **Unpacked**.
-- Expected: Only un-ticked items show — this is your "what's left" list.
-
-**E7 — An empty filter explains itself**
-- Setup: Tick **every** item (or use **Mark All Packed**), then tap **Unpacked**.
-- Expected: A friendly **"Everything's Packed"** message — not a blank screen, and not an
-  "Add Item" prompt.
-
-**E8 — Mark All Packed**
-- Setup: In packing mode.
-- Steps: Tap **Mark All Packed**.
-- Expected: Every item ticks, the bar reads **100%**, and the button greys out.
-
-**E9 — Reset**
-- Setup: With items ticked.
-- Steps: Tap **Reset**.
-- Expected: Everything un-ticks and the counter returns to **0 of N**.
-
-**E10 — Leaving and coming back remembers your progress** 📸 *screenshot required*
-- Setup: Tick about half the items, then tap **Done**.
-- Steps: You're back on the normal pack screen. Look just under the weight charts.
-- Expected: A card reading **"Packing in progress — X of N items checked off"**. Tapping
-  it takes you straight back into packing mode with your ticks intact. Screenshot the card.
-
-**E11 — It survives closing the app**
-- Setup: With some items ticked, **fully close** the app (swipe it away) and reopen it.
-- Steps: Go back to that pack.
-- Expected: Your ticks are still there.
-
-**E12 — Each pack is tracked separately**
-- Setup: Tick items in Pack A.
-- Steps: Open Pack B and start packing.
-- Expected: Pack B starts at **0 of N**. Pack A's progress is untouched.
-
-**E13 — Adding gear mid-pack doesn't break the count**
-- Setup: In a pack with, say, 4 of 10 ticked.
-- Steps: Leave packing mode, add an item from the catalog, then look at the progress.
-- Expected: It becomes **4 of 11** — the total goes up, your ticks are kept, and the
-  percentage **never exceeds 100%**.
-
-**E14 — Deleting a packed item doesn't break the count**
-- Setup: Tick an item, leave packing mode, then delete that same item from the pack.
-- Expected: The count drops sensibly and **never shows more packed than the pack holds**
-  (e.g. never "5 of 4").
-
-**E15 — No accidental edits while packing**
-- Setup: In packing mode.
-- Steps: Try tapping an item, and try swiping a row sideways.
-- Expected: Tapping only ticks/unticks — it must **not** open the item's edit screen.
-  Swipe-to-delete should not appear.
-
-### F. Rough edges (please try to break it)
-
-**F1 — Offline**
-- Setup: Turn on Airplane Mode.
-- Steps: Try each of the four tools.
-- Expected: **Start Packing works fully offline** (it's stored on your phone). The other
-  three need a connection and should say so **politely** — no crash, no endless spinner,
-  no silent nothing.
-
-**F2 — Signed out**
-- Setup: Sign out (or use Guest mode).
-- Steps: Try **Ask AI**.
-- Expected: A clear message that an account is needed — not a crash or an empty screen.
-
-**F3 — Tap things twice, fast**
-- Steps: Double-tap **Add** on the catalog sheet; double-tap items rapidly in packing mode.
-- Expected: No duplicated items, no wrong counts, no crash.
-
-**F4 — Dark mode & rotation**
-- Steps: View all four tools in **dark mode**, and rotate the phone.
-- Expected: Everything is readable and correctly laid out. Nothing overlaps or gets cut off.
-
-**F5 — Very long names**
-- Setup: Add an item with a very long name (40+ characters).
-- Expected: It wraps or trims tidily in packing mode and in the catalog list.
-
-**F6 — A big pack**
-- Setup: A pack with **30+** items.
-- Expected: Packing mode still scrolls smoothly and the progress bar stays accurate.
-
----
-
-## 5. Things to know up front (so you don't report false alarms)
-
-- **Packing progress lives on your phone, not your account.** If you sign in on a
-  different device, your ticks won't follow you. That's by design for now — please don't
-  report it as a bug.
-- **Scanned items with no catalog match arrive at 0 g.** The photo tells us *what* the
-  gear is but not what it weighs, so you fill the weight in yourself. Expected, not a bug.
-- **Each photo is analysed once.** Scanning the same picture again means picking it fresh
-  from your camera roll.
-- **The AI can be wrong.** We're testing whether it can *see your actual pack contents*,
-  not whether its advice is perfect. Bad advice about real items = interesting. Confident
-  talk about gear you don't own = a bug worth reporting.
-- **The + button always opens a menu**, even though "Add Manually" is the most common
-  choice. That's deliberate — it keeps all three ways of adding gear visible instead of
-  hiding two of them behind a gesture.
-
----
-
-## 6. Final summary sheet
-
-| Test ID | Result (Pass / Fail / Blocked / N-A) | Notes |
-|---|---|---|
-| A1 | | |
-| A2 | | |
-| A3 | | |
-| A4 | | |
-| B1 | | |
-| B2 | | |
-| B3 | | |
-| B4 | | |
-| B5 | | |
-| B6 | | |
-| C1 | | |
-| C2 | | |
-| C3 | | |
-| C4 | | |
-| C5 | | |
-| C6 | | |
-| C7 | | |
-| C8 | | |
-| C9 | | |
-| C10 | | |
-| C11 | | |
-| D1 | | |
-| D2 | | |
-| D3 | | |
-| D4 | | |
-| D5 | | |
-| D6 | | |
-| D7 | | |
-| D8 | | |
-| D9 | | |
-| D10 | | |
-| E1 | | |
-| E2 | | |
-| E3 | | |
-| E4 | | |
-| E5 | | |
-| E6 | | |
-| E7 | | |
-| E8 | | |
-| E9 | | |
-| E10 | | |
-| E11 | | |
-| E12 | | |
-| E13 | | |
-| E14 | | |
-| E15 | | |
-| F1 | | |
-| F2 | | |
-| F3 | | |
-| F4 | | |
-| F5 | | |
-| F6 | | |
-
-**🚨 Showstoppers** — list anything here that:
-- lost gear from a pack, or lost your packing progress, or
-- added items you never asked for, or
-- crashed the app, or
-- left you stuck on a screen you couldn't get out of.
-
-**Also worth flagging separately:**
-- Photo scans that were mostly wrong (tell us what was in the photo).
-- AI answers that clearly couldn't see your pack.
-
-Thank you! 🎒
+# Pack tools on iPhone: beta tester guide
+
+Four new ways to work with a pack on the iPhone app: asking the assistant about
+the pack you are in, adding gear from the catalog, scanning gear from a photo, and
+ticking items off as you pack your bag.
+
+These already exist on Android. This round is about the iPhone app, where all four
+are new, so none of it has been through a beta pass yet.
+
+## Before you start
+
+Note the OS version you are on. Every report needs to say where it happened.
+
+Sign in before you start. Three of the four tools need an account, and the guide
+says where that matters.
+
+Two things are worth having ready:
+
+- A pack with real gear in it. Six to eight items across a few categories —
+  shelter, sleep, clothing, kitchen — gives the weights and the progress counts
+  something to work with. A nearly empty pack hides most of what these tools do.
+- A photo of gear laid out on the floor or a bed, saved to your camera roll. Items
+  spread out and not overlapping, in good light. Four to six recognisable things,
+  like a tent, a jacket, a water bottle, a stove and a headtorch.
+
+## Finding the tools
+
+Open a pack. Everything below starts from the two buttons at the top right.
+
+- Tap the `+` button. Expect a menu with exactly three entries: Add Manually, Scan
+  Items from Photo, and Add from Catalog. One normal tap gets you there — pressing
+  and holding should never be necessary to find them.
+- Tap Add Manually. The pack item form should open, the same one that has always
+  been there.
+- Tap the `⋯` button. Expect Ask AI and Start Packing at the top, above Weight
+  Analysis, Gap Analysis and Edit Pack.
+- Open `⋯` on a pack with no items in it. Start Packing should be greyed out, and
+  Ask AI should still work.
+
+## Ask AI
+
+This is the assistant, but pointed at the pack you are looking at rather than
+starting from nothing.
+
+- Open `⋯` then Ask AI on a pack with gear in it. Expect the screen to be titled
+  Ask AI, with the pack's name as the heading and a greeting that names that pack.
+- Look at the row of suggestions above the text box. They should be about the pack
+  in front of you — What's missing, Cut weight, Heaviest items — rather than
+  general packing prompts.
+- Tap Heaviest items and read the whole answer. It should name actual items from
+  your pack with roughly the right weights. This is the one to spend time on: an
+  answer that talks in generalities and never names your gear is the failure worth
+  reporting, and a screenshot of the full reply helps.
+- Ask something specific of your own, like whether the pack is ready for rain.
+  Expect the answer to refer to what is actually in it.
+- Have a conversation in one pack, close it, then open Ask AI on a different pack.
+  Expect a fresh conversation naming the second pack, with nothing carried over
+  from the first.
+- Leave the pack and open the Assistant tab at the bottom of the screen. That one
+  should still be titled AI Assistant with its general suggestions, unaffected by
+  any of the above.
+
+## Add from Catalog
+
+- Tap `+` then Add from Catalog. Expect gear on screen straight away rather than an
+  empty state waiting for a search, along with a search box and a row of category
+  buttons.
+- Read the category buttons, scrolling sideways through all of them. Expect
+  ordinary English — Hike & Camp, Footwear. Anything showing raw code like `&Amp;`
+  or `&#39;` is a bug.
+- Type "tent" and watch the list while it works. Expect the rows to dim with a
+  spinner over them while the new results load, and pressing Return should not be
+  necessary.
+- Tap a category button, then tap the same one again. The first tap narrows the
+  list to that category and the second clears it. Expect the same loading
+  treatment as a search on both.
+- Tap three different rows. Each should get a blue tick, a bar along the bottom
+  should read "3 selected", and the button at the top right should read "Add (3)".
+- Use the quantity stepper on a selected row. Expect the number to change, and not
+  to go below 1.
+- Tap Clear in the bottom bar. Every tick should clear, the bar should disappear,
+  and Add should grey out.
+- Select two or three items and tap Add. Expect the sheet to close, a brief line
+  confirming how many were added, the items to appear in the pack, and the pack's
+  total weight to go up.
+- Add a single item with its quantity set to 3. It should land in the pack showing
+  `×3`.
+- Select some items and tap Cancel instead. The pack should be exactly as it was.
+- Scroll to the bottom of the list with no search text. More gear should load on
+  its own. Duplicate rows appearing is worth reporting.
+
+## Scan Items from Photo
+
+Use the gear photo from the setup above.
+
+- Tap `+` then Scan Items from Photo. Expect a Scan Items screen that explains what
+  the photo should look like, with a Choose Photo button.
+- Choose your gear photo and wait. A spinner saying it is looking for gear should
+  give way to a list of what it found. A screenshot of the results next to the
+  original photo is the useful thing here, along with a note of how many it got
+  right, missed, or invented.
+- Look at the list when it first appears. Expect every item already ticked, with
+  the full count on the button at the top right.
+- Untick a couple. The count in the button should drop to match.
+- Tap Select None, then Select All. The first clears every tick, the second
+  restores them, and the button label swaps between the two each time.
+- Read down the list. Items matched to the catalog should show a blue line with the
+  product and its weight. Expect unmatched ones to say "No catalog match — weight
+  not set" in orange. Both are normal, and the rough split between them is worth
+  noting.
+- Tick a few and tap Add. Expect the sheet to close, a line confirming the count,
+  and the items to appear in the pack. Unmatched items arrive at 0 g, which is
+  expected rather than a bug.
+- Try a photo with no gear in it at all — a landscape, a pet, a wall. Expect a No
+  Gear Detected screen offering another photo, not a crash, an endless spinner, or
+  nonsense added to the pack.
+- Tap Try Another Photo and pick a different image. It should analyse the new one
+  normally.
+- Start a scan and tap Cancel while the spinner is still going. The sheet should
+  close and nothing should reach the pack.
+
+## Start Packing
+
+- Open `⋯` then Start Packing on a pack with several items. The screen should
+  change: a progress card reading "0 of N packed" and 0%, a row of All, Unpacked
+  and Packed buttons, a circle beside every item, a Done button at the top right,
+  and Reset and Mark All Packed along the bottom. The weight charts should be
+  hidden while you are packing.
+- Look at Reset before ticking anything. It should be greyed out.
+- Tap two or three items. Each should get a filled blue tick and fade slightly,
+  and expect the count, the percentage and the progress bar to all move.
+- Tap a ticked item again. It should untick and the count should drop.
+- Tap Packed. Expect only the ticked items to remain, with the per-category counts
+  updating to match.
+- Tap Unpacked. Only the unticked ones should show, which is the list of what is
+  left to pack.
+- Tick everything, or use Mark All Packed, then tap Unpacked. Expect an
+  "Everything's Packed" message rather than a blank screen or a prompt to add
+  items.
+- Tap Mark All Packed. Expect every item to tick, the bar to read 100%, and the
+  button to grey out.
+- Tap Reset. Everything should untick and the count should return to 0 of N.
+- Tick about half the items and tap Done. Back on the pack screen, just under the
+  weight charts, expect a card reading "Packing in progress" with the count.
+  Tapping it should take you straight back in with your ticks intact.
+- Force quit from the app switcher with some items ticked, then reopen and go back
+  to that pack. The ticks should still be there.
+- Tick items in one pack, then start packing a different one. The second should
+  start at 0 of N with the first untouched.
+- With four of ten ticked, leave packing mode, add an item from the catalog, then
+  look at the progress. Expect four of eleven: the total goes up, the ticks stay,
+  and the percentage never goes over 100%.
+- Tick an item, leave packing mode, then delete that same item from the pack. The
+  count should drop sensibly and should never show more packed than the pack holds.
+- While packing, tap an item and try swiping a row sideways. Tapping should only
+  tick and untick, never open the item for editing, and swipe to delete should not
+  appear.
+
+## Offline
+
+PackRat works without a connection, and these four tools split cleanly on that.
+Packing is kept on the device, so it works with no signal at all. The other three
+need the network.
+
+- Use the app for a few minutes so it has something cached, then turn on airplane
+  mode and open a pack.
+- Start Packing in airplane mode and tick items off. All of it should work exactly
+  as it does online, including the progress card and the filters.
+- Force quit while still in airplane mode, reopen, and go back to the pack. The
+  ticks should have survived.
+- Turn airplane mode off. Your packed items should still be as you left them.
+- Open Add from Catalog in airplane mode. Expect it to say plainly that it cannot
+  reach the network, rather than an endless spinner or an empty list with no
+  explanation.
+- Try Scan Items from Photo and Ask AI in airplane mode. Both should say clearly
+  that a connection is needed.
+- An orange banner reading "You're offline, showing cached data" should appear
+  across the top while you have no connection, and disappear once you are back
+  online.
+
+Packed items stay on the device rather than on the account. Signing in on another
+phone will not bring your ticks across, which is expected for now.
+
+## Things that break apps
+
+- Sign out, or use guest mode, and open Ask AI. Expect a clear message that an
+  account is needed rather than a crash or an empty screen.
+- Double tap Add on the catalog sheet, and tap items rapidly in packing mode.
+  Expect no duplicated items, no wrong counts and no crash.
+- Switch to dark mode and look over all four tools again. The text should stay
+  legible against the darker backgrounds.
+- Rotate the phone on each of them. Nothing should overlap or get cut off.
+- Add an item with a very long name, over forty characters, then look at it in
+  packing mode and in the catalog list. It should wrap or trim tidily.
+- Run packing mode on a pack with thirty or more items. Scrolling should stay
+  smooth and the progress count should stay accurate.
+
+## Reporting
+
+Reports go to GitHub issues as usual. Say which pack and how many items were in it,
+since most of these tools behave differently on a full pack than an empty one.
+
+Two things are worth a screenshot every time: any answer from Ask AI that does not
+appear to know what is in the pack, and the results of a photo scan alongside the
+photo that produced them.
+
+A scanned item arriving at 0 g with no catalog match is expected, and each photo is
+analysed once, so a second look at the same picture means choosing it again from the
+camera roll.
+
+Anything merely annoying rather than broken is still worth reporting.
