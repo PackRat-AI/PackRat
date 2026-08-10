@@ -12,9 +12,11 @@ final class TripsViewModel {
     var searchText = ""
 
     private let service: TripService
+    private let outbox: OutboxService
 
-    init(service: TripService = .shared) {
+    init(service: TripService = .shared, outbox: OutboxService = .shared) {
         self.service = service
+        self.outbox = outbox
     }
 
     var currentPage = 1
@@ -60,6 +62,9 @@ final class TripsViewModel {
         }
 
         if let context, !isCacheLoaded {
+            // Clear rows from the retired `local-` id scheme before reading the cache,
+            // so they never reach the UI or the outbox.
+            LegacyLocalIDMigration.runIfNeeded(context: context)
             let cached = (try? context.fetch(FetchDescriptor<CachedTrip>(
                 sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]
             ))) ?? []
@@ -132,25 +137,52 @@ final class TripsViewModel {
         try? context.save()
     }
 
+    /// Never throws: an unreachable server queues the create for replay instead of
+    /// failing at the call site. Surfaced failures come from `OutboxService.failedCount`.
     func createTrip(name: String, description: String?, startDate: Date?, endDate: Date?,
                     location: TripLocationBody?, notes: String?, packId: String?,
-                    context: ModelContext? = nil) async throws {
+                    context: ModelContext? = nil) async {
         let localTrip = makeLocalTrip(
             name: name, description: description, startDate: startDate, endDate: endDate,
             location: location, notes: notes, packId: packId
         )
+        let payload = TripMutationPayload(
+            name: name,
+            description: description,
+            startDate: startDate?.iso8601String(),
+            endDate: endDate?.iso8601String(),
+            latitude: location?.latitude,
+            longitude: location?.longitude,
+            locationName: location?.name,
+            notes: notes,
+            packId: packId
+        )
+        func queueCreate() {
+            outbox.enqueue(
+                entityType: .trip,
+                entityId: localTrip.id,
+                operation: .create,
+                payload: OutboxService.encode(payload),
+                context: context
+            )
+        }
+
         let trip: Trip
         if canUseRemotePersonalStore {
             do {
+                // Send the local id so a retry can't create a duplicate record.
                 trip = try await service.createTrip(
+                    id: localTrip.id,
                     name: name, description: description, startDate: startDate, endDate: endDate,
                     location: location, notes: notes, packId: packId
                 )
             } catch {
                 trip = localTrip
+                queueCreate()
             }
         } else {
             trip = localTrip
+            queueCreate()
         }
         trips.insert(trip, at: 0)
         upsertCachedTrip(trip, context: context)
@@ -171,6 +203,27 @@ final class TripsViewModel {
             packId: packId,
             updatedAt: Date.iso8601Now()
         )
+        let payload = TripMutationPayload(
+            name: name,
+            description: description,
+            startDate: startDate?.iso8601String(),
+            endDate: endDate?.iso8601String(),
+            latitude: location?.latitude,
+            longitude: location?.longitude,
+            locationName: location?.name,
+            notes: notes,
+            packId: packId
+        )
+        func queueUpdate() {
+            outbox.enqueue(
+                entityType: .trip,
+                entityId: tripId,
+                operation: .update,
+                payload: OutboxService.encode(payload),
+                context: context
+            )
+        }
+
         let updated: Trip
         if canUseRemotePersonalStore {
             do {
@@ -180,9 +233,11 @@ final class TripsViewModel {
                 )
             } catch {
                 updated = localUpdated
+                queueUpdate()
             }
         } else {
             updated = localUpdated
+            queueUpdate()
         }
         if let idx = trips.firstIndex(where: { $0.id == tripId }) {
             trips[idx] = updated
@@ -190,19 +245,30 @@ final class TripsViewModel {
         upsertCachedTrip(updated, context: context)
     }
 
-    // Optimistic delete
-    func deleteTrip(_ tripId: String, context: ModelContext? = nil) async throws {
+    /// Optimistic delete. An unreachable server queues the delete for replay rather
+    /// than resurrecting the trip, matching create/update behaviour. Never throws.
+    func deleteTrip(_ tripId: String, context: ModelContext? = nil) async {
         guard let idx = trips.firstIndex(where: { $0.id == tripId }) else { return }
-        let removed = trips.remove(at: idx)
+        trips.remove(at: idx)
         deleteCachedTrip(tripId, context: context)
-        guard !tripId.hasPrefix("local-") else { return }
-        guard canUseRemotePersonalStore else { return }
+
+        func queueDelete() {
+            outbox.enqueue(
+                entityType: .trip,
+                entityId: tripId,
+                operation: .delete,
+                context: context
+            )
+        }
+
+        guard canUseRemotePersonalStore else {
+            queueDelete()
+            return
+        }
         do {
             try await service.deleteTrip(tripId)
         } catch {
-            trips.insert(removed, at: idx)
-            upsertCachedTrip(removed, context: context)
-            throw error
+            queueDelete()
         }
     }
 
@@ -216,8 +282,10 @@ final class TripsViewModel {
         packId: String?
     ) -> Trip {
         let now = Date.iso8601Now()
+        // A plain client UUID — the scheme the server accepts on create — so an
+        // offline trip is syncable as-is. No `local-` prefix to reconcile later.
         return Trip(
-            id: "local-\(UUID().uuidString)",
+            id: UUID().uuidString.lowercased(),
             name: name,
             description: description,
             notes: notes,

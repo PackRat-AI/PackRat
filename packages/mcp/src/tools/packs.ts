@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import { call, clampLimit, nowIso, ok, PAGINATION_LIMIT_MAX, withNextOffset } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
-import { GetPackOutputSchema, ListPacksOutputSchema } from '../output-schemas';
+import {
+  GetPackItemOutputSchema,
+  GetPackOutputSchema,
+  ListPackItemsOutputSchema,
+  ListPacksOutputSchema,
+} from '../output-schemas';
 import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
@@ -231,6 +236,7 @@ export function registerPackTools(agent: AgentContext): void {
       title: 'List Pack Items',
       description: 'List all items in a pack.',
       inputSchema: { pack_id: z.string().describe('The pack ID') },
+      outputSchema: ListPackItemsOutputSchema.shape,
       annotations: {
         title: 'List Pack Items',
         readOnlyHint: true,
@@ -239,12 +245,31 @@ export function registerPackTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async ({ pack_id }) =>
-      call({
-        promise: agent.api.user.packs({ packId: pack_id }).items.get(),
-        action: 'list pack items',
-        resourceHint: `pack ${pack_id}`,
-      }),
+    async ({ pack_id }) => {
+      const result = await agent.api.user.packs({ packId: pack_id }).items.get();
+      if (result.error || result.data == null) {
+        // Defer to the standard error envelope for failure consistency.
+        return call({
+          promise: Promise.resolve(result),
+          action: 'list pack items',
+          resourceHint: `pack ${pack_id}`,
+        });
+      }
+      // The API returns a bare array; normalise into the `{ data, nextOffset }`
+      // envelope the declared outputSchema expects.
+      //
+      // `nextOffset` is always null: this endpoint takes only `pack_id` and
+      // returns every item in one response, so there is never a next page.
+      // Don't route this through `withNextOffset` — passing `limit:
+      // items.length` would make its `items.length >= limit` check true for
+      // every response (including an empty pack), advertising a bogus
+      // continuation offset that a consumer could follow into a loop.
+      const items = Array.isArray(result.data) ? result.data : [];
+      return ok({
+        data: { data: items, nextOffset: null },
+        structured: true,
+      });
+    },
   );
 
   // ── Get a single pack item ────────────────────────────────────────────────
@@ -256,6 +281,7 @@ export function registerPackTools(agent: AgentContext): void {
       title: 'Get Pack Item',
       description: 'Get full details of a single pack item.',
       inputSchema: { item_id: z.string().describe('The pack item ID') },
+      outputSchema: GetPackItemOutputSchema.shape,
       annotations: {
         title: 'Get Pack Item',
         readOnlyHint: true,
@@ -269,6 +295,7 @@ export function registerPackTools(agent: AgentContext): void {
         promise: agent.api.user.packs.items({ itemId: item_id }).get(),
         action: 'get pack item',
         resourceHint: `item ${item_id}`,
+        structured: true,
       }),
   );
 

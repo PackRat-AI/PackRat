@@ -12,9 +12,11 @@ final class PacksViewModel {
     var searchText = ""
 
     let service: PackService
+    private let outbox: OutboxService
 
-    init(service: PackService = .shared) {
+    init(service: PackService = .shared, outbox: OutboxService = .shared) {
         self.service = service
+        self.outbox = outbox
     }
 
     var currentPage = 1
@@ -48,6 +50,9 @@ final class PacksViewModel {
         }
 
         if let context, !isCacheLoaded {
+            // Clear rows from the retired `local-` id scheme before reading the cache,
+            // so they never reach the UI or the outbox.
+            LegacyLocalIDMigration.runIfNeeded(context: context)
             let cached = (try? context.fetch(FetchDescriptor<CachedPack>(
                 sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]
             ))) ?? []
@@ -123,27 +128,47 @@ final class PacksViewModel {
         try? context.save()
     }
 
+    /// Never throws: an unreachable server queues the create for replay instead of
+    /// failing at the call site. Surfaced failures come from `OutboxService.failedCount`.
     func createPack(
         name: String,
         description: String?,
         category: String?,
         isPublic: Bool,
         context: ModelContext? = nil
-    ) async throws {
+    ) async {
         let localPack = makeLocalPack(name: name, description: description, category: category, isPublic: isPublic)
+        let payload = PackMutationPayload(
+            name: name, description: description, category: category, isPublic: isPublic
+        )
+
+        func queueCreate() {
+            outbox.enqueue(
+                entityType: .pack,
+                entityId: localPack.id,
+                operation: .create,
+                payload: OutboxService.encode(payload),
+                context: context
+            )
+        }
+
         guard canUseRemotePersonalStore else {
             packs.insert(localPack, at: 0)
             upsertCachedPack(localPack, context: context)
+            queueCreate()
             return
         }
 
         let pack: Pack
         do {
+            // Send the local id so a retry can't create a duplicate record.
             pack = try await service.createPack(
-                name: name, description: description, category: category, isPublic: isPublic
+                id: localPack.id, name: name, description: description,
+                category: category, isPublic: isPublic
             )
         } catch {
             pack = localPack
+            queueCreate()
         }
         packs.insert(pack, at: 0)
         upsertCachedPack(pack, context: context)
@@ -167,6 +192,19 @@ final class PacksViewModel {
             updatedAt: Date.iso8601Now()
         )
 
+        let payload = PackMutationPayload(
+            name: name, description: description, category: category, isPublic: isPublic
+        )
+        func queueUpdate() {
+            outbox.enqueue(
+                entityType: .pack,
+                entityId: packId,
+                operation: .update,
+                payload: OutboxService.encode(payload),
+                context: context
+            )
+        }
+
         let updated: Pack
         if canUseRemotePersonalStore {
             do {
@@ -175,9 +213,11 @@ final class PacksViewModel {
                 )
             } catch {
                 updated = localUpdated
+                queueUpdate()
             }
         } else {
             updated = localUpdated
+            queueUpdate()
         }
         if let idx = packs.firstIndex(where: { $0.id == packId }) {
             packs[idx] = updated
@@ -185,19 +225,31 @@ final class PacksViewModel {
         upsertCachedPack(updated, context: context)
     }
 
-    // Optimistic delete: remove immediately, restore on error
-    func deletePack(_ packId: String, context: ModelContext? = nil) async throws {
+    /// Optimistic delete. The removal always sticks locally — an unreachable server
+    /// queues the delete for replay rather than resurrecting the pack, so delete now
+    /// behaves like create and update. Never throws, for the same reason.
+    func deletePack(_ packId: String, context: ModelContext? = nil) async {
         guard let idx = packs.firstIndex(where: { $0.id == packId }) else { return }
-        let removed = packs.remove(at: idx)
+        packs.remove(at: idx)
         deleteCachedPack(packId, context: context)
-        guard !packId.hasPrefix("local-") else { return }
-        guard canUseRemotePersonalStore else { return }
+
+        func queueDelete() {
+            outbox.enqueue(
+                entityType: .pack,
+                entityId: packId,
+                operation: .delete,
+                context: context
+            )
+        }
+
+        guard canUseRemotePersonalStore else {
+            queueDelete()
+            return
+        }
         do {
             try await service.deletePack(packId)
         } catch {
-            packs.insert(removed, at: idx)
-            upsertCachedPack(removed, context: context)
-            throw error
+            queueDelete()
         }
     }
 
@@ -208,18 +260,35 @@ final class PacksViewModel {
             packId: packId, name: name, weight: weight, weightUnit: weightUnit,
             quantity: quantity, category: category, consumable: consumable, worn: worn, notes: notes
         )
+        let payload = PackItemMutationPayload(
+            name: name, weight: weight, weightUnit: weightUnit, quantity: quantity,
+            category: category, consumable: consumable, worn: worn, notes: notes
+        )
+        func queueCreate() {
+            outbox.enqueue(
+                entityType: .packItem,
+                entityId: localItem.id,
+                operation: .create,
+                parentId: packId,
+                payload: OutboxService.encode(payload),
+                context: context
+            )
+        }
+
         let item: PackItem
         if canUseRemotePersonalStore {
             do {
                 item = try await service.addItem(
-                    to: packId, name: name, weight: weight, weightUnit: weightUnit,
+                    to: packId, id: localItem.id, name: name, weight: weight, weightUnit: weightUnit,
                     quantity: quantity, category: category, consumable: consumable, worn: worn, notes: notes
                 )
             } catch {
                 item = localItem
+                queueCreate()
             }
         } else {
             item = localItem
+            queueCreate()
         }
         if let idx = packs.firstIndex(where: { $0.id == packId }) {
             var items = packs[idx].items ?? []
@@ -248,6 +317,27 @@ final class PacksViewModel {
                 worn: worn,
                 notes: notes ?? current?.notes
             )
+            let payload = PackItemMutationPayload(
+                name: name,
+                weight: weight ?? current?.weight,
+                weightUnit: weightUnit ?? current?.weightUnit.rawValue,
+                quantity: quantity ?? current?.quantity,
+                category: category ?? current?.category,
+                consumable: consumable,
+                worn: worn,
+                notes: notes ?? current?.notes
+            )
+            func queueUpdate() {
+                outbox.enqueue(
+                    entityType: .packItem,
+                    entityId: itemId,
+                    operation: .update,
+                    parentId: packId,
+                    payload: OutboxService.encode(payload),
+                    context: context
+                )
+            }
+
             let updated: PackItem
             if canUseRemotePersonalStore {
                 do {
@@ -257,9 +347,11 @@ final class PacksViewModel {
                     )
                 } catch {
                     updated = localUpdated
+                    queueUpdate()
                 }
             } else {
                 updated = localUpdated
+                queueUpdate()
             }
             var items = packs[packIdx].items ?? []
             items[itemIdx] = updated
@@ -268,32 +360,43 @@ final class PacksViewModel {
         }
     }
 
-    // Optimistic item delete
+    /// Optimistic item delete. Like `deletePack`, a failed or offline delete stays
+    /// deleted locally and is queued for replay instead of being rolled back.
     func deleteItem(_ itemId: String, from packId: String, context: ModelContext? = nil) async throws {
         guard let packIdx = packs.firstIndex(where: { $0.id == packId }),
               let itemIdx = packs[packIdx].items?.firstIndex(where: { $0.id == itemId }) else { return }
         var items = packs[packIdx].items ?? []
-        let removed = items.remove(at: itemIdx)
+        items.remove(at: itemIdx)
         packs[packIdx] = rebuildPack(packs[packIdx], items: items)
         upsertCachedPack(packs[packIdx], context: context)
-        guard canUseRemotePersonalStore else { return }
+
+        func queueDelete() {
+            outbox.enqueue(
+                entityType: .packItem,
+                entityId: itemId,
+                operation: .delete,
+                parentId: packId,
+                context: context
+            )
+        }
+
+        guard canUseRemotePersonalStore else {
+            queueDelete()
+            return
+        }
         do {
             try await service.deleteItem(itemId, from: packId)
         } catch {
-            var restored = packs[packIdx].items ?? []
-            restored.insert(removed, at: itemIdx)
-            if let idx = packs.firstIndex(where: { $0.id == packId }) {
-                packs[idx] = rebuildPack(packs[idx], items: restored)
-                upsertCachedPack(packs[idx], context: context)
-            }
-            throw error
+            queueDelete()
         }
     }
 
     private func makeLocalPack(name: String, description: String?, category: String?, isPublic: Bool) -> Pack {
         let now = Date.iso8601Now()
+        // A plain client UUID — the same scheme the server accepts on create — so an
+        // offline pack is syncable as-is. No `local-` prefix to reconcile later.
         return Pack(
-            id: "local-\(UUID().uuidString)", userId: nil, name: name,
+            id: UUID().uuidString.lowercased(), userId: nil, name: name,
             description: description, category: PackCategory(rawValue: category ?? ""),
             isPublic: isPublic, image: nil, tags: nil, templateId: nil,
             deleted: false, isAIGenerated: false, items: [],
@@ -303,7 +406,7 @@ final class PacksViewModel {
     }
 
     private func makeLocalItem(
-        id: String = "local-item-\(UUID().uuidString)",
+        id: String = UUID().uuidString.lowercased(),
         packId: String,
         name: String,
         weight: Double?,

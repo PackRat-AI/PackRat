@@ -7,18 +7,34 @@ struct Guide: Codable, Identifiable, Sendable {
     let id: String
     let title: String
     let content: String?
-    let excerpt: String?
+    /// The API calls this `description`; the UI shows it as the row excerpt.
+    let description: String?
+    /// Coarse bucket — currently `"general"` for every guide.
     let category: String?
-    let imageUrl: String?
+    /// The tags the /guides/categories endpoint actually returns; this is what
+    /// the category filter must match against, not `category`.
+    let categories: [String]?
+    let author: String?
+    let difficulty: String?
     let createdAt: String?
+
+    var excerpt: String? { description }
 }
 
+/// Mirrors `GuidesResponseSchema` in packages/schemas/src/guides.ts:
+/// `{ items, totalCount, page, limit, totalPages }`.
 struct GuidesResponse: Codable {
-    let guides: [Guide]?
-    let data: [Guide]?
-    let total: Int?
+    let items: [Guide]
+    let totalCount: Int?
+    let page: Int?
+    let limit: Int?
+    let totalPages: Int?
+}
 
-    var items: [Guide] { guides ?? data ?? [] }
+/// Mirrors `GuideCategoriesResponseSchema`: `{ categories, count }`.
+struct GuideCategoriesResponse: Codable {
+    let categories: [String]
+    let count: Int?
 }
 
 // MARK: - Service
@@ -33,10 +49,9 @@ final class GuidesService: Sendable {
         var query: [String: String] = ["page": "\(page)", "limit": "\(limit)"]
         if let cat = category { query["category"] = cat }
         let endpoint = Endpoint(.get, "/api/guides", query: query)
-        if let wrapped = try? await api.send(endpoint, as: GuidesResponse.self) {
-            return wrapped.items
-        }
-        return try await api.send(endpoint)
+        // Errors propagate: a failed fetch must surface as an error state, not
+        // as an empty list indistinguishable from "there are no guides".
+        return try await api.send(endpoint, as: GuidesResponse.self).items
     }
 
     func getGuide(_ id: String) async throws -> Guide {
@@ -46,8 +61,7 @@ final class GuidesService: Sendable {
 
     func categories() async throws -> [String] {
         let endpoint = Endpoint(.get, "/api/guides/categories")
-        if let arr = try? await api.send(endpoint, as: [String].self) { return arr }
-        return []
+        return try await api.send(endpoint, as: GuideCategoriesResponse.self).categories
     }
 }
 
@@ -67,7 +81,9 @@ final class GuidesViewModel {
 
     var filteredGuides: [Guide] {
         var result = guides
-        if let cat = selectedCategory { result = result.filter { $0.category == cat } }
+        if let cat = selectedCategory {
+            result = result.filter { $0.categories?.contains(cat) == true || $0.category == cat }
+        }
         if !searchText.isEmpty {
             result = result.filter {
                 $0.title.localizedCaseInsensitiveContains(searchText) ||
@@ -97,13 +113,18 @@ final class GuidesViewModel {
         isLoading = true
         error = nil
         defer { isLoading = false }
+
+        // The category filter is a convenience; losing it must not blank the
+        // list, so its failure is kept separate from the guides request.
+        async let fetchedCategories = try? service.categories()
+
         do {
-            async let g = service.listGuides()
-            async let c = service.categories()
-            (guides, categories) = try await (g, c)
+            guides = try await service.listGuides()
         } catch {
             self.error = error.localizedDescription
         }
+
+        categories = await fetchedCategories ?? []
     }
 
     func loadMore() async {
@@ -157,24 +178,18 @@ struct GuidesView: View {
     }
 
     private var categoryBar: some View {
-        HStack {
-            Picker("Category", selection: $viewModel.selectedCategory) {
-                Label("All", systemImage: "line.3.horizontal.decrease.circle")
-                    .tag(nil as String?)
-                ForEach(viewModel.categories, id: \.self) { cat in
-                    Label(cat.capitalized, systemImage: "tag")
-                        .tag(Optional(cat))
-                }
+        // A .menu Picker already renders its own label and the selected value,
+        // so no trailing Text — that duplicated the selection a third time.
+        Picker("Category", selection: $viewModel.selectedCategory) {
+            Label("All", systemImage: "line.3.horizontal.decrease.circle")
+                .tag(nil as String?)
+            ForEach(viewModel.categories, id: \.self) { cat in
+                Label(cat.capitalized, systemImage: "tag")
+                    .tag(Optional(cat))
             }
-            .pickerStyle(.menu)
-            .accessibilityIdentifier("guides_category_filter")
-
-            Spacer()
-
-            Text(viewModel.selectedCategory?.capitalized ?? "All")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
         }
+        .pickerStyle(.menu)
+        .accessibilityIdentifier("guides_category_filter")
         .padding(.vertical, 2)
     }
 
@@ -183,7 +198,7 @@ struct GuidesView: View {
             if !viewModel.categories.isEmpty {
                 Section {
                     categoryBar
-                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                         .listRowSeparator(.hidden)
                 }
             }

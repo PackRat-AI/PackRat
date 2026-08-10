@@ -253,16 +253,16 @@ actor APIClient {
 
     private func validateStatus(_ response: URLResponse, data: Data) throws {
         guard let http = response as? HTTPURLResponse else { throw PackRatError.unknown }
+        if (200...299).contains(http.statusCode) { return }
+
+        let message = APIErrorBody.decodeMessage(from: data)
+
         switch http.statusCode {
-        case 200...299: return
-        case 401:
-            if let message = APIErrorBody.decodeMessage(from: data), !message.isEmpty {
-                throw PackRatError.httpError(statusCode: http.statusCode, message: message)
-            }
-            throw PackRatError.unauthorized
-        case 404: throw PackRatError.notFound
+        // A 401 on a sign-in attempt means "wrong credentials", not "your
+        // session expired" — keep the server's wording when it gave us one.
+        case 401 where message == nil: throw PackRatError.unauthorized
+        case 404 where message == nil: throw PackRatError.notFound
         default:
-            let message = APIErrorBody.decodeMessage(from: data)
             throw PackRatError.httpError(statusCode: http.statusCode, message: message)
         }
     }
@@ -282,16 +282,34 @@ actor APIClient {
     }
 }
 
-private struct APIErrorBody: Decodable {
+/// Error bodies come in two shapes:
+///   - Better Auth (`/api/auth/**`): `{"message": "...", "code": "..."}`
+///   - Elysia routes:                `{"error": "..."}`
+/// Decoding only `error` silently dropped every Better Auth message, so auth
+/// failures surfaced as a generic "could not be loaded" banner.
+struct APIErrorBody: Decodable {
     let error: String?
     let message: String?
     let code: String?
 
-    static func decodeMessage(from data: Data) -> String? {
-        guard let body = try? JSONDecoder().decode(Self.self, from: data) else {
-            return nil
-        }
+    /// Nil unless `value` has non-whitespace content. A blank string is as absent as
+    /// a missing key: `InlineErrorView` trims before rendering, so `{"message":"  "}`
+    /// would otherwise suppress the 401/404 fallback and show the generic banner.
+    private static func nonBlank(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
 
-        return body.message ?? body.error ?? body.code
+    /// Prefer the human-readable text; fall back to the machine code so an
+    /// unrecognised body still says something specific. Blank strings are
+    /// treated as absent so `{"message":""}` falls through rather than
+    /// surfacing an empty banner.
+    var displayMessage: String? {
+        Self.nonBlank(message) ?? Self.nonBlank(error) ?? Self.nonBlank(code)
+    }
+
+    static func decodeMessage(from data: Data) -> String? {
+        (try? JSONDecoder().decode(Self.self, from: data))?.displayMessage
     }
 }
