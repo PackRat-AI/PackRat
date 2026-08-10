@@ -1,15 +1,20 @@
-# Pack tools on iPhone: beta tester guide
+# Pack tools on iPhone and Mac: beta tester guide
 
-Four new ways to work with a pack on the iPhone app: asking the assistant about
-the pack you are in, adding gear from the catalog, scanning gear from a photo, and
-ticking items off as you pack your bag.
+Four new ways to work with a pack: asking the assistant about the pack you are in,
+adding gear from the catalog, scanning gear from a photo, and ticking items off as
+you pack your bag.
 
-These already exist on Android. This round is about the iPhone app, where all four
-are new, so none of it has been through a beta pass yet.
+These already exist on Android. This round is about the iPhone and Mac apps, where
+all four are new, so none of it has been through a beta pass yet.
+
+All four are in both apps, reached the same way from the same two buttons. Most of
+this guide is written for iPhone. The Mac section at the end covers what differs
+there, and it is worth running the iPhone list on the Mac too.
 
 ## Before you start
 
-Note the OS version you are on. Every report needs to say where it happened.
+Note the OS version you are on and which of the two you tested. Every report needs
+to say where it happened.
 
 Sign in before you start. Three of the four tools need an account, and the guide
 says where that matters.
@@ -19,9 +24,11 @@ Two things are worth having ready:
 - A pack with real gear in it. Six to eight items across a few categories —
   shelter, sleep, clothing, kitchen — gives the weights and the progress counts
   something to work with. A nearly empty pack hides most of what these tools do.
-- A photo of gear laid out on the floor or a bed, saved to your camera roll. Items
+- A photo of gear laid out on the floor or a bed, in your photo library. Items
   spread out and not overlapping, in good light. Four to six recognisable things,
-  like a tent, a jacket, a water bottle, a stove and a headtorch.
+  like a tent, a jacket, a water bottle, a stove and a headtorch. On the Mac the
+  scanner reads from Photos, so the picture needs to be in your library there
+  rather than sitting loose in a folder.
 
 ## Finding the tools
 
@@ -179,7 +186,8 @@ need the network.
   online.
 
 Packed items stay on the device rather than on the account. Signing in on another
-phone will not bring your ticks across, which is expected for now.
+phone will not bring your ticks across, and the Mac keeps its own separate count
+from your phone, which is expected for now.
 
 ## Things that break apps
 
@@ -189,11 +197,48 @@ phone will not bring your ticks across, which is expected for now.
   Expect no duplicated items, no wrong counts and no crash.
 - Switch to dark mode and look over all four tools again. The text should stay
   legible against the darker backgrounds.
-- Rotate the phone on each of them. Nothing should overlap or get cut off.
+- Rotate the phone on each of them. Nothing should overlap or get cut off. The
+  Mac equivalent is resizing the window, which the Mac section covers.
 - Add an item with a very long name, over forty characters, then look at it in
   packing mode and in the catalog list. It should wrap or trim tidily.
 - Run packing mode on a pack with thirty or more items. Scrolling should stay
   smooth and the progress count should stay accurate.
+
+## Mac
+
+All four tools are in the Mac app as well, in the same places. Open a pack and the
+`+` and `⋯` buttons sit at the top right exactly as they do on the phone.
+
+Everything in the lists above is worth running here too. The Mac is a separate app
+with its own cache and its own packing counts, so passing on iPhone says nothing
+about passing here. What follows is what only the Mac does.
+
+- Work through the four tools once from the sidebar, the same way you did on the
+  phone. Expect each to open and behave as it did there.
+- Open a pack in its own window, then use `+` and `⋯` from that window. Both menus
+  should work the same as they do in the main window.
+- Resize the window narrow, then stretch it wide, with the catalog browser and the
+  scan results open. The rows and the category buttons should follow the width
+  without clipping or overlapping.
+- Open Ask AI on the Mac. Expect the pack's name as the heading and the same
+  pack-specific suggestions, and expect Return to send your question.
+- Scan Items from Photo reads from your Photos library rather than a file browser.
+  Choose your gear photo from there and expect the same list of detected items you
+  would get on the phone.
+- Run packing mode with two windows open on the same pack. Tick an item in one and
+  expect the other to catch up rather than showing a stale count.
+- Tick some items on the Mac, then look at the same pack on your phone. The counts
+  are deliberately separate, so expect them to differ. This one is a check that
+  neither device wipes the other, not that they agree.
+- Turn Wi-Fi off from the menu bar and run the offline list above. Packing should
+  work throughout, and the other three should say plainly that they cannot reach
+  the network.
+- Press Escape with the catalog browser, the scan sheet or Ask AI open. Each should
+  close.
+- Tab through the catalog browser and the scan list. Focus should move in an order
+  that makes sense, and it should always be clear which row or field you are on.
+- Try Cmd-C and Cmd-V in the catalog search box and in the Ask AI text field. Both
+  should behave the way they do in any other Mac app.
 
 ## Reporting
 
@@ -205,7 +250,7 @@ appear to know what is in the pack, and the results of a photo scan alongside th
 photo that produced them.
 
 A scanned item arriving at 0 g with no catalog match is expected, and each photo is
-analysed once, so a second look at the same picture means choosing it again from the
-camera roll.
+analysed once, so a second look at the same picture means choosing it again from
+your photo library.
 
 Anything merely annoying rather than broken is still worth reporting.
