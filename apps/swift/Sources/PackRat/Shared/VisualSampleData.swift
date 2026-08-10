@@ -30,9 +30,11 @@ enum VisualSampleData {
                 - Water treatment
                 - First aid and repair kit
                 """,
-                excerpt: "A practical packing order for shoulder-season overnight trips.",
-                category: "backpacking",
-                imageUrl: nil,
+                description: "A practical packing order for shoulder-season overnight trips.",
+                category: "general",
+                categories: ["gear", "planning"],
+                author: nil,
+                difficulty: "Beginner",
                 createdAt: Date.iso8601Now()
             ),
             Guide(
@@ -43,9 +45,11 @@ enum VisualSampleData {
 
                 Desert routes change quickly with heat, wind, and road access. Confirm water sources, carry a reserve, and leave dry campsites with enough margin for the next exposed section.
                 """,
-                excerpt: "How to set a reliable water margin for hot, exposed routes.",
-                category: "safety",
-                imageUrl: nil,
+                description: "How to set a reliable water margin for hot, exposed routes.",
+                category: "general",
+                categories: ["safety", "planning"],
+                author: nil,
+                difficulty: "Intermediate",
                 createdAt: Date.iso8601Now()
             ),
             Guide(
@@ -56,16 +60,19 @@ enum VisualSampleData {
 
                 Pack active insulation separately from camp warmth. A waterproof liner, dry socks, and an accessible shell prevent small weather shifts from becoming trip problems.
                 """,
-                excerpt: "Simple layer choices for cold starts, wind, and afternoon rain.",
-                category: "skills",
-                imageUrl: nil,
+                description: "Simple layer choices for cold starts, wind, and afternoon rain.",
+                category: "general",
+                categories: ["skills", "gear"],
+                author: nil,
+                difficulty: "Intermediate",
                 createdAt: Date.iso8601Now()
             ),
         ]
     }
 
     static var guideCategories: [String] {
-        Array(Set(guides.compactMap(\.category))).sorted()
+        // Mirrors the API: the filter lists the `categories` tags, not `category`.
+        Array(Set(guides.flatMap { $0.categories ?? [] })).sorted()
     }
 
     static func catalogItems(matching query: String) -> [CatalogItem] {
