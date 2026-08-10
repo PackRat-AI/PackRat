@@ -366,8 +366,9 @@ export const siteConfig = {
     ],
   },
 
-  // Support contact — surfaced from MCP /health, the login page, and the connector listing.
-  // Email is the canonical channel; we don't run a separate support web page yet.
+  // Support contact — surfaced from MCP /health, the login page, the connector
+  // listing, and the /support page. Email is the canonical channel; render
+  // these values rather than hardcoding an address.
   support: {
     email: 'hello@packratai.com',
     mailto: 'mailto:hello@packratai.com',

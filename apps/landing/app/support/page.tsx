@@ -1,3 +1,4 @@
+import { siteConfig } from 'landing-app/config/site';
 import Link from 'next/link';
 
 export const metadata = {
@@ -25,8 +26,8 @@ export default function SupportPage() {
               <h3 className="text-xl font-medium mb-1">Email</h3>
               <p>
                 For any question, bug report, or feedback, email{' '}
-                <a className="underline" href="mailto:support@packratai.com">
-                  support@packratai.com
+                <a className="underline" href={siteConfig.support.mailto}>
+                  {siteConfig.support.email}
                 </a>
                 . We aim to reply within two business days.
               </p>

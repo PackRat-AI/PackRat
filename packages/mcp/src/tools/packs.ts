@@ -256,10 +256,17 @@ export function registerPackTools(agent: AgentContext): void {
         });
       }
       // The API returns a bare array; normalise into the `{ data, nextOffset }`
-      // envelope the declared outputSchema expects (same shape as list_packs).
+      // envelope the declared outputSchema expects.
+      //
+      // `nextOffset` is always null: this endpoint takes only `pack_id` and
+      // returns every item in one response, so there is never a next page.
+      // Don't route this through `withNextOffset` — passing `limit:
+      // items.length` would make its `items.length >= limit` check true for
+      // every response (including an empty pack), advertising a bogus
+      // continuation offset that a consumer could follow into a loop.
       const items = Array.isArray(result.data) ? result.data : [];
       return ok({
-        data: withNextOffset({ items, offset: 0, limit: items.length }),
+        data: { data: items, nextOffset: null },
         structured: true,
       });
     },
