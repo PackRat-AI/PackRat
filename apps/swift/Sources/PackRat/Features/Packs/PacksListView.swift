@@ -13,7 +13,6 @@ struct PacksListView: View {
     @State private var isLoadingPublic = false
     @State private var packPendingDeletion: Pack?
     @State private var showingDeleteConfirmation = false
-    @State private var deleteError: String?
     @Environment(\.modelContext) private var modelContext
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -96,17 +95,6 @@ struct PacksListView: View {
         }
         .sheet(isPresented: $showingCreateSheet) {
             PackFormView(viewModel: viewModel)
-        }
-        .alert(
-            "Couldn't Delete Pack",
-            isPresented: Binding(
-                get: { deleteError != nil },
-                set: { if !$0 { deleteError = nil } }
-            )
-        ) {
-            Button("OK", role: .cancel) { deleteError = nil }
-        } message: {
-            Text(deleteError ?? "")
         }
         .navigationDestination(isPresented: $showingRecentPacks) {
             RecentPacksView(packs: viewModel.packs)
@@ -235,12 +223,10 @@ struct PacksListView: View {
     private func deletePack(_ pack: Pack) {
         packPendingDeletion = nil
         Task {
-            do {
-                try await viewModel.deletePack(pack.id, context: modelContext)
-                if selectedId == pack.id { selectedId = nil }
-            } catch {
-                deleteError = error.localizedDescription
-            }
+            // Deleting never fails at the call site — an unreachable server queues the
+            // delete for replay. Failures surface via the pending-writes banner.
+            await viewModel.deletePack(pack.id, context: modelContext)
+            if selectedId == pack.id { selectedId = nil }
         }
     }
 

@@ -50,6 +50,9 @@ final class PacksViewModel {
         }
 
         if let context, !isCacheLoaded {
+            // Clear rows from the retired `local-` id scheme before reading the cache,
+            // so they never reach the UI or the outbox.
+            LegacyLocalIDMigration.runIfNeeded(context: context)
             let cached = (try? context.fetch(FetchDescriptor<CachedPack>(
                 sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]
             ))) ?? []
@@ -125,13 +128,15 @@ final class PacksViewModel {
         try? context.save()
     }
 
+    /// Never throws: an unreachable server queues the create for replay instead of
+    /// failing at the call site. Surfaced failures come from `OutboxService.failedCount`.
     func createPack(
         name: String,
         description: String?,
         category: String?,
         isPublic: Bool,
         context: ModelContext? = nil
-    ) async throws {
+    ) async {
         let localPack = makeLocalPack(name: name, description: description, category: category, isPublic: isPublic)
         let payload = PackMutationPayload(
             name: name, description: description, category: category, isPublic: isPublic
@@ -222,8 +227,8 @@ final class PacksViewModel {
 
     /// Optimistic delete. The removal always sticks locally — an unreachable server
     /// queues the delete for replay rather than resurrecting the pack, so delete now
-    /// behaves like create and update.
-    func deletePack(_ packId: String, context: ModelContext? = nil) async throws {
+    /// behaves like create and update. Never throws, for the same reason.
+    func deletePack(_ packId: String, context: ModelContext? = nil) async {
         guard let idx = packs.firstIndex(where: { $0.id == packId }) else { return }
         packs.remove(at: idx)
         deleteCachedPack(packId, context: context)

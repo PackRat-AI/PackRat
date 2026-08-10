@@ -62,6 +62,9 @@ final class TripsViewModel {
         }
 
         if let context, !isCacheLoaded {
+            // Clear rows from the retired `local-` id scheme before reading the cache,
+            // so they never reach the UI or the outbox.
+            LegacyLocalIDMigration.runIfNeeded(context: context)
             let cached = (try? context.fetch(FetchDescriptor<CachedTrip>(
                 sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]
             ))) ?? []
@@ -134,9 +137,11 @@ final class TripsViewModel {
         try? context.save()
     }
 
+    /// Never throws: an unreachable server queues the create for replay instead of
+    /// failing at the call site. Surfaced failures come from `OutboxService.failedCount`.
     func createTrip(name: String, description: String?, startDate: Date?, endDate: Date?,
                     location: TripLocationBody?, notes: String?, packId: String?,
-                    context: ModelContext? = nil) async throws {
+                    context: ModelContext? = nil) async {
         let localTrip = makeLocalTrip(
             name: name, description: description, startDate: startDate, endDate: endDate,
             location: location, notes: notes, packId: packId
@@ -241,8 +246,8 @@ final class TripsViewModel {
     }
 
     /// Optimistic delete. An unreachable server queues the delete for replay rather
-    /// than resurrecting the trip, matching create/update behaviour.
-    func deleteTrip(_ tripId: String, context: ModelContext? = nil) async throws {
+    /// than resurrecting the trip, matching create/update behaviour. Never throws.
+    func deleteTrip(_ tripId: String, context: ModelContext? = nil) async {
         guard let idx = trips.firstIndex(where: { $0.id == tripId }) else { return }
         trips.remove(at: idx)
         deleteCachedTrip(tripId, context: context)

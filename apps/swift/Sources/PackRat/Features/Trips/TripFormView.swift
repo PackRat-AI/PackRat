@@ -202,7 +202,8 @@ struct TripFormView: View {
                         context: modelContext
                     )
                 } else {
-                    try await viewModel.createTrip(
+                    // Create never throws — offline writes queue for replay.
+                    await viewModel.createTrip(
                         name: name, description: description.isEmpty ? nil : description,
                         startDate: hasDates ? startDate : nil,
                         endDate: hasDates ? endDate : nil,
