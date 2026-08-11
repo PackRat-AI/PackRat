@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildChecklists,
   type Checklist,
+  HOW_TO_RECORD,
   mergeByPlatform,
   parsePlan,
   renderBody,
@@ -152,10 +153,24 @@ describe('renderBody', () => {
     expect(body).toContain('- [ ] Close the last window.\n\n### Keyboard');
   });
 
-  it('opens directly on the first section heading', () => {
+  it('opens on the recording rule, then the first section heading', () => {
     const body = renderBody(macList);
 
-    expect(body.startsWith('### Windows\n')).toBe(true);
+    expect(body.startsWith(`${HOW_TO_RECORD}\n\n### Windows\n`)).toBe(true);
+  });
+
+  it('says to check a box on a pass and open an issue on a failure', () => {
+    const body = renderBody(macList);
+
+    expect(body).toContain('Check a box if it passed for you.');
+    expect(body).toContain('Open an issue if it doesn’t');
+    expect(body).toContain('leave the box ticked if it was checked already');
+  });
+
+  it('states the recording rule once, not per section', () => {
+    const body = renderBody(macList);
+
+    expect(body.split(HOW_TO_RECORD)).toHaveLength(2);
   });
 
   it('ends on the last checkbox, with no reporting footer', () => {
@@ -175,21 +190,29 @@ describe('renderBody', () => {
     expect(body).not.toContain('**Tester:**');
   });
 
-  it('is nothing but headings and checkboxes', () => {
+  it('is nothing but the recording rule, headings and checkboxes', () => {
     const body = renderBody(macList);
     const shapes = body
       .split('\n')
       .filter((l) => l.trim() !== '')
-      .map((l) => (l.startsWith('### ') ? 'heading' : l.startsWith('- [ ] ') ? 'checkbox' : l));
+      .map((l) =>
+        l === HOW_TO_RECORD
+          ? 'rule'
+          : l.startsWith('### ')
+            ? 'heading'
+            : l.startsWith('- [ ] ')
+              ? 'checkbox'
+              : l,
+      );
 
-    expect(new Set(shapes)).toEqual(new Set(['heading', 'checkbox']));
+    expect(new Set(shapes)).toEqual(new Set(['rule', 'heading', 'checkbox']));
   });
 
   it('keeps the watch body as bare as any other platform', () => {
     const body = renderBody({ ...macList, platform: 'Apple Watch' });
 
     expect(body).not.toContain('Digital Crown');
-    expect(body.startsWith('### Windows\n')).toBe(true);
+    expect(body.startsWith(`${HOW_TO_RECORD}\n\n### Windows\n`)).toBe(true);
   });
 });
 

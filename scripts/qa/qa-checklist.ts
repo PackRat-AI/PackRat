@@ -218,8 +218,16 @@ export function mergeByPlatform(checklists: readonly Checklist[]): Checklist[] {
 }
 
 /**
- * Renders a checklist as a GitHub issue body: section headings and
- * checkboxes, nothing else.
+ * How a tester records a result. Kept to one line: the box is the pass
+ * signal, the issue carries the failure, and a tick already recorded stays
+ * put so nobody loses the fact that someone ran it.
+ */
+export const HOW_TO_RECORD =
+  'Check a box if it passed for you. Open an issue if it doesn’t, but leave the box ticked if it was checked already.';
+
+/**
+ * Renders a checklist as a GitHub issue body: the recording rule, then
+ * section headings and checkboxes.
  *
  * Items are grouped under their plan section so a tester can work through
  * it in the same order as the prose guide. Each checkbox keeps the plan's
@@ -227,11 +235,11 @@ export function mergeByPlatform(checklists: readonly Checklist[]): Checklist[] {
  * be a second source of truth.
  *
  * The issue title carries the platform, so the body does not repeat it.
- * Tester guidance lives in the plan and in `docs/qa/README.md` rather than
- * being restated on every issue.
+ * Everything else a tester needs lives in the plan and in
+ * `docs/qa/README.md` rather than being restated on every issue.
  */
 export function renderBody(list: Checklist): string {
-  const lines: string[] = [];
+  const lines: string[] = [HOW_TO_RECORD, ''];
 
   let current = '';
   for (const item of list.items) {
