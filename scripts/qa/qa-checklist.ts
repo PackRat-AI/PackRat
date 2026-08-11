@@ -92,7 +92,7 @@ const CONTINUATION = /^\s+\S/;
 export const PLANS: Readonly<Record<string, PlanConfig>> = Object.freeze({
   'apple-platforms': {
     file: 'docs/qa/apple-platforms-beta-test-plan.md',
-    label: 'Apple platforms',
+    label: 'Swift readiness',
     splitAt: ['iPhone', 'Mac', 'Apple Watch'],
   },
   'pack-tools': {

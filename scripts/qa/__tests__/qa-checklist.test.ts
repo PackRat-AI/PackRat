@@ -220,16 +220,16 @@ describe('mergeByPlatform', () => {
   /** Two plans, both touching iPhone and Mac. */
   const perPlan: Checklist[] = [
     {
-      title: '[QA] Apple platforms — iPhone',
+      title: '[QA] Swift readiness — iPhone',
       platform: 'iPhone',
       sources: ['apple.md'],
-      items: [{ section: 'Apple platforms — Packs', text: 'Create a pack.' }],
+      items: [{ section: 'Swift readiness — Packs', text: 'Create a pack.' }],
     },
     {
-      title: '[QA] Apple platforms — Mac',
+      title: '[QA] Swift readiness — Mac',
       platform: 'Mac',
       sources: ['apple.md'],
-      items: [{ section: 'Apple platforms — Windows', text: 'Open a second window.' }],
+      items: [{ section: 'Swift readiness — Windows', text: 'Open a second window.' }],
     },
     {
       title: '[QA] Pack tools — iPhone',
@@ -279,7 +279,7 @@ describe('mergeByPlatform', () => {
   it('keeps plan-prefixed sections distinct rather than folding them', () => {
     const body = renderBody(mergeByPlatform(perPlan)[1]);
 
-    expect(body).toContain('### Apple platforms — Windows');
+    expect(body).toContain('### Swift readiness — Windows');
     expect(body).toContain('### Pack tools — Mac');
   });
 
