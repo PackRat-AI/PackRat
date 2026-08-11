@@ -101,12 +101,6 @@ export const PLANS: Readonly<Record<string, PlanConfig>> = Object.freeze({
     splitAt: ['Mac'],
     leadPlatform: 'iPhone',
   },
-  'native-controls': {
-    file: 'docs/qa/native-controls-beta-test-plan.md',
-    label: 'Native controls',
-    splitAt: ['Mac'],
-    leadPlatform: 'iPhone',
-  },
 });
 
 /**

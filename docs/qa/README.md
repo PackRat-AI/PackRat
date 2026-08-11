@@ -4,12 +4,16 @@ The plans in this directory are the source of truth for what a beta tester
 runs. They are written as prose, in the beta-guide voice, because a tester
 reads them start to finish.
 
-| Plan | Scope |
-|---|---|
-| `apple-platforms-beta-test-plan.md` | iPhone, Mac, Apple Watch — packs, trips, weather, assistant, catalog, guides, offline |
-| `pack-tools-beta-test-plan.md` | Ask AI, Add from Catalog, Scan Items from Photo, Start Packing — iPhone and Mac |
-| `native-controls-beta-test-plan.md` | Native control surfaces |
-| `revenuecat-beta-test-plan.md` | Subscription purchase and restore flows |
+| Plan | Scope | In the gate |
+|---|---|---|
+| `apple-platforms-beta-test-plan.md` | iPhone, Mac, Apple Watch — packs, trips, weather, assistant, catalog, guides, offline | yes |
+| `pack-tools-beta-test-plan.md` | Ask AI, Add from Catalog, Scan Items from Photo, Start Packing — iPhone and Mac | yes |
+| `native-controls-beta-test-plan.md` | Native control surfaces | no |
+| `revenuecat-beta-test-plan.md` | Subscription purchase and restore flows | no |
+
+A plan outside the gate is still worth running; it just does not block the
+release. Add one by giving it an entry in `PLANS` in
+`scripts/qa/qa-checklist.ts`.
 
 ## Gating a release on them
 
