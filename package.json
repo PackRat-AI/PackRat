@@ -63,6 +63,7 @@
     "portless:clean": "portless prune",
     "portless:setup": "bash scripts/portless-setup.sh",
     "portless:urls": "bun run scripts/portless-urls.ts",
+    "qa:checklist": "bun run scripts/qa/qa-checklist.ts",
     "swift": "bun swift:config && cd apps/swift && xcodegen generate && bun scripts/fix-xcodeproj.ts",
     "swift:codegen": "swift package --package-path apps/swift/PackRatAPIClient plugin --allow-writing-to-package-directory generate-code-from-openapi && cp apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/GeneratedSources/Client.swift apps/swift/Sources/PackRat/API/Client.swift && cp apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/GeneratedSources/Types.swift apps/swift/Sources/PackRat/API/Types.swift",
     "swift:config": "bun run apps/swift/scripts/generate-swift-config.ts",

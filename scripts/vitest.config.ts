@@ -8,7 +8,8 @@ import { defineConfig } from 'vitest/config';
  *
  * Custom lint scripts (`scripts/lint/*.ts`) and the coverage ratchet
  * (`scripts/lint/coverage-ratchet.ts`) get their own test coverage via
- * files under `scripts/lint/__tests__/`.
+ * files under `scripts/lint/__tests__/`, and the QA checklist generator
+ * via `scripts/qa/__tests__/`.
  */
 export default defineConfig({
   test: {
