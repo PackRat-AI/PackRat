@@ -52,17 +52,22 @@ private enum MockChatError: LocalizedError {
     }
 }
 
-private struct MockChatService: ChatServicing {
+private final class MockChatService: ChatServicing, @unchecked Sendable {
     let chunks: [String]
     let error: (any Error)?
+
+    /// The context of the most recent `sendMessage` call, so tests can assert
+    /// the view model forwards its pack scoping to the transport.
+    private(set) var lastContext: ChatContext?
 
     init(chunks: [String], error: (any Error)? = nil) {
         self.chunks = chunks
         self.error = error
     }
 
-    func sendMessage(messages _: [ChatMessage]) async -> AsyncThrowingStream<String, Error> {
-        AsyncThrowingStream { continuation in
+    func sendMessage(messages _: [ChatMessage], context: ChatContext) async -> AsyncThrowingStream<String, Error> {
+        lastContext = context
+        return AsyncThrowingStream { continuation in
             for chunk in chunks {
                 continuation.yield(chunk)
             }

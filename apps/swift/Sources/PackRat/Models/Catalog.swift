@@ -55,3 +55,35 @@ struct CatalogSearchResponse: Decodable, Sendable {
 private extension String {
     var nilIfEmpty: String? { isEmpty ? nil : self }
 }
+
+// MARK: - Category display names
+
+extension String {
+    /// Title-cases a raw catalog category for display.
+    ///
+    /// Catalog categories are scraped and arrive with HTML entities intact
+    /// ("hike &amp; camp"). Plain `.capitalized` would render that as
+    /// "Hike &Amp; Camp", so decode the handful of entities that actually occur
+    /// before capitalizing. Full HTML parsing via NSAttributedString is not an
+    /// option here — it must run on the main thread and is far too slow for a
+    /// list of chips.
+    var catalogCategoryDisplayName: String {
+        let decoded = replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&#39;", with: "'")
+            .replacingOccurrences(of: "&apos;", with: "'")
+            .replacingOccurrences(of: "&nbsp;", with: " ")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+        // Capitalize per word so "&" and other separators survive intact.
+        return decoded
+            .split(separator: " ", omittingEmptySubsequences: true)
+            .map { word in
+                // Leave symbols and already-uppercase acronyms alone.
+                word.contains(where: \.isLetter) && word != word.uppercased()
+                    ? word.capitalized
+                    : String(word)
+            }
+            .joined(separator: " ")
+    }
+}

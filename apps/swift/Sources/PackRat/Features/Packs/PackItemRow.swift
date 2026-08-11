@@ -11,8 +11,47 @@ struct PackItemRow: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
     var onDetail: (() -> Void)? = nil
+    /// When non-nil the row is in packing mode: it shows a checkbox, and tapping
+    /// toggles packed rather than opening the item. Edit/delete/drag are
+    /// suppressed so a packing pass can't accidentally mutate the pack.
+    var packingState: PackingRowState? = nil
+
+    struct PackingRowState {
+        let isPacked: Bool
+        let onTogglePacked: () -> Void
+    }
 
     var body: some View {
+        if let packingState {
+            packingRow(packingState)
+        } else {
+            standardRow
+        }
+    }
+
+    private func packingRow(_ state: PackingRowState) -> some View {
+        Button(action: state.onTogglePacked) {
+            HStack(spacing: 12) {
+                Image(systemName: state.isPacked ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(state.isPacked ? Color.accentColor : Color.secondary)
+                    .accessibilityHidden(true)
+                // rowContent supplies its own horizontal padding; the checkbox
+                // sits inside that leading inset rather than adding to it.
+                rowContent
+                    .opacity(state.isPacked ? 0.45 : 1)
+            }
+            .padding(.leading, 4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("pack_item_row_\(item.id)")
+        .accessibilityLabel(item.name)
+        .accessibilityValue(state.isPacked ? "Packed" : "Not packed")
+        .accessibilityAddTraits(state.isPacked ? [.isButton, .isSelected] : .isButton)
+    }
+
+    private var standardRow: some View {
         Button {
             onDetail?() ?? onEdit()
         } label: {

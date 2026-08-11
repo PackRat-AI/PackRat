@@ -255,14 +255,17 @@ final class PacksViewModel {
 
     func addItem(to packId: String, name: String, weight: Double?, weightUnit: String?,
                  quantity: Int?, category: String?, consumable: Bool, worn: Bool, notes: String?,
+                 catalogItemId: Int? = nil, image: String? = nil,
                  context: ModelContext? = nil) async throws {
         let localItem = makeLocalItem(
             packId: packId, name: name, weight: weight, weightUnit: weightUnit,
-            quantity: quantity, category: category, consumable: consumable, worn: worn, notes: notes
+            quantity: quantity, category: category, consumable: consumable, worn: worn, notes: notes,
+            catalogItemId: catalogItemId, image: image
         )
         let payload = PackItemMutationPayload(
             name: name, weight: weight, weightUnit: weightUnit, quantity: quantity,
-            category: category, consumable: consumable, worn: worn, notes: notes
+            category: category, consumable: consumable, worn: worn, notes: notes,
+            catalogItemId: catalogItemId, image: image
         )
         func queueCreate() {
             outbox.enqueue(
@@ -280,7 +283,8 @@ final class PacksViewModel {
             do {
                 item = try await service.addItem(
                     to: packId, id: localItem.id, name: name, weight: weight, weightUnit: weightUnit,
-                    quantity: quantity, category: category, consumable: consumable, worn: worn, notes: notes
+                    quantity: quantity, category: category, consumable: consumable, worn: worn, notes: notes,
+                    catalogItemId: catalogItemId, image: image
                 )
             } catch {
                 item = localItem
@@ -296,6 +300,91 @@ final class PacksViewModel {
             packs[idx] = rebuildPack(packs[idx], items: items)
             upsertCachedPack(packs[idx], context: context)
         }
+    }
+
+    /// Adds several catalog items to a pack in one pass.
+    ///
+    /// Sequential rather than concurrent, matching Expo's `useBulkAddCatalogItems`:
+    /// each add mutates the same pack row server-side, so parallel writes race on
+    /// the pack's recomputed weights. Returns the number added — a partial
+    /// failure still keeps whatever succeeded rather than rolling back, so the
+    /// caller can report "added 3 of 5".
+    @discardableResult
+    func addCatalogItems(
+        _ selections: [(item: CatalogItem, quantity: Int)],
+        to packId: String,
+        context: ModelContext? = nil
+    ) async -> (added: Int, failed: Int) {
+        var added = 0
+        var failed = 0
+        for selection in selections {
+            let item = selection.item
+            do {
+                try await addItem(
+                    to: packId,
+                    name: item.name,
+                    weight: item.weight,
+                    // Catalog weight/unit are both optional — an item with no
+                    // published weight is added at 0 g for the user to fill in
+                    // rather than being skipped.
+                    weightUnit: item.weightUnit?.rawValue,
+                    quantity: selection.quantity,
+                    // Expo sends the item's own category or '' and lets the
+                    // server bucket it; keep the first catalog facet instead so
+                    // the pack's category grouping stays meaningful.
+                    category: item.categories?.first,
+                    consumable: false,
+                    worn: false,
+                    notes: nil,
+                    catalogItemId: item.id,
+                    image: item.primaryImage,
+                    context: context
+                )
+                added += 1
+            } catch {
+                failed += 1
+            }
+        }
+        return (added, failed)
+    }
+
+    /// Adds vision-detected items to a pack.
+    ///
+    /// Weight comes from the best catalog match when there is one — the vision
+    /// model returns a name/category/quantity but never a weight, so an
+    /// unmatched detection lands at 0 g for the user to fill in.
+    @discardableResult
+    func addDetectedItems(
+        _ detections: [DetectedItemWithMatches],
+        to packId: String,
+        context: ModelContext? = nil
+    ) async -> (added: Int, failed: Int) {
+        var added = 0
+        var failed = 0
+        for detection in detections {
+            let detected = detection.detected
+            let match = detection.primaryMatch
+            do {
+                try await addItem(
+                    to: packId,
+                    name: detected.name,
+                    weight: match?.weight,
+                    weightUnit: match?.weightUnit?.rawValue,
+                    quantity: detected.quantity,
+                    category: detected.category.isEmpty ? match?.categories?.first : detected.category,
+                    consumable: detected.consumable,
+                    worn: detected.worn,
+                    notes: detected.notes,
+                    catalogItemId: match?.id,
+                    image: match?.primaryImage,
+                    context: context
+                )
+                added += 1
+            } catch {
+                failed += 1
+            }
+        }
+        return (added, failed)
     }
 
     func updateItem(_ itemId: String, in packId: String, name: String, weight: Double?,
@@ -315,7 +404,12 @@ final class PacksViewModel {
                 category: category ?? current?.category,
                 consumable: consumable,
                 worn: worn,
-                notes: notes ?? current?.notes
+                notes: notes ?? current?.notes,
+                // Carry these over like every other field above. makeLocalItem
+                // defaults them to nil, so without this an edit to a
+                // catalog-added item erases its catalog link and image.
+                catalogItemId: current?.catalogItemId,
+                image: current?.image
             )
             let payload = PackItemMutationPayload(
                 name: name,
@@ -325,7 +419,9 @@ final class PacksViewModel {
                 category: category ?? current?.category,
                 consumable: consumable,
                 worn: worn,
-                notes: notes ?? current?.notes
+                notes: notes ?? current?.notes,
+                catalogItemId: current?.catalogItemId,
+                image: current?.image
             )
             func queueUpdate() {
                 outbox.enqueue(
@@ -415,7 +511,9 @@ final class PacksViewModel {
         category: String?,
         consumable: Bool,
         worn: Bool,
-        notes: String?
+        notes: String?,
+        catalogItemId: Int? = nil,
+        image: String? = nil
     ) -> PackItem {
         let now = Date.iso8601Now()
         return PackItem(
@@ -429,9 +527,9 @@ final class PacksViewModel {
             category: category,
             consumable: consumable,
             worn: worn,
-            image: nil,
+            image: image,
             notes: notes,
-            catalogItemId: nil,
+            catalogItemId: catalogItemId,
             userId: nil,
             deleted: false,
             isAIGenerated: false,

@@ -18,6 +18,25 @@ struct ChatView: View {
         viewModel.sendMessage()
     }
 
+    /// Pack-scoped chats are presented inside their own sheet, which supplies
+    /// the "Ask AI" title — leaving the generic one here would override it.
+    private var navigationTitleText: String {
+        viewModel.context.packName == nil ? "AI Assistant" : "Ask AI"
+    }
+
+    /// The generic starter prompts assume no pack context. When scoped to a
+    /// pack, offer prompts that exercise the `getPackDetails` tool instead.
+    private var activeSuggestions: [(String, String)] {
+        guard let packName = viewModel.context.packName else { return Self.suggestions }
+        return [
+            ("What's missing?", "Review “\(packName)” and tell me what essential gear is missing."),
+            ("Cut weight", "How can I reduce the weight of “\(packName)”? Suggest the biggest wins."),
+            ("Heaviest items", "What are the heaviest items in “\(packName)” and what are lighter alternatives?"),
+            ("Redundant gear", "Is there anything redundant or unnecessary in “\(packName)”?"),
+            ("Rain ready", "Is “\(packName)” ready for wet weather? What should I add?"),
+        ]
+    }
+
     var body: some View {
         Group {
             if authManager.isAuthenticated {
@@ -37,7 +56,7 @@ struct ChatView: View {
                 )
             }
         }
-        .navigationTitle("AI Assistant")
+        .navigationTitle(navigationTitleText)
         .toolbar {
             if authManager.isAuthenticated {
                 ToolbarItem(placement: .automatic) {
@@ -91,9 +110,12 @@ struct ChatView: View {
                         .font(.title2)
                         .foregroundStyle(Color.accentColor)
                 }
-            Text("PackRat AI")
+            Text(viewModel.context.packName ?? "PackRat AI")
                 .font(.title3.bold())
-            Text("Ask me anything about gear, trips, or packing strategy")
+                .multilineTextAlignment(.center)
+            Text(viewModel.context.packName == nil
+                 ? "Ask me anything about gear, trips, or packing strategy"
+                 : "I can see this pack's contents — ask about gaps, weight, or what to leave behind")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -117,7 +139,7 @@ struct ChatView: View {
     private var suggestionsBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(Self.suggestions, id: \.0) { label, prompt in
+                ForEach(activeSuggestions, id: \.0) { label, prompt in
                     Button {
                         viewModel.inputText = prompt
                         send()

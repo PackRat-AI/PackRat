@@ -294,7 +294,9 @@ final class OutboxService {
                     category: payload.category,
                     consumable: payload.consumable,
                     worn: payload.worn,
-                    notes: payload.notes
+                    notes: payload.notes,
+                    catalogItemId: payload.catalogItemId,
+                    image: payload.image
                 )
             case (.packItem, .update):
                 let payload: PackItemMutationPayload = try decode(mutation.payload)

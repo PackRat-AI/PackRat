@@ -522,7 +522,9 @@ final class VisualScreenshotTests: XCTestCase {
     private func capturePhoneExpandedPackStates() {
         captureTab("Packs", name: "home-before-81-data-pack-expanded")
         tapTextAndCapture("Alpine Weekend", name: "81-data-pack-detail-expanded")
-        tapAndCapture(identifier: "pack_detail_add_item_button", fallbackButton: "Add Item", name: "82-data-pack-add-item-sheet")
+        // Add Item is a pull-down menu (Add Manually / Scan / Catalog), not a
+        // button that opens the form directly, so capture the open menu.
+        openMenuAndCapture(identifier: "pack_detail_add_item_button", fallbackButton: "Add Item", name: "82-data-pack-add-item-menu")
         openMenuAndCapture(identifier: "pack_detail_more_menu", fallbackButton: "More", name: "83-data-pack-more-menu")
         captureTab("Packs", name: "home-before-84-data-pack-item-detail")
         tapTextAndCapture("Alpine Weekend", name: "84-data-pack-detail-before-item")
@@ -1023,7 +1025,9 @@ final class VisualScreenshotTests: XCTestCase {
     private func captureMacExpandedPackStates() {
         resetMacSampleDataSidebar("Packs")
         capture("81-data-pack-detail-expanded")
-        tapAndCapture(identifier: "pack_detail_add_item_button", fallbackButton: "Add Item", name: "82-data-pack-add-item-sheet")
+        // Add Item is a pull-down menu (Add Manually / Scan / Catalog), not a
+        // button that opens the form directly, so capture the open menu.
+        openMenuAndCapture(identifier: "pack_detail_add_item_button", fallbackButton: "Add Item", name: "82-data-pack-add-item-menu")
         resetMacSampleDataSidebar("Packs")
         scrollToElement(identifier: "pack_item_row_visual-item-shelter")
         if isPadVisualRun {
