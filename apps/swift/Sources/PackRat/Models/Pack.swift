@@ -10,6 +10,40 @@ extension Pack {
         guard let g = grams, g > 0 else { return "0 g" }
         return g >= 1000 ? String(format: "%.2f kg", g / 1000) : String(format: "%.0f g", g)
     }
+
+    /// The pack's contents as plain text, used to answer the client-executed
+    /// `getPackDetails` tool and to prime the first message of a pack chat.
+    /// Without it the model replies that it couldn't retrieve the pack.
+    var aiContextSummary: String {
+        var lines = ["Here are the contents of the pack I'm asking about:"]
+        lines.append("- Name: \(name)")
+        if let description, !description.isEmpty {
+            lines.append("- Description: \(description)")
+        }
+        if let category {
+            lines.append("- Category: \(category.rawValue)")
+        }
+        lines.append("- Total weight: \(formattedWeight(totalWeight))")
+        lines.append("- Base weight: \(formattedWeight(baseWeight))")
+
+        let items = activeItems
+        lines.append("- Item count: \(items.count)")
+        if items.isEmpty {
+            lines.append("- Items: none yet")
+        } else {
+            lines.append("- Items:")
+            for item in items {
+                var parts = ["  - \(item.name)"]
+                parts.append("qty \(item.quantity)")
+                parts.append(item.displayWeight.isEmpty ? "weight not set" : item.displayWeight)
+                parts.append("category \(item.category ?? "uncategorized")")
+                if item.worn { parts.append("worn") }
+                if item.consumable { parts.append("consumable") }
+                lines.append(parts.joined(separator: ", "))
+            }
+        }
+        return lines.joined(separator: "\n")
+    }
 }
 
 extension PackItem {
@@ -27,6 +61,48 @@ extension PackItem {
         case .oz: return weight * 28.3495
         case .lb: return weight * 453.592
         }
+    }
+
+    /// The item's facts as plain text, prepended to the first message of an
+    /// item-scoped chat so the model usually doesn't need a tool round trip.
+    var aiContextSummary: String {
+        var lines = ["Here are the details of the pack item I'm asking about:"]
+        lines.append("- Name: \(name)")
+        if let description, !description.isEmpty {
+            lines.append("- Description: \(description)")
+        }
+        lines.append("- Weight: \(displayWeight.isEmpty ? "not set" : displayWeight)")
+        lines.append("- Quantity: \(quantity)")
+        lines.append("- Category: \(category ?? "uncategorized")")
+        lines.append("- Worn: \(worn ? "yes" : "no")")
+        lines.append("- Consumable: \(consumable ? "yes" : "no")")
+        if let notes, !notes.isEmpty {
+            lines.append("- Notes: \(notes)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// Structured form of `aiContextSummary`, returned as the result of a
+    /// client-executed `getPackItemDetails` call.
+    var aiToolFields: [String: String] {
+        var fields: [String: String] = [
+            "id": id,
+            "name": name,
+            "quantity": "\(quantity)",
+            "category": category ?? "uncategorized",
+            "worn": worn ? "true" : "false",
+            "consumable": consumable ? "true" : "false",
+        ]
+        if weight > 0 {
+            fields["weight"] = displayWeight
+        }
+        if let description, !description.isEmpty {
+            fields["description"] = description
+        }
+        if let notes, !notes.isEmpty {
+            fields["notes"] = notes
+        }
+        return fields
     }
 }
 

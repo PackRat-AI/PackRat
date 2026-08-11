@@ -19,14 +19,7 @@ final class ChatViewModel {
     init(service: any ChatServicing = ChatService.shared, context: ChatContext = .general) {
         self.service = service
         self.context = context
-        messages.append(ChatMessage(role: .assistant, content: Self.greeting(for: context)))
-    }
-
-    private static func greeting(for context: ChatContext) -> String {
-        if let packName = context.packName {
-            return "Ask me anything about “\(packName)” — what's missing, how to cut weight, or whether it suits your trip."
-        }
-        return "Hi! I'm your PackRat AI assistant. I can help you plan trips, build packing lists, research gear, and answer questions about outdoor adventures. What are you working on?"
+        messages.append(ChatMessage(role: .assistant, content: context.greeting))
     }
 
     var canSend: Bool { !inputText.trimmingCharacters(in: .whitespaces).isEmpty && !isStreaming }
@@ -37,6 +30,13 @@ final class ChatViewModel {
 
         inputText = ""
         error = nil
+
+        // The bubble shows exactly what was typed; the wire copy of the first
+        // message additionally carries the item's own details, which usually
+        // saves a `getPackItemDetails` round trip.
+        let isFirstUserMessage = !messages.contains { $0.role == .user }
+        let sentText = isFirstUserMessage ? context.primedFirstMessage(text) : text
+
         messages.append(ChatMessage(role: .user, content: text))
 
         let placeholder = ChatMessage(role: .assistant, content: "")
@@ -47,35 +47,30 @@ final class ChatViewModel {
         streamingTask = Task { @MainActor in
             defer { isStreaming = false }
             do {
-                let history = Array(messages.dropLast())
-                for try await chunk in await service.sendMessage(messages: history, context: context) {
-                    guard let data = chunk.data(using: .utf8),
-                          let parsed = try? JSONDecoder().decode(UIStreamChunk.self, from: data)
-                    else { continue }
+                var history = Array(messages.dropLast())
+                if sentText != text, let lastIdx = history.indices.last {
+                    history[lastIdx].content = sentText
+                }
 
-                    switch parsed.type {
-                    case "text-delta":
-                        if let delta = parsed.delta {
-                            appendToPlaceholder(id: placeholderId, text: delta)
-                        }
-                    case "tool-input-start":
-                        if let callId = parsed.toolCallId, let name = parsed.toolName {
-                            addToolInvocation(to: placeholderId, invocation: ToolInvocation(toolCallId: callId, toolName: name))
-                        }
-                    case "tool-input-available":
-                        if let callId = parsed.toolCallId, let inputData = parsed.rawInputData {
-                            updateToolInput(id: placeholderId, callId: callId, data: inputData)
-                        }
-                    case "tool-output-available":
-                        if let callId = parsed.toolCallId, let outputData = parsed.rawOutputData {
-                            updateToolOutput(id: placeholderId, callId: callId, data: outputData)
-                        }
-                    default:
-                        break
-                    }
+                // A turn can end waiting on a client-executed tool. Answer it and
+                // resume, bounded so a misbehaving model can't loop forever.
+                for _ in 0..<Self.maxToolRoundTrips {
+                    try await streamTurn(history: history, placeholderId: placeholderId)
+
+                    guard let pending = pendingClientToolCall(in: placeholderId) else { break }
+                    answerClientTool(pending, in: placeholderId)
+
+                    guard let assistant = messages.first(where: { $0.id == placeholderId }) else { break }
+                    history.append(assistant)
+                    clearPlaceholderToolState(placeholderId)
                 }
             } catch is CancellationError {
                 // User cancelled — leave the partial response in place
+            } catch let urlError as URLError where urlError.code == .cancelled {
+                // URLSession reports cancellation as NSURLErrorCancelled (-999),
+                // not CancellationError, so it needs its own arm. Without it a
+                // cancelled request looks like a failure and wipes the message
+                // the user just sent.
             } catch {
                 self.error = error.localizedDescription
                 messages.removeAll { $0.id == placeholderId }
@@ -91,13 +86,83 @@ final class ChatViewModel {
 
     func clearHistory() {
         cancelStreaming()
+        error = nil
         messages.removeAll()
+        // Re-seed with the scoped greeting so a cleared pack or item chat still
+        // reads as being about that pack or item.
         messages.append(ChatMessage(
             role: .assistant,
-            content: context.packName == nil
+            content: context == .general
                 ? "Chat cleared. What can I help you with?"
-                : Self.greeting(for: context)
+                : context.greeting
         ))
+    }
+
+    /// Client-executed tools: declared server-side with no `execute`, so the
+    /// model blocks until the client sends the result back.
+    /// See `packages/api/src/utils/ai/tools.ts`.
+    private static let clientExecutedTools: Set<String> = ["getPackItemDetails", "getPackDetails"]
+    private static let maxToolRoundTrips = 3
+
+    /// Streams one turn into the placeholder message.
+    private func streamTurn(history: [ChatMessage], placeholderId: UUID) async throws {
+        for try await chunk in await service.sendMessage(messages: history, context: context) {
+            guard let data = chunk.data(using: .utf8),
+                  let parsed = try? JSONDecoder().decode(UIStreamChunk.self, from: data)
+            else { continue }
+
+            switch parsed.type {
+            case "text-delta":
+                if let delta = parsed.delta {
+                    appendToPlaceholder(id: placeholderId, text: delta)
+                }
+            case "tool-input-start":
+                if let callId = parsed.toolCallId, let name = parsed.toolName {
+                    addToolInvocation(to: placeholderId, invocation: ToolInvocation(toolCallId: callId, toolName: name))
+                }
+            case "tool-input-available":
+                if let callId = parsed.toolCallId, let inputData = parsed.rawInputData {
+                    updateToolInput(id: placeholderId, callId: callId, data: inputData)
+                }
+            case "tool-output-available":
+                if let callId = parsed.toolCallId, let outputData = parsed.rawOutputData {
+                    updateToolOutput(id: placeholderId, callId: callId, data: outputData)
+                }
+            default:
+                break
+            }
+        }
+    }
+
+    /// A tool the server expects *us* to execute, still awaiting its result.
+    private func pendingClientToolCall(in placeholderId: UUID) -> ToolInvocation? {
+        messages.first { $0.id == placeholderId }?
+            .toolInvocations
+            .first { $0.state == .running && Self.clientExecutedTools.contains($0.toolName) }
+    }
+
+    /// Fills in a client-executed tool's result from local data.
+    private func answerClientTool(_ invocation: ToolInvocation, in placeholderId: UUID) {
+        guard Self.clientExecutedTools.contains(invocation.toolName) else { return }
+
+        let notFound = invocation.toolName == "getPackDetails" ? "Pack not found" : "Item not found"
+        let output: [String: Any] = if let payload = context.toolPayload {
+            ["success": true, "data": payload]
+        } else {
+            ["success": false, "error": notFound]
+        }
+
+        let data = (try? JSONSerialization.data(withJSONObject: output)) ?? Data("{}".utf8)
+        updateToolOutput(id: placeholderId, callId: invocation.id, data: data)
+    }
+
+    /// Drops tool invocations from the live placeholder once they've been folded
+    /// into the outgoing history, so the same call isn't answered twice.
+    private func clearPlaceholderToolState(_ placeholderId: UUID) {
+        guard let idx = messages.firstIndex(where: { $0.id == placeholderId }) else { return }
+        var updated = messages[idx]
+        updated.toolInvocations.removeAll()
+        messages[idx] = updated
     }
 
     private func appendToPlaceholder(id: UUID, text: String) {
