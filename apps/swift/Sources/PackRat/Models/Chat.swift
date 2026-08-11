@@ -42,8 +42,22 @@ struct ChatMessage: Identifiable, Sendable {
 /// detail screens (`apps/expo/features/packs/screens/PackItemDetailScreen.tsx`).
 enum ChatContext: Equatable, Sendable {
     case general
-    case item(id: String, name: String, details: String? = nil)
+    case item(id: String, name: String, details: String? = nil, fields: [String: String] = [:])
     case pack(id: String, name: String)
+
+    /// Structured data used to answer a client-executed `getPackItemDetails` /
+    /// `getPackDetails` call. Returning nil means "not found".
+    var toolPayload: [String: String]? {
+        switch self {
+        case .general:
+            return nil
+        case let .item(id, name, _, fields):
+            guard !fields.isEmpty else { return ["id": id, "name": name] }
+            return fields
+        case let .pack(id, name):
+            return ["id": id, "name": name]
+        }
+    }
 
     /// Wire value for the API's `contextType` field.
     var contextType: String {
@@ -55,7 +69,7 @@ enum ChatContext: Equatable, Sendable {
     }
 
     var itemId: String? {
-        if case let .item(id, _, _) = self { return id }
+        if case let .item(id, _, _, _) = self { return id }
         return nil
     }
 
@@ -74,7 +88,7 @@ enum ChatContext: Equatable, Sendable {
     /// would end the turn with no text. Supplying the facts up front means the
     /// model never needs to call the tool.
     var primingDetails: String? {
-        if case let .item(_, _, details) = self { return details }
+        if case let .item(_, _, details, _) = self { return details }
         return nil
     }
 
@@ -96,7 +110,7 @@ enum ChatContext: Equatable, Sendable {
         switch self {
         case .general:
             return "Hi! I'm your PackRat AI assistant. I can help you plan trips, build packing lists, research gear, and answer questions about outdoor adventures. What are you working on?"
-        case let .item(_, name, _):
+        case let .item(_, name, _, _):
             return "I see you're looking at \(name). What would you like to know about it?"
         case let .pack(_, name):
             return "I see you're working with your \(name). How can I help optimize your pack?"
@@ -116,7 +130,7 @@ enum ChatContext: Equatable, Sendable {
                 ("Essential first aid", "What first aid items are must-haves in every pack?"),
                 ("Food planning", "How much food should I pack per day for a backpacking trip?"),
             ]
-        case let .item(_, name, _):
+        case let .item(_, name, _, _):
             return [
                 ("Tell me more", "Tell me more about \(name)"),
                 ("Alternatives", "What are alternatives to \(name)?"),
@@ -155,17 +169,64 @@ struct ChatUIMessage: Encodable {
     let id: String
     let role: String
     let content: String
-    let parts: [ChatUITextPart]
+    let parts: [ChatUIPart]
 
     init(from msg: ChatMessage) {
         self.id = msg.id.uuidString
         self.role = msg.role.rawValue
         self.content = msg.content
-        self.parts = [ChatUITextPart(text: msg.content)]
+
+        var parts: [ChatUIPart] = []
+        if !msg.content.isEmpty {
+            parts.append(.text(msg.content))
+        }
+        // Replay answered client-side tool calls so the server can resume the
+        // turn. `getPackItemDetails` has no server `execute`, so the model waits
+        // on us to supply the result.
+        for invocation in msg.toolInvocations where invocation.state == .complete {
+            parts.append(.tool(invocation))
+        }
+        if parts.isEmpty {
+            parts.append(.text(""))
+        }
+        self.parts = parts
     }
 }
 
-struct ChatUITextPart: Encodable {
-    let type = "text"
-    let text: String
+/// One entry in a UIMessage's `parts` array. Text parts are `{type:"text"}`;
+/// an answered tool call is `{type:"tool-<name>", state:"output-available", …}`,
+/// matching what `convertToModelMessages` expects on the API side.
+enum ChatUIPart: Encodable {
+    case text(String)
+    case tool(ToolInvocation)
+
+    private enum CodingKeys: String, CodingKey {
+        case type, text, toolCallId, state, input, output
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case let .text(text):
+            try c.encode("text", forKey: .type)
+            try c.encode(text, forKey: .text)
+        case let .tool(invocation):
+            try c.encode("tool-\(invocation.toolName)", forKey: .type)
+            try c.encode(invocation.id, forKey: .toolCallId)
+            try c.encode("output-available", forKey: .state)
+            try c.encode(invocation.inputJSON, forKey: .input)
+            try c.encode(invocation.outputJSON, forKey: .output)
+        }
+    }
+}
+
+extension ToolInvocation {
+    /// Decoded `input`, so it re-encodes as real JSON rather than a string.
+    var inputJSON: JSONValue {
+        inputData.flatMap { try? JSONDecoder().decode(JSONValue.self, from: $0) } ?? .object([:])
+    }
+
+    var outputJSON: JSONValue {
+        outputData.flatMap { try? JSONDecoder().decode(JSONValue.self, from: $0) } ?? .null
+    }
 }

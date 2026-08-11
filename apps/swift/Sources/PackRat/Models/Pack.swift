@@ -34,6 +34,29 @@ extension PackItem {
     /// Stands in for the `getPackItemDetails` tool, which the API declares
     /// without a server-side `execute` and expects the client to answer.
     /// See `ChatContext.primingDetails`.
+    /// Structured form of `aiContextSummary`, returned as the result of a
+    /// client-executed `getPackItemDetails` call.
+    var aiToolFields: [String: String] {
+        var fields: [String: String] = [
+            "id": id,
+            "name": name,
+            "quantity": "\(quantity)",
+            "category": category ?? "uncategorized",
+            "worn": worn ? "true" : "false",
+            "consumable": consumable ? "true" : "false",
+        ]
+        if weight > 0 {
+            fields["weight"] = displayWeight
+        }
+        if let description, !description.isEmpty {
+            fields["description"] = description
+        }
+        if let notes, !notes.isEmpty {
+            fields["notes"] = notes
+        }
+        return fields
+    }
+
     var aiContextSummary: String {
         var lines = ["Here are the details of the pack item I'm asking about:"]
         lines.append("- Name: \(name)")

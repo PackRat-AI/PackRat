@@ -340,7 +340,12 @@ private struct AskAIAboutItemSheet: View {
     init(item: PackItem) {
         self.item = item
         _viewModel = State(initialValue: ChatViewModel(
-            context: .item(id: item.id, name: item.name, details: item.aiContextSummary)
+            context: .item(
+                id: item.id,
+                name: item.name,
+                details: item.aiContextSummary,
+                fields: item.aiToolFields
+            )
         ))
     }
 

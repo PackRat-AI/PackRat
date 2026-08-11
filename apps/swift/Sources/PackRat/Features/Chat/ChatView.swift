@@ -15,7 +15,7 @@ struct ChatView: View {
     private var navigationTitle: String {
         switch viewModel.context {
         case .general: return "AI Assistant"
-        case let .item(_, name, _): return name
+        case let .item(_, name, _, _): return name
         case let .pack(_, name): return name
         }
     }
@@ -24,7 +24,7 @@ struct ChatView: View {
         switch viewModel.context {
         case .general:
             return "Ask me anything about gear, trips, or packing strategy"
-        case let .item(_, name, _):
+        case let .item(_, name, _, _):
             return "Ask about \(name) — alternatives, weight savings, or how to care for it"
         case .pack:
             return "Ask about this pack — weight savings, gaps, or how to organize it"
