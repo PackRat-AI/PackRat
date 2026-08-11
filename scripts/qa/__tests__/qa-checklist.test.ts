@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildChecklists,
   type Checklist,
+  mergeByPlatform,
   parsePlan,
   renderBody,
   renderGate,
@@ -80,7 +81,7 @@ describe('parsePlan', () => {
 
     expect(lists.map((l) => l.platform)).toEqual(['iPhone', 'Mac']);
     // Both feature sections land on iPhone; only the Mac bullet on Mac.
-    expect(lists[0].items.map((i) => i.section)).toEqual(['Ask AI', 'Start Packing']);
+    expect(lists[0].items.map((i) => i.section)).toEqual(['Fake — Ask AI', 'Fake — Start Packing']);
     expect(lists[1].items).toHaveLength(1);
     expect(lists[1].items[0].text).toBe('Resize the window narrow, then stretch it wide.');
   });
@@ -101,11 +102,13 @@ describe('parsePlan', () => {
     expect(allText).not.toContain('Reports go to GitHub issues.');
   });
 
-  it('records the subsection each item came from, for grouping', () => {
+  it('records the subsection each item came from, prefixed by its plan', () => {
     const lists = parsePlan(PLATFORM_SPLIT_PLAN, PLATFORM_CONFIG);
 
-    expect(lists[0].items[0].section).toBe('Signing in');
-    expect(lists[1].items[0].section).toBe('Windows');
+    // The plan label rides along so sections stay distinct once several
+    // plans are merged into one platform issue.
+    expect(lists[0].items[0].section).toBe('Fake — Signing in');
+    expect(lists[1].items[0].section).toBe('Fake — Windows');
   });
 
   it('titles each checklist with the plan label and platform', () => {
@@ -119,7 +122,7 @@ describe('renderBody', () => {
   const macList: Checklist = {
     title: '[QA] Fake — Mac',
     platform: 'Mac',
-    source: 'docs/qa/fake.md',
+    sources: ['docs/qa/fake.md'],
     items: [
       { section: 'Windows', text: 'Open a second window.' },
       { section: 'Windows', text: 'Close the last window.' },
@@ -190,18 +193,108 @@ describe('renderBody', () => {
   });
 });
 
+describe('mergeByPlatform', () => {
+  /** Two plans, both touching iPhone and Mac. */
+  const perPlan: Checklist[] = [
+    {
+      title: '[QA] Apple platforms — iPhone',
+      platform: 'iPhone',
+      sources: ['apple.md'],
+      items: [{ section: 'Apple platforms — Packs', text: 'Create a pack.' }],
+    },
+    {
+      title: '[QA] Apple platforms — Mac',
+      platform: 'Mac',
+      sources: ['apple.md'],
+      items: [{ section: 'Apple platforms — Windows', text: 'Open a second window.' }],
+    },
+    {
+      title: '[QA] Pack tools — iPhone',
+      platform: 'iPhone',
+      sources: ['tools.md'],
+      items: [{ section: 'Pack tools — Ask AI', text: 'Open Ask AI.' }],
+    },
+    {
+      title: '[QA] Pack tools — Mac',
+      platform: 'Mac',
+      sources: ['tools.md'],
+      items: [{ section: 'Pack tools — Mac', text: 'Resize the window.' }],
+    },
+  ];
+
+  it('produces one checklist per platform, not per plan', () => {
+    const merged = mergeByPlatform(perPlan);
+
+    expect(merged).toHaveLength(2);
+    expect(merged.map((l) => l.platform)).toEqual(['iPhone', 'Mac']);
+  });
+
+  it('titles the merged checklist by platform alone', () => {
+    const merged = mergeByPlatform(perPlan);
+
+    expect(merged.map((l) => l.title)).toEqual(['[QA] iPhone', '[QA] Mac']);
+  });
+
+  it('concatenates every plan’s items for that platform', () => {
+    const merged = mergeByPlatform(perPlan);
+
+    expect(merged[0].items.map((i) => i.text)).toEqual(['Create a pack.', 'Open Ask AI.']);
+    expect(merged[1].items.map((i) => i.text)).toEqual([
+      'Open a second window.',
+      'Resize the window.',
+    ]);
+  });
+
+  it('loses no items in the merge', () => {
+    const merged = mergeByPlatform(perPlan);
+    const before = perPlan.reduce((sum, l) => sum + l.items.length, 0);
+    const after = merged.reduce((sum, l) => sum + l.items.length, 0);
+
+    expect(after).toBe(before);
+  });
+
+  it('keeps plan-prefixed sections distinct rather than folding them', () => {
+    const body = renderBody(mergeByPlatform(perPlan)[1]);
+
+    expect(body).toContain('### Apple platforms — Windows');
+    expect(body).toContain('### Pack tools — Mac');
+  });
+
+  it('records every source plan it merged, without duplicates', () => {
+    const merged = mergeByPlatform(perPlan);
+
+    expect(merged[0].sources).toEqual(['apple.md', 'tools.md']);
+    expect(mergeByPlatform([perPlan[0], perPlan[0]])[0].sources).toEqual(['apple.md']);
+  });
+
+  it('does not mutate the checklists handed to it', () => {
+    mergeByPlatform(perPlan);
+
+    expect(perPlan[0].items).toHaveLength(1);
+    expect(perPlan[0].sources).toEqual(['apple.md']);
+  });
+
+  it('passes a single-platform set straight through, retitled', () => {
+    const merged = mergeByPlatform([perPlan[0]]);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0].title).toBe('[QA] iPhone');
+    expect(merged[0].items).toHaveLength(1);
+  });
+});
+
 describe('renderGate', () => {
   const lists: Checklist[] = [
     {
       title: '[QA] A — iPhone',
       platform: 'iPhone',
-      source: 'a.md',
+      sources: ['a.md'],
       items: [{ section: 's', text: 't' }],
     },
     {
       title: '[QA] A — Mac',
       platform: 'Mac',
-      source: 'a.md',
+      sources: ['a.md'],
       items: [
         { section: 's', text: 't' },
         { section: 's', text: 'u' },
@@ -255,10 +348,10 @@ describe('buildChecklists', () => {
   it('covers the four pack tools in the iPhone checklist sections', () => {
     const sections = new Set(buildChecklists('pack-tools')[0].items.map((i) => i.section));
 
-    expect(sections).toContain('Ask AI');
-    expect(sections).toContain('Add from Catalog');
-    expect(sections).toContain('Scan Items from Photo');
-    expect(sections).toContain('Start Packing');
+    expect(sections).toContain('Pack tools — Ask AI');
+    expect(sections).toContain('Pack tools — Add from Catalog');
+    expect(sections).toContain('Pack tools — Scan Items from Photo');
+    expect(sections).toContain('Pack tools — Start Packing');
   });
 
   it('throws on an unknown plan rather than generating an empty checklist', () => {

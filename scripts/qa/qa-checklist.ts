@@ -54,13 +54,13 @@ export interface TestItem {
 
 /** One generated issue: a platform's worth of test items. */
 export interface Checklist {
-  /** Issue title, e.g. `[QA] Pack tools — Mac`. */
+  /** Issue title, e.g. `[QA] Mac`. */
   title: string;
-  /** Platform label used in the body's attribution line. */
+  /** Platform this checklist covers. */
   platform: string;
   items: TestItem[];
-  /** Repo-relative path of the plan this came from. */
-  source: string;
+  /** Repo-relative paths of the plans this came from. */
+  sources: string[];
 }
 
 /**
@@ -177,9 +177,44 @@ export function parsePlan(markdown: string, config: PlanConfig): Checklist[] {
   return [...byPlatform].map(([name, items]) => ({
     title: `[QA] ${config.label} — ${name}`,
     platform: name,
-    items,
-    source: config.file,
+    // Section names collide across plans — both apple-platforms and
+    // pack-tools have offline and Mac sections — so carry the plan label
+    // into the heading. Without it, merging by platform would fold two
+    // unrelated groups of items under one ambiguous heading.
+    items: items.map((item) => ({ ...item, section: `${config.label} — ${item.section}` })),
+    sources: [config.file],
   }));
+}
+
+/**
+ * Merges per-plan checklists into one per platform.
+ *
+ * A tester works a device, not a document: whoever picks up the Mac wants
+ * one list covering every plan that touches the Mac. Plan order is
+ * preserved, and each item's heading already names its plan, so a merged
+ * body still reads as the plans in sequence.
+ */
+export function mergeByPlatform(checklists: readonly Checklist[]): Checklist[] {
+  const byPlatform = new Map<string, Checklist>();
+
+  for (const list of checklists) {
+    const existing = byPlatform.get(list.platform);
+    if (existing) {
+      existing.items.push(...list.items);
+      for (const source of list.sources) {
+        if (!existing.sources.includes(source)) existing.sources.push(source);
+      }
+      continue;
+    }
+    byPlatform.set(list.platform, {
+      title: `[QA] ${list.platform}`,
+      platform: list.platform,
+      items: [...list.items],
+      sources: [...list.sources],
+    });
+  }
+
+  return [...byPlatform.values()];
 }
 
 /**
@@ -265,7 +300,7 @@ if (import.meta.main) {
   const planArg = argv.indexOf('--plan');
   const keys = planArg === -1 ? Object.keys(PLANS) : [argv[planArg + 1]];
 
-  const checklists = keys.flatMap(buildChecklists);
+  const checklists = mergeByPlatform(keys.flatMap(buildChecklists));
 
   if (!create) {
     for (const list of checklists) {
