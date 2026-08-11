@@ -30,6 +30,13 @@
 //
 // `--create` is deliberately opt-in: without it the script only prints,
 // so the output can be reviewed before anything reaches the tracker.
+//
+// Note: the repo has an auto-labeller that tags new issues `bug` and
+// `documentation` (plus a guess at `web`/`api`/`mobile`) regardless of the
+// labels passed here. A checklist is not a bug, and leaving those on
+// pollutes `label:bug` triage, so strip them after creating:
+//
+//   gh issue edit <n> --remove-label bug --remove-label documentation
 
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
