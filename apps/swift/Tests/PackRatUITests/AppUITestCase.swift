@@ -361,25 +361,35 @@ class AppUITestCase: XCTestCase {
         let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
         let action = app.buttons[identifier]
 
-        for _ in 0..<6 {
-            if action.waitForExistence(timeout: 1), action.isHittable, isSafelyVisibleAboveTabBar(action) {
+        XCTAssertTrue(action.waitForExistence(timeout: 8), "Home action '\(title)' must exist")
+
+        // `isHittable` is the authority on whether a tap will land: XCTest
+        // resolves it against the real hit-test result, including tab-bar
+        // occlusion. An extra geometric margin on top of it only creates false
+        // negatives — a 12pt "safely above the tab bar" inset rejected the
+        // Weather row, which sits 3pt inside that inset while being fully
+        // visible and hittable, and the resulting swipeUp scrolled it off the
+        // top of the list where no tap could reach it.
+        for _ in 0..<8 {
+            if action.isHittable {
                 action.tap()
                 return
             }
-            app.swipeUp()
+            // Recover in whichever direction the row actually went. Swiping up
+            // unconditionally cannot bring back a row that is already above the
+            // viewport (negative minY).
+            if action.exists, action.frame.minY < 0 {
+                app.swipeDown()
+            } else {
+                app.swipeUp()
+            }
         }
 
-        XCTAssertTrue(action.waitForExistence(timeout: 2), "Home action '\(title)' must exist")
-        if action.isHittable {
-            action.tap()
-        } else {
-            action.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-        }
-    }
-
-    private func isSafelyVisibleAboveTabBar(_ element: XCUIElement) -> Bool {
-        let tabBarTop = app.tabBars.firstMatch.exists ? app.tabBars.firstMatch.frame.minY : app.frame.maxY
-        return element.frame.minY >= 0 && element.frame.maxY <= tabBarTop - 12
+        XCTAssertTrue(
+            action.isHittable,
+            "Home action '\(title)' never became hittable (frame \(action.frame))"
+        )
+        action.tap()
     }
 
     private func tapTabBarButton(_ element: XCUIElement) {
