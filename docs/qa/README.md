@@ -42,9 +42,20 @@ one heading.
 `--create` is opt-in. Without it the script only prints, so the bodies can
 be reviewed before anything reaches the tracker.
 
-The bodies are deliberately bare: section headings and checkboxes, nothing
-else. The title carries the platform, and tester guidance belongs in the
-plan and in this file rather than restated on every issue.
+The bodies are deliberately bare: one line on how to record a result, then
+section headings and checkboxes. The title carries the platform, and
+everything else a tester needs belongs in the plan and in this file rather
+than restated on every issue.
+
+That line reads:
+
+> Check a box if it passed for you. Open an issue if it doesn't, but leave
+> the box ticked if it was checked already.
+
+Leaving an existing tick alone means the box records that someone ran the
+item and the issue carries the failure. A full checklist therefore means
+"everything was tested", so the open-issue count — not the tick count — is
+what the ship criteria below turn on.
 
 ## When a plan changes
 
