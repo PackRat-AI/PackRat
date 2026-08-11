@@ -555,10 +555,13 @@ struct PackDetailView: View {
 
     private var weightSummary: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-            weightCard("Total", value: pack.totalWeight, color: .blue)
-            weightCard("Base", value: pack.baseWeight, color: .green)
-            weightCard("Worn", value: pack.wornWeight, color: .orange)
-            weightCard("Consumable", value: pack.consumableWeight, color: .purple)
+            // `currentPack`, not the captured `pack`: the latter is a stale snapshot
+            // from when the view was pushed, so totals kept showing weights for items
+            // the live pack no longer has (empty list next to a non-zero total).
+            weightCard("Total", value: currentPack.totalWeight, color: .blue)
+            weightCard("Base", value: currentPack.baseWeight, color: .green)
+            weightCard("Worn", value: currentPack.wornWeight, color: .orange)
+            weightCard("Consumable", value: currentPack.consumableWeight, color: .purple)
         }
     }
 

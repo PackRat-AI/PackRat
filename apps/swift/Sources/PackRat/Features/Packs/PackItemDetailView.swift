@@ -2,13 +2,33 @@ import SwiftUI
 import NukeUI
 
 struct PackItemDetailView: View {
-    let item: PackItem
+    private let initialItem: PackItem
     let packId: String
-    let viewModel: PacksViewModel
+    @Bindable var viewModel: PacksViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(AuthManager.self) private var authManager
     @State private var showingEdit = false
+    @State private var showingAskAI = false
     @State private var similarItems: [CatalogItem] = []
     @State private var isLoadingSimilar = false
+
+    init(item: PackItem, packId: String, viewModel: PacksViewModel) {
+        self.initialItem = item
+        self.packId = packId
+        self.viewModel = viewModel
+    }
+
+    /// Re-reads the item from the view model so edits made in the sheet are
+    /// reflected here on dismiss. `initialItem` is only a snapshot from when
+    /// this view was constructed, so rendering it directly left the detail
+    /// screen showing the pre-edit weight after saving.
+    private var item: PackItem {
+        viewModel.packs
+            .first { $0.id == packId }?
+            .activeItems
+            .first { $0.id == initialItem.id }
+            ?? initialItem
+    }
 
     var body: some View {
         NavigationStack {
@@ -19,6 +39,7 @@ struct PackItemDetailView: View {
                     if let notes = item.notes, !notes.isEmpty {
                         notesSection(notes)
                     }
+                    askAISection
                     similarSection
                 }
                 .padding(.bottom, 24)
@@ -36,7 +57,12 @@ struct PackItemDetailView: View {
                         .accessibilityIdentifier("pack_item_detail_edit_button")
                 }
             }
+            .sheet(isPresented: $showingAskAI) {
+                PackItemAskAISheet(item: item)
+            }
             .sheet(isPresented: $showingEdit) {
+                // `item`, not `initialItem`: re-opening Edit must prefill from the
+                // latest values, not the snapshot this view was created with.
                 PackItemFormView(packId: packId, viewModel: viewModel, existingItem: item)
             }
         }
@@ -242,6 +268,30 @@ struct PackItemDetailView: View {
 
     // MARK: - Similar Items
 
+    /// Opens a chat scoped to this item, mirroring the Expo app's "Ask AI about
+    /// this item" action on `PackItemDetailScreen`.
+    ///
+    /// Hidden for guests: the chat API requires an account, so the sheet would
+    /// only render `ChatView`'s guest placeholder.
+    @ViewBuilder
+    private var askAISection: some View {
+        if authManager.isAuthenticated {
+            Button {
+                showingAskAI = true
+            } label: {
+                Label("Ask AI about this item", systemImage: "sparkles")
+                    .font(.callout.bold())
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.accentColor.opacity(0.12), in: Capsule())
+                    .foregroundStyle(Color.accentColor)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            .accessibilityIdentifier("pack_item_detail_ask_ai_button")
+        }
+    }
+
     private var similarSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Similar Gear")
@@ -264,7 +314,7 @@ struct PackItemDetailView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(similarItems) { catalogItem in
-                            SimilarItemCard(item: catalogItem)
+                            SimilarItemCard(item: catalogItem, packsViewModel: viewModel)
                         }
                     }
                     .padding(.horizontal)
@@ -289,8 +339,21 @@ struct PackItemDetailView: View {
 
 private struct SimilarItemCard: View {
     let item: CatalogItem
+    let packsViewModel: PacksViewModel
+    @State private var showingDetail = false
 
     var body: some View {
+        cardContent
+            .contentShape(Rectangle())
+            .onTapGesture { showingDetail = true }
+            .accessibilityIdentifier("pack_item_similar_card_\(item.id)")
+            .accessibilityAddTraits(.isButton)
+            .sheet(isPresented: $showingDetail) {
+                CatalogItemDetailView(item: item, packsViewModel: packsViewModel)
+            }
+    }
+
+    private var cardContent: some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)

@@ -100,6 +100,94 @@ describe('Catalog Routes', () => {
       await expectJsonResponse(res);
     });
 
+    // Regression coverage for #2662: searching "Tent" surfaced leggings, tote
+    // bags and repair kits above actual tents. Two distinct causes — unanchored
+    // substring matching, and ordering that ignored the query entirely.
+    describe('search relevance (#2662)', () => {
+      it('does not match the term inside a longer word', async () => {
+        const decoy = await seedCatalogItem({
+          name: 'Trailhead Leggings',
+          description: 'Consistent stretch and high recycled content for intent-driven hikers.',
+          categories: ['Clothing'],
+        });
+
+        const res = await apiWithAuth('/catalog?q=tent&limit=100');
+
+        expect(res.status).toBe(200);
+        const data = await expectJsonResponse(res, ['items']);
+        const ids = data.items.map((item: { id: number }) => item.id);
+        // "Consistent", "content" and "intent" all contain the letters "tent".
+        expect(ids).not.toContain(decoy.id);
+      });
+
+      it('ranks a name match above an item that only mentions the term in its description', async () => {
+        const tent = await seedCatalogItem({
+          name: 'Copper Spur UL2 Tent',
+          description: 'Freestanding two-person shelter.',
+          categories: ['Shelter'],
+        });
+        const repairKit = await seedCatalogItem({
+          name: 'Fabric Repair Kit',
+          description: 'Patches for a torn tent, tarp, or sleeping pad.',
+          categories: ['Accessories'],
+        });
+
+        const res = await apiWithAuth('/catalog?q=tent&limit=100');
+
+        expect(res.status).toBe(200);
+        const data = await expectJsonResponse(res, ['items']);
+        const ids = data.items.map((item: { id: number }) => item.id);
+        // Both legitimately match; the tent must come first.
+        expect(ids).toContain(tent.id);
+        expect(ids).toContain(repairKit.id);
+        expect(ids.indexOf(tent.id)).toBeLessThan(ids.indexOf(repairKit.id));
+      });
+
+      it('ranks an exact name match above a partial name match', async () => {
+        const partial = await seedCatalogItem({
+          name: 'Tent Footprint',
+          description: 'Groundsheet.',
+          categories: ['Shelter'],
+        });
+        const exact = await seedCatalogItem({
+          name: 'Tent',
+          description: 'A plain tent.',
+          categories: ['Shelter'],
+        });
+
+        const res = await apiWithAuth('/catalog?q=tent&limit=100');
+
+        expect(res.status).toBe(200);
+        const data = await expectJsonResponse(res, ['items']);
+        const ids = data.items.map((item: { id: number }) => item.id);
+        expect(ids.indexOf(exact.id)).toBeLessThan(ids.indexOf(partial.id));
+      });
+
+      it('still matches brand and model by substring', async () => {
+        const item = await seedCatalogItem({
+          name: 'Ultralight Shelter',
+          brand: 'Hilleberg',
+          description: 'No matching word in here.',
+          categories: ['Shelter'],
+        });
+
+        const res = await apiWithAuth('/catalog?q=Hille&limit=100');
+
+        expect(res.status).toBe(200);
+        const data = await expectJsonResponse(res, ['items']);
+        const ids = data.items.map((catalogItem: { id: number }) => catalogItem.id);
+        expect(ids).toContain(item.id);
+      });
+
+      it('treats regex metacharacters in the query as literal text', async () => {
+        const res = await apiWithAuth(`/catalog?q=${encodeURIComponent('tent(')}&limit=10`);
+
+        // An unescaped "(" would be an invalid POSIX regex and error the query.
+        expect(res.status).toBe(200);
+        await expectJsonResponse(res);
+      });
+    });
+
     it('accepts sorting parameters', async () => {
       const res = await apiWithAuth('/catalog?sortBy=weight&sortOrder=asc');
 

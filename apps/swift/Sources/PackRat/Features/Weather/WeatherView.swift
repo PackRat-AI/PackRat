@@ -28,9 +28,15 @@ struct WeatherView: View {
                 )
             } else {
                 List {
-                    searchStateContent
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
+                    // Only add the search row when it actually has something to
+                    // show. An unconditional row still reserves inset-grouped row
+                    // height and padding while empty, which rendered as a large
+                    // blank gap between the search field and Saved Locations.
+                    if hasSearchStateContent {
+                        searchStateContent
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
 
                     if !viewModel.savedLocations.isEmpty && viewModel.searchText.isEmpty && viewModel.searchResults.isEmpty {
                         savedLocationsSection
@@ -139,6 +145,12 @@ struct WeatherView: View {
     }
 
     // MARK: - Search
+
+    /// Mirrors the three branches inside `searchStateContent`; when none of them
+    /// would render, the row is omitted entirely rather than left empty.
+    private var hasSearchStateContent: Bool {
+        viewModel.isSearching || !viewModel.searchResults.isEmpty || viewModel.searchError != nil
+    }
 
     private var searchStateContent: some View {
         VStack(alignment: .leading, spacing: 8) {

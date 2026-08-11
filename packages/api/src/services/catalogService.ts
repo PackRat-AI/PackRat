@@ -111,17 +111,60 @@ export class CatalogService {
     }
 
     const conditions: SQL[] = [];
+    // Relevance score for a `q` search. Null when not searching, in which case
+    // ordering falls back to popularity as before.
+    //
+    // Two problems this addresses (see issue #2662, "Tent" returning leggings
+    // and tote bags above actual tents):
+    //
+    //  1. Unanchored `ilike '%tent%'` matches the letters anywhere, including
+    //     inside unrelated words — "consistent", "content", "intent", "patent"
+    //     — which appear constantly in marketing copy. Free-text fields now
+    //     require a word-boundary match (`\mtent\M`) instead of a substring,
+    //     so incidental hits inside longer words no longer qualify at all.
+    //     Short/structured fields (brand, model, sku) keep substring matching,
+    //     where partial typing is the normal way to search.
+    //
+    //  2. Nothing ranked by the query — results were ordered purely by how
+    //     often an item had been added to packs, so a popular pair of leggings
+    //     that matched incidentally outranked an exact-name tent. Matches are
+    //     now tiered by *where* they hit, with popularity kept only as a
+    //     tiebreaker within a tier.
+    let relevance: SQL | null = null;
     if (q) {
+      const term = q.trim();
+      // Escape regex metacharacters: `q` is user input and reaches a POSIX
+      // regex operator below, where an unescaped `(` or `*` would either error
+      // or silently change the match semantics.
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // `\m` / `\M` are POSIX word-boundary escapes (start/end of word).
+      const wordBoundary = `\\m${escaped}\\M`;
+      const nameWord = sql`${catalogItems.name} ~* ${wordBoundary}`;
+      const descriptionWord = sql`COALESCE(${catalogItems.description}, '') ~* ${wordBoundary}`;
+      const categoriesWord = sql`${catalogItems.categories}::text ~* ${wordBoundary}`;
+
       const searchCondition = or(
-        ilike(catalogItems.name, `%${q}%`),
-        ilike(catalogItems.description, `%${q}%`),
-        ilike(catalogItems.brand, `%${q}%`),
-        ilike(catalogItems.model, `%${q}%`),
-        ilike(sql`${catalogItems.categories}::text`, `%${q}%`),
+        nameWord,
+        descriptionWord,
+        categoriesWord,
+        ilike(catalogItems.brand, `%${term}%`),
+        ilike(catalogItems.model, `%${term}%`),
       );
       if (searchCondition) {
         conditions.push(searchCondition);
       }
+
+      // Higher is better. Exact name beats name-prefix beats name-word, all of
+      // which beat a category match, which beats brand/model, which beats a
+      // mention buried in the description.
+      relevance = sql`(CASE
+        WHEN lower(${catalogItems.name}) = lower(${term}) THEN 100
+        WHEN ${catalogItems.name} ~* ${`^${escaped}\\M`} THEN 80
+        WHEN ${nameWord} THEN 60
+        WHEN ${categoriesWord} THEN 40
+        WHEN ${catalogItems.brand} ILIKE ${`%${term}%`} OR ${catalogItems.model} ILIKE ${`%${term}%`} THEN 20
+        ELSE 0
+      END)`;
     }
 
     if (category) {
@@ -130,8 +173,11 @@ export class CatalogService {
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // Build orderBy clause with usage as default
-    let orderBy = [desc(sql`COALESCE(pack_item_counts.count, 0)`), desc(catalogItems.id)]; // default ordering by usage
+    // Build orderBy clause: relevance first when searching, else usage.
+    // An explicit `sort` from the caller still wins over both.
+    let orderBy = relevance
+      ? [desc(relevance), desc(sql`COALESCE(pack_item_counts.count, 0)`), desc(catalogItems.id)]
+      : [desc(sql`COALESCE(pack_item_counts.count, 0)`), desc(catalogItems.id)]; // default ordering by usage
     if (sort) {
       const { field, order } = sort;
       // All branches include `desc(catalogItems.id)` as a tiebreaker so that

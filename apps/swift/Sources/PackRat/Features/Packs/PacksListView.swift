@@ -158,8 +158,16 @@ struct PacksListView: View {
         }
     }
 
+    /// Compact iOS navigates by pushing from `packRow`'s `NavigationLink`, so the
+    /// list must not also track a selection — the tapped row would stay rendered
+    /// in its selected (gray) state after the pop back. Selection is only
+    /// meaningful on the split-view layouts, where it drives the detail pane.
+    private var listSelection: Binding<String?>? {
+        isCompact ? nil : $selectedId
+    }
+
     private var packList: some View {
-        List(displayedPacks, selection: $selectedId) { pack in
+        List(displayedPacks, selection: listSelection) { pack in
             packRow(pack)
                 .contextMenu {
                     #if os(macOS)
