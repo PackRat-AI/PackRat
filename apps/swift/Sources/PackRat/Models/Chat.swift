@@ -34,14 +34,120 @@ struct ChatMessage: Identifiable, Sendable {
     }
 }
 
+/// Scope for a chat session. Mirrors the `contextType` / `itemId` / `packId`
+/// fields the API reads in `packages/api/src/routes/chat.ts`, which steer the
+/// server-side system prompt at the `getPackItemDetails` / `getPackDetails` tools.
+///
+/// Parity note: the Expo app sends the same context from its pack and pack-item
+/// detail screens (`apps/expo/features/packs/screens/PackItemDetailScreen.tsx`).
+enum ChatContext: Equatable, Sendable {
+    case general
+    case item(id: String, name: String, details: String? = nil)
+    case pack(id: String, name: String)
+
+    /// Wire value for the API's `contextType` field.
+    var contextType: String {
+        switch self {
+        case .general: return "general"
+        case .item: return "item"
+        case .pack: return "pack"
+        }
+    }
+
+    var itemId: String? {
+        if case let .item(id, _, _) = self { return id }
+        return nil
+    }
+
+    var packId: String? {
+        if case let .pack(id, _) = self { return id }
+        return nil
+    }
+
+    /// A plain-text dump of the item's fields, prepended to the first user
+    /// message.
+    ///
+    /// Why this exists: `getPackItemDetails` is declared server-side **without
+    /// an `execute`** (`packages/api/src/utils/ai/tools.ts`) — the AI SDK
+    /// expects the *client* to answer it, which the Expo app does from its
+    /// local store via `onToolCall`. Our stream is one-shot, so a tool call
+    /// would end the turn with no text. Supplying the facts up front means the
+    /// model never needs to call the tool.
+    var primingDetails: String? {
+        if case let .item(_, _, details) = self { return details }
+        return nil
+    }
+
+    /// Builds the text actually sent for the user's first message in an item
+    /// chat. Later messages are sent verbatim — the details are already in the
+    /// history the API receives.
+    func primedFirstMessage(_ userMessage: String) -> String {
+        guard let primingDetails, !primingDetails.isEmpty else { return userMessage }
+        return """
+        \(primingDetails)
+
+        \(userMessage)
+        """
+    }
+
+    /// Opening assistant message. Matches `getContextualGreeting` in
+    /// `packages/api/src/utils/chatContextHelpers.ts` so both clients read alike.
+    var greeting: String {
+        switch self {
+        case .general:
+            return "Hi! I'm your PackRat AI assistant. I can help you plan trips, build packing lists, research gear, and answer questions about outdoor adventures. What are you working on?"
+        case let .item(_, name, _):
+            return "I see you're looking at \(name). What would you like to know about it?"
+        case let .pack(_, name):
+            return "I see you're working with your \(name). How can I help optimize your pack?"
+        }
+    }
+
+    /// Chips shown above the composer, as `(label, prompt)` pairs. The item and
+    /// pack prompts mirror `getContextualSuggestions` on the API side.
+    var suggestions: [(String, String)] {
+        switch self {
+        case .general:
+            return [
+                ("Ultralight tips", "What are the best ultralight backpacking tips for cutting pack weight?"),
+                ("3-day hike gear", "What gear should I pack for a 3-day summer hiking trip?"),
+                ("Layering advice", "Explain the layering system for outdoor clothing."),
+                ("Rain prep", "How should I prepare my pack for a rainy backcountry trip?"),
+                ("Essential first aid", "What first aid items are must-haves in every pack?"),
+                ("Food planning", "How much food should I pack per day for a backpacking trip?"),
+            ]
+        case let .item(_, name, _):
+            return [
+                ("Tell me more", "Tell me more about \(name)"),
+                ("Alternatives", "What are alternatives to \(name)?"),
+                ("Cut weight", "How can I reduce the weight of my \(name)?"),
+                ("Worth bringing?", "Is \(name) worth bringing on a short trip?"),
+                ("How to care", "How should I care for and maintain my \(name)?"),
+            ]
+        case .pack:
+            return [
+                ("Weight savings", "Analyze my pack for weight savings"),
+                ("What's missing", "What am I missing from my pack?"),
+                ("Organize", "How can I better organize these items?"),
+            ]
+        }
+    }
+}
+
 // Vercel AI SDK UIMessage format expected by the chat API
 struct ChatRequest: Encodable {
     let messages: [ChatUIMessage]
     let date: String
+    let contextType: String
+    let itemId: String?
+    let packId: String?
 
-    init(messages: [ChatMessage]) {
+    init(messages: [ChatMessage], context: ChatContext = .general) {
         self.messages = messages.map { ChatUIMessage(from: $0) }
         self.date = ISO8601DateFormatter().string(from: Date())
+        self.contextType = context.contextType
+        self.itemId = context.itemId
+        self.packId = context.packId
     }
 }
 

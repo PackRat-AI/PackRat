@@ -9,15 +9,17 @@ final class ChatViewModel {
     var isStreaming = false
     var error: String?
 
+    /// What this conversation is about. Drives the opening greeting, the
+    /// suggestion chips, and the `contextType`/`itemId` sent to the API.
+    let context: ChatContext
+
     private let service: any ChatServicing
     private var streamingTask: Task<Void, Never>?
 
-    init(service: any ChatServicing = ChatService.shared) {
+    init(service: any ChatServicing = ChatService.shared, context: ChatContext = .general) {
         self.service = service
-        messages.append(ChatMessage(
-            role: .assistant,
-            content: "Hi! I'm your PackRat AI assistant. I can help you plan trips, build packing lists, research gear, and answer questions about outdoor adventures. What are you working on?"
-        ))
+        self.context = context
+        messages.append(ChatMessage(role: .assistant, content: context.greeting))
     }
 
     var canSend: Bool { !inputText.trimmingCharacters(in: .whitespaces).isEmpty && !isStreaming }
@@ -28,6 +30,13 @@ final class ChatViewModel {
 
         inputText = ""
         error = nil
+
+        // The bubble shows exactly what was typed; the wire copy of the first
+        // message additionally carries the item's details so the model doesn't
+        // have to call the client-executed `getPackItemDetails` tool.
+        let isFirstUserMessage = !messages.contains { $0.role == .user }
+        let sentText = isFirstUserMessage ? context.primedFirstMessage(text) : text
+
         messages.append(ChatMessage(role: .user, content: text))
 
         let placeholder = ChatMessage(role: .assistant, content: "")
@@ -38,8 +47,11 @@ final class ChatViewModel {
         streamingTask = Task { @MainActor in
             defer { isStreaming = false }
             do {
-                let history = Array(messages.dropLast())
-                for try await chunk in await service.sendMessage(messages: history) {
+                var history = Array(messages.dropLast())
+                if sentText != text, let lastIdx = history.indices.last {
+                    history[lastIdx].content = sentText
+                }
+                for try await chunk in await service.sendMessage(messages: history, context: context) {
                     guard let data = chunk.data(using: .utf8),
                           let parsed = try? JSONDecoder().decode(UIStreamChunk.self, from: data)
                     else { continue }
@@ -82,11 +94,11 @@ final class ChatViewModel {
 
     func clearHistory() {
         cancelStreaming()
+        error = nil
         messages.removeAll()
-        messages.append(ChatMessage(
-            role: .assistant,
-            content: "Chat cleared. What can I help you with?"
-        ))
+        // Re-seed with the scoped greeting so a cleared item chat still reads as
+        // being about that item rather than falling back to a general prompt.
+        messages.append(ChatMessage(role: .assistant, content: context.greeting))
     }
 
     private func appendToPlaceholder(id: UUID, text: String) {

@@ -10,6 +10,27 @@ struct ChatView: View {
         authManager.isAuthenticated && viewModel.messages.count <= 1 && !viewModel.isStreaming
     }
 
+    /// Titles the screen after whatever the conversation is scoped to, so an
+    /// item chat opened from a pack item reads as being about that item.
+    private var navigationTitle: String {
+        switch viewModel.context {
+        case .general: return "AI Assistant"
+        case let .item(_, name, _): return name
+        case let .pack(_, name): return name
+        }
+    }
+
+    private var welcomeSubtitle: String {
+        switch viewModel.context {
+        case .general:
+            return "Ask me anything about gear, trips, or packing strategy"
+        case let .item(_, name, _):
+            return "Ask about \(name) — alternatives, weight savings, or how to care for it"
+        case .pack:
+            return "Ask about this pack — weight savings, gaps, or how to organize it"
+        }
+    }
+
     /// Sends the message and drops the keyboard, so the reply is not hidden
     /// behind it. The composer is multi-line (`axis: .vertical`), so Return
     /// inserts a newline and never dismisses on its own.
@@ -37,7 +58,7 @@ struct ChatView: View {
                 )
             }
         }
-        .navigationTitle("AI Assistant")
+        .navigationTitle(navigationTitle)
         .toolbar {
             if authManager.isAuthenticated {
                 ToolbarItem(placement: .automatic) {
@@ -93,7 +114,7 @@ struct ChatView: View {
                 }
             Text("PackRat AI")
                 .font(.title3.bold())
-            Text("Ask me anything about gear, trips, or packing strategy")
+            Text(welcomeSubtitle)
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -105,19 +126,10 @@ struct ChatView: View {
 
     // MARK: - Suggestions
 
-    private static let suggestions: [(String, String)] = [
-        ("Ultralight tips", "What are the best ultralight backpacking tips for cutting pack weight?"),
-        ("3-day hike gear", "What gear should I pack for a 3-day summer hiking trip?"),
-        ("Layering advice", "Explain the layering system for outdoor clothing."),
-        ("Rain prep", "How should I prepare my pack for a rainy backcountry trip?"),
-        ("Essential first aid", "What first aid items are must-haves in every pack?"),
-        ("Food planning", "How much food should I pack per day for a backpacking trip?"),
-    ]
-
     private var suggestionsBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(Self.suggestions, id: \.0) { label, prompt in
+                ForEach(viewModel.context.suggestions, id: \.0) { label, prompt in
                     Button {
                         viewModel.inputText = prompt
                         send()

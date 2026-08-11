@@ -28,6 +28,28 @@ extension PackItem {
         case .lb: return weight * 453.592
         }
     }
+
+    /// The facts the AI needs about this item, as plain text.
+    ///
+    /// Stands in for the `getPackItemDetails` tool, which the API declares
+    /// without a server-side `execute` and expects the client to answer.
+    /// See `ChatContext.primingDetails`.
+    var aiContextSummary: String {
+        var lines = ["Here are the details of the pack item I'm asking about:"]
+        lines.append("- Name: \(name)")
+        if let description, !description.isEmpty {
+            lines.append("- Description: \(description)")
+        }
+        lines.append("- Weight: \(displayWeight.isEmpty ? "not set" : displayWeight)")
+        lines.append("- Quantity: \(quantity)")
+        lines.append("- Category: \(category ?? "uncategorized")")
+        lines.append("- Worn: \(worn ? "yes" : "no")")
+        lines.append("- Consumable: \(consumable ? "yes" : "no")")
+        if let notes, !notes.isEmpty {
+            lines.append("- Notes: \(notes)")
+        }
+        return lines.joined(separator: "\n")
+    }
 }
 
 extension PackCategory {

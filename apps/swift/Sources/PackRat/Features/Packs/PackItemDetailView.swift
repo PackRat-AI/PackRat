@@ -6,7 +6,9 @@ struct PackItemDetailView: View {
     let packId: String
     let viewModel: PacksViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(AuthManager.self) private var authManager
     @State private var showingEdit = false
+    @State private var showingAskAI = false
     @State private var similarItems: [CatalogItem] = []
     @State private var isLoadingSimilar = false
 
@@ -19,6 +21,7 @@ struct PackItemDetailView: View {
                     if let notes = item.notes, !notes.isEmpty {
                         notesSection(notes)
                     }
+                    askAISection
                     similarSection
                 }
                 .padding(.bottom, 24)
@@ -38,6 +41,21 @@ struct PackItemDetailView: View {
             }
             .sheet(isPresented: $showingEdit) {
                 PackItemFormView(packId: packId, viewModel: viewModel, existingItem: item)
+            }
+            .sheet(isPresented: $showingAskAI) {
+                NavigationStack {
+                    ChatView(viewModel: ChatViewModel(
+                        context: .item(id: item.id, name: item.name, details: item.aiContextSummary)
+                    ))
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") { showingAskAI = false }
+                            }
+                        }
+                }
+                #if os(macOS)
+                .frame(minWidth: 520, minHeight: 560)
+                #endif
             }
         }
         #if os(macOS)
@@ -237,6 +255,34 @@ struct PackItemDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal)
+        }
+    }
+
+    // MARK: - Ask AI
+
+    /// Opens a chat scoped to this item. Mirrors the Expo app's
+    /// "Ask AI about this item" action on `PackItemDetailScreen`, which sends
+    /// `contextType: 'item'` + `itemId` so the assistant can call
+    /// `getPackItemDetails` server-side.
+    ///
+    /// Hidden for guests — the chat API requires an account, and `ChatView`
+    /// would otherwise render its own guest-limited placeholder inside a sheet.
+    @ViewBuilder
+    private var askAISection: some View {
+        if authManager.isAuthenticated {
+            Button {
+                showingAskAI = true
+            } label: {
+                Label("Ask AI about this item", systemImage: "sparkles")
+                    .font(.callout.bold())
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.accentColor.opacity(0.12), in: Capsule())
+                    .foregroundStyle(Color.accentColor)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            .accessibilityIdentifier("pack_item_detail_ask_ai_button")
         }
     }
 
