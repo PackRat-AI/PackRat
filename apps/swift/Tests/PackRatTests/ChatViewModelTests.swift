@@ -110,6 +110,28 @@ struct ChatItemContextViewModelTests {
         #expect(secondSent.content == "And the quilt?")
     }
 
+    @Test("a URLSession cancellation keeps the user's message and shows no error")
+    func urlCancellationIsNotAFailure() async throws {
+        // URLSession reports cancellation as NSURLErrorCancelled, not
+        // CancellationError. Treating it as a failure used to delete the
+        // message the user had just sent.
+        let service = MockChatService(
+            chunks: [],
+            error: URLError(.cancelled)
+        )
+        let viewModel = ChatViewModel(
+            service: service,
+            context: .item(id: "i", name: "Down Quilt")
+        )
+
+        viewModel.inputText = "How can I cut weight?"
+        viewModel.sendMessage()
+        try await waitUntil { !viewModel.isStreaming }
+
+        #expect(viewModel.error == nil)
+        #expect(viewModel.messages.contains { $0.role == .user && $0.content == "How can I cut weight?" })
+    }
+
     @Test("general context sends the message unchanged")
     func generalContextSendsVerbatim() async throws {
         let service = MockChatService(chunks: [

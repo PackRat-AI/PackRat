@@ -79,6 +79,11 @@ final class ChatViewModel {
                 }
             } catch is CancellationError {
                 // User cancelled — leave the partial response in place
+            } catch let urlError as URLError where urlError.code == .cancelled {
+                // URLSession reports cancellation as NSURLErrorCancelled (-999)
+                // rather than CancellationError, so it needs its own arm. Without
+                // it a cancelled request looks like a failure and wipes the
+                // message the user just sent.
             } catch {
                 self.error = error.localizedDescription
                 messages.removeAll { $0.id == placeholderId }

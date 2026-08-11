@@ -43,19 +43,12 @@ struct PackItemDetailView: View {
                 PackItemFormView(packId: packId, viewModel: viewModel, existingItem: item)
             }
             .sheet(isPresented: $showingAskAI) {
-                NavigationStack {
-                    ChatView(viewModel: ChatViewModel(
-                        context: .item(id: item.id, name: item.name, details: item.aiContextSummary)
-                    ))
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Done") { showingAskAI = false }
-                            }
-                        }
-                }
-                #if os(macOS)
-                .frame(minWidth: 520, minHeight: 560)
-                #endif
+                // The view model is owned by the sheet's own view, not built in
+                // this closure: SwiftUI re-evaluates the builder on layout
+                // changes (the keyboard alone is enough), and a fresh
+                // ChatViewModel each time would cancel the in-flight streaming
+                // Task and drop the conversation.
+                AskAIAboutItemSheet(item: item)
             }
         }
         #if os(macOS)
@@ -328,6 +321,41 @@ struct PackItemDetailView: View {
             query: item.name,
             limit: 6
         )) ?? []
+    }
+}
+
+// MARK: - Ask AI Sheet
+
+/// Hosts an item-scoped `ChatView`.
+///
+/// Exists so the `ChatViewModel` lives in `@State` and is created exactly once
+/// per presentation. Constructing it inline in the `.sheet` closure instead
+/// makes SwiftUI rebuild it whenever the sheet re-renders, which cancels the
+/// streaming request mid-flight and clears the messages.
+private struct AskAIAboutItemSheet: View {
+    let item: PackItem
+    @Environment(\.dismiss) private var dismiss
+    @State private var viewModel: ChatViewModel
+
+    init(item: PackItem) {
+        self.item = item
+        _viewModel = State(initialValue: ChatViewModel(
+            context: .item(id: item.id, name: item.name, details: item.aiContextSummary)
+        ))
+    }
+
+    var body: some View {
+        NavigationStack {
+            ChatView(viewModel: viewModel)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                }
+        }
+        #if os(macOS)
+        .frame(minWidth: 520, minHeight: 560)
+        #endif
     }
 }
 
