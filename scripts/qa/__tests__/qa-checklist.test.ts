@@ -149,18 +149,10 @@ describe('renderBody', () => {
     expect(body).toContain('- [ ] Close the last window.\n\n### Keyboard');
   });
 
-  it('asks for platform and OS attribution', () => {
+  it('opens directly on the first section heading', () => {
     const body = renderBody(macList);
 
-    expect(body).toContain('**Platform:** Mac');
-    expect(body).toContain('**OS version:**');
-    expect(body).toContain('**Tester:**');
-  });
-
-  it('opens on the attribution fields, with no prose preamble', () => {
-    const body = renderBody(macList);
-
-    expect(body.startsWith('**Platform:** Mac\n')).toBe(true);
+    expect(body.startsWith('### Windows\n')).toBe(true);
   });
 
   it('ends on the last checkbox, with no reporting footer', () => {
@@ -172,11 +164,29 @@ describe('renderBody', () => {
     expect(body).not.toContain('---');
   });
 
+  it('carries no metadata block — the title holds the platform', () => {
+    const body = renderBody(macList);
+
+    expect(body).not.toContain('**Platform:**');
+    expect(body).not.toContain('**OS version:**');
+    expect(body).not.toContain('**Tester:**');
+  });
+
+  it('is nothing but headings and checkboxes', () => {
+    const body = renderBody(macList);
+    const shapes = body
+      .split('\n')
+      .filter((l) => l.trim() !== '')
+      .map((l) => (l.startsWith('### ') ? 'heading' : l.startsWith('- [ ] ') ? 'checkbox' : l));
+
+    expect(new Set(shapes)).toEqual(new Set(['heading', 'checkbox']));
+  });
+
   it('keeps the watch body as bare as any other platform', () => {
     const body = renderBody({ ...macList, platform: 'Apple Watch' });
 
     expect(body).not.toContain('Digital Crown');
-    expect(body).toContain('**Platform:** Apple Watch');
+    expect(body.startsWith('### Windows\n')).toBe(true);
   });
 });
 

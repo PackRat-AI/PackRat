@@ -183,34 +183,29 @@ export function parsePlan(markdown: string, config: PlanConfig): Checklist[] {
 }
 
 /**
- * Renders a checklist as a GitHub issue body.
+ * Renders a checklist as a GitHub issue body: section headings and
+ * checkboxes, nothing else.
  *
  * Items are grouped under their plan section so a tester can work through
  * it in the same order as the prose guide. Each checkbox keeps the plan's
  * wording verbatim — the plan is the spec, and paraphrasing it here would
  * be a second source of truth.
+ *
+ * The issue title carries the platform, so the body does not repeat it.
+ * Tester guidance lives in the plan and in `docs/qa/README.md` rather than
+ * being restated on every issue.
  */
 export function renderBody(list: Checklist): string {
   const lines: string[] = [];
-
-  // Attribution fields only — the tester fills these in, and the plans
-  // require knowing which platform and OS a result came from. No prose
-  // preamble: the checkboxes are the point, and the guidance lives in the
-  // plan itself rather than being restated on every issue.
-  lines.push(
-    `**Platform:** ${list.platform}`,
-    '**OS version:** _fill this in before you start_',
-    '**Tester:** _your name_',
-    '',
-  );
 
   let current = '';
   for (const item of list.items) {
     if (item.section !== current) {
       current = item.section;
       // Blank line before the heading, or GitHub renders it tight against
-      // the preceding checkbox list.
-      if (lines.at(-1) !== '') lines.push('');
+      // the preceding checkbox list. Not before the first one — that would
+      // open the body on an empty line.
+      if (lines.length > 0 && lines.at(-1) !== '') lines.push('');
       lines.push(`### ${current}`, '');
     }
     lines.push(`- [ ] ${item.text}`);
