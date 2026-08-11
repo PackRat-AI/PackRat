@@ -357,6 +357,13 @@ class AppUITestCase: XCTestCase {
         tapHomeAction(title)
     }
 
+    /// Bottom edge of the navigation bar — anything above it is occluded by the
+    /// bar even though its origin is still positive. 0 when there is no bar.
+    private var navigationBarBottom: CGFloat {
+        let bar = app.navigationBars.firstMatch
+        return bar.exists ? bar.frame.maxY : 0
+    }
+
     private func tapHomeAction(_ title: String) {
         let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
         let action = app.buttons[identifier]
@@ -376,9 +383,12 @@ class AppUITestCase: XCTestCase {
                 return
             }
             // Recover in whichever direction the row actually went. Swiping up
-            // unconditionally cannot bring back a row that is already above the
-            // viewport (negative minY).
-            if action.exists, action.frame.minY < 0 {
+            // unconditionally cannot bring back a row that is scrolled past the
+            // top of the list — and "past the top" means behind the navigation
+            // bar, not just a negative origin: a row at y=58 under a nav bar
+            // spanning 53–98 is on screen, positive, and still un-hittable
+            // because the bar occludes it.
+            if action.exists, action.frame.minY < navigationBarBottom {
                 app.swipeDown()
             } else {
                 app.swipeUp()
@@ -387,7 +397,8 @@ class AppUITestCase: XCTestCase {
 
         XCTAssertTrue(
             action.isHittable,
-            "Home action '\(title)' never became hittable (frame \(action.frame))"
+            "Home action '\(title)' never became hittable "
+                + "(frame \(action.frame), navBarBottom \(navigationBarBottom))"
         )
         action.tap()
     }
