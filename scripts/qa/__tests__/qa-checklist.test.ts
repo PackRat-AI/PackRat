@@ -57,7 +57,6 @@ const PLATFORM_CONFIG = {
   file: 'docs/qa/fake.md',
   label: 'Fake',
   splitAt: ['iPhone', 'Mac'],
-  alsoRun: { Mac: 'iPhone' },
 } as const;
 
 const FEATURE_CONFIG = {
@@ -65,7 +64,6 @@ const FEATURE_CONFIG = {
   label: 'Fake',
   splitAt: ['Mac'],
   leadPlatform: 'iPhone',
-  alsoRun: { Mac: 'iPhone' },
 } as const;
 
 describe('parsePlan', () => {
@@ -122,7 +120,6 @@ describe('renderBody', () => {
     title: '[QA] Fake — Mac',
     platform: 'Mac',
     source: 'docs/qa/fake.md',
-    alsoRun: 'iPhone',
     items: [
       { section: 'Windows', text: 'Open a second window.' },
       { section: 'Windows', text: 'Close the last window.' },
@@ -152,40 +149,34 @@ describe('renderBody', () => {
     expect(body).toContain('- [ ] Close the last window.\n\n### Keyboard');
   });
 
-  it('states the item count and asks for platform and OS attribution', () => {
+  it('asks for platform and OS attribution', () => {
     const body = renderBody(macList);
 
-    expect(body).toContain('3 items');
     expect(body).toContain('**Platform:** Mac');
     expect(body).toContain('**OS version:**');
+    expect(body).toContain('**Tester:**');
   });
 
-  it('points back at the plan as the source of truth', () => {
+  it('opens on the attribution fields, with no prose preamble', () => {
     const body = renderBody(macList);
 
-    expect(body).toContain('docs/qa/fake.md');
-    expect(body).toContain('bun run qa:checklist');
+    expect(body.startsWith('**Platform:** Mac\n')).toBe(true);
   });
 
-  it('warns that a Mac pass does not follow from the iPhone pass', () => {
+  it('ends on the last checkbox, with no reporting footer', () => {
     const body = renderBody(macList);
 
-    expect(body).toContain('passing');
-    expect(body).toContain('says nothing about passing here');
+    expect(body.trimEnd().endsWith('- [ ] Press Escape.')).toBe(true);
+    expect(body).not.toContain('Reports go to GitHub issues');
+    expect(body).not.toContain('merely annoying');
+    expect(body).not.toContain('---');
   });
 
-  it('omits the cross-platform warning when there is nothing to re-run', () => {
-    const body = renderBody({ ...macList, platform: 'iPhone', alsoRun: undefined });
+  it('keeps the watch body as bare as any other platform', () => {
+    const body = renderBody({ ...macList, platform: 'Apple Watch' });
 
-    expect(body).not.toContain('says nothing about passing here');
-  });
-
-  it('adds the watch screenshot instructions only for the watch', () => {
-    const watch = renderBody({ ...macList, platform: 'Apple Watch' });
-    const mac = renderBody(macList);
-
-    expect(watch).toContain('Digital Crown');
-    expect(mac).not.toContain('Digital Crown');
+    expect(body).not.toContain('Digital Crown');
+    expect(body).toContain('**Platform:** Apple Watch');
   });
 });
 

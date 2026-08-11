@@ -61,8 +61,6 @@ export interface Checklist {
   items: TestItem[];
   /** Repo-relative path of the plan this came from. */
   source: string;
-  /** Rendered when the Mac/Watch pass also re-runs another platform's list. */
-  alsoRun?: string;
 }
 
 /**
@@ -78,8 +76,6 @@ interface PlanConfig {
   label: string;
   splitAt: readonly string[];
   leadPlatform?: string;
-  /** Platform → the other platform whose list it also re-runs. */
-  alsoRun?: Readonly<Record<string, string>>;
 }
 
 /** Bullets here are tester setup, not test items. */
@@ -98,21 +94,18 @@ export const PLANS: Readonly<Record<string, PlanConfig>> = Object.freeze({
     file: 'docs/qa/apple-platforms-beta-test-plan.md',
     label: 'Apple platforms',
     splitAt: ['iPhone', 'Mac', 'Apple Watch'],
-    alsoRun: Object.freeze({ Mac: 'iPhone' }),
   },
   'pack-tools': {
     file: 'docs/qa/pack-tools-beta-test-plan.md',
     label: 'Pack tools',
     splitAt: ['Mac'],
     leadPlatform: 'iPhone',
-    alsoRun: Object.freeze({ Mac: 'iPhone' }),
   },
   'native-controls': {
     file: 'docs/qa/native-controls-beta-test-plan.md',
     label: 'Native controls',
     splitAt: ['Mac'],
     leadPlatform: 'iPhone',
-    alsoRun: Object.freeze({ Mac: 'iPhone' }),
   },
 });
 
@@ -186,7 +179,6 @@ export function parsePlan(markdown: string, config: PlanConfig): Checklist[] {
     platform: name,
     items,
     source: config.file,
-    alsoRun: config.alsoRun?.[name],
   }));
 }
 
@@ -201,30 +193,16 @@ export function parsePlan(markdown: string, config: PlanConfig): Checklist[] {
 export function renderBody(list: Checklist): string {
   const lines: string[] = [];
 
+  // Attribution fields only — the tester fills these in, and the plans
+  // require knowing which platform and OS a result came from. No prose
+  // preamble: the checkboxes are the point, and the guidance lives in the
+  // plan itself rather than being restated on every issue.
   lines.push(
-    `Generated from \`${list.source}\` — that plan is the source of truth.`,
-    'Regenerate with `bun run qa:checklist` after the plan changes.',
-    '',
     `**Platform:** ${list.platform}`,
     '**OS version:** _fill this in before you start_',
     '**Tester:** _your name_',
     '',
-    `Tick each box you have actually run and seen pass. ${list.items.length} items.`,
-    '',
-    'If something fails, leave the box unticked, open a normal bug issue, and',
-    'link it on that line — an unticked box with no link reads as "not tested',
-    'yet", which is a different thing from "tested and broken".',
-    '',
   );
-
-  if (list.alsoRun) {
-    lines.push(
-      `> This is a separate app from ${list.alsoRun} with its own cache, so passing`,
-      `> on ${list.alsoRun} says nothing about passing here. Run the ${list.alsoRun}`,
-      '> checklist against this platform too, then the items below.',
-      '',
-    );
-  }
 
   let current = '';
   for (const item of list.items) {
@@ -238,16 +216,7 @@ export function renderBody(list: Checklist): string {
     lines.push(`- [ ] ${item.text}`);
   }
 
-  lines.push('', '---', '', 'Reports go to GitHub issues as usual.');
-  if (list.platform === 'Apple Watch') {
-    lines.push(
-      'To screenshot on the watch, press the Digital Crown and the side button',
-      "together. It lands in your phone's photos.",
-    );
-  }
-  lines.push('', 'Anything merely annoying rather than broken is still worth reporting.');
-
-  return lines.join('\n');
+  return `${lines.join('\n')}\n`;
 }
 
 /** Renders the rollup issue that gates the release on the others. */
