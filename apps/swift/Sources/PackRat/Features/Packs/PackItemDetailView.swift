@@ -2,13 +2,31 @@ import SwiftUI
 import NukeUI
 
 struct PackItemDetailView: View {
-    let item: PackItem
+    private let initialItem: PackItem
     let packId: String
-    let viewModel: PacksViewModel
+    @Bindable var viewModel: PacksViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var showingEdit = false
     @State private var similarItems: [CatalogItem] = []
     @State private var isLoadingSimilar = false
+
+    init(item: PackItem, packId: String, viewModel: PacksViewModel) {
+        self.initialItem = item
+        self.packId = packId
+        self.viewModel = viewModel
+    }
+
+    /// Re-reads the item from the view model so edits made in the sheet are
+    /// reflected here on dismiss. `initialItem` is only a snapshot from when
+    /// this view was constructed, so rendering it directly left the detail
+    /// screen showing the pre-edit weight after saving.
+    private var item: PackItem {
+        viewModel.packs
+            .first { $0.id == packId }?
+            .activeItems
+            .first { $0.id == initialItem.id }
+            ?? initialItem
+    }
 
     var body: some View {
         NavigationStack {
@@ -37,6 +55,8 @@ struct PackItemDetailView: View {
                 }
             }
             .sheet(isPresented: $showingEdit) {
+                // `item`, not `initialItem`: re-opening Edit must prefill from the
+                // latest values, not the snapshot this view was created with.
                 PackItemFormView(packId: packId, viewModel: viewModel, existingItem: item)
             }
         }
@@ -264,7 +284,7 @@ struct PackItemDetailView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(similarItems) { catalogItem in
-                            SimilarItemCard(item: catalogItem)
+                            SimilarItemCard(item: catalogItem, packsViewModel: viewModel)
                         }
                     }
                     .padding(.horizontal)
@@ -289,8 +309,21 @@ struct PackItemDetailView: View {
 
 private struct SimilarItemCard: View {
     let item: CatalogItem
+    let packsViewModel: PacksViewModel
+    @State private var showingDetail = false
 
     var body: some View {
+        cardContent
+            .contentShape(Rectangle())
+            .onTapGesture { showingDetail = true }
+            .accessibilityIdentifier("pack_item_similar_card_\(item.id)")
+            .accessibilityAddTraits(.isButton)
+            .sheet(isPresented: $showingDetail) {
+                CatalogItemDetailView(item: item, packsViewModel: packsViewModel)
+            }
+    }
+
+    private var cardContent: some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
