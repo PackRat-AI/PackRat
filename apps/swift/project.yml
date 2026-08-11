@@ -147,7 +147,7 @@ targets:
       base:
         SWIFT_VERSION: "5.9"
         MARKETING_VERSION: "2.2.0"
-        CURRENT_PROJECT_VERSION: "2026080901"
+        CURRENT_PROJECT_VERSION: "2026081101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
         PACKRAT_IOS_BUNDLE_IDENTIFIER: com.andrewbierman.packrat
@@ -186,7 +186,7 @@ targets:
       base:
         SWIFT_VERSION: "5.9"
         MARKETING_VERSION: "2.2.0"
-        CURRENT_PROJECT_VERSION: "2026080901"
+        CURRENT_PROJECT_VERSION: "2026081101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
         PACKRAT_WATCH_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.watchkitapp
@@ -203,8 +203,11 @@ targets:
     sources:
       - Sources/PackRat
       - Sources/PackRatShared
-      - path: Resources/Assets.xcassets
-        buildPhase: resources
+      # The catalog must go through actool, not a verbatim resource copy: as a
+      # plain resource the app ships with no Assets.car and no .icns, and the
+      # App Store upload fails with "Missing required icon" (90236). Listing it
+      # as a source (no buildPhase override) puts it in the compile phase.
+      - Resources/Assets.xcassets
       - path: Resources/PrivacyInfo.xcprivacy
         buildPhase: resources
     entitlements:
@@ -221,6 +224,13 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSPrincipalClass: NSApplication
         NSHighResolutionCapable: true
+        # Required for Mac App Store distribution — the build warns and Apple
+        # rejects submissions without a category (90242).
+        LSApplicationCategoryType: public.app-category.travel
+        # Without this, an uploaded build sits at MISSING_EXPORT_COMPLIANCE and
+        # never appears in TestFlight — the macOS tab simply stays absent. The
+        # app only uses standard HTTPS, which is exempt. Matches PackRat-iOS.
+        ITSAppUsesNonExemptEncryption: false
         PACKRAT_ENV: $(PACKRAT_ENV)
         SENTRY_DSN: $(SENTRY_DSN)
         NSAppTransportSecurity:
@@ -248,12 +258,16 @@ targets:
       base:
         SWIFT_VERSION: "5.9"
         MARKETING_VERSION: "2.2.0"
-        CURRENT_PROJECT_VERSION: "2026080901"
-        CODE_SIGN_STYLE: Manual
-        DEVELOPMENT_TEAM: ""
-        CODE_SIGN_IDENTITY: "-"
-        CODE_SIGNING_REQUIRED: NO
-        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.mac
+        CURRENT_PROJECT_VERSION: "2026081101"
+        # Real distribution signing: the target previously used an ad-hoc
+        # identity with no team, which cannot produce a TestFlight build. E2E
+        # and CI still build unsigned by passing CODE_SIGNING_REQUIRED=NO etc.
+        # on the xcodebuild command line, which overrides these.
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 666HGMV2LU
+        # Ships under the production record so Mac testers get the build on
+        # TestFlight's macOS tab of the same app as the iPhone one.
+        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat
         PACKRAT_DISPLAY_NAME: PackRat
         # Match iOS target so @testable import PackRat resolves on both platforms.
         PRODUCT_MODULE_NAME: PackRat
@@ -417,6 +431,18 @@ schemes:
       config: Debug
     archive:
       config: Release
+  # Mirrors PackRat-iOS-Staging: archives the Staging config so the build talks
+  # to the deployed DEV API (PACKRAT_ENV=dev) instead of production. Lets a
+  # macOS TestFlight build go to beta testers without writing to the production
+  # database.
+  PackRat-macOS-Staging:
+    build:
+      targets:
+        PackRat-macOS: all
+    run:
+      config: Staging
+    archive:
+      config: Staging
   PackRat-Watch:
     build:
       targets:
