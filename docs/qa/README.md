@@ -34,9 +34,9 @@ tick actually came from.
 `--create` is opt-in. Without it the script only prints, so the bodies can
 be reviewed before anything reaches the tracker.
 
-The bodies are deliberately bare: Platform / OS version / Tester, then the
-checkboxes. Tester guidance belongs in the plan and in this file, not
-restated at the top and bottom of every issue.
+The bodies are deliberately bare: section headings and checkboxes, nothing
+else. The title carries the platform, and tester guidance belongs in the
+plan and in this file rather than restated on every issue.
 
 ## When a plan changes
 
