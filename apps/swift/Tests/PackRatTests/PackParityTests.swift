@@ -98,6 +98,30 @@ struct ChatViewModelPackScopingTests {
         #expect(viewModel.messages.first?.content.contains("PackRat AI assistant") == true)
     }
 
+    /// The view model holding a `ChatContext` is not enough — it has to reach the
+    /// transport, or the request goes out unscoped and the server silently
+    /// answers as a general chat.
+    @Test("the pack context is forwarded to the transport")
+    func packContextReachesTheService() async throws {
+        let service = RecordingChatService()
+        let viewModel = ChatViewModel(
+            service: service,
+            context: .pack(id: "pack-7", name: "Ridge Line")
+        )
+
+        viewModel.inputText = "What's missing?"
+        viewModel.sendMessage()
+
+        // sendMessage spawns a Task; poll briefly rather than sleeping a fixed
+        // amount, so the test is neither flaky nor slower than it needs to be.
+        var attempts = 0
+        while service.lastContext == nil, attempts < 200 {
+            try await Task.sleep(for: .milliseconds(5))
+            attempts += 1
+        }
+        #expect(service.lastContext == .pack(id: "pack-7", name: "Ridge Line"))
+    }
+
     @Test("clearHistory keeps the pack greeting")
     func clearHistoryKeepsPackGreeting() {
         let viewModel = ChatViewModel(
@@ -116,94 +140,121 @@ private struct StubChatService: ChatServicing {
     }
 }
 
+/// Captures the context the view model sends, so a test can assert the pack
+/// scoping actually reaches the transport.
+private final class RecordingChatService: ChatServicing, @unchecked Sendable {
+    private(set) var lastContext: ChatContext?
+
+    func sendMessage(messages _: [ChatMessage], context: ChatContext) async -> AsyncThrowingStream<String, Error> {
+        lastContext = context
+        return AsyncThrowingStream { $0.finish() }
+    }
+}
+
 // MARK: - Packing mode
 
 @Suite("PackingModeStore")
 @MainActor
 struct PackingModeStoreTests {
     /// Each test gets its own suite-name UserDefaults so persistence is
-    /// exercised for real without leaking between tests or into the app domain.
-    private func makeStore() throws -> (PackingModeStore, UserDefaults) {
-        let defaults = try #require(UserDefaults(suiteName: "packing-test-\(UUID().uuidString)"))
-        return (PackingModeStore(defaults: defaults), defaults)
+    /// Runs `body` against a store backed by a throwaway suite, so persistence is
+    /// exercised for real without leaking between tests or into the app domain,
+    /// then removes the suite. Suites persist to disk, so leaving them behind
+    /// litters the test host with a plist per test per run.
+    private func withStore(
+        _ body: (PackingModeStore, UserDefaults) throws -> Void
+    ) throws {
+        let name = "packing-test-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        try body(PackingModeStore(defaults: defaults), defaults)
     }
 
     @Test("items start unpacked")
     func startsUnpacked() throws {
-        let (store, _) = try makeStore()
-        #expect(store.isPacked("i1", in: "p1") == false)
-        #expect(store.packedItems(in: "p1").isEmpty)
+        try withStore { store, _ in
+            #expect(store.isPacked("i1", in: "p1") == false)
+            #expect(store.packedItems(in: "p1").isEmpty)
+        }
     }
 
     @Test("toggle marks packed then unpacked")
     func toggleRoundTrip() throws {
-        let (store, _) = try makeStore()
-        store.toggle(itemId: "i1", in: "p1")
-        #expect(store.isPacked("i1", in: "p1"))
-        store.toggle(itemId: "i1", in: "p1")
-        #expect(store.isPacked("i1", in: "p1") == false)
+        try withStore { store, _ in
+            store.toggle(itemId: "i1", in: "p1")
+            #expect(store.isPacked("i1", in: "p1"))
+            store.toggle(itemId: "i1", in: "p1")
+            #expect(store.isPacked("i1", in: "p1") == false)
+        }
     }
 
     @Test("unpacking removes the key rather than storing false")
     func unpackingRemovesKey() throws {
-        let (store, _) = try makeStore()
-        store.setPacked(true, itemId: "i1", in: "p1")
-        store.setPacked(false, itemId: "i1", in: "p1")
-        #expect(store.packedItems(in: "p1").isEmpty)
+        try withStore { store, _ in
+            store.setPacked(true, itemId: "i1", in: "p1")
+            store.setPacked(false, itemId: "i1", in: "p1")
+            #expect(store.packedItems(in: "p1").isEmpty)
+        }
     }
 
     @Test("packs are scoped independently")
     func packsAreIndependent() throws {
-        let (store, _) = try makeStore()
-        store.setPacked(true, itemId: "shared-item", in: "p1")
-        #expect(store.isPacked("shared-item", in: "p1"))
-        #expect(store.isPacked("shared-item", in: "p2") == false)
+        try withStore { store, _ in
+            store.setPacked(true, itemId: "shared-item", in: "p1")
+            #expect(store.isPacked("shared-item", in: "p1"))
+            #expect(store.isPacked("shared-item", in: "p2") == false)
+        }
     }
 
     @Test("reset clears only the target pack")
     func resetIsScoped() throws {
-        let (store, _) = try makeStore()
-        store.setPacked(true, itemId: "i1", in: "p1")
-        store.setPacked(true, itemId: "i2", in: "p2")
-        store.reset(packId: "p1")
-        #expect(store.packedItems(in: "p1").isEmpty)
-        #expect(store.isPacked("i2", in: "p2"))
+        try withStore { store, _ in
+            store.setPacked(true, itemId: "i1", in: "p1")
+            store.setPacked(true, itemId: "i2", in: "p2")
+            store.reset(packId: "p1")
+            #expect(store.packedItems(in: "p1").isEmpty)
+            #expect(store.isPacked("i2", in: "p2"))
+        }
     }
 
     @Test("replace overwrites and drops false entries")
     func replaceDropsFalse() throws {
-        let (store, _) = try makeStore()
-        store.setPacked(true, itemId: "stale", in: "p1")
-        store.replace(packedItems: ["i1": true, "i2": false], in: "p1")
-        #expect(store.packedItems(in: "p1") == ["i1": true])
+        try withStore { store, _ in
+            store.setPacked(true, itemId: "stale", in: "p1")
+            store.replace(packedItems: ["i1": true, "i2": false], in: "p1")
+            #expect(store.packedItems(in: "p1") == ["i1": true])
+        }
     }
 
     /// Progress is computed against the pack's *current* items. An item checked
     /// off and later deleted must not keep counting, or progress exceeds 100%.
     @Test("packedCount ignores ids no longer in the pack")
     func packedCountIgnoresDeletedItems() throws {
-        let (store, _) = try makeStore()
-        store.setPacked(true, itemId: "i1", in: "p1")
-        store.setPacked(true, itemId: "deleted-item", in: "p1")
-        #expect(store.packedCount(in: "p1", among: ["i1", "i2"]) == 1)
+        try withStore { store, _ in
+            store.setPacked(true, itemId: "i1", in: "p1")
+            store.setPacked(true, itemId: "deleted-item", in: "p1")
+            #expect(store.packedCount(in: "p1", among: ["i1", "i2"]) == 1)
+        }
     }
 
     @Test("state survives a new store over the same defaults")
     func statePersists() throws {
-        let (store, defaults) = try makeStore()
-        store.setPacked(true, itemId: "i1", in: "p1")
+        try withStore { store, defaults in
+            store.setPacked(true, itemId: "i1", in: "p1")
 
-        let reloaded = PackingModeStore(defaults: defaults)
-        #expect(reloaded.isPacked("i1", in: "p1"))
+            let reloaded = PackingModeStore(defaults: defaults)
+            #expect(reloaded.isPacked("i1", in: "p1"))
+        }
     }
 
     @Test("a malformed persisted payload degrades to empty, not a crash")
     func malformedPayloadIsIgnored() throws {
-        let defaults = try #require(UserDefaults(suiteName: "packing-test-\(UUID().uuidString)"))
-        defaults.set(["p1": "not-a-dictionary"], forKey: "packingMode")
+        try withStore { _, defaults in
+            defaults.set(["p1": "not-a-dictionary"], forKey: "packingMode")
 
-        let store = PackingModeStore(defaults: defaults)
-        #expect(store.packedItems(in: "p1").isEmpty)
+            let store = PackingModeStore(defaults: defaults)
+            #expect(store.packedItems(in: "p1").isEmpty)
+        }
     }
 }
 
@@ -298,7 +349,7 @@ struct PackCatalogBrowserSearchStateTests {
     /// typing with no feedback at all.
     @Test("typing marks the view as searching immediately")
     func typingSetsSearchingBeforeDebounce() {
-        let viewModel = PackCatalogBrowserViewModel()
+        let viewModel = PackCatalogBrowserViewModel(service: StubCatalogService())
         #expect(viewModel.isSearching == false)
 
         viewModel.searchText = "tent"
@@ -310,11 +361,92 @@ struct PackCatalogBrowserSearchStateTests {
 
     @Test("changing category also shows the loader")
     func categoryChangeSetsSearching() {
-        let viewModel = PackCatalogBrowserViewModel()
+        let viewModel = PackCatalogBrowserViewModel(service: StubCatalogService())
         viewModel.selectCategory("shelter")
         #expect(viewModel.isSearching)
         #expect(viewModel.selectedCategory == "shelter")
     }
+
+    /// Selecting an item, then searching for something else, must not lose the
+    /// earlier pick — resolving against the visible list alone would drop it.
+    @Test("selections survive the result list being replaced")
+    func selectionSurvivesNewSearch() async {
+        let first = StubCatalogService.item(id: 1, name: "Tent")
+        let second = StubCatalogService.item(id: 2, name: "Stove")
+        let service = StubCatalogService(pages: [[first], [second]])
+        let viewModel = PackCatalogBrowserViewModel(service: service)
+
+        await viewModel.load(reset: true)
+        viewModel.toggleSelection(first)
+        #expect(viewModel.selectedCount == 1)
+
+        // Second load replaces `items` entirely, as a new query would.
+        await viewModel.load(reset: true)
+        viewModel.toggleSelection(second)
+
+        let resolved = viewModel.resolvedSelection()
+        #expect(resolved.count == 2)
+        #expect(Set(resolved.map(\.item.id)) == [1, 2])
+    }
+
+    /// A failed append used to consume the page number, so the next scroll asked
+    /// for page 3 and page 2's results were never fetched.
+    @Test("a failed page load gives the page number back")
+    func failedPageIsRetried() async {
+        // A full first page, so `hasMore` stays true and paging can continue.
+        let firstPage = (1...20).map { StubCatalogService.item(id: $0, name: "Item \($0)") }
+        let service = StubCatalogService(pages: [firstPage])
+        let viewModel = PackCatalogBrowserViewModel(service: service)
+        await viewModel.load(reset: true)
+
+        let last = try? #require(firstPage.last)
+        guard let last else { return }
+
+        service.shouldFail = true
+        await viewModel.loadMoreIfNeeded(currentItem: last)
+
+        service.shouldFail = false
+        service.requestedPages.removeAll()
+        await viewModel.loadMoreIfNeeded(currentItem: last)
+
+        // Page 2 is asked for again rather than being skipped for page 3.
+        #expect(service.requestedPages == [2])
+    }
+}
+
+/// In-memory stand-in for `CatalogService`, so these tests never touch the
+/// network. Reaching `CatalogService.shared` here made real requests to whatever
+/// `PACKRAT_ENV` pointed at, which fails or hangs depending on the machine.
+@MainActor
+private final class StubCatalogService: CatalogBrowsing, @unchecked Sendable {
+    var pages: [[CatalogItem]]
+    var shouldFail = false
+    var requestedPages: [Int] = []
+
+    init(pages: [[CatalogItem]] = []) {
+        self.pages = pages
+    }
+
+    static func item(id: Int, name: String) -> CatalogItem {
+        CatalogItem(
+            id: id, name: name, productUrl: "https://example.com/\(id)",
+            sku: "sku-\(id)", weight: 100, weightUnit: .g, description: nil,
+            categories: nil, images: nil, brand: nil, model: nil,
+            ratingValue: nil, color: nil, size: nil, price: nil,
+            availability: nil, seller: nil, reviewCount: nil
+        )
+    }
+
+    func categories(limit _: Int) async throws -> [String] { [] }
+
+    func browse(query _: String?, category _: String?, page: Int, limit _: Int) async throws -> [CatalogItem] {
+        requestedPages.append(page)
+        if shouldFail { throw StubError.failed }
+        let index = page - 1
+        return index < pages.count ? pages[index] : []
+    }
+
+    enum StubError: Error { case failed }
 }
 
 // MARK: - Catalog category display names

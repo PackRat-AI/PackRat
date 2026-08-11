@@ -79,7 +79,7 @@ final class PackItemsScanViewModel {
 struct PackItemsScanSheet: View {
     let packId: String
     let packsViewModel: PacksViewModel
-    var onAdded: ((Int) -> Void)?
+    var onAdded: ((_ added: Int, _ failed: Int) -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AuthManager.self) private var authManager
@@ -238,7 +238,7 @@ struct PackItemsScanSheet: View {
             viewModel.phase = .failed("Couldn't add those items. Check your connection and try again.")
             return
         }
-        onAdded?(result.added)
+        onAdded?(result.added, result.failed)
         dismiss()
     }
 }

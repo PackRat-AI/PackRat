@@ -259,7 +259,8 @@ final class PacksViewModel {
         )
         let payload = PackItemMutationPayload(
             name: name, weight: weight, weightUnit: weightUnit, quantity: quantity,
-            category: category, consumable: consumable, worn: worn, notes: notes
+            category: category, consumable: consumable, worn: worn, notes: notes,
+            catalogItemId: catalogItemId, image: image
         )
         func queueCreate() {
             outbox.enqueue(
@@ -398,7 +399,12 @@ final class PacksViewModel {
                 category: category ?? current?.category,
                 consumable: consumable,
                 worn: worn,
-                notes: notes ?? current?.notes
+                notes: notes ?? current?.notes,
+                // Carry these over like every other field above. makeLocalItem
+                // defaults them to nil, so without this an edit to a
+                // catalog-added item erases its catalog link and image.
+                catalogItemId: current?.catalogItemId,
+                image: current?.image
             )
             let payload = PackItemMutationPayload(
                 name: name,
@@ -408,7 +414,9 @@ final class PacksViewModel {
                 category: category ?? current?.category,
                 consumable: consumable,
                 worn: worn,
-                notes: notes ?? current?.notes
+                notes: notes ?? current?.notes,
+                catalogItemId: current?.catalogItemId,
+                image: current?.image
             )
             func queueUpdate() {
                 outbox.enqueue(

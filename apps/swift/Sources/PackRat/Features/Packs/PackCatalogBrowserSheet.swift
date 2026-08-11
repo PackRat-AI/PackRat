@@ -14,8 +14,14 @@ final class PackCatalogBrowserViewModel {
     var items: [CatalogItem] = []
     var categories: [String] = []
     var selectedCategory: String?
-    /// Catalog id → quantity. Presence means selected.
-    var selection: [Int: Int] = [:]
+    /// Catalog id → the selected item and how many of it. Presence means
+    /// selected.
+    ///
+    /// The item is held here, not looked up in `items`, because searching or
+    /// changing category replaces `items` wholesale. Resolving against the
+    /// visible list would silently drop anything selected under a previous
+    /// query — you would tick three things, search again, tap Add, and get one.
+    var selection: [Int: (item: CatalogItem, quantity: Int)] = [:]
     var isLoading = false
     /// True from the keystroke until fresh results land, spanning the debounce.
     /// Distinct from `isLoading`, which only covers the request itself and so
@@ -25,12 +31,13 @@ final class PackCatalogBrowserViewModel {
     var error: String?
     var hasLoadedOnce = false
 
-    private let service: CatalogService
+    private let service: any CatalogBrowsing
+    private let pageSize = 20
     private var page = 1
     private var hasMore = true
     private var searchTask: Task<Void, Never>?
 
-    init(service: CatalogService = .shared) {
+    init(service: any CatalogBrowsing = CatalogService.shared) {
         self.service = service
     }
 
@@ -42,15 +49,19 @@ final class PackCatalogBrowserViewModel {
 
     func toggleSelection(_ item: CatalogItem) {
         if selection[item.id] == nil {
-            selection[item.id] = 1
+            selection[item.id] = (item: item, quantity: 1)
         } else {
             selection.removeValue(forKey: item.id)
         }
     }
 
     func setQuantity(_ quantity: Int, for item: CatalogItem) {
-        guard selection[item.id] != nil else { return }
-        selection[item.id] = max(1, quantity)
+        guard let existing = selection[item.id] else { return }
+        selection[item.id] = (item: existing.item, quantity: max(1, quantity))
+    }
+
+    func quantity(for item: CatalogItem) -> Int {
+        selection[item.id]?.quantity ?? 1
     }
 
     func clearSelection() { selection.removeAll() }
@@ -73,9 +84,14 @@ final class PackCatalogBrowserViewModel {
     }
 
     func selectCategory(_ category: String?) {
+        // Cancel any in-flight debounce or reset load and take over `searchTask`.
+        // Otherwise a pending search can land after the category change and
+        // overwrite its results — whichever response finishes last wins, which
+        // is not necessarily the request the user made last.
+        searchTask?.cancel()
         selectedCategory = category
         isSearching = true
-        Task { await load(reset: true) }
+        searchTask = Task { await load(reset: true) }
     }
 
     func loadInitialIfNeeded() async {
@@ -109,8 +125,12 @@ final class PackCatalogBrowserViewModel {
                 query: searchText.isEmpty ? nil : searchText,
                 category: selectedCategory,
                 page: page,
-                limit: 20
+                limit: pageSize
             )
+            // A superseded request must not commit. Without this a cancelled
+            // search or category change still assigns its results when it
+            // finally returns, replacing whatever the user actually asked for.
+            guard !Task.isCancelled else { return }
             if reset {
                 items = results
             } else {
@@ -120,8 +140,11 @@ final class PackCatalogBrowserViewModel {
                 let known = Set(items.map(\.id))
                 items.append(contentsOf: results.filter { !known.contains($0.id) })
             }
-            hasMore = results.count == 20
+            hasMore = results.count == pageSize
         } catch {
+            // Give the page number back on a failed append, or the next scroll
+            // asks for page + 2 and that page's results are never fetched.
+            if !reset, page > 1 { page -= 1 }
             self.error = error.localizedDescription
         }
     }
@@ -132,21 +155,33 @@ final class PackCatalogBrowserViewModel {
         await load(reset: false)
     }
 
-    /// Resolves the current selection to (item, quantity) pairs in the order
-    /// they appear on screen, so the added items land in a predictable order.
+    /// Every selected item, including ones no longer in the visible list because
+    /// the query or category changed after they were ticked.
+    ///
+    /// Ordered by the on-screen list first so a normal add lands predictably,
+    /// then anything selected under an earlier query, so nothing is lost.
     func resolvedSelection() -> [(item: CatalogItem, quantity: Int)] {
-        items.compactMap { item in
-            guard let quantity = selection[item.id] else { return nil }
-            return (item, quantity)
+        var remaining = selection
+        var ordered: [(item: CatalogItem, quantity: Int)] = []
+        for item in items {
+            if let picked = remaining.removeValue(forKey: item.id) {
+                ordered.append(picked)
+            }
         }
+        // Stable order for the off-screen remainder, which a dictionary cannot
+        // give on its own.
+        ordered.append(contentsOf: remaining.values.sorted { $0.item.id < $1.item.id })
+        return ordered
     }
 }
 
 struct PackCatalogBrowserSheet: View {
     let packId: String
     let packsViewModel: PacksViewModel
-    /// Called with the number of items added, so the caller can surface a toast.
-    var onAdded: ((Int) -> Void)?
+    /// Called with how many items were added and how many failed, so the caller
+    /// can surface a toast that admits a partial failure rather than reporting
+    /// only the successes.
+    var onAdded: ((_ added: Int, _ failed: Int) -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = PackCatalogBrowserViewModel()
@@ -270,7 +305,7 @@ struct PackCatalogBrowserSheet: View {
                     PackCatalogItemRow(
                         item: item,
                         isSelected: viewModel.isSelected(item),
-                        quantity: viewModel.selection[item.id] ?? 1,
+                        quantity: viewModel.quantity(for: item),
                         onToggle: { viewModel.toggleSelection(item) },
                         onQuantityChange: { viewModel.setQuantity($0, for: item) }
                     )
@@ -330,7 +365,7 @@ struct PackCatalogBrowserSheet: View {
             viewModel.error = "Couldn't add \(result.failed == 1 ? "the item" : "those items"). Check your connection and try again."
             return
         }
-        onAdded?(result.added)
+        onAdded?(result.added, result.failed)
         dismiss()
     }
 }

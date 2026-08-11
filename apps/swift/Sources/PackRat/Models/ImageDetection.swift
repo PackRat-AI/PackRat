@@ -55,13 +55,13 @@ struct DetectedItem: Codable, Sendable {
 /// One detection plus the catalog items it was matched against.
 /// Mirrors `DetectedItemWithMatchesSchema`. The analyze route returns a bare
 /// array of these — not an object wrapper.
-struct DetectedItemWithMatches: Codable, Sendable, Identifiable {
+/// Deliberately not `Identifiable`: detections carry no server id, and a photo
+/// can legitimately contain two of the same thing ("Trekking Pole" twice), so any
+/// id derived from the name would collide and make SwiftUI drop a row. The scan
+/// list is indexed by position instead.
+struct DetectedItemWithMatches: Codable, Sendable {
     let detected: DetectedItem
     let catalogMatches: [CatalogItem]
-
-    /// Detections have no server-assigned id; index-independent identity comes
-    /// from the name, which is unique enough within a single photo's results.
-    var id: String { detected.name }
 
     /// The best catalog match, when the matcher found one. Used to prefill
     /// weight — the vision model does not estimate weight itself.

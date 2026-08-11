@@ -1,6 +1,14 @@
 import Foundation
 
-final class CatalogService: Sendable {
+/// The catalog reads the pack-first browse sheet depends on. Exists so that
+/// sheet's view model can be driven by a stub in tests instead of reaching
+/// `CatalogService.shared` and issuing real requests.
+protocol CatalogBrowsing: Sendable {
+    func categories(limit: Int) async throws -> [String]
+    func browse(query: String?, category: String?, page: Int, limit: Int) async throws -> [CatalogItem]
+}
+
+final class CatalogService: CatalogBrowsing, Sendable {
     static let shared = CatalogService()
     private let api: APIClient
 

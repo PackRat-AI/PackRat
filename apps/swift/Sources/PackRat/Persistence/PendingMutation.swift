@@ -88,6 +88,38 @@ struct PackItemMutationPayload: Codable, Sendable {
     var consumable: Bool
     var worn: Bool
     var notes: String?
+    /// Kept on the payload so an item added from the catalog while offline still
+    /// reaches the server with its catalog link and image once the outbox
+    /// replays. Nil for hand-entered items.
+    ///
+    /// Optional with a default so payloads queued by an earlier build, which had
+    /// neither field, still decode instead of stranding in the outbox.
+    var catalogItemId: Int?
+    var image: String?
+
+    init(
+        name: String,
+        weight: Double? = nil,
+        weightUnit: String? = nil,
+        quantity: Int? = nil,
+        category: String? = nil,
+        consumable: Bool,
+        worn: Bool,
+        notes: String? = nil,
+        catalogItemId: Int? = nil,
+        image: String? = nil
+    ) {
+        self.name = name
+        self.weight = weight
+        self.weightUnit = weightUnit
+        self.quantity = quantity
+        self.category = category
+        self.consumable = consumable
+        self.worn = worn
+        self.notes = notes
+        self.catalogItemId = catalogItemId
+        self.image = image
+    }
 }
 
 /// Field set for a queued trip create/update. Dates are ISO-8601 strings so the

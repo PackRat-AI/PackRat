@@ -292,8 +292,10 @@ struct PackDetailView: View {
             PackCatalogBrowserSheet(
                 packId: currentPack.id,
                 packsViewModel: viewModel,
-                onAdded: { count in
-                    statusMessage = "Added ^[\(count) item](inflect: true) from the catalog"
+                onAdded: { added, failed in
+                    statusMessage = addedStatusMessage(
+                        added: added, failed: failed, source: "the catalog"
+                    )
                 }
             )
         }
@@ -301,8 +303,10 @@ struct PackDetailView: View {
             PackItemsScanSheet(
                 packId: currentPack.id,
                 packsViewModel: viewModel,
-                onAdded: { count in
-                    statusMessage = "Added ^[\(count) item](inflect: true) from your photo"
+                onAdded: { added, failed in
+                    statusMessage = addedStatusMessage(
+                        added: added, failed: failed, source: "your photo"
+                    )
                 }
             )
         }
@@ -348,13 +352,33 @@ struct PackDetailView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .accessibilityIdentifier("pack_detail_status_toast")
                     .task(id: statusMessage) {
-                        try? await Task.sleep(for: .seconds(2.5))
-                        withAnimation { self.statusMessage = nil }
+                        let shown = statusMessage
+                        // `try?` would swallow the cancellation a replacing toast
+                        // causes, and the old task would then clear the new
+                        // message early. Bail on cancellation, and only clear
+                        // what this task actually put up.
+                        do {
+                            try await Task.sleep(for: .seconds(2.5))
+                        } catch {
+                            return
+                        }
+                        if self.statusMessage == shown {
+                            withAnimation { self.statusMessage = nil }
+                        }
                     }
             }
         }
         .animation(.spring(duration: 0.3), value: statusMessage)
         .animation(.easeInOut(duration: 0.2), value: isPackingMode)
+    }
+
+    /// Toast copy for a bulk add. A partial failure has to say so — reporting
+    /// only the successes leaves the user believing everything landed.
+    private func addedStatusMessage(added: Int, failed: Int, source: String) -> String {
+        if failed > 0 {
+            return "Added ^[\(added) item](inflect: true), ^[\(failed) item](inflect: true) couldn't be added"
+        }
+        return "Added ^[\(added) item](inflect: true) from \(source)"
     }
 
     // MARK: - Packing mode
