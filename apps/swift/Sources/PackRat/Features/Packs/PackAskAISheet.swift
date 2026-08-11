@@ -16,7 +16,7 @@ struct PackAskAISheet: View {
     init(pack: Pack) {
         self.pack = pack
         _viewModel = State(initialValue: ChatViewModel(
-            context: .pack(id: pack.id, name: pack.name)
+            context: .pack(id: pack.id, name: pack.name, details: pack.aiContextSummary)
         ))
     }
 

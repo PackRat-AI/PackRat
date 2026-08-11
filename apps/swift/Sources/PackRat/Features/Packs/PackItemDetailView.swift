@@ -6,7 +6,9 @@ struct PackItemDetailView: View {
     let packId: String
     @Bindable var viewModel: PacksViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(AuthManager.self) private var authManager
     @State private var showingEdit = false
+    @State private var showingAskAI = false
     @State private var similarItems: [CatalogItem] = []
     @State private var isLoadingSimilar = false
 
@@ -37,6 +39,7 @@ struct PackItemDetailView: View {
                     if let notes = item.notes, !notes.isEmpty {
                         notesSection(notes)
                     }
+                    askAISection
                     similarSection
                 }
                 .padding(.bottom, 24)
@@ -53,6 +56,9 @@ struct PackItemDetailView: View {
                     Button("Edit", systemImage: "pencil") { showingEdit = true }
                         .accessibilityIdentifier("pack_item_detail_edit_button")
                 }
+            }
+            .sheet(isPresented: $showingAskAI) {
+                PackItemAskAISheet(item: item)
             }
             .sheet(isPresented: $showingEdit) {
                 // `item`, not `initialItem`: re-opening Edit must prefill from the
@@ -261,6 +267,30 @@ struct PackItemDetailView: View {
     }
 
     // MARK: - Similar Items
+
+    /// Opens a chat scoped to this item, mirroring the Expo app's "Ask AI about
+    /// this item" action on `PackItemDetailScreen`.
+    ///
+    /// Hidden for guests: the chat API requires an account, so the sheet would
+    /// only render `ChatView`'s guest placeholder.
+    @ViewBuilder
+    private var askAISection: some View {
+        if authManager.isAuthenticated {
+            Button {
+                showingAskAI = true
+            } label: {
+                Label("Ask AI about this item", systemImage: "sparkles")
+                    .font(.callout.bold())
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.accentColor.opacity(0.12), in: Capsule())
+                    .foregroundStyle(Color.accentColor)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            .accessibilityIdentifier("pack_item_detail_ask_ai_button")
+        }
+    }
 
     private var similarSection: some View {
         VStack(alignment: .leading, spacing: 10) {

@@ -21,13 +21,19 @@ struct ChatView: View {
     /// Pack-scoped chats are presented inside their own sheet, which supplies
     /// the "Ask AI" title — leaving the generic one here would override it.
     private var navigationTitleText: String {
-        viewModel.context.packName == nil ? "AI Assistant" : "Ask AI"
+        if viewModel.context.packName != nil { return "Ask AI" }
+        if let itemName = viewModel.context.itemName { return itemName }
+        return "AI Assistant"
     }
 
     /// The generic starter prompts assume no pack context. When scoped to a
-    /// pack, offer prompts that exercise the `getPackDetails` tool instead.
+    /// pack, offer prompts that exercise the `getPackDetails` tool instead; when
+    /// scoped to a single item, the item's own prompts come from `ChatContext`.
     private var activeSuggestions: [(String, String)] {
-        guard let packName = viewModel.context.packName else { return Self.suggestions }
+        guard let packName = viewModel.context.packName else {
+            let itemSuggestions = viewModel.context.itemSuggestions
+            return itemSuggestions.isEmpty ? Self.suggestions : itemSuggestions
+        }
         return [
             ("What's missing?", "Review “\(packName)” and tell me what essential gear is missing."),
             ("Cut weight", "How can I reduce the weight of “\(packName)”? Suggest the biggest wins."),
@@ -100,6 +106,16 @@ struct ChatView: View {
         }
     }
 
+    private var welcomeSubtitle: String {
+        if viewModel.context.packName != nil {
+            return "I can see this pack's contents — ask about gaps, weight, or what to leave behind"
+        }
+        if let itemName = viewModel.context.itemName {
+            return "Ask about \(itemName) — alternatives, weight savings, or how to care for it"
+        }
+        return "Ask me anything about gear, trips, or packing strategy"
+    }
+
     private var welcomeHeader: some View {
         VStack(spacing: 10) {
             Circle()
@@ -110,12 +126,10 @@ struct ChatView: View {
                         .font(.title2)
                         .foregroundStyle(Color.accentColor)
                 }
-            Text(viewModel.context.packName ?? "PackRat AI")
+            Text(viewModel.context.packName ?? viewModel.context.itemName ?? "PackRat AI")
                 .font(.title3.bold())
                 .multilineTextAlignment(.center)
-            Text(viewModel.context.packName == nil
-                 ? "Ask me anything about gear, trips, or packing strategy"
-                 : "I can see this pack's contents — ask about gaps, weight, or what to leave behind")
+            Text(welcomeSubtitle)
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
