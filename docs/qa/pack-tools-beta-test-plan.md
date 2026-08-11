@@ -35,8 +35,7 @@ Two things are worth having ready:
 Open a pack. Everything below starts from the two buttons at the top right.
 
 - Tap the `+` button. Expect a menu with exactly three entries: Add Manually, Scan
-  Items from Photo, and Add from Catalog. One normal tap gets you there — pressing
-  and holding should never be necessary to find them.
+  Items from Photo, and Add from Catalog.
 - Tap Add Manually. The pack item form should open, the same one that has always
   been there.
 - Tap the `⋯` button. Expect Ask AI and Start Packing at the top, above Weight
@@ -52,7 +51,7 @@ starting from nothing.
 - Open `⋯` then Ask AI on a pack with gear in it. Expect the screen to be titled
   Ask AI, with the pack's name as the heading and a greeting that names that pack.
 - Look at the row of suggestions above the text box. They should be about the pack
-  in front of you — What's missing, Cut weight, Heaviest items — rather than
+  in front of you — What's missing, Cut weight, Heaviest items and not
   general packing prompts.
 - Tap Heaviest items and read the whole answer. It should name actual items from
   your pack with roughly the right weights. This is the one to spend time on: an
@@ -103,9 +102,7 @@ Use the gear photo from the setup above.
 - Tap `+` then Scan Items from Photo. Expect a Scan Items screen that explains what
   the photo should look like, with a Choose Photo button.
 - Choose your gear photo and wait. A spinner saying it is looking for gear should
-  give way to a list of what it found. A screenshot of the results next to the
-  original photo is the useful thing here, along with a note of how many it got
-  right, missed, or invented.
+  give way to a list of what it found.
 - Look at the list when it first appears. Expect every item already ticked, with
   the full count on the button at the top right.
 - Untick a couple. The count in the button should drop to match.
@@ -242,15 +239,7 @@ about passing here. What follows is what only the Mac does.
 
 ## Reporting
 
-Reports go to GitHub issues as usual. Say which pack and how many items were in it,
+Reports go to GitHub issues as usual. Mention how many items were in the pack you found an issue on,
 since most of these tools behave differently on a full pack than an empty one.
-
-Two things are worth a screenshot every time: any answer from Ask AI that does not
-appear to know what is in the pack, and the results of a photo scan alongside the
-photo that produced them.
-
-A scanned item arriving at 0 g with no catalog match is expected, and each photo is
-analysed once, so a second look at the same picture means choosing it again from
-your photo library.
 
 Anything merely annoying rather than broken is still worth reporting.
