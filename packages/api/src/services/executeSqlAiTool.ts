@@ -6,6 +6,26 @@ import { createReadOnlyDb } from '../db';
 // ── SQL complexity patterns ───────────────────────────────────────────
 const SQL_JOIN_KEYWORD = /\bjoin\b/g;
 
+// Mutating keywords rejected by isReadOnlyQuery. These are matched on WORD
+// BOUNDARIES, not as bare substrings: a plain `includes('delete')` also
+// matches the `deleted` column that every soft-deleted table carries, so the
+// correct `SELECT ... WHERE deleted = false` was always rejected as a
+// mutation. `\b` still catches the real statements regardless of surrounding
+// whitespace, newlines, parens or casing (the input is lowercased first).
+const FORBIDDEN_KEYWORD_PATTERNS = Object.freeze([
+  /\binsert\b/,
+  /\bupdate\b/,
+  /\bdelete\b/,
+  /\bdrop\b/,
+  /\bcreate\b/,
+  /\balter\b/,
+  /\btruncate\b/,
+  /\bgrant\b/,
+  /\brevoke\b/,
+  /\bcommit\b/,
+  /\brollback\b/,
+] as const);
+
 // Post-execution result-byte budget. A bad AI-generated query
 // (`SELECT * FROM catalog_items LIMIT 1000`) can otherwise ship ~100 MB
 // to the Worker + LLM context. This guard is post-execution — the DB read
@@ -101,21 +121,7 @@ function isReadOnlyQuery(query: string): boolean {
   const normalizedQuery = query.trim().toLowerCase();
   if (!normalizedQuery.startsWith('select')) return false;
 
-  const forbiddenKeywords = [
-    'insert',
-    'update',
-    'delete',
-    'drop',
-    'create',
-    'alter',
-    'truncate',
-    'grant',
-    'revoke',
-    'commit',
-    'rollback',
-  ];
-
-  return !forbiddenKeywords.some((keyword) => normalizedQuery.includes(keyword));
+  return !FORBIDDEN_KEYWORD_PATTERNS.some((pattern) => pattern.test(normalizedQuery));
 }
 
 function validateQueryComplexity(query: string): { valid: boolean; error?: string } {

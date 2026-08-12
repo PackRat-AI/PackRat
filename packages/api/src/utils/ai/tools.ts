@@ -1,5 +1,6 @@
 import { AIService, CatalogService, WeatherService } from '@packrat/api/services';
 import { executeSqlAiTool } from '@packrat/api/services/executeSqlAiTool';
+import { listUserPacksAiTool } from '@packrat/api/services/listUserPacksAiTool';
 import { z } from 'zod';
 
 export async function createTools(userId: string) {
@@ -9,6 +10,34 @@ export async function createTools(userId: string) {
   const aiService = new AIService();
 
   return {
+    listUserPacks: tool({
+      description:
+        "List the signed-in user's own packs. Use this to resolve a pack the user mentions by NAME " +
+        '(for example "my Japan Trip pack") into a pack id before calling getPackDetails. ' +
+        'Returns id, name, category and description for each match.',
+      inputSchema: z.object({
+        nameQuery: z
+          .string()
+          .optional()
+          .describe(
+            'Optional fuzzy/partial name filter, matched case-insensitively against the pack ' +
+              "name. Omit to list all of the user's packs.",
+          ),
+      }),
+      execute: async ({ nameQuery }) => {
+        try {
+          const data = await listUserPacksAiTool({ userId, nameQuery });
+          return { success: true, data };
+        } catch (error) {
+          console.error('listUserPacks tool error', error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to list packs',
+          };
+        }
+      },
+    }),
+
     getPackDetails: tool({
       description:
         'Get detailed information about a specific pack including all items, weights, and categories. Executed client-side from local device data.',
