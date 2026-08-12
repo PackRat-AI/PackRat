@@ -7,6 +7,7 @@ struct PackItemDetailView: View {
     @Bindable var viewModel: PacksViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(AuthManager.self) private var authManager
+    @Environment(\.weightUnit) private var weightUnit
     @State private var showingEdit = false
     @State private var showingAskAI = false
     @State private var similarItems: [CatalogItem] = []
@@ -98,7 +99,7 @@ struct PackItemDetailView: View {
             }
 
             VStack(spacing: 0) {
-                detailRow("Weight", value: item.displayWeight.isEmpty ? "Not set" : item.displayWeight, symbol: "scalemass")
+                detailRow("Weight", value: item.displayWeight.isEmpty ? "Not set" : item.displayWeight(in: weightUnit), symbol: "scalemass")
                 detailRow("Quantity", value: "\(item.quantity)", symbol: "number")
                 detailRow("Category", value: item.category?.capitalized ?? "Uncategorized", symbol: "tag")
                 detailRow("Pack Weight", value: packWeightLabel, symbol: "backpack")
@@ -161,7 +162,7 @@ struct PackItemDetailView: View {
             HStack(spacing: 12) {
                 if item.weight > 0 {
                     metaChip(
-                        value: item.displayWeight,
+                        value: item.displayWeight(in: weightUnit),
                         label: "Weight",
                         symbol: "scalemass.fill",
                         color: .blue
@@ -177,10 +178,12 @@ struct PackItemDetailView: View {
                 }
                 if item.weight > 0 && item.quantity > 1 {
                     let total = item.weightInGrams * Double(item.quantity)
-                    let formatted = total >= 1000
-                        ? String(format: "%.2f kg", total / 1000)
-                        : String(format: "%.0f g", total)
-                    metaChip(value: formatted, label: "Total", symbol: "sum", color: .teal)
+                    metaChip(
+                        value: weightUnit.display(grams: total),
+                        label: "Total",
+                        symbol: "sum",
+                        color: .teal
+                    )
                 }
             }
 
@@ -341,6 +344,7 @@ private struct SimilarItemCard: View {
     let item: CatalogItem
     let packsViewModel: PacksViewModel
     @State private var showingDetail = false
+    @Environment(\.weightUnit) private var weightUnit
 
     var body: some View {
         cardContent
@@ -385,7 +389,7 @@ private struct SimilarItemCard: View {
                     .lineLimit(2)
                     .frame(width: 120, alignment: .leading)
                 if !item.displayWeight.isEmpty {
-                    Text(item.displayWeight)
+                    Text(item.displayWeight(in: weightUnit))
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }

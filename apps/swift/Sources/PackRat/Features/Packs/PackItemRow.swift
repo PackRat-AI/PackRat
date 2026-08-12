@@ -21,6 +21,8 @@ struct PackItemRow: View {
         let onTogglePacked: () -> Void
     }
 
+    @Environment(\.weightUnit) private var weightUnit
+
     var body: some View {
         if let packingState {
             packingRow(packingState)
@@ -93,7 +95,7 @@ struct PackItemRow: View {
 
                 HStack(spacing: 8) {
                     if !item.displayWeight.isEmpty {
-                        Label(item.displayWeight, systemImage: "scalemass")
+                        Label(item.displayWeight(in: weightUnit), systemImage: "scalemass")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

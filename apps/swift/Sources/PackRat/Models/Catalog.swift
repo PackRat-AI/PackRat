@@ -7,9 +7,18 @@ extension CatalogItem {
     var displayName: String { name }
     var displayBrand: String? { brand?.nilIfEmpty }
 
+    /// The item's own stored weight and unit, unconverted.
+    ///
+    /// Prefer `displayWeight(in:)` for UI so the app-wide preference applies.
     var displayWeight: String {
         guard let weight, weight > 0, let weightUnit else { return "" }
         return String(format: "%.0f %@", weight, weightUnit.rawValue)
+    }
+
+    /// The item's weight converted into the user's preferred unit.
+    func displayWeight(in unit: AppWeightUnit) -> String {
+        guard let weight, weight > 0, let weightUnit else { return "" }
+        return unit.display(weight, from: weightUnit)
     }
 
     var displayPrice: String? {

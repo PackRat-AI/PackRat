@@ -252,6 +252,8 @@ struct PacksListView: View {
 private struct PackRowView: View {
     let pack: Pack
 
+    @Environment(\.weightUnit) private var weightUnit
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -261,7 +263,7 @@ private struct PackRowView: View {
                     .layoutPriority(1)
                 Spacer()
                 if let total = pack.totalWeight, total > 0 {
-                    Text(pack.formattedWeight(total))
+                    Text(pack.formattedWeight(total, in: weightUnit))
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 7)

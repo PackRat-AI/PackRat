@@ -35,6 +35,8 @@ struct RecentPacksView: View {
 private struct RecentPackRow: View {
     let pack: Pack
 
+    @Environment(\.weightUnit) private var weightUnit
+
     private var timeAgo: String {
         guard let dateStr = pack.createdAt,
               let date = ISO8601DateFormatter().date(from: dateStr) else {
@@ -69,7 +71,7 @@ private struct RecentPackRow: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 3) {
-                Text(pack.formattedWeight(pack.totalWeight))
+                Text(pack.formattedWeight(pack.totalWeight, in: weightUnit))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
                 if !timeAgo.isEmpty {

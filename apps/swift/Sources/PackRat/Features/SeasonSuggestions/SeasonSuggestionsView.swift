@@ -202,6 +202,7 @@ struct SeasonSuggestionsView: View {
 private struct SeasonSuggestionRow: View {
     let suggestion: SeasonSuggestion
     @State private var expanded = false
+    @Environment(\.weightUnit) private var weightUnit
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -261,7 +262,7 @@ private struct SeasonSuggestionRow: View {
                             Spacer()
                             VStack(alignment: .trailing, spacing: 1) {
                                 if !item.displayWeight.isEmpty {
-                                    Text(item.displayWeight)
+                                    Text(item.displayWeight(in: weightUnit))
                                         .font(.caption2.monospacedDigit())
                                         .foregroundStyle(.secondary)
                                 }

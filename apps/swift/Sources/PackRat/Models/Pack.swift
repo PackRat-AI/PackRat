@@ -6,9 +6,14 @@ extension Pack {
     var activeItems: [PackItem] { (items ?? []).filter { !$0.deleted } }
     var itemCount: Int { activeItems.count }
 
-    func formattedWeight(_ grams: Double?) -> String {
-        guard let g = grams, g > 0 else { return "0 g" }
-        return g >= 1000 ? String(format: "%.2f kg", g / 1000) : String(format: "%.0f g", g)
+    /// Formats a gram value for display.
+    ///
+    /// - Parameter unit: The user's preferred display unit. Views should pass
+    ///   their `@AppStorage(AppWeightUnit.storageKey)` value so the setting in
+    ///   Preferences actually takes effect; it defaults to grams for non-UI
+    ///   callers such as `aiContextSummary`.
+    func formattedWeight(_ grams: Double?, in unit: AppWeightUnit = .grams) -> String {
+        unit.display(grams: grams)
     }
 
     /// The pack's contents as plain text, used to answer the client-executed
@@ -47,21 +52,26 @@ extension Pack {
 }
 
 extension PackItem {
+    /// The item's own stored weight and unit, unconverted.
+    ///
+    /// Prefer `displayWeight(in:)` for UI: this shows whichever unit the item
+    /// happened to be created with, which is why changing the app-wide
+    /// preference appeared to do nothing on item rows.
     var displayWeight: String {
         guard weight > 0 else { return "" }
         return String(format: "%.0f %@", weight, weightUnit.rawValue)
     }
+
+    /// The item's weight converted into the user's preferred unit.
+    func displayWeight(in unit: AppWeightUnit) -> String {
+        guard weight > 0 else { return "" }
+        return unit.display(weight, from: weightUnit)
+    }
+
     var effectiveQuantity: Int { quantity }
 
     /// Weight normalized to grams, for consistent chart calculations.
-    var weightInGrams: Double {
-        switch weightUnit {
-        case .g:  return weight
-        case .kg: return weight * 1_000
-        case .oz: return weight * 28.3495
-        case .lb: return weight * 453.592
-        }
-    }
+    var weightInGrams: Double { weight * weightUnit.gramsPerUnit }
 
     /// The item's facts as plain text, prepended to the first message of an
     /// item-scoped chat so the model usually doesn't need a tool round trip.
@@ -114,16 +124,27 @@ extension PackCategory {
 }
 
 extension WeightUnit {
-    init(from decoder: any Decoder) throws {
-        let raw = try decoder.singleValueContainer().decode(String.self)
-        // Map legacy values to canonical units
+    /// Maps an API-supplied unit string onto a canonical unit, absorbing the
+    /// legacy spellings the server has sent over time. Returns `nil` for
+    /// anything unrecognized so callers can decide whether to fall back.
+    ///
+    /// Shared with the decoder below and with payloads that type their unit as a
+    /// plain `String` (`SeasonSuggestionItem`, `PackTemplateItem`).
+    init?(apiValue raw: String) {
         switch raw.lowercased() {
         case "lbs": self = .lb
         case "grams": self = .g
         case "kilograms", "kgs": self = .kg
         case "ounces", "ozs": self = .oz
-        default: self = Self(rawValue: raw) ?? .g
+        default:
+            guard let unit = Self(rawValue: raw.lowercased()) else { return nil }
+            self = unit
         }
+    }
+
+    init(from decoder: any Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = Self(apiValue: raw) ?? .g
     }
 }
 
@@ -156,6 +177,69 @@ enum AppWeightUnit: String, CaseIterable {
     case grams = "g", kg, oz, lb
 
     var label: String { rawValue }
+
+    /// The `UserDefaults` key the preference is stored under. Declared here so
+    /// every consuming `@AppStorage` spells it the same way.
+    static let storageKey = "defaultAppWeightUnit"
+
+    /// Grams per one of this unit — the single source of truth for conversion in
+    /// both directions.
+    var gramsPerUnit: Double {
+        switch self {
+        case .grams: return 1
+        case .kg:    return 1_000
+        case .oz:    return 28.3495
+        case .lb:    return 453.592
+        }
+    }
+
+    /// Digits to show. Grams are whole numbers; the larger units need decimals
+    /// or a 300 g item reads as "1 lb".
+    private var fractionDigits: Int {
+        switch self {
+        case .grams: return 0
+        case .kg:    return 2
+        case .oz:    return 1
+        case .lb:    return 2
+        }
+    }
+
+    /// Formats a gram value into this unit.
+    ///
+    /// Weights are stored and computed in grams throughout the app (the server
+    /// sends pack totals in grams), so this is the single conversion point for
+    /// display. Replaces four separate hard-coded g/kg formatters that ignored
+    /// the user's preference entirely.
+    func display(grams: Double?) -> String {
+        guard let grams, grams > 0 else { return "0 \(rawValue)" }
+
+        // Metric auto-promotes g → kg the way it always did, so a 2.4 kg pack
+        // doesn't read as "2400 g". Imperial units are absolute by choice.
+        if self == .grams, grams >= 1_000 {
+            return String(format: "%.2f kg", grams / 1_000)
+        }
+
+        let value = grams / gramsPerUnit
+        return String(format: "%.\(fractionDigits)f %@", value, rawValue)
+    }
+
+    /// Converts a value expressed in `unit` into this unit for display.
+    func display(_ value: Double, from unit: WeightUnit) -> String {
+        display(grams: value * unit.gramsPerUnit)
+    }
+}
+
+extension WeightUnit {
+    /// Grams per one of this unit. Mirrors `AppWeightUnit.gramsPerUnit` for the
+    /// API-facing enum, so per-item weights can be normalized before display.
+    var gramsPerUnit: Double {
+        switch self {
+        case .g:  return 1
+        case .kg: return 1_000
+        case .oz: return 28.3495
+        case .lb: return 453.592
+        }
+    }
 }
 
 // Wind speed + distance display unit. Raw values match the Expo app's
