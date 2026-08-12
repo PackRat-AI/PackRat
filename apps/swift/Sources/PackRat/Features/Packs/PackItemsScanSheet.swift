@@ -15,6 +15,9 @@ final class PackItemsScanViewModel {
         case analyzing
         case reviewing
         case failed(String)
+        /// Distinct from `failed` so the sheet can show the connectivity state
+        /// directly instead of round-tripping a message through string sniffing.
+        case offline
     }
 
     var phase: Phase = .picking
@@ -46,9 +49,18 @@ final class PackItemsScanViewModel {
     func selectNone() { selectedIndices.removeAll() }
 
     func analyze(imageData: Data, userId: String) async {
-        phase = .analyzing
         detections = []
         selectedIndices = []
+
+        // Scanning needs the server's vision model, so there is nothing useful to
+        // do offline. Checking up front keeps the user out of a doomed upload and
+        // out of the generic failure copy that a transport error produces.
+        guard NetworkMonitor.shared.isConnected else {
+            phase = .offline
+            return
+        }
+
+        phase = .analyzing
         do {
             let results = try await service.detectItems(imageData: imageData, userId: userId)
             detections = results
@@ -56,7 +68,11 @@ final class PackItemsScanViewModel {
             selectedIndices = Set(results.indices)
             phase = .reviewing
         } catch {
-            phase = .failed(error.localizedDescription)
+            // A connection that drops mid-upload lands here rather than in the
+            // guard above, so classify by error rather than assuming it's generic.
+            phase = FriendlyErrorPresentation.isConnectivityError(error)
+                ? .offline
+                : .failed(error.localizedDescription)
         }
     }
 
@@ -126,6 +142,13 @@ struct PackItemsScanSheet: View {
         #endif
     }
 
+    /// Pluralized in Swift: `^[…](inflect: true)` markup only resolves through a
+    /// localization catalog, and this target ships none, so it rendered verbatim.
+    private var detectionCountLabel: String {
+        let count = viewModel.detections.count
+        return "\(count) \(count == 1 ? "item" : "items") found"
+    }
+
     private var addButton: some View {
         Button {
             Task { await addSelected() }
@@ -162,6 +185,11 @@ struct PackItemsScanSheet: View {
             }
         case .failed(let message):
             ErrorView(message, retry: { viewModel.reset() })
+        case .offline:
+            ConnectionUnavailableView(
+                message: "Scanning items from a photo needs an internet connection. Reconnect and try again.",
+                retry: { viewModel.reset() }
+            )
         }
     }
 
@@ -206,7 +234,7 @@ struct PackItemsScanSheet: View {
                 }
             } header: {
                 HStack {
-                    Text("^[\(viewModel.detections.count) item](inflect: true) found")
+                    Text(detectionCountLabel)
                     Spacer()
                     Button(viewModel.selectedCount == viewModel.detections.count ? "Select None" : "Select All") {
                         if viewModel.selectedCount == viewModel.detections.count {
