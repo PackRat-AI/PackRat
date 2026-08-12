@@ -4,11 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Capture the Drizzle chain rather than hitting Postgres. What matters here is
 // *what the query asks for* — the scoping predicates and the row cap — so the
 // condition is rendered to real SQL and asserted on directly.
-const mockLimit = vi.fn();
-const mockWhere = vi.fn(() => ({ limit: mockLimit }));
-const mockFrom = vi.fn(() => ({ where: mockWhere }));
-const mockSelect = vi.fn(() => ({ from: mockFrom }));
-const mockTag = vi.fn(() => ({ select: mockSelect }));
+// The builder args are typed explicitly: `vi.fn(() => …)` infers a zero-arg
+// signature, which types `mock.calls` as `[]` and makes `calls[0]?.[0]` a
+// compile error rather than the captured argument.
+const mockLimit = vi.fn((_count: number) => Promise.resolve<unknown[]>([]));
+const mockWhere = vi.fn((_condition: unknown) => ({ limit: mockLimit }));
+const mockFrom = vi.fn((_table: unknown) => ({ where: mockWhere }));
+const mockSelect = vi.fn((_projection: Record<string, unknown>) => ({ from: mockFrom }));
+const mockTag = vi.fn((_tag: string) => ({ select: mockSelect }));
 
 vi.mock('@packrat/api/db', () => ({
   createDb: () => ({ tag: mockTag }),
@@ -44,7 +47,7 @@ describe('listUserPacksAiTool', () => {
   it('projects only the four columns the model needs', async () => {
     await listUserPacksAiTool({ userId: TEST_USER_ID });
 
-    const projection = mockSelect.mock.calls[0]?.[0] as Record<string, unknown>;
+    const projection = mockSelect.mock.calls[0]?.[0] ?? {};
     expect(Object.keys(projection).sort()).toEqual(['category', 'description', 'id', 'name']);
   });
 
