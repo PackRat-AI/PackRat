@@ -214,23 +214,35 @@ final class ChatViewModel {
 
     /// `getPackDetails` / `getPackItemDetails`.
     ///
-    /// Prefers the conversation's scoped payload, then falls back to the pack the
-    /// model actually named. Ignoring the requested id is what made a general
-    /// chat insist an existing pack could not be found.
+    /// Answers for the id the model actually asked about. The conversation's
+    /// scoped payload is used only when it *is* that pack — a pack-scoped chat
+    /// asked about a different pack would otherwise be handed the scoped pack's
+    /// contents under the other pack's name, which is worse than a miss.
+    ///
+    /// Falling back to a local lookup is what fixed the general chat insisting an
+    /// existing pack could not be found.
     private func packDetailsOutput(for invocation: ToolInvocation) -> [String: Any] {
-        let requested: [String: String]? = if invocation.toolName == "getPackDetails",
-                                              let packTools,
-                                              let packId = toolArguments(invocation)["packId"] as? String,
-                                              !packId.isEmpty {
-            packTools.packDetails(id: packId)
-        } else {
-            nil
+        guard invocation.toolName == "getPackDetails" else {
+            // Item details are only ever answered from the scoped context.
+            guard let payload = context.toolPayload else { return Self.failure("Item not found") }
+            return ["success": true, "data": payload]
         }
 
-        guard let payload = context.toolPayload ?? requested else {
-            return Self.failure(
-                invocation.toolName == "getPackDetails" ? "Pack not found" : "Item not found"
-            )
+        let requestedId = (toolArguments(invocation)["packId"] as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // No id given: the scoped pack is the only thing it could mean.
+        guard let requestedId, !requestedId.isEmpty else {
+            guard let payload = context.toolPayload else { return Self.failure("Pack not found") }
+            return ["success": true, "data": payload]
+        }
+
+        if requestedId == context.packId, let payload = context.toolPayload {
+            return ["success": true, "data": payload]
+        }
+
+        guard let payload = packTools?.packDetails(id: requestedId) else {
+            return Self.failure("Pack not found")
         }
         return ["success": true, "data": payload]
     }
