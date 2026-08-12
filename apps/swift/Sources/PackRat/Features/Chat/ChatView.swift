@@ -71,7 +71,11 @@ struct ChatView: View {
                 }
             }
         }
-        .keyboardDoneButton(isFocused: $isInputFocused)
+        // No `keyboardDoneButton` here on purpose: the keyboard accessory bar it
+        // adds sits in the same place as the composer, so its trailing "Done"
+        // landed on top of the send button. Chat already has two dismissal
+        // paths — `dismissesKeyboardOnScroll` on the message list, and `send()`
+        // clearing `isInputFocused` — so the accessory bar was pure overlap.
     }
 
     // MARK: - Message List

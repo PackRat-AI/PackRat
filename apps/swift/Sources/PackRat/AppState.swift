@@ -9,7 +9,7 @@ final class AppState {
     let tripsVM = TripsViewModel()
     let weatherVM = WeatherViewModel()
     let catalogVM = CatalogViewModel()
-    let chatVM = ChatViewModel()
+    let chatVM: ChatViewModel
     let feedVM = FeedViewModel()
     let templatesVM = PackTemplatesViewModel()
     let trailConditionsVM = TrailConditionsViewModel()
@@ -28,6 +28,11 @@ final class AppState {
     var isGlobalSearchPresented = false
 
     init() {
+        // Back the assistant's pack tools with the local store, so it can find
+        // packs by name and add items to them against the same data the Packs tab
+        // shows. Without this every pack reads as missing, even ones on screen.
+        chatVM = ChatViewModel(packTools: LocalChatPackTools(packsViewModel: packsVM))
+
         if VisualSampleData.isEnabled {
             VisualSampleData.apply(to: self)
         }

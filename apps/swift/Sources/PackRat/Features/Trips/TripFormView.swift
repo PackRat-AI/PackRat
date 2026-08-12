@@ -10,6 +10,7 @@ struct TripFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.weightUnit) private var weightUnit
 
     @State private var name = ""
     @State private var description = ""
@@ -108,7 +109,7 @@ struct TripFormView: View {
                                 .font(.caption).foregroundStyle(.secondary)
                             Spacer()
                             if let total = pack.totalWeight {
-                                Text(pack.formattedWeight(total))
+                                Text(pack.formattedWeight(total, in: weightUnit))
                                     .font(.caption.monospacedDigit())
                                     .foregroundStyle(.secondary)
                             }

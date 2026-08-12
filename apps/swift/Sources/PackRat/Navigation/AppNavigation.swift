@@ -110,8 +110,20 @@ struct AppNavigation: View {
             }
     }
 
+    /// The banner lives here rather than in each layout so it can't drift out of
+    /// one of them — it was previously only mounted in `splitLayout`, which left
+    /// every iPhone (compact width) with no offline indicator at all.
     @ViewBuilder
     private var navigationBody: some View {
+        layoutBody
+            .safeAreaInset(edge: .top, spacing: 0) {
+                OfflineBanner()
+            }
+            .animation(.easeInOut(duration: 0.3), value: NetworkMonitor.shared.isConnected)
+    }
+
+    @ViewBuilder
+    private var layoutBody: some View {
         #if os(iOS)
         if horizontalSizeClass == .compact {
             phoneLayout
@@ -128,11 +140,7 @@ struct AppNavigation: View {
     private var splitLayout: some View {
         @Bindable var state = appState
 
-        return VStack(spacing: 0) {
-            OfflineBanner()
-            splitNavigation
-        }
-        .animation(.easeInOut(duration: 0.3), value: NetworkMonitor.shared.isConnected)
+        return splitNavigation
         .environment(appState)
         #if os(macOS)
         .navigationSplitViewStyle(.balanced)

@@ -1,5 +1,7 @@
 import Foundation
 import Observation
+import Sentry
+import SwiftData
 #if os(iOS)
 import AuthenticationServices
 import GoogleSignIn
@@ -298,6 +300,30 @@ final class AuthManager {
         isGuest = false
         currentUser = nil
         SentryConfig.clearUser()
+        // `signOut` is reachable from non-main contexts (see `MainActor.run`
+        // callers), while the SwiftData container is main-actor isolated.
+        Task { @MainActor in Self.purgeCachedUserContent() }
+    }
+
+    /// Drops the SwiftData mirror of the signed-out user's packs and trips.
+    ///
+    /// `CachedPack`/`CachedTrip` are keyed only by server id with no user column,
+    /// and the view models seed themselves from that cache before the network
+    /// responds. Left in place, the next user to sign in on this device sees the
+    /// previous user's packs and trips flash up first.
+    @MainActor
+    private static func purgeCachedUserContent() {
+        let context = PersistenceController.shared.container.mainContext
+        do {
+            try context.delete(model: CachedPack.self)
+            try context.delete(model: CachedTrip.self)
+            try context.save()
+        } catch {
+            SentrySDK.capture(error: error) { scope in
+                scope.setTag(value: "auth", key: "feature")
+                scope.setTag(value: "purgeCachedUserContent", key: "action")
+            }
+        }
     }
 
     /// Android-style "Clear Data": wipes *everything* the app stores locally —

@@ -27,6 +27,7 @@ struct PackDetailView: View {
     @State private var itemPendingDeletion: PackItem?
     @State private var showingDeleteConfirmation = false
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.weightUnit) private var weightUnit
     @State private var statusMessage: String?
 
     // MARK: Packing mode
@@ -374,11 +375,19 @@ struct PackDetailView: View {
 
     /// Toast copy for a bulk add. A partial failure has to say so — reporting
     /// only the successes leaves the user believing everything landed.
+    ///
+    /// Pluralized in Swift rather than with `^[…](inflect: true)` markup: that
+    /// markup is only resolved for strings that go through a localization
+    /// catalog, and this target ships no `.xcstrings`, so it rendered verbatim.
     private func addedStatusMessage(added: Int, failed: Int, source: String) -> String {
         if failed > 0 {
-            return "Added ^[\(added) item](inflect: true), ^[\(failed) item](inflect: true) couldn't be added"
+            return "Added \(Self.itemCountPhrase(added)), \(Self.itemCountPhrase(failed)) couldn't be added"
         }
-        return "Added ^[\(added) item](inflect: true) from \(source)"
+        return "Added \(Self.itemCountPhrase(added)) from \(source)"
+    }
+
+    private static func itemCountPhrase(_ count: Int) -> String {
+        "\(count) \(count == 1 ? "item" : "items")"
     }
 
     // MARK: - Packing mode
@@ -570,7 +579,7 @@ struct PackDetailView: View {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(currentPack.formattedWeight(value))
+            Text(currentPack.formattedWeight(value, in: weightUnit))
                 .font(.callout.monospacedDigit().bold())
                 .foregroundStyle(color)
         }

@@ -9,6 +9,7 @@ struct TripDetailView: View {
     @State private var showingEditSheet = false
     @State private var mapPosition: MapCameraPosition = .automatic
     @Environment(AppState.self) private var appState
+    @Environment(\.weightUnit) private var weightUnit
 
     private var coordinate: CLLocationCoordinate2D? {
         guard let lat = trip.location?.latitude, let lon = trip.location?.longitude,
@@ -122,7 +123,7 @@ struct TripDetailView: View {
                         }
                         Spacer()
                         if let total = pack.totalWeight {
-                            Text(pack.formattedWeight(total))
+                            Text(pack.formattedWeight(total, in: weightUnit))
                                 .font(.callout.monospacedDigit().bold())
                                 .foregroundStyle(.tint)
                         }

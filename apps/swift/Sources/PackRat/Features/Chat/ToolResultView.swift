@@ -267,6 +267,8 @@ private struct CatalogToolView: View {
 private struct PackDetailsToolView: View {
     let data: Data
 
+    @Environment(\.weightUnit) private var weightUnit
+
     private struct PackOutput: Decodable {
         let success: Bool?
         let data: PackData?
@@ -312,7 +314,7 @@ private struct PackDetailsToolView: View {
     }
 
     private func formatWeight(_ g: Double) -> String {
-        g >= 1000 ? String(format: "%.1fkg", g / 1000) : String(format: "%.0fg", g)
+        weightUnit.display(grams: g)
     }
 }
 

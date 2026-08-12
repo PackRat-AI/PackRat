@@ -47,10 +47,15 @@ extension PackTemplate {
         (items ?? []).reduce(0) { $0 + $1.weightInGrams }
     }
 
-    func formattedTotalWeight() -> String {
+    /// Formats the template's total weight for display.
+    ///
+    /// - Parameter unit: The user's preferred display unit. Views should pass
+    ///   their `@Environment(\.weightUnit)` value; it defaults to grams for
+    ///   non-UI callers, matching `Pack.formattedWeight`.
+    func formattedTotalWeight(in unit: AppWeightUnit = .grams) -> String {
         let g = totalWeightGrams
         guard g > 0 else { return "No weight data" }
-        return g >= 1000 ? String(format: "%.2f kg", g / 1000) : String(format: "%.0f g", g)
+        return unit.display(grams: g)
     }
 }
 

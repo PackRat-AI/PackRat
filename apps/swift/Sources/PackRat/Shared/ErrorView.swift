@@ -117,15 +117,19 @@ struct GuestLimitedView: View {
 }
 
 struct ConnectionUnavailableView: View {
+    let message: String?
     let retry: (() async -> Void)?
 
-    init(retry: (() async -> Void)? = nil) {
+    /// - Parameter message: Overrides the generic "connect to refresh" copy for
+    ///   features that are wholly unavailable offline rather than merely stale.
+    init(message: String? = nil, retry: (() async -> Void)? = nil) {
+        self.message = message
         self.retry = retry
     }
 
     var body: some View {
         ErrorSurfaceView(
-            presentation: .connectionNeeded,
+            presentation: message.map { .connectionNeeded.withDescription($0) } ?? .connectionNeeded,
             retry: retry
         )
     }
@@ -204,6 +208,58 @@ struct FriendlyErrorPresentation {
 
         let trimmed = rawMessage.trimmingCharacters(in: .whitespacesAndNewlines)
         return FriendlyErrorPresentation.isPresentableToUser(trimmed) ? trimmed : description
+    }
+
+    /// A copy of this presentation with different body copy, for callers that
+    /// know exactly why a feature is unavailable ("scanning needs a connection")
+    /// and can say something more useful than the generic bucket text.
+    func withDescription(_ description: String) -> FriendlyErrorPresentation {
+        FriendlyErrorPresentation(
+            title: title,
+            description: description,
+            systemImage: systemImage,
+            inlineSystemImage: inlineSystemImage,
+            inlineColor: inlineColor,
+            allowsRetry: allowsRetry,
+            retryTitle: retryTitle,
+            accessibilityIdentifier: accessibilityIdentifier
+        )
+    }
+
+    /// Classifies a thrown error as a connectivity failure by *type* rather than
+    /// by sniffing `localizedDescription`.
+    ///
+    /// The string matcher in `init(_:)` only works on English devices, and even
+    /// there it misses the DNS/host failures that a real offline request tends to
+    /// produce ("A server with the specified hostname could not be found."), which
+    /// is how an airplane-mode request ended up reading "Temporarily Unavailable".
+    static func isConnectivityError(_ error: Error) -> Bool {
+        if let packRatError = error as? PackRatError, case .networkError = packRatError {
+            return true
+        }
+
+        let offlineCodes: Set<URLError.Code> = [
+            .notConnectedToInternet,
+            .networkConnectionLost,
+            .cannotFindHost,
+            .cannotConnectToHost,
+            .dnsLookupFailed,
+            .timedOut,
+            .internationalRoamingOff,
+            .dataNotAllowed,
+            .callIsActive,
+            .secureConnectionFailed,
+        ]
+
+        if let urlError = error as? URLError, offlineCodes.contains(urlError.code) {
+            return true
+        }
+
+        // `URLError` bridged through an intermediate `NSError` loses its Swift
+        // type but keeps its domain and code.
+        let nsError = error as NSError
+        return nsError.domain == NSURLErrorDomain
+            && offlineCodes.contains(URLError.Code(rawValue: nsError.code))
     }
 
     /// True when the keyword matcher found no specific bucket for the message.

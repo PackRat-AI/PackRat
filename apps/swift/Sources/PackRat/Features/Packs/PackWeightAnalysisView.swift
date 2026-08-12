@@ -3,6 +3,8 @@ import SwiftUI
 struct PackWeightAnalysisView: View {
     let pack: Pack
 
+    @Environment(\.weightUnit) private var weightUnit
+
     private var items: [PackItem] { pack.activeItems }
 
     private var categoryGroups: [(name: String, items: [PackItem])] {
@@ -59,7 +61,7 @@ struct PackWeightAnalysisView: View {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(pack.formattedWeight(value))
+            Text(pack.formattedWeight(value, in: weightUnit))
                 .font(.title3.bold().monospacedDigit())
                 .foregroundStyle(color)
             if let pct {
@@ -78,6 +80,8 @@ private struct CategoryWeightSection: View {
     let name: String
     let items: [PackItem]
     let pack: Pack
+
+    @Environment(\.weightUnit) private var weightUnit
 
     private var totalGrams: Double {
         items.reduce(0) { acc, item in
@@ -99,7 +103,7 @@ private struct CategoryWeightSection: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(name.capitalized)
                         .font(.subheadline.bold())
-                    Text(pack.formattedWeight(totalGrams))
+                    Text(pack.formattedWeight(totalGrams, in: weightUnit))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -124,7 +128,7 @@ private struct CategoryWeightSection: View {
                         }
                     }
                     Spacer()
-                    Text(item.displayWeight)
+                    Text(item.displayWeight(in: weightUnit))
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }

@@ -340,14 +340,31 @@ struct PackCatalogBrowserSheet: View {
         }
     }
 
+    /// The confirm action lives here as well as in the toolbar. The toolbar copy
+    /// competes with the always-visible search drawer for the navigation bar on
+    /// iPhone and gets collapsed, which left the selection bar showing only
+    /// "N selected" and "Clear" — no way to finish the flow.
     private var selectionBar: some View {
-        HStack {
+        HStack(spacing: 12) {
             Text("\(viewModel.selectedCount) selected")
                 .font(.callout.bold())
             Spacer()
             Button("Clear") { viewModel.clearSelection() }
                 .font(.callout)
                 .accessibilityIdentifier("pack_catalog_clear")
+            Button {
+                Task { await addSelected() }
+            } label: {
+                if viewModel.isAdding {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Text("Add (\(viewModel.selectedCount))")
+                        .font(.callout.bold())
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!viewModel.canAdd)
+            .accessibilityIdentifier("pack_catalog_confirm_add_bar")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -379,6 +396,8 @@ private struct PackCatalogItemRow: View {
     let onToggle: () -> Void
     let onQuantityChange: (Int) -> Void
 
+    @Environment(\.weightUnit) private var weightUnit
+
     var body: some View {
         VStack(spacing: 8) {
             HStack(spacing: 12) {
@@ -403,7 +422,7 @@ private struct PackCatalogItemRow: View {
                             Text(brand).font(.caption2.bold()).foregroundStyle(.tint)
                         }
                         if !item.displayWeight.isEmpty {
-                            Text(item.displayWeight)
+                            Text(item.displayWeight(in: weightUnit))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }

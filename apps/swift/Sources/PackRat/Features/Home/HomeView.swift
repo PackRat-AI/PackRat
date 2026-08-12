@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 struct HomeView: View {
@@ -5,6 +6,7 @@ struct HomeView: View {
 
     @Environment(AppState.self) private var appState
     @Environment(AuthManager.self) private var authManager
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showingSeasonSuggestions = false
     @State private var showingShoppingList = false
@@ -27,12 +29,36 @@ struct HomeView: View {
         return firstName
     }
 
-    @ViewBuilder
     var body: some View {
+        sizedBody
+            // Home shows Packs/Trips/Items counts but used to have no loader of its
+            // own, relying on the Packs and Trips tabs to populate the view models.
+            // Those tabs are built lazily, so a fresh sign-in landed on Home with
+            // empty arrays and rendered zeros until the user switched tabs.
+            .task { await loadSummaryData() }
+    }
+
+    @ViewBuilder
+    private var sizedBody: some View {
         if horizontalSizeClass == .compact {
             compactBody
         } else {
             regularBody
+        }
+    }
+
+    /// Loads only when empty: returning to Home from another tab shouldn't refetch
+    /// what that tab just loaded. `AuthManager.signOut` clears the view models, so
+    /// after a re-sign-in these are genuinely empty and this does fetch.
+    /// Sequential rather than `async let`: both view models are main-actor
+    /// isolated, so the two loads cannot overlap anyway, and reading `appState`
+    /// from inside an implicitly-async closure needs an extra actor hop.
+    private func loadSummaryData() async {
+        if appState.packsVM.packs.isEmpty {
+            await appState.packsVM.load(context: modelContext)
+        }
+        if appState.tripsVM.trips.isEmpty {
+            await appState.tripsVM.load(context: modelContext)
         }
     }
 

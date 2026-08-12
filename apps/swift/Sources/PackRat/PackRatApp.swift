@@ -29,6 +29,7 @@ struct PackRatApp: App {
             AuthGateView()
                 .environment(authManager)
                 .flushesPendingWrites()
+                .providesWeightUnitPreference()
         }
         .modelContainer(PersistenceController.shared.container)
         #if os(macOS)
@@ -44,6 +45,7 @@ struct PackRatApp: App {
         Settings {
             PreferencesView()
                 .environment(authManager)
+                .providesWeightUnitPreference()
         }
 
         // These windows host the same detail views as the main window, so they
@@ -54,6 +56,7 @@ struct PackRatApp: App {
                 PackWindowView(packId: id)
                     .environment(authManager)
                     .flushesPendingWrites()
+                    .providesWeightUnitPreference()
             }
         }
         .modelContainer(PersistenceController.shared.container)
@@ -64,6 +67,7 @@ struct PackRatApp: App {
                 TripWindowView(tripId: id)
                     .environment(authManager)
                     .flushesPendingWrites()
+                    .providesWeightUnitPreference()
             }
         }
         .modelContainer(PersistenceController.shared.container)

@@ -97,6 +97,7 @@ struct CatalogItemRow: View {
     let packsViewModel: PacksViewModel
     @State private var showingAddToPack = false
     @State private var showingDetail = false
+    @Environment(\.weightUnit) private var weightUnit
 
     var body: some View {
         rowContent
@@ -196,7 +197,7 @@ struct CatalogItemRow: View {
                 .lineLimit(1)
         }
         if !item.displayWeight.isEmpty {
-            Label(item.displayWeight, systemImage: "scalemass")
+            Label(item.displayWeight(in: weightUnit), systemImage: "scalemass")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -256,6 +257,7 @@ struct AddCatalogItemToPackSheet: View {
     let packsViewModel: PacksViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.weightUnit) private var weightUnit
 
     @State private var selectedPackId: String?
     @State private var quantity = 1
@@ -268,7 +270,7 @@ struct AddCatalogItemToPackSheet: View {
                 Section("Item") {
                     LabeledContent("Name") { Text(item.displayName) }
                     if !item.displayWeight.isEmpty {
-                        LabeledContent("Weight") { Text(item.displayWeight) }
+                        LabeledContent("Weight") { Text(item.displayWeight(in: weightUnit)) }
                     }
                     if let brand = item.displayBrand {
                         LabeledContent("Brand") { Text(brand) }

@@ -99,10 +99,34 @@ final class PacksViewModel {
         defer { isLoading = false }
         do {
             let more = try await service.listPacks(page: nextPage, limit: pageSize)
-            packs.append(contentsOf: more)
+            // Dedupe by id: `load()` can reassign `packs` while this page is in
+            // flight, and appending blindly then showed the same pack twice —
+            // duplicate ids also collide in `ForEach` identity, so the duplicates
+            // were visible rather than harmless.
+            let known = Set(packs.map(\.id))
+            packs.append(contentsOf: more.filter { !known.contains($0.id) })
             currentPage = nextPage
             hasMore = more.count == pageSize
         } catch { }
+    }
+
+    /// Clears every trace of the signed-in user's packs, including the on-disk
+    /// cache. Without this, signing in as a different user briefly showed the
+    /// previous user's packs from SwiftData, and a re-sign-in as the same user
+    /// kept stale pagination state.
+    func reset(context: ModelContext? = nil) {
+        packs = []
+        isLoading = false
+        isCacheLoaded = false
+        error = nil
+        searchText = ""
+        currentPage = 1
+        hasMore = true
+
+        if let context {
+            try? context.delete(model: CachedPack.self)
+            try? context.save()
+        }
     }
 
     private func writeCachePacks(_ freshPacks: [Pack], context: ModelContext) {

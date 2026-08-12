@@ -171,6 +171,7 @@ struct PackTemplateDetailView: View {
     let packsVM: PacksViewModel
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.weightUnit) private var weightUnit
     @State private var showingApplySheet = false
     @State private var showingEditTemplate = false
     @State private var showingAddItem = false
@@ -203,7 +204,7 @@ struct PackTemplateDetailView: View {
                         .font(.callout.bold())
                     if currentTemplate.totalWeightGrams > 0 {
                         Text("·").foregroundStyle(.secondary)
-                        Text(currentTemplate.formattedTotalWeight())
+                        Text(currentTemplate.formattedTotalWeight(in: weightUnit))
                             .font(.callout.bold().monospacedDigit())
                             .foregroundStyle(.tint)
                     }
@@ -418,6 +419,8 @@ private struct ApplyTemplateSheet: View {
 private struct TemplateWeightChart: View {
     let template: PackTemplate
 
+    @Environment(\.weightUnit) private var weightUnit
+
     private struct CategoryWeight: Identifiable {
         let id = UUID()
         let category: String
@@ -450,7 +453,7 @@ private struct TemplateWeightChart: View {
                 .chartLegend(.hidden)
                 .overlay {
                     VStack(spacing: 2) {
-                        Text(template.formattedTotalWeight())
+                        Text(template.formattedTotalWeight(in: weightUnit))
                             .font(.caption2.monospacedDigit().bold())
                             .minimumScaleFactor(0.6)
                             .lineLimit(1)
