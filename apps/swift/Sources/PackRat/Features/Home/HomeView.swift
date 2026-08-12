@@ -50,18 +50,16 @@ struct HomeView: View {
     /// Loads only when empty: returning to Home from another tab shouldn't refetch
     /// what that tab just loaded. `AuthManager.signOut` clears the view models, so
     /// after a re-sign-in these are genuinely empty and this does fetch.
+    /// Sequential rather than `async let`: both view models are main-actor
+    /// isolated, so the two loads cannot overlap anyway, and reading `appState`
+    /// from inside an implicitly-async closure needs an extra actor hop.
     private func loadSummaryData() async {
-        async let packs: Void = {
-            if appState.packsVM.packs.isEmpty {
-                await appState.packsVM.load(context: modelContext)
-            }
-        }()
-        async let trips: Void = {
-            if appState.tripsVM.trips.isEmpty {
-                await appState.tripsVM.load(context: modelContext)
-            }
-        }()
-        _ = await (packs, trips)
+        if appState.packsVM.packs.isEmpty {
+            await appState.packsVM.load(context: modelContext)
+        }
+        if appState.tripsVM.trips.isEmpty {
+            await appState.tripsVM.load(context: modelContext)
+        }
     }
 
     private var compactBody: some View {
