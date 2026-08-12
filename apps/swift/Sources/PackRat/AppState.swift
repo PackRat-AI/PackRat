@@ -28,14 +28,10 @@ final class AppState {
     var isGlobalSearchPresented = false
 
     init() {
-        // The general assistant has no scoped pack, so give it a way to look up
-        // whichever pack the model asks about. Without this it reports every
-        // pack as missing, even ones the user can see in the Packs tab.
-        let packs = packsVM
-        chatVM = ChatViewModel(resolvePack: { [weak packs] packId in
-            guard let pack = packs?.packs.first(where: { $0.id == packId }) else { return nil }
-            return ["id": pack.id, "name": pack.name, "contents": pack.aiContextSummary]
-        })
+        // Back the assistant's pack tools with the local store, so it can find
+        // packs by name and add items to them against the same data the Packs tab
+        // shows. Without this every pack reads as missing, even ones on screen.
+        chatVM = ChatViewModel(packTools: LocalChatPackTools(packsViewModel: packsVM))
 
         if VisualSampleData.isEnabled {
             VisualSampleData.apply(to: self)

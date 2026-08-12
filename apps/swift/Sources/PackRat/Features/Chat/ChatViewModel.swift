@@ -16,21 +16,21 @@ final class ChatViewModel {
     private let service: any ChatServicing
     private var streamingTask: Task<Void, Never>?
 
-    /// Resolves a pack id the model asked about into a tool payload.
+    /// Backs the pack tools with the device's local store.
     ///
-    /// In a general chat there is no scoped pack, so `getPackDetails` used to
-    /// fail for *every* id — the model would then tell the user their pack does
-    /// not exist. This looks the requested pack up in the local store instead.
-    private let resolvePack: (@MainActor (String) -> [String: String]?)?
+    /// Optional so a chat can be constructed without pack access (previews,
+    /// tests, an item-scoped chat); those calls then report the tool as
+    /// unavailable rather than answering wrongly.
+    private let packTools: (any ChatPackToolHandling)?
 
     init(
         service: any ChatServicing = ChatService.shared,
         context: ChatContext = .general,
-        resolvePack: (@MainActor (String) -> [String: String]?)? = nil
+        packTools: (any ChatPackToolHandling)? = nil
     ) {
         self.service = service
         self.context = context
-        self.resolvePack = resolvePack
+        self.packTools = packTools
         messages.append(ChatMessage(role: .assistant, content: context.greeting))
     }
 
@@ -70,7 +70,7 @@ final class ChatViewModel {
                     try await streamTurn(history: history, placeholderId: placeholderId)
 
                     guard let pending = pendingClientToolCall(in: placeholderId) else { break }
-                    answerClientTool(pending, in: placeholderId)
+                    await answerClientTool(pending, in: placeholderId)
 
                     guard let assistant = messages.first(where: { $0.id == placeholderId }) else { break }
                     history.append(assistant)
@@ -112,9 +112,20 @@ final class ChatViewModel {
 
     /// Client-executed tools: declared server-side with no `execute`, so the
     /// model blocks until the client sends the result back.
+    ///
+    /// Every tool that touches the user's own packs is answered here rather than
+    /// on the server, so reads reflect the local store the user is looking at and
+    /// writes land in it immediately instead of only in Postgres.
     /// See `packages/api/src/utils/ai/tools.ts`.
-    private static let clientExecutedTools: Set<String> = ["getPackItemDetails", "getPackDetails"]
-    private static let maxToolRoundTrips = 3
+    private static let clientExecutedTools: Set<String> = [
+        "getPackItemDetails",
+        "getPackDetails",
+        "listUserPacks",
+        "addItemToPack",
+    ]
+    /// One extra round trip over the previous limit: resolving a pack by name and
+    /// then adding to it is legitimately two tool calls before the model speaks.
+    private static let maxToolRoundTrips = 4
 
     /// Streams one turn into the placeholder message.
     private func streamTurn(history: [ChatMessage], placeholderId: UUID) async throws {
@@ -154,35 +165,85 @@ final class ChatViewModel {
     }
 
     /// Fills in a client-executed tool's result from local data.
-    private func answerClientTool(_ invocation: ToolInvocation, in placeholderId: UUID) {
+    private func answerClientTool(_ invocation: ToolInvocation, in placeholderId: UUID) async {
         guard Self.clientExecutedTools.contains(invocation.toolName) else { return }
 
-        let notFound = invocation.toolName == "getPackDetails" ? "Pack not found" : "Item not found"
-        // Prefer the scoped context, then fall back to looking up whichever pack
-        // the model actually asked for. Ignoring the requested id is what made a
-        // general chat insist that an existing pack could not be found.
-        let payload = context.toolPayload ?? requestedPackPayload(for: invocation)
-        let output: [String: Any] = if let payload {
-            ["success": true, "data": payload]
-        } else {
-            ["success": false, "error": notFound]
+        let output: [String: Any]
+        switch invocation.toolName {
+        case "listUserPacks":
+            output = listPacksOutput(for: invocation)
+        case "addItemToPack":
+            output = await addItemOutput(for: invocation)
+        default:
+            output = packDetailsOutput(for: invocation)
         }
 
         let data = (try? JSONSerialization.data(withJSONObject: output)) ?? Data("{}".utf8)
         updateToolOutput(id: placeholderId, callId: invocation.id, data: data)
     }
 
-    /// The pack the model named in a `getPackDetails` call, resolved locally.
-    private func requestedPackPayload(for invocation: ToolInvocation) -> [String: String]? {
-        guard invocation.toolName == "getPackDetails",
-              let resolvePack,
-              let data = invocation.inputData,
-              let args = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let packId = args["packId"] as? String,
-              !packId.isEmpty
-        else { return nil }
+    private func listPacksOutput(for invocation: ToolInvocation) -> [String: Any] {
+        guard let packTools else { return Self.failure("Pack list is unavailable on this device.") }
 
-        return resolvePack(packId)
+        let summaries = packTools.listPacks(nameQuery: toolArguments(invocation)["nameQuery"] as? String)
+        // Hand back JSON rather than the Swift values so the model receives the
+        // same field names the tool's schema advertises.
+        guard let encoded = try? JSONEncoder().encode(summaries),
+              let decoded = try? JSONSerialization.jsonObject(with: encoded)
+        else { return Self.failure("Could not read the pack list.") }
+
+        return ["success": true, "data": decoded]
+    }
+
+    private func addItemOutput(for invocation: ToolInvocation) async -> [String: Any] {
+        guard let packTools else { return Self.failure("Adding items is unavailable on this device.") }
+        guard let request = ChatAddItemRequest(toolArguments: toolArguments(invocation)) else {
+            return Self.failure(ChatPackToolError.invalidArguments.localizedDescription)
+        }
+
+        do {
+            let result = try await packTools.addItem(request)
+            guard let encoded = try? JSONEncoder().encode(result),
+                  let decoded = try? JSONSerialization.jsonObject(with: encoded)
+            else { return ["success": true] }
+            return ["success": true, "data": decoded]
+        } catch {
+            return Self.failure(error.localizedDescription)
+        }
+    }
+
+    /// `getPackDetails` / `getPackItemDetails`.
+    ///
+    /// Prefers the conversation's scoped payload, then falls back to the pack the
+    /// model actually named. Ignoring the requested id is what made a general
+    /// chat insist an existing pack could not be found.
+    private func packDetailsOutput(for invocation: ToolInvocation) -> [String: Any] {
+        let requested: [String: String]? = if invocation.toolName == "getPackDetails",
+                                              let packTools,
+                                              let packId = toolArguments(invocation)["packId"] as? String,
+                                              !packId.isEmpty {
+            packTools.packDetails(id: packId)
+        } else {
+            nil
+        }
+
+        guard let payload = context.toolPayload ?? requested else {
+            return Self.failure(
+                invocation.toolName == "getPackDetails" ? "Pack not found" : "Item not found"
+            )
+        }
+        return ["success": true, "data": payload]
+    }
+
+    private func toolArguments(_ invocation: ToolInvocation) -> [String: Any] {
+        guard let data = invocation.inputData,
+              let args = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return [:] }
+        return args
+    }
+
+    private static func failure(_ message: String) -> [String: Any] {
+        ["success": false, "error": message]
     }
 
     /// Drops tool invocations from the live placeholder once they've been folded

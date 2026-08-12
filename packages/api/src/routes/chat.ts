@@ -118,8 +118,16 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       - Use tools proactively to provide accurate, up-to-date information
       - When the user refers to one of their packs by name (for example "my Japan Trip
         pack"), call listUserPacks to resolve that name to a pack id first, then pass that id
-        to getPackDetails. Never tell the user a pack does not exist without checking
-        listUserPacks.
+        to getPackDetails or addItemToPack. Never invent or guess a pack id, and never tell
+        the user a pack does not exist without checking listUserPacks.
+      - When asked to add gear to a pack, look the item up in the catalog first
+        (getCatalogItems or catalogVectorSearch) so you can pass a real weight, weightUnit
+        and category to addItemToPack — a pack's weight totals are the point of the app, and
+        an item added without a weight silently degrades them. If you genuinely cannot find a
+        weight, add the item without one and say so.
+      - After addItemToPack succeeds, confirm what you added in one short sentence, including
+        the quantity and which pack. If it fails, say what went wrong instead of implying the
+        item was added.
 
       Schema Info for SQL Tool:
       ${schemaInfo}
