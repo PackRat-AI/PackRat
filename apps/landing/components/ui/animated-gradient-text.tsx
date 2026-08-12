@@ -15,7 +15,7 @@ interface AnimatedGradientTextProps {
 export default function AnimatedGradientText({
   children,
   className,
-  colors = ['#0F766E', '#14B8A6', '#F97316', '#FB923C'],
+  colors = ['#0070E9', '#007BFE', '#0385FF', '#3B82F6'],
   duration = 8,
   animate = true,
 }: AnimatedGradientTextProps) {
