@@ -16,9 +16,21 @@ final class ChatViewModel {
     private let service: any ChatServicing
     private var streamingTask: Task<Void, Never>?
 
-    init(service: any ChatServicing = ChatService.shared, context: ChatContext = .general) {
+    /// Resolves a pack id the model asked about into a tool payload.
+    ///
+    /// In a general chat there is no scoped pack, so `getPackDetails` used to
+    /// fail for *every* id — the model would then tell the user their pack does
+    /// not exist. This looks the requested pack up in the local store instead.
+    private let resolvePack: (@MainActor (String) -> [String: String]?)?
+
+    init(
+        service: any ChatServicing = ChatService.shared,
+        context: ChatContext = .general,
+        resolvePack: (@MainActor (String) -> [String: String]?)? = nil
+    ) {
         self.service = service
         self.context = context
+        self.resolvePack = resolvePack
         messages.append(ChatMessage(role: .assistant, content: context.greeting))
     }
 
@@ -146,7 +158,11 @@ final class ChatViewModel {
         guard Self.clientExecutedTools.contains(invocation.toolName) else { return }
 
         let notFound = invocation.toolName == "getPackDetails" ? "Pack not found" : "Item not found"
-        let output: [String: Any] = if let payload = context.toolPayload {
+        // Prefer the scoped context, then fall back to looking up whichever pack
+        // the model actually asked for. Ignoring the requested id is what made a
+        // general chat insist that an existing pack could not be found.
+        let payload = context.toolPayload ?? requestedPackPayload(for: invocation)
+        let output: [String: Any] = if let payload {
             ["success": true, "data": payload]
         } else {
             ["success": false, "error": notFound]
@@ -154,6 +170,19 @@ final class ChatViewModel {
 
         let data = (try? JSONSerialization.data(withJSONObject: output)) ?? Data("{}".utf8)
         updateToolOutput(id: placeholderId, callId: invocation.id, data: data)
+    }
+
+    /// The pack the model named in a `getPackDetails` call, resolved locally.
+    private func requestedPackPayload(for invocation: ToolInvocation) -> [String: String]? {
+        guard invocation.toolName == "getPackDetails",
+              let resolvePack,
+              let data = invocation.inputData,
+              let args = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let packId = args["packId"] as? String,
+              !packId.isEmpty
+        else { return nil }
+
+        return resolvePack(packId)
     }
 
     /// Drops tool invocations from the live placeholder once they've been folded
