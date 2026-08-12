@@ -111,10 +111,34 @@ final class TripsViewModel {
         defer { isLoading = false }
         do {
             let more = try await service.listTrips(page: nextPage, limit: pageSize)
-            trips.append(contentsOf: more)
+            // Dedupe by id: `load()` can reassign `trips` while this page is in
+            // flight, and appending blindly then showed the same trip twice —
+            // duplicate ids also collide in `ForEach` identity, so the duplicates
+            // were visible rather than harmless.
+            let known = Set(trips.map(\.id))
+            trips.append(contentsOf: more.filter { !known.contains($0.id) })
             currentPage = nextPage
             hasMore = more.count == pageSize
         } catch { }
+    }
+
+    /// Clears every trace of the signed-in user's trips, including the on-disk
+    /// cache. Without this, signing in as a different user briefly showed the
+    /// previous user's trips from SwiftData, and a re-sign-in as the same user
+    /// kept stale pagination state.
+    func reset(context: ModelContext? = nil) {
+        trips = []
+        isLoading = false
+        isCacheLoaded = false
+        error = nil
+        searchText = ""
+        currentPage = 1
+        hasMore = true
+
+        if let context {
+            try? context.delete(model: CachedTrip.self)
+            try? context.save()
+        }
     }
 
     private func writeCacheTrips(_ freshTrips: [Trip], context: ModelContext) {
