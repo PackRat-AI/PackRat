@@ -8,14 +8,24 @@
  *   --side-by-side  separate Swift beta listing (`com.andrewbierman.packrat.swift`,
  *                   display name `PackRat Swift`) for parallel beta installs.
  *
- * Auth uses an Apple ID + app-specific password (no App Store Connect API key
- * required). Generate a password at appleid.apple.com -> Sign-In & Security ->
- * App-Specific Passwords.
+ * Auth accepts either an App Store Connect API key or an Apple ID +
+ * app-specific password (appleid.apple.com -> Sign-In & Security ->
+ * App-Specific Passwords). See the env block below.
  *
  * Required env (put in apps/swift/.env.local, gitignored):
+ *   APPLE_TEAM_ID            Apple Developer Team ID used for signing
+ *
+ * Then EITHER an App Store Connect API key (preferred — no Apple ID password,
+ * no interactive account required):
+ *   APPLE_ASC_API_KEY_ID     ASC API key id, e.g. 8WXNXX6SWS
+ *   APPLE_ASC_API_ISSUER_ID  issuer UUID for that key (differs per team)
+ * altool only finds the matching `AuthKey_<id>.p8` in one of these dirs:
+ *   ./private_keys, ~/private_keys, ~/.private_keys,
+ *   ~/.appstoreconnect/private_keys
+ *
+ * OR an Apple ID + app-specific password:
  *   APPLE_ID                 your Apple ID email
  *   APPLE_APP_PASSWORD       app-specific password (xxxx-xxxx-xxxx-xxxx)
- *   APPLE_TEAM_ID            Apple Developer Team ID used for signing
  *
  * Optional env:
  *   APPLE_ASC_PROVIDER       App Store Connect provider short name for altool;
@@ -129,7 +139,14 @@ function printPreflight(input: {
 }
 
 if (uploadConfig.dryRun) {
-  printPreflight({ config: uploadConfig, ascProvider: nodeEnv.APPLE_ASC_PROVIDER });
+  // Pass the resolved team id so the dry run shows the real archive overrides.
+  // Without it the preflight always printed `DEVELOPMENT_TEAM=<APPLE_TEAM_ID>`,
+  // which hides exactly the misconfiguration a dry run exists to catch.
+  printPreflight({
+    config: uploadConfig,
+    teamId: nodeEnv.APPLE_TEAM_ID,
+    ascProvider: nodeEnv.APPLE_ASC_PROVIDER ?? nodeEnv.APPLE_TEAM_ID,
+  });
   process.exit(0);
 }
 
@@ -160,8 +177,18 @@ if (uploadConfig.lane === 'replacement') {
 }
 
 const teamId = req({ name: 'APPLE_TEAM_ID' });
-const appleId = VERIFY_ARCHIVE_ONLY ? undefined : req({ name: 'APPLE_ID' });
-const appPassword = VERIFY_ARCHIVE_ONLY ? undefined : req({ name: 'APPLE_APP_PASSWORD' });
+
+// Two auth paths. An App Store Connect API key is preferred — it needs no Apple
+// ID password and no interactive account in Xcode. `altool` only finds the `.p8`
+// in fixed directories, so the key must be in one of: ./private_keys,
+// ~/private_keys, ~/.private_keys, ~/.appstoreconnect/private_keys.
+const ascApiKeyId = nodeEnv.APPLE_ASC_API_KEY_ID;
+const ascApiIssuer = nodeEnv.APPLE_ASC_API_ISSUER_ID;
+const usesApiKey = Boolean(ascApiKeyId && ascApiIssuer);
+
+const appleId = VERIFY_ARCHIVE_ONLY || usesApiKey ? undefined : req({ name: 'APPLE_ID' });
+const appPassword =
+  VERIFY_ARCHIVE_ONLY || usesApiKey ? undefined : req({ name: 'APPLE_APP_PASSWORD' });
 const ascProvider = nodeEnv.APPLE_ASC_PROVIDER ?? teamId;
 printPreflight({ config: uploadConfig, teamId, ascProvider });
 
@@ -270,12 +297,18 @@ run({
     'ios',
     '--file',
     ipa,
-    '--username',
-    appleId ?? '',
-    '--password',
-    appPassword ?? '',
-    '--asc-provider',
-    ascProvider,
+    // `--apiKey`/`--apiIssuer` and `--username`/`--password` are mutually
+    // exclusive; altool rejects a mix of the two.
+    ...(usesApiKey
+      ? ['--apiKey', ascApiKeyId ?? '', '--apiIssuer', ascApiIssuer ?? '']
+      : [
+          '--username',
+          appleId ?? '',
+          '--password',
+          appPassword ?? '',
+          '--asc-provider',
+          ascProvider,
+        ]),
   ],
 });
 

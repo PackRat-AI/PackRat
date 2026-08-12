@@ -122,7 +122,12 @@ export const nodeEnvSchema = z.object({
   APPLE_APP_PASSWORD: z.string().min(1).optional(),
   APPLE_TEAM_ID: z.string().min(1).optional(),
   APPLE_ASC_PROVIDER: z.string().min(1).optional(),
+  // App Store Connect API key auth, as an alternative to APPLE_ID +
+  // APPLE_APP_PASSWORD (apps/swift/scripts/upload-testflight.ts).
+  APPLE_ASC_API_KEY_ID: z.string().min(1).optional(),
+  APPLE_ASC_API_ISSUER_ID: z.string().uuid().optional(),
   BUILD_NUMBER: z.string().regex(/^\d+$/).optional(),
+  MARKETING_VERSION: z.string().min(1).optional(),
   APP_STORE_CURRENT_BUILD_NUMBER: z.string().regex(/^\d+$/).optional(),
 });
 
@@ -207,6 +212,9 @@ export const nodeEnv = nodeEnvSchema.parse({
   APPLE_APP_PASSWORD: process.env.APPLE_APP_PASSWORD,
   APPLE_TEAM_ID: process.env.APPLE_TEAM_ID,
   APPLE_ASC_PROVIDER: process.env.APPLE_ASC_PROVIDER,
+  APPLE_ASC_API_KEY_ID: process.env.APPLE_ASC_API_KEY_ID,
+  APPLE_ASC_API_ISSUER_ID: process.env.APPLE_ASC_API_ISSUER_ID,
   BUILD_NUMBER: process.env.BUILD_NUMBER,
+  MARKETING_VERSION: process.env.MARKETING_VERSION,
   APP_STORE_CURRENT_BUILD_NUMBER: process.env.APP_STORE_CURRENT_BUILD_NUMBER,
 });
