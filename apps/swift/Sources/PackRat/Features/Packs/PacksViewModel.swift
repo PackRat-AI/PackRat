@@ -53,6 +53,10 @@ final class PacksViewModel {
             // Clear rows from the retired `local-` id scheme before reading the cache,
             // so they never reach the UI or the outbox.
             LegacyLocalIDMigration.runIfNeeded(context: context)
+            // Import packs the Expo build kept only on device — guest-mode content and
+            // writes that never synced — before the cache read, so they show up on this
+            // first launch rather than after a restart.
+            ExpoLocalDataMigration.runIfNeeded(context: context, outbox: outbox)
             let cached = (try? context.fetch(FetchDescriptor<CachedPack>(
                 sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]
             ))) ?? []
