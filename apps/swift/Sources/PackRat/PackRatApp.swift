@@ -7,6 +7,7 @@ import AppKit
 @main
 struct PackRatApp: App {
     @State private var authManager = AuthManager()
+    @AppStorage("appearanceMode") private var appearanceMode: AppPreferences.AppearanceMode = .system
     #if os(macOS)
     @NSApplicationDelegateAdaptor(PackRatMacAppDelegate.self) private var appDelegate
     #endif
@@ -30,6 +31,7 @@ struct PackRatApp: App {
                 .environment(authManager)
                 .flushesPendingWrites()
                 .providesWeightUnitPreference()
+                .preferredColorScheme(appearanceMode.colorScheme)
         }
         .modelContainer(PersistenceController.shared.container)
         #if os(macOS)
@@ -57,6 +59,7 @@ struct PackRatApp: App {
                     .environment(authManager)
                     .flushesPendingWrites()
                     .providesWeightUnitPreference()
+                    .preferredColorScheme(appearanceMode.colorScheme)
             }
         }
         .modelContainer(PersistenceController.shared.container)
@@ -68,6 +71,7 @@ struct PackRatApp: App {
                     .environment(authManager)
                     .flushesPendingWrites()
                     .providesWeightUnitPreference()
+                    .preferredColorScheme(appearanceMode.colorScheme)
             }
         }
         .modelContainer(PersistenceController.shared.container)

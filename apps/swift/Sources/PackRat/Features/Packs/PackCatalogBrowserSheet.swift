@@ -185,6 +185,11 @@ struct PackCatalogBrowserSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = PackCatalogBrowserViewModel()
+    /// Bound explicitly (rather than read from `\.isSearchPresented`) so the
+    /// bottom selection bar's Add button can be gated on it: that button only
+    /// makes sense while searching, since the toolbar's own Add button is
+    /// what's visible the rest of the time — showing both would be redundant.
+    @State private var isSearchPresented = false
 
     var body: some View {
         NavigationStack {
@@ -194,11 +199,12 @@ struct PackCatalogBrowserSheet: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .searchable(
                     text: $viewModel.searchText,
+                    isPresented: $isSearchPresented,
                     placement: .navigationBarDrawer(displayMode: .always),
                     prompt: "Search tents, packs, sleeping bags…"
                 )
                 #else
-                .searchable(text: $viewModel.searchText, prompt: "Search gear…")
+                .searchable(text: $viewModel.searchText, isPresented: $isSearchPresented, prompt: "Search gear…")
                 #endif
                 .onChange(of: viewModel.searchText) { viewModel.onSearchTextChanged() }
                 .toolbar {
@@ -206,13 +212,18 @@ struct PackCatalogBrowserSheet: View {
                         Button("Cancel") { dismiss() }
                             .accessibilityIdentifier("pack_catalog_cancel")
                     }
-                    ToolbarItem(placement: .primaryAction) {
-                        addButton
+                    // Hidden while searching — the bottom selection bar takes
+                    // over the Add action there instead (see `safeAreaInset`
+                    // below), so the two controls never double up.
+                    if !isSearchPresented {
+                        ToolbarItem(placement: .primaryAction) {
+                            addButton
+                        }
                     }
                 }
                 .task { await viewModel.loadInitialIfNeeded() }
                 .safeAreaInset(edge: .bottom) {
-                    if viewModel.selectedCount > 0 {
+                    if isSearchPresented && viewModel.selectedCount > 0 {
                         selectionBar
                     }
                 }

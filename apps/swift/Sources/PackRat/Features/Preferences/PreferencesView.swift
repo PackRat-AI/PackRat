@@ -12,12 +12,46 @@ final class AppPreferences: ObservableObject {
     @AppStorage("speedUnit") var speedUnit: SpeedUnit = .mph
     @AppStorage("accentColorName") var accentColorName: String = "blue"
     @AppStorage("apiBaseURL") var apiBaseURL: String = ""
+    @AppStorage("appearanceMode") var appearanceMode: AppearanceMode = .system
 
     enum TemperatureUnit: String, CaseIterable {
         case fahrenheit = "°F"
         case celsius = "°C"
 
         var label: String { rawValue }
+    }
+
+    /// Drives `.preferredColorScheme` at the app root. `.system` passes `nil`
+    /// through so the app just follows the OS setting, same as if this
+    /// preference didn't exist.
+    enum AppearanceMode: String, CaseIterable {
+        case system
+        case light
+        case dark
+
+        var label: String {
+            switch self {
+            case .system: return "System"
+            case .light: return "Light"
+            case .dark: return "Dark"
+            }
+        }
+
+        var systemImage: String {
+            switch self {
+            case .system: return "circle.lefthalf.filled"
+            case .light: return "sun.max"
+            case .dark: return "moon"
+            }
+        }
+
+        var colorScheme: ColorScheme? {
+            switch self {
+            case .system: return nil
+            case .light: return .light
+            case .dark: return .dark
+            }
+        }
     }
 }
 
@@ -30,6 +64,7 @@ struct PreferencesView: View {
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
     @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
     @AppStorage("apiBaseURL") private var apiBaseURL: String = ""
+    @AppStorage("appearanceMode") private var appearanceMode: AppPreferences.AppearanceMode = .system
 
     @State private var showingClearDataConfirm = false
     @Environment(\.openURL) private var openURL
@@ -109,6 +144,16 @@ struct PreferencesView: View {
 
     @ViewBuilder
     private var generalSection: some View {
+        Section("Appearance") {
+            Picker("Appearance", selection: $appearanceMode) {
+                ForEach(AppPreferences.AppearanceMode.allCases, id: \.self) { mode in
+                    Text(mode.label).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("settings_appearance_picker")
+        }
+
         Section("Temperature") {
             Picker("Display temperature in", selection: $temperatureUnit) {
                 ForEach(AppPreferences.TemperatureUnit.allCases, id: \.self) { unit in
@@ -270,6 +315,7 @@ struct PreferencesView: View {
         temperatureUnit = .fahrenheit
         speedUnit = .mph
         apiBaseURL = ""
+        appearanceMode = .system
     }
 }
 
