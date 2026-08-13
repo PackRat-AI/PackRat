@@ -22,8 +22,21 @@ private let logger = Logger(subsystem: "com.packrat.app", category: "migration")
 ///
 /// Both live in Expo's `expo-sqlite/kv-store` database at
 /// `<Documents>/SQLite/ExpoSQLiteStorage`, table `storage (key TEXT PRIMARY KEY, value TEXT)`,
-/// under the keys Legend-State derives from each store's `persist.name` — `packs` and
-/// `packItems`. Each value is a JSON object keyed by entity id.
+/// under the keys Legend-State derives from each store's `persist.name` (see `StoreKey`).
+/// Each value is a JSON object keyed by entity id.
+///
+/// Covers every store Expo persists through that plugin:
+///
+/// | Store | Destination |
+/// |---|---|
+/// | `packs`, `packItems` | SwiftData cache + outbox |
+/// | `trips` | SwiftData cache + outbox |
+/// | `packTemplates`, `packTemplateItems` | outbox (no local cache exists) |
+/// | `trail_condition_reports` | outbox (no local cache exists) |
+/// | `packingMode` | `UserDefaults` — never had a server copy |
+/// | `userPreferences` | `UserDefaults` weight unit |
+/// | `packWeigthHistory` | *skipped* — server-derived, no create endpoint |
+/// | `user` | *skipped* — re-fetched from the session `KeychainService` migrates |
 ///
 /// Imported rows are written to the SwiftData cache *and* enqueued on the outbox as
 /// creates, which is what actually rescues them: `OutboxService` replays creates in
@@ -40,9 +53,23 @@ private let logger = Logger(subsystem: "com.packrat.app", category: "migration")
 enum ExpoLocalDataMigration {
     private static let defaultsKey = "expoLocalDataMigrationCompleted"
 
-    /// Legend-State stores each observable under its `persist.name`.
-    private static let packsKey = "packs"
-    private static let packItemsKey = "packItems"
+    /// Legend-State stores each observable under its `persist.name`. These are the
+    /// literal names from `apps/expo/features/**/store/*.ts` — including the misspelled
+    /// `packWeigthHistory`, which has to match the key Expo actually wrote.
+    private enum StoreKey {
+        static let packs = "packs"
+        static let packItems = "packItems"
+        static let trips = "trips"
+        static let packTemplates = "packTemplates"
+        static let packTemplateItems = "packTemplateItems"
+        static let trailConditionReports = "trail_condition_reports"
+        static let packingMode = "packingMode"
+        static let preferences = "userPreferences"
+        /// `apps/expo/features/packs/store/packWeightHistory.ts` persists under this
+        /// misspelling. Not a typo here — correcting it would read a key that never
+        /// existed on disk.
+        static let packWeightHistory = "packWeigthHistory"
+    }
 
     /// Imports Expo's local packs and pack items, at most once per install.
     ///
@@ -89,49 +116,327 @@ enum ExpoLocalDataMigration {
             return nil
         }
 
-        let packs = decodeRecords(from: rows[packsKey])
-        let items = decodeRecords(from: rows[packItemsKey])
+        var imported = 0
+        imported += importPacks(rows: rows, context: context, outbox: outbox)
+        imported += importTrips(rows: rows, context: context, outbox: outbox)
+        imported += importTemplates(rows: rows, outbox: outbox, context: context)
+        imported += importTrailConditionReports(rows: rows, outbox: outbox, context: context)
 
-        guard !packs.isEmpty || !items.isEmpty else { return 0 }
+        // Local-only state: no server copy exists for either, so for *every* user — not
+        // just guests — this is the only chance to carry it across.
+        importPackingMode(rows: rows)
+        importPreferences(rows: rows)
+
+        // `packWeigthHistory` is deliberately not imported. It is a derived log the
+        // server recomputes from pack contents, there is no create endpoint for it, and
+        // the Swift app reads history from the API. Importing would mean inventing rows
+        // the server would immediately contradict.
+
+        if imported > 0 {
+            do {
+                try context.save()
+            } catch {
+                logger.error("Failed to save imported Expo data: \(error.localizedDescription, privacy: .public)")
+                return nil
+            }
+            logger.info("Imported \(imported, privacy: .public) record(s) from the Expo install")
+        }
+
+        return imported
+    }
+
+    // MARK: - Packs
+
+    private static func importPacks(
+        rows: [String: String],
+        context: ModelContext,
+        outbox: OutboxService?
+    ) -> Int {
+        let packs = decodeRecords(from: rows[StoreKey.packs])
+        let items = decodeRecords(from: rows[StoreKey.packItems])
+        guard !packs.isEmpty else { return 0 }
 
         // Ids already present in the Swift store came from the server on an earlier
         // launch of this build; the server copy wins and re-importing would enqueue a
         // duplicate create.
-        let existingPackIDs = Set(
-            (try? context.fetch(FetchDescriptor<CachedPack>()))?.map(\.id) ?? []
-        )
+        let existing = Set((try? context.fetch(FetchDescriptor<CachedPack>()))?.map(\.id) ?? [])
 
         var imported = 0
         for record in packs {
-            guard let id = record["id"] as? String, !id.isEmpty else { continue }
-            // Expo tombstones rather than deleting; a tombstoned pack is not content.
-            guard record["deleted"] as? Bool != true else { continue }
-            guard !existingPackIDs.contains(id) else { continue }
-            guard !LegacyLocalIDMigration.isLegacy(id) else { continue }
-            guard let name = record["name"] as? String, !name.isEmpty else { continue }
+            guard let id = importableID(record, existing: existing),
+                  let name = nonEmpty(record["name"])
+            else { continue }
 
             let itemsForPack = items.filter { item in
                 item["packId"] as? String == id
                     && item["deleted"] as? Bool != true
-                    && (item["name"] as? String)?.isEmpty == false
+                    && nonEmpty(item["name"]) != nil
             }
 
             insertPack(record, named: name, id: id, items: itemsForPack, context: context)
             enqueuePack(record, named: name, id: id, items: itemsForPack, outbox: outbox, context: context)
             imported += 1
         }
-
-        if imported > 0 {
-            do {
-                try context.save()
-            } catch {
-                logger.error("Failed to save imported Expo packs: \(error.localizedDescription, privacy: .public)")
-                return nil
-            }
-            logger.info("Imported \(imported, privacy: .public) pack(s) from the Expo install")
-        }
-
         return imported
+    }
+
+    // MARK: - Trips
+
+    private static func importTrips(
+        rows: [String: String],
+        context: ModelContext,
+        outbox: OutboxService?
+    ) -> Int {
+        let trips = decodeRecords(from: rows[StoreKey.trips])
+        guard !trips.isEmpty else { return 0 }
+
+        let existing = Set((try? context.fetch(FetchDescriptor<CachedTrip>()))?.map(\.id) ?? [])
+
+        var imported = 0
+        for record in trips {
+            guard let id = importableID(record, existing: existing),
+                  let name = nonEmpty(record["name"])
+            else { continue }
+
+            // Expo nests location as `{ latitude, longitude, name }`; the Swift payload
+            // carries it flattened.
+            let location = record["location"] as? [String: Any]
+            let latitude = numeric(location?["latitude"])
+            let longitude = numeric(location?["longitude"])
+
+            let trip = Trip(
+                id: id,
+                name: name,
+                description: record["description"] as? String,
+                notes: record["notes"] as? String,
+                location: {
+                    guard let latitude, let longitude else { return nil }
+                    return TripLocation(
+                        latitude: latitude,
+                        longitude: longitude,
+                        name: location?["name"] as? String
+                    )
+                }(),
+                startDate: record["startDate"] as? String,
+                endDate: record["endDate"] as? String,
+                userId: nil,
+                packId: record["packId"] as? String,
+                deleted: false,
+                createdAt: record["localCreatedAt"] as? String ?? record["createdAt"] as? String,
+                updatedAt: record["localUpdatedAt"] as? String ?? record["updatedAt"] as? String
+            )
+            context.insert(CachedTrip(from: trip))
+
+            let payload = TripMutationPayload(
+                name: name,
+                description: record["description"] as? String,
+                startDate: record["startDate"] as? String,
+                endDate: record["endDate"] as? String,
+                latitude: latitude,
+                longitude: longitude,
+                locationName: location?["name"] as? String,
+                notes: record["notes"] as? String,
+                packId: record["packId"] as? String
+            )
+            enqueue(.trip, id: id, payload: payload, outbox: outbox, context: context)
+            imported += 1
+        }
+        return imported
+    }
+
+    // MARK: - Pack templates
+
+    /// Templates and their items have no SwiftData cache — the app reads them from the
+    /// API — so these are queued for upload only. Without that, a guest's own templates
+    /// are gone.
+    private static func importTemplates(
+        rows: [String: String],
+        outbox: OutboxService?,
+        context: ModelContext
+    ) -> Int {
+        let templates = decodeRecords(from: rows[StoreKey.packTemplates])
+        let items = decodeRecords(from: rows[StoreKey.packTemplateItems])
+        guard !templates.isEmpty else { return 0 }
+
+        var imported = 0
+        for record in templates {
+            guard let id = importableID(record, existing: []),
+                  let name = nonEmpty(record["name"])
+            else { continue }
+            // App-provided templates belong to the server's catalogue, not the user.
+            guard record["isAppTemplate"] as? Bool != true else { continue }
+
+            let payload = PackTemplateMutationPayload(
+                name: name,
+                description: record["description"] as? String,
+                category: record["category"] as? String ?? "custom",
+                image: record["image"] as? String,
+                tags: record["tags"] as? [String]
+            )
+            enqueue(.packTemplate, id: id, payload: payload, outbox: outbox, context: context)
+            imported += 1
+
+            for item in items where item["packTemplateId"] as? String == id {
+                guard item["deleted"] as? Bool != true,
+                      let itemId = importableID(item, existing: []),
+                      let itemName = nonEmpty(item["name"])
+                else { continue }
+
+                let itemPayload = PackTemplateItemMutationPayload(
+                    name: itemName,
+                    description: item["description"] as? String,
+                    weight: numeric(item["weight"]),
+                    weightUnit: item["weightUnit"] as? String,
+                    quantity: numeric(item["quantity"]).map { Int($0) } ?? 1,
+                    category: item["category"] as? String,
+                    consumable: item["consumable"] as? Bool ?? false,
+                    worn: item["worn"] as? Bool ?? false,
+                    notes: item["notes"] as? String,
+                    image: item["image"] as? String
+                )
+                enqueue(
+                    .packTemplateItem, id: itemId, payload: itemPayload,
+                    parentId: id, outbox: outbox, context: context
+                )
+                imported += 1
+            }
+        }
+        return imported
+    }
+
+    // MARK: - Trail condition reports
+
+    private static func importTrailConditionReports(
+        rows: [String: String],
+        outbox: OutboxService?,
+        context: ModelContext
+    ) -> Int {
+        let reports = decodeRecords(from: rows[StoreKey.trailConditionReports])
+        guard !reports.isEmpty else { return 0 }
+
+        var imported = 0
+        for record in reports {
+            guard let id = importableID(record, existing: []),
+                  let trailName = nonEmpty(record["trailName"]),
+                  let condition = nonEmpty(record["overallCondition"])
+            else { continue }
+
+            let payload = TrailConditionReportMutationPayload(
+                trailName: trailName,
+                trailRegion: record["trailRegion"] as? String,
+                surface: record["surface"] as? String,
+                overallCondition: condition,
+                hazards: record["hazards"] as? [String],
+                waterCrossings: record["waterCrossings"] as? Bool,
+                waterCrossingDifficulty: record["waterCrossingDifficulty"] as? String,
+                notes: record["notes"] as? String,
+                photos: record["photos"] as? [String],
+                tripId: record["tripId"] as? String
+            )
+            enqueue(.trailConditionReport, id: id, payload: payload, outbox: outbox, context: context)
+            imported += 1
+        }
+        return imported
+    }
+
+    // MARK: - Local-only state
+
+    /// Carries over which items are checked off as packed.
+    ///
+    /// `pack_items` has no `isPacked` column and no endpoint exists, so this state has
+    /// never left the device for anyone. Both apps use the same
+    /// `[packId: [itemId: Bool]]` shape under the same `packingMode` key —
+    /// Expo in its SQLite store, Swift in `UserDefaults` — so this is a straight copy.
+    /// Existing Swift state wins so a re-run can't clobber packing done since.
+    private static func importPackingMode(rows: [String: String], defaults: UserDefaults = .standard) {
+        guard defaults.object(forKey: "packingMode") == nil,
+              let json = rows[StoreKey.packingMode],
+              let data = json.data(using: .utf8),
+              let raw = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return }
+
+        // Keep only `true` entries, matching PackingModeStore's on-disk contract.
+        var state: [String: [String: Bool]] = [:]
+        for (packId, value) in raw {
+            guard let items = value as? [String: Any] else { continue }
+            let packed = items.compactMapValues { $0 as? Bool }.filter { $0.value }
+            if !packed.isEmpty { state[packId] = packed }
+        }
+        guard !state.isEmpty else { return }
+
+        defaults.set(state, forKey: "packingMode")
+        logger.info("Imported packed state for \(state.count, privacy: .public) pack(s)")
+    }
+
+    /// Carries the weight unit across.
+    ///
+    /// Expo's preferences store is server-backed, so a signed-in user's preference
+    /// returns on first fetch — but a guest's never synced, and the Swift app reads the
+    /// unit from `@AppStorage(AppWeightUnit.storageKey)`, which a fresh install defaults
+    /// to grams. Only set when the user hasn't already chosen one in this build.
+    ///
+    /// Expo persists `'kg' | 'lb'`; `AppWeightUnit` is the Swift-side display setting.
+    /// Temperature and speed units are skipped: the Swift app has no equivalent setting
+    /// to write them into, so there is nothing to carry them to.
+    private static func importPreferences(rows: [String: String], defaults: UserDefaults = .standard) {
+        guard defaults.object(forKey: AppWeightUnit.storageKey) == nil,
+              let json = rows[StoreKey.preferences],
+              let data = json.data(using: .utf8),
+              let prefs = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let unit = prefs["weightUnit"] as? String
+        else { return }
+
+        switch unit {
+        case "kg": defaults.set(AppWeightUnit.kg.rawValue, forKey: AppWeightUnit.storageKey)
+        case "lb": defaults.set(AppWeightUnit.lb.rawValue, forKey: AppWeightUnit.storageKey)
+        default: return
+        }
+        logger.info("Imported weight unit preference '\(unit, privacy: .public)'")
+    }
+
+    // MARK: - Shared helpers
+
+    /// An id worth importing: present, not tombstoned, not from the retired `local-`
+    /// scheme, and not already known to this install.
+    private static func importableID(_ record: [String: Any], existing: Set<String>) -> String? {
+        guard let id = record["id"] as? String, !id.isEmpty,
+              record["deleted"] as? Bool != true,
+              !LegacyLocalIDMigration.isLegacy(id),
+              !existing.contains(id)
+        else { return nil }
+        return id
+    }
+
+    private static func nonEmpty(_ value: Any?) -> String? {
+        guard let string = value as? String, !string.isEmpty else { return nil }
+        return string
+    }
+
+    /// Encodes and queues a create, logging rather than throwing if encoding fails —
+    /// one bad record must not abort the rest of the import.
+    private static func enqueue<Payload: Encodable>(
+        _ entityType: OutboxEntityType,
+        id: String,
+        payload: Payload,
+        parentId: String? = nil,
+        outbox: OutboxService?,
+        context: ModelContext
+    ) {
+        guard let outbox else { return }
+        guard let encoded = try? JSONEncoder().encode(payload) else {
+            logger.error(
+                "Failed to encode imported \(entityType.rawValue, privacy: .public) \(id, privacy: .public); skipping upload"
+            )
+            return
+        }
+        outbox.enqueue(
+            entityType: entityType,
+            entityId: id,
+            operation: .create,
+            parentId: parentId,
+            payload: encoded,
+            context: context
+        )
     }
 
     // MARK: - SwiftData cache
@@ -241,52 +546,41 @@ enum ExpoLocalDataMigration {
         outbox: OutboxService?,
         context: ModelContext
     ) {
-        guard let outbox else { return }
-
-        let packPayload = PackMutationPayload(
-            name: name,
-            description: record["description"] as? String,
-            category: record["category"] as? String,
-            isPublic: record["isPublic"] as? Bool ?? false
-        )
-        guard let encodedPack = try? JSONEncoder().encode(packPayload) else {
-            logger.error("Failed to encode imported pack \(id, privacy: .public); skipping upload")
-            return
-        }
-
-        outbox.enqueue(
-            entityType: .pack,
-            entityId: id,
-            operation: .create,
-            payload: encodedPack,
+        enqueue(
+            .pack,
+            id: id,
+            payload: PackMutationPayload(
+                name: name,
+                description: record["description"] as? String,
+                category: record["category"] as? String,
+                isPublic: record["isPublic"] as? Bool ?? false
+            ),
+            outbox: outbox,
             context: context
         )
 
         for item in items {
             guard let itemId = item["id"] as? String, !itemId.isEmpty,
-                  let itemName = item["name"] as? String, !itemName.isEmpty
+                  let itemName = nonEmpty(item["name"])
             else { continue }
 
-            let payload = PackItemMutationPayload(
-                name: itemName,
-                weight: numeric(item["weight"]),
-                weightUnit: item["weightUnit"] as? String,
-                quantity: numeric(item["quantity"]).map(Int.init),
-                category: item["category"] as? String,
-                consumable: item["consumable"] as? Bool ?? false,
-                worn: item["worn"] as? Bool ?? false,
-                notes: item["notes"] as? String,
-                catalogItemId: numeric(item["catalogItemId"]).map(Int.init),
-                image: item["image"] as? String
-            )
-            guard let encoded = try? JSONEncoder().encode(payload) else { continue }
-
-            outbox.enqueue(
-                entityType: .packItem,
-                entityId: itemId,
-                operation: .create,
+            enqueue(
+                .packItem,
+                id: itemId,
+                payload: PackItemMutationPayload(
+                    name: itemName,
+                    weight: numeric(item["weight"]),
+                    weightUnit: item["weightUnit"] as? String,
+                    quantity: numeric(item["quantity"]).map { Int($0) },
+                    category: item["category"] as? String,
+                    consumable: item["consumable"] as? Bool ?? false,
+                    worn: item["worn"] as? Bool ?? false,
+                    notes: item["notes"] as? String,
+                    catalogItemId: numeric(item["catalogItemId"]).map { Int($0) },
+                    image: item["image"] as? String
+                ),
                 parentId: id,
-                payload: encoded,
+                outbox: outbox,
                 context: context
             )
         }

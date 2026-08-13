@@ -6,6 +6,14 @@ enum OutboxEntityType: String, Codable, Sendable {
     case pack
     case packItem
     case trip
+    /// User-authored pack templates. Only ever enqueued by `ExpoLocalDataMigration`
+    /// today — the Swift UI creates templates online through `PackTemplateService` —
+    /// but the outbox is the only path that can upload content rescued from the Expo
+    /// install, including a guest's templates that never reached the server.
+    case packTemplate
+    case packTemplateItem
+    /// Trail condition reports authored on device. Same rationale as `packTemplate`.
+    case trailConditionReport
 }
 
 /// The write being replayed. `create` and `update` carry a payload; `delete` does not.
@@ -129,6 +137,111 @@ struct PackItemMutationPayload: Codable, Sendable {
         self.notes = notes
         self.catalogItemId = catalogItemId
         self.image = image
+    }
+}
+
+/// Field set for a queued pack-template create/update.
+///
+/// `isAppTemplate` is carried but defaults to false: templates rescued from an Expo
+/// install are the user's own, and marking one as an app template would publish it.
+struct PackTemplateMutationPayload: Codable, Sendable {
+    var name: String
+    var description: String?
+    var category: String
+    var image: String?
+    var tags: [String]?
+    var isAppTemplate: Bool
+
+    init(
+        name: String,
+        description: String? = nil,
+        category: String,
+        image: String? = nil,
+        tags: [String]? = nil,
+        isAppTemplate: Bool = false
+    ) {
+        self.name = name
+        self.description = description
+        self.category = category
+        self.image = image
+        self.tags = tags
+        self.isAppTemplate = isAppTemplate
+    }
+}
+
+/// Field set for a queued pack-template-item create/update.
+struct PackTemplateItemMutationPayload: Codable, Sendable {
+    var name: String
+    var description: String?
+    var weight: Double?
+    var weightUnit: String?
+    var quantity: Int
+    var category: String?
+    var consumable: Bool
+    var worn: Bool
+    var notes: String?
+    var image: String?
+
+    init(
+        name: String,
+        description: String? = nil,
+        weight: Double? = nil,
+        weightUnit: String? = nil,
+        quantity: Int = 1,
+        category: String? = nil,
+        consumable: Bool = false,
+        worn: Bool = false,
+        notes: String? = nil,
+        image: String? = nil
+    ) {
+        self.name = name
+        self.description = description
+        self.weight = weight
+        self.weightUnit = weightUnit
+        self.quantity = quantity
+        self.category = category
+        self.consumable = consumable
+        self.worn = worn
+        self.notes = notes
+        self.image = image
+    }
+}
+
+/// Field set for a queued trail-condition-report create/update.
+struct TrailConditionReportMutationPayload: Codable, Sendable {
+    var trailName: String
+    var trailRegion: String?
+    var surface: String?
+    var overallCondition: String
+    var hazards: [String]?
+    var waterCrossings: Bool?
+    var waterCrossingDifficulty: String?
+    var notes: String?
+    var photos: [String]?
+    var tripId: String?
+
+    init(
+        trailName: String,
+        trailRegion: String? = nil,
+        surface: String? = nil,
+        overallCondition: String,
+        hazards: [String]? = nil,
+        waterCrossings: Bool? = nil,
+        waterCrossingDifficulty: String? = nil,
+        notes: String? = nil,
+        photos: [String]? = nil,
+        tripId: String? = nil
+    ) {
+        self.trailName = trailName
+        self.trailRegion = trailRegion
+        self.surface = surface
+        self.overallCondition = overallCondition
+        self.hazards = hazards
+        self.waterCrossings = waterCrossings
+        self.waterCrossingDifficulty = waterCrossingDifficulty
+        self.notes = notes
+        self.photos = photos
+        self.tripId = tripId
     }
 }
 
