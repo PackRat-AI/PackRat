@@ -232,7 +232,7 @@ struct PackDetailView: View {
                         }
                         .disabled(items.isEmpty)
 
-                        Button("Gap Analysis", systemImage: "sparkles.magnifyingglass") {
+                        Button("Gap Analysis", systemImage: "sparkle.magnifyingglass") {
                             showingGapAnalysis = true
                         }
                         .disabled(items.isEmpty)
