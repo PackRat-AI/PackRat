@@ -51,6 +51,41 @@ struct KeychainServiceTests {
         keychain.clearTokens()
     }
 
+    // expo-secure-store appends ":no-auth" to its default "app" service on every
+    // write, so this is the service a shipped Expo install actually uses. Reading
+    // only bare "app" logged real users out across the update.
+    @Test("migrates the cookie from every service expo-secure-store writes")
+    func migratesCookieFromSuffixedExpoServices() {
+        for service in ["app:no-auth", "app:auth", "app"] {
+            keychain.clearTokens()
+            keychain.saveLegacyExpoCookieForTesting(
+                """
+                {"better-auth.session_token":{"value":"token-from-\(service)"}}
+                """,
+                service: service
+            )
+
+            #expect(keychain.sessionToken == "token-from-\(service)")
+        }
+        keychain.clearTokens()
+    }
+
+    @Test("clearTokens removes the cookie from every expo service variant")
+    func clearTokensRemovesSuffixedExpoCookies() {
+        for service in ["app:no-auth", "app:auth", "app"] {
+            keychain.saveLegacyExpoCookieForTesting(
+                """
+                {"better-auth.session_token":{"value":"token-from-\(service)"}}
+                """,
+                service: service
+            )
+        }
+
+        keychain.clearTokens()
+
+        #expect(keychain.sessionToken == nil)
+    }
+
     @Test("reads Expo secure Better Auth session cookie")
     func readsExpoSecureBetterAuthCookie() {
         keychain.saveLegacyExpoCookieForTesting("""
