@@ -211,7 +211,8 @@ function verifyBinary(input: {
     for (const error of result.errors) console.error(`${label} verification failed: ${error}`);
     process.exit(1);
   }
-  console.log(`✓ Verified ${label} metadata (${result.iosApp}, ${result.watchApp})`);
+  const watch = result.watchApp ?? 'no embedded watch app';
+  console.log(`✓ Verified ${label} metadata (${result.iosApp}, ${watch})`);
 }
 
 // 1. Archive for a real device (TestFlight cannot accept a simulator build).

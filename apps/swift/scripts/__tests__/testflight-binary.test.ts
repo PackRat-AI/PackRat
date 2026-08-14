@@ -24,11 +24,16 @@ ${body}
 `;
 }
 
-function writeArchive(input?: { iosBundleId?: string; packratEnv?: string }): string {
+function writeArchive(input?: {
+  iosBundleId?: string;
+  packratEnv?: string;
+  withWatchApp?: boolean;
+}): string {
+  const withWatchApp = input?.withWatchApp ?? true;
   const root = mkdtempSync(join(tmpdir(), 'packrat-archive-test-'));
   const iosApp = join(root, 'PackRat.xcarchive', 'Products', 'Applications', 'PackRat.app');
   const watchApp = join(iosApp, 'Watch', 'PackRat Watch.app');
-  mkdirSync(watchApp, { recursive: true });
+  mkdirSync(withWatchApp ? watchApp : iosApp, { recursive: true });
   writeFileSync(
     join(iosApp, 'Info.plist'),
     plist({
@@ -38,15 +43,17 @@ function writeArchive(input?: { iosBundleId?: string; packratEnv?: string }): st
       PACKRAT_ENV: input?.packratEnv ?? 'production',
     }),
   );
-  writeFileSync(
-    join(watchApp, 'Info.plist'),
-    plist({
-      CFBundleIdentifier: 'com.andrewbierman.packrat.watchkitapp',
-      CFBundleDisplayName: 'PackRat',
-      CFBundleVersion: '2026071802',
-      WKCompanionAppBundleIdentifier: 'com.andrewbierman.packrat',
-    }),
-  );
+  if (withWatchApp) {
+    writeFileSync(
+      join(watchApp, 'Info.plist'),
+      plist({
+        CFBundleIdentifier: 'com.andrewbierman.packrat.watchkitapp',
+        CFBundleDisplayName: 'PackRat',
+        CFBundleVersion: '2026071802',
+        WKCompanionAppBundleIdentifier: 'com.andrewbierman.packrat',
+      }),
+    );
+  }
   return join(root, 'PackRat.xcarchive');
 }
 
@@ -61,6 +68,19 @@ describe('TestFlight binary verification', () => {
       });
       expect(result.iosApp).toContain('PackRat.app');
       expect(result.watchApp).toContain('PackRat Watch.app');
+    } finally {
+      rmSync(join(archivePath, '..'), { recursive: true, force: true });
+    }
+  });
+
+  it('accepts an archive with no embedded watch app', () => {
+    // The watch app is not part of the first Swift release, so an archive
+    // without one is valid rather than an error.
+    const archivePath = writeArchive({ withWatchApp: false });
+    try {
+      const result = verifyTestFlightArchive({ archivePath, config: replacementConfig });
+      expect(result).toMatchObject({ ok: true, errors: [] });
+      expect(result.watchApp).toBeNull();
     } finally {
       rmSync(join(archivePath, '..'), { recursive: true, force: true });
     }
