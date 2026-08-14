@@ -242,6 +242,13 @@ verifyBinary({
 });
 
 // 2. Export a signed .ipa for App Store distribution.
+//
+// Automatic signing asks Xcode's account system for a profile. On a machine with
+// no Apple ID configured in Xcode that fails with `No Accounts` / `No profiles
+// for '<bundle id>' were found`, even when the profile is installed. Set
+// EXPORT_PROVISIONING_PROFILE to the profile's *name* to sign manually instead.
+// See docs/macos-testflight.md, which hits the same wall on the macOS lane.
+const exportProfileName = process.env.EXPORT_PROVISIONING_PROFILE?.trim();
 const exportOptions = join(work, 'ExportOptions.plist');
 writeFileSync(
   exportOptions,
@@ -252,7 +259,16 @@ writeFileSync(
   <key>method</key><string>app-store-connect</string>
   <key>teamID</key><string>${teamId}</string>
   <key>destination</key><string>export</string>
-  <key>signingStyle</key><string>automatic</string>
+${
+  exportProfileName
+    ? `  <key>signingStyle</key><string>manual</string>
+  <key>signingCertificate</key><string>Apple Distribution</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>${uploadConfig.bundleId}</key><string>${exportProfileName}</string>
+  </dict>`
+    : '  <key>signingStyle</key><string>automatic</string>'
+}
   <key>uploadSymbols</key><true/>
 </dict>
 </plist>
