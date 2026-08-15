@@ -141,7 +141,7 @@ jobs:
 
       - name: Upload coverage summary artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-summary-${{ matrix.artifact_slug }}
           path: ${{ matrix.summary_path }}
