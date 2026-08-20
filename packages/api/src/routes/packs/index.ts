@@ -162,6 +162,12 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
 
         // Zod validates all fields at runtime; cast through the Standard Schema
         // inference gap so drizzle's insert accepts the values.
+        //
+        // `id` is client-supplied, so the same create can arrive twice: the offline
+        // outbox replays queued writes, and a retried request is indistinguishable
+        // from a new one. Without a conflict clause the second attempt raised a
+        // primary-key violation, surfaced as a 500, and the client marked the write
+        // permanently failed. Ignoring the conflict makes the replay a no-op instead.
         const [newPack] = await db
           .tag('packs.create')
           .insert(packs)
@@ -177,12 +183,27 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
             localCreatedAt: new Date(data.localCreatedAt as string),
             localUpdatedAt: new Date(data.localUpdatedAt as string),
           } as typeof packs.$inferInsert)
+          .onConflictDoNothing({ target: packs.id })
           .returning();
 
-        if (!newPack) return status(500, { error: 'Failed to create pack' });
+        if (newPack) {
+          const packWithItems: PackWithItems = { ...newPack, items: [] };
+          return PackWithWeightsSchema.parse(computePackWeights({ pack: packWithItems }));
+        }
 
-        const packWithItems: PackWithItems = { ...newPack, items: [] };
-        return PackWithWeightsSchema.parse(computePackWeights({ pack: packWithItems }));
+        // The id already exists. Return the caller's own pack so a replayed create is
+        // idempotent, scoping the read by `userId` so a guessed id can neither
+        // overwrite nor disclose someone else's pack.
+        const existingPack: PackWithItems | undefined = await db
+          .tag('packs.createConflict')
+          .query.packs.findFirst({
+            where: and(eq(packs.id, data.id), eq(packs.userId, user.userId)),
+            with: { items: true },
+          });
+
+        if (!existingPack) return status(409, { error: 'Pack id already exists' });
+
+        return PackWithWeightsSchema.parse(computePackWeights({ pack: existingPack }));
       } catch (error) {
         captureApiException({ error, operation: 'packs.create' });
         return status(500, { error: 'Failed to create pack' });
@@ -193,6 +214,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       response: {
         200: 'packs.PackWithWeights',
         400: 'packs.ErrorResponse',
+        409: 'packs.ErrorResponse',
         500: 'packs.ErrorResponse',
       },
       isAuthenticated: true,
