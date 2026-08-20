@@ -96,7 +96,16 @@ enum ExpoLocalDataMigration {
             return
         }
 
-        if run(databasePath: path, context: context, outbox: outbox) != nil {
+        // A signed-in user's Expo data was already synced to the server by Legend-State
+        // (every store is a `syncedCrud`), so it will arrive on the first fetch. Queuing
+        // it would replay a create for an id the server already holds — a duplicate
+        // write per record, and the "N changes waiting to sync" banner sitting over an
+        // import that needed no uploading at all.
+        let isSignedIn = KeychainService.shared.sessionToken != nil
+
+        if run(
+            databasePath: path, context: context, outbox: outbox, isSignedIn: isSignedIn
+        ) != nil {
             defaults.set(true, forKey: defaultsKey)
         }
     }
@@ -105,22 +114,30 @@ enum ExpoLocalDataMigration {
     ///
     /// Returns the number of packs imported, or `nil` if the database could not be read —
     /// in which case the import is incomplete and must not be recorded as done.
+    /// `isSignedIn` suppresses the outbox uploads. The rows still reach the local cache
+    /// so they render on this first launch; they are simply not re-queued as creates,
+    /// because a signed-in user's Expo stores were server-synced and the server already
+    /// holds these ids. Guests keep the uploads — the outbox is the only thing that can
+    /// ever carry their content to an account.
     @discardableResult
     static func run(
         databasePath: String,
         context: ModelContext,
-        outbox: OutboxService?
+        outbox: OutboxService?,
+        isSignedIn: Bool = false
     ) -> Int? {
         guard let rows = readStorageRows(at: databasePath) else {
             logger.error("Failed to read Expo's SQLite store; will retry next launch")
             return nil
         }
 
+        let uploads = isSignedIn ? nil : outbox
+
         var imported = 0
-        imported += importPacks(rows: rows, context: context, outbox: outbox)
-        imported += importTrips(rows: rows, context: context, outbox: outbox)
-        imported += importTemplates(rows: rows, outbox: outbox, context: context)
-        imported += importTrailConditionReports(rows: rows, outbox: outbox, context: context)
+        imported += importPacks(rows: rows, context: context, outbox: uploads)
+        imported += importTrips(rows: rows, context: context, outbox: uploads)
+        imported += importTemplates(rows: rows, outbox: uploads, context: context)
+        imported += importTrailConditionReports(rows: rows, outbox: uploads, context: context)
 
         // Local-only state: no server copy exists for either, so for *every* user — not
         // just guests — this is the only chance to carry it across.
