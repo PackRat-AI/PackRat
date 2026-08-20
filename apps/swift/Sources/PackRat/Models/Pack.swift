@@ -5,6 +5,22 @@ import Foundation
 extension Pack {
     var activeItems: [PackItem] { (items ?? []).filter { !$0.deleted } }
     var itemCount: Int { activeItems.count }
+}
+
+extension Array where Element == Pack {
+    /// Drops soft-deleted packs (tombstones).
+    ///
+    /// Applied at every ingress into a view model's `packs` array — network
+    /// responses, SwiftData cache reads, and pagination — so the app never
+    /// renders a tombstone even if a server or a locally-migrated cache hands
+    /// one over. Expo got this for free from Legend State's `fieldDeleted`
+    /// tombstone handling; the Swift client has no sync layer, so it filters
+    /// explicitly. Migrating users carry Expo-era local data that contains
+    /// tombstones, so client-side filtering is required, not just defensive.
+    var activePacks: [Pack] { filter { !$0.deleted } }
+}
+
+extension Pack {
 
     func formattedWeight(_ grams: Double?) -> String {
         guard let g = grams, g > 0 else { return "0 g" }

@@ -51,7 +51,7 @@ final class PacksViewModel {
             let cached = (try? context.fetch(FetchDescriptor<CachedPack>(
                 sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]
             ))) ?? []
-            let cachedPacks = cached.compactMap { $0.toPack() }
+            let cachedPacks = cached.compactMap { $0.toPack() }.activePacks
             if !cachedPacks.isEmpty {
                 packs = cachedPacks
                 isCacheLoaded = true
@@ -69,11 +69,15 @@ final class PacksViewModel {
 
         do {
             let fresh = try await service.listPacks(page: 1, limit: pageSize)
-            packs = fresh
+            let active = fresh.activePacks
+            packs = active
             currentPage = 1
+            // Page-size comparison stays on the raw response: filtering shrinks
+            // the array, and testing the filtered count would end pagination
+            // early on a page that happened to contain tombstones.
             hasMore = fresh.count == pageSize
             if let context {
-                writeCachePacks(fresh, context: context)
+                writeCachePacks(active, context: context)
             }
         } catch {
             if packs.isEmpty {
@@ -94,7 +98,7 @@ final class PacksViewModel {
         defer { isLoading = false }
         do {
             let more = try await service.listPacks(page: nextPage, limit: pageSize)
-            packs.append(contentsOf: more)
+            packs.append(contentsOf: more.activePacks)
             currentPage = nextPage
             hasMore = more.count == pageSize
         } catch { }

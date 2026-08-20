@@ -1,5 +1,10 @@
 import Foundation
 
+extension Array where Element == Trip {
+    /// Drops soft-deleted trips. See `Array<Pack>.activePacks`.
+    var activeTrips: [Trip] { filter { !$0.deleted } }
+}
+
 // MARK: - Trip extensions (structs defined in Generated.swift)
 
 extension Trip {
