@@ -99,9 +99,17 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const includePublic = Number(query.includePublic ?? 0) === 1;
       const db = createDb();
 
-      const where = includePublic
-        ? and(or(eq(packs.userId, user.userId), eq(packs.isPublic, true)), eq(packs.deleted, false))
-        : eq(packs.userId, user.userId);
+      // `deleted` must be filtered on BOTH branches. It used to hang off the
+      // includePublic branch only, so the default (owned-only) path returned
+      // soft-deleted packs. The Expo client masked it via Legend State's
+      // `fieldDeleted` tombstone handling; the Swift client has no equivalent
+      // and rendered them.
+      const where = and(
+        includePublic
+          ? or(eq(packs.userId, user.userId), eq(packs.isPublic, true))
+          : eq(packs.userId, user.userId),
+        eq(packs.deleted, false),
+      );
 
       // Drop packItems.embedding (1536-dim) from list payload. Mobile hot
       // path — 5 packs × 20 items × ~6KB embedding = 600KB minimum DB→Worker
@@ -133,9 +141,9 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const result = await db.tag('packs.list').query.packs.findMany({
         where,
         with: {
-          items: includePublic
-            ? { columns: PACK_ITEM_LIST_COLUMNS, where: eq(packItems.deleted, false) }
-            : { columns: PACK_ITEM_LIST_COLUMNS },
+          // Filter deleted items on both branches too — the owned-only path
+          // previously shipped tombstoned items and let clients count them.
+          items: { columns: PACK_ITEM_LIST_COLUMNS, where: eq(packItems.deleted, false) },
         },
       });
 
@@ -336,7 +344,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       // Same pattern as the list endpoint above — the audit missed this
       // callsite; folded in here for parity.
       const pack = await db.tag('packs.getById').query.packs.findFirst({
-        where: eq(packs.id, params.packId),
+        where: and(eq(packs.id, params.packId), eq(packs.deleted, false)),
         with: {
           items: {
             columns: {
@@ -390,7 +398,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         // `<name> (<weight><unit> × <quantity>)`; without it, every entry
         // renders as `undefined (1200g × 1)`.
         const pack = await db.tag('packs.getById').query.packs.findFirst({
-          where: eq(packs.id, params.packId),
+          where: and(eq(packs.id, params.packId), eq(packs.deleted, false)),
           with: {
             items: {
               columns: {
@@ -784,7 +792,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
 
       const pack = await db.tag('packs.getById').query.packs.findFirst({
-        where: eq(packs.id, params.packId),
+        where: and(eq(packs.id, params.packId), eq(packs.deleted, false)),
         columns: { id: true, userId: true, isPublic: true },
       });
 
