@@ -245,6 +245,7 @@ struct PacksListView: View {
         defer { isLoadingPublic = false }
         do {
             publicPacks = try await viewModel.service.listPacks(page: 1, limit: 30, includePublic: true)
+                .activePacks
         } catch { }
     }
 }

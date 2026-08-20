@@ -68,7 +68,7 @@ final class TripsViewModel {
             let cached = (try? context.fetch(FetchDescriptor<CachedTrip>(
                 sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]
             ))) ?? []
-            let cachedTrips = cached.compactMap { $0.toTrip() }
+            let cachedTrips = cached.compactMap { $0.toTrip() }.activeTrips
             if !cachedTrips.isEmpty {
                 trips = cachedTrips
             }
@@ -86,11 +86,13 @@ final class TripsViewModel {
 
         do {
             let fresh = try await service.listTrips(page: 1, limit: pageSize)
-            trips = fresh
+            let active = fresh.activeTrips
+            trips = active
             currentPage = 1
+            // Page-size comparison stays on the raw response — see PacksViewModel.
             hasMore = fresh.count == pageSize
             if let context {
-                writeCacheTrips(fresh, context: context)
+                writeCacheTrips(active, context: context)
             }
         } catch {
             if trips.isEmpty {
@@ -116,7 +118,7 @@ final class TripsViewModel {
             // duplicate ids also collide in `ForEach` identity, so the duplicates
             // were visible rather than harmless.
             let known = Set(trips.map(\.id))
-            trips.append(contentsOf: more.filter { !known.contains($0.id) })
+            trips.append(contentsOf: more.activeTrips.filter { !known.contains($0.id) })
             currentPage = nextPage
             hasMore = more.count == pageSize
         } catch { }
