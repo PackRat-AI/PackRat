@@ -134,8 +134,11 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     async ({ user }) => {
       const db = createDb();
       const templates = await db.tag('packTemplates.list').query.packTemplates.findMany({
-        where: or(eq(packTemplates.userId, user.userId), eq(packTemplates.isAppTemplate, true)),
-        with: { items: true },
+        where: and(
+          or(eq(packTemplates.userId, user.userId), eq(packTemplates.isAppTemplate, true)),
+          eq(packTemplates.deleted, false),
+        ),
+        with: { items: { where: eq(packTemplateItems.deleted, false) } },
       });
       return templates;
     },
@@ -537,7 +540,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
           or(eq(packTemplates.userId, user.userId), eq(packTemplates.isAppTemplate, true)),
           eq(packTemplates.deleted, false),
         ),
-        with: { items: true },
+        with: { items: { where: eq(packTemplateItems.deleted, false) } },
       });
 
       if (!template) return status(404, { error: 'Template not found' });
@@ -665,7 +668,12 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
         .tag('packTemplates.listItems')
         .select()
         .from(packTemplateItems)
-        .where(eq(packTemplateItems.packTemplateId, templateId));
+        .where(
+          and(
+            eq(packTemplateItems.packTemplateId, templateId),
+            eq(packTemplateItems.deleted, false),
+          ),
+        );
 
       return items;
     },
