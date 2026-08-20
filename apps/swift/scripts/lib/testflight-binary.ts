@@ -129,10 +129,11 @@ function verifyAppBundles(input: {
     expected: config.apiEnvironment,
   });
 
+  // The watch app is not embedded in the first Swift release, so its absence is
+  // valid. When it is present every attribute is still checked strictly, which
+  // keeps this honest once the watch app ships again.
   const watchApp = findAppBundles(join(iosApp, 'Watch')).at(0) ?? null;
-  if (!watchApp) {
-    errors.push('Could not find embedded watchOS .app bundle.');
-  } else {
+  if (watchApp) {
     const watchPlist = readPlist(join(watchApp, 'Info.plist'));
     expectEqual({
       errors,

@@ -35,10 +35,19 @@ final class OutboxService {
 
     private let packService: PackService
     private let tripService: TripService
+    private let templateService: PackTemplateService
+    private let trailConditionsService: TrailConditionsService
 
-    init(packService: PackService = .shared, tripService: TripService = .shared) {
+    init(
+        packService: PackService = .shared,
+        tripService: TripService = .shared,
+        templateService: PackTemplateService = .shared,
+        trailConditionsService: TrailConditionsService = .shared
+    ) {
         self.packService = packService
         self.tripService = tripService
+        self.templateService = templateService
+        self.trailConditionsService = trailConditionsService
     }
 
     // MARK: - Enqueue
@@ -347,6 +356,77 @@ final class OutboxService {
                 )
             case (.trip, .delete):
                 try await tripService.deleteTrip(mutation.entityId)
+
+            case (.packTemplate, .create):
+                let payload: PackTemplateMutationPayload = try decode(mutation.payload)
+                _ = try await templateService.createTemplate(
+                    id: mutation.entityId,
+                    name: payload.name,
+                    description: payload.description,
+                    category: payload.category
+                )
+            case (.packTemplate, .update):
+                let payload: PackTemplateMutationPayload = try decode(mutation.payload)
+                _ = try await templateService.updateTemplate(
+                    mutation.entityId,
+                    name: payload.name,
+                    description: payload.description,
+                    category: payload.category
+                )
+            case (.packTemplate, .delete):
+                try await templateService.deleteTemplate(mutation.entityId)
+
+            case (.packTemplateItem, .create):
+                let payload: PackTemplateItemMutationPayload = try decode(mutation.payload)
+                guard let templateId = mutation.parentId else {
+                    return .terminal("Queued template item has no template")
+                }
+                _ = try await templateService.addItem(
+                    toTemplate: templateId,
+                    id: mutation.entityId,
+                    name: payload.name,
+                    weight: payload.weight ?? 0,
+                    weightUnit: payload.weightUnit ?? WeightUnit.g.rawValue,
+                    quantity: payload.quantity,
+                    category: payload.category,
+                    consumable: payload.consumable,
+                    worn: payload.worn,
+                    notes: payload.notes
+                )
+            case (.packTemplateItem, .update):
+                let payload: PackTemplateItemMutationPayload = try decode(mutation.payload)
+                _ = try await templateService.updateItem(
+                    mutation.entityId,
+                    name: payload.name,
+                    weight: payload.weight ?? 0,
+                    weightUnit: payload.weightUnit ?? WeightUnit.g.rawValue,
+                    quantity: payload.quantity,
+                    category: payload.category,
+                    consumable: payload.consumable,
+                    worn: payload.worn,
+                    notes: payload.notes
+                )
+            case (.packTemplateItem, .delete):
+                try await templateService.deleteItem(mutation.entityId)
+
+            case (.trailConditionReport, .create):
+                let payload: TrailConditionReportMutationPayload = try decode(mutation.payload)
+                _ = try await trailConditionsService.createReport(
+                    id: mutation.entityId,
+                    trailName: payload.trailName,
+                    trailRegion: payload.trailRegion,
+                    surface: payload.surface,
+                    overallCondition: payload.overallCondition,
+                    hazards: payload.hazards ?? [],
+                    notes: payload.notes
+                )
+            case (.trailConditionReport, .delete):
+                try await trailConditionsService.deleteReport(mutation.entityId)
+            case (.trailConditionReport, .update):
+                // No update endpoint exists on the Swift client, and nothing enqueues
+                // one — reports are create-or-delete here. Dropping rather than
+                // retrying forever: a retry could never succeed.
+                return .terminal("Trail condition reports cannot be updated")
             }
             return .success
         } catch {
