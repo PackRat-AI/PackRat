@@ -38,6 +38,22 @@ struct KeychainServiceTests {
         keychain.clearTokens()
     }
 
+    /// `ExpoLocalDataMigration.runIfNeeded` decides whether to queue the imported Expo
+    /// rows for upload by reading exactly this expression. Its own tests inject
+    /// `isSignedIn` directly, so this pins the wiring they cannot reach: a carried-over
+    /// session has to read as signed in, or the import re-queues every record the
+    /// server already owns.
+    @Test("a carried-over session reads as signed in for the Expo import gate")
+    func sessionTokenDrivesMigrationGate() {
+        keychain.clearTokens()
+        #expect((KeychainService.shared.sessionToken != nil) == false)
+
+        keychain.saveSessionToken("carried-over-session")
+        #expect((KeychainService.shared.sessionToken != nil) == true)
+
+        keychain.clearTokens()
+    }
+
     @Test("reads and migrates Expo Better Auth session cookie")
     func readsAndMigratesExpoBetterAuthCookie() {
         keychain.saveLegacyExpoCookieForTesting("""
