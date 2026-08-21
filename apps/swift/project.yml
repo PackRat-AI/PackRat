@@ -137,9 +137,12 @@ targets:
         product: Sentry
       - package: GoogleSignIn
         product: GoogleSignIn
-      # PackRat-Watch is intentionally NOT embedded: the watch app is not part of
-      # the first Swift release. The target still builds via its own scheme, so
-      # re-embed this dependency when the watch app ships.
+      - target: PackRat-Watch
+        embed: true
+        codeSign: true
+        copy:
+          destination: wrapper
+          subpath: Watch
     settings:
       base:
         SWIFT_VERSION: "5.9"
