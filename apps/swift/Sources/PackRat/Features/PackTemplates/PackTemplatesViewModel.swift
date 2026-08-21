@@ -43,7 +43,7 @@ final class PackTemplatesViewModel {
         error = nil
         defer { isLoading = false }
         do {
-            templates = try await service.listTemplates()
+            templates = try await service.listTemplates().activeTemplates
         } catch {
             self.error = error.localizedDescription
         }

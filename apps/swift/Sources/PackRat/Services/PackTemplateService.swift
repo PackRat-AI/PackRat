@@ -99,7 +99,10 @@ final class PackTemplateService: Sendable {
     /// Applies a template to an existing pack by copying all template items.
     func applyToPack(templateId: String, packId: String) async throws {
         let template = try await getTemplate(templateId)
-        guard let items = template.items else { return }
+        // `activeItems`, not `items`: copying tombstoned template items would
+        // resurrect deleted gear into the target pack.
+        let items = template.activeItems
+        guard !items.isEmpty else { return }
         let packService = PackService.shared
         for item in items {
             _ = try await packService.addItem(

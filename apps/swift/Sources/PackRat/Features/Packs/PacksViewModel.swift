@@ -60,7 +60,7 @@ final class PacksViewModel {
             let cached = (try? context.fetch(FetchDescriptor<CachedPack>(
                 sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]
             ))) ?? []
-            let cachedPacks = cached.compactMap { $0.toPack() }
+            let cachedPacks = cached.compactMap { $0.toPack() }.activePacks
             if !cachedPacks.isEmpty {
                 packs = cachedPacks
             }
@@ -78,11 +78,15 @@ final class PacksViewModel {
 
         do {
             let fresh = try await service.listPacks(page: 1, limit: pageSize)
-            packs = fresh
+            let active = fresh.activePacks
+            packs = active
             currentPage = 1
+            // Page-size comparison stays on the raw response: filtering shrinks
+            // the array, and testing the filtered count would end pagination
+            // early on a page that happened to contain tombstones.
             hasMore = fresh.count == pageSize
             if let context {
-                writeCachePacks(fresh, context: context)
+                writeCachePacks(active, context: context)
             }
         } catch {
             if packs.isEmpty {
@@ -108,7 +112,7 @@ final class PacksViewModel {
             // duplicate ids also collide in `ForEach` identity, so the duplicates
             // were visible rather than harmless.
             let known = Set(packs.map(\.id))
-            packs.append(contentsOf: more.filter { !known.contains($0.id) })
+            packs.append(contentsOf: more.activePacks.filter { !known.contains($0.id) })
             currentPage = nextPage
             hasMore = more.count == pageSize
         } catch { }
