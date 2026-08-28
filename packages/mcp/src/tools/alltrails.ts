@@ -15,6 +15,7 @@ export function registerAlltrailsTools(agent: AgentContext): void {
       annotations: {
         title: 'Preview AllTrails URL',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: false,
         openWorldHint: true,
       },
