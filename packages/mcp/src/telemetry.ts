@@ -71,8 +71,13 @@ const SENSITIVE_PATTERNS: readonly RegExp[] = [
   // JWTs (three base64url segments) — the highest-risk shape here, since
   // the whole worker traffics in them.
   /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g,
-  // Bearer / token / secret / password assignments in JSON or prose.
-  /\b(bearer|token|secret|password|api[_-]?key|refresh[_-]?token)\b\s*[:=]\s*"?[A-Za-z0-9._-]{8,}"?/gi,
+  // Bearer / token / secret / password credentials. The separator is
+  // `[:=]` OR whitespace so both the JSON form (`"token": "abc..."`) and
+  // the HTTP header form (`Authorization: Bearer abc...`) are caught — an
+  // earlier version required a colon or equals and let the header form
+  // through, which is the exact shape most likely to appear in an error
+  // message echoed back from an upstream call.
+  /\b(bearer|token|secret|password|api[_-]?key|refresh[_-]?token)\b["']?\s*[:=]?\s*["']?[A-Za-z0-9._-]{8,}["']?/gi,
   // Email addresses.
   /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g,
 ];
