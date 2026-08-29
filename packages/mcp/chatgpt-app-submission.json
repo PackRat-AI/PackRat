@@ -176,10 +176,10 @@
     },
     {
       "description": "Search the gear catalog with natural language and compare the top results on weight and price.",
-      "user_prompt": "Search the PackRat gear catalog for ultralight 2-person tents under 1.5kg and compare the top three on weight and price.",
+      "user_prompt": "Search the PackRat gear catalog for ultralight sleeping pads under 500 grams and compare the top three on weight and price.",
       "file_attachment_urls": null,
       "tools_triggered": "packrat_search_gear_catalog",
-      "expected_output": "Returns matching two-person tents from the catalog under roughly 1500 grams, then a side-by-side comparison of the top three on weight and price. Rating is shown where the catalog has one and omitted where it does not, since rating coverage is partial. The comparison is presented in the response; there is no separate comparison tool call.",
+      "expected_output": "Returns matching ultralight sleeping pads from the catalog under roughly 500 grams, then a side-by-side comparison of the top three on weight and price. Rating is shown where the catalog has one and omitted where it does not, since rating coverage is partial. The comparison is presented in the response itself; there is no separate comparison tool call.",
       "expected_output_url": null
     },
     {
