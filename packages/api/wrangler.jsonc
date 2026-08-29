@@ -17,6 +17,11 @@
   // unminified stack traces. Sentry symbolication uses a separate
   // @sentry/cli sourcemaps upload step in CI (see deploy workflow).
   "upload_source_maps": true,
+  "alias": {
+    // See src/shims/bun-empty.ts — drizzle-orm/bun-sql pulls in the `bun`
+    // builtin, which esbuild cannot resolve for the Workers bundle.
+    "bun": "./src/shims/bun-empty.ts"
+  },
   "version_metadata": {
     "binding": "CF_VERSION_METADATA"
   },
