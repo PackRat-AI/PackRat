@@ -184,7 +184,7 @@ Please:
 1. Search for relevant guides with \`packrat_search_outdoor_guides\` to understand what's needed for ${activity}
 2. Use \`packrat_semantic_gear_search\` to find top options — run multiple searches to cover different aspects
 3. Get full specs for the top 3-5 candidates with \`packrat_get_catalog_item\`
-4. Use \`packrat_compare_gear_items\` to create a side-by-side comparison
+4. Present a side-by-side comparison of the candidates you found
 5. Provide ranked recommendations with pros/cons for each option
 
 Format the response as:

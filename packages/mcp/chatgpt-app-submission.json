@@ -104,18 +104,6 @@
         "destructive_justification": "Executes a read-only search that cannot modify catalog data."
       }
     },
-    "packrat_compare_gear_items": {
-      "annotations": {
-        "readOnlyHint": true,
-        "openWorldHint": false,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Looks up the given catalog item IDs and returns a side-by-side specification comparison.",
-        "open_world_justification": "Reads only from PackRat's internal gear catalog.",
-        "destructive_justification": "Retrieves and formats existing catalog records without altering them."
-      }
-    },
     "packrat_similar_pack_items": {
       "annotations": {
         "readOnlyHint": true,
@@ -164,18 +152,6 @@
         "destructive_justification": "Produces suggestions only and does not modify any pack or inventory record."
       }
     },
-    "packrat_search_gear_catalog": {
-      "annotations": {
-        "readOnlyHint": true,
-        "openWorldHint": false,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Runs a keyword and filter search over the PackRat gear catalog.",
-        "open_world_justification": "Searches PackRat's internal catalog rather than third-party retail sites.",
-        "destructive_justification": "Executes a read-only query against catalog data."
-      }
-    },
     "packrat_list_pack_items": {
       "annotations": {
         "readOnlyHint": true,
@@ -202,8 +178,8 @@
       "description": "Search the gear catalog with natural language and compare the top results on weight and price.",
       "user_prompt": "Search the PackRat gear catalog for ultralight 2-person tents under 1.5kg and compare the top three on weight and price.",
       "file_attachment_urls": null,
-      "tools_triggered": "packrat_semantic_gear_search, packrat_compare_gear_items",
-      "expected_output": "Returns matching two-person tents from the catalog under roughly 1500 grams, then a side-by-side comparison of the top three on weight and price. Rating is shown where the catalog has one and omitted where it does not, since rating coverage is partial.",
+      "tools_triggered": "packrat_semantic_gear_search",
+      "expected_output": "Returns matching two-person tents from the catalog under roughly 1500 grams, then a side-by-side comparison of the top three on weight and price. Rating is shown where the catalog has one and omitted where it does not, since rating coverage is partial. The comparison is presented in the response; there is no separate comparison tool call.",
       "expected_output_url": null
     },
     {

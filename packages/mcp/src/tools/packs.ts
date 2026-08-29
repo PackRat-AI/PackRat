@@ -317,7 +317,7 @@ export function registerPackTools(agent: AgentContext): void {
     {
       title: 'Add Pack Item',
       description:
-        'Add a gear item to a pack. Provide either a catalog_item_id (from packrat_search_gear_catalog) or specify custom item details. Weight should be in grams.',
+        'Add a gear item to a pack. Provide either a catalog_item_id (from packrat_semantic_gear_search) or specify custom item details. Weight should be in grams.',
       inputSchema: {
         pack_id: z.string().describe('The pack ID to add the item to'),
         name: z.string().min(1).describe('Item name'),

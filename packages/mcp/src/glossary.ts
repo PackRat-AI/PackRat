@@ -77,9 +77,10 @@ gear-side categories (different list — gear, not activity).
 A canonical product in PackRat's gear database. Has stable specs
 (weight, dimensions, price, manufacturer URL) and is shared across all
 users. Catalog items are the source of truth that **pack items**
-reference. Searched via \`packrat_search_gear_catalog\` (text) or
-\`packrat_semantic_gear_search\` (vector). Read by ID via
-\`packrat_get_catalog_item\`.
+reference. Searched via \`packrat_semantic_gear_search\` — it handles
+natural-language queries ("ultralight 2-person tent under 1.5kg") directly,
+so pass the user's phrasing through rather than reducing it to keywords.
+Read by ID via \`packrat_get_catalog_item\`.
 
 ### Trip
 
@@ -211,7 +212,7 @@ narrow it).
 | \`packrat://trips/{id}\` | Trip details (destination, dates, linked pack). |
 | \`packrat://catalog/{id}\` | Catalog item specs. |
 | \`packrat://catalog/categories\` | Gear category list. |
-| \`packrat://search?q=...\` | Free-text search across the gear catalog (delegates to \`packrat_search_gear_catalog\`). |
+| \`packrat://search?q=...\` | Literal-phrase search across the gear catalog; prefer \`packrat_semantic_gear_search\` for natural language. |
 | \`packrat://glossary\` | This document. |
 
 The \`packs\`, \`trips\`, and \`catalog/{id}\` templates carry list
