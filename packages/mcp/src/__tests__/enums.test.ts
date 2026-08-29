@@ -119,10 +119,9 @@ describe('CatalogSortField', () => {
     expect(CatalogSortField.CreatedAt).toBe('createdAt');
     expect(CatalogSortField.UpdatedAt).toBe('updatedAt');
     expect(CatalogSortField.Usage).toBe('usage');
-    expect(CatalogSortField.Weight).toBe('weight');
   });
 
-  it('has 8 members', () => {
-    expect(Object.values(CatalogSortField)).toHaveLength(8);
+  it('has 7 members', () => {
+    expect(Object.values(CatalogSortField)).toHaveLength(7);
   });
 });
