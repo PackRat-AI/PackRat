@@ -54,6 +54,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { type ApiClient, createApiClient } from '@packrat/api-client';
 import { isNumber, isObject, isString } from '@packrat/guards';
 import { safeJsonStringify } from '@packrat/utils';
+import { createLogger } from './observability';
 
 export type TokenProvider = () => string | null | undefined;
 
@@ -269,6 +270,7 @@ export async function call<T>(
       // (see TreatyResponse). Pull `value` out when present, else pass it through.
       const e = result.error;
       const body = isObject(e) && 'value' in e ? e.value : e;
+      logUpstreamFailure({ status: result.status, operation: options.action });
       return formatError({ status: result.status, body, opts: options });
     }
     return ok({ data: result.data, structured: options.structured });
@@ -278,11 +280,55 @@ export async function call<T>(
     // them escape as protocol violations.
     const message = e instanceof Error ? e.message : String(e);
     const action = options.action ?? 'request';
+    logUpstreamFailure({ status: 0, operation: action });
     return errResponse({
       code: 'network_error',
       message: `${action} failed: ${message}`,
       retryable: true,
     });
+  }
+}
+
+/**
+ * U16 review observability: record that an upstream PackRat API call failed.
+ *
+ * WHY here: `call()` is the single chokepoint every tool's upstream request
+ * flows through, so one emit point covers the whole surface without touching
+ * 60+ tool files.
+ *
+ * WHY it matters for submission review: a tool-call log line alone says
+ * "packrat_get_weather returned an error". It does not say whether our
+ * handler is broken or whether Neon/the weather provider was briefly down.
+ * `upstreamStatus` makes that distinction, which is the difference between
+ * "fix the code" and "re-run the test case".
+ *
+ * `operation` is the caller-supplied action verb phrase (e.g. "list packs"),
+ * never a URL — URLs can carry IDs and query text, and the allowlist in
+ * `observability.ts` deliberately has no field for them.
+ *
+ * Status 0 is the sentinel for "threw before we got an HTTP status"
+ * (network failure, DNS, abort) — distinct from any real HTTP code.
+ *
+ * Never throws: telemetry must not convert a handled API error into an
+ * unhandled one.
+ */
+function logUpstreamFailure({ status, operation }: { status: number; operation?: string }): void {
+  try {
+    // No inbound Request in scope here (this runs deep inside a DO tool
+    // handler), so the line is attributed by `upstream` rather than a
+    // cf-ray. The `mcp.tool.call` line emitted by the handler wrapper
+    // carries the sessionId and lands adjacent in the log stream.
+    const logger = createLogger({ correlationId: 'upstream', service: 'mcp' });
+    logger.warn({
+      msg: 'mcp.upstream.error',
+      fields: {
+        upstreamStatus: status,
+        upstreamOperation: operation ?? 'request',
+        retryable: status === 0 || status >= 500 || status === 429,
+      },
+    });
+  } catch {
+    // Deliberately silent — see docstring.
   }
 }
 

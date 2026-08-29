@@ -52,7 +52,7 @@ import { ServiceMeta } from './constants';
 import { applyCorsHeaders, applyLocalhostCors } from './cors';
 import { faviconResponse } from './favicon';
 import { buildResourceMetadata, unauthorizedResponse } from './metadata';
-import { attachCorrelationId, correlationIdFrom } from './observability';
+import { attachCorrelationId, correlationIdFrom, createLogger } from './observability';
 import { registerPrompts } from './prompts';
 import { checkRateLimit, toolRateLimitKey } from './rate-limit';
 import { BEARER_REGEX, extractBearer, withCorrelationHeader } from './request-helpers';
@@ -565,8 +565,34 @@ export default {
 
     // ── 3. /mcp — JWT-gated protected resource ───────────────────────────────
     if (url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) {
+      // U16 review observability: auth outcomes are logged here because a
+      // failed connection never reaches the tool surface at all. The first
+      // OpenAI submission was rejected without per-case detail, and
+      // "the reviewer could not connect" is invisible in tool-call logs by
+      // construction — it has to be captured at the gate.
+      //
+      // We log the OUTCOME and the REASON, never the token or any part of
+      // it. `hasToken` distinguishes "no Authorization header" (the normal
+      // pre-OAuth discovery probe, which is expected and not a fault) from
+      // "token present but rejected" (a real failure worth investigating).
+      const authLogger = createLogger({ correlationId, service: 'mcp' });
       const bearer = extractBearer(request.headers.get('Authorization'));
       if (!bearer) {
+        // Expected during discovery: clients probe unauthenticated first to
+        // learn the resource metadata URL. Logged at info, not warn, so it
+        // doesn't create noise that masks real auth failures.
+        authLogger.info({
+          msg: 'mcp.auth',
+          fields: {
+            authEvent: 'challenge',
+            authOk: false,
+            authReason: 'no_bearer',
+            hasToken: false,
+            httpStatus: 401,
+            method: request.method,
+            path: url.pathname,
+          },
+        });
         const unauth = unauthorizedResponse({ env });
         const cors = applyLocalhostCors({ request, existing: unauth }) ?? unauth;
         return withCorrelationHeader({ response: cors, correlationId });
@@ -574,10 +600,39 @@ export default {
 
       const verified = await verifyMcpToken({ token: bearer, env, ctx });
       if (!verified) {
+        // A token was presented and rejected — expired, wrong audience,
+        // bad signature, or JWKS fetch failure. `verifyMcpToken` returns
+        // null for all of these by contract (it never throws), so we can't
+        // distinguish them here. Warn level: this is the shape of a real
+        // review blocker.
+        authLogger.warn({
+          msg: 'mcp.auth',
+          fields: {
+            authEvent: 'verify_failed',
+            authOk: false,
+            authReason: 'token_rejected',
+            hasToken: true,
+            httpStatus: 401,
+            method: request.method,
+            path: url.pathname,
+          },
+        });
         const unauth = unauthorizedResponse({ env });
         const cors = applyLocalhostCors({ request, existing: unauth }) ?? unauth;
         return withCorrelationHeader({ response: cors, correlationId });
       }
+
+      authLogger.info({
+        msg: 'mcp.auth',
+        fields: {
+          authEvent: 'verified',
+          authOk: true,
+          hasToken: true,
+          scopeCount: verified.scopes.length,
+          method: request.method,
+          path: url.pathname,
+        },
+      });
 
       // Inject the verified-claim Props into ctx.props for the DO handler.
       // The `agents/mcp` SDK reads `ctx.props` and forwards via
