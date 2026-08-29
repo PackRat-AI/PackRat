@@ -457,7 +457,8 @@ export function registerPackTools(agent: AgentContext): void {
     'packrat_similar_pack_items',
     {
       title: 'Find Similar Pack Items',
-      description: 'Find catalog gear similar to a specific item in a pack (semantic similarity).',
+      description:
+        "Find catalog gear comparable to a specific item already in a pack — the tool for swapping or upgrading an item, including finding a lighter replacement. Takes the pack item's `item_id`, which is returned by `packrat_list_pack_items`, `packrat_add_pack_item`, and in the `byCategory[].items[].id` field of `packrat_analyze_pack_weight`. Results are ranked by semantic similarity, NOT by weight, so compare each result's `weight` against the source item to identify the genuinely lighter options.",
       inputSchema: {
         pack_id: z.string(),
         item_id: z.string(),

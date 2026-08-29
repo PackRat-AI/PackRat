@@ -394,14 +394,18 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const db = createDb();
       try {
         // Minimal projection: only what computePackBreakdown reads.
-        // `name` is required — `byCategory[].items[]` formats each item as
-        // `<name> (<weight><unit> × <quantity>)`; without it, every entry
-        // renders as `undefined (1200g × 1)`.
+        // `name` is required — `byCategory[].items[]` carries a `label`
+        // formatted as `<name> (<weight><unit> × <quantity>)`; without it,
+        // every entry renders as `undefined (1200g × 1)`.
+        // `id` is required so each breakdown entry carries the pack-item id
+        // that `packrat_similar_pack_items` takes — a caller that spots the
+        // heaviest item here can then look up lighter replacements for it.
         const pack = await db.tag('packs.getById').query.packs.findFirst({
           where: and(eq(packs.id, params.packId), eq(packs.deleted, false)),
           with: {
             items: {
               columns: {
+                id: true,
                 name: true,
                 weight: true,
                 weightUnit: true,
