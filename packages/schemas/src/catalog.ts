@@ -107,6 +107,9 @@ const SortSchema = z.object({
     'createdAt',
     'updatedAt',
     'usage',
+    // `weight` is normalised to grams in CatalogService before ordering —
+    // the stored column mixes g/kg/oz/lb, so a raw sort would be wrong.
+    'weight',
   ]),
   order: z.enum(['asc', 'desc']),
 });

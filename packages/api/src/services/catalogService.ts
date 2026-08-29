@@ -84,7 +84,8 @@ export class CatalogService {
         | 'ratingValue'
         | 'createdAt'
         | 'updatedAt'
-        | 'usage';
+        | 'usage'
+        | 'weight';
       order: 'asc' | 'desc';
     };
   }): Promise<{
@@ -197,6 +198,36 @@ export class CatalogService {
           order === 'desc'
             ? desc(sql`COALESCE(pack_item_counts.count, 0)`)
             : asc(sql`COALESCE(pack_item_counts.count, 0)`),
+          desc(catalogItems.id),
+        ];
+      } else if (field === 'weight') {
+        // Weight needs unit normalisation before it can be ordered.
+        // `catalog_items.weight` is a bare number whose unit lives in a
+        // separate `weight_unit` column, and the catalog genuinely mixes
+        // them: ~960k rows in grams, but ~3k in oz, ~1k in lb, and ~175 in
+        // kg. Ordering the raw column would rank "3 oz" (85 g) as lighter
+        // than "10 g", which is exactly backwards for the ultralight
+        // queries this sort exists to serve.
+        //
+        // So convert to grams inline. Unknown/NULL units are treated as
+        // grams, matching the dominant convention in the data.
+        const weightInGrams = sql`(
+          ${catalogItems.weight} * CASE lower(${catalogItems.weightUnit})
+            WHEN 'kg' THEN 1000
+            WHEN 'lb' THEN 453.59237
+            WHEN 'oz' THEN 28.349523125
+            ELSE 1
+          END
+        )`;
+        // NULLS LAST in both directions: a row with no recorded weight is
+        // not "the lightest", and surfacing ~820k unweighed rows at the top
+        // of an ascending weight sort would make the sort useless. Postgres
+        // defaults to NULLS LAST for ASC and NULLS FIRST for DESC, so the
+        // DESC branch needs it stated explicitly.
+        orderBy = [
+          order === 'desc'
+            ? sql`${weightInGrams} DESC NULLS LAST`
+            : sql`${weightInGrams} ASC NULLS LAST`,
           desc(catalogItems.id),
         ];
       } else {

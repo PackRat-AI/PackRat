@@ -60,6 +60,18 @@ export enum CatalogSortField {
   CreatedAt = 'createdAt',
   UpdatedAt = 'updatedAt',
   Usage = 'usage',
+  /**
+   * Sort by item weight, normalised to grams server-side (the stored
+   * catalog mixes g/kg/oz/lb, so the API converts before ordering).
+   *
+   * Added after an OpenAI Apps review run: the model reached for
+   * `sort_by: "weight"` unprompted on an ultralight-gear query, the value
+   * failed schema validation, and the whole catalog search silently
+   * no-opped — so the answer was built from model knowledge instead of
+   * PackRat's catalog. Weight is the primary axis backpackers optimise
+   * on; omitting it from a gear catalog's sort options was the gap.
+   */
+  Weight = 'weight',
 }
 
 /** Sort direction */
