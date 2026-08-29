@@ -1868,3 +1868,66 @@ OAUTH_KV namespaces + DCR secret" above.
 - [`packages/mcp/.dev.vars.example`](../../packages/mcp/.dev.vars.example) — required env vars
 - [`packages/mcp/wrangler.jsonc`](../../packages/mcp/wrangler.jsonc) — env / route / binding structure
 - [The implementation plan](../plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md)
+
+## U16 — Review-session observability (OpenAI Apps submission)
+
+Added after the first OpenAI Apps submission was rejected with "some test
+cases failed" and no per-case detail. The goal is that a *second* rejection
+arrives with evidence attached instead of guesswork.
+
+### What gets emitted
+
+All lines are structured JSON on `console.*` → Workers Logs. `logpush` and
+`observability` are already enabled at `head_sampling_rate: 1`, so nothing is
+sampled away.
+
+| `msg` | When | Key fields |
+|---|---|---|
+| `mcp.tool.call` | Every tool invocation | `sessionId`, `seq`, `toolName`, `durationMs`, `ok`, `isError`, `errorCode`, `resultChars`, `structured`, `argKeys`, `preview` |
+| `mcp.tools.list` | Once per session, after the scope filter | `sessionId`, `toolCount`, `toolNames` |
+| `mcp.session` | Session init | `sessionId`, `phase`, `scopeCount`, `toolCount` |
+| `mcp.auth` | Every `/mcp` request gate | `authEvent`, `authOk`, `authReason`, `hasToken`, `httpStatus` |
+| `mcp.upstream.error` | Any failed PackRat API call | `upstreamStatus`, `upstreamOperation`, `retryable` |
+
+### Reconstructing a session
+
+`sessionId` (`session:<DO-id>`) groups one MCP session; `seq` orders the calls
+within it. Together they turn the log stream into an ordered transcript of what
+a reviewer's run actually did.
+
+```bash
+# Live, during a review run:
+bunx wrangler tail --env prod --format json
+
+# Just the tool calls:
+bunx wrangler tail --env prod --format json | grep mcp.tool.call
+
+# Auth failures only:
+bunx wrangler tail --env prod --format json | grep mcp.auth | grep '"authOk":false'
+```
+
+`mcp.auth` lines carry the `cf-ray` correlation ID rather than a `sessionId`
+(they are emitted at the fetch gate, before the DO exists). The
+`X-Correlation-Id` response header echoes the same value, so a failing client
+request can be tied to its server-side line.
+
+### The allowlist trap — read before adding a field
+
+`observability.ts` enforces a **default-deny** allowlist (`TOP_LEVEL_ALLOWLIST`).
+Any field logged but not listed there is silently rewritten to the string
+`'[redacted]'`. It does not throw and it does not warn.
+
+**Add the allowlist entry in the same commit as the log field.** The
+round-trip test in `src/__tests__/telemetry.test.ts` ("preserves every emitted
+field through scrubFields") is what catches an omission — keep its
+`EMITTED_FIELDS` map in sync when adding fields.
+
+### Privacy invariants
+
+- Argument **keys** are logged, never argument **values** (a trip name or
+  search query is user content).
+- Result previews are capped at 600 chars and passed through `previewForLog`,
+  which strips JWTs, bearer/secret assignments, and email addresses before
+  truncating. Scrub-then-truncate ordering matters: truncating first could
+  split a credential into a fragment the pattern pass would miss.
+- No tokens, no URLs, no request/response bodies.
