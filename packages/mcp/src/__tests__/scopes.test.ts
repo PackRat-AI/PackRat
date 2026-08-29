@@ -71,8 +71,7 @@ describe('classifyTool', () => {
   it('classifies read-only domain verbs as read', () => {
     expect(classifyTool('packrat_analyze_pack_gaps')).toBe('read');
     expect(classifyTool('packrat_analyze_pack_weight')).toBe('read');
-    expect(classifyTool('packrat_compare_gear_items')).toBe('read');
-    expect(classifyTool('packrat_semantic_gear_search')).toBe('read');
+    expect(classifyTool('packrat_search_gear_catalog')).toBe('read');
     expect(classifyTool('packrat_similar_catalog_items')).toBe('read');
     expect(classifyTool('packrat_similar_pack_items')).toBe('read');
     expect(classifyTool('packrat_suggest_pack_items')).toBe('read');

@@ -17,7 +17,8 @@ export function registerCatalogTools(agent: AgentContext): void {
   // no such gear" and offered to search the web instead, which is the worst
   // outcome an app review can produce.
   //
-  // `packrat_semantic_gear_search` (vector) handles the same natural-language
+  // The vector-backed replacement below (which now carries this same name)
+  // handles the natural-language
   // queries correctly — it returned 30 relevant hits on the identical prompt —
   // so the keyword path is withdrawn rather than shipped alongside it. Re-enable
   // once the matcher tokenises the query and ranks per-token instead of
@@ -87,20 +88,26 @@ export function registerCatalogTools(agent: AgentContext): void {
 
   // ── Semantic/vector search ────────────────────────────────────────────────
 
+  // Named `packrat_search_gear_catalog` — the plain, discoverable name for
+  // "search the gear catalog" — even though the implementation is vector
+  // search. The former keyword tool owned this name and is now disabled
+  // (see above); the name is reused rather than retired because it is what
+  // a model reaches for when a user says "search PackRat for X", and the
+  // semantic path is the one that actually answers such queries well.
   tool<{ query: string; limit: number }>(
     agent.server,
-    'packrat_semantic_gear_search',
+    'packrat_search_gear_catalog',
     {
-      title: 'Semantic Gear Search',
+      title: 'Search Gear Catalog',
       description:
-        'Search the gear catalog using vector/semantic search. Good for natural-language queries like "warm but lightweight insulation layer for cold shoulder-season camping" or "minimalist trail running shoe for rocky terrain".',
+        'Search the PackRat gear catalog of outdoor products with specs, weights, prices, and reviews. Pass the user\'s natural-language phrasing directly — the search is semantic, so full descriptive queries like "ultralight 2-person tent under 1.5kg" or "warm but lightweight insulation layer for shoulder-season camping" work better than reduced keywords.',
       inputSchema: {
         query: z.string().min(3),
         limit: z.number().int().min(1).max(30).default(8),
       },
       outputSchema: CatalogSimilarityOutputSchema.shape,
       annotations: {
-        title: 'Semantic Gear Search',
+        title: 'Search Gear Catalog',
         readOnlyHint: true,
         destructiveHint: false,
         idempotentHint: true,

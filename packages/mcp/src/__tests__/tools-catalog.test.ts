@@ -33,11 +33,11 @@ function countCalls(calls: ApiCall[], segments: string[]): number {
 // surface (see tools/catalog.ts for the rationale). Restore these
 // alongside the registration if the tool is ever re-enabled.
 
-describe('packrat_semantic_gear_search', () => {
+describe('packrat_search_gear_catalog', () => {
   it('GETs the vector-search endpoint and returns a text block', async () => {
     const { agent, server, calls } = makeAgent();
     registerCatalogTools(agent);
-    const result = await getToolHandler(server, 'packrat_semantic_gear_search')(
+    const result = await getToolHandler(server, 'packrat_search_gear_catalog')(
       { query: 'warm lightweight insulation layer', limit: 8 },
       makeExtra(),
     );

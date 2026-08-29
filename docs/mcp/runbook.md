@@ -550,7 +550,7 @@ Tier 2 categories (representative — not exhaustive):
   (`packrat_get_pack_item`, `packrat_list_pack_items`).
 - Catalog read paths beyond `packrat_search_gear_catalog`
   (`packrat_get_catalog_item`, `packrat_similar_catalog_items`,
-  `packrat_semantic_gear_search`, `packrat_compare_gear_items`,
+  `packrat_search_gear_catalog`,
   `packrat_list_gear_categories`).
 - All `tools/feed.ts`, `tools/trail-conditions.ts`,
   `tools/trails.ts`, `tools/alltrails.ts`, `tools/guides.ts`,
@@ -633,7 +633,7 @@ them on every `resources/list` call would burn megabytes of context
 for marginal value. `CATALOG_LIST_CAP = 25` is one screen of resource
 entries in Claude.ai's resource browser; the model can still page
 deeper via `packrat://search?q=...` or the
-`packrat_search_gear_catalog` / `packrat_semantic_gear_search` tools.
+`packrat_search_gear_catalog` tool (semantic/vector backed).
 
 Bumping the cap is cheap (single constant in `resources.ts`); revisit
 if reviewer feedback says the initial surface is too narrow.
@@ -1955,3 +1955,30 @@ field through scrubFields") is what catches an omission — keep its
   truncating. Scrub-then-truncate ordering matters: truncating first could
   split a credential into a fragment the pattern pass would miss.
 - No tokens, no URLs, no request/response bodies.
+
+
+## Connector tool surface — keep these in sync
+
+Three artifacts describe the tool surface and drift apart silently:
+
+1. **`packages/mcp/src/tools/*.ts`** — the registrations. Source of truth.
+2. **`packages/mcp/chatgpt-app-submission.json`** — the tools declared to
+   OpenAI. Only the connector-exposed subset.
+3. **`apps/landing/data/mcp-catalog.json`** — the public docs table, a
+   GENERATED artifact.
+
+(3) is produced by `bun run dump-catalog` from `packages/mcp/`. It is not
+wired into CI, so it does not regenerate on its own — it sat stale from
+2026-06-27 until 2026-08-29 and kept advertising `packrat_compare_gear_items`
+and `packrat_semantic_gear_search` after both were renamed or withdrawn.
+**Re-run it whenever a tool is added, renamed, or disabled**, and grep
+`apps/landing/app/mcp/page.tsx` too — that page hardcodes some tool names in
+prose that the generator does not touch.
+
+### Naming note: `packrat_search_gear_catalog`
+
+The name now belongs to the **vector/semantic** tool. It previously belonged
+to a keyword-matching tool that was withdrawn (the matcher required a
+contiguous phrase match, so natural-language queries returned zero results).
+The name was reused rather than retired because it is the name a model
+reaches for when a user says "search PackRat for X".
