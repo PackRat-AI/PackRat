@@ -1,0 +1,260 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "PackRat",
+    "subtitle": "Plan trips and build packs",
+    "description": "PackRat is an outdoor adventure planner. It helps you build and weigh packing lists, plan multi-day trips, search a large outdoor gear catalog by natural language, check weather for a destination, and read outdoor guides. Tools cover reading and writing your own packs, trips, and pack templates, plus read-only lookups for gear, trails, weather, and guides.",
+    "category": "TRAVEL"
+  },
+  "tools": {
+    "packrat_get_weather": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches current conditions and forecast for a location and returns them without storing or changing any data.",
+        "open_world_justification": "Reads live forecast data from a third-party weather provider outside PackRat.",
+        "destructive_justification": "Only retrieves forecast data and cannot delete, overwrite, or otherwise alter any record."
+      }
+    },
+    "packrat_create_trip": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a new trip record in the signed-in user's PackRat account.",
+        "open_world_justification": "The trip is private to the user's account and is not published to any public or third-party system.",
+        "destructive_justification": "Only adds a new trip and never removes or overwrites an existing one."
+      }
+    },
+    "packrat_create_pack": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a new pack record in the signed-in user's PackRat account.",
+        "open_world_justification": "The pack is created private to the user's account and is not published externally.",
+        "destructive_justification": "Only adds a new pack and never deletes or overwrites existing packs."
+      }
+    },
+    "packrat_add_pack_item": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Adds a gear item row to one of the user's packs.",
+        "open_world_justification": "Writes only to the user's private pack contents within PackRat.",
+        "destructive_justification": "Appends a new item and leaves existing items in the pack untouched."
+      }
+    },
+    "packrat_list_packs": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the signed-in user's packs without modifying them.",
+        "open_world_justification": "Reads only from the user's own PackRat account data.",
+        "destructive_justification": "Performs a read query and cannot alter or remove any pack."
+      }
+    },
+    "packrat_analyze_pack_weight": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Computes a total, base, worn, and consumable weight breakdown from the pack's existing items without changing them.",
+        "open_world_justification": "Reads only the user's own pack contents inside PackRat.",
+        "destructive_justification": "Returns a calculated breakdown and writes nothing back to the pack."
+      }
+    },
+    "packrat_analyze_pack_gaps": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Compares the pack's existing categories against recommended essentials and returns what is missing without adding anything.",
+        "open_world_justification": "Reads only the user's own pack data within PackRat.",
+        "destructive_justification": "Reports missing categories and never removes or replaces existing items."
+      }
+    },
+    "packrat_semantic_gear_search": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Runs a vector similarity query over the PackRat gear catalog and returns matches.",
+        "open_world_justification": "Searches PackRat's own catalog rather than the public internet.",
+        "destructive_justification": "Executes a read-only search that cannot modify catalog data."
+      }
+    },
+    "packrat_compare_gear_items": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Looks up the given catalog item IDs and returns a side-by-side specification comparison.",
+        "open_world_justification": "Reads only from PackRat's internal gear catalog.",
+        "destructive_justification": "Retrieves and formats existing catalog records without altering them."
+      }
+    },
+    "packrat_similar_pack_items": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Finds catalog items similar to an item already in the user's pack and returns them as suggestions.",
+        "open_world_justification": "Queries PackRat's own catalog and the user's pack, not external systems.",
+        "destructive_justification": "Returns suggestions only and does not swap, remove, or edit any pack item."
+      }
+    },
+    "packrat_search_guides": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Runs a full-text search across PackRat's published outdoor guides.",
+        "open_world_justification": "Searches PackRat's own guide content store rather than the open web.",
+        "destructive_justification": "Performs a read-only search that cannot change guide content."
+      }
+    },
+    "packrat_get_guide": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches the full text of one published guide by ID.",
+        "open_world_justification": "Reads from PackRat's own guide content store.",
+        "destructive_justification": "Retrieves guide content and cannot edit or delete it."
+      }
+    },
+    "packrat_get_season_suggestions": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Generates season-appropriate packing suggestions from the user's existing inventory and returns them without saving.",
+        "open_world_justification": "Uses the user's own PackRat inventory and does not write to external systems.",
+        "destructive_justification": "Produces suggestions only and does not modify any pack or inventory record."
+      }
+    },
+    "packrat_search_gear_catalog": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Runs a keyword and filter search over the PackRat gear catalog.",
+        "open_world_justification": "Searches PackRat's internal catalog rather than third-party retail sites.",
+        "destructive_justification": "Executes a read-only query against catalog data."
+      }
+    },
+    "packrat_list_pack_items": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists the gear items currently in one of the user's packs.",
+        "open_world_justification": "Reads only the user's own private pack contents.",
+        "destructive_justification": "Performs a read query and leaves all items unchanged."
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "description": "Plan a trip end to end, including weather, a saved trip, and a matching pack.",
+      "user_prompt": "Plan a 3-day backpacking trip to Tuolumne Meadows in Yosemite starting tomorrow. Check the weather, then create a trip and build a pack for it.",
+      "file_attachment_urls": null,
+      "tools_triggered": "packrat_get_weather, packrat_create_trip, packrat_create_pack, packrat_add_pack_item",
+      "expected_output": "Returns the near-term forecast for the destination, then confirms a newly created trip and a newly created pack containing appropriate backpacking gear items.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Search the gear catalog with natural language and compare the top results on weight and price.",
+      "user_prompt": "Find ultralight 2-person tents under 1.5kg and compare the top three on weight and price.",
+      "file_attachment_urls": null,
+      "tools_triggered": "packrat_semantic_gear_search, packrat_compare_gear_items",
+      "expected_output": "Returns matching two-person tents from the catalog under roughly 1500 grams, then a side-by-side comparison of the top three on weight and price. Rating is shown where the catalog has one and omitted where it does not, since rating coverage is partial.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Analyze an existing pack's weight and identify missing essentials for stated conditions.",
+      "user_prompt": "What's the total weight of my Yosemite pack? Then, treating it as a 2-day backpacking trip in rainy conditions, tell me which essentials I'm missing.",
+      "file_attachment_urls": null,
+      "tools_triggered": "packrat_list_packs, packrat_analyze_pack_weight, packrat_analyze_pack_gaps",
+      "expected_output": "Identifies the pack whose name contains Yosemite, returns its total weight with a base, worn, and consumable breakdown, then lists missing essential gear categories for a 2-day rainy backpacking trip.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Build a pack and then swap the heaviest items for lighter options.",
+      "user_prompt": "Create a backpacking pack for a cold, wet weekend, then find lighter alternatives for my heaviest items.",
+      "file_attachment_urls": null,
+      "tools_triggered": "packrat_create_pack, packrat_add_pack_item, packrat_analyze_pack_weight, packrat_similar_pack_items",
+      "expected_output": "Creates the pack with suitable cold and wet weather gear, reports the heaviest items by weight, and proposes lighter catalog alternatives for them.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Look up destination guidance from published guides and seasonal suggestions.",
+      "user_prompt": "Search PackRat's guides for water filtration tips, and give me season-appropriate packing suggestions for Zion in November.",
+      "file_attachment_urls": null,
+      "tools_triggered": "packrat_search_guides, packrat_get_guide, packrat_get_season_suggestions",
+      "expected_output": "Returns relevant guide content on water filtration plus season-appropriate packing suggestions for the stated location and month. If no guide matches the query, the app says so plainly and still returns the seasonal suggestions.",
+      "expected_output_url": null
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "description": "Do not trigger for flight or hotel booking requests, which the app cannot perform.",
+      "user_prompt": "Book me a flight to Denver and a hotel near the park for next weekend.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because it does not book travel or lodging.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not trigger for turn-by-turn navigation or live trail routing.",
+      "user_prompt": "Give me turn-by-turn directions to the trailhead and track my hike as I walk it.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because it provides no live navigation or activity tracking.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not trigger for general shopping outside outdoor gear planning.",
+      "user_prompt": "Order a new laptop charger and have it delivered tomorrow.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because it does not place orders and the item is unrelated to outdoor gear planning.",
+      "expected_output_url": null
+    }
+  ]
+}
