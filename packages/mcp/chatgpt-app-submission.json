@@ -183,11 +183,11 @@
       "expected_output_url": null
     },
     {
-      "description": "Analyze an existing pack's weight and identify missing essentials for stated conditions.",
-      "user_prompt": "What's the total weight of my Yosemite pack? Then, treating it as a 2-day backpacking trip in rainy conditions, tell me which essentials I'm missing.",
+      "description": "Analyze an existing pack's weight and identify missing essentials.",
+      "user_prompt": "What's the total weight of my Tuolumne Meadows pack, and am I missing any essentials?",
       "file_attachment_urls": null,
       "tools_triggered": "packrat_list_packs, packrat_analyze_pack_weight, packrat_analyze_pack_gaps",
-      "expected_output": "Identifies the pack whose name contains Yosemite, returns its total weight with a base, worn, and consumable breakdown, then lists missing essential gear categories for a 2-day rainy backpacking trip.",
+      "expected_output": "Identifies the pack whose name contains Tuolumne Meadows, returns its total weight with a base, worn, and consumable breakdown, then lists missing gear the pack analysis flags, with the must-have items called out ahead of the nice-to-have ones.",
       "expected_output_url": null
     },
     {
