@@ -290,6 +290,28 @@ describe('packrat_analyze_pack_gaps', () => {
     expect(firstText(result).length).toBeGreaterThan(0);
     expect(hit(calls, { segments: ['user', 'packs', 'gap-analysis'], verb: 'post' })).toBe(true);
   });
+
+  // A bare "what am I missing?" prompt supplies only the pack. The upstream
+  // endpoint requires destination/tripType/duration, so without defaults the
+  // call fails validation instead of answering — this was one of the causes
+  // of the ChatGPT Apps review rejection.
+  it('falls back to a 2-day backpacking context when trip details are omitted', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_analyze_pack_gaps')(
+      { pack_id: 'p_abc123' },
+      makeExtra(),
+    );
+    expect(firstText(result).length).toBeGreaterThan(0);
+
+    const call = calls.find((c) => c.path.at(-1) === 'post' && c.path.includes('gap-analysis'));
+    expect(call, 'gap-analysis post was not recorded').toBeDefined();
+    expect(call?.args[0]).toMatchObject({
+      destination: 'Unspecified',
+      tripType: PackCategory.Backpacking,
+      duration: 2,
+    });
+  });
 });
 
 // DISABLED — packrat_analyze_pack_image is not registered: no connector path

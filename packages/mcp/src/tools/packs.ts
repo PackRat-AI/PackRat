@@ -598,9 +598,9 @@ export function registerPackTools(agent: AgentContext): void {
 
   tool<{
     pack_id: string;
-    destination: string;
-    trip_type: PackCategory;
-    duration_days: number;
+    destination?: string;
+    trip_type?: PackCategory;
+    duration_days?: number;
     start_date?: string;
     end_date?: string;
   }>(
@@ -609,12 +609,23 @@ export function registerPackTools(agent: AgentContext): void {
     {
       title: 'Analyze Pack Gaps',
       description:
-        "Identify missing essential gear categories for a specific trip context. Compares the pack's current categories against recommended essentials and returns what's missing.",
+        "Identify missing essential gear categories for a specific trip context. Compares the pack's current categories against recommended essentials and returns what's missing. Only pack_id is required — when the user doesn't state a destination, trip type, or duration, this falls back to a general 2-day backpacking context rather than failing.",
       inputSchema: {
         pack_id: z.string().describe('The pack ID to analyze'),
-        destination: z.string().describe('Trip destination'),
-        trip_type: z.nativeEnum(PackCategory).describe('Trip / activity type'),
-        duration_days: z.number().int().min(1).describe('Trip duration in days'),
+        destination: z
+          .string()
+          .optional()
+          .describe("Trip destination; defaults to 'Unspecified' when the user hasn't named one"),
+        trip_type: z
+          .nativeEnum(PackCategory)
+          .optional()
+          .describe(`Trip / activity type; defaults to '${PackCategory.Backpacking}'`),
+        duration_days: z
+          .number()
+          .int()
+          .min(1)
+          .optional()
+          .describe('Trip duration in days; defaults to 2'),
         start_date: z.string().optional().describe('ISO date for trip start'),
         end_date: z.string().optional().describe('ISO date for trip end'),
       },
@@ -628,10 +639,13 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ pack_id, destination, trip_type, duration_days, start_date, end_date }) =>
       call({
+        // Defaults keep the tool usable from a bare "what am I missing?" prompt.
+        // The upstream endpoint requires all three, so a missing field would
+        // otherwise surface as a validation error rather than an answer.
         promise: agent.api.user.packs({ packId: pack_id })['gap-analysis'].post({
-          destination,
-          tripType: trip_type,
-          duration: duration_days,
+          destination: destination ?? 'Unspecified',
+          tripType: trip_type ?? PackCategory.Backpacking,
+          duration: duration_days ?? 2,
           startDate: start_date,
           endDate: end_date,
         }),
