@@ -1895,16 +1895,40 @@ sampled away.
 within it. Together they turn the log stream into an ordered transcript of what
 a reviewer's run actually did.
 
+**Gotcha:** `wrangler tail --format json` emits *pretty-printed* JSON — multi-line
+objects, not JSONL. A per-line `json.loads` finds nothing. The structured log
+line is a JSON **string** nested inside `.logs[].message[]`, so it must be
+grepped out and unescaped:
+
 ```bash
-# Live, during a review run:
-bunx wrangler tail --env prod --format json
+# Live, during a review run — all telemetry:
+bunx wrangler tail --env prod --format json \
+  | grep -o '{\\"ts[^}]*}' | sed 's/\\"/"/g'
 
 # Just the tool calls:
-bunx wrangler tail --env prod --format json | grep mcp.tool.call
+bunx wrangler tail --env prod --format json \
+  | grep -o '{\\"ts[^}]*}' | sed 's/\\"/"/g' | grep mcp.tool.call
 
 # Auth failures only:
-bunx wrangler tail --env prod --format json | grep mcp.auth | grep '"authOk":false'
+bunx wrangler tail --env prod --format json \
+  | grep -o '{\\"ts[^}]*}' | sed 's/\\"/"/g' | grep '"authOk":false'
 ```
+
+Verified live on 2026-08-29 against deploy `8a20ea8f`: an unauthenticated POST
+to `/mcp` emits `authEvent:"challenge"` at info, and a bogus bearer emits
+`authEvent:"verify_failed"` at warn — both with no `[redacted]` fields.
+
+### Known issue: MCP_TOOLS_RL is not bound
+
+`wrangler deploy` warns `Unexpected fields found in env.prod field:
+"rate_limiting"` and the deployed binding table shows only `PackRatMCP` and
+`CF_VERSION_METADATA`. The rate-limit binding has **never** attached (predates
+U16; `wrangler.jsonc` untouched since `a3cd4c4ac`). `checkRateLimit` falls back
+to "allowed" when the binding is absent, so the tool surface is currently
+unlimited. Fails open, not closed — not a review blocker, but it means the
+60/60s budget documented above is not actually enforced. Likely a wrangler
+schema change for the `rate_limiting` block; wrangler is 35 minor versions
+behind (4.92.0 vs 4.127.1).
 
 `mcp.auth` lines carry the `cf-ray` correlation ID rather than a `sessionId`
 (they are emitted at the fetch gate, before the DO exists). The
