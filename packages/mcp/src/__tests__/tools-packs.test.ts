@@ -43,6 +43,42 @@ describe('packrat_list_packs', () => {
     expect(firstText(result).length).toBeGreaterThan(0);
     expect(hit(calls, { segments: ['user', 'packs'], verb: 'get' })).toBe(true);
   });
+
+  it("strips each pack's items array from the listing", async () => {
+    // Regression guard. `GET /api/packs` inlines every pack's full item list
+    // and takes no limit, so on an account with a dozen packs the
+    // pretty-printed envelope exceeded the 150k response cap (174 343 chars
+    // measured on the review account). Truncation drops structuredContent,
+    // and the model then reports it cannot read the user's packs at all —
+    // which is what happened on two of three runs of the submission test
+    // case. A listing needs the computed totals, not per-item detail.
+    const { agent, server } = makeAgent();
+    const heavyPack = {
+      id: 'p_1',
+      name: 'Heavy',
+      totalWeight: 1000,
+      baseWeight: 900,
+      items: Array.from({ length: 30 }, (_, i) => ({ id: `i_${i}`, name: `Item ${i}` })),
+    };
+    agent.api = {
+      user: {
+        packs: {
+          get: () => Promise.resolve({ data: [heavyPack], error: null, status: 200 }),
+        },
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: minimal stub for one call path
+    } as any;
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_list_packs')(
+      { include_public: false, offset: 0, limit: 10 },
+      makeExtra(),
+    );
+    const text = firstText(result);
+    expect(text).toContain('"name": "Heavy"');
+    // Computed totals survive; the per-item payload does not.
+    expect(text).toContain('totalWeight');
+    expect(text).not.toContain('i_0');
+  });
 });
 
 describe('packrat_get_pack', () => {

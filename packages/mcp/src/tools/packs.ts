@@ -65,8 +65,30 @@ export function registerPackTools(agent: AgentContext): void {
       // slice here using the clamped limit + offset. This keeps the
       // structured envelope honest about page size and `nextOffset`.
       const page = items.slice(offset, offset + clamped);
+      // Drop each pack's `items` array from the listing.
+      //
+      // WHY: `GET /api/packs` inlines every pack's full item list, and the
+      // route takes no limit — it returns the account's entire pack history.
+      // On an account with a dozen packs that is ~10 KB per pack, and the
+      // pretty-printed envelope blew past the 150k response cap (measured at
+      // 174 343 chars on the review account). Truncation drops
+      // `structuredContent`, so the model receives an unparseable blob and
+      // reports it cannot read the user's packs at all — which is exactly
+      // what happened on two of three runs of the submission test case.
+      //
+      // Slicing alone does not fix it: the oversized payload has already
+      // crossed the wire and been parsed before the slice happens. A listing
+      // does not need per-item detail anyway — `totalWeight`/`baseWeight` are
+      // already computed server-side, and `packrat_get_pack` /
+      // `packrat_list_pack_items` exist for drilling into one pack.
+      //
+      // `items` is optional on PackSchema, so omitting it stays schema-valid.
+      const summaries = page.map((pack) => {
+        const { items: _items, ...rest } = pack as typeof pack & { items?: unknown };
+        return rest;
+      });
       return ok({
-        data: withNextOffset({ items: page, offset, limit: clamped }),
+        data: withNextOffset({ items: summaries, offset, limit: clamped }),
         structured: true,
       });
     },
