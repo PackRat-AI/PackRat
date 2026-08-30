@@ -53,7 +53,7 @@
  *
  *   bun packages/mcp/scripts/seed-reviewer-account.ts \
  *     --token <reviewer-access-token> \
- *     [--api https://api.packrat.world] \
+ *     [--api https://api.packratai.com] \
  *     [--dry-run]
  *
  * Get the token by signing into the reviewer account and copying its access
@@ -173,7 +173,7 @@ function arg(flag: string): string | undefined {
 const HAS = (flag: string): boolean => process.argv.includes(flag);
 
 const TOKEN = arg('--token') ?? process.env.PACKRAT_REVIEWER_TOKEN;
-const API = (arg('--api') ?? 'https://api.packrat.world').replace(/\/$/, '');
+const API = (arg('--api') ?? 'https://api.packratai.com').replace(/\/$/, '');
 const DRY_RUN = HAS('--dry-run');
 const FORCE = HAS('--force');
 
@@ -224,17 +224,30 @@ async function main(): Promise<void> {
     return;
   }
 
-  const pack = await api<{ id: string }>('/api/packs', {
+  // The pack/item create endpoints take a CLIENT-supplied `id` plus
+  // `localCreatedAt`/`localUpdatedAt` — they are built for the offline
+  // outbox in the mobile app, where a replayed write must be idempotent
+  // (the route does onConflictDoNothing on the id). Server-generated ids
+  // are not an option, so the script mints UUIDs itself.
+  const now = new Date().toISOString();
+  const packId = crypto.randomUUID();
+  await api('/api/packs', {
     method: 'POST',
-    body: JSON.stringify(PACK),
+    body: JSON.stringify({
+      ...PACK,
+      id: packId,
+      localCreatedAt: now,
+      localUpdatedAt: now,
+    }),
   });
-  console.log(`\nCreated pack ${pack.id}`);
+  console.log(`\nCreated pack ${packId}`);
 
   let added = 0;
   for (const item of ITEMS) {
-    await api(`/api/packs/${pack.id}/items`, {
+    await api(`/api/packs/${packId}/items`, {
       method: 'POST',
       body: JSON.stringify({
+        id: crypto.randomUUID(),
         name: item.name,
         category: item.category,
         weight: item.weight_grams,
