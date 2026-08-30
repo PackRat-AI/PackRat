@@ -2014,6 +2014,33 @@ the public REST API as that user and needs no DB or admin access. It is
 idempotent: a second run detects the existing `Lost Coast Trail` pack and exits
 without duplicating it.
 
+### Cleaning the account between test rounds
+
+Test runs leave packs and trips behind — TC1 creates a trip and a pack every
+time it runs, and the pack-building cases each create one. After a dozen runs
+the account had 13 packs and 2 trips, which is both unrepresentative of a real
+reviewer's account and actively harmful: `GET /api/packs` inlines every pack's
+items, so the listing grew past the MCP 150 000-char response cap and the model
+started reporting it could not read the user's packs at all.
+
+Delete everything except the seeded fixture, then re-seed if needed:
+
+```bash
+TOKEN=<reviewer-access-token>
+API=https://api.packratai.com
+
+# Inspect first — never bulk-delete blind.
+curl -s "$API/api/packs" -H "authorization: Bearer $TOKEN" \
+  | python3 -c "import json,sys; [print(p['id'], p['name']) for p in json.load(sys.stdin)]"
+
+# Delete a pack / trip (both are SOFT deletes — recoverable via the deleted flag).
+curl -X DELETE "$API/api/packs/<packId>" -H "authorization: Bearer $TOKEN"
+curl -X DELETE "$API/api/trips/<tripId>" -H "authorization: Bearer $TOKEN"
+```
+
+Keep the `Lost Coast Trail` fixture (or re-seed it afterwards). A clean account
+is one fixture pack and zero trips.
+
 ### Do not casually reword the seeded item names
 
 TC4 routes through `packrat_similar_pack_items`, a vector search over the gear
