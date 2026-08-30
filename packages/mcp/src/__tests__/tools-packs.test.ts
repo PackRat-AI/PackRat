@@ -15,6 +15,7 @@
  * irrelevant here — we never call `elicitInput`.
  */
 
+import { isObject } from '@packrat/guards';
 import { describe, expect, it } from 'vitest';
 import { ItemCategory, PackCategory } from '../enums';
 import { registerPackTools } from '../tools/packs';
@@ -215,34 +216,36 @@ describe('packrat_similar_pack_items', () => {
     expect(hit(calls, { segments: ['user', 'packs', 'items', 'similar'], verb: 'get' })).toBe(true);
   });
 
-  it('forwards lighter_only as a string query param when set', () => {
+  /** Pull the `query` object off the recorded similar-items call. */
+  const similarQuery = (calls: { path: string[]; args: unknown[] }[]) => {
+    const call = calls.find((c) =>
+      hit([c], { segments: ['user', 'packs', 'items', 'similar'], verb: 'get' }),
+    );
+    const first = call?.args[0];
+    return isObject(first) ? (first as { query?: Record<string, unknown> }).query : undefined;
+  };
+
+  it('forwards lighter_only as the string "true" when set', async () => {
     const { agent, server, calls } = makeAgent();
     registerPackTools(agent);
-    return getToolHandler(server, 'packrat_similar_pack_items')(
+    await getToolHandler(server, 'packrat_similar_pack_items')(
       { pack_id: 'p_abc123', item_id: 'i_xyz789', limit: 10, lighter_only: true },
       makeExtra(),
-    ).then(() => {
-      const call = calls.find((c: ApiCall) =>
-        hit([c], { segments: ['user', 'packs', 'items', 'similar'], verb: 'get' }),
-      );
-      // Eden serialises query params as strings; the endpoint checks
-      // `=== 'true'`, so a boolean would silently disable the filter.
-      expect(call?.args?.[0]?.query?.lighter_only).toBe('true');
-    });
+    );
+    // Eden serialises query params as strings and the endpoint compares
+    // against 'true', so forwarding a raw boolean would silently disable
+    // the filter rather than fail loudly.
+    expect(similarQuery(calls)?.lighter_only).toBe('true');
   });
 
-  it('omits lighter_only entirely when not set', () => {
+  it('omits lighter_only entirely when not set', async () => {
     const { agent, server, calls } = makeAgent();
     registerPackTools(agent);
-    return getToolHandler(server, 'packrat_similar_pack_items')(
+    await getToolHandler(server, 'packrat_similar_pack_items')(
       { pack_id: 'p_abc123', item_id: 'i_xyz789', limit: 10 },
       makeExtra(),
-    ).then(() => {
-      const call = calls.find((c: ApiCall) =>
-        hit([c], { segments: ['user', 'packs', 'items', 'similar'], verb: 'get' }),
-      );
-      expect(call?.args?.[0]?.query).not.toHaveProperty('lighter_only');
-    });
+    );
+    expect(similarQuery(calls)).not.toHaveProperty('lighter_only');
   });
 });
 

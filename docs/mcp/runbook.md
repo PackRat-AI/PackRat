@@ -1982,3 +1982,60 @@ to a keyword-matching tool that was withdrawn (the matcher required a
 contiguous phrase match, so natural-language queries returned zero results).
 The name was reused rather than retired because it is the name a model
 reaches for when a user says "search PackRat for X".
+
+## Seeding the reviewer account (required before app-submission testing)
+
+Two submission test cases read a pack that must **already exist** on the
+reviewer's account:
+
+- **TC3** — "What's the total weight of my Tuolumne Meadows pack, and am I
+  missing any essentials?"
+- **TC4** — "…then find lighter alternatives for my heaviest items."
+
+The reviewer account gets wiped between test rounds. Without the fixture those
+cases fail for **setup** reasons, which from the reviewer's side is
+indistinguishable from the app being broken.
+
+```bash
+bun packages/mcp/scripts/seed-reviewer-account.ts --token <reviewer-access-token>
+
+# preview without writing:
+bun packages/mcp/scripts/seed-reviewer-account.ts --token <t> --dry-run
+```
+
+The token must belong to the reviewer account itself — the script writes via
+the public REST API as that user and needs no DB or admin access. It is
+idempotent: a second run detects the existing `Tuolumne Meadows` pack and exits
+without duplicating it.
+
+### Do not casually reword the seeded item names
+
+TC4 routes through `packrat_similar_pack_items`, a vector search over the gear
+catalog whose similarity is computed against the **pack item's name**. A name
+that embeds closer to the wrong product category returns useless results.
+
+This actually happened during a review run: an item named
+`"40L backpack with rain cover"` returned **rain covers**, not backpacks,
+because the phrase embeds nearer to "rain cover". The model got nothing usable,
+fell back to the open web, and quoted weights for products not in our catalog
+while attributing them to PackRat.
+
+Every name in the script was verified empirically — embedded with
+`text-embedding-3-small`, queried against the live catalog with `lighter_only`
+applied — to return same-category, genuinely lighter, coherent products. Keep
+names simple and category-forward:
+
+| Works | Does not work |
+|---|---|
+| `65L backpacking backpack` | `40L backpack with rain cover` |
+| `2-person backpacking tent` | `Ultralight shelter system` |
+
+If you change a name, re-verify it returns the right category before relying on it.
+
+### Why these categories
+
+The four heavy items TC4 targets come from categories whose catalog weight data
+holds up. Per issue #2735, `catalog_items.weight` is unreliable in places (about
+30% of two-person tents record over 3 kg; some rows are stored in pounds). The
+seeded tent is a mid-weight 2200 g shelter rather than an ultralight one, so it
+has hundreds of coherent lighter candidates instead of competing with bad rows.
