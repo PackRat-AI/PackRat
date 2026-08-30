@@ -66,8 +66,7 @@ describe('packrat_list_packs', () => {
           get: () => Promise.resolve({ data: [heavyPack], error: null, status: 200 }),
         },
       },
-      // biome-ignore lint/suspicious/noExplicitAny: minimal stub for one call path
-    } as any;
+    } as unknown as typeof agent.api;
     registerPackTools(agent);
     const result = await getToolHandler(server, 'packrat_list_packs')(
       { include_public: false, offset: 0, limit: 10 },
