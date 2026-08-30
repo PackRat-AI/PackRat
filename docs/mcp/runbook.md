@@ -1988,9 +1988,15 @@ reaches for when a user says "search PackRat for X".
 Two submission test cases read a pack that must **already exist** on the
 reviewer's account:
 
-- **TC3** — "What's the total weight of my Tuolumne Meadows pack, and am I
+- **TC3** — "What's the total weight of my Lost Coast Trail pack, and am I
   missing any essentials?"
-- **TC4** — "…then find lighter alternatives for my heaviest items."
+- **TC4** — "Find lighter alternatives for the heaviest items in my Lost Coast
+  Trail pack."
+
+The fixture is deliberately **not** a Yosemite/Tuolumne pack: TC1's prompt
+creates its own "Tuolumne Meadows 3-Day" pack, so reusing that destination
+would leave two lookalike packs on the account and make "my <X> pack"
+ambiguous — the model could analyse either, and which one would vary by run.
 
 The reviewer account gets wiped between test rounds. Without the fixture those
 cases fail for **setup** reasons, which from the reviewer's side is
@@ -2005,7 +2011,7 @@ bun packages/mcp/scripts/seed-reviewer-account.ts --token <t> --dry-run
 
 The token must belong to the reviewer account itself — the script writes via
 the public REST API as that user and needs no DB or admin access. It is
-idempotent: a second run detects the existing `Tuolumne Meadows` pack and exits
+idempotent: a second run detects the existing `Lost Coast Trail` pack and exits
 without duplicating it.
 
 ### Do not casually reword the seeded item names

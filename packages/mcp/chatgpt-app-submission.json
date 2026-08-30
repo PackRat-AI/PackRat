@@ -184,18 +184,18 @@
     },
     {
       "description": "Analyze an existing pack's weight and identify missing essentials.",
-      "user_prompt": "What's the total weight of my Tuolumne Meadows pack, and am I missing any essentials?",
+      "user_prompt": "What's the total weight of my Lost Coast Trail pack, and am I missing any essentials?",
       "file_attachment_urls": null,
       "tools_triggered": "packrat_list_packs, packrat_analyze_pack_weight, packrat_analyze_pack_gaps",
-      "expected_output": "Identifies the pack whose name contains Tuolumne Meadows, returns its total weight with a base, worn, and consumable breakdown, then lists missing gear the pack analysis flags, with the must-have items called out ahead of the nice-to-have ones.",
+      "expected_output": "Identifies the pack whose name contains Lost Coast Trail, returns its total weight with a base, worn, and consumable breakdown, then lists missing gear the pack analysis flags, with the must-have items called out ahead of the nice-to-have ones.",
       "expected_output_url": null
     },
     {
-      "description": "Build a pack and then swap the heaviest items for lighter options.",
-      "user_prompt": "Create a backpacking pack for a cold, wet weekend, then find lighter alternatives for my heaviest items.",
+      "description": "Analyze an existing pack and swap the heaviest items for lighter catalog options.",
+      "user_prompt": "Find lighter alternatives for the heaviest items in my Lost Coast Trail pack.",
       "file_attachment_urls": null,
-      "tools_triggered": "packrat_create_pack, packrat_add_pack_item, packrat_analyze_pack_weight, packrat_similar_pack_items",
-      "expected_output": "Creates the pack with suitable cold and wet weather gear, reports the heaviest items by weight, and proposes lighter catalog alternatives for them.",
+      "tools_triggered": "packrat_list_packs, packrat_analyze_pack_weight, packrat_similar_pack_items",
+      "expected_output": "Identifies the Lost Coast Trail pack, reports its heaviest items by weight, then proposes lighter catalog alternatives for them with the weight saving for each. Alternatives come from the PackRat gear catalog rather than general knowledge.",
       "expected_output_url": null
     },
     {

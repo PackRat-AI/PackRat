@@ -8,9 +8,14 @@
  * Two of the five submission test cases read a pack that must already
  * exist on the reviewer's account:
  *
- *   TC3 — "What's the total weight of my Tuolumne Meadows pack, and am I
+ *   TC3 — "What's the total weight of my Lost Coast Trail pack, and am I
  *          missing any essentials?"
- *   TC4 — "…then find lighter alternatives for my heaviest items."
+ *   TC4 — "Find lighter alternatives for the heaviest items in my Lost Coast
+ *          Trail pack."
+ *
+ * The name is deliberately distinct from TC1's destination: TC1 creates its
+ * own "Tuolumne Meadows 3-Day" pack, so reusing Yosemite here would leave two
+ * lookalike packs on the account and make "my <X> pack" ambiguous.
  *
  * The reviewer account is wiped between test rounds, so without this
  * script those cases fail for setup reasons rather than product reasons —
@@ -56,7 +61,7 @@
  * ever calls the public REST API as that user — it needs no DB access and
  * no admin rights.
  *
- * Idempotent: if a pack named "Tuolumne Meadows" already exists on the
+ * Idempotent: if a pack named "Lost Coast Trail" already exists on the
  * account, the script reports it and exits without creating a duplicate,
  * unless --force is passed (which creates a second pack; prefer cleaning up
  * first).
@@ -85,15 +90,24 @@ interface SeedItem {
   notes?: string;
 }
 
-/** The pack TC3 and TC4 both read. */
-const PACK_NAME = 'Tuolumne Meadows';
+/**
+ * The pack TC3 and TC4 both read.
+ *
+ * Deliberately NOT a Yosemite/Tuolumne name: TC1's prompt creates its own
+ * pack ("Tuolumne Meadows 3-Day — Aug 30–Sep 1"), so a fixture sharing that
+ * destination would leave two similar packs on the account and make TC3's
+ * "my <X> pack" ambiguous — the model could analyse either one, and which it
+ * picks would vary by run. A distinct destination keeps the fixture
+ * unmistakable regardless of what other test cases have already created.
+ */
+const PACK_NAME = 'Lost Coast Trail';
 
 const PACK = {
   name: PACK_NAME,
   description:
-    'Three-day Tuolumne Meadows backpacking trip. Seeded fixture for the app-submission test cases.',
+    'Three-day Lost Coast Trail backpacking trip. Seeded fixture for the app-submission test cases.',
   category: 'backpacking' as const,
-  tags: ['yosemite', 'backpacking', '3-day'],
+  tags: ['lost-coast', 'backpacking', '3-day'],
 };
 
 /**
