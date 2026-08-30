@@ -6,3 +6,4 @@ export {
   isInEarlyAccess,
   PACKRAT_PRO_ENTITLEMENT,
 } from './featureAccess';
+export { normalizeFeatureFlags } from './featureFlagResolution';

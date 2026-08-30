@@ -1,22 +1,16 @@
-import { isBoolean } from '@packrat/guards';
 import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import {
   type FeatureFlagKey,
   type FeatureFlagsMap,
   featureFlagsAtom,
+  normalizeFlags,
 } from 'expo-app/atoms/featureFlagsAtom';
-import { appConfig } from 'expo-app/config';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect } from 'react';
 
 export const FEATURE_FLAGS_QUERY_KEY = ['featureFlags', 'config'] as const;
-
-// The known flag keys, typed. Object.keys widens to string[], but the keys of
-// the statically-defined config object are exactly FeatureFlagKey.
-// safe-cast: keys of a compile-time-known object are its keyof union
-const knownFeatureFlagKeys = Object.keys(appConfig.featureFlags) as FeatureFlagKey[];
 
 /**
  * Fetches the effective feature-flag map from the API. Cached for 5 minutes —
@@ -65,22 +59,26 @@ export function useFeatureFlags(): FeatureFlagsMap {
 
   useEffect(() => {
     if (!data) return;
-    // Recompute fresh from the coded defaults on every successful fetch,
-    // rather than folding onto the previously cached value, so a flag
-    // removed server-side reliably reverts instead of sticking.
-    const next: FeatureFlagsMap = { ...appConfig.featureFlags };
-    // Iterate the typed known keys, not the server response, so an unrecognized
-    // server key can't create a flag and each key is a FeatureFlagKey by type.
-    for (const key of knownFeatureFlagKeys) {
-      const value = data[key];
-      if (isBoolean(value)) next[key] = value;
-    }
-    setCached(next);
+    // Recompute fresh from the server response on every successful fetch,
+    // rather than folding onto the previously cached value, so a flag removed
+    // server-side reliably reverts instead of sticking.
+    //
+    // `normalizeFlags` iterates the build's known keys rather than the response,
+    // so an unrecognized server key can't create a flag; a known key the server
+    // omits resolves to `false` rather than to its coded default, because the
+    // server is authoritative once it has answered and an omitted key is one
+    // nobody has decided on.
+    setCached(normalizeFlags(data));
   }, [data, setCached]);
 
   return cached;
 }
 
+/**
+ * Read one flag. Always returns a boolean: the map is normalized on both the
+ * rehydration and fetch paths, and the `?? false` here is a final backstop so
+ * the declared return type can never be a lie — an unresolvable flag is off.
+ */
 export function useFeatureFlag(key: FeatureFlagKey): boolean {
-  return useFeatureFlags()[key];
+  return useFeatureFlags()[key] ?? false;
 }
