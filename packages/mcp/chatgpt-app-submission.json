@@ -202,8 +202,8 @@
       "description": "Look up destination guidance from published guides and seasonal suggestions.",
       "user_prompt": "Search PackRat's guides for water filtration tips, and give me season-appropriate packing suggestions for Zion in November.",
       "file_attachment_urls": null,
-      "tools_triggered": "packrat_search_guides, packrat_get_guide, packrat_get_season_suggestions",
-      "expected_output": "Returns relevant PackRat guide content on water filtration, plus season-appropriate packing suggestions for the stated location and month. If no guide matches the query, the app says so plainly and still returns the seasonal suggestions.",
+      "tools_triggered": "packrat_search_guides, packrat_get_guide",
+      "expected_output": "Returns relevant guide content on water filtration plus season-appropriate packing suggestions for the stated location and month.",
       "expected_output_url": null
     }
   ],
