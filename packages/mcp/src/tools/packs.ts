@@ -452,18 +452,30 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Similar items for an item in a pack ───────────────────────────────────
 
-  tool<{ pack_id: string; item_id: string; limit: number; threshold?: number }>(
+  tool<{
+    pack_id: string;
+    item_id: string;
+    limit: number;
+    threshold?: number;
+    lighter_only?: boolean;
+  }>(
     agent.server,
     'packrat_similar_pack_items',
     {
       title: 'Find Similar Pack Items',
       description:
-        "Find catalog gear comparable to a specific item already in a pack — the tool for swapping or upgrading an item, including finding a lighter replacement. Takes the pack item's `item_id`, which is returned by `packrat_list_pack_items`, `packrat_add_pack_item`, and in the `byCategory[].items[].id` field of `packrat_analyze_pack_weight`. Results are ranked by semantic similarity, NOT by weight, so compare each result's `weight` against the source item to identify the genuinely lighter options.",
+        "Find catalog gear comparable to a specific item already in a pack — the tool for swapping or upgrading an item, including finding a lighter replacement. Takes the pack item's `item_id`, which is returned by `packrat_list_pack_items`, `packrat_add_pack_item`, and in the `byCategory[].items[].id` field of `packrat_analyze_pack_weight`. Set `lighter_only: true` whenever the user wants a lighter replacement — results are otherwise ranked by semantic similarity alone and will include items heavier than the source.",
       inputSchema: {
         pack_id: z.string(),
         item_id: z.string(),
         limit: z.number().int().min(1).max(50).default(10),
         threshold: z.number().min(0).max(1).optional().describe('Similarity threshold (0-1)'),
+        lighter_only: z
+          .boolean()
+          .optional()
+          .describe(
+            'Return only catalog items weighing less than the source pack item. Weights normalise to grams server-side, so mixed g/kg/oz/lb rows compare correctly.',
+          ),
       },
       annotations: {
         title: 'Find Similar Pack Items',
@@ -473,7 +485,7 @@ export function registerPackTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async ({ pack_id, item_id, limit, threshold }) =>
+    async ({ pack_id, item_id, limit, threshold, lighter_only }) =>
       call({
         promise: agent.api.user
           .packs({ packId: pack_id })
@@ -482,6 +494,7 @@ export function registerPackTools(agent: AgentContext): void {
             query: {
               limit: String(limit),
               ...(threshold !== undefined ? { threshold: String(threshold) } : {}),
+              ...(lighter_only ? { lighter_only: 'true' } : {}),
             },
           }),
         action: 'find similar items',

@@ -214,6 +214,36 @@ describe('packrat_similar_pack_items', () => {
     expect(firstText(result).length).toBeGreaterThan(0);
     expect(hit(calls, { segments: ['user', 'packs', 'items', 'similar'], verb: 'get' })).toBe(true);
   });
+
+  it('forwards lighter_only as a string query param when set', () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    return getToolHandler(server, 'packrat_similar_pack_items')(
+      { pack_id: 'p_abc123', item_id: 'i_xyz789', limit: 10, lighter_only: true },
+      makeExtra(),
+    ).then(() => {
+      const call = calls.find((c: ApiCall) =>
+        hit([c], { segments: ['user', 'packs', 'items', 'similar'], verb: 'get' }),
+      );
+      // Eden serialises query params as strings; the endpoint checks
+      // `=== 'true'`, so a boolean would silently disable the filter.
+      expect(call?.args?.[0]?.query?.lighter_only).toBe('true');
+    });
+  });
+
+  it('omits lighter_only entirely when not set', () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    return getToolHandler(server, 'packrat_similar_pack_items')(
+      { pack_id: 'p_abc123', item_id: 'i_xyz789', limit: 10 },
+      makeExtra(),
+    ).then(() => {
+      const call = calls.find((c: ApiCall) =>
+        hit([c], { segments: ['user', 'packs', 'items', 'similar'], verb: 'get' }),
+      );
+      expect(call?.args?.[0]?.query).not.toHaveProperty('lighter_only');
+    });
+  });
 });
 
 describe('packrat_suggest_pack_items', () => {
