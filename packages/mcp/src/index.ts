@@ -452,9 +452,9 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
     // client can see, not what we registered. A divergence between this list
     // and the tools declared in `chatgpt-app-submission.json` is a direct
     // rejection cause, and this is the only place it's observable.
-    this.telemetry.session('init', {
-      scopeCount: grantedScopes.length,
-      toolCount: this._toolsByName.size,
+    this.telemetry.session({
+      phase: 'init',
+      fields: { scopeCount: grantedScopes.length, toolCount: this._toolsByName.size },
     });
     this.telemetry.toolsList(
       [...this._toolsByName].filter(([, tool]) => tool.enabled).map(([name]) => name),

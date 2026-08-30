@@ -59,13 +59,17 @@
  * Get the token by signing into the reviewer account and copying its access
  * token, or by minting one through the normal auth flow. The script only
  * ever calls the public REST API as that user — it needs no DB access and
- * no admin rights.
+ * no admin rights, which is also why the token is a flag rather than an
+ * environment variable (see the TOKEN constant).
  *
  * Idempotent: if a pack named "Lost Coast Trail" already exists on the
  * account, the script reports it and exits without creating a duplicate,
  * unless --force is passed (which creates a second pack; prefer cleaning up
  * first).
  */
+
+import { toString as asString, toRecordArray } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 
 type ItemCategory =
   | 'clothing'
@@ -172,8 +176,14 @@ function arg(flag: string): string | undefined {
 }
 const HAS = (flag: string): boolean => process.argv.includes(flag);
 
-const TOKEN = arg('--token') ?? process.env.PACKRAT_REVIEWER_TOKEN;
-const API = (arg('--api') ?? 'https://api.packratai.com').replace(/\/$/, '');
+// `--token` only, deliberately: reading it from the environment would mean
+// importing the `@packrat/env/node` shim, whose schema requires
+// NEON_DATABASE_URL and several other unrelated vars. This script talks to
+// the public REST API and needs no database access, so forcing an operator
+// to populate a DB URL just to seed a pack would be worse than passing a flag.
+const TOKEN = arg('--token');
+const RAW_API = arg('--api') ?? 'https://api.packratai.com';
+const API = RAW_API.endsWith('/') ? RAW_API.slice(0, -1) : RAW_API;
 const DRY_RUN = HAS('--dry-run');
 const FORCE = HAS('--force');
 
@@ -181,13 +191,21 @@ if (!TOKEN) {
   console.error(
     'Missing token.\n\n' +
       '  bun packages/mcp/scripts/seed-reviewer-account.ts --token <access-token>\n\n' +
-      'Or set PACKRAT_REVIEWER_TOKEN. The token must belong to the reviewer\n' +
-      'account itself — the script writes packs as that user via the public API.',
+      'The token must belong to the reviewer account itself — the script writes\n' +
+      'packs as that user via the public API.',
   );
   process.exit(1);
 }
 
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
+/**
+ * Call the PackRat API as the reviewer user.
+ *
+ * Returns `unknown` rather than a caller-chosen generic: a `<T>` here would
+ * be an unchecked assertion about a network response, which is exactly the
+ * shape check-type-casts rejects. Callers narrow what they actually read
+ * (see `toRecord` / `toRecordArray` at the two call sites below).
+ */
+async function api({ path, init }: { path: string; init?: RequestInit }): Promise<unknown> {
   const res = await fetch(`${API}${path}`, {
     ...init,
     headers: {
@@ -200,7 +218,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     throw new Error(`${init?.method ?? 'GET'} ${path} → ${res.status}: ${text.slice(0, 300)}`);
   }
-  return (text ? JSON.parse(text) : {}) as T;
+  return text ? safeJsonParse(text) : {};
 }
 
 async function main(): Promise<void> {
@@ -216,10 +234,11 @@ async function main(): Promise<void> {
   }
 
   // Idempotency: don't stack duplicate fixture packs on the reviewer account.
-  const existing = await api<{ items?: { id: string; name: string }[] }>('/api/packs');
-  const dupe = existing.items?.find((p) => p.name === PACK_NAME);
+  // The list route returns a bare array of packs.
+  const existing = toRecordArray(await api({ path: '/api/packs' }));
+  const dupe = existing.find((p) => asString(p.name) === PACK_NAME);
   if (dupe && !FORCE) {
-    console.log(`\nPack "${PACK_NAME}" already exists (id ${dupe.id}). Nothing to do.`);
+    console.log(`\nPack "${PACK_NAME}" already exists (id ${asString(dupe.id)}). Nothing to do.`);
     console.log('Pass --force to create another anyway (prefer deleting the old one first).');
     return;
   }
@@ -231,32 +250,38 @@ async function main(): Promise<void> {
   // are not an option, so the script mints UUIDs itself.
   const now = new Date().toISOString();
   const packId = crypto.randomUUID();
-  await api('/api/packs', {
-    method: 'POST',
-    body: JSON.stringify({
-      ...PACK,
-      id: packId,
-      localCreatedAt: now,
-      localUpdatedAt: now,
-    }),
+  await api({
+    path: '/api/packs',
+    init: {
+      method: 'POST',
+      body: safeJsonStringify({
+        ...PACK,
+        id: packId,
+        localCreatedAt: now,
+        localUpdatedAt: now,
+      }),
+    },
   });
   console.log(`\nCreated pack ${packId}`);
 
   let added = 0;
   for (const item of ITEMS) {
-    await api(`/api/packs/${packId}/items`, {
-      method: 'POST',
-      body: JSON.stringify({
-        id: crypto.randomUUID(),
-        name: item.name,
-        category: item.category,
-        weight: item.weight_grams,
-        weightUnit: 'g',
-        quantity: item.quantity ?? 1,
-        consumable: item.is_consumable ?? false,
-        worn: item.is_worn ?? false,
-        ...(item.notes ? { notes: item.notes } : {}),
-      }),
+    await api({
+      path: `/api/packs/${packId}/items`,
+      init: {
+        method: 'POST',
+        body: safeJsonStringify({
+          id: crypto.randomUUID(),
+          name: item.name,
+          category: item.category,
+          weight: item.weight_grams,
+          weightUnit: 'g',
+          quantity: item.quantity ?? 1,
+          consumable: item.is_consumable ?? false,
+          worn: item.is_worn ?? false,
+          ...(item.notes ? { notes: item.notes } : {}),
+        }),
+      },
     });
     added += 1;
     process.stdout.write(`\r  added ${added}/${ITEMS.length}`);

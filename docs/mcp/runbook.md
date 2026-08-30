@@ -2010,7 +2010,9 @@ bun packages/mcp/scripts/seed-reviewer-account.ts --token <t> --dry-run
 ```
 
 The token must belong to the reviewer account itself — the script writes via
-the public REST API as that user and needs no DB or admin access. It is
+the public REST API as that user and needs no DB or admin access. It is passed
+as a flag rather than read from the environment: the shared env shim requires
+`NEON_DATABASE_URL` and other unrelated vars this script has no use for. It is
 idempotent: a second run detects the existing `Lost Coast Trail` pack and exits
 without duplicating it.
 

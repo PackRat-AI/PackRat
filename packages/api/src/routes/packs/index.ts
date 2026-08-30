@@ -1136,14 +1136,17 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       // Both sides need unit normalisation before they can be compared: the
       // catalog stores g/kg/oz/lb in `weight_unit`, and so does `pack_items`.
       // Comparing the raw columns would rank 3 oz (85 g) as lighter than 10 g.
-      const gramsExpr = (weight: SQL | AnyColumn, unit: SQL | AnyColumn): SQL<number> =>
+      const gramsExpr = ({ weight, unit }: { weight: AnyColumn; unit: AnyColumn }): SQL<number> =>
         sql<number>`(${weight} * CASE lower(${unit})
           WHEN 'kg' THEN 1000
           WHEN 'lb' THEN 453.59237
           WHEN 'oz' THEN 28.349523125
           ELSE 1
         END)`;
-      const catalogGrams = gramsExpr(catalogItems.weight, catalogItems.weightUnit);
+      const catalogGrams = gramsExpr({
+        weight: catalogItems.weight,
+        unit: catalogItems.weightUnit,
+      });
       const sourceGrams =
         normalize({
           weight: sourceItem.weight,

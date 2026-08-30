@@ -201,7 +201,7 @@ describe('ReviewTelemetry', () => {
         t.toolCall({ toolName: 'x', durationMs: 1, args: {}, result: { content: [] } }),
       ).not.toThrow();
       expect(() => t.toolsList(['a'])).not.toThrow();
-      expect(() => t.session('init')).not.toThrow();
+      expect(() => t.session({ phase: 'init' })).not.toThrow();
     } finally {
       console.log = original;
     }

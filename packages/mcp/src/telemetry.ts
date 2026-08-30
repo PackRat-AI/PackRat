@@ -42,7 +42,7 @@
  * zone log for the same request.
  */
 
-import { isObject, isString } from '@packrat/guards';
+import { toString as asString, isString, toRecord } from '@packrat/guards';
 import { safeJsonStringify } from '@packrat/utils';
 import { createLogger, type Logger } from './observability';
 
@@ -121,10 +121,7 @@ export function previewForLog(value: unknown): string {
  * runs.
  */
 export function argKeysOf(args: unknown): string {
-  if (!isObject(args)) return '';
-  return Object.keys(args as Record<string, unknown>)
-    .sort()
-    .join(',');
+  return Object.keys(toRecord(args)).sort().join(',');
 }
 
 /** Shape of a tool result we can read telemetry off of, without importing the SDK union. */
@@ -140,12 +137,7 @@ type ResultLike = {
  * successful results or any shape that doesn't match — we never guess.
  */
 function errorCodeOf(result: ResultLike): string | undefined {
-  const structured = result.structuredContent;
-  if (!isObject(structured)) return undefined;
-  const error = (structured as Record<string, unknown>).error;
-  if (!isObject(error)) return undefined;
-  const code = (error as Record<string, unknown>).code;
-  return isString(code) ? code : undefined;
+  return asString(toRecord(toRecord(result.structuredContent).error).code);
 }
 
 /** Total characters across a result's text content blocks. */
@@ -154,10 +146,7 @@ function resultCharsOf(result: ResultLike): number {
   if (!Array.isArray(content)) return 0;
   let total = 0;
   for (const block of content) {
-    if (isObject(block)) {
-      const text = (block as Record<string, unknown>).text;
-      if (isString(text)) total += text.length;
-    }
+    total += asString(toRecord(block).text)?.length ?? 0;
   }
   return total;
 }
@@ -167,11 +156,7 @@ function resultTextOf(result: ResultLike): unknown {
   const content = result.content;
   if (!Array.isArray(content) || content.length === 0) return result.structuredContent ?? null;
   const first = content[0];
-  if (isObject(first)) {
-    const text = (first as Record<string, unknown>).text;
-    if (isString(text)) return text;
-  }
-  return first ?? null;
+  return asString(toRecord(first).text) ?? first ?? null;
 }
 
 // ── Session-scoped emitter ───────────────────────────────────────────────────
@@ -235,7 +220,7 @@ export class ReviewTelemetry {
         return;
       }
 
-      const envelope = (isObject(result) ? result : {}) as ResultLike;
+      const envelope: ResultLike = toRecord(result);
       const isError = envelope.isError === true;
       const errorCode = errorCodeOf(envelope);
       const fields: Record<string, unknown> = {
@@ -286,7 +271,7 @@ export class ReviewTelemetry {
   }
 
   /** Session lifecycle marker — pairs a sessionId with granted-scope count. */
-  session(phase: string, fields: Record<string, unknown> = {}): void {
+  session({ phase, fields = {} }: { phase: string; fields?: Record<string, unknown> }): void {
     try {
       this.logger.info({
         msg: 'mcp.session',
