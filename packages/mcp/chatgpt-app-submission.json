@@ -199,11 +199,11 @@
       "expected_output_url": null
     },
     {
-      "description": "Look up destination guidance from published guides and seasonal suggestions.",
-      "user_prompt": "Search PackRat's guides for water filtration tips, and give me season-appropriate packing suggestions for Zion in November.",
+      "description": "Look up published guide content on an outdoor skills topic and summarise it.",
+      "user_prompt": "Search PackRat's guides for Leave No Trace, then open the most relevant one and summarise its key principles for me.",
       "file_attachment_urls": null,
       "tools_triggered": "packrat_search_guides, packrat_get_guide",
-      "expected_output": "Returns relevant guide content on water filtration plus season-appropriate packing suggestions for the stated location and month.",
+      "expected_output": "Returns matching PackRat guides for Leave No Trace, then opens the most relevant one and summarises its principles from the guide's own content. The summary reflects what the guide says rather than general knowledge about the topic.",
       "expected_output_url": null
     }
   ],
