@@ -22,7 +22,7 @@
 // there is intentional and is honoured. This module only governs values that
 // arrive from outside the binary, where absence carries no decision at all.
 
-import { isBoolean, isObject, objectFromEntries, objectKeys } from '@packrat/guards';
+import { isBoolean, isObject } from '@packrat/guards';
 
 /**
  * Normalize an untrusted flag map against a set of known keys and their coded
@@ -48,22 +48,21 @@ export function normalizeFeatureFlags<K extends string>({
   source: unknown;
   defaults: Record<K, boolean>;
 }): Record<K, boolean> {
-  // `objectKeys` / `objectFromEntries` from ts-extras rather than the built-ins:
-  // Object.keys widens to string[] and Object.fromEntries widens the result,
-  // both of which would need an `as`. The typed versions preserve K, so this
-  // function carries no type assertions at all.
-  const known = objectKeys(defaults);
+  // Start from a copy of `defaults` rather than an empty object. That keeps the
+  // value typed as Record<K, boolean> the whole way through with no assertion:
+  // an empty `{}` would have to be asserted into shape, and the entries helpers
+  // (objectKeys/objectFromEntries) widen K into a `${Exclude<K, symbol>}`
+  // template literal that TS will not narrow back to K.
+  const resolved: Record<K, boolean> = { ...defaults };
 
   // Nothing fetched or rehydrated — the coded decisions stand.
-  if (!isObject(source)) {
-    return objectFromEntries(known.map((key) => [key, defaults[key]]));
+  if (!isObject(source)) return resolved;
+
+  for (const key in resolved) {
+    // Reflect.get reads an unknown-shaped object without asserting its type.
+    const value = Reflect.get(source, key);
+    resolved[key] = isBoolean(value) ? value : false;
   }
 
-  return objectFromEntries(
-    known.map((key) => {
-      // Reflect.get reads an unknown-shaped object without asserting its type.
-      const value = Reflect.get(source, key);
-      return [key, isBoolean(value) ? value : false];
-    }),
-  );
+  return resolved;
 }
