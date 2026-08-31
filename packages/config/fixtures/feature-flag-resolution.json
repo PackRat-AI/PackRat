@@ -1,0 +1,71 @@
+{
+  "$comment": [
+    "Shared parity fixture for feature-flag resolution.",
+    "",
+    "Read by BOTH implementations' test suites:",
+    "  - packages/config/src/featureFlagResolution.parity.test.ts (TypeScript)",
+    "  - apps/swift/Tests/PackRatTests/FeatureFlagResolutionTests.swift (Swift)",
+    "",
+    "The two resolvers must agree on every case below. Add a case here rather",
+    "than to one suite alone — a case added to only one language is exactly the",
+    "silent drift this file exists to prevent.",
+    "",
+    "`source: null` means nothing has been fetched or rehydrated yet."
+  ],
+  "cases": [
+    {
+      "name": "no source yet — coded defaults stand",
+      "defaults": { "enableAlpha": true, "enableBeta": false },
+      "source": null,
+      "expected": { "enableAlpha": true, "enableBeta": false }
+    },
+    {
+      "name": "booleans from the source are applied",
+      "defaults": { "enableAlpha": true, "enableBeta": false },
+      "source": { "enableAlpha": false, "enableBeta": true },
+      "expected": { "enableAlpha": false, "enableBeta": true }
+    },
+    {
+      "name": "key missing from a present source resolves to false, not its coded default",
+      "defaults": { "enableAlpha": true, "enableBeta": false },
+      "source": { "enableBeta": true },
+      "expected": { "enableAlpha": false, "enableBeta": true }
+    },
+    {
+      "name": "empty source turns every known key off",
+      "defaults": { "enableAlpha": true, "enableBeta": true },
+      "source": {},
+      "expected": { "enableAlpha": false, "enableBeta": false }
+    },
+    {
+      "name": "string values are rejected, not coerced",
+      "defaults": { "enableAlpha": true, "enableBeta": false },
+      "source": { "enableAlpha": "true", "enableBeta": "false" },
+      "expected": { "enableAlpha": false, "enableBeta": false }
+    },
+    {
+      "name": "numeric values are rejected, not coerced",
+      "defaults": { "enableAlpha": true, "enableBeta": false },
+      "source": { "enableAlpha": 1, "enableBeta": 0 },
+      "expected": { "enableAlpha": false, "enableBeta": false }
+    },
+    {
+      "name": "null value resolves to false",
+      "defaults": { "enableAlpha": true },
+      "source": { "enableAlpha": null },
+      "expected": { "enableAlpha": false }
+    },
+    {
+      "name": "unknown server key is dropped — the build's key set is authoritative",
+      "defaults": { "enableAlpha": true, "enableBeta": false },
+      "source": { "enableAlpha": true, "enableBeta": true, "enableGhost": true },
+      "expected": { "enableAlpha": true, "enableBeta": true }
+    },
+    {
+      "name": "empty known-key set yields an empty map",
+      "defaults": {},
+      "source": { "anything": true },
+      "expected": {}
+    }
+  ]
+}
