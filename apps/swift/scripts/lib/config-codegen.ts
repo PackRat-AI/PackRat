@@ -23,9 +23,7 @@ export function renderSwiftFeatureFlags({
   featureFlags: FeatureFlags;
   sourceDescription: string;
 }): string {
-  const entries = Object.entries(featureFlags).sort(([left], [right]) =>
-    left.localeCompare(right),
-  );
+  const entries = Object.entries(featureFlags).sort(([left], [right]) => left.localeCompare(right));
 
   const fields = entries
     .map(([key, value]) => `    static let ${swiftIdentifier(key)} = ${swiftBool(value)}`)
