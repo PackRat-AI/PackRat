@@ -23,6 +23,21 @@ struct AuthGateView: View {
         .animation(.spring(duration: 0.3), value: authManager.isRestoringSession)
         .animation(.spring(duration: 0.3), value: authManager.canUseApp)
         .animation(.spring(duration: 0.3), value: route)
+        // Re-runs whenever the signed-in user changes, including sign-out
+        // (nil). Tying purchases identity to the same signal as the rest of the
+        // session keeps RevenueCat's app-user-id equal to our users.id, which
+        // is the join the entitlements webhook writes against.
+        .task(id: authManager.currentUser?.id) {
+            if let userId = authManager.currentUser?.id {
+                await SubscriptionService.shared.identify(userId: userId)
+            } else {
+                // Anonymous again, so the next account on this device does not
+                // inherit the previous one's entitlements.
+                await SubscriptionService.shared.resetUser()
+            }
+            await FeatureAccessStore.shared.refresh()
+            await FeatureFlagStore.shared.refresh()
+        }
         .onOpenURL { url in
             #if os(iOS)
             if GIDSignIn.sharedInstance.handle(url) {

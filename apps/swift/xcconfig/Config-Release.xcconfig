@@ -5,3 +5,9 @@ PACKRAT_DISPLAY_NAME = PackRat
 // environment (CI secret, Release-build script, or Config-Release.local.xcconfig
 // — gitignored) for production crash reporting. Empty value disables Sentry.
 SENTRY_DSN =
+
+// REVENUECAT_API_KEY flows xcconfig → Info.plist → runtime, like SENTRY_DSN.
+// Leave blank to disable purchases entirely: the SDK is never configured, and
+// entitlement checks resolve to "not Pro" rather than erroring. Gated features
+// therefore stay closed on a build with no key, which is the safe default.
+REVENUECAT_API_KEY =

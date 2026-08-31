@@ -16,6 +16,12 @@ struct PackRatApp: App {
         // errors are captured. A missing DSN silently disables the SDK.
         SentryConfig.start()
 
+        // Configure purchases before the first entitlement read. A build with
+        // no REVENUECAT_API_KEY no-ops here and resolves every viewer as
+        // non-Pro, so gated features stay closed rather than opening by
+        // accident. MainActor-isolated, and App.init runs on the main actor.
+        MainActor.assumeIsolated { SubscriptionService.shared.configure() }
+
         #if os(macOS)
         if ProcessInfo.processInfo.arguments.contains("--reset-auth") {
             UserDefaults.standard.set(true, forKey: "ApplePersistenceIgnoreState")

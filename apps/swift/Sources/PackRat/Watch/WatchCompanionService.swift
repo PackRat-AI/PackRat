@@ -78,7 +78,12 @@ final class WatchCompanionService: NSObject {
                 title: report?.trailName ?? "Trail Report",
                 conditionText: report?.overallCondition.capitalized ?? "Ready for a field note.",
                 hazardCount: report?.hazards.count ?? 0
-            )
+            ),
+            // Resolved on the phone, which owns the RevenueCat SDK. Reads the
+            // store's cached answer rather than the network, so publishing a
+            // snapshot never blocks on a fetch; an unresolved store reports
+            // false, leaving the watch fail-closed.
+            isPro: FeatureAccessStore.shared.isPro
         )
     }
 

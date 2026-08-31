@@ -7,6 +7,53 @@ struct PackRatWatchSnapshot: Codable, Equatable, Sendable {
     var weather: WatchWeatherSnapshot
     var trail: WatchTrailSnapshot
 
+    /// Whether the paired phone's signed-in user holds the Pro entitlement.
+    ///
+    /// The watch does not run the RevenueCat SDK — it has no purchase surface
+    /// of its own, so a second SDK there would be a second thing to keep in
+    /// sync for no product gain. Entitlement state rides the snapshot that
+    /// already flows phone → watch.
+    ///
+    /// Defaults to `false` — the fail-closed answer for a watch that has not
+    /// heard from the phone, or has only heard from a build too old to know
+    /// about entitlements.
+    var isPro: Bool = false
+
+    // A property default does NOT make the synthesized decoder tolerate a
+    // missing key — it throws `keyNotFound`. The watch app can outlive the
+    // phone build that last published to it, and a payload from a phone
+    // predating this field must degrade to "not Pro" rather than failing the
+    // whole decode and blanking the watch face. Hence the explicit init.
+    private enum CodingKeys: String, CodingKey {
+        case updatedAt, pack, trip, weather, trail, isPro
+    }
+
+    init(
+        updatedAt: Date,
+        pack: WatchPackSnapshot,
+        trip: WatchTripSnapshot? = nil,
+        weather: WatchWeatherSnapshot,
+        trail: WatchTrailSnapshot,
+        isPro: Bool = false
+    ) {
+        self.updatedAt = updatedAt
+        self.pack = pack
+        self.trip = trip
+        self.weather = weather
+        self.trail = trail
+        self.isPro = isPro
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        pack = try container.decode(WatchPackSnapshot.self, forKey: .pack)
+        trip = try container.decodeIfPresent(WatchTripSnapshot.self, forKey: .trip)
+        weather = try container.decode(WatchWeatherSnapshot.self, forKey: .weather)
+        trail = try container.decode(WatchTrailSnapshot.self, forKey: .trail)
+        isPro = try container.decodeIfPresent(Bool.self, forKey: .isPro) ?? false
+    }
+
     static let fallback = PackRatWatchSnapshot(
         updatedAt: Date(timeIntervalSince1970: 0),
         pack: WatchPackSnapshot(

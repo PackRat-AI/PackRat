@@ -27,3 +27,9 @@ PACKRAT_DISPLAY_NAME = PackRat
 // SENTRY_DSN is provided as a build-setting (xcconfig) and not committed —
 // the value is gitignored via Config-Debug.local.xcconfig.
 SENTRY_DSN =
+
+// REVENUECAT_API_KEY flows xcconfig → Info.plist → runtime, like SENTRY_DSN.
+// Leave blank to disable purchases entirely: the SDK is never configured, and
+// entitlement checks resolve to "not Pro" rather than erroring. Gated features
+// therefore stay closed on a build with no key, which is the safe default.
+REVENUECAT_API_KEY =
