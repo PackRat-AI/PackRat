@@ -5,7 +5,9 @@ import {
   DECISION_BLOCK_HEADING,
   DECLARATIONS,
   newFeatureFlagKeys,
+  newFlagsDefaultingTrue,
   parseDecision,
+  validateConvention,
   validateDecision,
 } from '../detect-access-decisions';
 
@@ -248,5 +250,85 @@ describe('validateDecision', () => {
       expiry: '2026-10-15',
     });
     expect(problems.some((p) => p.includes('omitted'))).toBe(true);
+  });
+});
+
+describe('newFlagsDefaultingTrue', () => {
+  it('flags a new default added as true', () => {
+    // A new feature that ships on for everyone at merge — the undecided
+    // rollout the gate exists to prevent, and one no PR-body edit can undo.
+    const diff = `+++ b/packages/config/src/config.ts
++    [FeatureFlag.EnableSummitLog]: true,
+`;
+    expect(newFlagsDefaultingTrue(diff)).toEqual(['EnableSummitLog']);
+  });
+
+  it('ignores a new default added as false', () => {
+    const diff = `+++ b/packages/config/src/config.ts
++    [FeatureFlag.EnableSummitLog]: false,
+`;
+    expect(newFlagsDefaultingTrue(diff)).toEqual([]);
+  });
+
+  it('ignores a removed true default', () => {
+    const diff = `-    [FeatureFlag.EnableOldThing]: true,
+`;
+    expect(newFlagsDefaultingTrue(diff)).toEqual([]);
+  });
+
+  it('returns nothing for an empty diff', () => {
+    expect(newFlagsDefaultingTrue('')).toEqual([]);
+  });
+});
+
+describe('validateConvention', () => {
+  it('is silent when no flag was added', () => {
+    // Most PRs. The convention only applies to new features.
+    expect(validateConvention({ flagKeys: [] })).toEqual([]);
+  });
+
+  it('requires a feature-key when a flag was added', () => {
+    const problems = validateConvention({ flagKeys: ['enableSummitLog'] });
+    expect(problems.length).toBeGreaterThan(0);
+    expect(problems[0]).toContain('also needs a feature_access key');
+  });
+
+  it('names the expected derived key so the fix is obvious', () => {
+    const problems = validateConvention({ flagKeys: ['enableSummitLog'] });
+    expect(problems.join(' ')).toContain('summit-log');
+  });
+
+  it('accepts a feature-key matching the derived name', () => {
+    expect(
+      validateConvention({ flagKeys: ['enableSummitLog'], declaredKey: 'summit-log' }),
+    ).toEqual([]);
+  });
+
+  it('rejects a feature-key that does not match the flag', () => {
+    // The pairing is what makes the two gates checkable rather than a matter
+    // of memory, so a mismatched name has to fail.
+    const problems = validateConvention({
+      flagKeys: ['enableSummitLog'],
+      declaredKey: 'summitlog',
+    });
+    expect(problems.length).toBeGreaterThan(0);
+    expect(problems[0]).toContain('does not match');
+  });
+
+  it('accepts any one of several added flags', () => {
+    // A PR adding two flags declares one access key; requiring one per flag
+    // would block a legitimately paired feature.
+    expect(
+      validateConvention({
+        flagKeys: ['enableSummitLog', 'enableTrailPhotos'],
+        declaredKey: 'trail-photos',
+      }),
+    ).toEqual([]);
+  });
+
+  it('applies the acronym rule when deriving the expected key', () => {
+    expect(validateConvention({ flagKeys: ['enableLocalAI'], declaredKey: 'local-ai' })).toEqual(
+      [],
+    );
   });
 });

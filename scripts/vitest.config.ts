@@ -11,6 +11,16 @@ import { defineConfig } from 'vitest/config';
  * files under `scripts/lint/__tests__/`.
  */
 export default defineConfig({
+  resolve: {
+    alias: {
+      // detect-access-decisions.ts imports the flag → feature_access naming
+      // rule from @packrat/config so the convention has one definition rather
+      // than a copy in the lint. Bun resolves the workspace package at
+      // runtime; vitest needs the alias spelled out.
+      '@packrat/config': resolve(__dirname, '../packages/config/src/index.ts'),
+      '@packrat/guards': resolve(__dirname, '../packages/guards/src/index.ts'),
+    },
+  },
   test: {
     name: 'scripts-unit',
     environment: 'node',

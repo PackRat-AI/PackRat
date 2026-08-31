@@ -39,6 +39,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { featureAccessKeyForFlag } from '@packrat/config';
 
 export const DECISION_BLOCK_HEADING = '## Access decision';
 
@@ -103,6 +104,30 @@ export function newFeatureFlagKeys(diff: string): string[] {
 
   for (const line of diff.split('\n')) {
     const match = line.match(addedEntry);
+    if (match?.[1]) keys.push(match[1]);
+  }
+  return keys;
+}
+
+/**
+ * Flag keys whose default value is added as `true` in this diff.
+ *
+ * The convention is that a new feature ships dark: the flag defaults to `false`
+ * and is turned on deliberately. A new key defaulting to `true` is on for
+ * everyone the moment it merges, which is the decision this gate exists to stop
+ * from happening by accident.
+ *
+ * Matches the defaults block in `APP_CONFIG_SOURCE`, e.g.
+ * `+    [FeatureFlag.EnableSummitLog]: true,`
+ */
+export function newFlagsDefaultingTrue(diff: string): string[] {
+  const keys: string[] = [];
+  const addedDefault = /^\+\s*\[FeatureFlag\.([A-Za-z0-9_]+)\]:\s*true\s*,?\s*$/;
+
+  for (const line of diff.split('\n')) {
+    const match = line.match(addedDefault);
+    // Report the enum member name; the caller has the wire name from
+    // newFeatureFlagKeys and the two are adjacent in the file.
     if (match?.[1]) keys.push(match[1]);
   }
   return keys;
@@ -282,6 +307,49 @@ export function validateDecision(decision: AccessDecision | null): string[] {
   return problems;
 }
 
+/**
+ * Checks the both-gates convention: every new feature carries a feature flag
+ * *and* a `feature_access` key, with the access key derived from the flag name.
+ *
+ * These answer different questions — the flag is "can this be on at all", the
+ * access row is "who may use it" — and a feature with only one of them is
+ * half-gated. A flag with no access row ships to whoever the flag lets in, with
+ * no audience decision. An access row with no flag cannot be switched off.
+ *
+ * @param flagKeys      Wire-name flag keys added in this diff.
+ * @param declaredKey   The `feature-key` from the PR declaration, if any.
+ */
+export function validateConvention({
+  flagKeys,
+  declaredKey,
+}: {
+  flagKeys: string[];
+  declaredKey?: string;
+}): string[] {
+  if (flagKeys.length === 0) return [];
+
+  const problems: string[] = [];
+  const expected = flagKeys.map(featureAccessKeyForFlag);
+
+  if (!declaredKey) {
+    problems.push(
+      `This PR adds the feature flag(s) ${flagKeys.join(', ')}, so it also needs a feature_access key.`,
+      `By the naming rule that is: ${expected.join(', ')}. See docs/access-decisions.md.`,
+    );
+    return problems;
+  }
+
+  if (!expected.includes(declaredKey)) {
+    problems.push(
+      `\`feature-key: ${declaredKey}\` does not match the flag(s) added in this PR.`,
+      `Expected one of: ${expected.join(', ')} (derived from ${flagKeys.join(', ')}).`,
+      'The two names are paired by rule so CI can check them; see docs/access-decisions.md.',
+    );
+  }
+
+  return problems;
+}
+
 // ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
@@ -331,6 +399,22 @@ function main(): never {
     console.log(`Detected new feature flag key(s): ${mechanicalKeys.join(', ')}`);
   }
 
+  // The convention is that a new feature ships dark. A flag whose default is
+  // added as `true` is on for everyone at merge, which is precisely the
+  // undecided rollout this gate exists to prevent — and unlike a missing
+  // access decision, no later edit to the PR body will change it.
+  const defaultingTrue = newFlagsDefaultingTrue(diff);
+  if (defaultingTrue.length > 0) {
+    console.error('\n✗ New feature flags must default to `false`.\n');
+    console.error(
+      `  - ${defaultingTrue.join(', ')} default to true in packages/config/src/config.ts.`,
+    );
+    console.error('  - A new feature ships dark and is turned on deliberately. Set the default to');
+    console.error('    false and enable it once the access decision is in place.\n');
+    console.error('See docs/access-decisions.md.');
+    process.exit(1);
+  }
+
   const problems = validateDecision(decision);
   if (problems.length > 0) {
     console.error('\n✗ This PR needs a human access decision before it can merge.\n');
@@ -342,6 +426,20 @@ function main(): never {
     console.error('  feature-key: <key>');
     console.error('  expiry: YYYY-MM-DD                  # early-access only\n');
     console.error('See docs/access-decisions.md.');
+    process.exit(1);
+  }
+
+  // Both gates, paired by rule. Checked after validateDecision so a PR missing
+  // its audience hears about that first rather than getting two complaints at
+  // once about the same incomplete block.
+  const conventionProblems = validateConvention({
+    flagKeys: mechanicalKeys,
+    declaredKey: decision?.featureKey,
+  });
+  if (conventionProblems.length > 0) {
+    console.error('\n✗ Every new feature needs both a feature flag and a feature_access key.\n');
+    for (const problem of conventionProblems) console.error(`  - ${problem}`);
+    console.error('');
     process.exit(1);
   }
 

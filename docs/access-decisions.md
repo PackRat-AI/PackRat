@@ -3,6 +3,49 @@
 Every new user-facing feature needs a human to decide who gets it before it can
 merge. Nothing else does.
 
+## The convention
+
+**Every new feature gets both gates. No exceptions.**
+
+| Gate | Question it answers | Where it lives |
+|---|---|---|
+| Feature flag | Can this be on at all? | `FeatureFlag` in `packages/config/src/config.ts` |
+| `feature_access` key | Who is allowed to use it? | the `feature_access` table |
+
+These are different questions and one does not substitute for the other. A flag
+with no access row ships to whoever the flag lets in, with nobody having decided
+that. An access row with no flag cannot be switched off if it misbehaves. Half a
+gate is the failure mode this convention exists to remove.
+
+Two rules make it checkable rather than a matter of memory:
+
+**1. The names are paired by rule.** Drop the `enable` prefix, kebab-case the
+rest:
+
+```
+enableSummitLog               → summit-log
+enableTrips                   → trips
+enableWildlifeIdentification  → wildlife-identification
+enableLocalAI                 → local-ai      (a capital run is one word)
+enableOAuth                   → oauth
+```
+
+`featureAccessKeyForFlag` in `packages/config/src/featureKeys.ts` is the single
+implementation; CI re-derives the name and rejects a `feature-key` that does not
+match the flag added in the same PR.
+
+**2. A new flag defaults to `false`.** A new feature ships dark and is turned on
+deliberately. A flag whose default is added as `true` is on for everyone the
+moment it merges — the undecided rollout this whole mechanism is meant to
+prevent, and unlike a missing audience, no later edit to the PR body undoes it.
+CI fails the PR outright.
+
+One pre-existing exception: the only live server-side gate uses the access key
+`'wildlife'` (hardcoded at `packages/api/src/routes/wildlife/index.ts:33`) for a
+feature whose flag is `enableWildlifeIdentification`. Under the rule above it
+would be `wildlife-identification`. It predates the convention; leave it unless
+you are already touching that route.
+
 That second sentence is the point. Most work in this repo is fixes, refactors
 and polish, and none of it should have to pass a product gate. The mechanism
 below is designed to stay invisible on those PRs and only speak up when a
@@ -128,12 +171,15 @@ When you open a PR:
 
 1. Decide whether the work adds a new user-facing feature, using the lists
    above. When genuinely unsure, choose `new-feature`.
-2. Add the declaration block to the PR description with `declaration:` filled
+2. If it is a new feature, add **both** gates as part of building it: a
+   `FeatureFlag` key defaulting to `false`, and the matching `feature_access`
+   key derived by the naming rule. Adding one without the other fails CI.
+3. Add the declaration block to the PR description with `declaration:` filled
    in and nothing else.
-3. If you declared `new-feature`, say so in your handoff — plainly, e.g. "This
+4. If you declared `new-feature`, say so in your handoff — plainly, e.g. "This
    adds a new user-facing feature, so it needs an access decision before it can
    merge." State that the decision is owed and stop there.
-4. Do not fill in `audience`, `feature-key`, or `expiry`. Do not recommend a
+5. Do not fill in `audience`, `feature-key`, or `expiry`. Do not recommend a
    value for them in the PR body, in a comment, or in your handoff message.
 
 If a human has already told you the audience for this specific feature, you may

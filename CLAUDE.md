@@ -68,6 +68,15 @@ PackRat enforces coverage at two layers: each workspace's `vitest.config.ts` dec
 
 Every new user-facing feature needs a human to decide who gets it before it can merge. Nothing else does — fixes, refactors, polish, docs and tests pass without anyone touching the gate.
 
+### The convention: every new feature gets both gates
+
+A **feature flag** (can this be on at all?) *and* a **`feature_access` key** (who may use it?). Different questions; neither substitutes for the other. A flag with no access row ships to whoever the flag lets in with nobody having decided that; an access row with no flag can't be switched off. Two rules make this checkable:
+
+1. **Names are paired by rule** — drop `enable`, kebab-case the rest. `enableSummitLog` → `summit-log`, `enableLocalAI` → `local-ai` (a capital run is one word). `featureAccessKeyForFlag` in `packages/config/src/featureKeys.ts` is the only implementation; CI re-derives it and rejects a mismatched `feature-key`.
+2. **New flags default to `false`** — a new feature ships dark and is turned on deliberately. A default added as `true` fails CI outright, since unlike a missing audience no PR-body edit undoes it.
+
+So when you build a new feature: add the flag (defaulting false) and the derived access key as part of the work, not as a follow-up.
+
 Every PR description carries an access-decision block. The template ships with the common case already filled in:
 
 ```

@@ -12,7 +12,7 @@ export default defineConfig({
       reportsDirectory: resolve(__dirname, 'coverage'),
       // Only the resolvers carry runtime logic worth covering; the rest of the
       // package is static config tables and re-exports.
-      include: ['src/featureAccess.ts', 'src/featureFlagResolution.ts'],
+      include: ['src/featureAccess.ts', 'src/featureFlagResolution.ts', 'src/featureKeys.ts'],
       exclude: ['src/**/*.test.ts'],
       thresholds: {
         statements: 100,
