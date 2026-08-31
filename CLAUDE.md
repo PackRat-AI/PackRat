@@ -64,6 +64,25 @@ bun bump              # Bump monorepo version
 
 PackRat enforces coverage at two layers: each workspace's `vitest.config.ts` declares per-metric thresholds (mostly 95%+; `packages/units` 100%, `packages/{analytics,overpass}` 80%), and a **coverage ratchet** (`bun check:coverage` against `coverage-baselines.json`) blocks any PR that lowers a workspace's coverage. An **assertion-strength lint** (`bun lint:weak-assertions`) flags coverage-theater patterns (assertion-free tests, bare `.toBeDefined()`, bare `.toHaveBeenCalled()`, oversized snapshots). `packages/api` integration tests still run (`api-tests.yml`) but are not coverage-counted — V8 instrumentation is unsupported under the Cloudflare Workers pool. Full policy and patterns: **`docs/testing.md`**.
 
+## Access Decisions (required on every PR)
+
+Every new user-facing feature needs a human to decide who gets it before it can merge. Nothing else does — fixes, refactors, polish, docs and tests pass without anyone touching the gate.
+
+Every PR description carries an access-decision block. The template ships with the common case already filled in:
+
+```
+## Access decision
+declaration: none
+```
+
+**Your job as a coding agent is exactly one field.** Decide whether the work adds a new user-facing feature (a new screen, route, or a capability a user would describe as new — *not* a bug fix, refactor, or a flip of an existing flag's default) and set `declaration:` to `none` or `new-feature`. When genuinely unsure, choose `new-feature`: a false positive costs one edit to the PR body, a false negative ships a feature nobody ruled on.
+
+**Never fill in `audience`, `feature-key`, or `expiry`, and never recommend values for them** — not in the PR body, not in a comment, not in your handoff. Choosing who pays for what is a product judgement that belongs to a person; an agent that proposes a tier is making the decision and asking for a rubber stamp. Surface that the decision is owed and stop: "This adds a new user-facing feature, so it needs an access decision before it can merge."
+
+Adding a new key to `FeatureFlag` in `packages/config/src/config.ts` is detected mechanically, so declaring `none` alongside a new flag key fails the check — the diff wins.
+
+Enforced by `.github/workflows/access-decision.yml` (`scripts/lint/detect-access-decisions.ts`), which re-runs when the PR description is edited. Full contract: **`docs/access-decisions.md`**.
+
 ## Code Style
 
 Enforced by **Biome 2.0** via lefthook pre-commit hook:

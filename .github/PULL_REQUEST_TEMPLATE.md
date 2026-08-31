@@ -24,6 +24,22 @@ Closes #<!-- issue number, if applicable -->
 - [ ] Guides site (`apps/guides`)
 - [ ] CI / CD (`.github/`)
 
+## Access decision
+
+<!--
+Required. See docs/access-decisions.md.
+
+Most PRs are `declaration: none` — fixes, refactors, polish, docs, tests.
+Leave the line below as-is for those.
+
+If this adds a NEW user-facing feature, change it to `new-feature`. A human
+then adds `audience`, `feature-key`, and (for early-access) `expiry`, and merge
+is blocked until they do. Coding agents fill in `declaration:` only — choosing
+who gets a feature is a product call and stays with a person.
+-->
+
+declaration: none
+
 ## Testing
 
 <!-- Describe how you tested your changes. -->
