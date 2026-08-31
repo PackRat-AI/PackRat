@@ -41,10 +41,13 @@ import { isBoolean, isObject } from '@packrat/guards';
  * @param source   Untrusted map, or null/undefined when nothing is cached yet.
  * @param defaults The coded defaults from config.ts. Defines the known key set.
  */
-export function normalizeFeatureFlags<K extends string>(
-  source: unknown,
-  defaults: Record<K, boolean>,
-): Record<K, boolean> {
+export function normalizeFeatureFlags<K extends string>({
+  source,
+  defaults,
+}: {
+  source: unknown;
+  defaults: Record<K, boolean>;
+}): Record<K, boolean> {
   const known = Object.keys(defaults) as K[];
 
   if (!isObject(source)) {

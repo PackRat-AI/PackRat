@@ -18,7 +18,7 @@ export const codedFeatureFlags: FeatureFlagsMap = { ...appConfig.featureFlags };
  * for why absence is treated as "off" rather than "unset".
  */
 export function normalizeFlags(source: unknown): FeatureFlagsMap {
-  return normalizeFeatureFlags(source, codedFeatureFlags);
+  return normalizeFeatureFlags({ source, defaults: codedFeatureFlags });
 }
 
 // Persisted cache of the last-fetched effective flags. Seeded with the coded

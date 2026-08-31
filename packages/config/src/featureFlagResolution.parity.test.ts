@@ -28,7 +28,9 @@ describe('feature-flag resolution parity fixture', () => {
 
   for (const testCase of fixture.cases) {
     it(testCase.name, () => {
-      expect(normalizeFeatureFlags(testCase.source, testCase.defaults)).toEqual(testCase.expected);
+      expect(
+        normalizeFeatureFlags({ source: testCase.source, defaults: testCase.defaults }),
+      ).toEqual(testCase.expected);
     });
   }
 });
