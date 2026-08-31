@@ -39,7 +39,14 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { featureAccessKeyForFlag } from '@packrat/config';
+// Imported from the leaf module by relative path, not via the `@packrat/config`
+// barrel. The barrel re-exports featureFlagResolution, which imports
+// @packrat/guards — and access-decision.yml runs this script with bare `bun`
+// and no `bun install`, so a workspace import fails to resolve there. Keeping
+// the gate dependency-free is deliberate: it is a required check that reruns on
+// every PR-description edit, so it should stay a ~10s job rather than pay for
+// an install. featureKeys.ts itself has no imports.
+import { featureAccessKeyForFlag } from '../../packages/config/src/featureKeys';
 
 export const DECISION_BLOCK_HEADING = '## Access decision';
 
