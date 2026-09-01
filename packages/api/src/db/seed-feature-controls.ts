@@ -108,17 +108,6 @@ const GENERALLY_AVAILABLE: ReadonlySet<string> = new Set([
   'enableRevenueCat',
 ]);
 
-/**
- * Access keys that do not follow the derivation rule.
- *
- * `packages/api/src/routes/wildlife/index.ts:33` enforces access under the
- * literal 'wildlife', where the rule gives 'wildlife-identification'. It
- * predates the convention and the live gate resolves against this key, so the
- * row has to exist. Generally available for the same reason as the rest of the
- * pre-convention set. Remove once that route is migrated.
- */
-const LEGACY_ACCESS_KEYS = [{ key: 'wildlife', label: 'Wildlife (legacy key)' }] as const;
-
 export async function seedFeatureControls() {
   const url = nodeEnv.NEON_DATABASE_URL;
   if (!url) throw new Error('NEON_DATABASE_URL is not set');
@@ -153,28 +142,21 @@ export async function seedFeatureControls() {
       earlyAccessUntil: GENERALLY_AVAILABLE.has(flagKey) ? null : earlyAccessUntil,
     }));
 
-    const legacyRows = LEGACY_ACCESS_KEYS.map(({ key, label }) => ({
-      key,
-      label,
-      description: null,
-      earlyAccessUntil: null,
-    }));
-
     await db
       .insert(featureFlags)
       .values(flagRows)
       .onConflictDoNothing({ target: featureFlags.key });
     await db
       .insert(featureAccess)
-      .values([...accessRows, ...legacyRows])
+      .values(accessRows)
       .onConflictDoNothing({ target: featureAccess.key });
 
     const gated = accessRows.filter((row) => row.earlyAccessUntil !== null).length;
 
     console.log(`[seed] feature_flags:  ${flagRows.length} row(s) ensured`);
     console.log(
-      `[seed] feature_access: ${accessRows.length + legacyRows.length} row(s) ensured ` +
-        `(${gated} early-access, ${accessRows.length + legacyRows.length - gated} generally available)`,
+      `[seed] feature_access: ${accessRows.length} row(s) ensured ` +
+        `(${gated} early-access, ${accessRows.length - gated} generally available)`,
     );
     console.log('[seed] Existing rows were left untouched (ON CONFLICT DO NOTHING).');
   } finally {

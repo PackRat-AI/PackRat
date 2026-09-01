@@ -11,8 +11,9 @@
 //
 // Before this rule the two namespaces were unrelated and nothing checked them
 // against each other: the one live gate used the access key `'wildlife'` for a
-// feature whose flag is `enableWildlifeIdentification`. Deriving one name from
-// the other is what makes the pairing checkable rather than a matter of memory.
+// feature whose flag is `enableWildlifeIdentification`. That route now derives
+// its key like everything else. Deriving one name from the other is what makes
+// the pairing checkable rather than a matter of memory.
 //
 // The rule: drop the `enable` prefix, then kebab-case the rest.
 //

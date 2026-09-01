@@ -151,7 +151,17 @@ with values mirroring the coded defaults, so the first run changed no observable
 behaviour — it only moved the answer from "no row, fall back to the binary" to
 "a row that says the same thing".
 
-One key does not follow the derivation rule: the server-side gate at
-`packages/api/src/routes/wildlife/index.ts:33` enforces access under the literal
-`'wildlife'`, where the rule would give `wildlife-identification`. Both rows are
-seeded. Leave it unless you are already changing that route.
+Every access key now follows the derivation rule. The wildlife route previously
+enforced against the literal `'wildlife'`; it now derives
+`wildlife-identification` from its flag like everything else, so there are no
+exceptions left.
+
+If a database was seeded before that change it still holds an orphaned
+`wildlife` row. Nothing reads it, and it is safe to delete:
+
+```sql
+DELETE FROM feature_access WHERE key = 'wildlife';
+```
+
+No rush — the wildlife flag defaults `false`, so the feature was never live and
+the old row never gated anyone.
