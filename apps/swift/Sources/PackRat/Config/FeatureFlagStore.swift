@@ -95,7 +95,7 @@ struct FeatureFlagService: Sendable {
     init(api: APIClient = .shared) { self.api = api }
 
     func fetchFlags() async throws -> [String: Any] {
-        let endpoint = Endpoint(.get, "/feature-flags", requiresAuth: false)
+        let endpoint = Endpoint(.get, "/api/feature-flags", requiresAuth: false)
         let raw: [String: Bool] = try await api.send(endpoint)
         return raw
     }

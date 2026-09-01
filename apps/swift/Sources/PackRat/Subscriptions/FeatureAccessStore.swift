@@ -135,7 +135,7 @@ struct FeatureAccessService: Sendable {
     /// Features whose window is null are omitted — an absent key and a null
     /// timestamp both mean "not gated", so collapsing them loses nothing.
     func fetchConfig() async throws -> [String: String] {
-        let endpoint = Endpoint(.get, "/feature-access", requiresAuth: false)
+        let endpoint = Endpoint(.get, "/api/feature-access", requiresAuth: false)
         let rows: [FeatureAccessRow] = try await api.send(endpoint)
 
         return rows.reduce(into: [String: String]()) { result, row in
