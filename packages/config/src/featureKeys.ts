@@ -40,22 +40,71 @@ const ENABLE_PREFIX = 'enable';
  * @returns The matching `feature_access` key, e.g. `summit-log`.
  */
 export function featureAccessKeyForFlag(flagKey: string): string {
-  const withoutPrefix = flagKey.startsWith(ENABLE_PREFIX)
-    ? flagKey.slice(ENABLE_PREFIX.length)
-    : flagKey;
-
-  return kebabCase(withoutPrefix);
+  return kebabCase(stripEnablePrefix(flagKey));
 }
 
 /**
- * kebab-cases a PascalCase or camelCase identifier, treating a run of capitals
- * as a single word.
+ * A human-readable label for a feature, derived from its flag key.
  *
- * Hand-rolled rather than pulled from a utility library because the exact
- * acronym behaviour is part of the documented convention: most kebab-case
- * helpers turn `LocalAI` into `local-a-i`, which would make the rule
- * unpredictable for anyone naming a new feature.
+ *   enableSummitLog              → "Summit Log"
+ *   enableWildlifeIdentification → "Wildlife Identification"
+ *   enableLocalAI                → "Local AI"
+ *   enableOAuth                  → "OAuth"
+ *
+ * Derived rather than hand-written so that adding a feature is one line in
+ * config.ts and nothing else. A second place to register a label is a second
+ * place to forget one.
+ *
+ * `feature_access.label` is only display text for the admin UI, so an
+ * approximate label is fine: edit the row to something better whenever you
+ * like, and the seed will leave it alone (every insert is ON CONFLICT DO
+ * NOTHING).
  */
+export function featureLabelForFlag(flagKey: string): string {
+  const words = kebabCase(stripEnablePrefix(flagKey)).split('-');
+
+  return words
+    .map((word) => {
+      // A word that was an acronym in the flag name reads better fully
+      // capitalised — "ai" → "AI", "oauth" → "OAuth" — but re-deriving which
+      // ones those were means going back to the original casing.
+      const original = findOriginalCasing({ flagKey, lowercased: word });
+      return original ?? word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+}
+
+function stripEnablePrefix(flagKey: string): string {
+  return flagKey.startsWith(ENABLE_PREFIX) ? flagKey.slice(ENABLE_PREFIX.length) : flagKey;
+}
+
+/**
+ * Recovers a word's original casing from the flag key, so acronyms survive the
+ * round trip through kebab-case. Returns undefined when the original carries no
+ * capitalisation worth keeping, in which case the caller title-cases it.
+ */
+function findOriginalCasing({
+  flagKey,
+  lowercased,
+}: {
+  flagKey: string;
+  lowercased: string;
+}): string | undefined {
+  // The word always appears: it came from kebab-casing this very key, and
+  // kebab-casing only inserts separators and lowercases. So no not-found guard
+  // here — an unreachable branch is worse than none, since it can never be
+  // covered or verified.
+  const index = flagKey.toLowerCase().indexOf(lowercased);
+  const slice = flagKey.slice(index, index + lowercased.length);
+
+  // Keep the original spelling whenever it carries capitalisation the
+  // lowercased form lost — "AI" and "OAuth" both qualify, and title-casing
+  // either would read as a mistake ("Ai", "Oauth"). A word that is simply
+  // lowercase in the flag name has nothing to preserve, so it title-cases
+  // normally.
+  return slice !== slice.toLowerCase() ? slice : undefined;
+}
+
 // Hoisted to module scope: these run on every derivation, and re-compiling a
 // literal per call is what Biome's useTopLevelRegex rule guards against.
 //
@@ -74,6 +123,15 @@ const WORD_BOUNDARY = /([a-z0-9])([A-Z])/g;
 
 const WHITESPACE_RUN = /\s+/;
 
+/**
+ * kebab-cases a PascalCase or camelCase identifier, treating a run of capitals
+ * as a single word.
+ *
+ * Hand-rolled rather than pulled from a utility library because the exact
+ * acronym behaviour is part of the documented convention: most kebab-case
+ * helpers turn `LocalAI` into `local-a-i`, which would make the rule
+ * unpredictable for anyone naming a new feature.
+ */
 function kebabCase(value: string): string {
   return value
     .replace(ACRONYM_BOUNDARY, '$1 $2')

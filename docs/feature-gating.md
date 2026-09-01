@@ -22,9 +22,10 @@ free for everyone, with no second flip to remember.
 
 ## The convention
 
-Every new feature comes with three artifacts, in the same PR as the code:
+**Add one line to `packages/config/src/config.ts`. That is the whole
+convention.** Everything else is derived from it.
 
-**1. A flag in `packages/config/src/config.ts`, defaulting to `false`.**
+**1. The flag, defaulting to `false`.**
 
 ```ts
 const FeatureFlag = Object.freeze({
@@ -43,7 +44,7 @@ The default is the binary's answer when it cannot reach the database. `false`
 means a feature that has shipped in a build but not yet been turned on stays
 dark, which is what makes the rest of this safe.
 
-**2. A `feature_access` key, named by the derivation rule.**
+**2. The `feature_access` key — derived, not chosen.**
 
 Drop the `enable` prefix, kebab-case the rest. A run of capitals is one word:
 
@@ -58,40 +59,48 @@ enableOAuth                   → oauth
 implementation. Deriving the name rather than choosing one means you never have
 to look up which access key belongs to which flag.
 
-**3. An entry in the seed script, so both rows exist in the database.**
+**3. Nothing.**
 
-Add the flag's label and description to `FEATURE_CONTROLS` in
-`packages/api/src/db/seed-feature-controls.ts`. The `enabled` default is read
-from `packages/config` and the access key is derived, so neither is repeated
-there — only the prose.
+That is the whole convention. The seed script derives everything from
+`APP_CONFIG.featureFlags` — the flag key, its `enabled` default, the access key,
+and a display label — so adding a feature needs no edit anywhere else:
 
-**CI runs this automatically.** `.github/workflows/migrations.yml` runs the
-seed straight after migrations on every push to `main` or `development` that
-touches `packages/api/drizzle/**`, the seed script, or `packages/config/src/config.ts`
-— so adding a flag is enough to get its rows seeded. To run it by hand against
-an environment:
+```
+enableSummitLog  →  feature_flags.key      = 'enableSummitLog'
+                    feature_flags.enabled  = false     (the coded default)
+                    feature_access.key     = 'summit-log'
+                    feature_access.label   = 'Summit Log'
+```
+
+**CI seeds it automatically.** `.github/workflows/migrations.yml` runs the seed
+right after migrations on every push to `main` or `development` touching
+`packages/api/drizzle/**`, the seed script, or `packages/config/src/config.ts` —
+so adding a flag is enough to get its rows created. To run it by hand:
 
 ```bash
 cd packages/api && bun run db:seed:feature-controls
 ```
 
-Every insert is `ON CONFLICT DO NOTHING`, so re-running is harmless and will
-never clobber a row an operator has since changed.
+Every insert is `ON CONFLICT DO NOTHING`, so re-running is harmless and never
+clobbers a row an operator has changed — including a nicer label typed into the
+admin UI.
 
 **A new feature seeds Pro-gated, not open.** `feature_access` has no "closed"
 state of its own — the resolver reads a null or past `early_access_until` as
 generally available — so a row seeded with `NULL` would be a row that is *open*.
-Anything not explicitly marked `generally-available` in `FEATURE_CONTROLS`
-therefore gets a real early-access window (`DEFAULT_EARLY_ACCESS_WEEKS`, six
-weeks) instead.
+New features therefore get a real early-access window
+(`DEFAULT_EARLY_ACCESS_WEEKS`, six weeks) and are Pro-only until someone widens
+them in the database.
 
 The flag is still the real backstop: it defaults `false`, so a new feature is
 dark regardless. The access default is the second layer — if someone turns the
 flag on before thinking about audience, the feature reaches Pro members rather
 than everyone.
 
-To ship something free from day one, mark it `generally-available` in
-`FEATURE_CONTROLS`. That is a decision someone writes down, which is the point.
+Features that predate this convention are listed in `GENERALLY_AVAILABLE` in the
+seed script and stay free for everyone: they already shipped, and applying a
+window retroactively would take away access people have. That list is closed and
+will not grow.
 
 ## Why seeding is not a migration
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { APP_CONFIG } from './config';
-import { featureAccessKeyForFlag } from './featureKeys';
+import { featureAccessKeyForFlag, featureLabelForFlag } from './featureKeys';
 
 describe('featureAccessKeyForFlag', () => {
   it('drops the enable prefix and kebab-cases the rest', () => {
@@ -65,5 +65,58 @@ describe('featureAccessKeyForFlag', () => {
     expect(featureAccessKeyForFlag('enableRevenueCat')).toBe('revenue-cat');
     expect(featureAccessKeyForFlag('enableFeed')).toBe('feed');
     expect(featureAccessKeyForFlag('enableTrails')).toBe('trails');
+  });
+});
+
+describe('featureLabelForFlag', () => {
+  it('title-cases the words of a flag name', () => {
+    expect(featureLabelForFlag('enableSummitLog')).toBe('Summit Log');
+    expect(featureLabelForFlag('enableTrips')).toBe('Trips');
+  });
+
+  it('keeps acronyms capitalised', () => {
+    // "Local A I" or "Local Ai" would both read as a mistake in the admin UI.
+    expect(featureLabelForFlag('enableLocalAI')).toBe('Local AI');
+    expect(featureLabelForFlag('enableOAuth')).toBe('OAuth');
+  });
+
+  it('handles a multi-word flag with an acronym', () => {
+    expect(featureLabelForFlag('enableAPIKeyRotation')).toBe('API Key Rotation');
+  });
+
+  it('derives a non-empty label for every shipped flag', () => {
+    for (const flagKey of Object.keys(APP_CONFIG.featureFlags)) {
+      const label = featureLabelForFlag(flagKey);
+      expect(label.length).toBeGreaterThan(0);
+      // No leftover kebab hyphens or camelCase runs.
+      expect(label).not.toContain('-');
+      expect(label.charAt(0)).toBe(label.charAt(0).toUpperCase());
+    }
+  });
+
+  it('derives the documented labels for the shipped flags', () => {
+    expect(featureLabelForFlag('enableWildlifeIdentification')).toBe('Wildlife Identification');
+    expect(featureLabelForFlag('enablePackTemplates')).toBe('Pack Templates');
+    expect(featureLabelForFlag('enableTrailConditions')).toBe('Trail Conditions');
+    expect(featureLabelForFlag('enableRevenueCat')).toBe('Revenue Cat');
+  });
+});
+
+describe('featureLabelForFlag edge cases', () => {
+  it('title-cases a word whose original spelling is plain lowercase', () => {
+    // Exercises the branch where the original casing carries nothing worth
+    // preserving, so the word is title-cased normally.
+    expect(featureLabelForFlag('enabletrips')).toBe('Trips');
+  });
+
+  it('handles a flag key that is only the prefix', () => {
+    // Degenerate but total: no words left after stripping `enable`.
+    expect(featureLabelForFlag('enable')).toBe('');
+  });
+
+  it('title-cases a word that does not appear verbatim in the flag key', () => {
+    // A digit boundary splits "pack2sync" into words that are still findable,
+    // whereas this one exercises the not-found path in the casing lookup.
+    expect(featureLabelForFlag('enableFoo')).toBe('Foo');
   });
 });

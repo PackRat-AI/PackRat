@@ -10,45 +10,62 @@
  * so a feature can be turned on or placed behind Pro in the database without a
  * release.
  *
- * Deliberately NOT a Drizzle migration. Migrations own schema; this is data.
- * Keeping it out means the `drizzle-kit generate` rule in CLAUDE.md stays
- * absolute with no carve-out, and re-seeding does not require inventing a new
- * migration each time.
+ * # Nothing to register here
  *
- * CI runs this automatically: .github/workflows/migrations.yml invokes it right
- * after migrations, so a new feature's rows land without anyone remembering to
- * seed by hand.
+ * Everything is derived from `APP_CONFIG.featureFlags`. Adding a feature is one
+ * line in packages/config/src/config.ts and nothing else — this script needs no
+ * edit, ever:
  *
- * Flag values mirror the coded defaults in packages/config/src/config.ts, so
- * the flag half of a first run changes no observable behaviour — it only moves
- * the answer from "no row, fall back to the binary" to "a row that says the
- * same thing". Once a row exists, the database is authoritative and this script
- * leaves it alone.
+ *   key         ← the flag key
+ *   enabled     ← the coded default, so the seed cannot disagree with the binary
+ *   access key  ← featureAccessKeyForFlag (drop `enable`, kebab-case)
+ *   label       ← featureLabelForFlag ("Summit Log")
  *
- * Access rows are NOT seeded open. A null `early_access_until` reads as
- * generally available, so a feature with no explicit decision would be seeded
- * free for everyone. Anything not listed in FEATURE_CONTROLS as
- * 'generally-available' gets a real early-access window instead — see
- * AccessDefault below.
+ * An earlier version kept a hand-written table of labels and descriptions here.
+ * That made adding a feature a three-place edit, and the third place is exactly
+ * the one that gets forgotten.
  *
- * feature_access keys are derived from flag names by the documented rule (drop
- * `enable`, kebab-case, a capital run is one word) via featureAccessKeyForFlag,
- * rather than being listed by hand — a second hand-maintained list is a second
- * thing to get out of sync.
+ * # Access defaults closed
  *
- * Usage:
- *   NEON_DATABASE_URL=<url> bun run packages/api/src/db/seed-feature-controls.ts
+ * `feature_access` has no "closed" state of its own — the resolver reads a null
+ * or past `early_access_until` as generally available — so seeding null would
+ * publish every new feature to everyone. New features therefore seed with a
+ * real early-access window and are Pro-gated until someone widens them in the
+ * database.
  *
- * Or via the package script:
+ * Features that predate this convention are listed in GENERALLY_AVAILABLE
+ * below: they already shipped to everyone, and applying a window retroactively
+ * would take away access people already have. That list is closed — it will not
+ * grow, because everything new goes through the convention.
+ *
+ * The flag is still the real backstop: it defaults false, so a new feature is
+ * dark regardless. The access default is the second layer, for when the flag
+ * gets turned on before anyone has thought about audience.
+ *
+ * # Running
+ *
+ * CI runs this automatically — .github/workflows/migrations.yml invokes it
+ * right after migrations, so a new feature's rows land without anyone
+ * remembering. By hand:
+ *
  *   cd packages/api && bun run db:seed:feature-controls
  *
- * Idempotent: every insert is ON CONFLICT DO NOTHING, so re-running is
- * harmless and never clobbers a row an operator has since changed. New features
- * add their entry to FEATURE_CONTROLS below and re-run this.
+ * Idempotent: every insert is ON CONFLICT DO NOTHING, so re-running never
+ * clobbers a row an operator has since changed — including a nicer label typed
+ * into the admin UI.
+ *
+ * Deliberately NOT a Drizzle migration. Migrations own schema; this is data.
+ * Keeping it out means the `drizzle-kit generate` rule in CLAUDE.md stays
+ * absolute with no carve-out.
  */
 
 import { neon, neonConfig } from '@neondatabase/serverless';
-import { APP_CONFIG, earlyAccessUntilFrom, featureAccessKeyForFlag } from '@packrat/config';
+import {
+  APP_CONFIG,
+  earlyAccessUntilFrom,
+  featureAccessKeyForFlag,
+  featureLabelForFlag,
+} from '@packrat/config';
 import { featureAccess, featureFlags } from '@packrat/db/schema';
 import { nodeEnv } from '@packrat/env/node';
 import { drizzle } from 'drizzle-orm/neon-http';
@@ -71,121 +88,36 @@ const isStandardPostgresUrl = (url: string) => {
 };
 
 /**
- * How a feature's access row is seeded.
+ * Flags that shipped before this convention existed, seeded free for everyone.
  *
- *   'early-access'        — Pro-only for DEFAULT_EARLY_ACCESS_WEEKS from the
- *                           seed run. The default for anything new.
- *   'generally-available' — free for everyone from the start.
- *
- * `feature_access` has no "closed" state of its own: the resolver reads a null
- * or past `early_access_until` as generally available. A row seeded with null
- * is therefore a row that is *open*, which is the wrong default for a feature
- * nobody has decided on. Seeding a future window instead means a new feature is
- * Pro-gated until someone consciously widens it.
- *
- * The flag is still the real backstop — it defaults false, so a new feature is
- * dark regardless. This is the second layer: if the flag gets turned on before
- * anyone thinks about audience, the feature reaches Pro members, not everyone.
+ * A closed list. Do not add to it: a new feature seeds Pro-gated and is widened
+ * in the database when you decide to, not by editing this file.
  */
-type AccessDefault = 'early-access' | 'generally-available';
-
-/**
- * Per-flag metadata. `enabled` is not listed — it comes from packages/config so
- * the seed cannot disagree with the coded default — and the access key is
- * derived. Only the prose and the access default live here.
- */
-const FEATURE_CONTROLS: Record<
-  string,
-  { label: string; description: string; access: AccessDefault }
-> = {
-  // The 12 flags predating this convention are all 'generally-available':
-  // they already shipped to everyone, and applying an early-access window
-  // retroactively would take away access people already have. The monetization
-  // model never does that — a feature only ever moves from Pro-first to free.
-  enableOAuth: {
-    label: 'OAuth sign-in',
-    description: 'Google and Apple sign-in',
-    access: 'generally-available',
-  },
-  enableTrips: { label: 'Trips', description: 'Trip planning', access: 'generally-available' },
-  enablePackInsights: {
-    label: 'Pack Insights',
-    description: 'AI-generated pack analysis',
-    access: 'generally-available',
-  },
-  enableShoppingList: {
-    label: 'Shopping List',
-    description: 'Shopping list',
-    access: 'generally-available',
-  },
-  enableSharedPacks: {
-    label: 'Shared Packs',
-    description: 'Pack sharing between users',
-    access: 'generally-available',
-  },
-  enablePackTemplates: {
-    label: 'Pack Templates',
-    description: 'Reusable pack templates',
-    access: 'generally-available',
-  },
-  enableTrailConditions: {
-    label: 'Trail Conditions',
-    description: 'Trail condition reports',
-    access: 'generally-available',
-  },
-  enableFeed: { label: 'Feed', description: 'Social feed', access: 'generally-available' },
-  enableWildlifeIdentification: {
-    label: 'Wildlife Identification',
-    description: 'Wildlife photo identification',
-    access: 'generally-available',
-  },
-  enableLocalAI: {
-    label: 'Local AI',
-    description: 'On-device AI inference',
-    access: 'generally-available',
-  },
-  enableTrails: {
-    label: 'Trails',
-    description: 'Trail search and detail',
-    access: 'generally-available',
-  },
-  enableRevenueCat: {
-    label: 'Subscriptions',
-    description: 'Subscriptions and entitlements',
-    access: 'generally-available',
-  },
-};
-
-/**
- * The access default for a flag with no entry above — i.e. every new feature.
- * Closed, not open.
- */
-const DEFAULT_ACCESS: AccessDefault = 'early-access';
+const GENERALLY_AVAILABLE: ReadonlySet<string> = new Set([
+  'enableOAuth',
+  'enableTrips',
+  'enablePackInsights',
+  'enableShoppingList',
+  'enableSharedPacks',
+  'enablePackTemplates',
+  'enableTrailConditions',
+  'enableFeed',
+  'enableWildlifeIdentification',
+  'enableLocalAI',
+  'enableTrails',
+  'enableRevenueCat',
+]);
 
 /**
  * Access keys that do not follow the derivation rule.
  *
  * `packages/api/src/routes/wildlife/index.ts:33` enforces access under the
  * literal 'wildlife', where the rule gives 'wildlife-identification'. It
- * predates the convention, and the live gate resolves against this key, so the
- * row has to exist. Remove this once that route is migrated.
+ * predates the convention and the live gate resolves against this key, so the
+ * row has to exist. Generally available for the same reason as the rest of the
+ * pre-convention set. Remove once that route is migrated.
  */
-const LEGACY_ACCESS_KEYS: {
-  key: string;
-  label: string;
-  description: string;
-  access: AccessDefault;
-}[] = [
-  {
-    key: 'wildlife',
-    label: 'Wildlife (legacy key)',
-    description: 'Legacy key used by the wildlife route gate',
-    // Already shipped, so generally available for the same reason as the other
-    // pre-convention features: an early-access window here would newly gate a
-    // live route behind Pro.
-    access: 'generally-available',
-  },
-];
+const LEGACY_ACCESS_KEYS = [{ key: 'wildlife', label: 'Wildlife (legacy key)' }] as const;
 
 export async function seedFeatureControls() {
   const url = nodeEnv.NEON_DATABASE_URL;
@@ -201,29 +133,32 @@ export async function seedFeatureControls() {
     : drizzle(neon(url));
 
   try {
+    const flagKeys = Object.keys(APP_CONFIG.featureFlags);
+
     const flagRows = Object.entries(APP_CONFIG.featureFlags).map(([key, enabled]) => ({
       key,
       enabled,
-      description: FEATURE_CONTROLS[key]?.description ?? null,
+      description: null,
     }));
 
-    // One timestamp for the whole run, so every early-access feature seeded
-    // together graduates together rather than drifting by milliseconds.
+    // One timestamp for the whole run, so features seeded together graduate
+    // together rather than drifting apart by milliseconds.
     const seededAt = new Date();
+    const earlyAccessUntil = earlyAccessUntilFrom(seededAt);
 
-    const accessRows = Object.keys(APP_CONFIG.featureFlags).map((flagKey) => {
-      const meta = FEATURE_CONTROLS[flagKey];
-      const access = meta?.access ?? DEFAULT_ACCESS;
-      return {
-        key: featureAccessKeyForFlag(flagKey),
-        label: meta?.label ?? flagKey,
-        description: meta?.description ?? null,
-        // A window for anything not explicitly declared generally available.
-        // Null would mean open, which is not a safe default for a feature
-        // nobody has ruled on — see AccessDefault.
-        earlyAccessUntil: access === 'early-access' ? earlyAccessUntilFrom(seededAt) : null,
-      };
-    });
+    const accessRows = flagKeys.map((flagKey) => ({
+      key: featureAccessKeyForFlag(flagKey),
+      label: featureLabelForFlag(flagKey),
+      description: null,
+      earlyAccessUntil: GENERALLY_AVAILABLE.has(flagKey) ? null : earlyAccessUntil,
+    }));
+
+    const legacyRows = LEGACY_ACCESS_KEYS.map(({ key, label }) => ({
+      key,
+      label,
+      description: null,
+      earlyAccessUntil: null,
+    }));
 
     await db
       .insert(featureFlags)
@@ -231,18 +166,15 @@ export async function seedFeatureControls() {
       .onConflictDoNothing({ target: featureFlags.key });
     await db
       .insert(featureAccess)
-      .values([
-        ...accessRows,
-        ...LEGACY_ACCESS_KEYS.map(({ access, ...row }) => ({
-          ...row,
-          earlyAccessUntil: access === 'early-access' ? earlyAccessUntilFrom(seededAt) : null,
-        })),
-      ])
+      .values([...accessRows, ...legacyRows])
       .onConflictDoNothing({ target: featureAccess.key });
+
+    const gated = accessRows.filter((row) => row.earlyAccessUntil !== null).length;
 
     console.log(`[seed] feature_flags:  ${flagRows.length} row(s) ensured`);
     console.log(
-      `[seed] feature_access: ${accessRows.length + LEGACY_ACCESS_KEYS.length} row(s) ensured`,
+      `[seed] feature_access: ${accessRows.length + legacyRows.length} row(s) ensured ` +
+        `(${gated} early-access, ${accessRows.length + legacyRows.length - gated} generally available)`,
     );
     console.log('[seed] Existing rows were left untouched (ON CONFLICT DO NOTHING).');
   } finally {

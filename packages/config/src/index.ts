@@ -8,4 +8,4 @@ export {
   PACKRAT_PRO_ENTITLEMENT,
 } from './featureAccess';
 export { normalizeFeatureFlags } from './featureFlagResolution';
-export { featureAccessKeyForFlag } from './featureKeys';
+export { featureAccessKeyForFlag, featureLabelForFlag } from './featureKeys';
