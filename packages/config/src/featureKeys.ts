@@ -7,7 +7,7 @@
 // These answer different questions and both are required. A flag alone ships a
 // feature with no decision about who gets it; an access row alone leaves no way
 // to switch the feature off. The convention is both, always — see
-// docs/access-decisions.md.
+// docs/feature-gating.md.
 //
 // Before this rule the two namespaces were unrelated and nothing checked them
 // against each other: the one live gate used the access key `'wildlife'` for a

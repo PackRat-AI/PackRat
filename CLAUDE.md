@@ -64,33 +64,21 @@ bun bump              # Bump monorepo version
 
 PackRat enforces coverage at two layers: each workspace's `vitest.config.ts` declares per-metric thresholds (mostly 95%+; `packages/units` 100%, `packages/{analytics,overpass}` 80%), and a **coverage ratchet** (`bun check:coverage` against `coverage-baselines.json`) blocks any PR that lowers a workspace's coverage. An **assertion-strength lint** (`bun lint:weak-assertions`) flags coverage-theater patterns (assertion-free tests, bare `.toBeDefined()`, bare `.toHaveBeenCalled()`, oversized snapshots). `packages/api` integration tests still run (`api-tests.yml`) but are not coverage-counted — V8 instrumentation is unsupported under the Cloudflare Workers pool. Full policy and patterns: **`docs/testing.md`**.
 
-## Access Decisions (required on every PR)
+## Feature Gating (every new feature)
 
-Every new user-facing feature needs a human to decide who gets it before it can merge. Nothing else does — fixes, refactors, polish, docs and tests pass without anyone touching the gate.
+Every new feature ships with **two controls, both off, both seeded by a migration**: a **feature flag** (can this be on at all?) and a **`feature_access` key** (who may use it?). Different questions, and neither substitutes for the other — a flag with no access row ships to whoever the flag lets in with nobody having decided that; an access row with no flag can't be switched off.
 
-### The convention: every new feature gets both gates
+Three artifacts, in the same PR as the code:
 
-A **feature flag** (can this be on at all?) *and* a **`feature_access` key** (who may use it?). Different questions; neither substitutes for the other. A flag with no access row ships to whoever the flag lets in with nobody having decided that; an access row with no flag can't be switched off. Two rules make this checkable:
+1. **A flag in `packages/config/src/config.ts`, defaulting to `false`.** The default is what the binary answers when it can't reach the DB, so a feature that has shipped in a build but isn't turned on yet stays dark. This is what makes the rest safe.
+2. **A `feature_access` key, named by the derivation rule** — drop `enable`, kebab-case the rest, a capital run is one word. `enableSummitLog` → `summit-log`, `enableLocalAI` → `local-ai`. `featureAccessKeyForFlag` in `packages/config/src/featureKeys.ts` is the only implementation; derive the name, never invent one.
+3. **A seed migration inserting both rows, off**, with `ON CONFLICT ("key") DO NOTHING`, plus its `_journal.json` entry.
 
-1. **Names are paired by rule** — drop `enable`, kebab-case the rest. `enableSummitLog` → `summit-log`, `enableLocalAI` → `local-ai` (a capital run is one word). `featureAccessKeyForFlag` in `packages/config/src/featureKeys.ts` is the only implementation; CI re-derives it and rejects a mismatched `feature-key`.
-2. **New flags default to `false`** — a new feature ships dark and is turned on deliberately. A default added as `true` fails CI outright, since unlike a missing audience no PR-body edit undoes it.
+Turning a feature on is then a **database change** — flip `feature_flags.enabled`, or set `feature_access.early_access_until` for a Pro-first window. No deploy, no code change.
 
-So when you build a new feature: add the flag (defaulting false) and the derived access key as part of the work, not as a follow-up.
+**CI does not gate this.** There is no required check and no merge blocking; the decision doesn't have to be made at merge time. The safety property comes from the flag defaulting to `false` and the seed row defaulting to off, not from a check.
 
-Every PR description carries an access-decision block. The template ships with the common case already filled in:
-
-```
-## Access decision
-declaration: none
-```
-
-**Your job as a coding agent is exactly one field.** Decide whether the work adds a new user-facing feature (a new screen, route, or a capability a user would describe as new — *not* a bug fix, refactor, or a flip of an existing flag's default) and set `declaration:` to `none` or `new-feature`. When genuinely unsure, choose `new-feature`: a false positive costs one edit to the PR body, a false negative ships a feature nobody ruled on.
-
-**Never fill in `audience`, `feature-key`, or `expiry`, and never recommend values for them** — not in the PR body, not in a comment, not in your handoff. Choosing who pays for what is a product judgement that belongs to a person; an agent that proposes a tier is making the decision and asking for a rubber stamp. Surface that the decision is owed and stop: "This adds a new user-facing feature, so it needs an access decision before it can merge."
-
-Adding a new key to `FeatureFlag` in `packages/config/src/config.ts` is detected mechanically, so declaring `none` alongside a new flag key fails the check — the diff wins.
-
-Enforced by `.github/workflows/access-decision.yml` (`scripts/lint/detect-access-decisions.ts`), which re-runs when the PR description is edited. Full contract: **`docs/access-decisions.md`**.
+Full contract, including the Drizzle Kit carve-out for seed migrations: **`docs/feature-gating.md`**.
 
 ## Code Style
 
@@ -272,6 +260,22 @@ Defined in root `tsconfig.json`:
 Hand-written migrations get out of sync with the schema, drift across environments, and break the Better Auth / drizzle-zod / inferred-TS-types unified pipeline (PR #2414). If `drizzle-kit generate` produces a migration you disagree with, **fix the schema or the generator config** — do not edit the SQL by hand.
 
 If you find a migration in the repo that was hand-written (no `drizzle-kit` provenance), flag it in your PR description and regenerate from schema as a follow-up commit.
+
+#### Carve-out: seed-only migrations
+
+**Seed data is the one documented exception**, because `drizzle-kit generate` diffs *schema* and will not emit data statements — there is nothing for it to generate. Feature gating depends on this: every new feature ships a migration seeding its `feature_flags` and `feature_access` rows in the off state (see `docs/feature-gating.md`).
+
+The exception is narrow and holds only when **all** of these are true:
+
+- **No schema changes** — no `CREATE`, `ALTER`, or `DROP`. A migration that both seeds and alters must be split in two, with the schema half generated by Drizzle Kit as normal.
+- Touches only `feature_flags` and `feature_access`.
+- Every statement is idempotent (`ON CONFLICT ("key") DO NOTHING`), so a re-run is harmless and never clobbers a row someone set by hand.
+- Named `00NN_seed_*.sql` so its nature is obvious in a directory listing.
+- Has a `_journal.json` entry, added by hand.
+
+Because it changes no schema, **no snapshot is generated for it and none is needed** — `migrate.ts` counts `_journal.json` entries and does not read snapshots. `bunx drizzle-kit check` requires a live DB connection and has nothing to verify for a data-only file; skip it for these and validate the SQL against a scratch Postgres instead.
+
+Anything touching schema still goes through `drizzle-kit generate`. No exceptions.
 
 ## EAS Build Profiles
 
