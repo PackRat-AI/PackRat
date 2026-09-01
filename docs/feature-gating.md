@@ -1,8 +1,8 @@
 # Feature gating
 
 Every new feature ships with two controls, both off, both seeded into the
-database by a migration. Turning a feature on is a database change you make when
-you decide to, not a code change and not a release.
+database. Turning a feature on is a database change you make when you decide to,
+not a code change and not a release.
 
 ## The two controls
 
@@ -58,58 +58,43 @@ enableOAuth                   → oauth
 implementation. Deriving the name rather than choosing one means you never have
 to look up which access key belongs to which flag.
 
-**3. A seed migration that creates both rows, off.**
+**3. An entry in the seed script, so both rows exist in the database.**
 
-```sql
--- packages/api/drizzle/00NN_seed_summit_log.sql
-INSERT INTO "feature_flags" ("key", "enabled", "description") VALUES
-	('enableSummitLog', false, 'Summit log')
-ON CONFLICT ("key") DO NOTHING;
---> statement-breakpoint
-INSERT INTO "feature_access" ("key", "label", "description", "early_access_until") VALUES
-	('summit-log', 'Summit Log', 'Summit log', NULL)
-ON CONFLICT ("key") DO NOTHING;
+Add the flag's label and description to `FEATURE_CONTROLS` in
+`packages/api/src/db/seed-feature-controls.ts`. The `enabled` default is read
+from `packages/config` and the access key is derived, so neither is repeated
+there — only the prose.
+
+Then run it against each environment:
+
+```bash
+cd packages/api && bun run db:seed:feature-controls
 ```
 
-Add a matching entry to `packages/api/drizzle/meta/_journal.json`.
+Every insert is `ON CONFLICT DO NOTHING`, so re-running is harmless and will
+never clobber a row an operator has since changed. It sits alongside the other
+seeders (`db:seed:oauth-clients` and friends) as a post-deploy step.
 
-`ON CONFLICT DO NOTHING` throughout: a row someone already created by hand is a
-deliberate act, and a migration must never silently overwrite it. This also
-makes re-running the migration harmless.
+`early_access_until` seeds as `NULL` — generally available. A Pro-first window
+is something you set in the database when you decide on one; it is not seeded,
+because early access is not a property of shipping the code.
 
-Set `early_access_until` to `NULL` unless you already know the feature is
-Pro-first. A window can be added later in the database; it does not need to be
-decided at merge.
+## Why seeding is not a migration
 
-## Why a migration
+Migrations own **schema**; this is **data**. Keeping the two apart means the
+`drizzle-kit generate` rule in `CLAUDE.md` stays absolute with no exception to
+remember, and re-seeding after adding a feature does not require inventing a new
+migration file each time.
 
-The deploy pipeline applies migrations per environment and stops if one fails.
-That makes seeding atomic with the deploy: the controls exist before the code
-that reads them is live, and a failure is loud rather than a row quietly missing
-in production.
+It also matches what the repo already does: `db:seed:oauth-clients` registers a
+production config row the same way, and CI already runs it post-deploy.
 
-A post-merge job writing to the database would have given the same rows with
-none of that — it can fail on a network blip or an expired credential, and
-nobody notices until a feature behaves unexpectedly.
-
-### The Drizzle Kit carve-out
-
-`CLAUDE.md` has a hard rule: **never hand-write SQL migrations, always use
-`drizzle-kit generate`.** Seed migrations are the documented exception, because
-`drizzle-kit generate` diffs *schema* and will not emit data statements — there
-is nothing for it to generate.
-
-The exception is narrow and holds only when all of these are true:
-
-- The migration contains **no schema changes** — no `CREATE`, `ALTER`, or `DROP`.
-  A migration that both seeds and alters must be split in two.
-- It touches only `feature_flags` and `feature_access`.
-- Every statement is idempotent (`ON CONFLICT DO NOTHING`).
-- The file name says what it is: `00NN_seed_*.sql`.
-
-Because it changes no schema, no snapshot is generated for it and none is
-needed — `migrate.ts` reads `_journal.json`, not the snapshots. Any migration
-that does touch schema still goes through `drizzle-kit generate`, no exceptions.
+The tradeoff is honest — a seed run is a separate step from the deploy, so it
+can be forgotten. Nothing breaks when it is. A missing `feature_flags` row means
+the client falls back to the coded default, which is `false` for anything new;
+a missing `feature_access` row means the feature is generally available, but the
+flag is still off. The feature stays dark either way. That is what makes the
+looser coupling safe.
 
 ## Turning a feature on
 
@@ -139,9 +124,10 @@ touched is dark on every path.
 
 ## Existing keys
 
-`0051_seed_feature_controls.sql` backfilled all 12 flags that predate this
-convention, with values mirroring the coded defaults, so applying it changed no
-behaviour.
+`seed-feature-controls.ts` covers all 12 flags that predate this convention,
+with values mirroring the coded defaults, so the first run changed no observable
+behaviour — it only moved the answer from "no row, fall back to the binary" to
+"a row that says the same thing".
 
 One key does not follow the derivation rule: the server-side gate at
 `packages/api/src/routes/wildlife/index.ts:33` enforces access under the literal
