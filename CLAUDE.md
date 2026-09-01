@@ -72,11 +72,13 @@ Three artifacts, in the same PR as the code:
 
 1. **A flag in `packages/config/src/config.ts`, defaulting to `false`.** The default is what the binary answers when it can't reach the DB, so a feature that has shipped in a build but isn't turned on yet stays dark. This is what makes the rest safe.
 2. **A `feature_access` key, named by the derivation rule** — drop `enable`, kebab-case the rest, a capital run is one word. `enableSummitLog` → `summit-log`, `enableLocalAI` → `local-ai`. `featureAccessKeyForFlag` in `packages/config/src/featureKeys.ts` is the only implementation; derive the name, never invent one.
-3. **An entry in `packages/api/src/db/seed-feature-controls.ts`**, then `bun run db:seed:feature-controls` per environment. Every insert is `ON CONFLICT DO NOTHING`, so re-running never clobbers a row an operator changed.
+3. **An entry in `packages/api/src/db/seed-feature-controls.ts`.** CI seeds it automatically — `.github/workflows/migrations.yml` runs the seed after migrations on pushes touching the drizzle dir, the seed script, or `config.ts`. Every insert is `ON CONFLICT DO NOTHING`, so re-running never clobbers a row an operator changed.
 
 Turning a feature on is then a **database change** — flip `feature_flags.enabled`, or set `feature_access.early_access_until` for a Pro-first window. No deploy, no code change.
 
-**CI does not gate this.** There is no required check and no merge blocking; the decision doesn't have to be made at merge time. The safety property comes from the flag defaulting to `false` and the seed row defaulting to off, not from a check.
+**A new feature seeds closed on both axes.** The flag defaults `false`, and the access row gets a real early-access window rather than `NULL` — a null `early_access_until` reads as *generally available*, so seeding null would ship a feature nobody ruled on to everyone. Mark a feature `generally-available` in `FEATURE_CONTROLS` to make it free from day one; that is a decision someone writes down.
+
+**CI does not gate merges.** There is no required check and no merge blocking; the audience decision doesn't have to be made at merge time. The safety property comes from both defaults being closed, not from a check.
 
 Seeding is a **seed script, not a migration** — migrations own schema, this is data, so the `drizzle-kit generate` rule below stays absolute. Full contract: **`docs/feature-gating.md`**.
 

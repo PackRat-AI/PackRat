@@ -65,19 +65,33 @@ Add the flag's label and description to `FEATURE_CONTROLS` in
 from `packages/config` and the access key is derived, so neither is repeated
 there — only the prose.
 
-Then run it against each environment:
+**CI runs this automatically.** `.github/workflows/migrations.yml` runs the
+seed straight after migrations on every push to `main` or `development` that
+touches `packages/api/drizzle/**`, the seed script, or `packages/config/src/config.ts`
+— so adding a flag is enough to get its rows seeded. To run it by hand against
+an environment:
 
 ```bash
 cd packages/api && bun run db:seed:feature-controls
 ```
 
 Every insert is `ON CONFLICT DO NOTHING`, so re-running is harmless and will
-never clobber a row an operator has since changed. It sits alongside the other
-seeders (`db:seed:oauth-clients` and friends) as a post-deploy step.
+never clobber a row an operator has since changed.
 
-`early_access_until` seeds as `NULL` — generally available. A Pro-first window
-is something you set in the database when you decide on one; it is not seeded,
-because early access is not a property of shipping the code.
+**A new feature seeds Pro-gated, not open.** `feature_access` has no "closed"
+state of its own — the resolver reads a null or past `early_access_until` as
+generally available — so a row seeded with `NULL` would be a row that is *open*.
+Anything not explicitly marked `generally-available` in `FEATURE_CONTROLS`
+therefore gets a real early-access window (`DEFAULT_EARLY_ACCESS_WEEKS`, six
+weeks) instead.
+
+The flag is still the real backstop: it defaults `false`, so a new feature is
+dark regardless. The access default is the second layer — if someone turns the
+flag on before thinking about audience, the feature reaches Pro members rather
+than everyone.
+
+To ship something free from day one, mark it `generally-available` in
+`FEATURE_CONTROLS`. That is a decision someone writes down, which is the point.
 
 ## Why seeding is not a migration
 
@@ -89,12 +103,11 @@ migration file each time.
 It also matches what the repo already does: `db:seed:oauth-clients` registers a
 production config row the same way, and CI already runs it post-deploy.
 
-The tradeoff is honest — a seed run is a separate step from the deploy, so it
-can be forgotten. Nothing breaks when it is. A missing `feature_flags` row means
-the client falls back to the coded default, which is `false` for anything new;
-a missing `feature_access` row means the feature is generally available, but the
-flag is still off. The feature stays dark either way. That is what makes the
-looser coupling safe.
+Being a script rather than a migration does mean seeding is a separate step —
+which is why CI runs it automatically in the same workflow as migrations, rather
+than leaving it to be remembered. If it is ever skipped, nothing breaks: a
+missing `feature_flags` row falls back to the coded default, which is `false`
+for anything new, so the feature stays dark.
 
 ## Turning a feature on
 

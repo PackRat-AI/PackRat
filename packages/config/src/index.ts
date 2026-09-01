@@ -1,6 +1,7 @@
 export { APP_CONFIG, DashboardLayoutId, DashboardTileId, FeatureFlag } from './config';
 export {
   DEFAULT_EARLY_ACCESS_WEEKS,
+  earlyAccessUntilFrom,
   type FeatureAccessLike,
   hasFeatureAccess,
   isInEarlyAccess,

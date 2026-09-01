@@ -7,7 +7,13 @@ on:
       - development
     paths:
       - 'packages/api/drizzle/**'
-      
+      # Feature-control seeding runs in this workflow too, so a change to the
+      # seed script or to the flag list it reads must trigger it. Without these,
+      # adding a feature flag would leave its control rows unseeded until some
+      # unrelated migration happened to run.
+      - 'packages/api/src/db/seed-feature-controls.ts'
+      - 'packages/config/src/config.ts'
+
   workflow_dispatch:
     inputs:
       environment:
@@ -64,4 +70,18 @@ jobs:
         env:
           NEON_DATABASE_URL: ${{ env.TARGET_ENV == 'prod' && secrets.NEON_PROD_DATABASE_URL || secrets.NEON_DEV_DATABASE_URL }}
         run: bun run packages/api/migrate.ts
+
+      # Feature controls are data, not schema, so they are a seed script rather
+      # than a migration (see docs/feature-gating.md). Running them here anyway
+      # means a new feature's flag and access rows land automatically instead of
+      # depending on someone remembering to run the seed by hand.
+      #
+      # Runs after migrations because it writes to feature_flags/feature_access,
+      # which a migration may have just created or altered. Idempotent — every
+      # insert is ON CONFLICT DO NOTHING, so a re-run never clobbers a row an
+      # operator changed.
+      - name: Seed feature controls
+        env:
+          NEON_DATABASE_URL: ${{ env.TARGET_ENV == 'prod' && secrets.NEON_PROD_DATABASE_URL || secrets.NEON_DEV_DATABASE_URL }}
+        run: bun run packages/api/src/db/seed-feature-controls.ts
 
