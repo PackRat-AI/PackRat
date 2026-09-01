@@ -9,6 +9,7 @@
     "deploy:dev": "wrangler deploy --minify -e dev",
     "dev": "wrangler dev -e dev --port ${PORT:-8787}",
     "disabled-check-types": "tsc --noEmit",
+    "dump-catalog": "bun scripts/dump-catalog.ts",
     "test": "vitest run",
     "test:integration": "vitest run --project mcp-integration",
     "test:unit": "vitest run --project mcp-unit",

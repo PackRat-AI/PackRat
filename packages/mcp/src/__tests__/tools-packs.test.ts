@@ -15,6 +15,7 @@
  * irrelevant here — we never call `elicitInput`.
  */
 
+import { isObject } from '@packrat/guards';
 import { describe, expect, it } from 'vitest';
 import { ItemCategory, PackCategory } from '../enums';
 import { registerPackTools } from '../tools/packs';
@@ -41,6 +42,41 @@ describe('packrat_list_packs', () => {
     expect(result.content[0]?.type).toBe('text');
     expect(firstText(result).length).toBeGreaterThan(0);
     expect(hit(calls, { segments: ['user', 'packs'], verb: 'get' })).toBe(true);
+  });
+
+  it("strips each pack's items array from the listing", async () => {
+    // Regression guard. `GET /api/packs` inlines every pack's full item list
+    // and takes no limit, so on an account with a dozen packs the
+    // pretty-printed envelope exceeded the 150k response cap (174 343 chars
+    // measured on the review account). Truncation drops structuredContent,
+    // and the model then reports it cannot read the user's packs at all —
+    // which is what happened on two of three runs of the submission test
+    // case. A listing needs the computed totals, not per-item detail.
+    const { agent, server } = makeAgent();
+    const heavyPack = {
+      id: 'p_1',
+      name: 'Heavy',
+      totalWeight: 1000,
+      baseWeight: 900,
+      items: Array.from({ length: 30 }, (_, i) => ({ id: `i_${i}`, name: `Item ${i}` })),
+    };
+    agent.api = {
+      user: {
+        packs: {
+          get: () => Promise.resolve({ data: [heavyPack], error: null, status: 200 }),
+        },
+      },
+    } as unknown as typeof agent.api;
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_list_packs')(
+      { include_public: false, offset: 0, limit: 10 },
+      makeExtra(),
+    );
+    const text = firstText(result);
+    expect(text).toContain('"name": "Heavy"');
+    // Computed totals survive; the per-item payload does not.
+    expect(text).toContain('totalWeight');
+    expect(text).not.toContain('i_0');
   });
 });
 
@@ -214,6 +250,38 @@ describe('packrat_similar_pack_items', () => {
     expect(firstText(result).length).toBeGreaterThan(0);
     expect(hit(calls, { segments: ['user', 'packs', 'items', 'similar'], verb: 'get' })).toBe(true);
   });
+
+  /** Pull the `query` object off the recorded similar-items call. */
+  const similarQuery = (calls: { path: string[]; args: unknown[] }[]) => {
+    const call = calls.find((c) =>
+      hit([c], { segments: ['user', 'packs', 'items', 'similar'], verb: 'get' }),
+    );
+    const first = call?.args[0];
+    return isObject(first) ? (first as { query?: Record<string, unknown> }).query : undefined;
+  };
+
+  it('forwards lighter_only as the string "true" when set', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    await getToolHandler(server, 'packrat_similar_pack_items')(
+      { pack_id: 'p_abc123', item_id: 'i_xyz789', limit: 10, lighter_only: true },
+      makeExtra(),
+    );
+    // Eden serialises query params as strings and the endpoint compares
+    // against 'true', so forwarding a raw boolean would silently disable
+    // the filter rather than fail loudly.
+    expect(similarQuery(calls)?.lighter_only).toBe('true');
+  });
+
+  it('omits lighter_only entirely when not set', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    await getToolHandler(server, 'packrat_similar_pack_items')(
+      { pack_id: 'p_abc123', item_id: 'i_xyz789', limit: 10 },
+      makeExtra(),
+    );
+    expect(similarQuery(calls)).not.toHaveProperty('lighter_only');
+  });
 });
 
 describe('packrat_suggest_pack_items', () => {
@@ -289,6 +357,28 @@ describe('packrat_analyze_pack_gaps', () => {
     expect(result.content[0]?.type).toBe('text');
     expect(firstText(result).length).toBeGreaterThan(0);
     expect(hit(calls, { segments: ['user', 'packs', 'gap-analysis'], verb: 'post' })).toBe(true);
+  });
+
+  // A bare "what am I missing?" prompt supplies only the pack. The upstream
+  // endpoint requires destination/tripType/duration, so without defaults the
+  // call fails validation instead of answering — this was one of the causes
+  // of the ChatGPT Apps review rejection.
+  it('falls back to a 2-day backpacking context when trip details are omitted', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_analyze_pack_gaps')(
+      { pack_id: 'p_abc123' },
+      makeExtra(),
+    );
+    expect(firstText(result).length).toBeGreaterThan(0);
+
+    const call = calls.find((c) => c.path.at(-1) === 'post' && c.path.includes('gap-analysis'));
+    expect(call, 'gap-analysis post was not recorded').toBeDefined();
+    expect(call?.args[0]).toMatchObject({
+      destination: 'Unspecified',
+      tripType: PackCategory.Backpacking,
+      duration: 2,
+    });
   });
 });
 

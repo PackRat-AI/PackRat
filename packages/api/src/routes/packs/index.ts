@@ -33,8 +33,10 @@ import {
   UpdatePackRequestSchema,
 } from '@packrat/schemas/packs';
 import { ErrorResponseSchema } from '@packrat/schemas/shared';
+import { normalize, parseWeightUnit } from '@packrat/units';
 import { safeJsonStringify } from '@packrat/utils';
 import {
+  type AnyColumn,
   and,
   cosineDistance,
   eq,
@@ -394,14 +396,18 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const db = createDb();
       try {
         // Minimal projection: only what computePackBreakdown reads.
-        // `name` is required — `byCategory[].items[]` formats each item as
-        // `<name> (<weight><unit> × <quantity>)`; without it, every entry
-        // renders as `undefined (1200g × 1)`.
+        // `name` is required — `byCategory[].items[]` carries a `label`
+        // formatted as `<name> (<weight><unit> × <quantity>)`; without it,
+        // every entry renders as `undefined (1200g × 1)`.
+        // `id` is required so each breakdown entry carries the pack-item id
+        // that `packrat_similar_pack_items` takes — a caller that spots the
+        // heaviest item here can then look up lighter replacements for it.
         const pack = await db.tag('packs.getById').query.packs.findFirst({
           where: and(eq(packs.id, params.packId), eq(packs.deleted, false)),
           with: {
             items: {
               columns: {
+                id: true,
                 name: true,
                 weight: true,
                 weightUnit: true,
@@ -1092,6 +1098,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const { itemId } = params;
       const limit = query.limit ? Number(query.limit) : 5;
       const threshold = query.threshold ? Number(query.threshold) : 0.1;
+      const lighterOnly = query.lighter_only === 'true';
 
       const validLimit = Math.min(Math.max(limit, 1), 20);
 
@@ -1116,12 +1123,54 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const maxCatalogDistance = 1 - threshold;
       const { embedding: _catalogEmbedding, ...catalogColumns } = getTableColumns(catalogItems);
 
+      // `lighter_only`: restrict results to items that actually weigh less
+      // than the source item.
+      //
+      // WHY: similarity alone cannot answer "find me a lighter alternative".
+      // A vector search for a 1200 g tent returns other 2-person tents — and
+      // most of them are heavier (3000 g rows sat at the top of the results
+      // during an OpenAI Apps review run). The caller then either presents a
+      // heavier item as an upgrade or, as happened, abandons the catalog and
+      // sources a figure from the open web.
+      //
+      // Both sides need unit normalisation before they can be compared: the
+      // catalog stores g/kg/oz/lb in `weight_unit`, and so does `pack_items`.
+      // Comparing the raw columns would rank 3 oz (85 g) as lighter than 10 g.
+      const gramsExpr = ({ weight, unit }: { weight: AnyColumn; unit: AnyColumn }): SQL<number> =>
+        sql<number>`(${weight} * CASE lower(${unit})
+          WHEN 'kg' THEN 1000
+          WHEN 'lb' THEN 453.59237
+          WHEN 'oz' THEN 28.349523125
+          ELSE 1
+        END)`;
+      const catalogGrams = gramsExpr({
+        weight: catalogItems.weight,
+        unit: catalogItems.weightUnit,
+      });
+      const sourceGrams =
+        normalize({
+          weight: sourceItem.weight,
+          unit: parseWeightUnit({ value: sourceItem.weightUnit }),
+        }) || 0;
+
+      // A source item with no usable weight cannot anchor a "lighter" filter,
+      // so the flag degrades to plain similarity rather than returning an
+      // empty list.
+      const lighterFilter =
+        lighterOnly && sourceGrams > 0
+          ? and(isNotNull(catalogItems.weight), sql`${catalogGrams} < ${sourceGrams}`)
+          : undefined;
+
       const similarCatalogItems = await db
         .tag('packs.getSimilarItems')
         .select({ ...catalogColumns, similarity: catalogSimilarity })
         .from(catalogItems)
         .where(
-          and(sql`${catalogDistance} < ${maxCatalogDistance}`, isNotNull(catalogItems.embedding)),
+          and(
+            sql`${catalogDistance} < ${maxCatalogDistance}`,
+            isNotNull(catalogItems.embedding),
+            lighterFilter,
+          ),
         )
         .orderBy(catalogDistance)
         .limit(validLimit);
@@ -1139,6 +1188,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       query: z.object({
         limit: z.string().optional(),
         threshold: z.string().optional(),
+        lighter_only: z.string().optional(),
       }),
       isAuthenticated: true,
       detail: {

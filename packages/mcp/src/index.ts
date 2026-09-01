@@ -52,12 +52,13 @@ import { ServiceMeta } from './constants';
 import { applyCorsHeaders, applyLocalhostCors } from './cors';
 import { faviconResponse } from './favicon';
 import { buildResourceMetadata, unauthorizedResponse } from './metadata';
-import { attachCorrelationId, correlationIdFrom } from './observability';
+import { attachCorrelationId, correlationIdFrom, createLogger } from './observability';
 import { registerPrompts } from './prompts';
 import { checkRateLimit, toolRateLimitKey } from './rate-limit';
 import { BEARER_REGEX, extractBearer, withCorrelationHeader } from './request-helpers';
 import { registerResources } from './resources';
 import { getVisibleTools } from './scopes';
+import { ReviewTelemetry } from './telemetry';
 import { verifyMcpToken } from './token-verify';
 // DISABLED — admin-gated tools are not shipped on the connector surface.
 // import { registerAdminTools } from './tools/admin';
@@ -114,6 +115,21 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
    * `_registeredTools`) keeps us off of internal SDK shape.
    */
   private _toolsByName: Map<string, RegisteredTool> = new Map();
+  /**
+   * Review-session telemetry (see `telemetry.ts`). Lazily built so the
+   * `sessionId` can be derived from the Durable Object ID — that ID is
+   * stable for the lifetime of one MCP session, which is exactly the
+   * grouping key needed to reconstruct a reviewer's run as an ordered
+   * transcript.
+   */
+  private _telemetry: ReviewTelemetry | null = null;
+
+  private get telemetry(): ReviewTelemetry {
+    if (!this._telemetry) {
+      this._telemetry = new ReviewTelemetry(`session:${this.ctx.id.toString()}`);
+    }
+    return this._telemetry;
+  }
 
   get api(): McpClients {
     if (!this._api) {
@@ -199,12 +215,74 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
           toolName: name,
           handler: originalHandler,
         });
-        args[2] = wrappedHandler;
+        args[2] = this.wrapHandlerWithTelemetry({
+          toolName: name,
+          handler: wrappedHandler,
+        });
       }
       const tool = (original as (...a: unknown[]) => RegisteredTool)(...args);
       this._toolsByName.set(name, tool);
       return tool;
     }) as typeof this.server.registerTool;
+  }
+
+  /**
+   * Wrap a tool handler so every invocation emits one `mcp.tool.call` line.
+   *
+   * This is the primary artifact for diagnosing an OpenAI Apps review: it
+   * records which tool ran, in what order within the session, how long it
+   * took, whether it succeeded, and a bounded preview of what came back.
+   *
+   * Layering: this wraps the rate-limit wrapper (not the reverse), so a
+   * call rejected by the rate limiter is still logged — with its
+   * `rate_limited` error code visible. A silent rate-limit rejection
+   * during a review would be nearly impossible to diagnose from the
+   * outside, since the model just sees a retryable error envelope.
+   *
+   * Timing uses `Date.now()` deltas rather than `performance.now()`:
+   * Workers clamps timer resolution for side-channel reasons, so the
+   * millisecond figure is coarse. It is precise enough to separate "fast
+   * cache hit" from "slow upstream", which is the distinction that matters
+   * when a reviewer reports a timeout.
+   *
+   * The handler's return value and thrown errors both pass through
+   * untouched — telemetry observes, it never alters the tool contract.
+   */
+  private wrapHandlerWithTelemetry({
+    toolName,
+    handler,
+  }: {
+    toolName: string;
+    handler: (...handlerArgs: unknown[]) => unknown;
+  }): (...handlerArgs: unknown[]) => unknown {
+    return async (...handlerArgs: unknown[]): Promise<unknown> => {
+      const startedAt = Date.now();
+      // The SDK invokes tool handlers as `(args, extra)` — index 0 is the
+      // validated argument object. We log only its KEY names (see
+      // `argKeysOf`), never the values.
+      const args = handlerArgs[0];
+      try {
+        const result = await handler(...handlerArgs);
+        this.telemetry.toolCall({
+          toolName,
+          durationMs: Date.now() - startedAt,
+          args,
+          result,
+        });
+        return result;
+      } catch (error) {
+        this.telemetry.toolCall({
+          toolName,
+          durationMs: Date.now() - startedAt,
+          args,
+          thrown: error,
+        });
+        // Rethrow unchanged: the SDK turns this into a JSON-RPC error and
+        // the model needs to see the same failure it would have seen
+        // without instrumentation.
+        throw error;
+      }
+    };
   }
 
   /**
@@ -366,6 +444,21 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
     const props = this.props as { scopes?: readonly string[] } | undefined;
     const grantedScopes: readonly string[] = props?.scopes ?? [];
     this.applyScopeFilter(grantedScopes);
+
+    // ── Review observability (U16) ─────────────────────────────────────────
+    // Emit a session marker plus a snapshot of the tool listing this session
+    // actually exposes. The snapshot is taken AFTER `applyScopeFilter` on
+    // purpose: what matters for a submission review is what the reviewer's
+    // client can see, not what we registered. A divergence between this list
+    // and the tools declared in `chatgpt-app-submission.json` is a direct
+    // rejection cause, and this is the only place it's observable.
+    this.telemetry.session({
+      phase: 'init',
+      fields: { scopeCount: grantedScopes.length, toolCount: this._toolsByName.size },
+    });
+    this.telemetry.toolsList(
+      [...this._toolsByName].filter(([, tool]) => tool.enabled).map(([name]) => name),
+    );
   }
 }
 
@@ -472,8 +565,34 @@ export default {
 
     // ── 3. /mcp — JWT-gated protected resource ───────────────────────────────
     if (url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) {
+      // U16 review observability: auth outcomes are logged here because a
+      // failed connection never reaches the tool surface at all. The first
+      // OpenAI submission was rejected without per-case detail, and
+      // "the reviewer could not connect" is invisible in tool-call logs by
+      // construction — it has to be captured at the gate.
+      //
+      // We log the OUTCOME and the REASON, never the token or any part of
+      // it. `hasToken` distinguishes "no Authorization header" (the normal
+      // pre-OAuth discovery probe, which is expected and not a fault) from
+      // "token present but rejected" (a real failure worth investigating).
+      const authLogger = createLogger({ correlationId, service: 'mcp' });
       const bearer = extractBearer(request.headers.get('Authorization'));
       if (!bearer) {
+        // Expected during discovery: clients probe unauthenticated first to
+        // learn the resource metadata URL. Logged at info, not warn, so it
+        // doesn't create noise that masks real auth failures.
+        authLogger.info({
+          msg: 'mcp.auth',
+          fields: {
+            authEvent: 'challenge',
+            authOk: false,
+            authReason: 'no_bearer',
+            hasToken: false,
+            httpStatus: 401,
+            method: request.method,
+            path: url.pathname,
+          },
+        });
         const unauth = unauthorizedResponse({ env });
         const cors = applyLocalhostCors({ request, existing: unauth }) ?? unauth;
         return withCorrelationHeader({ response: cors, correlationId });
@@ -481,10 +600,39 @@ export default {
 
       const verified = await verifyMcpToken({ token: bearer, env, ctx });
       if (!verified) {
+        // A token was presented and rejected — expired, wrong audience,
+        // bad signature, or JWKS fetch failure. `verifyMcpToken` returns
+        // null for all of these by contract (it never throws), so we can't
+        // distinguish them here. Warn level: this is the shape of a real
+        // review blocker.
+        authLogger.warn({
+          msg: 'mcp.auth',
+          fields: {
+            authEvent: 'verify_failed',
+            authOk: false,
+            authReason: 'token_rejected',
+            hasToken: true,
+            httpStatus: 401,
+            method: request.method,
+            path: url.pathname,
+          },
+        });
         const unauth = unauthorizedResponse({ env });
         const cors = applyLocalhostCors({ request, existing: unauth }) ?? unauth;
         return withCorrelationHeader({ response: cors, correlationId });
       }
+
+      authLogger.info({
+        msg: 'mcp.auth',
+        fields: {
+          authEvent: 'verified',
+          authOk: true,
+          hasToken: true,
+          scopeCount: verified.scopes.length,
+          method: request.method,
+          path: url.pathname,
+        },
+      });
 
       // Inject the verified-claim Props into ctx.props for the DO handler.
       // The `agents/mcp` SDK reads `ctx.props` and forwards via

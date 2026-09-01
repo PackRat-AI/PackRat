@@ -214,6 +214,37 @@ describe('computePackBreakdown', () => {
     expect(result.byCategory[0]?.totalGrams).toBe(500);
   });
 
+  it('carries the pack-item id on each breakdown entry', () => {
+    // Load-bearing: `packrat_similar_pack_items` takes a pack-item id, and the
+    // breakdown is where a caller identifies the heaviest item. Without this
+    // field the MCP surface can name the heaviest item but not act on it —
+    // which is exactly why the "find lighter alternatives" flow never reached
+    // that tool during an OpenAI Apps review run.
+    const items = [
+      makePackItem({ id: 'pi_42', weight: 900, weightUnit: 'g', category: 'Shelter' }),
+    ];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(result.byCategory[0]?.items[0]?.id).toBe('pi_42');
+  });
+
+  it('sorts items within a category heaviest first', () => {
+    const items = [
+      makePackItem({ id: 'light', name: 'Stakes', weight: 100, weightUnit: 'g', category: 'S' }),
+      makePackItem({ id: 'heavy', name: 'Tent', weight: 1200, weightUnit: 'g', category: 'S' }),
+    ];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(result.byCategory[0]?.items.map((i) => i.id)).toEqual(['heavy', 'light']);
+  });
+
+  it('reports quantity-adjusted grams per item, not the per-unit weight', () => {
+    // `label` prints the per-unit weight ("200g × 3") but `grams` must be the
+    // total contribution, or ranking by it would misorder a multi-quantity row.
+    const items = [makePackItem({ id: 'i1', weight: 200, weightUnit: 'g', quantity: 3 })];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(result.byCategory[0]?.items[0]?.grams).toBe(600);
+    expect(result.byCategory[0]?.items[0]?.quantity).toBe(3);
+  });
+
   it('falls back to "Uncategorized" when category is null', () => {
     const items = [makePackItem({ weight: 100, weightUnit: 'g', category: null })];
     const result = computePackBreakdown(makePack({ items }));
@@ -263,7 +294,7 @@ describe('computePackBreakdown', () => {
       }),
     ];
     const result = computePackBreakdown(makePack({ items }));
-    expect(result.byCategory[0]?.items[0]).toBe('Tent (1000g × 1)');
+    expect(result.byCategory[0]?.items[0]?.label).toBe('Tent (1000g × 1)');
   });
 
   it('uses "g" as fallback unit in item string when weightUnit is null', () => {
@@ -276,7 +307,7 @@ describe('computePackBreakdown', () => {
       }),
     ];
     const result = computePackBreakdown(makePack({ items }));
-    expect(result.byCategory[0]?.items[0]).toBe('Snack (50g × 1)');
+    expect(result.byCategory[0]?.items[0]?.label).toBe('Snack (50g × 1)');
   });
 
   it('converts weights across units (kg → g) before accumulating', () => {

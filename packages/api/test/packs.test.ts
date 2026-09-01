@@ -564,17 +564,20 @@ describe('Packs Routes', () => {
       expect(breakdown).toHaveProperty('byCategory');
 
       // Lock per-item rendering inside byCategory — this is the F1-flagged
-      // failure mode: if `name` is dropped from the U6 projection,
-      // byCategory[].items[] strings render as "undefined (1200g × 1)".
-      // After U6 adds name:true to the whitelist, these assertions remain GREEN.
+      // failure mode: if `name` is dropped from the projection,
+      // byCategory[].items[].label renders as "undefined (1200g × 1)".
       expect(Array.isArray(breakdown.byCategory)).toBe(true);
       for (const cat of breakdown.byCategory) {
         expect(cat).toHaveProperty('category');
         expect(cat).toHaveProperty('items');
         expect(Array.isArray(cat.items)).toBe(true);
-        for (const itemString of cat.items) {
+        for (const item of cat.items) {
           // Must not start with "undefined" — guard against name being projected out.
-          expect(itemString).not.toMatch(/^undefined/);
+          expect(item.label).not.toMatch(/^undefined/);
+          // `id` must survive the projection too: it is what makes the
+          // heaviest item actionable via the similar-items lookup.
+          expect(typeof item.id).toBe('string');
+          expect(item.id.length).toBeGreaterThan(0);
         }
       }
     });

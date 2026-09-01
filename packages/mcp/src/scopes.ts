@@ -91,8 +91,6 @@ const READ_NAMES: ReadonlySet<string> = new Set([
   'packrat_whoami',
   'packrat_analyze_pack_gaps',
   'packrat_analyze_pack_weight',
-  'packrat_compare_gear_items',
-  'packrat_semantic_gear_search',
   'packrat_similar_catalog_items',
   'packrat_similar_pack_items',
   'packrat_suggest_pack_items',

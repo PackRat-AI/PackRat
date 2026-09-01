@@ -65,8 +65,30 @@ export function registerPackTools(agent: AgentContext): void {
       // slice here using the clamped limit + offset. This keeps the
       // structured envelope honest about page size and `nextOffset`.
       const page = items.slice(offset, offset + clamped);
+      // Drop each pack's `items` array from the listing.
+      //
+      // WHY: `GET /api/packs` inlines every pack's full item list, and the
+      // route takes no limit — it returns the account's entire pack history.
+      // On an account with a dozen packs that is ~10 KB per pack, and the
+      // pretty-printed envelope blew past the 150k response cap (measured at
+      // 174 343 chars on the review account). Truncation drops
+      // `structuredContent`, so the model receives an unparseable blob and
+      // reports it cannot read the user's packs at all — which is exactly
+      // what happened on two of three runs of the submission test case.
+      //
+      // Slicing alone does not fix it: the oversized payload has already
+      // crossed the wire and been parsed before the slice happens. A listing
+      // does not need per-item detail anyway — `totalWeight`/`baseWeight` are
+      // already computed server-side, and `packrat_get_pack` /
+      // `packrat_list_pack_items` exist for drilling into one pack.
+      //
+      // `items` is optional on PackSchema, so omitting it stays schema-valid.
+      const summaries = page.map((pack) => {
+        const { items: _items, ...rest } = pack as typeof pack & { items?: unknown };
+        return rest;
+      });
       return ok({
-        data: withNextOffset({ items: page, offset, limit: clamped }),
+        data: withNextOffset({ items: summaries, offset, limit: clamped }),
         structured: true,
       });
     },
@@ -317,7 +339,7 @@ export function registerPackTools(agent: AgentContext): void {
     {
       title: 'Add Pack Item',
       description:
-        'Add a gear item to a pack. Provide either a catalog_item_id (from packrat_search_gear_catalog) or specify custom item details. Weight should be in grams.',
+        'Add a gear item to a pack. Provide either a catalog_item_id (from packrat_search_gear_catalog, the semantic catalog search) or specify custom item details. Weight should be in grams.',
       inputSchema: {
         pack_id: z.string().describe('The pack ID to add the item to'),
         name: z.string().min(1).describe('Item name'),
@@ -452,17 +474,30 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Similar items for an item in a pack ───────────────────────────────────
 
-  tool<{ pack_id: string; item_id: string; limit: number; threshold?: number }>(
+  tool<{
+    pack_id: string;
+    item_id: string;
+    limit: number;
+    threshold?: number;
+    lighter_only?: boolean;
+  }>(
     agent.server,
     'packrat_similar_pack_items',
     {
       title: 'Find Similar Pack Items',
-      description: 'Find catalog gear similar to a specific item in a pack (semantic similarity).',
+      description:
+        "Find catalog gear comparable to a specific item already in a pack — the tool for swapping or upgrading an item, including finding a lighter replacement. Takes the pack item's `item_id`, which is returned by `packrat_list_pack_items`, `packrat_add_pack_item`, and in the `byCategory[].items[].id` field of `packrat_analyze_pack_weight`. Set `lighter_only: true` whenever the user wants a lighter replacement — results are otherwise ranked by semantic similarity alone and will include items heavier than the source.",
       inputSchema: {
         pack_id: z.string(),
         item_id: z.string(),
         limit: z.number().int().min(1).max(50).default(10),
         threshold: z.number().min(0).max(1).optional().describe('Similarity threshold (0-1)'),
+        lighter_only: z
+          .boolean()
+          .optional()
+          .describe(
+            'Return only catalog items weighing less than the source pack item. Weights normalise to grams server-side, so mixed g/kg/oz/lb rows compare correctly.',
+          ),
       },
       annotations: {
         title: 'Find Similar Pack Items',
@@ -472,7 +507,7 @@ export function registerPackTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async ({ pack_id, item_id, limit, threshold }) =>
+    async ({ pack_id, item_id, limit, threshold, lighter_only }) =>
       call({
         promise: agent.api.user
           .packs({ packId: pack_id })
@@ -481,6 +516,7 @@ export function registerPackTools(agent: AgentContext): void {
             query: {
               limit: String(limit),
               ...(threshold !== undefined ? { threshold: String(threshold) } : {}),
+              ...(lighter_only ? { lighter_only: 'true' } : {}),
             },
           }),
         action: 'find similar items',
@@ -598,9 +634,9 @@ export function registerPackTools(agent: AgentContext): void {
 
   tool<{
     pack_id: string;
-    destination: string;
-    trip_type: PackCategory;
-    duration_days: number;
+    destination?: string;
+    trip_type?: PackCategory;
+    duration_days?: number;
     start_date?: string;
     end_date?: string;
   }>(
@@ -609,12 +645,23 @@ export function registerPackTools(agent: AgentContext): void {
     {
       title: 'Analyze Pack Gaps',
       description:
-        "Identify missing essential gear categories for a specific trip context. Compares the pack's current categories against recommended essentials and returns what's missing.",
+        "Identify missing essential gear categories for a specific trip context. Compares the pack's current categories against recommended essentials and returns what's missing. Only pack_id is required — when the user doesn't state a destination, trip type, or duration, this falls back to a general 2-day backpacking context rather than failing.",
       inputSchema: {
         pack_id: z.string().describe('The pack ID to analyze'),
-        destination: z.string().describe('Trip destination'),
-        trip_type: z.nativeEnum(PackCategory).describe('Trip / activity type'),
-        duration_days: z.number().int().min(1).describe('Trip duration in days'),
+        destination: z
+          .string()
+          .optional()
+          .describe("Trip destination; defaults to 'Unspecified' when the user hasn't named one"),
+        trip_type: z
+          .nativeEnum(PackCategory)
+          .optional()
+          .describe(`Trip / activity type; defaults to '${PackCategory.Backpacking}'`),
+        duration_days: z
+          .number()
+          .int()
+          .min(1)
+          .optional()
+          .describe('Trip duration in days; defaults to 2'),
         start_date: z.string().optional().describe('ISO date for trip start'),
         end_date: z.string().optional().describe('ISO date for trip end'),
       },
@@ -628,10 +675,13 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ pack_id, destination, trip_type, duration_days, start_date, end_date }) =>
       call({
+        // Defaults keep the tool usable from a bare "what am I missing?" prompt.
+        // The upstream endpoint requires all three, so a missing field would
+        // otherwise surface as a validation error rather than an answer.
         promise: agent.api.user.packs({ packId: pack_id })['gap-analysis'].post({
-          destination,
-          tripType: trip_type,
-          duration: duration_days,
+          destination: destination ?? 'Unspecified',
+          tripType: trip_type ?? PackCategory.Backpacking,
+          duration: duration_days ?? 2,
           startDate: start_date,
           endDate: end_date,
         }),

@@ -550,7 +550,7 @@ Tier 2 categories (representative — not exhaustive):
   (`packrat_get_pack_item`, `packrat_list_pack_items`).
 - Catalog read paths beyond `packrat_search_gear_catalog`
   (`packrat_get_catalog_item`, `packrat_similar_catalog_items`,
-  `packrat_semantic_gear_search`, `packrat_compare_gear_items`,
+  `packrat_search_gear_catalog`,
   `packrat_list_gear_categories`).
 - All `tools/feed.ts`, `tools/trail-conditions.ts`,
   `tools/trails.ts`, `tools/alltrails.ts`, `tools/guides.ts`,
@@ -633,7 +633,7 @@ them on every `resources/list` call would burn megabytes of context
 for marginal value. `CATALOG_LIST_CAP = 25` is one screen of resource
 entries in Claude.ai's resource browser; the model can still page
 deeper via `packrat://search?q=...` or the
-`packrat_search_gear_catalog` / `packrat_semantic_gear_search` tools.
+`packrat_search_gear_catalog` tool (semantic/vector backed).
 
 Bumping the cap is cheap (single constant in `resources.ts`); revisit
 if reviewer feedback says the initial surface is too narrow.
@@ -1868,3 +1868,209 @@ OAUTH_KV namespaces + DCR secret" above.
 - [`packages/mcp/.dev.vars.example`](../../packages/mcp/.dev.vars.example) — required env vars
 - [`packages/mcp/wrangler.jsonc`](../../packages/mcp/wrangler.jsonc) — env / route / binding structure
 - [The implementation plan](../plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md)
+
+## U16 — Review-session observability (OpenAI Apps submission)
+
+Added after the first OpenAI Apps submission was rejected with "some test
+cases failed" and no per-case detail. The goal is that a *second* rejection
+arrives with evidence attached instead of guesswork.
+
+### What gets emitted
+
+All lines are structured JSON on `console.*` → Workers Logs. `logpush` and
+`observability` are already enabled at `head_sampling_rate: 1`, so nothing is
+sampled away.
+
+| `msg` | When | Key fields |
+|---|---|---|
+| `mcp.tool.call` | Every tool invocation | `sessionId`, `seq`, `toolName`, `durationMs`, `ok`, `isError`, `errorCode`, `resultChars`, `structured`, `argKeys`, `preview` |
+| `mcp.tools.list` | Once per session, after the scope filter | `sessionId`, `toolCount`, `toolNames` |
+| `mcp.session` | Session init | `sessionId`, `phase`, `scopeCount`, `toolCount` |
+| `mcp.auth` | Every `/mcp` request gate | `authEvent`, `authOk`, `authReason`, `hasToken`, `httpStatus` |
+| `mcp.upstream.error` | Any failed PackRat API call | `upstreamStatus`, `upstreamOperation`, `retryable` |
+
+### Reconstructing a session
+
+`sessionId` (`session:<DO-id>`) groups one MCP session; `seq` orders the calls
+within it. Together they turn the log stream into an ordered transcript of what
+a reviewer's run actually did.
+
+**Gotcha:** `wrangler tail --format json` emits *pretty-printed* JSON — multi-line
+objects, not JSONL. A per-line `json.loads` finds nothing. The structured log
+line is a JSON **string** nested inside `.logs[].message[]`, so it must be
+grepped out and unescaped:
+
+```bash
+# Live, during a review run — all telemetry:
+bunx wrangler tail --env prod --format json \
+  | grep -o '{\\"ts[^}]*}' | sed 's/\\"/"/g'
+
+# Just the tool calls:
+bunx wrangler tail --env prod --format json \
+  | grep -o '{\\"ts[^}]*}' | sed 's/\\"/"/g' | grep mcp.tool.call
+
+# Auth failures only:
+bunx wrangler tail --env prod --format json \
+  | grep -o '{\\"ts[^}]*}' | sed 's/\\"/"/g' | grep '"authOk":false'
+```
+
+Verified live on 2026-08-29 against deploy `8a20ea8f`: an unauthenticated POST
+to `/mcp` emits `authEvent:"challenge"` at info, and a bogus bearer emits
+`authEvent:"verify_failed"` at warn — both with no `[redacted]` fields.
+
+### Known issue: MCP_TOOLS_RL is not bound
+
+`wrangler deploy` warns `Unexpected fields found in env.prod field:
+"rate_limiting"` and the deployed binding table shows only `PackRatMCP` and
+`CF_VERSION_METADATA`. The rate-limit binding has **never** attached (predates
+U16; `wrangler.jsonc` untouched since `a3cd4c4ac`). `checkRateLimit` falls back
+to "allowed" when the binding is absent, so the tool surface is currently
+unlimited. Fails open, not closed — not a review blocker, but it means the
+60/60s budget documented above is not actually enforced. Likely a wrangler
+schema change for the `rate_limiting` block; wrangler is 35 minor versions
+behind (4.92.0 vs 4.127.1).
+
+`mcp.auth` lines carry the `cf-ray` correlation ID rather than a `sessionId`
+(they are emitted at the fetch gate, before the DO exists). The
+`X-Correlation-Id` response header echoes the same value, so a failing client
+request can be tied to its server-side line.
+
+### The allowlist trap — read before adding a field
+
+`observability.ts` enforces a **default-deny** allowlist (`TOP_LEVEL_ALLOWLIST`).
+Any field logged but not listed there is silently rewritten to the string
+`'[redacted]'`. It does not throw and it does not warn.
+
+**Add the allowlist entry in the same commit as the log field.** The
+round-trip test in `src/__tests__/telemetry.test.ts` ("preserves every emitted
+field through scrubFields") is what catches an omission — keep its
+`EMITTED_FIELDS` map in sync when adding fields.
+
+### Privacy invariants
+
+- Argument **keys** are logged, never argument **values** (a trip name or
+  search query is user content).
+- Result previews are capped at 600 chars and passed through `previewForLog`,
+  which strips JWTs, bearer/secret assignments, and email addresses before
+  truncating. Scrub-then-truncate ordering matters: truncating first could
+  split a credential into a fragment the pattern pass would miss.
+- No tokens, no URLs, no request/response bodies.
+
+
+## Connector tool surface — keep these in sync
+
+Three artifacts describe the tool surface and drift apart silently:
+
+1. **`packages/mcp/src/tools/*.ts`** — the registrations. Source of truth.
+2. **`packages/mcp/chatgpt-app-submission.json`** — the tools declared to
+   OpenAI. Only the connector-exposed subset.
+3. **`apps/landing/data/mcp-catalog.json`** — the public docs table, a
+   GENERATED artifact.
+
+(3) is produced by `bun run dump-catalog` from `packages/mcp/`. It is not
+wired into CI, so it does not regenerate on its own — it sat stale from
+2026-06-27 until 2026-08-29 and kept advertising `packrat_compare_gear_items`
+and `packrat_semantic_gear_search` after both were renamed or withdrawn.
+**Re-run it whenever a tool is added, renamed, or disabled**, and grep
+`apps/landing/app/mcp/page.tsx` too — that page hardcodes some tool names in
+prose that the generator does not touch.
+
+### Naming note: `packrat_search_gear_catalog`
+
+The name now belongs to the **vector/semantic** tool. It previously belonged
+to a keyword-matching tool that was withdrawn (the matcher required a
+contiguous phrase match, so natural-language queries returned zero results).
+The name was reused rather than retired because it is the name a model
+reaches for when a user says "search PackRat for X".
+
+## Seeding the reviewer account (required before app-submission testing)
+
+Two submission test cases read a pack that must **already exist** on the
+reviewer's account:
+
+- **TC3** — "What's the total weight of my Lost Coast Trail pack, and am I
+  missing any essentials?"
+- **TC4** — "Find lighter alternatives for the heaviest items in my Lost Coast
+  Trail pack."
+
+The fixture is deliberately **not** a Yosemite/Tuolumne pack: TC1's prompt
+creates its own "Tuolumne Meadows 3-Day" pack, so reusing that destination
+would leave two lookalike packs on the account and make "my <X> pack"
+ambiguous — the model could analyse either, and which one would vary by run.
+
+The reviewer account gets wiped between test rounds. Without the fixture those
+cases fail for **setup** reasons, which from the reviewer's side is
+indistinguishable from the app being broken.
+
+```bash
+bun packages/mcp/scripts/seed-reviewer-account.ts --token <reviewer-access-token>
+
+# preview without writing:
+bun packages/mcp/scripts/seed-reviewer-account.ts --token <t> --dry-run
+```
+
+The token must belong to the reviewer account itself — the script writes via
+the public REST API as that user and needs no DB or admin access. It is passed
+as a flag rather than read from the environment: the shared env shim requires
+`NEON_DATABASE_URL` and other unrelated vars this script has no use for. It is
+idempotent: a second run detects the existing `Lost Coast Trail` pack and exits
+without duplicating it.
+
+### Cleaning the account between test rounds
+
+Test runs leave packs and trips behind — TC1 creates a trip and a pack every
+time it runs, and the pack-building cases each create one. After a dozen runs
+the account had 13 packs and 2 trips, which is both unrepresentative of a real
+reviewer's account and actively harmful: `GET /api/packs` inlines every pack's
+items, so the listing grew past the MCP 150 000-char response cap and the model
+started reporting it could not read the user's packs at all.
+
+Delete everything except the seeded fixture, then re-seed if needed:
+
+```bash
+TOKEN=<reviewer-access-token>
+API=https://api.packratai.com
+
+# Inspect first — never bulk-delete blind.
+curl -s "$API/api/packs" -H "authorization: Bearer $TOKEN" \
+  | python3 -c "import json,sys; [print(p['id'], p['name']) for p in json.load(sys.stdin)]"
+
+# Delete a pack / trip (both are SOFT deletes — recoverable via the deleted flag).
+curl -X DELETE "$API/api/packs/<packId>" -H "authorization: Bearer $TOKEN"
+curl -X DELETE "$API/api/trips/<tripId>" -H "authorization: Bearer $TOKEN"
+```
+
+Keep the `Lost Coast Trail` fixture (or re-seed it afterwards). A clean account
+is one fixture pack and zero trips.
+
+### Do not casually reword the seeded item names
+
+TC4 routes through `packrat_similar_pack_items`, a vector search over the gear
+catalog whose similarity is computed against the **pack item's name**. A name
+that embeds closer to the wrong product category returns useless results.
+
+This actually happened during a review run: an item named
+`"40L backpack with rain cover"` returned **rain covers**, not backpacks,
+because the phrase embeds nearer to "rain cover". The model got nothing usable,
+fell back to the open web, and quoted weights for products not in our catalog
+while attributing them to PackRat.
+
+Every name in the script was verified empirically — embedded with
+`text-embedding-3-small`, queried against the live catalog with `lighter_only`
+applied — to return same-category, genuinely lighter, coherent products. Keep
+names simple and category-forward:
+
+| Works | Does not work |
+|---|---|
+| `65L backpacking backpack` | `40L backpack with rain cover` |
+| `2-person backpacking tent` | `Ultralight shelter system` |
+
+If you change a name, re-verify it returns the right category before relying on it.
+
+### Why these categories
+
+The four heavy items TC4 targets come from categories whose catalog weight data
+holds up. Per issue #2735, `catalog_items.weight` is unreliable in places (about
+30% of two-person tents record over 3 kg; some rows are stored in pounds). The
+seeded tent is a mid-weight 2200 g shelter rather than an ultralight one, so it
+has hundreds of coherent lighter candidates instead of competing with bad rows.

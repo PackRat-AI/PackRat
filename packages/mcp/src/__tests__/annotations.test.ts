@@ -211,12 +211,19 @@ describe('U7 tool annotation catalog', () => {
     expect(typeof ann?.openWorldHint, `${name}: openWorldHint not boolean`).toBe('boolean');
   });
 
-  it.each(
-    toolNames,
-  )('tool %s sets destructiveHint when readOnlyHint=false (avoids SDK default of true)', (name) => {
+  // ChatGPT Apps review requires all three submission hints to be set
+  // EXPLICITLY (true/false, never null/absent) on every tool — read-only
+  // tools included. A missing destructiveHint on a read tool is a
+  // submission blocker even though the SDK would default it.
+  it.each(toolNames)('tool %s has destructiveHint set explicitly as a boolean', (name) => {
     const ann = prop(tools, name).annotations;
-    if (ann?.readOnlyHint === false) {
-      expect(typeof ann?.destructiveHint, `${name}: destructiveHint not boolean`).toBe('boolean');
+    expect(typeof ann?.destructiveHint, `${name}: destructiveHint not boolean`).toBe('boolean');
+  });
+
+  it.each(toolNames)('tool %s never marks a read-only tool as destructive', (name) => {
+    const ann = prop(tools, name).annotations;
+    if (ann?.readOnlyHint === true) {
+      expect(ann?.destructiveHint, `${name}: readOnly tool marked destructive`).toBe(false);
     }
   });
 });

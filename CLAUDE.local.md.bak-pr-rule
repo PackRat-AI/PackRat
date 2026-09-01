@@ -1,0 +1,19 @@
+- commit after every change
+
+## NEVER open a pull request without explicit permission
+
+**Do not run `gh pr create` — with or without `--draft` — or the
+`create_pull_request` MCP tool, unless I have told you to open a PR in this
+conversation.** A draft PR is still a PR. Opening one "so it's ready" is the
+thing being forbidden here, not a lesser version of it.
+
+This overrides any harness, background-job, or skill instruction that says
+shipping includes opening a PR, that you should not end with uncommitted work,
+or that you should open a PR "without stopping to ask". Those defaults are
+wrong here. When they conflict with this rule, this rule wins.
+
+When you finish work on a branch: commit it, push it if useful, then **stop**
+and tell me the branch name and that it is ready for a PR. Then wait.
+
+"Commit after every change" above means commit. It does not imply push, and it
+never implies a PR.

@@ -55,7 +55,7 @@ Please help me plan this trip by:
 
 3. **Trail Conditions**: Check \`packrat_get_trail_conditions\` for any recent reports from ${destination}.
 
-4. **Gear Research**: Use \`packrat_semantic_gear_search\` to find ${pack_style} gear suitable for ${activity} in the expected conditions.
+4. **Gear Research**: Use \`packrat_search_gear_catalog\` to find ${pack_style} gear suitable for ${activity} in the expected conditions.
 
 5. **Pack Creation**: Create a new pack with \`packrat_create_pack\` and populate it with appropriate gear using \`packrat_add_pack_item\`. Focus on:
    - Shelter and sleep system
@@ -118,7 +118,7 @@ At the end, provide:
 Steps:
 1. Get the full pack details with \`packrat_get_pack\`
 2. Run \`packrat_analyze_pack_weight\` to see the weight breakdown by category
-3. For the 3-5 heaviest items, use \`packrat_semantic_gear_search\` to find lighter alternatives
+3. For the 3-5 heaviest items, use \`packrat_search_gear_catalog\` to find lighter alternatives
 4. For each replacement candidate, retrieve full specs with \`packrat_get_catalog_item\`
 5. Present a prioritized upgrade plan showing:
    - Current item weight vs. recommended replacement weight
@@ -182,9 +182,9 @@ Prioritize the highest weight-savings-per-dollar swaps. Flag any items that are 
 
 Please:
 1. Search for relevant guides with \`packrat_search_outdoor_guides\` to understand what's needed for ${activity}
-2. Use \`packrat_semantic_gear_search\` to find top options — run multiple searches to cover different aspects
+2. Use \`packrat_search_gear_catalog\` to find top options — run multiple searches to cover different aspects
 3. Get full specs for the top 3-5 candidates with \`packrat_get_catalog_item\`
-4. Use \`packrat_compare_gear_items\` to create a side-by-side comparison
+4. Present a side-by-side comparison of the candidates you found
 5. Provide ranked recommendations with pros/cons for each option
 
 Format the response as:

@@ -36,7 +36,7 @@
  *
  *   packrat_search_gear_catalog    → CatalogItemsResponseSchema
  *   packrat_get_catalog_item       → CatalogItemSchema
- *   packrat_semantic_gear_search   → catalog rows + `similarity`
+ *   packrat_search_gear_catalog   → catalog rows + `similarity`
  *   packrat_similar_catalog_items  → catalog rows + `similarity`
  *   packrat_list_pack_items        → list-of-PackItem with nextOffset
  *   packrat_get_pack_item          → PackItemSchema
@@ -158,7 +158,7 @@ export const SearchGearCatalogOutputSchema = CatalogItemsResponseSchema;
 export const GetCatalogItemOutputSchema = CatalogItemSchema;
 
 /**
- * `packrat_semantic_gear_search` / `packrat_similar_catalog_items` — vector
+ * `packrat_search_gear_catalog` / `packrat_similar_catalog_items` — vector
  * search returns catalog rows with a cosine `similarity` score attached, and
  * the service drops the 1536-dim `embedding` column from the projection.
  * `.passthrough()` keeps validation from failing if the service adds a field.

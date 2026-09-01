@@ -132,12 +132,28 @@ export const ItemSuggestionsResponseSchema = z.object({
   ),
 });
 
+/**
+ * One item inside a category breakdown.
+ *
+ * `label` is the human-readable string this used to be (`<name> (<weight><unit>
+ * × <qty>)`). `id` is the pack-item id, carried so a caller that identifies the
+ * heaviest item here can pass it straight to the similar-items lookup; `grams`
+ * is quantity-adjusted so ranking by it matches the category totals.
+ */
+export const PackBreakdownItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  label: z.string(),
+  grams: z.number(),
+  quantity: z.number(),
+});
+
 export const PackCategoryBreakdownSchema = z.object({
   category: z.string(),
   totalGrams: z.number(),
   totalLbs: z.number(),
   itemCount: z.number(),
-  items: z.array(z.string()),
+  items: z.array(PackBreakdownItemSchema),
 });
 
 export const PackWeightBreakdownSchema = z.object({
