@@ -3,6 +3,7 @@ import { clientEnvs } from '@packrat/env/expo-client';
 import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
+import * as Sentry from '@sentry/react-native';
 import {
   DefaultChatTransport,
   lastAssistantMessageIsCompleteWithToolCalls,
@@ -33,8 +34,16 @@ import { createLocalTools } from 'expo-app/features/ai/lib/tools';
 import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
+import { useCreatePackItem } from 'expo-app/features/packs/hooks/useCreatePackItem';
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
 import { packsStore } from 'expo-app/features/packs/store/packs';
+import {
+  type AddItemToPackInput,
+  describeAddedItem,
+  type ListUserPacksInput,
+  listUserPacksFromStore,
+  prepareAddItemToPack,
+} from 'expo-app/features/packs/utils/chatPackTools';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
@@ -94,6 +103,7 @@ export default function AIChat() {
   const aiMode = useAtomValue(aiModeAtom);
   const modelStatus = useAtomValue(localModelStatusAtom);
   const enableLocalAI = useFeatureFlag('enableLocalAI');
+  const createPackItem = useCreatePackItem();
 
   const context = React.useMemo(
     () => ({
@@ -283,6 +293,81 @@ export default function AIChat() {
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     onToolCall: ({ toolCall }) => {
       if (toolCall.dynamic) return;
+
+      // listUserPacks and addItemToPack are declared server-side with no
+      // `execute`, so they are answered here. Every branch must call
+      // addToolOutput exactly once: an unanswered tool call never resolves,
+      // sendAutomaticallyWhen never fires, and the turn hangs (issue #2710).
+      if (toolCall.toolName === 'listUserPacks') {
+        const { nameQuery } = toolCall.input as ListUserPacksInput;
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'listUserPacks called',
+          level: 'info',
+          data: { nameQuery },
+        });
+        try {
+          addToolOutput({
+            tool: 'listUserPacks',
+            toolCallId: toolCall.toolCallId,
+            output: listUserPacksFromStore({ packs: packsStore.get(), nameQuery }),
+          });
+        } catch (error) {
+          Sentry.captureException(error, {
+            tags: { feature: 'ai.tool', action: 'listUserPacks' },
+            extra: { nameQuery },
+          });
+          addToolOutput({
+            tool: 'listUserPacks',
+            toolCallId: toolCall.toolCallId,
+            output: { success: false, error: 'Failed to list packs on this device' },
+          });
+        }
+        return;
+      }
+
+      if (toolCall.toolName === 'addItemToPack') {
+        const input = toolCall.input as AddItemToPackInput;
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'addItemToPack called',
+          level: 'info',
+          data: { packId: input.packId, name: input.name },
+        });
+        try {
+          const prepared = prepareAddItemToPack({ packs: packsStore.get(), input });
+          if (!prepared.success) {
+            addToolOutput({
+              tool: 'addItemToPack',
+              toolCallId: toolCall.toolCallId,
+              output: prepared,
+            });
+            return;
+          }
+
+          const { pack, itemData } = prepared.data;
+          // Same write path the UI uses: writes to the local store first and
+          // syncs outward through the outbox, so this works offline.
+          const created = createPackItem({ packId: pack.id, itemData });
+
+          addToolOutput({
+            tool: 'addItemToPack',
+            toolCallId: toolCall.toolCallId,
+            output: { success: true, data: describeAddedItem({ pack, item: created }) },
+          });
+        } catch (error) {
+          Sentry.captureException(error, {
+            tags: { feature: 'ai.tool', action: 'addItemToPack' },
+            extra: { packId: input.packId, itemName: input.name },
+          });
+          addToolOutput({
+            tool: 'addItemToPack',
+            toolCallId: toolCall.toolCallId,
+            output: { success: false, error: 'Failed to add the item on this device' },
+          });
+        }
+        return;
+      }
 
       if (toolCall.toolName === 'getPackDetails') {
         const { packId } = toolCall.input as { packId: string };
