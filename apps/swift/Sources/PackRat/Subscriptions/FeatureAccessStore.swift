@@ -31,6 +31,8 @@ final class FeatureAccessStore {
     static let shared = FeatureAccessStore()
 
     private let configCacheKey = "featureAccess.config.v1"
+    private let labelCacheKey = "featureAccess.labels.v1"
+    private let descriptionCacheKey = "featureAccess.descriptions.v1"
     private let entitlementCacheKey = "featureAccess.isPro.v1"
 
     private let userDefaults: UserDefaults
@@ -38,6 +40,12 @@ final class FeatureAccessStore {
     /// `feature_access` rows, keyed by feature key, as ISO-8601 strings.
     /// An absent key means the feature has no row — generally available.
     private(set) var earlyAccessByKey: [String: String] = [:]
+
+    /// Server-supplied labels and descriptions, keyed by feature key. The
+    /// paywall prefers these over a name derived from the key, so an admin can
+    /// improve the copy without shipping an app update.
+    private(set) var labelByKey: [String: String] = [:]
+    private(set) var descriptionByKey: [String: String] = [:]
 
     /// Whether the viewer holds the active Pro entitlement.
     private(set) var isPro = false
@@ -55,6 +63,9 @@ final class FeatureAccessStore {
         // cached — an entitlement alone cannot tell us what is gated.
         if let cachedConfig = userDefaults.dictionary(forKey: configCacheKey) as? [String: String] {
             earlyAccessByKey = cachedConfig
+            labelByKey = userDefaults.dictionary(forKey: labelCacheKey) as? [String: String] ?? [:]
+            descriptionByKey =
+                userDefaults.dictionary(forKey: descriptionCacheKey) as? [String: String] ?? [:]
             isPro = userDefaults.bool(forKey: entitlementCacheKey)
             isResolved = true
         }
@@ -87,6 +98,40 @@ final class FeatureAccessStore {
         FeatureAccess.parseEarlyAccessUntil(earlyAccessByKey[featureKey])
     }
 
+    /// Display name for a feature: the server's label when it has one, falling
+    /// back to a name derived from the key so the paywall always has something
+    /// to show.
+    func label(_ featureKey: String) -> String {
+        labelByKey[featureKey] ?? FeatureAccess.displayName(forAccessKey: featureKey)
+    }
+
+    /// The server's description, if an admin has written one.
+    func description(_ featureKey: String) -> String? {
+        descriptionByKey[featureKey]
+    }
+
+    /// Whole days until the feature graduates, floored at 1.
+    ///
+    /// Matches `daysUntilGraduation` in Expo's gate: a window closing in a few
+    /// hours reads as "1 day" rather than "0 days", which would suggest it is
+    /// already open.
+    func daysUntilGraduation(_ featureKey: String, now: Date = Date()) -> Int? {
+        guard let until = earlyAccessUntil(featureKey) else { return nil }
+        let days = (until.timeIntervalSince(now) / 86_400).rounded(.up)
+        return max(1, Int(days))
+    }
+
+    /// Other features currently in early access, for the paywall to list as
+    /// what else the subscription unlocks. Sorted for a stable order and capped,
+    /// matching the four slots Expo's paywall template exposes.
+    func otherEarlyAccessFeatures(excluding featureKey: String, limit: Int = 4) -> [String] {
+        earlyAccessByKey.keys
+            .filter { $0 != featureKey && isInEarlyAccess($0) }
+            .sorted()
+            .prefix(limit)
+            .map { label($0) }
+    }
+
     /// Refreshes both signals and caches them.
     ///
     /// Both must succeed to mark the store resolved. A partial refresh — config
@@ -111,11 +156,26 @@ final class FeatureAccessStore {
                 pro = false
             }
 
-            earlyAccessByKey = config
+            var windows: [String: String] = [:]
+            var labels: [String: String] = [:]
+            var descriptions: [String: String] = [:]
+            for row in config {
+                // A null window means generally available; omitting the key and
+                // storing null mean the same thing to the resolver.
+                if let until = row.earlyAccessUntil { windows[row.key] = until }
+                if let label = row.label { labels[row.key] = label }
+                if let description = row.description { descriptions[row.key] = description }
+            }
+
+            earlyAccessByKey = windows
+            labelByKey = labels
+            descriptionByKey = descriptions
             isPro = pro
             isResolved = true
 
-            userDefaults.set(config, forKey: configCacheKey)
+            userDefaults.set(windows, forKey: configCacheKey)
+            userDefaults.set(labels, forKey: labelCacheKey)
+            userDefaults.set(descriptions, forKey: descriptionCacheKey)
             userDefaults.set(pro, forKey: entitlementCacheKey)
         } catch {
             // Deliberately leaves `isResolved` as-is. If a previous refresh or
@@ -138,20 +198,18 @@ struct FeatureAccessService: Sendable {
 
     init(api: APIClient = .shared) { self.api = api }
 
-    /// Returns `earlyAccessUntil` per feature key, as an ISO-8601 string.
-    /// Features whose window is null are omitted — an absent key and a null
-    /// timestamp both mean "not gated", so collapsing them loses nothing.
-    func fetchConfig() async throws -> [String: String] {
+    /// Returns every `feature_access` row. The caller keeps the windows for
+    /// gating and the label/description for the paywall, so both come from one
+    /// request.
+    func fetchConfig() async throws -> [FeatureAccessRow] {
         let endpoint = Endpoint(.get, "/api/feature-access", requiresAuth: false)
-        let rows: [FeatureAccessRow] = try await api.send(endpoint)
-
-        return rows.reduce(into: [String: String]()) { result, row in
-            if let until = row.earlyAccessUntil { result[row.key] = until }
-        }
+        return try await api.send(endpoint)
     }
 }
 
 struct FeatureAccessRow: Decodable, Sendable {
     let key: String
+    let label: String?
+    let description: String?
     let earlyAccessUntil: String?
 }

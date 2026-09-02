@@ -30,6 +30,7 @@ struct EarlyAccessGate<Content: View>: View {
 
     @State private var store = FeatureAccessStore.shared
     @State private var hasAttempted = false
+    @State private var isPaywallPresented = false
 
     var body: some View {
         Group {
@@ -38,6 +39,7 @@ struct EarlyAccessGate<Content: View>: View {
                     content()
                 } else {
                     gatedView
+                        .onAppear { isPaywallPresented = true }
                 }
             } else if hasAttempted {
                 // A refresh ran and still left the store unresolved, so the
@@ -56,68 +58,107 @@ struct EarlyAccessGate<Content: View>: View {
             await store.refresh()
             hasAttempted = true
         }
+        // A full-screen modal, the way Expo presents its RevenueCat paywall and
+        // the way every subscription app does it — never markup rendered inside
+        // the gated screen. Dismissing leaves the viewer on the locked state
+        // behind it, which explains the gate and can reopen this.
+        .fullScreenCover(isPresented: $isPaywallPresented) {
+            EarlyAccessPaywall(
+                featureKey: featureKey,
+                onDismiss: { isPaywallPresented = false },
+                onEntitlementChanged: { isPaywallPresented = false }
+            )
+        }
     }
 
-    /// Shown when the viewer is known not to be Pro. The wording matches what
-    /// Expo puts on its paywall: the feature opens to everyone later, so this
-    /// is a "not yet" rather than a "never".
+    /// The state behind the paywall modal. Kept deliberately quiet — the modal
+    /// carries the pitch — but it has to stand on its own when the viewer
+    /// dismisses, so it explains the lock and offers a way back in.
     private var gatedView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "crown.fill")
-                .font(.largeTitle)
-                .foregroundStyle(.orange)
+        VStack(spacing: 20) {
+            ZStack {
+                Circle()
+                    .fill(Color.orange.opacity(0.12))
+                    .frame(width: 76, height: 76)
+                Image(systemName: "crown.fill")
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(.orange)
+            }
 
-            Text("Early access")
-                .font(.title2.weight(.semibold))
+            VStack(spacing: 8) {
+                Text(store.label(featureKey))
+                    .font(.title2.weight(.semibold))
+                    .multilineTextAlignment(.center)
 
-            Text(gatedMessage)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text(gatedMessage)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
-            Text("Subscribe in the PackRat app on your phone to get it now.")
-                .font(.footnote)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-
-            Button("Check again") { Task { await retry() } }
-                .buttonStyle(.borderedProminent)
+            Button {
+                isPaywallPresented = true
+            } label: {
+                Text("See what's included")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, minHeight: 50)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.orange)
+            .padding(.top, 4)
         }
-        .padding(24)
+        .padding(28)
+        .frame(maxWidth: 420)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Shown on a cold start with nothing cached and no way to reach the API.
-    /// Deliberately not the gated view: we do not know this viewer is free, and
-    /// telling a paying member to subscribe would be wrong.
+    /// Cold start with nothing cached and the fetch failed, so Pro status is
+    /// genuinely unknown. Deliberately not the gated state: telling a paying
+    /// member to subscribe would be worse than admitting we cannot tell.
     private var cannotVerifyView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "wifi.exclamationmark")
-                .font(.largeTitle)
-                .foregroundStyle(.secondary)
+        VStack(spacing: 20) {
+            ZStack {
+                Circle()
+                    .fill(Color.secondary.opacity(0.12))
+                    .frame(width: 76, height: 76)
+                Image(systemName: "wifi.exclamationmark")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
 
-            Text("Can't verify your access")
-                .font(.title2.weight(.semibold))
+            VStack(spacing: 8) {
+                Text("Can't verify your access")
+                    .font(.title3.weight(.semibold))
 
-            Text("We couldn't reach our servers. If you're subscribed, connect to the internet and try again.")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Text("We couldn't reach our servers. If you're subscribed, reconnect and try again.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
-            Button("Try again") { Task { await retry() } }
-                .buttonStyle(.borderedProminent)
+            Button {
+                Task { await retry() }
+            } label: {
+                Text("Try again")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, minHeight: 50)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.top, 4)
         }
-        .padding(24)
+        .padding(28)
+        .frame(maxWidth: 420)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var gatedMessage: String {
-        let name = FeatureAccess.displayName(forAccessKey: featureKey)
-        if let until = store.earlyAccessUntil(featureKey) {
-            let date = until.formatted(date: .abbreviated, time: .omitted)
-            return "\(name) is in early access for Pro members until \(date), then it's free for everyone."
+        if let days = store.daysUntilGraduation(featureKey) {
+            let unit = days == 1 ? "day" : "days"
+            return "In early access for PackRat Pro. Free for everyone in \(days) \(unit)."
         }
-        return "\(name) is in early access for Pro members. It becomes free for everyone when the window ends."
+        return "In early access for PackRat Pro. Free for everyone once the window ends."
     }
 
     private func retry() async {
