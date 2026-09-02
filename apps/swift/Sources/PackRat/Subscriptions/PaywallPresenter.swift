@@ -1,47 +1,5 @@
 import RevenueCat
-import RevenueCatUI
 import SwiftUI
-
-/// The early-access paywall — RevenueCat's own paywall, presented full screen.
-///
-/// Renders the same dashboard-configured template the Expo app presents
-/// (`apps/expo/app/(app)/paywall.tsx`), fed the same `earlyaccessmodel`
-/// offering, so both platforms sell identical packages with identical copy and
-/// pricing. Changing the paywall in the RevenueCat dashboard updates iOS,
-/// macOS and Expo together, with no app release on any of them.
-///
-/// This view assumes its offering is already loaded. Callers fetch first and
-/// present only once they have one — see the `.paywall` modifier below. A
-/// paywall that opens into a spinner or an error is worse than one that never
-/// opened: the viewer tapped "unlock" and got a dead end.
-struct EarlyAccessPaywall: View {
-    let offering: Offering
-    /// The gated feature this was opened for, or nil when opened from Settings
-    /// as a general upgrade. Only affects when a restore counts as success: a
-    /// feature gate closes once that feature unlocks, Settings once the account
-    /// is Pro at all.
-    let featureKey: String?
-    let onEntitlementChanged: () -> Void
-
-    var body: some View {
-        PaywallView(offering: offering)
-            .onPurchaseCompleted { customerInfo in
-                FeatureAccessStore.shared.apply(customerInfo: customerInfo)
-                onEntitlementChanged()
-            }
-            .onRestoreCompleted { customerInfo in
-                // Restore reports completion even when the account owns
-                // nothing, so only close if it actually granted access.
-                FeatureAccessStore.shared.apply(customerInfo: customerInfo)
-                if didRestoreGrantAccess() { onEntitlementChanged() }
-            }
-    }
-
-    private func didRestoreGrantAccess() -> Bool {
-        guard let featureKey else { return FeatureAccessStore.shared.isPro }
-        return FeatureAccessStore.shared.isAllowed(featureKey)
-    }
-}
 
 /// Loads the offering, then presents the paywall — the pattern every
 /// subscription app follows.
@@ -82,9 +40,13 @@ private struct PaywallPresenter: ViewModifier {
                 }
             }
             .fullScreenCover(item: $offering) { loaded in
-                EarlyAccessPaywall(
+                PackRatPaywallView(
                     offering: loaded,
                     featureKey: featureKey,
+                    onDismiss: {
+                        offering = nil
+                        isPresented = false
+                    },
                     onEntitlementChanged: {
                         offering = nil
                         isPresented = false
