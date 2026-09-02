@@ -155,8 +155,8 @@ screen is a conversion decision, not a description of the model.
 
 **Decision.** A guest opening a gated feature gets the full paywall — the
 feature, the plans, the prices. The call to action reads *Sign In to Subscribe*
-and routes them into sign-in, after which they can buy. RevenueCat is not
-configured at all until a real account id exists.
+and routes them into sign-in, after which they can buy. The restriction is on
+*buying*, not on seeing the offer.
 
 **Why.** Two constraints meet here.
 
@@ -165,9 +165,9 @@ account. A purchase made with no account attaches to an anonymous identity, and
 when that person later signs into an account that already exists, the
 entitlement either follows the Apple ID and moves off whichever account held it,
 or strands where nobody can reach it. Neither is discoverable until after the
-money is taken. Not creating the anonymous identity in the first place removes
-the problem rather than handling it — which is RevenueCat's own advice for apps
-that do not want anonymous purchases.
+money is taken. So the purchase call refuses to run while the store SDK is on an
+anonymous identity, and the paywall sends guests to sign in before they reach
+it.
 
 The second constraint is that refusing to *show* the offer is a different thing
 from refusing to take payment. Asking for an account before someone knows what
@@ -189,6 +189,14 @@ and the difference cannot be detected until after the purchase.
 label reading "Sign in to subscribe" that told people what to do without letting
 them do it, and bounced anyone opening a gated feature back to Home with no
 explanation, which reads as a crash rather than a decision.
+
+**Rejected alternative — refuse to initialise the store until sign-in.** Tried
+second, on a misreading of RevenueCat's guidance. It does prevent anonymous
+purchases, but prices come from the same connection, so guests got "Upgrades
+Unavailable" instead of a paywall. The guidance about deferring initialisation
+is really about background app prewarming creating junk customer records, which
+is solved by initialising on first render rather than at launch — not by
+withholding it from signed-out people.
 
 ## ADR-007 — Access rules are data, not releases
 

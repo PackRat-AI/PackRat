@@ -39,35 +39,25 @@ final class SubscriptionService {
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    /// Configures the SDK against a known user, and identifies them.
+    /// Configures the SDK so prices can be fetched.
     ///
-    /// Deliberately not called at launch. `Purchases.configure` mints an
-    /// anonymous app-user-id straight away, and a purchase made against that id
-    /// belongs to no PackRat account — unresolvable once that person signs into
-    /// an account that already exists. Configuring only once a real user id is
-    /// in hand means the anonymous identity is never created, which is
-    /// RevenueCat's own documented way to prevent anonymous purchases.
+    /// Called once the first view is on screen rather than from
+    /// `didFinishLaunchingWithOptions`: iOS may prewarm the app in the
+    /// background, and configuring there mints a RevenueCat user record for a
+    /// launch no person ever saw.
     ///
-    /// Safe to call repeatedly. Once configured, a different user id switches
-    /// identity via `logIn` rather than reconfiguring.
-    ///
-    /// - Returns: the customer info for this user, or nil when the build has no
-    ///   API key or the call failed.
-    @discardableResult
-    func configure(userId: String) async -> CustomerInfo? {
-        guard let apiKey = Self.apiKey else { return nil }
+    /// Configuring puts the SDK on an anonymous id, which is fine — offerings
+    /// are public catalogue data and a paywall has to show prices before anyone
+    /// signs in. What must not happen is a *purchase* against that anonymous
+    /// id, since it belongs to no PackRat account; the paywall's buy button
+    /// enforces that, not this. See docs/features/early-access-subscriptions.md
+    /// (ADR-006).
+    func configure() {
+        guard !isConfigured, let apiKey = Self.apiKey else { return }
 
-        if !isConfigured {
-            Purchases.logLevel = APIClient.isNonProduction ? .debug : .warn
-            Purchases.configure(withAPIKey: apiKey, appUserID: userId)
-            isConfigured = true
-
-            // Configured with the id directly, so no logIn is needed; read the
-            // current state rather than assuming it.
-            return try? await Purchases.shared.customerInfo()
-        }
-
-        return await identify(userId: userId)
+        Purchases.logLevel = APIClient.isNonProduction ? .debug : .warn
+        Purchases.configure(withAPIKey: apiKey)
+        isConfigured = true
     }
 
     /// Associates purchases with a signed-in PackRat user.
@@ -155,6 +145,14 @@ final class SubscriptionService {
     func purchase(package: Package) async throws -> PurchaseOutcome {
         guard isConfigured else { throw SubscriptionError.notConfigured }
 
+        // A purchase must belong to an account. RevenueCat is configured for
+        // everyone so prices can load, which leaves the SDK on an anonymous id
+        // until sign-in — and a subscription bought against that id cannot be
+        // resolved later if the buyer signs into an account that already
+        // exists. The paywall routes guests to sign-in before they get here;
+        // this is the backstop for any future call site that forgets.
+        guard !Purchases.shared.isAnonymous else { throw SubscriptionError.accountRequired }
+
         do {
             let result = try await Purchases.shared.purchase(package: package)
             if result.userCancelled { return .cancelled }
@@ -210,4 +208,7 @@ enum PurchaseOutcome {
 enum SubscriptionError: Error {
     /// No API key was supplied at build time, so there is nothing to ask.
     case notConfigured
+    /// Attempted to buy while signed out. A subscription has to belong to an
+    /// account — see docs/features/early-access-subscriptions.md (ADR-006).
+    case accountRequired
 }

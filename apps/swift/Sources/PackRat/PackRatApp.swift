@@ -16,13 +16,9 @@ struct PackRatApp: App {
         // errors are captured. A missing DSN silently disables the SDK.
         SentryConfig.start()
 
-        // RevenueCat is deliberately NOT configured here. Configuring mints an
-        // anonymous app-user-id immediately, and a purchase made against that
-        // id has no PackRat account to attach to — which becomes unresolvable
-        // the moment that person signs into an account that already exists.
-        // Configuring only once we have a real user id means the anonymous
-        // identity never exists. See SubscriptionService.configure(userId:) and
-        // docs/features/early-access-subscriptions.md (ADR-006).
+        // RevenueCat is configured from AuthGateView, not here: iOS prewarms
+        // apps in the background, and configuring during launch would create a
+        // RevenueCat user record for a launch no person ever saw.
 
         #if os(macOS)
         if ProcessInfo.processInfo.arguments.contains("--reset-auth") {

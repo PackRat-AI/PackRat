@@ -34,11 +34,16 @@ struct AuthGateView: View {
             // below may never land to correct it.
             FeatureAccessStore.shared.forgetEntitlement()
 
+            // Configure here rather than in App.init: iOS prewarms apps in the
+            // background, and configuring there creates a RevenueCat user
+            // record for a launch nobody saw.
+            SubscriptionService.shared.configure()
+
             if let userId = authManager.currentUser?.id {
-                // Configures RevenueCat on first sign-in, switches identity on
-                // subsequent ones. Never before this point — see
-                // SubscriptionService.configure(userId:).
-                if let customerInfo = await SubscriptionService.shared.configure(userId: userId) {
+                // Attach purchases to the account. logIn also carries over
+                // anything bought against the anonymous id, though the paywall
+                // does not let a guest buy in the first place.
+                if let customerInfo = await SubscriptionService.shared.identify(userId: userId) {
                     FeatureAccessStore.shared.apply(customerInfo: customerInfo)
                 }
             } else {
