@@ -424,7 +424,14 @@ struct AppNavigation: View {
         case .feed:            FeedView(viewModel: appState.feedVM)
         case .guides:          GuidesView()
         case .gearInventory:   GearInventoryView().environment(appState)
-        case .wildlife:        WildlifeView()
+        case .wildlife:
+            // Same gate as the split-view path above. Both destinations have to
+            // wrap it: the phone and the iPad/Mac layouts render the feature
+            // through separate switches, so gating only one leaves the other
+            // open.
+            EarlyAccessGate(featureKey: "wildlife-identification") {
+                WildlifeView()
+            }
         case .aiPacks:         AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
         }
     }
