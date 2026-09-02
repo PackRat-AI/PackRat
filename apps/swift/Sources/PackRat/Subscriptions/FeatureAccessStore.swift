@@ -133,6 +133,22 @@ final class FeatureAccessStore {
             .map { label($0) }
     }
 
+    /// Forgets the cached Pro answer, keeping the feature config.
+    ///
+    /// Called the moment the signed-in identity changes, before the refresh
+    /// that follows. Entitlement is cached per device but belongs to an
+    /// account, so without this the next person on a shared device inherits
+    /// the previous one's Pro until a fetch succeeds — and offline, that fetch
+    /// may never come. Fail-closed: an unknown viewer is not Pro.
+    ///
+    /// The config half is deliberately kept. Which features are gated is the
+    /// same for everyone, so there is nothing to leak and dropping it would
+    /// only make the next gate resolve slower.
+    func forgetEntitlement() {
+        isPro = false
+        userDefaults.set(false, forKey: entitlementCacheKey)
+    }
+
     /// Applies customer info straight from a completed purchase or restore.
     ///
     /// The paywall already holds the authoritative answer at that moment, so

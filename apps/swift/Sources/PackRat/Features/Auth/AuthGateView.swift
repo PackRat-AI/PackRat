@@ -28,8 +28,20 @@ struct AuthGateView: View {
         // session keeps RevenueCat's app-user-id equal to our users.id, which
         // is the join the entitlements webhook writes against.
         .task(id: authManager.currentUser?.id) {
+            // Drop the cached Pro answer before anything else. It is cached per
+            // device but belongs to an account, so the next person to sign in
+            // must not inherit it — least of all offline, where the refresh
+            // below may never land to correct it.
+            FeatureAccessStore.shared.forgetEntitlement()
+
             if let userId = authManager.currentUser?.id {
-                await SubscriptionService.shared.identify(userId: userId)
+                // Carries a guest's purchase onto the account they just made or
+                // signed into: RevenueCat's logIn transfers an anonymous id's
+                // entitlements, and hands back the merged customer info, so a
+                // guest who subscribed keeps what they paid for.
+                if let customerInfo = await SubscriptionService.shared.identify(userId: userId) {
+                    FeatureAccessStore.shared.apply(customerInfo: customerInfo)
+                }
             } else {
                 // Anonymous again, so the next account on this device does not
                 // inherit the previous one's entitlements.

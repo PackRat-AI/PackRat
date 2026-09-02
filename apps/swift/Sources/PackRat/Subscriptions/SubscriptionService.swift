@@ -9,11 +9,12 @@ import Sentry
 /// our `users.id`, which is what lets the webhook attribute an entitlement row
 /// to an account), and the same no-op-when-unconfigured behaviour.
 ///
-/// Two things are deliberately out of scope here, matching what Expo actually
-/// gates on today rather than everything its purchases module can do:
-///   - the paywall and purchase flow (`PurchasesUI`, offerings, restore)
-///   - per-product logic
-/// This is the entitlement-*reading* half. Selling comes later.
+/// Covers the whole integration: reading entitlements, fetching offerings,
+/// buying, restoring, and the platform's subscription-management screen.
+///
+/// Guests can subscribe. A guest purchase attaches to RevenueCat's anonymous
+/// id, and `identify` transfers it onto the account when they later sign up —
+/// so nobody loses what they paid for by making an account afterwards.
 ///
 /// The watch app does not use this type. It receives resolved entitlement state
 /// from the phone over WatchConnectivity — see `WatchCompanionService`.
@@ -53,15 +54,25 @@ final class SubscriptionService {
     /// The RevenueCat app user id is our `users.id`, which is the join the
     /// webhook relies on to write an entitlement row against the right account.
     /// Getting this wrong means a real purchase never reaches the database.
-    func identify(userId: String) async {
-        guard isConfigured else { return }
+    /// Returns the merged customer info, or nil if the SDK is unconfigured or
+    /// the call failed.
+    ///
+    /// `logIn` also transfers an anonymous id's purchases onto the account, so
+    /// a guest who subscribed and then signed up keeps what they paid for. The
+    /// returned info already reflects that merge, which is why callers apply it
+    /// rather than waiting for the next refresh.
+    @discardableResult
+    func identify(userId: String) async -> CustomerInfo? {
+        guard isConfigured else { return nil }
         do {
-            _ = try await Purchases.shared.logIn(userId)
+            let (customerInfo, _) = try await Purchases.shared.logIn(userId)
+            return customerInfo
         } catch {
             SentrySDK.capture(error: error) { scope in
                 scope.setTag(value: "subscriptions", key: "feature")
                 scope.setTag(value: "identify", key: "action")
             }
+            return nil
         }
     }
 
