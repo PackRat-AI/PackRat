@@ -31,6 +31,7 @@ struct EarlyAccessGate<Content: View>: View {
     @State private var store = FeatureAccessStore.shared
     @State private var hasAttempted = false
     @State private var isPaywallPresented = false
+    @State private var hasAutoPresentedPaywall = false
 
     var body: some View {
         Group {
@@ -39,7 +40,15 @@ struct EarlyAccessGate<Content: View>: View {
                     content()
                 } else {
                     gatedView
-                        .onAppear { isPaywallPresented = true }
+                        .onAppear {
+                            // Open the paywall once on arrival, the way Expo
+                            // does. Not on every appearance: coming back after
+                            // dismissing it would reopen it immediately and
+                            // trap the viewer on the screen.
+                            guard !hasAutoPresentedPaywall else { return }
+                            hasAutoPresentedPaywall = true
+                            isPaywallPresented = true
+                        }
                 }
             } else if hasAttempted {
                 // A refresh ran and still left the store unresolved, so the
@@ -58,17 +67,13 @@ struct EarlyAccessGate<Content: View>: View {
             await store.refresh()
             hasAttempted = true
         }
-        // A full-screen modal, the way Expo presents its RevenueCat paywall and
-        // the way every subscription app does it — never markup rendered inside
-        // the gated screen. Dismissing leaves the viewer on the locked state
-        // behind it, which explains the gate and can reopen this.
-        .fullScreenCover(isPresented: $isPaywallPresented) {
-            EarlyAccessPaywall(
-                featureKey: featureKey,
-                onDismiss: { isPaywallPresented = false },
-                onEntitlementChanged: { isPaywallPresented = false }
-            )
-        }
+        // Loads the offering first and only opens once there is something to
+        // show; a failure keeps the viewer here with an alert. See the modifier.
+        .paywall(
+            isPresented: $isPaywallPresented,
+            featureKey: featureKey,
+            onEntitlementChanged: { Task { await store.refresh() } }
+        )
     }
 
     /// The state behind the paywall modal. Kept deliberately quiet — the modal

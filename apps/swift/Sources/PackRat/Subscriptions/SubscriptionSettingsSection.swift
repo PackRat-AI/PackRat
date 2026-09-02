@@ -39,13 +39,7 @@ struct SubscriptionSettingsSection: View {
             }
             .disabled(isRestoring)
         }
-        .fullScreenCover(isPresented: $isPaywallPresented) {
-            EarlyAccessPaywall(
-                featureKey: nil,
-                onDismiss: { isPaywallPresented = false },
-                onEntitlementChanged: { isPaywallPresented = false }
-            )
-        }
+        .paywall(isPresented: $isPaywallPresented)
         .alert(item: $alert) { alert in
             Alert(title: Text(alert.title), dismissButton: .default(Text("OK")))
         }

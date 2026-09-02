@@ -1,6 +1,8 @@
 // Debug build defaults.
 // To override locally, create xcconfig/Config-Debug.local.xcconfig (gitignored).
-#include? "Config-Debug.local.xcconfig"
+// The include sits at the BOTTOM of this file on purpose: xcconfig is
+// last-assignment-wins, so an include at the top would be overwritten by the
+// empty defaults below it and local secrets would silently never apply.
 
 // NOTE: xcconfig files treat // as a comment, so full URLs can't be stored here.
 // Use PACKRAT_ENV to select an environment; URLs live in APIClient.swift.
@@ -33,3 +35,5 @@ SENTRY_DSN =
 // entitlement checks resolve to "not Pro" rather than erroring. Gated features
 // therefore stay closed on a build with no key, which is the safe default.
 REVENUECAT_API_KEY =
+
+#include? "Config-Debug.local.xcconfig"
