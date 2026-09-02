@@ -4,12 +4,21 @@ import SwiftUI
 /// PackRat's own early-access paywall.
 ///
 /// Packages, prices and the purchase call come from RevenueCat; every pixel is
-/// ours. Prices are always read from `localizedPriceString` rather than
-/// hardcoded, so they stay correct in every storefront and currency.
+/// ours. Prices are read from `localizedPriceString` rather than hardcoded, so
+/// they stay correct in every storefront and currency.
 ///
-/// The pitch is early access, not premium. Each gated feature graduates to free
-/// on its own date, so the honest hook is *sooner* — and the countdown says so
-/// rather than implying the feature is paid forever.
+/// # On the copy
+///
+/// The job of this screen is to convert. Two things follow from that.
+///
+/// The headline is an invitation, matching what Expo sends its paywall
+/// ("Get early access to {feature} today"), not a description of the pricing
+/// model. Nobody subscribes because they understood the graduation schedule.
+///
+/// And the early-access window is never framed as "free for everyone in N
+/// days", which is an argument to close the screen and wait. Where the window
+/// appears at all it is scarcity — this is the period during which Pro members
+/// have it and others do not.
 struct PackRatPaywallView: View {
     let offering: Offering
     /// The gated feature this was opened for, or nil when opened from Settings
@@ -29,7 +38,9 @@ struct PackRatPaywallView: View {
         var isBusy: Bool { self != .idle }
     }
 
-    private let accent = Color(red: 0.98, green: 0.64, blue: 0.13)
+    /// The app's own accent, from the asset catalog, so the paywall belongs to
+    /// PackRat rather than looking like a bolted-on subscription screen.
+    private let accent = Color.accentColor
 
     var body: some View {
         ZStack {
@@ -38,13 +49,11 @@ struct PackRatPaywallView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     hero
-                    if !benefits.isEmpty {
-                        benefitList.padding(.top, 30)
-                    }
-                    planPicker.padding(.top, 28)
+                    valueProps.padding(.top, 30)
+                    planPicker.padding(.top, 26)
                 }
                 .padding(.horizontal, 22)
-                .padding(.bottom, 240)
+                .padding(.bottom, 250)
             }
             .scrollIndicators(.hidden)
 
@@ -68,12 +77,12 @@ struct PackRatPaywallView: View {
     private var backdrop: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(red: 0.10, green: 0.09, blue: 0.14),
-                         Color(red: 0.04, green: 0.04, blue: 0.06)],
+                colors: [Color(red: 0.06, green: 0.11, blue: 0.09),
+                         Color(red: 0.03, green: 0.04, blue: 0.04)],
                 startPoint: .top, endPoint: .bottom
             )
             RadialGradient(
-                colors: [accent.opacity(0.30), .clear],
+                colors: [accent.opacity(0.32), .clear],
                 center: UnitPoint(x: 0.5, y: 0.02),
                 startRadius: 8, endRadius: 460
             )
@@ -86,108 +95,129 @@ struct PackRatPaywallView: View {
     private var hero: some View {
         VStack(spacing: 16) {
             ZStack {
-                Circle().fill(accent.opacity(0.15)).frame(width: 96, height: 96)
-                Circle().stroke(accent.opacity(0.32), lineWidth: 1).frame(width: 96, height: 96)
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 38, weight: .semibold))
+                Circle().fill(accent.opacity(0.16)).frame(width: 94, height: 94)
+                Circle().stroke(accent.opacity(0.34), lineWidth: 1).frame(width: 94, height: 94)
+                Image(systemName: "sparkles")
+                    .font(.system(size: 36, weight: .semibold))
                     .foregroundStyle(accent)
-                    .shadow(color: accent.opacity(0.45), radius: 16, y: 4)
+                    .shadow(color: accent.opacity(0.5), radius: 16, y: 4)
             }
             .scaleEffect(hasAppeared ? 1 : 0.88)
 
-            VStack(spacing: 9) {
+            VStack(spacing: 10) {
                 Text("PACKRAT PRO")
                     .font(.caption.weight(.bold))
                     .tracking(1.7)
                     .foregroundStyle(accent)
 
                 Text(headline)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .font(.system(size: 33, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.65)
 
                 Text(subheadline)
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(.white.opacity(0.68))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .opacity(hasAppeared ? 1 : 0)
 
-            if let days = daysRemaining {
+            if let scarcity {
                 HStack(spacing: 7) {
-                    Image(systemName: "clock.fill").font(.caption2.weight(.bold))
-                    Text("Free for everyone in \(days) \(days == 1 ? "day" : "days")")
+                    Image(systemName: "bolt.fill").font(.caption2.weight(.bold))
+                    Text(scarcity)
                         .font(.footnote.weight(.semibold))
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(accent)
                 .padding(.horizontal, 15)
                 .padding(.vertical, 9)
-                .background(.white.opacity(0.11), in: Capsule())
-                .overlay(Capsule().stroke(.white.opacity(0.15), lineWidth: 1))
+                .background(accent.opacity(0.13), in: Capsule())
+                .overlay(Capsule().stroke(accent.opacity(0.28), lineWidth: 1))
             }
         }
-        .padding(.top, 58)
+        .padding(.top, 56)
     }
 
+    /// An invitation, mirroring Expo's "Get early access to {feature} today".
     private var headline: String {
-        guard let featureKey else { return "Get every feature first" }
-        return store.label(featureKey)
+        guard let featureKey else { return "Unlock everything, first" }
+        return "Get \(store.label(featureKey)) today"
     }
 
     private var subheadline: String {
         if let featureKey, let description = store.description(featureKey) {
             return description
         }
-        return "Use new features weeks before they open up to everyone."
-    }
-
-    private var daysRemaining: Int? {
-        guard let featureKey else { return nil }
-        return store.daysUntilGraduation(featureKey)
-    }
-
-    // MARK: - Benefits
-
-    /// Other features currently in early access. Real cross-sell, pulled from
-    /// the same config that drives the gates, so it never goes stale.
-    private var benefits: [String] {
-        store.otherEarlyAccessFeatures(excluding: featureKey ?? "")
-    }
-
-    private var benefitList: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            Text("ALSO IN EARLY ACCESS")
-                .font(.caption2.weight(.bold))
-                .tracking(1.1)
-                .foregroundStyle(.white.opacity(0.45))
-
-            ForEach(benefits, id: \.self) { name in
-                HStack(spacing: 10) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.footnote)
-                        .foregroundStyle(accent)
-                    Text(name)
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.88))
-                    Spacer(minLength: 0)
-                }
-            }
+        if let featureKey {
+            return "\(store.label(featureKey)) is ready now for PackRat Pro members."
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+        return "Every new feature, the day it's ready."
+    }
+
+    /// Framed as the window during which Pro members have it and others do not.
+    /// Never "free for everyone in N days" — that is a reason to close the
+    /// screen, and it was on the last version of this paywall.
+    private var scarcity: String? {
+        guard let featureKey, let days = store.daysUntilGraduation(featureKey) else { return nil }
+        return "\(days) \(days == 1 ? "day" : "days") ahead of everyone else"
+    }
+
+    // MARK: - Value props
+
+    private var valueProps: some View {
+        VStack(spacing: 10) {
+            if !otherFeatures.isEmpty {
+                valueRow(
+                    icon: "square.stack.3d.up.fill",
+                    title: "Everything else in early access",
+                    detail: otherFeatures.joined(separator: " · ")
+                )
+            }
+            valueRow(
+                icon: "arrow.up.forward.circle.fill",
+                title: "Every new feature first",
+                detail: "New tools land for Pro members before anyone else."
+            )
+            valueRow(
+                icon: "heart.fill",
+                title: "You fund the work",
+                detail: "PackRat is built by a small team. Pro is what pays for it."
+            )
+        }
+    }
+
+    private func valueRow(icon: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: 13) {
+            Image(systemName: icon)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(accent)
+                .frame(width: 28)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                Text(detail)
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.58))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var otherFeatures: [String] {
+        store.otherEarlyAccessFeatures(excluding: featureKey ?? "")
     }
 
     // MARK: - Plans
 
     private var planPicker: some View {
         VStack(spacing: 10) {
-            ForEach(offering.availablePackages, id: \.identifier) { package in
-                planRow(package)
-            }
+            ForEach(offering.availablePackages, id: \.identifier) { planRow($0) }
         }
     }
 
@@ -203,9 +233,7 @@ struct PackRatPaywallView: View {
                     Circle()
                         .strokeBorder(isSelected ? accent : .white.opacity(0.28), lineWidth: 2)
                         .frame(width: 22, height: 22)
-                    if isSelected {
-                        Circle().fill(accent).frame(width: 12, height: 12)
-                    }
+                    if isSelected { Circle().fill(accent).frame(width: 12, height: 12) }
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -221,7 +249,7 @@ struct PackRatPaywallView: View {
 
                 Spacer(minLength: 8)
 
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .trailing, spacing: 3) {
                     Text(package.localizedPriceString)
                         .font(.body.weight(.semibold))
                         .foregroundStyle(.white)
@@ -229,26 +257,27 @@ struct PackRatPaywallView: View {
                         Text("BEST VALUE")
                             .font(.caption2.weight(.bold))
                             .tracking(0.5)
-                            .foregroundStyle(accent)
+                            .foregroundStyle(.black)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(accent, in: Capsule())
                     }
                 }
             }
             .padding(15)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isSelected ? accent.opacity(0.11) : Color.white.opacity(0.05))
+                    .fill(isSelected ? accent.opacity(0.12) : Color.white.opacity(0.05))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? accent.opacity(0.65) : .white.opacity(0.08),
+                    .stroke(isSelected ? accent.opacity(0.7) : .white.opacity(0.08),
                             lineWidth: isSelected ? 1.6 : 1)
             )
         }
         .buttonStyle(.plain)
     }
 
-    /// Prefer the store's own product title; fall back to the package type so a
-    /// dashboard with blank titles still reads sensibly.
     private func title(for package: Package) -> String {
         let title = package.storeProduct.localizedTitle
         if !title.isEmpty { return title }
@@ -275,9 +304,9 @@ struct PackRatPaywallView: View {
         }
     }
 
-    /// Longest recurring plan wins the badge — the cheapest per month, and what
-    /// a subscription app conventionally highlights. Lifetime is excluded: it is
-    /// a different kind of purchase, not a better-value subscription.
+    /// Longest recurring plan: cheapest per month, and what a subscription app
+    /// conventionally highlights. Lifetime is excluded — a different kind of
+    /// purchase, not a better-value subscription.
     private var bestValuePackage: Package? {
         let ranked: [PackageType] = [.annual, .sixMonth, .threeMonth, .twoMonth, .monthly, .weekly]
         for type in ranked {
@@ -303,18 +332,17 @@ struct PackRatPaywallView: View {
                     if phase == .purchasing {
                         ProgressView().tint(.black)
                     } else {
-                        Text(ctaTitle)
-                            .font(.headline)
+                        Text(ctaTitle).font(.headline)
                     }
                 }
                 .frame(maxWidth: .infinity, minHeight: 52)
                 .foregroundStyle(.black)
                 .background(
-                    LinearGradient(colors: [accent, accent.opacity(0.85)],
+                    LinearGradient(colors: [accent, accent.opacity(0.86)],
                                    startPoint: .top, endPoint: .bottom),
                     in: RoundedRectangle(cornerRadius: 14)
                 )
-                .shadow(color: accent.opacity(0.28), radius: 14, y: 5)
+                .shadow(color: accent.opacity(0.3), radius: 14, y: 5)
             }
             .disabled(phase.isBusy || selected == nil)
 
@@ -326,12 +354,12 @@ struct PackRatPaywallView: View {
                 } else {
                     Text("Restore Purchases")
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.65))
+                        .foregroundStyle(.white.opacity(0.62))
                 }
             }
             .disabled(phase.isBusy)
 
-            Text("Cancel anytime in Settings. Features you unlock stay unlocked.")
+            Text(finePrint)
                 .font(.caption2)
                 .foregroundStyle(.white.opacity(0.4))
                 .multilineTextAlignment(.center)
@@ -345,9 +373,20 @@ struct PackRatPaywallView: View {
         }
     }
 
+    /// The standard App Store CTA. "Start Subscription" is not a phrase any
+    /// shipping paywall uses.
     private var ctaTitle: String {
         guard let selected else { return "Continue" }
-        return selected.packageType == .lifetime ? "Unlock Forever" : "Start Subscription"
+        return selected.packageType == .lifetime ? "Buy Lifetime Access" : "Continue"
+    }
+
+    /// Says the one thing a subscriber actually needs before paying: how to get
+    /// out. Anything else here is noise.
+    private var finePrint: String {
+        guard let selected, selected.packageType != .lifetime else {
+            return "One payment. No subscription."
+        }
+        return "Auto-renews until cancelled. Cancel anytime."
     }
 
     private var closeButton: some View {
@@ -406,8 +445,8 @@ struct PackRatPaywallView: View {
     }
 }
 
-/// Copy written for someone who just tried to pay. No internal vocabulary, and
-/// each one says whether trying again is worth it.
+/// Copy for someone who just tried to pay. No internal vocabulary, and each one
+/// says whether trying again is worthwhile.
 private struct PurchaseAlert: Identifiable {
     let id = UUID()
     let title: String

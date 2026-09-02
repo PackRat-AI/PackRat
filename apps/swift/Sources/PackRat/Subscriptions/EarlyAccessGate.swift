@@ -28,10 +28,11 @@ struct EarlyAccessGate<Content: View>: View {
     let featureKey: String
     @ViewBuilder let content: () -> Content
 
+    @Environment(AppState.self) private var appState
+
     @State private var store = FeatureAccessStore.shared
     @State private var hasAttempted = false
     @State private var isPaywallPresented = false
-    @State private var hasAutoPresentedPaywall = false
 
     var body: some View {
         Group {
@@ -39,16 +40,11 @@ struct EarlyAccessGate<Content: View>: View {
                 if store.isAllowed(featureKey) {
                     content()
                 } else {
-                    gatedView
-                        .onAppear {
-                            // Open the paywall once on arrival, the way Expo
-                            // does. Not on every appearance: coming back after
-                            // dismissing it would reopen it immediately and
-                            // trap the viewer on the screen.
-                            guard !hasAutoPresentedPaywall else { return }
-                            hasAutoPresentedPaywall = true
-                            isPaywallPresented = true
-                        }
+                    // Nothing behind the paywall. Blank, not a placeholder
+                    // pretending to be a screen the viewer can use.
+                    Color(.systemBackground)
+                        .ignoresSafeArea()
+                        .onAppear { isPaywallPresented = true }
                 }
             } else if hasAttempted {
                 // A refresh ran and still left the store unresolved, so the
@@ -74,48 +70,12 @@ struct EarlyAccessGate<Content: View>: View {
             featureKey: featureKey,
             onEntitlementChanged: { Task { await store.refresh() } }
         )
-    }
-
-    /// The state behind the paywall modal. Kept deliberately quiet — the modal
-    /// carries the pitch — but it has to stand on its own when the viewer
-    /// dismisses, so it explains the lock and offers a way back in.
-    private var gatedView: some View {
-        VStack(spacing: 20) {
-            ZStack {
-                Circle()
-                    .fill(Color.orange.opacity(0.12))
-                    .frame(width: 76, height: 76)
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 30, weight: .semibold))
-                    .foregroundStyle(.orange)
-            }
-
-            VStack(spacing: 8) {
-                Text(store.label(featureKey))
-                    .font(.title2.weight(.semibold))
-                    .multilineTextAlignment(.center)
-
-                Text(gatedMessage)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Button {
-                isPaywallPresented = true
-            } label: {
-                Text("See what's included")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, minHeight: 50)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
-            .padding(.top, 4)
+        .onChange(of: isPaywallPresented) { wasPresented, isPresented in
+            // Dismissed without unlocking: leave, rather than stranding the
+            // viewer on a screen they have no access to.
+            guard wasPresented, !isPresented, !store.isAllowed(featureKey) else { return }
+            appState.navItem = .home
         }
-        .padding(28)
-        .frame(maxWidth: 420)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// Cold start with nothing cached and the fetch failed, so Pro status is
@@ -156,14 +116,6 @@ struct EarlyAccessGate<Content: View>: View {
         .padding(28)
         .frame(maxWidth: 420)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var gatedMessage: String {
-        if let days = store.daysUntilGraduation(featureKey) {
-            let unit = days == 1 ? "day" : "days"
-            return "In early access for PackRat Pro. Free for everyone in \(days) \(unit)."
-        }
-        return "In early access for PackRat Pro. Free for everyone once the window ends."
     }
 
     private func retry() async {
