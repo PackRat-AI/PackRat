@@ -40,8 +40,9 @@ one still in its early-access window presents the paywall. There is no
 half-state: the feature either opens or the paywall does.
 
 **A guest** (using the app without an account) sees generally-available
-features. Guests cannot subscribe — see ADR-006 — so a guest opening a gated
-feature is returned to Home rather than shown a paywall they cannot act on.
+features. Opening a gated feature shows them the paywall in full; the call to
+action routes to sign-in, because a subscription has to belong to an account —
+see ADR-006. Once signed in they land back in the app and can subscribe.
 
 **Someone whose subscription lapsed** loses access to features still inside
 their window, and keeps every feature that has since graduated. They never lose
@@ -49,8 +50,9 @@ something that became free while they were paying.
 
 ## The paywall
 
-Presented full screen when a signed-in free user opens a gated feature, and from
-Settings via *Upgrade to Pro*.
+Presented full screen when anyone without access opens a gated feature, and from
+Settings via *Upgrade to Pro*. Guests see it too — the call to action routes
+them to sign-in rather than the screen refusing to open.
 
 It leads with an invitation to use the feature now, names the remaining window
 as a head start ("42 days ahead of everyone else"), lists the other features
@@ -149,30 +151,44 @@ most prominent element was telling people not to buy.
 graduation promise is real) while the emphasis is on acting now. Copy on this
 screen is a conversion decision, not a description of the model.
 
-## ADR-006 — Guests cannot subscribe
+## ADR-006 — Guests see the paywall; buying requires an account
 
-**Decision.** Subscribing requires an account. A guest opening a gated feature
-is returned to Home; Settings shows *Sign in to subscribe* in place of the
-upgrade action.
+**Decision.** A guest opening a gated feature gets the full paywall — the
+feature, the plans, the prices. The call to action reads *Sign In to Subscribe*
+and routes them into sign-in, after which they can buy. RevenueCat is not
+configured at all until a real account id exists.
 
-**Why.** A subscription is owned by an Apple ID, while access in PackRat is
-owned by an account. A guest purchase has no account to attach to, which creates
-a collision with no good answer: when that guest later signs into an existing
-account that is not Pro, the subscription either follows the Apple ID and moves
-off whichever account previously held it, or stays behind and leaves someone who
-just paid looking at a paywall. Both outcomes are bad, and both would be
-discovered by the user *after* taking their money.
+**Why.** Two constraints meet here.
 
-Requiring sign-in first makes ownership unambiguous at the moment of purchase.
+A subscription is owned by an Apple ID; access in PackRat is owned by an
+account. A purchase made with no account attaches to an anonymous identity, and
+when that person later signs into an account that already exists, the
+entitlement either follows the Apple ID and moves off whichever account held it,
+or strands where nobody can reach it. Neither is discoverable until after the
+money is taken. Not creating the anonymous identity in the first place removes
+the problem rather than handling it — which is RevenueCat's own advice for apps
+that do not want anonymous purchases.
 
-**Consequence.** One extra step before paying, which costs some conversion. This
-was chosen knowingly: an unrecoverable "I paid and lost it" is worse than a
-sign-in prompt, and refunds and support load are the alternative cost.
+The second constraint is that refusing to *show* the offer is a different thing
+from refusing to take payment. Asking for an account before someone knows what
+they would be buying inverts the order every subscription app uses, and App
+Store guideline 5.1.1(v) is pointed about registration that is not tied to
+account-specific functionality. Early access genuinely is account-specific, so
+requiring sign-in at the point of purchase is defensible; requiring it to view a
+price is not.
 
-**Rejected alternative.** Allowing guest purchase and transferring the
-entitlement on sign-in. This works when the guest creates a *new* account, and
-breaks when they sign into an existing one — which cannot be detected until
-after the purchase.
+**Consequence.** One extra step between deciding to buy and buying, which costs
+some conversion. Accepted: an unrecoverable "I paid and lost it" is worse, and
+the alternative cost is refunds and support load.
+
+**Rejected alternative — allow guest purchase, transfer on sign-in.** Works when
+the guest creates a *new* account, breaks when they sign into an existing one,
+and the difference cannot be detected until after the purchase.
+
+**Rejected alternative — hide the paywall from guests.** Tried first. It left a
+label reading "Sign in to subscribe" that told people what to do without letting
+them do it, and bounced anyone opening a gated feature back to Home with no
+explanation, which reads as a crash rather than a decision.
 
 ## ADR-007 — Access rules are data, not releases
 

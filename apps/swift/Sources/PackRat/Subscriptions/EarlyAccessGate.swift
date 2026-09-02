@@ -29,7 +29,6 @@ struct EarlyAccessGate<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     @Environment(AppState.self) private var appState
-    @Environment(AuthManager.self) private var authManager
 
     @State private var store = FeatureAccessStore.shared
     @State private var hasAttempted = false
@@ -45,16 +44,11 @@ struct EarlyAccessGate<Content: View>: View {
                     // pretending to be a screen the viewer can use.
                     Color(.systemBackground)
                         .ignoresSafeArea()
-                        .onAppear {
-                            // Guests cannot subscribe, so showing them a
-                            // paywall would be a dead end. Send them to sign in
-                            // instead; the gate re-resolves once they are back.
-                            if authManager.isAuthenticated {
-                                isPaywallPresented = true
-                            } else {
-                                appState.navItem = .home
-                            }
-                        }
+                        // Guests see the paywall too. Value first, account at
+                        // the point of intent — the CTA routes them to sign in
+                        // rather than the screen refusing to open. Bouncing
+                        // someone out with no explanation reads as a bug.
+                        .onAppear { isPaywallPresented = true }
                 }
             } else if hasAttempted {
                 // A refresh ran and still left the store unresolved, so the

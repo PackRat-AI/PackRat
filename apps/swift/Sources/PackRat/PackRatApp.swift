@@ -16,11 +16,13 @@ struct PackRatApp: App {
         // errors are captured. A missing DSN silently disables the SDK.
         SentryConfig.start()
 
-        // Configure purchases before the first entitlement read. A build with
-        // no REVENUECAT_API_KEY no-ops here and resolves every viewer as
-        // non-Pro, so gated features stay closed rather than opening by
-        // accident. MainActor-isolated, and App.init runs on the main actor.
-        MainActor.assumeIsolated { SubscriptionService.shared.configure() }
+        // RevenueCat is deliberately NOT configured here. Configuring mints an
+        // anonymous app-user-id immediately, and a purchase made against that
+        // id has no PackRat account to attach to — which becomes unresolvable
+        // the moment that person signs into an account that already exists.
+        // Configuring only once we have a real user id means the anonymous
+        // identity never exists. See SubscriptionService.configure(userId:) and
+        // docs/features/early-access-subscriptions.md (ADR-006).
 
         #if os(macOS)
         if ProcessInfo.processInfo.arguments.contains("--reset-auth") {

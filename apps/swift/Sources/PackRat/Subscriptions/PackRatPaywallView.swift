@@ -27,6 +27,8 @@ struct PackRatPaywallView: View {
     let onDismiss: () -> Void
     let onEntitlementChanged: () -> Void
 
+    @Environment(AuthManager.self) private var authManager
+
     @State private var store = FeatureAccessStore.shared
     @State private var selected: Package?
     @State private var phase: Phase = .idle
@@ -326,7 +328,14 @@ struct PackRatPaywallView: View {
     private var purchaseDock: some View {
         VStack(spacing: 11) {
             Button {
-                Task { await purchase() }
+                if authManager.isAuthenticated {
+                    Task { await purchase() }
+                } else {
+                    // Value first, account at the point of intent. Leaving guest
+                    // mode drops the viewer on the auth gate; the feature they
+                    // came for is waiting once they are back.
+                    authManager.signOut()
+                }
             } label: {
                 ZStack {
                     if phase == .purchasing {
@@ -346,18 +355,14 @@ struct PackRatPaywallView: View {
             }
             .disabled(phase.isBusy || selected == nil)
 
-            Button {
-                Task { await restore() }
-            } label: {
-                if phase == .restoring {
-                    ProgressView().controlSize(.small).tint(.white)
-                } else {
-                    Text("Restore Purchases")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.62))
+            if authManager.isAuthenticated {
+                Button {
+                    Task { await restore() }
+                } label: {
+                    restoreLabel
                 }
+                .disabled(phase.isBusy)
             }
-            .disabled(phase.isBusy)
 
             Text(finePrint)
                 .font(.caption2)
@@ -373,9 +378,23 @@ struct PackRatPaywallView: View {
         }
     }
 
+    @ViewBuilder
+    private var restoreLabel: some View {
+        if phase == .restoring {
+            ProgressView().controlSize(.small).tint(.white)
+        } else {
+            Text("Restore Purchases")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.white.opacity(0.62))
+        }
+    }
+
     /// The standard App Store CTA. "Start Subscription" is not a phrase any
     /// shipping paywall uses.
     private var ctaTitle: String {
+        // A guest is one step further out, and the button should say so rather
+        // than promising a purchase it will not start.
+        guard authManager.isAuthenticated else { return "Sign In to Subscribe" }
         guard let selected else { return "Continue" }
         return selected.packageType == .lifetime ? "Buy Lifetime Access" : "Continue"
     }
@@ -383,6 +402,11 @@ struct PackRatPaywallView: View {
     /// Says the one thing a subscriber actually needs before paying: how to get
     /// out. Anything else here is noise.
     private var finePrint: String {
+        // Tell a guest what the next tap does before they take it, so the jump
+        // to sign-in is expected rather than a surprise.
+        guard authManager.isAuthenticated else {
+            return "Subscriptions are tied to your PackRat account, so you'll sign in first."
+        }
         guard let selected, selected.packageType != .lifetime else {
             return "One payment. No subscription."
         }

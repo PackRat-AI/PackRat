@@ -35,16 +35,16 @@ struct AuthGateView: View {
             FeatureAccessStore.shared.forgetEntitlement()
 
             if let userId = authManager.currentUser?.id {
-                // Carries a guest's purchase onto the account they just made or
-                // signed into: RevenueCat's logIn transfers an anonymous id's
-                // entitlements, and hands back the merged customer info, so a
-                // guest who subscribed keeps what they paid for.
-                if let customerInfo = await SubscriptionService.shared.identify(userId: userId) {
+                // Configures RevenueCat on first sign-in, switches identity on
+                // subsequent ones. Never before this point — see
+                // SubscriptionService.configure(userId:).
+                if let customerInfo = await SubscriptionService.shared.configure(userId: userId) {
                     FeatureAccessStore.shared.apply(customerInfo: customerInfo)
                 }
             } else {
-                // Anonymous again, so the next account on this device does not
-                // inherit the previous one's entitlements.
+                // Signed out. Returns RevenueCat to an anonymous id if it was
+                // ever configured, so the next account on this device does not
+                // inherit these entitlements.
                 await SubscriptionService.shared.resetUser()
             }
             await FeatureAccessStore.shared.refresh()

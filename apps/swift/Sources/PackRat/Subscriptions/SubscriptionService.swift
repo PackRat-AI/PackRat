@@ -39,14 +39,35 @@ final class SubscriptionService {
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    /// Configures the SDK. Safe to call more than once; later calls are ignored.
-    /// Call once at app launch, before any entitlement read.
-    func configure() {
-        guard !isConfigured, let apiKey = Self.apiKey else { return }
+    /// Configures the SDK against a known user, and identifies them.
+    ///
+    /// Deliberately not called at launch. `Purchases.configure` mints an
+    /// anonymous app-user-id straight away, and a purchase made against that id
+    /// belongs to no PackRat account — unresolvable once that person signs into
+    /// an account that already exists. Configuring only once a real user id is
+    /// in hand means the anonymous identity is never created, which is
+    /// RevenueCat's own documented way to prevent anonymous purchases.
+    ///
+    /// Safe to call repeatedly. Once configured, a different user id switches
+    /// identity via `logIn` rather than reconfiguring.
+    ///
+    /// - Returns: the customer info for this user, or nil when the build has no
+    ///   API key or the call failed.
+    @discardableResult
+    func configure(userId: String) async -> CustomerInfo? {
+        guard let apiKey = Self.apiKey else { return nil }
 
-        Purchases.logLevel = APIClient.isNonProduction ? .debug : .warn
-        Purchases.configure(withAPIKey: apiKey)
-        isConfigured = true
+        if !isConfigured {
+            Purchases.logLevel = APIClient.isNonProduction ? .debug : .warn
+            Purchases.configure(withAPIKey: apiKey, appUserID: userId)
+            isConfigured = true
+
+            // Configured with the id directly, so no logIn is needed; read the
+            // current state rather than assuming it.
+            return try? await Purchases.shared.customerInfo()
+        }
+
+        return await identify(userId: userId)
     }
 
     /// Associates purchases with a signed-in PackRat user.

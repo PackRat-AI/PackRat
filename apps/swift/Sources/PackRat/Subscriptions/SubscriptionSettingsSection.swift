@@ -22,16 +22,11 @@ struct SubscriptionSettingsSection: View {
             planRow
 
             if !authManager.isAuthenticated {
-                // Guests cannot subscribe. A purchase attaches to RevenueCat's
-                // anonymous id, and if they later sign into an account that is
-                // already known, the entitlement either follows the Apple ID or
-                // strands on an identity nobody can reach — neither of which is
-                // something to resolve after taking someone's money. Sign-in
-                // first makes the owner unambiguous. See
-                // docs/features/early-access-subscriptions.md (ADR-006).
-                Text("Sign in to subscribe")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                // Guests still get here — the paywall shows them what Pro is
+                // before asking for anything, and its CTA routes to sign-in.
+                // A dead label saying "sign in to subscribe" tells someone what
+                // to do without letting them do it.
+                Button("Upgrade to Pro") { isPaywallPresented = true }
             } else if store.isPro {
                 Button("Manage Subscription") { manageSubscription() }
             } else {
