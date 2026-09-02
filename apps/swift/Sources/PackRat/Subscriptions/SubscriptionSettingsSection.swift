@@ -8,6 +8,8 @@ import SwiftUI
 /// a plan row ("PackRat Pro" / "Free Plan"), the primary action ("Manage
 /// Subscription" / "Upgrade to Pro"), and "Restore Purchases".
 struct SubscriptionSettingsSection: View {
+    @Environment(AuthManager.self) private var authManager
+
     @State private var store = FeatureAccessStore.shared
     @State private var isRestoring = false
     @State private var isPaywallPresented = false
@@ -19,25 +21,41 @@ struct SubscriptionSettingsSection: View {
         Section("Subscription") {
             planRow
 
-            if store.isPro {
+            if !authManager.isAuthenticated {
+                // Guests cannot subscribe. A purchase attaches to RevenueCat's
+                // anonymous id, and if they later sign into an account that is
+                // already known, the entitlement either follows the Apple ID or
+                // strands on an identity nobody can reach — neither of which is
+                // something to resolve after taking someone's money. Sign-in
+                // first makes the owner unambiguous. See
+                // docs/features/early-access-subscriptions.md (ADR-006).
+                Text("Sign in to subscribe")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else if store.isPro {
                 Button("Manage Subscription") { manageSubscription() }
             } else {
                 Button("Upgrade to Pro") { isPaywallPresented = true }
             }
 
-            Button {
-                Task { await restore() }
-            } label: {
-                HStack {
-                    Text(isRestoring ? "Restoring…" : "Restore Purchases")
-                        .foregroundStyle(.secondary)
-                    if isRestoring {
-                        Spacer()
-                        ProgressView()
+            // Restore is also sign-in only: it writes the recovered
+            // entitlement to whichever identity is current, and for a guest
+            // that is an anonymous id they may never return to.
+            if authManager.isAuthenticated {
+                Button {
+                    Task { await restore() }
+                } label: {
+                    HStack {
+                        Text(isRestoring ? "Restoring…" : "Restore Purchases")
+                            .foregroundStyle(.secondary)
+                        if isRestoring {
+                            Spacer()
+                            ProgressView()
+                        }
                     }
                 }
+                .disabled(isRestoring)
             }
-            .disabled(isRestoring)
         }
         .paywall(isPresented: $isPaywallPresented)
         .alert(item: $alert) { alert in
