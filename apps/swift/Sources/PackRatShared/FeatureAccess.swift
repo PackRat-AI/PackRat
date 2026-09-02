@@ -65,6 +65,21 @@ public enum FeatureAccess {
         return hasPro
     }
 
+    /// A human-readable name for a feature, from its `feature_access` key.
+    ///
+    ///   summit-log              → "Summit Log"
+    ///   wildlife-identification → "Wildlife Identification"
+    ///
+    /// Derived rather than looked up so a gate can name the feature it is
+    /// holding back without the client shipping a second copy of the labels.
+    /// The `label` column exists server-side for the admin UI, but a gate
+    /// rendering before that response lands still needs something to say.
+    public static func displayName(forAccessKey key: String) -> String {
+        key.split(separator: "-")
+            .map { $0.prefix(1).uppercased() + $0.dropFirst() }
+            .joined(separator: " ")
+    }
+
     /// Parses an `earlyAccessUntil` value as it arrives over the wire.
     ///
     /// Returns `nil` for both a JSON null and an unparseable string. Collapsing

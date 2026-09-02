@@ -80,6 +80,13 @@ final class FeatureAccessStore {
         return FeatureAccess.isInEarlyAccess(earlyAccessUntil: until, now: now)
     }
 
+    /// When `featureKey` graduates to free for everyone, or nil if it has no
+    /// window. Lets a gate tell the viewer how long the wait is rather than
+    /// leaving "early access" open-ended.
+    func earlyAccessUntil(_ featureKey: String) -> Date? {
+        FeatureAccess.parseEarlyAccessUntil(earlyAccessByKey[featureKey])
+    }
+
     /// Refreshes both signals and caches them.
     ///
     /// Both must succeed to mark the store resolved. A partial refresh — config
