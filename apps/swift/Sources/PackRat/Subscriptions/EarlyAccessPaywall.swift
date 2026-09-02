@@ -1,310 +1,109 @@
+import RevenueCat
+import RevenueCatUI
 import SwiftUI
 
-/// The early-access paywall — a full-screen modal presented when a free viewer
-/// opens a feature still inside its Pro-only window.
+/// The early-access paywall — RevenueCat's own paywall, presented full screen.
 ///
-/// Carries the same content the Expo app feeds into its RevenueCat paywall
-/// template (feature name, description, days until it opens to everyone, and
-/// other features currently in early access), rendered natively because the
-/// Swift client has no RevenueCat paywall UI.
+/// This renders the same dashboard-configured template the Expo app presents
+/// (`apps/expo/app/(app)/paywall.tsx`), fed the same `earlyaccessmodel`
+/// offering, so both platforms sell identical packages with identical copy and
+/// pricing. Changing the paywall in the RevenueCat dashboard updates iOS,
+/// macOS and Expo together, with no app release on any of them.
 ///
-/// The pitch is "early access", not "premium". Every gated feature graduates to
-/// free on its own date, so the offer is getting it sooner — never getting it at
-/// all. The countdown is the hook, and it is the honest one.
+/// Purchases and restores complete inside this view via the SDK. On success the
+/// customer info is pushed straight into `FeatureAccessStore` so the gate
+/// behind the paywall re-resolves immediately rather than waiting for the next
+/// refresh.
 struct EarlyAccessPaywall: View {
-    let featureKey: String
+    /// The gated feature this paywall was opened for, or nil when opened from
+    /// Settings as a general upgrade. Only affects when a restore is treated as
+    /// success: a feature gate closes once that feature unlocks, while Settings
+    /// closes once the account is Pro at all.
+    let featureKey: String?
     let onDismiss: () -> Void
     let onEntitlementChanged: () -> Void
 
-    @State private var store = FeatureAccessStore.shared
-    @State private var isWorking = false
-    @State private var errorMessage: String?
-    @State private var hasAppeared = false
-
-    @Environment(\.dynamicTypeSize) private var typeSize
-
-    private let brand = Color(red: 0.98, green: 0.62, blue: 0.11)
+    @State private var offering: Offering?
+    @State private var loadFailed = false
 
     var body: some View {
-        ZStack {
-            backdrop
-
-            ScrollView {
-                VStack(spacing: 0) {
-                    hero
-                    countdownPill
-                        .padding(.top, 28)
-                    benefits
-                        .padding(.top, 32)
-                    if !otherFeatures.isEmpty {
-                        alsoUnlocks
-                            .padding(.top, 20)
+        Group {
+            if let offering {
+                PaywallView(offering: offering)
+                    .onPurchaseCompleted { customerInfo in
+                        FeatureAccessStore.shared.apply(customerInfo: customerInfo)
+                        onEntitlementChanged()
                     }
-                    Spacer(minLength: 32)
-                }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 220)
-            }
-            .scrollIndicators(.hidden)
-
-            VStack(spacing: 0) {
-                Spacer()
-                actionDock
-            }
-            .ignoresSafeArea(edges: .bottom)
-        }
-        .overlay(alignment: .topTrailing) { dismissButton }
-        .preferredColorScheme(.dark)
-        .onAppear {
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.8)) { hasAppeared = true }
-        }
-    }
-
-    // MARK: - Backdrop
-
-    /// A warm vertical gradient with a soft radial bloom behind the crown, so
-    /// the screen reads as a considered surface rather than a plain sheet.
-    private var backdrop: some View {
-        ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.09, green: 0.08, blue: 0.13),
-                    Color(red: 0.05, green: 0.05, blue: 0.07),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-
-            RadialGradient(
-                colors: [brand.opacity(0.34), .clear],
-                center: UnitPoint(x: 0.5, y: 0.08),
-                startRadius: 4,
-                endRadius: 420
-            )
-        }
-        .ignoresSafeArea()
-    }
-
-    // MARK: - Hero
-
-    private var hero: some View {
-        VStack(spacing: 18) {
-            ZStack {
-                Circle()
-                    .fill(brand.opacity(0.16))
-                    .frame(width: 104, height: 104)
-                    .blur(radius: 2)
-
-                Circle()
-                    .stroke(brand.opacity(0.35), lineWidth: 1)
-                    .frame(width: 104, height: 104)
-
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 42, weight: .semibold))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [brand, brand.opacity(0.75)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .shadow(color: brand.opacity(0.5), radius: 18, y: 4)
-            }
-            .scaleEffect(hasAppeared ? 1 : 0.86)
-            .opacity(hasAppeared ? 1 : 0)
-
-            VStack(spacing: 10) {
-                Text("EARLY ACCESS")
-                    .font(.caption.weight(.bold))
-                    .tracking(1.6)
-                    .foregroundStyle(brand)
-
-                Text(store.label(featureKey))
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.7)
-
-                Text(
-                    store.description(featureKey)
-                        ?? "Be first to use \(store.label(featureKey)) — weeks before everyone else."
-                )
-                .font(.body)
-                .foregroundStyle(.white.opacity(0.68))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-            }
-            .opacity(hasAppeared ? 1 : 0)
-            .offset(y: hasAppeared ? 0 : 12)
-        }
-        .padding(.top, 56)
-    }
-
-    // MARK: - Countdown
-
-    /// The single most persuasive true fact on the screen: this is temporary.
-    private var countdownPill: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "clock.fill")
-                .font(.footnote.weight(.semibold))
-            Text(countdownText)
-                .font(.subheadline.weight(.semibold))
-        }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 18)
-        .padding(.vertical, 11)
-        .background(.white.opacity(0.10), in: Capsule())
-        .overlay(Capsule().stroke(.white.opacity(0.14), lineWidth: 1))
-    }
-
-    private var countdownText: String {
-        guard let days = store.daysUntilGraduation(featureKey) else {
-            return "Free for everyone soon"
-        }
-        return "Free for everyone in \(days) \(days == 1 ? "day" : "days")"
-    }
-
-    // MARK: - Benefits
-
-    private var benefits: some View {
-        VStack(spacing: 14) {
-            benefitRow(
-                icon: "bolt.fill",
-                title: "Use it now",
-                detail: "Skip the wait on \(store.label(featureKey)) and everything else in early access."
-            )
-            benefitRow(
-                icon: "lock.open.fill",
-                title: "Nothing is taken away",
-                detail: "Features only ever move from Pro-first to free. You never lose access."
-            )
-            benefitRow(
-                icon: "arrow.triangle.2.circlepath",
-                title: "Cancel anytime",
-                detail: "Managed by the App Store, alongside your other subscriptions."
-            )
-        }
-    }
-
-    private func benefitRow(icon: String, title: String, detail: String) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon)
-                .font(.footnote.weight(.bold))
-                .foregroundStyle(brand)
-                .frame(width: 30, height: 30)
-                .background(brand.opacity(0.14), in: RoundedRectangle(cornerRadius: 9))
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                Text(detail)
-                    .font(.footnote)
-                    .foregroundStyle(.white.opacity(0.6))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(.white.opacity(0.07), lineWidth: 1)
-        )
-    }
-
-    // MARK: - Cross-sell
-
-    private var alsoUnlocks: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Also in early access")
-                .font(.caption.weight(.semibold))
-                .tracking(0.6)
-                .foregroundStyle(.white.opacity(0.5))
-
-            VStack(alignment: .leading, spacing: 9) {
-                ForEach(otherFeatures, id: \.self) { name in
-                    HStack(spacing: 9) {
-                        Image(systemName: "checkmark")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(brand)
-                        Text(name)
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.85))
+                    .onRestoreCompleted { customerInfo in
+                        // Restore reports completion even when the account owns
+                        // nothing, so only close if it actually granted access.
+                        FeatureAccessStore.shared.apply(customerInfo: customerInfo)
+                        if didRestoreGrantAccess() { onEntitlementChanged() }
                     }
-                }
+            } else if loadFailed {
+                unavailableView
+            } else {
+                loadingView
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(.white.opacity(0.07), lineWidth: 1)
-        )
+        .task { await loadOffering() }
+        .overlay(alignment: .topTrailing) {
+            // The template has no dismiss affordance of its own when presented
+            // this way, so the gate always stays escapable.
+            if offering == nil { dismissButton }
+        }
     }
 
-    // MARK: - Actions
+    private var loadingView: some View {
+        ZStack {
+            Color(.systemBackground).ignoresSafeArea()
+            ProgressView().controlSize(.large)
+        }
+    }
 
-    /// Pinned to the bottom over a material blur so the primary action stays
-    /// reachable however far the content scrolls.
-    private var actionDock: some View {
-        VStack(spacing: 12) {
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.white.opacity(0.75))
-                    .multilineTextAlignment(.center)
-                    .transition(.opacity)
-            }
+    /// Offerings could not be fetched — almost always offline, since the
+    /// paywall needs live pricing from the store. Never silently strand the
+    /// viewer on a blank screen.
+    private var unavailableView: some View {
+        ZStack {
+            Color(.systemBackground).ignoresSafeArea()
 
-            Button {
-                Task { await checkAccess() }
-            } label: {
+            VStack(spacing: 20) {
                 ZStack {
-                    if isWorking {
-                        ProgressView().tint(.black)
-                    } else {
-                        Text("I already subscribed")
-                            .font(.headline)
-                    }
+                    Circle()
+                        .fill(Color.secondary.opacity(0.12))
+                        .frame(width: 76, height: 76)
+                    Image(systemName: "wifi.exclamationmark")
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(.secondary)
                 }
-                .frame(maxWidth: .infinity, minHeight: 52)
-                .foregroundStyle(.black)
-                .background(
-                    LinearGradient(
-                        colors: [brand, brand.opacity(0.86)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    in: RoundedRectangle(cornerRadius: 14)
-                )
-                .shadow(color: brand.opacity(0.3), radius: 16, y: 6)
+
+                VStack(spacing: 8) {
+                    Text("Can't reach the store")
+                        .font(.title3.weight(.semibold))
+
+                    Text("Plans and prices need a connection. Reconnect and try again.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Button {
+                    Task { await loadOffering() }
+                } label: {
+                    Text("Try again")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button("Not now", action: onDismiss)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
             }
-            .disabled(isWorking)
-
-            // Buying happens in the Expo app — the Swift client reads
-            // entitlements but has no purchase flow — so the screen says where
-            // to subscribe rather than offering a button that cannot work.
-            Text("Subscribe in PackRat on your phone. Your subscription applies here automatically.")
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.45))
-                .multilineTextAlignment(.center)
-
-            Button("Maybe later", action: onDismiss)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.white.opacity(0.6))
-                .padding(.top, 2)
-        }
-        .padding(.horizontal, 24)
-        .padding(.top, 18)
-        .padding(.bottom, 34)
-        .background(.ultraThinMaterial)
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(.white.opacity(0.08))
-                .frame(height: 1)
+            .padding(28)
+            .frame(maxWidth: 420)
         }
     }
 
@@ -312,31 +111,30 @@ struct EarlyAccessPaywall: View {
         Button(action: onDismiss) {
             Image(systemName: "xmark")
                 .font(.footnote.weight(.bold))
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(.secondary)
                 .frame(width: 30, height: 30)
-                .background(.white.opacity(0.12), in: Circle())
+                .background(.regularMaterial, in: Circle())
         }
         .padding(.trailing, 20)
         .padding(.top, 14)
         .accessibilityLabel("Close")
     }
 
-    private var otherFeatures: [String] {
-        store.otherEarlyAccessFeatures(excluding: featureKey)
+    /// Whether a completed restore actually changed anything for this viewer.
+    private func didRestoreGrantAccess() -> Bool {
+        guard let featureKey else { return FeatureAccessStore.shared.isPro }
+        return FeatureAccessStore.shared.isAllowed(featureKey)
     }
 
-    private func checkAccess() async {
-        isWorking = true
-        errorMessage = nil
-        await store.refresh()
-        isWorking = false
-
-        if store.isAllowed(featureKey) {
-            onEntitlementChanged()
-        } else {
-            withAnimation {
-                errorMessage = "No active subscription found for this account."
-            }
+    private func loadOffering() async {
+        loadFailed = false
+        do {
+            offering = try await SubscriptionService.shared.earlyAccessOffering()
+            // A configured SDK with no matching offering is a dashboard problem,
+            // not a network one, but it looks the same to the viewer.
+            if offering == nil { loadFailed = true }
+        } catch {
+            loadFailed = true
         }
     }
 }

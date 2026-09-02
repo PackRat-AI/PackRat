@@ -60,6 +60,7 @@ struct PreferencesView: View {
         // on iPhone, where there is no dedicated Settings window.
         Form {
             generalSection
+            SubscriptionSettingsSection()
             unitsSection
             notificationSection
             advancedSection

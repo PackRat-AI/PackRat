@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import RevenueCat
 import Sentry
 
 /// Resolves "may this viewer use this feature right now" for the Swift apps.
@@ -130,6 +131,24 @@ final class FeatureAccessStore {
             .sorted()
             .prefix(limit)
             .map { label($0) }
+    }
+
+    /// Applies customer info straight from a completed purchase or restore.
+    ///
+    /// The paywall already holds the authoritative answer at that moment, so
+    /// waiting for the next `refresh` would leave the gate stale behind a
+    /// dismissing paywall — the user pays and the feature is still locked.
+    /// Mirrors Expo writing the result into its customerInfo query cache.
+    func apply(customerInfo: CustomerInfo) {
+        let pro = SubscriptionService.isPro(customerInfo)
+        isPro = pro
+        userDefaults.set(pro, forKey: entitlementCacheKey)
+
+        // Only mark resolved if the config half is genuinely known; entitlement
+        // alone cannot say which features are gated.
+        if !earlyAccessByKey.isEmpty || userDefaults.dictionary(forKey: configCacheKey) != nil {
+            isResolved = true
+        }
     }
 
     /// Refreshes both signals and caches them.

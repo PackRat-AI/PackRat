@@ -93,6 +93,86 @@ final class SubscriptionService {
     static func isPro(_ customerInfo: CustomerInfo) -> Bool {
         customerInfo.entitlements.active[FeatureAccess.proEntitlementIdentifier] != nil
     }
+
+    // MARK: - Buying
+
+    /// Fetches the available offerings.
+    ///
+    /// Mirrors `useOfferings` in Expo. The offering ids are shared with the
+    /// Expo app so both platforms sell the same packages out of the same
+    /// RevenueCat dashboard configuration.
+    func fetchOfferings() async throws -> Offerings {
+        guard isConfigured else { throw SubscriptionError.notConfigured }
+        return try await Purchases.shared.offerings()
+    }
+
+    /// The offering to show for an early-access gate, falling back to the
+    /// default offering when the early-access one is not configured. Matches
+    /// how Expo's paywall route resolves its offering.
+    func earlyAccessOffering() async throws -> Offering? {
+        let offerings = try await fetchOfferings()
+        return offerings.all[Self.earlyAccessOfferingID] ?? offerings.current
+    }
+
+    /// Buys a package. Mirrors `usePurchase` in Expo.
+    ///
+    /// A user cancelling is not an error worth reporting — it is the most
+    /// ordinary outcome on a paywall — so it comes back as a plain flag rather
+    /// than a thrown error the caller has to special-case.
+    @discardableResult
+    func purchase(package: Package) async throws -> PurchaseOutcome {
+        guard isConfigured else { throw SubscriptionError.notConfigured }
+
+        do {
+            let result = try await Purchases.shared.purchase(package: package)
+            if result.userCancelled { return .cancelled }
+            return .purchased(result.customerInfo)
+        } catch {
+            SentrySDK.capture(error: error) { scope in
+                scope.setTag(value: "subscriptions", key: "feature")
+                scope.setTag(value: "purchase", key: "action")
+                scope.setContext(value: ["productId": package.storeProduct.productIdentifier],
+                                 key: "purchase")
+            }
+            throw error
+        }
+    }
+
+    /// Restores previous purchases. Mirrors `useRestorePurchases` in Expo.
+    func restorePurchases() async throws -> CustomerInfo {
+        guard isConfigured else { throw SubscriptionError.notConfigured }
+
+        do {
+            return try await Purchases.shared.restorePurchases()
+        } catch {
+            SentrySDK.capture(error: error) { scope in
+                scope.setTag(value: "subscriptions", key: "feature")
+                scope.setTag(value: "restorePurchases", key: "action")
+            }
+            throw error
+        }
+    }
+
+    /// Opens the platform's own subscription-management screen, the same
+    /// destination Expo's "Manage Subscription" row uses.
+    func manageSubscriptionsURL() -> URL? {
+        #if os(iOS)
+        return URL(string: "https://apps.apple.com/account/subscriptions")
+        #else
+        return URL(string: "macappstores://apps.apple.com/account/subscriptions")
+        #endif
+    }
+
+    /// Offering identifiers, shared with `apps/expo/features/purchases/types.ts`.
+    static let proOfferingID = "default"
+    static let earlyAccessOfferingID = "earlyaccessmodel"
+}
+
+/// What came back from a purchase attempt. Cancellation is a normal outcome,
+/// not a failure, so it is modelled here rather than thrown.
+enum PurchaseOutcome {
+    case purchased(CustomerInfo)
+    case cancelled
 }
 
 enum SubscriptionError: Error {

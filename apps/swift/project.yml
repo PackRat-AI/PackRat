@@ -148,6 +148,8 @@ targets:
         product: GoogleSignIn
       - package: RevenueCat
         product: RevenueCat
+      - package: RevenueCat
+        product: RevenueCatUI
       # PackRat-Watch is intentionally NOT embedded: the watch app is not part of
       # the first Swift release. The target still builds via its own scheme, so
       # re-embed this dependency when the watch app ships.
@@ -265,6 +267,8 @@ targets:
         product: Sentry
       - package: RevenueCat
         product: RevenueCat
+      - package: RevenueCat
+        product: RevenueCatUI
     settings:
       base:
         SWIFT_VERSION: "5.9"
