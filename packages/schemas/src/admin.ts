@@ -134,7 +134,10 @@ export const AdminFeatureFlagItemSchema = z.object({
   updatedAt: z.string().nullable(),
   // A platform absent here inherits `effective`; one present overrides it for
   // that platform only.
-  platformOverrides: z.record(z.enum(CLIENT_PLATFORMS), PlatformOverrideItemSchema),
+  // `.optional()` on the value is load-bearing: a record keyed by an enum
+  // treats every member as required, so without it a flag targeting only macOS
+  // fails validation for the two platforms it says nothing about.
+  platformOverrides: z.record(z.enum(CLIENT_PLATFORMS), PlatformOverrideItemSchema.optional()),
 });
 export type AdminFeatureFlagItem = z.infer<typeof AdminFeatureFlagItemSchema>;
 export const AdminFeatureFlagListSchema = z.array(AdminFeatureFlagItemSchema);
