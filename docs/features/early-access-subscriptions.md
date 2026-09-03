@@ -16,11 +16,16 @@ Every feature has two independent switches, and both must allow it.
 
 | Control | Question | Who changes it |
 |---|---|---|
-| Feature flag | Can this be on at all? | Engineering / admin — a kill switch |
+| Feature flag | Can this be on at all, on this platform? | Engineering / admin — a kill switch |
 | Feature access | Who may use it right now? | Product — the monetization layer |
 
 A feature that is flagged off does not exist for anyone, subscriber or not. A
 feature that is flagged on is then subject to its access rule.
+
+The flag can differ per platform. A feature can be live on iPhone and held back
+on Mac, or switched off on Android alone while a build problem is fixed, without
+touching anyone else. A flag with no platform-specific setting behaves the same
+everywhere.
 
 Access is a single timestamp, `early_access_until`:
 
@@ -223,3 +228,27 @@ early, by whoever wrote the code, and cannot be corrected quickly if it is wrong
 already in people's hands. The graduation promise in ADR-001 constrains what
 those changes may be: a window may be shortened, never extended in a way that
 takes back access someone already has.
+
+## ADR-008 — Flags target platforms; access does not
+
+**Decision.** A feature flag can carry a per-platform value, layered over a
+global one. Feature access has no platform dimension: who may use a feature is
+the same answer everywhere.
+
+**Why.** The two controls fail for different reasons. A feature breaks on one
+platform — a layout that does not fit on Mac, a native dependency misbehaving on
+Android — and the fix is to switch it off there while leaving it running for
+everyone else. That is a per-platform question by nature.
+
+Access is not. Someone who pays for Pro on their phone and opens the Mac app is
+the same subscriber, and a subscription that unlocked a feature on one device
+but not another would be a support problem, not a feature.
+
+**Consequence.** Two mechanisms that look similar behave differently, which is
+worth knowing before reaching for the wrong one. "Not available on Mac yet" is a
+flag; "Pro members only" is access.
+
+An unrecognised platform resolves to the global value rather than to off. Failing
+closed would dark-launch every feature for any client the server did not
+recognise — an old build, a surface added later — which is far worse than a flag
+being slightly too widely on.
