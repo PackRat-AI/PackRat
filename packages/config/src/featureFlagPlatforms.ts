@@ -91,17 +91,18 @@ export function resolveFlagsForPlatform({
   };
 
   const resolved: Record<string, boolean> = {};
-  for (const key of Object.keys(defaults)) {
+  // Object.entries rather than Object.keys: it hands back the default value
+  // alongside the key, so the fallback needs no indexed read that
+  // noUncheckedIndexedAccess would widen to `boolean | undefined`.
+  for (const [key, defaultValue] of Object.entries(defaults)) {
     const platformValue = read({ source: platformOverrides, key });
     if (platformValue !== undefined) {
       resolved[key] = platformValue;
       continue;
     }
 
-    // No ?? false on the default: the loop iterates the keys of `defaults`, so
-    // every one of them is present by construction.
     const globalValue = read({ source: globalOverrides, key });
-    resolved[key] = globalValue !== undefined ? globalValue : defaults[key];
+    resolved[key] = globalValue !== undefined ? globalValue : defaultValue;
   }
   return resolved;
 }

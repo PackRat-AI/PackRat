@@ -2,12 +2,13 @@ import { createDb } from '@packrat/api/db';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import {
   APP_CONFIG,
+  type ClientPlatformValue,
   FeatureFlag,
   isClientPlatform,
   resolveFlagsForPlatform,
 } from '@packrat/config';
 import { featureFlagPlatformOverrides, featureFlags } from '@packrat/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 // All flag keys known to the codebase. Exported so the admin route can build
 // a zod enum from it — that's the actual validation boundary for write paths.
@@ -27,6 +28,18 @@ export interface AdminFeatureFlagItem {
   effective: boolean;
   description: string | null;
   updatedAt: Date | null;
+  /**
+   * Per-platform overrides, keyed by platform. A platform absent from this map
+   * inherits `effective`; a platform present in it overrides that value for
+   * that platform only.
+   */
+  platformOverrides: Partial<Record<ClientPlatformValue, PlatformOverrideItem>>;
+}
+
+export interface PlatformOverrideItem {
+  enabled: boolean;
+  reason: string | null;
+  updatedAt: Date;
 }
 
 /**
@@ -86,6 +99,23 @@ export async function listFeatureFlagsForAdmin(): Promise<AdminFeatureFlagItem[]
       columns: { key: true, enabled: true, description: true, updatedAt: true },
     });
     const overrideByKey = new Map(overrides.map((row) => [row.key, row]));
+
+    const platformRows = await db
+      .tag('featureFlags.listAdminPlatformOverrides')
+      .query.featureFlagPlatformOverrides.findMany({
+        columns: { key: true, platform: true, enabled: true, reason: true, updatedAt: true },
+      });
+    const platformByKey = new Map<string, AdminFeatureFlagItem['platformOverrides']>();
+    for (const row of platformRows) {
+      const forKey = platformByKey.get(row.key) ?? {};
+      forKey[row.platform] = {
+        enabled: row.enabled,
+        reason: row.reason,
+        updatedAt: row.updatedAt,
+      };
+      platformByKey.set(row.key, forKey);
+    }
+
     return KNOWN_FEATURE_FLAG_KEYS.map((key) => {
       const defaultValue = getDefaultFlagValue(key);
       const override = overrideByKey.get(key);
@@ -96,6 +126,7 @@ export async function listFeatureFlagsForAdmin(): Promise<AdminFeatureFlagItem[]
         effective: override ? override.enabled : defaultValue,
         description: override?.description ?? null,
         updatedAt: override?.updatedAt ?? null,
+        platformOverrides: platformByKey.get(key) ?? {},
       };
     });
   } catch (error) {
@@ -140,6 +171,8 @@ export async function upsertFeatureFlagOverride({
       effective: row.enabled,
       description: row.description,
       updatedAt: row.updatedAt,
+      // Unchanged by a global write; the caller refetches the list to see them.
+      platformOverrides: {},
     };
   } catch (error) {
     captureApiException({
@@ -168,6 +201,69 @@ export async function deleteFeatureFlagOverride(key: string): Promise<boolean> {
       operation: 'featureFlags.delete',
       tags: { feature: 'featureFlags' },
       extra: { key },
+    });
+    throw error;
+  }
+}
+
+/**
+ * Sets a platform override, or clears it so the platform inherits the global
+ * value again.
+ *
+ * Clearing is a delete rather than a stored "inherit" value: an absent row is
+ * already how inheritance is expressed everywhere else in this system, and a
+ * third state would mean two ways to say the same thing.
+ */
+export async function setFeatureFlagPlatformOverride({
+  key,
+  platform,
+  enabled,
+  reason,
+}: {
+  key: string;
+  platform: ClientPlatformValue;
+  /** `null` clears the override, restoring inheritance from the global value. */
+  enabled: boolean | null;
+  reason?: string | null;
+}): Promise<void> {
+  const db = createDb();
+  try {
+    if (enabled === null) {
+      await db
+        .tag('featureFlags.clearPlatformOverride')
+        .delete(featureFlagPlatformOverrides)
+        .where(
+          and(
+            eq(featureFlagPlatformOverrides.key, key),
+            eq(featureFlagPlatformOverrides.platform, platform),
+          ),
+        );
+      return;
+    }
+
+    // The platform table references feature_flags, so the global row has to
+    // exist first. Seed it at its coded default rather than failing: someone
+    // targeting one platform has not said anything about the others.
+    await db
+      .tag('featureFlags.ensureGlobalRow')
+      .insert(featureFlags)
+      .values({ key, enabled: getDefaultFlagValue(key), updatedAt: new Date() })
+      .onConflictDoNothing({ target: featureFlags.key });
+
+    await db
+      .tag('featureFlags.setPlatformOverride')
+      .insert(featureFlagPlatformOverrides)
+      .values({ key, platform, enabled, reason: reason ?? null, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: [featureFlagPlatformOverrides.key, featureFlagPlatformOverrides.platform],
+        set: { enabled, reason: reason ?? null, updatedAt: new Date() },
+      });
+  } catch (error) {
+    captureApiException({
+      error,
+      operation: 'featureFlags.setPlatformOverride',
+      tags: { feature: 'featureFlags' },
+      extra: { key, platform, enabled },
     });
     throw error;
   }

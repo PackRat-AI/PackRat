@@ -116,6 +116,15 @@ export type AdminCatalogItem = z.infer<typeof AdminCatalogItemSchema>;
 // (packages/config). Rows only exist for keys an admin has overridden — a
 // missing row means the key is still using its coded default.
 
+/** Platforms a flag can be targeted at. Mirrors `client_platform` in the DB. */
+export const CLIENT_PLATFORMS = ['ios', 'android', 'macos'] as const;
+
+export const PlatformOverrideItemSchema = z.object({
+  enabled: z.boolean(),
+  reason: z.string().nullable(),
+  updatedAt: z.string(),
+});
+
 export const AdminFeatureFlagItemSchema = z.object({
   key: z.string(),
   defaultValue: z.boolean(),
@@ -123,6 +132,9 @@ export const AdminFeatureFlagItemSchema = z.object({
   effective: z.boolean(),
   description: z.string().nullable(),
   updatedAt: z.string().nullable(),
+  // A platform absent here inherits `effective`; one present overrides it for
+  // that platform only.
+  platformOverrides: z.record(z.enum(CLIENT_PLATFORMS), PlatformOverrideItemSchema),
 });
 export type AdminFeatureFlagItem = z.infer<typeof AdminFeatureFlagItemSchema>;
 export const AdminFeatureFlagListSchema = z.array(AdminFeatureFlagItemSchema);
@@ -136,6 +148,17 @@ export const FeatureFlagUpsertBodySchema = z.object({
 // override row that listEffectiveFeatureFlags silently ignores.
 export const FeatureFlagKeyParamSchema = z.object({
   key: z.enum(FEATURE_FLAG_KEYS),
+});
+
+export const FeatureFlagPlatformParamSchema = z.object({
+  key: z.enum(FEATURE_FLAG_KEYS),
+  platform: z.enum(CLIENT_PLATFORMS),
+});
+
+export const FeatureFlagPlatformOverrideBodySchema = z.object({
+  // null clears the override, so the platform inherits the global value again.
+  enabled: z.boolean().nullable(),
+  reason: z.string().nullable().optional(),
 });
 
 // ─── Feature Access ───────────────────────────────────────────────────────────
