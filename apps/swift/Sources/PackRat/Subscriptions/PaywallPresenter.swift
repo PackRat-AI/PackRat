@@ -13,23 +13,19 @@ private struct PaywallPresenter: ViewModifier {
     let onEntitlementChanged: () -> Void
 
     @State private var offering: Offering?
-    // No onChange guard tying `offering == nil` back to `isPresented`. It looked
-    // like it kept the binding honest, but `load()` clears `isLoading` in a
-    // defer before assigning `offering`, so for one render offering was nil,
-    // isPresented true and isLoading false — and the guard closed the sheet it
-    // had just opened. Both dismiss paths and every failure path already reset
-    // the binding themselves, so it was redundant as well as harmful.
     @State private var isLoading = false
     @State private var failure: PaywallFailure?
 
     func body(content: Content) -> some View {
         content
+            // `isPresented` is a request, not the presentation state. The sheet
+            // is driven by `offering`, and this resets the request as soon as it
+            // has been acted on — otherwise the flag latches true, the next tap
+            // is a no-op change, and the paywall never opens again.
             .onChange(of: isPresented) { _, wanted in
-                if wanted {
-                    Task { await load() }
-                } else {
-                    offering = nil
-                }
+                guard wanted else { return }
+                isPresented = false
+                Task { await load() }
             }
             .overlay {
                 // A brief inline spinner while offerings load. Deliberately not
@@ -45,17 +41,16 @@ private struct PaywallPresenter: ViewModifier {
                     }
                 }
             }
+            // Presentation follows the loaded offering alone. One source of
+            // truth: dismissing clears it, and nothing else has to be kept in
+            // step.
             .fullScreenCover(item: $offering) { loaded in
                 PackRatPaywallView(
                     offering: loaded,
                     featureKey: featureKey,
-                    onDismiss: {
-                        offering = nil
-                        isPresented = false
-                    },
+                    onDismiss: { offering = nil },
                     onEntitlementChanged: {
                         offering = nil
-                        isPresented = false
                         onEntitlementChanged()
                     }
                 )
@@ -78,16 +73,13 @@ private struct PaywallPresenter: ViewModifier {
                 // The SDK answered but no offering is configured. Nothing the
                 // viewer can do, so do not invite a retry.
                 failure = .unavailable
-                isPresented = false
                 return
             }
             offering = loaded
         } catch SubscriptionError.notConfigured {
             failure = .unavailable
-            isPresented = false
         } catch {
             failure = .couldNotLoad
-            isPresented = false
         }
     }
 }
