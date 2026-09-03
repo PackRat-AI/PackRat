@@ -95,8 +95,26 @@ struct FeatureFlagService: Sendable {
     init(api: APIClient = .shared) { self.api = api }
 
     func fetchFlags() async throws -> [String: Any] {
-        let endpoint = Endpoint(.get, "/api/feature-flags", requiresAuth: false)
+        let endpoint = Endpoint(
+            .get,
+            "/api/feature-flags",
+            query: ["platform": Self.platform],
+            requiresAuth: false
+        )
         let raw: [String: Bool] = try await api.send(endpoint)
         return raw
+    }
+
+    /// The platform this build reports for flag targeting.
+    ///
+    /// Compile-time rather than runtime: one binary is one platform, and the
+    /// Swift app ships separate iOS and macOS targets. Matches the
+    /// `client_platform` values the API targets.
+    static var platform: String {
+        #if os(macOS)
+        return "macos"
+        #else
+        return "ios"
+        #endif
     }
 }

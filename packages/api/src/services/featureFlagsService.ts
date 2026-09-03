@@ -1,7 +1,12 @@
 import { createDb } from '@packrat/api/db';
 import { captureApiException } from '@packrat/api/utils/sentry';
-import { APP_CONFIG, FeatureFlag } from '@packrat/config';
-import { featureFlags } from '@packrat/db/schema';
+import {
+  APP_CONFIG,
+  FeatureFlag,
+  isClientPlatform,
+  resolveFlagsForPlatform,
+} from '@packrat/config';
+import { featureFlagPlatformOverrides, featureFlags } from '@packrat/db/schema';
 import { eq } from 'drizzle-orm';
 
 // All flag keys known to the codebase. Exported so the admin route can build
@@ -25,26 +30,49 @@ export interface AdminFeatureFlagItem {
 }
 
 /**
- * Effective value for every known flag: a DB override wins, else the coded
- * default in packages/config. Powers the public, unauthenticated route the
- * client fetches to resolve gating.
+ * Effective value for every known flag, optionally targeted at one platform.
+ *
+ * Resolution is three layers, most specific first: a platform override, the
+ * global override, then the coded default. Powers the public, unauthenticated
+ * route the clients fetch to resolve gating.
+ *
+ * `platform` comes from an untrusted query parameter. An unrecognised value is
+ * ignored rather than rejected, and the caller gets globally-resolved flags —
+ * an old client or a surface with no targeting (Expo on web) must not have
+ * every flag dark-launched just because the server did not recognise it.
  */
-export async function listEffectiveFeatureFlags(): Promise<Record<string, boolean>> {
+export async function listEffectiveFeatureFlags(
+  platform?: string,
+): Promise<Record<string, boolean>> {
   const db = createDb();
-  const effective: Record<string, boolean> = { ...APP_CONFIG.featureFlags };
+  const defaults: Record<string, boolean> = { ...APP_CONFIG.featureFlags };
+
   try {
-    const overrides = await db.tag('featureFlags.listEffective').query.featureFlags.findMany({
+    const globalRows = await db.tag('featureFlags.listEffective').query.featureFlags.findMany({
       columns: { key: true, enabled: true },
     });
-    for (const row of overrides) {
-      if (row.key in effective) effective[row.key] = row.enabled;
+    const globalOverrides: Record<string, boolean> = {};
+    for (const row of globalRows) globalOverrides[row.key] = row.enabled;
+
+    // Only query platform rows when the caller named a platform we target.
+    const platformOverrides: Record<string, boolean> = {};
+    if (isClientPlatform(platform)) {
+      const platformRows = await db
+        .tag('featureFlags.listPlatformOverrides')
+        .query.featureFlagPlatformOverrides.findMany({
+          columns: { key: true, enabled: true },
+          where: eq(featureFlagPlatformOverrides.platform, platform),
+        });
+      for (const row of platformRows) platformOverrides[row.key] = row.enabled;
     }
-    return effective;
+
+    return resolveFlagsForPlatform({ platformOverrides, globalOverrides, defaults });
   } catch (error) {
     captureApiException({
       error,
       operation: 'featureFlags.listEffective',
       tags: { feature: 'featureFlags' },
+      extra: { platform },
     });
     throw error;
   }

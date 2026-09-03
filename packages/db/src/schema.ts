@@ -10,6 +10,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   real,
   serial,
   text,
@@ -837,6 +838,45 @@ export const featureFlags = pgTable('feature_flags', {
 
 export type FeatureFlagRow = InferSelectModel<typeof featureFlags>;
 export type NewFeatureFlagRow = InferInsertModel<typeof featureFlags>;
+
+// The client surfaces a flag can be targeted at. `ios` and `android` cover the
+// Expo app; `ios` and `macos` cover the Swift app.
+//
+// Two absences are deliberate. The watch has no network of its own — it reads
+// what the phone sends — so it inherits the phone's answer. Expo's web build
+// reads flags too, but web is not a targetable platform here: an unrecognised
+// platform resolves to the global value, so web keeps working without being
+// separately steerable.
+export const clientPlatformEnum = pgEnum('client_platform', ['ios', 'android', 'macos']);
+
+// Per-platform overrides layered on top of `feature_flags`. A row here wins for
+// that platform only; a platform with no row inherits the global value, which
+// in turn falls back to the coded default. Kept as a separate table rather than
+// columns on feature_flags so adding a platform is a migration on one enum
+// instead of a schema change per surface, and so a flag with no platform
+// targeting costs no extra storage.
+export const featureFlagPlatformOverrides = pgTable(
+  'feature_flag_platform_overrides',
+  {
+    key: text('key')
+      .notNull()
+      .references(() => featureFlags.key, { onDelete: 'cascade' }),
+    platform: clientPlatformEnum('platform').notNull(),
+    enabled: boolean('enabled').notNull(),
+    // Why this platform differs. Worth recording: a platform-specific override
+    // usually encodes a temporary reason (a broken build, a staged rollout)
+    // that is otherwise lost the moment whoever set it moves on.
+    reason: text('reason'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.key, table.platform] })],
+);
+
+export type FeatureFlagPlatformOverrideRow = InferSelectModel<typeof featureFlagPlatformOverrides>;
+export type NewFeatureFlagPlatformOverrideRow = InferInsertModel<
+  typeof featureFlagPlatformOverrides
+>;
 
 // Per-user RevenueCat entitlement state, kept in sync by the RevenueCat webhook
 // (packages/api's revenuecatWebhook route). This is the server's source of

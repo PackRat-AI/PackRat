@@ -9,8 +9,20 @@ import {
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 
 export const FEATURE_FLAGS_QUERY_KEY = ['featureFlags', 'config'] as const;
+
+/**
+ * The platform name the API targets flags at.
+ *
+ * Web is deliberately not a targetable platform, so it is sent as-is and the
+ * server resolves it globally — the same outcome as omitting it, without this
+ * having to know which platforms the server currently targets.
+ */
+function clientPlatform(): string {
+  return Platform.OS;
+}
 
 /**
  * Fetches the effective feature-flag map from the API. Cached for 5 minutes —
@@ -28,7 +40,9 @@ function useFeatureFlagsQuery() {
         level: 'info',
       });
       try {
-        const { data, error } = await apiClient['feature-flags'].get();
+        const { data, error } = await apiClient['feature-flags'].get({
+          query: { platform: clientPlatform() },
+        });
         if (error || !data) throw error ?? new Error('Failed to load feature-flags config');
         return data;
       } catch (error) {
