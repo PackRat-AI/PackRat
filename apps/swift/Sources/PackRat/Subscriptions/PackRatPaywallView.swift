@@ -129,14 +129,18 @@ struct PackRatPaywallView: View {
         .padding(.top, 56)
     }
 
-    /// An invitation, mirroring Expo's "Get early access to {feature} today".
+    /// An invitation to act now. Opened from a gated feature it names that
+    /// feature; opened from Settings there is no one feature to name, so it
+    /// speaks to the whole set.
     private var headline: String {
-        guard let featureKey else { return "Unlock PackRat Pro" }
+        guard let featureKey else { return "Unlock access to all our exclusive features" }
         return "Unlock \(store.label(featureKey)) today"
     }
 
     private var subheadline: String {
-        guard featureKey != nil else { return "Every new feature, the day it's ready." }
+        guard featureKey != nil else {
+            return "These features are currently in early access and only available to our Pro members."
+        }
         return "This feature is currently in early access and only available to our Pro members."
     }
 
