@@ -13,6 +13,12 @@ private struct PaywallPresenter: ViewModifier {
     let onEntitlementChanged: () -> Void
 
     @State private var offering: Offering?
+    // No onChange guard tying `offering == nil` back to `isPresented`. It looked
+    // like it kept the binding honest, but `load()` clears `isLoading` in a
+    // defer before assigning `offering`, so for one render offering was nil,
+    // isPresented true and isLoading false — and the guard closed the sheet it
+    // had just opened. Both dismiss paths and every failure path already reset
+    // the binding themselves, so it was redundant as well as harmful.
     @State private var isLoading = false
     @State private var failure: PaywallFailure?
 
@@ -53,11 +59,6 @@ private struct PaywallPresenter: ViewModifier {
                         onEntitlementChanged()
                     }
                 )
-            }
-            .onChange(of: offering) { _, current in
-                // The template's own close button clears the cover; keep the
-                // caller's binding in step so it can be reopened.
-                if current == nil, isPresented, !isLoading { isPresented = false }
             }
             .alert(item: $failure) { failure in
                 Alert(
