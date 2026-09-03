@@ -156,6 +156,13 @@ waiting against buying.
 simply not the paywall's argument. Copy on this screen is a conversion decision,
 not a description of the pricing model.
 
+The same mistake has now been made twice in different forms — first as a
+countdown badge, then as a value-prop line reading "each one opens up to all
+users later". Both were accurate and both told a reader they could have the
+thing by doing nothing. **Nothing on the paywall should state or imply that
+waiting is an option**, however it is phrased. The model is explained in this
+document and in the app's own settings; the paywall's job is narrower.
+
 ## ADR-006 — Guests see the paywall; buying requires an account
 
 **Decision.** A guest opening a gated feature gets the full paywall — the

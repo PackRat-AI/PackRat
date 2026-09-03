@@ -139,7 +139,10 @@ struct PackRatPaywallView: View {
 
     private var subheadline: String {
         guard featureKey != nil else {
-            return "These features are currently in early access and only available to our Pro members."
+            // Opened from Settings, where nothing on screen has explained what
+            // Pro is. Name the offer rather than referring to features the
+            // reader cannot see.
+            return "Pro members get every new PackRat feature as soon as it's built, while everyone else waits."
         }
         return "This feature is currently in early access and only available to our Pro members."
     }
@@ -148,7 +151,9 @@ struct PackRatPaywallView: View {
 
     private var valueProps: some View {
         VStack(spacing: 10) {
-            if !otherFeatures.isEmpty {
+            // Only on a feature paywall. From Settings the headline already
+            // speaks to the whole set, so listing it again says nothing new.
+            if featureKey != nil, !otherFeatures.isEmpty {
                 valueRow(
                     icon: "square.stack.3d.up.fill",
                     title: "Everything else in early access",
@@ -158,7 +163,7 @@ struct PackRatPaywallView: View {
             valueRow(
                 icon: "arrow.up.forward.circle.fill",
                 title: "Try new features weeks before everyone else",
-                detail: "Each one opens up to all users later. Pro gets it the day it's ready."
+                detail: "New tools land for Pro members the day they're ready."
             )
             valueRow(
                 icon: "heart.fill",
