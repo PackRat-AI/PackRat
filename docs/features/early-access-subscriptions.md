@@ -54,11 +54,12 @@ Presented full screen when anyone without access opens a gated feature, and from
 Settings via *Upgrade to Pro*. Guests see it too — the call to action routes
 them to sign-in rather than the screen refusing to open.
 
-It leads with an invitation to use the feature now, names the remaining window
-as a head start ("42 days ahead of everyone else"), lists the other features
-currently in early access, and offers the plans configured in RevenueCat with
-prices in the viewer's own currency. The longest recurring plan is preselected
-and marked best value.
+It leads with the app icon and an invitation — *Unlock {feature} today* — says
+the feature is in early access for Pro members, and lists what a subscription
+gets: the other features currently in early access, new features weeks before
+everyone else, that it supports a small team, and that it can be cancelled at
+any time. Plans come from RevenueCat with prices in the viewer's own currency,
+and the longest recurring plan is preselected and marked best value.
 
 Dismissing it returns the viewer where they came from. A gated feature has no
 content to show, so there is no locked screen to be left on.
@@ -138,18 +139,22 @@ feature gives away the thing being sold, silently, to everyone in that state.
 "can't verify your access" rather than either outcome. That state is rare and
 deliberately visible, since the alternative is guessing.
 
-## ADR-005 — The paywall sells the head start, not the schedule
+## ADR-005 — The paywall does not count down to free
 
-**Decision.** The paywall never says "free for everyone in N days". Where the
-window appears, it is framed as being ahead of others.
+**Decision.** The paywall states that the feature is in early access for Pro
+members. It does not show how many days remain, in either direction — neither
+"free for everyone in 42 days" nor "42 days ahead of everyone else".
 
-**Why.** An earlier version of the paywall led with the countdown to free. It is
-accurate and it is also a direct argument to close the screen and wait — the
-most prominent element was telling people not to buy.
+**Why.** An early version led with the countdown to free. It is accurate, and it
+is also a direct argument to close the screen and wait: the most prominent
+element on a screen asking for money was telling people not to spend it.
+Reframing the same number as a head start reads better but still puts a specific
+deadline in front of someone deciding whether to pay, and invites them to weigh
+waiting against buying.
 
-**Consequence.** The honesty is preserved (the window is still stated, and the
-graduation promise is real) while the emphasis is on acting now. Copy on this
-screen is a conversion decision, not a description of the model.
+**Consequence.** The graduation promise is still real and still documented; it is
+simply not the paywall's argument. Copy on this screen is a conversion decision,
+not a description of the pricing model.
 
 ## ADR-006 — Guests see the paywall; buying requires an account
 

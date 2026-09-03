@@ -95,23 +95,23 @@ struct PackRatPaywallView: View {
     // MARK: - Hero
 
     private var hero: some View {
-        VStack(spacing: 16) {
-            ZStack {
-                Circle().fill(accent.opacity(0.16)).frame(width: 94, height: 94)
-                Circle().stroke(accent.opacity(0.34), lineWidth: 1).frame(width: 94, height: 94)
-                Image(systemName: "sparkles")
-                    .font(.system(size: 36, weight: .semibold))
-                    .foregroundStyle(accent)
-                    .shadow(color: accent.opacity(0.5), radius: 16, y: 4)
-            }
-            .scaleEffect(hasAppeared ? 1 : 0.88)
+        VStack(spacing: 18) {
+            // The app's own icon rather than a generic symbol: this is PackRat
+            // asking, and the mark is what people already recognise. Rounded
+            // rect like an app icon, not a circle.
+            Image("AppLogo")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 84, height: 84)
+                .clipShape(RoundedRectangle(cornerRadius: 19, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 19, style: .continuous)
+                        .stroke(.white.opacity(0.12), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.35), radius: 18, y: 8)
+                .scaleEffect(hasAppeared ? 1 : 0.88)
 
             VStack(spacing: 10) {
-                Text("PACKRAT PRO")
-                    .font(.caption.weight(.bold))
-                    .tracking(1.7)
-                    .foregroundStyle(accent)
-
                 Text(headline)
                     .font(.system(size: 33, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
@@ -125,45 +125,19 @@ struct PackRatPaywallView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .opacity(hasAppeared ? 1 : 0)
-
-            if let scarcity {
-                HStack(spacing: 7) {
-                    Image(systemName: "bolt.fill").font(.caption2.weight(.bold))
-                    Text(scarcity)
-                        .font(.footnote.weight(.semibold))
-                }
-                .foregroundStyle(accent)
-                .padding(.horizontal, 15)
-                .padding(.vertical, 9)
-                .background(accent.opacity(0.13), in: Capsule())
-                .overlay(Capsule().stroke(accent.opacity(0.28), lineWidth: 1))
-            }
         }
         .padding(.top, 56)
     }
 
     /// An invitation, mirroring Expo's "Get early access to {feature} today".
     private var headline: String {
-        guard let featureKey else { return "Unlock everything, first" }
-        return "Get \(store.label(featureKey)) today"
+        guard let featureKey else { return "Unlock PackRat Pro" }
+        return "Unlock \(store.label(featureKey)) today"
     }
 
     private var subheadline: String {
-        if let featureKey, let description = store.description(featureKey) {
-            return description
-        }
-        if let featureKey {
-            return "\(store.label(featureKey)) is ready now for PackRat Pro members."
-        }
-        return "Every new feature, the day it's ready."
-    }
-
-    /// Framed as the window during which Pro members have it and others do not.
-    /// Never "free for everyone in N days" — that is a reason to close the
-    /// screen, and it was on the last version of this paywall.
-    private var scarcity: String? {
-        guard let featureKey, let days = store.daysUntilGraduation(featureKey) else { return nil }
-        return "\(days) \(days == 1 ? "day" : "days") ahead of everyone else"
+        guard featureKey != nil else { return "Every new feature, the day it's ready." }
+        return "This feature is currently in early access and only available to our Pro members."
     }
 
     // MARK: - Value props
@@ -179,13 +153,18 @@ struct PackRatPaywallView: View {
             }
             valueRow(
                 icon: "arrow.up.forward.circle.fill",
-                title: "Every new feature first",
-                detail: "New tools land for Pro members before anyone else."
+                title: "Try new features weeks before everyone else",
+                detail: "Each one opens up to all users later. Pro gets it the day it's ready."
             )
             valueRow(
                 icon: "heart.fill",
-                title: "You fund the work",
-                detail: "PackRat is built by a small team. Pro is what pays for it."
+                title: "You're supporting a small team",
+                detail: "PackRat is made by a handful of people who love the outdoors. Pro is what keeps us building it."
+            )
+            valueRow(
+                icon: "arrow.triangle.2.circlepath",
+                title: "Cancel anytime",
+                detail: "Manage it from your Apple account, like any other subscription."
             )
         }
     }
