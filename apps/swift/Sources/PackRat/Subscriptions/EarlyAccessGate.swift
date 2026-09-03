@@ -24,9 +24,9 @@ import SwiftUI
 /// Expo opens a RevenueCat sheet this shows an in-place explanation instead.
 /// That is the one deliberate difference; the decision logic is the same, and
 /// both sides run the identical resolver from `packages/config`.
-struct EarlyAccessGate<Content: View>: View {
+struct EarlyAccessGate<Gated: View>: View {
     let featureKey: String
-    @ViewBuilder let content: () -> Content
+    @ViewBuilder let content: () -> Gated
 
     @Environment(AppState.self) private var appState
 
@@ -42,7 +42,9 @@ struct EarlyAccessGate<Content: View>: View {
                 } else {
                     // Nothing behind the paywall. Blank, not a placeholder
                     // pretending to be a screen the viewer can use.
-                    Color(.systemBackground)
+                    // Platform-neutral: systemBackground is UIKit-only, and
+                    // this view builds for macOS too.
+                    Color.clear
                         .ignoresSafeArea()
                         // Guests see the paywall too. Value first, account at
                         // the point of intent — the CTA routes them to sign in

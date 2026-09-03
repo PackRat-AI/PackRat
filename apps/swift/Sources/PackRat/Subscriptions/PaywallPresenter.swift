@@ -44,7 +44,7 @@ private struct PaywallPresenter: ViewModifier {
             // Presentation follows the loaded offering alone. One source of
             // truth: dismissing clears it, and nothing else has to be kept in
             // step.
-            .fullScreenCover(item: $offering) { loaded in
+            .paywallPresentation(item: $offering) { loaded in
                 PackRatPaywallView(
                     offering: loaded,
                     featureKey: featureKey,
@@ -104,6 +104,25 @@ private struct PaywallFailure: Identifiable {
         title: "Couldn't Load Plans",
         message: "Check your connection and try again."
     )
+}
+
+private extension View {
+    /// Presents the paywall the way each platform expects.
+    ///
+    /// iOS takes over the screen; macOS has no fullScreenCover, and a Mac app
+    /// commandeering the whole display would be wrong even if it did. A sheet
+    /// is the native equivalent there.
+    @ViewBuilder
+    func paywallPresentation<Item: Identifiable, Presented: View>(
+        item: Binding<Item?>,
+        @ViewBuilder content: @escaping (Item) -> Presented
+    ) -> some View {
+        #if os(macOS)
+        sheet(item: item, content: content)
+        #else
+        fullScreenCover(item: item, content: content)
+        #endif
+    }
 }
 
 extension Offering: @retroactive Identifiable {
