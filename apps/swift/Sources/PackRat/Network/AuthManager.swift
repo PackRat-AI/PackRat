@@ -1,9 +1,9 @@
+import AuthenticationServices
 import Foundation
 import Observation
 import Sentry
 import SwiftData
 #if os(iOS)
-import AuthenticationServices
 import GoogleSignIn
 import UIKit
 #endif
@@ -145,7 +145,6 @@ final class AuthManager {
         SentryConfig.setUser(id: response.user.id, email: response.user.email)
     }
 
-    #if os(iOS)
     @MainActor
     func loginWithApple(credential: ASAuthorizationAppleIDCredential) async throws {
         guard let data = credential.identityToken,
@@ -164,6 +163,7 @@ final class AuthManager {
         )
     }
 
+    #if os(iOS)
     @MainActor
     func loginWithGoogle() async throws {
         guard let clientID = Bundle.main.object(forInfoDictionaryKey: "GOOGLE_IOS_CLIENT_ID") as? String,

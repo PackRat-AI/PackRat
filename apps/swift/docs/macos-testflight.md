@@ -50,11 +50,11 @@ xcodebuild -exportArchive -archivePath /tmp/PackRat-mac.xcarchive \
 # 3. Validate, then upload (--type osx; a macOS App Store export is a .pkg)
 set -a && . apps/swift/.env.local && set +a
 xcrun altool --validate-app --type osx \
-  --file /tmp/PackRat-mac-export/PackRat-macOS.pkg \
+  --file /tmp/PackRat-mac-export/PackRat.pkg \
   --username "$APPLE_ID" --password "$APPLE_APP_PASSWORD" \
   --asc-provider "$APPLE_TEAM_ID"
 xcrun altool --upload-app --type osx \
-  --file /tmp/PackRat-mac-export/PackRat-macOS.pkg \
+  --file /tmp/PackRat-mac-export/PackRat.pkg \
   --username "$APPLE_ID" --password "$APPLE_APP_PASSWORD" \
   --asc-provider "$APPLE_TEAM_ID"
 ```
@@ -186,7 +186,7 @@ CI still build unsigned by passing `CODE_SIGNING_REQUIRED=NO` on the
 To check a built app before spending an upload:
 
 ```bash
-APP=/tmp/PackRat-mac.xcarchive/Products/Applications/PackRat-macOS.app
+APP=/tmp/PackRat-mac.xcarchive/Products/Applications/PackRat.app
 ls "$APP/Contents/Resources/" | grep -E 'icns|Assets.car'   # want both
 plutil -p "$APP/Contents/Info.plist" | grep -iE 'icon|Category|Encryption'
 ```
