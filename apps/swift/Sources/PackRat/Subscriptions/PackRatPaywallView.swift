@@ -163,7 +163,7 @@ struct PackRatPaywallView: View {
             valueRow(
                 icon: "arrow.up.forward.circle.fill",
                 title: "Try new features weeks before everyone else",
-                detail: "New tools land for Pro members the day they're ready."
+                detail: "Pro members get early access to every new tool we ship."
             )
             valueRow(
                 icon: "heart.fill",
