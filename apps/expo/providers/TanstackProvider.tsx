@@ -3,6 +3,7 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { FEATURE_ACCESS_QUERY_KEY } from 'expo-app/features/purchases/hooks/useFeatureAccess';
+import { useRefreshFeatureStatesOnForeground } from 'expo-app/hooks/useRefreshFeatureStatesOnForeground';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
 import type React from 'react';
 
@@ -67,6 +68,15 @@ const persister = createAsyncStoragePersister({
   key: 'packrat.reactQueryCache.v1',
 });
 
+/**
+ * Hosts hooks that need the query client. Rendered inside the provider rather
+ * than beside it, since `useQueryClient` only resolves below it.
+ */
+function QueryClientEffects() {
+  useRefreshFeatureStatesOnForeground();
+  return null;
+}
+
 export function TanstackProvider({ children }: { children: React.ReactNode }) {
   return (
     <PersistQueryClientProvider
@@ -85,6 +95,7 @@ export function TanstackProvider({ children }: { children: React.ReactNode }) {
         },
       }}
     >
+      <QueryClientEffects />
       {children}
     </PersistQueryClientProvider>
   );
