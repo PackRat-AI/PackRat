@@ -33,6 +33,10 @@ struct PackRatApp: App {
             AuthGateView()
                 .environment(authManager)
                 .flushesPendingWrites()
+                // Only on the main window. The auxiliary Pack/Trip windows on
+                // macOS read the same shared stores, so attaching there too
+                // would refetch once per open window on every resume.
+                .refreshesFeatureStatesOnForeground()
                 .providesWeightUnitPreference()
         }
         .modelContainer(PersistenceController.shared.container)
