@@ -14,6 +14,7 @@ import type {
   BrandRow,
   BreakdownItem,
   CatalogOverview,
+  ClientPlatform,
   EmbeddingStats,
   EtlFailureSummary,
   EtlJob,
@@ -230,7 +231,7 @@ export async function updateCatalogItem({
 
 // ─── Feature Flags ────────────────────────────────────────────────────────────
 
-export type { AdminFeatureFlagItem };
+export type { AdminFeatureFlagItem, ClientPlatform };
 
 export async function getFeatureFlags(): Promise<AdminFeatureFlagItem[]> {
   const { data, error } = await adminClient['feature-flags'].get();
@@ -253,6 +254,28 @@ export async function upsertFeatureFlag({
   });
   if (error) throwOnError({ error });
   return unwrap({ data, name: 'upsertFeatureFlag' });
+}
+
+/**
+ * Sets a per-platform override, or clears it so the platform inherits the
+ * flag's global value again.
+ *
+ * @param enabled `null` clears the override.
+ */
+export async function setFeatureFlagPlatformOverride({
+  key,
+  platform,
+  enabled,
+}: {
+  key: string;
+  platform: ClientPlatform;
+  enabled: boolean | null;
+}): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient['feature-flags']({ key }).platforms({ platform }).put({
+    enabled,
+  });
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'setFeatureFlagPlatformOverride' });
 }
 
 export async function resetFeatureFlag(key: string): Promise<{ success: boolean }> {

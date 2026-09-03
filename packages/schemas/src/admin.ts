@@ -1,4 +1,4 @@
-import { FeatureFlag } from '@packrat/config';
+import { type ClientPlatformValue, FeatureFlag } from '@packrat/config';
 import { z } from 'zod';
 
 // All flag keys known to the codebase, as a non-empty tuple for z.enum.
@@ -116,8 +116,21 @@ export type AdminCatalogItem = z.infer<typeof AdminCatalogItemSchema>;
 // (packages/config). Rows only exist for keys an admin has overridden — a
 // missing row means the key is still using its coded default.
 
-/** Platforms a flag can be targeted at. Mirrors `client_platform` in the DB. */
-export const CLIENT_PLATFORMS = ['ios', 'android', 'macos'] as const;
+/**
+ * Platforms a flag can be targeted at.
+ *
+ * z.enum needs a literal tuple, which `ClientPlatform` (an object) can't
+ * provide — so the values are restated here and pinned to the config type.
+ * Adding a platform there without adding it here is a compile error, which is
+ * the point: this list cannot silently fall behind.
+ */
+export const CLIENT_PLATFORMS = [
+  'ios',
+  'android',
+  'macos',
+] as const satisfies readonly ClientPlatformValue[];
+
+export type ClientPlatform = (typeof CLIENT_PLATFORMS)[number];
 
 export const PlatformOverrideItemSchema = z.object({
   enabled: z.boolean(),
