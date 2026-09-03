@@ -12,6 +12,12 @@ import UIKit
 final class AuthManager {
     var currentUser: User?
     var isGuest = false
+
+    /// Set when a guest leaves guest mode to do something that needs an
+    /// account, so the auth flow can open on sign-in rather than the welcome
+    /// screen. Someone who tapped "Sign In to Subscribe" has already made that
+    /// choice; showing them the welcome screen again asks it twice.
+    var wantsSignInDirectly = false
     var isRestoringSession = false
     var isAuthenticated: Bool { currentUser != nil }
     var canUseApp: Bool { isAuthenticated || isGuest }
@@ -291,6 +297,15 @@ final class AuthManager {
             await MainActor.run { currentUser = user }
             persistUser(user)
         }
+    }
+
+    /// Leaves guest mode straight into the sign-in screen.
+    ///
+    /// For flows where the person has already said they want an account —
+    /// subscribing, for instance — so the welcome screen does not re-ask.
+    func signOutForSignIn() {
+        wantsSignInDirectly = true
+        signOut()
     }
 
     func signOut() {

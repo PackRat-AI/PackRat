@@ -331,10 +331,10 @@ struct PackRatPaywallView: View {
                 if authManager.isAuthenticated {
                     Task { await purchase() }
                 } else {
-                    // Value first, account at the point of intent. Leaving guest
-                    // mode drops the viewer on the auth gate; the feature they
-                    // came for is waiting once they are back.
-                    authManager.signOut()
+                    // Value first, account at the point of intent. Goes
+                    // straight to sign-in rather than the welcome screen —
+                    // tapping this button was already the decision.
+                    authManager.signOutForSignIn()
                 }
             } label: {
                 ZStack {

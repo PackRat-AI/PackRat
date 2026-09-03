@@ -18,6 +18,15 @@ struct AuthGateView: View {
                 AppNavigation()
             } else {
                 authContent
+                    .onAppear {
+                        // Someone who left guest mode specifically to sign in
+                        // has already chosen; open there rather than making
+                        // them pick again on the welcome screen.
+                        if authManager.wantsSignInDirectly {
+                            route = .login
+                            authManager.wantsSignInDirectly = false
+                        }
+                    }
             }
         }
         .animation(.spring(duration: 0.3), value: authManager.isRestoringSession)
