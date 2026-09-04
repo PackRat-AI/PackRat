@@ -2,17 +2,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
   const findMany = vi.fn();
+  const platformFindMany = vi.fn();
   const insertReturning = vi.fn();
   const deleteReturning = vi.fn();
   return {
     findMany,
+    platformFindMany,
     insertReturning,
     deleteReturning,
     captureApiException: vi.fn(),
     createDb: vi.fn(() => {
       const db = {
         tag: (_label: string) => db,
-        query: { featureFlags: { findMany } },
+        query: {
+          featureFlags: { findMany },
+          featureFlagPlatformOverrides: { findMany: platformFindMany },
+        },
         insert: (_table: unknown) => ({
           values: (_values: unknown) => ({
             onConflictDoUpdate: (_opts: unknown) => ({
@@ -33,8 +38,12 @@ const mocks = vi.hoisted(() => {
 
 vi.mock('@packrat/api/db', () => ({ createDb: mocks.createDb }));
 vi.mock('@packrat/api/utils/sentry', () => ({ captureApiException: mocks.captureApiException }));
-vi.mock('@packrat/db', () => ({ featureFlags: { key: 'key' } }));
+vi.mock('@packrat/db', () => ({
+  featureFlags: { key: 'key' },
+  featureFlagPlatformOverrides: { key: 'key', platform: 'platform' },
+}));
 vi.mock('drizzle-orm', () => ({
+  and: vi.fn((...conds) => ({ conds })),
   eq: vi.fn((col, val) => ({ col, val })),
   relations: vi.fn(() => ({})),
 }));
@@ -50,6 +59,8 @@ import {
 describe('featureFlagsService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Most cases have no platform overrides; the ones that do set their own.
+    mocks.platformFindMany.mockResolvedValue([]);
   });
 
   describe('listEffectiveFeatureFlags()', () => {
@@ -100,6 +111,7 @@ describe('featureFlagsService', () => {
         effective: APP_CONFIG.featureFlags[FeatureFlag.EnableFeed],
         description: null,
         updatedAt: null,
+        platformOverrides: {},
       });
     });
 
@@ -123,7 +135,34 @@ describe('featureFlagsService', () => {
         effective: false,
         description: 'killed for launch',
         updatedAt,
+        platformOverrides: {},
       });
+    });
+
+    it('attaches platform overrides to the flag they belong to', async () => {
+      const updatedAt = new Date('2026-03-01T00:00:00.000Z');
+      mocks.findMany.mockResolvedValue([]);
+      mocks.platformFindMany.mockResolvedValue([
+        {
+          key: FeatureFlag.EnableTrips,
+          platform: 'macos',
+          enabled: false,
+          reason: 'desktop layout unfinished',
+          updatedAt,
+        },
+      ]);
+
+      const items = await listFeatureFlagsForAdmin();
+
+      expect(items.find((item) => item.key === FeatureFlag.EnableTrips)?.platformOverrides).toEqual(
+        {
+          macos: { enabled: false, reason: 'desktop layout unfinished', updatedAt },
+        },
+      );
+      // A row for one flag must not leak onto its neighbours.
+      expect(items.find((item) => item.key === FeatureFlag.EnableFeed)?.platformOverrides).toEqual(
+        {},
+      );
     });
 
     it('captures and rethrows on a DB error', async () => {
@@ -157,6 +196,9 @@ describe('featureFlagsService', () => {
         effective: true,
         description: 'launch push',
         updatedAt,
+        // A global write does not touch platform rows; the caller refetches
+        // the list to see them.
+        platformOverrides: {},
       });
     });
 
