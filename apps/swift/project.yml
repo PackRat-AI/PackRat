@@ -210,12 +210,20 @@ targets:
     entitlements:
       path: Resources/PackRat-macOS.entitlements
       properties:
+        # Guideline 4.8 — the Mac build offers a third-party login option, so
+        # Sign in with Apple must be available here too, not just on iOS.
+        com.apple.developer.applesignin:
+          - Default
         com.apple.security.app-sandbox: YES
         com.apple.security.network.client: YES
     info:
       path: Resources/Info-macOS.plist
       properties:
         CFBundleDisplayName: $(PACKRAT_DISPLAY_NAME)
+        # Literal, not $(PRODUCT_NAME): the target is named PackRat-macOS, and
+        # the substituted value put "macOS" into the name Finder and the menu
+        # bar show — rejected under guideline 5.2.5.
+        CFBundleName: PackRat
         CFBundleIconName: AppIcon
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
@@ -266,6 +274,10 @@ targets:
         # TestFlight's macOS tab of the same app as the iPhone one.
         PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat
         PACKRAT_DISPLAY_NAME: PackRat
+        # Guideline 5.2.5 — PRODUCT_NAME defaults to the target name, which made
+        # CFBundleName (and the Finder/menu-bar app name) read "PackRat-macOS".
+        # Apple flagged the "macOS" term as confusingly similar to their product.
+        PRODUCT_NAME: PackRat
         # Match iOS target so @testable import PackRat resolves on both platforms.
         PRODUCT_MODULE_NAME: PackRat
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -338,6 +350,10 @@ targets:
       base:
         SWIFT_VERSION: "5.9"
         GENERATE_INFOPLIST_FILE: YES
+        # PRODUCT_NAME on PackRat-macOS is "PackRat" (guideline 5.2.5), but
+        # xcodegen derives TEST_HOST from the *target* name. Point it at the
+        # real product or the test host is not found.
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/PackRat.app/Contents/MacOS/PackRat"
 
   PackRatMacOSUITests:
     type: bundle.ui-testing

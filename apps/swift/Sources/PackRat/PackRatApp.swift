@@ -6,6 +6,10 @@ import AppKit
 
 @main
 struct PackRatApp: App {
+    /// Scene id of the primary `WindowGroup`, so the macOS menu commands can
+    /// reopen it via `openWindow(id:)` after the last window is closed.
+    static let mainWindowSceneID = "main"
+
     @State private var authManager = AuthManager()
     #if os(macOS)
     @NSApplicationDelegateAdaptor(PackRatMacAppDelegate.self) private var appDelegate
@@ -25,7 +29,9 @@ struct PackRatApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        // Identified so `openWindow(id:)` from the File/Window menu commands can
+        // reopen it after the user closes the last main window (guideline 4).
+        WindowGroup(id: PackRatApp.mainWindowSceneID) {
             AuthGateView()
                 .environment(authManager)
                 .flushesPendingWrites()
@@ -86,16 +92,26 @@ final class PackRatMacAppDelegate: NSObject, NSApplicationDelegate {
             NSApp.unhide(nil)
             NSApp.activate(ignoringOtherApps: true)
             if NSApp.windows.isEmpty {
-                NSApp.sendAction(Selector(("newWindow:")), to: nil, from: nil)
+                Self.openMainWindow()
             }
         }
     }
 
+    /// Clicking the Dock icon with no windows open has to bring the main window
+    /// back — the other half of guideline 4's "no way to reopen it" finding.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag {
-            NSApp.sendAction(Selector(("newWindow:")), to: nil, from: nil)
+            Self.openMainWindow()
         }
         return true
+    }
+
+    /// SwiftUI installs a responder for `newWindow:` for each `WindowGroup`, so
+    /// sending it up the chain reopens the main scene. Falls back to un-minimising
+    /// / re-showing an existing window if one is somehow still around.
+    static func openMainWindow() {
+        if NSApp.sendAction(Selector(("newWindow:")), to: nil, from: nil) { return }
+        NSApp.windows.first?.makeKeyAndOrderFront(nil)
     }
 }
 #endif

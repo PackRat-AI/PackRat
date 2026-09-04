@@ -1,7 +1,5 @@
 import SwiftUI
-#if os(iOS)
 import AuthenticationServices
-#endif
 
 struct LoginView: View {
     @Environment(AuthManager.self) private var authManager
@@ -100,7 +98,11 @@ struct LoginView: View {
                         .controlSize(.large)
                         .disabled(isLoading)
                         .accessibilityIdentifier("auth_google")
+                        #endif
 
+                        // Guideline 4.8 requires Sign in with Apple to sit alongside
+                        // any third-party login on every platform we ship, macOS
+                        // included — it is not iOS-only.
                         SignInWithAppleButton(.continue) { request in
                             request.requestedScopes = [.fullName, .email]
                         } onCompletion: { result in
@@ -111,17 +113,6 @@ struct LoginView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .disabled(isLoading)
                         .accessibilityIdentifier("auth_apple")
-                        #else
-                        Button {
-                            error = "Google sign-in is available in the iOS app. Use email sign-in on macOS for now."
-                        } label: {
-                            Label("Continue with Google", systemImage: "g.circle")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
-                        .accessibilityIdentifier("auth_google")
-                        #endif
                     }
                 }
             }
@@ -156,6 +147,7 @@ struct LoginView: View {
             }
         }
     }
+    #endif
 
     private func signInWithApple(_ result: Result<ASAuthorization, Error>) {
         error = nil
@@ -178,7 +170,6 @@ struct LoginView: View {
             self.error = error.localizedDescription
         }
     }
-    #endif
 }
 
 private struct LoginInlineErrorView: View {
