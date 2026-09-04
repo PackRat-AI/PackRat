@@ -59,12 +59,21 @@ Presented full screen when anyone without access opens a gated feature, and from
 Settings via *Upgrade to Pro*. Guests see it too — the call to action routes
 them to sign-in rather than the screen refusing to open.
 
-It leads with the app icon and an invitation — *Unlock {feature} today* — says
-the feature is in early access for Pro members, and lists what a subscription
-gets: the other features currently in early access, new features weeks before
-everyone else, that it supports a small team, and that it can be cancelled at
-any time. Plans come from RevenueCat with prices in the viewer's own currency,
-and the longest recurring plan is preselected and marked best value.
+It leads with the app icon and an invitation. Opened from a gated feature that
+is *Unlock {feature} today*; opened from Settings, where no one feature prompted
+it, *Unlock access to all our exclusive features*.
+
+It then lists what a subscription gets: new features weeks before everyone else,
+that it supports a small team, and that it can be cancelled at any time. When
+the paywall was opened from a specific feature and others are also in early
+access, those are named first — the viewer is being shown the rest of what they
+would get, which a general appeal cannot convey.
+
+Plans come from RevenueCat with prices in the viewer's own currency, and the
+longest recurring plan is preselected and marked best value. PackRat Pro is sold
+in every App Store territory, each at the local equivalent of the base price
+rather than a converted figure — so the amount shown is one that reads naturally
+in that market.
 
 Dismissing it returns the viewer where they came from. A gated feature has no
 content to show, so there is no locked screen to be left on.
@@ -75,6 +84,14 @@ content to show, so there is no locked screen to be left on.
 reinstall, and is available to signed-in users in Settings. *Manage
 Subscription* leaves the app for the platform's own subscription screen, which
 is the only place a subscription can actually be cancelled.
+
+## Staying current
+
+Access is re-checked when the app is opened and again whenever it returns to the
+foreground. Someone who subscribes on their phone and picks up their Mac, or
+whose early-access window ends while the app sits in the background, sees the
+change on their next glance rather than after a restart — an app can sit
+backgrounded for days, so waiting for a relaunch would mean waiting indefinitely.
 
 ## Offline
 
@@ -252,3 +269,26 @@ An unrecognised platform resolves to the global value rather than to off. Failin
 closed would dark-launch every feature for any client the server did not
 recognise — an old build, a surface added later — which is far worse than a flag
 being slightly too widely on.
+
+## ADR-009 — Sold everywhere, priced locally
+
+**Decision.** PackRat Pro is available in all 175 App Store territories, and
+each one carries its own price rather than a single figure converted at the
+till.
+
+**Why.** The app is downloadable worldwide, so restricting the subscription to
+one market would have produced the worst possible outcome: someone installs
+PackRat, opens a feature in early access, taps subscribe, and reaches a paywall
+with nothing to buy. The gate still holds them out, and there is no way through
+it. A feature they cannot use and cannot pay for reads as broken software, not
+as a product that is not sold to them.
+
+Local pricing matters for the same reason a converted price does not. £9.99 and
+¥1,500 are prices; "$9.99, whatever that is where you live" is an obstacle.
+Apple's own equivalents already account for local tax and rounding, so the
+amount shown is one that reads naturally in that market.
+
+**Consequence.** Revenue arrives in many currencies and moves with exchange
+rates. Prices do not drift on their own — a subscription's price stays where it
+was set until it is deliberately changed, so a future repricing is a decision
+someone makes, not something that happens quietly.
