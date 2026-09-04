@@ -21,6 +21,7 @@ import SwiftUI
 /// case that is both actionable and data-losing: the change exists on this device
 /// and will never reach the server unless the user retries or discards it.
 struct SyncStatusSection: View {
+    @Environment(AuthManager.self) private var authManager
     @Environment(\.modelContext) private var modelContext
     @State private var showingDiscardConfirmation = false
 
@@ -35,6 +36,91 @@ struct SyncStatusSection: View {
         let failed = outbox.failedCount
         let isFlushing = outbox.isFlushing
 
+        if authManager.isAuthenticated {
+            accountSection(
+                isConnected: isConnected, pending: pending, failed: failed, isFlushing: isFlushing
+            )
+        } else {
+            guestSection(pending: pending)
+        }
+    }
+
+    // MARK: - Guest
+
+    /// A guest has no account, so "Last Synced" and "Sync Now" describe a
+    /// destination that does not exist — but their work *is* queued on the
+    /// outbox (`ExpoLocalDataMigration` enqueues guest content deliberately, so
+    /// signing in uploads it). Hiding the section outright would therefore
+    /// conceal the true state of their data: on-device only, not backed up.
+    ///
+    /// So this is neither hidden nor a dead disabled control, but an explanatory
+    /// state with the one action that changes the situation. The distinction the
+    /// guidance draws is whether the user could *ever* interact with the control:
+    /// permanently unavailable → hide, temporarily → disable. Guest is neither.
+    /// It is a state the user can leave, which is what makes sign-in the right
+    /// affordance rather than a disabled "Sync Now".
+    ///
+    /// Copy states the benefit rather than nagging, and is explicit about the
+    /// risk without being alarming — the honest fact is that deleting the app
+    /// loses the data, and a user deciding whether to make an account needs it.
+    ///
+    /// No Discard action here, and none is reachable: `flush` requires a session
+    /// token, so a guest's queue never drains and no mutation can reach `failed`.
+    /// A guest's `failedCount` is structurally zero. That matters because for a
+    /// guest, discarding would destroy the *only* copy of their work rather than
+    /// abandoning a write the server already refused.
+    @ViewBuilder
+    private func guestSection(pending: Int) -> some View {
+        Section {
+            Label {
+                Text("Saved on this device only")
+            } icon: {
+                Image(systemName: "iphone").foregroundStyle(.secondary)
+            }
+            .accessibilityIdentifier("sync_status_row")
+
+            if pending > 0 {
+                LabeledContent("Ready to Upload") {
+                    Text(pending == 1 ? "1 change" : "\(pending) changes")
+                        .foregroundStyle(.secondary)
+                }
+                .accessibilityIdentifier("sync_guest_pending")
+            }
+
+            // `signOut` returns a guest to the auth gate, which is how the rest
+            // of the app offers sign-in to guests (see `GuestLimitedView`).
+            Button("Sign In to Sync") {
+                authManager.signOut()
+            }
+            .accessibilityIdentifier("sync_guest_sign_in_button")
+        } header: {
+            Text("Sync")
+        } footer: {
+            Text(guestFooter(pending: pending))
+        }
+    }
+
+    private func guestFooter(pending: Int) -> String {
+        let base = """
+        Your packs and trips are stored on this device and are not backed up. \
+        If you delete PackRat, they're gone.
+        """
+        guard pending > 0 else {
+            return "\(base) Sign in to sync them to an account and reach them from other devices."
+        }
+        let subject = pending == 1 ? "change is" : "changes are"
+        return """
+        \(base) Sign in to sync them to an account and reach them from other \
+        devices — the \(subject) uploaded automatically when you do.
+        """
+    }
+
+    // MARK: - Signed in
+
+    @ViewBuilder
+    private func accountSection(
+        isConnected: Bool, pending: Int, failed: Int, isFlushing: Bool
+    ) -> some View {
         Section {
             statusRow(isConnected: isConnected, pending: pending, failed: failed, isFlushing: isFlushing)
 
