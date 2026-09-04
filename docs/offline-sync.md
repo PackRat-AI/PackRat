@@ -315,7 +315,32 @@ vague ones that *"seldom add value."* The section footer carries the
 reassurance the one-line status cannot: *"Changes you make offline are saved
 on this device and sent to your account automatically when you reconnect."*
 
-### 5.3 Elsewhere in the app
+### 5.3 Guest mode
+
+A guest has no account, so most of §5.2 does not apply — but their work *is*
+queued (`ExpoLocalDataMigration` enqueues guest content deliberately so that
+signing in uploads it). The section therefore neither hides nor shows dead
+controls; it states the situation and offers the one action that changes it:
+
+| Row | Content |
+|---|---|
+| Status | "Saved on this device only" |
+| Ready to Upload | pending count, only when non-zero |
+| Action | "Sign In to Sync" → `authManager.signOut()`, i.e. the auth gate |
+
+Footer: *"Your packs and trips are stored on this device and are not backed
+up. If you delete PackRat, they're gone. Sign in to sync them to an account
+and reach them from other devices…"*
+
+No **Last Synced** (nothing has ever synced), no **Sync Now** (no
+destination), and no **Discard** — the last is not merely hidden but
+unreachable: `flush` requires a session token, so a guest's queue never
+drains and no mutation can reach `failed`. A guest's `failedCount` is
+structurally zero. That is deliberate: for a guest, discarding would destroy
+the *only* copy of their work rather than abandoning a write the server had
+already refused.
+
+### 5.4 Elsewhere in the app
 
 Read-only server-backed screens (catalog, weather, guides, assistant) handle
 their own empty/cached states. They do not consult the outbox.
@@ -395,11 +420,15 @@ added this document.
    but never compared, so last-write-wins-by-timestamp is one server-side
    `WHERE` clause away — but today it is arrival order, not timestamp order,
    that decides.
-2. **A signed-out queue drains nowhere and says nothing.** `flush` requires a
-   session token. Writes made before signing out sit indefinitely, and the
-   Settings status row shows them as "waiting to sync" with no hint that
-   signing in is the unblock. The retry policy is careful not to *fail* these
-   writes (401 is attempt-free), so the queue is safe — just opaque.
+2. **A signed-*out* queue drains nowhere and says nothing.** `flush` requires
+   a session token. The **guest** case is handled (§5.3 names the state and
+   offers sign-in), but a user who signed in, queued writes, then signed *out*
+   falls through to the guest branch and is told their work is "saved on this
+   device only" — true, but it loses the fact that these writes were bound for
+   an account they already have. The retry policy is careful not to *fail*
+   them (401 is attempt-free), so the queue is safe, just described
+   imprecisely. Distinguishing "never had an account" from "signed out with
+   work pending" needs state neither `AuthManager` nor the outbox tracks today.
 3. **`lastSyncedAt` is narrower than its label suggests.** It records when a
    *queued write last drained*, not when the app last talked to the server. A
    user who has only ever written while online has never queued anything, so
