@@ -13,7 +13,7 @@ import Testing
 // build the cache is necessarily empty — nothing has synced yet, and the import
 // deliberately runs *before* the first server fetch — so every pack the server already
 // owns is re-queued as if it were unsynced guest content. That is the "210 changes
-// waiting to sync" banner observed during the carryover QA run.
+// waiting to sync" figure observed during the carryover QA run.
 
 @Suite("ExpoLocalDataMigration outbox enqueue")
 @MainActor

@@ -232,7 +232,7 @@ struct PacksListView: View {
         packPendingDeletion = nil
         Task {
             // Deleting never fails at the call site — an unreachable server queues the
-            // delete for replay. Failures surface via the pending-writes banner.
+            // delete for replay. Failures surface in Settings → Sync.
             await viewModel.deletePack(pack.id, context: modelContext)
             if selectedId == pack.id { selectedId = nil }
         }

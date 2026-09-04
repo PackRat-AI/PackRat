@@ -99,7 +99,7 @@ enum ExpoLocalDataMigration {
         // A signed-in user's Expo data was already synced to the server by Legend-State
         // (every store is a `syncedCrud`), so it will arrive on the first fetch. Queuing
         // it would replay a create for an id the server already holds — a duplicate
-        // write per record, and the "N changes waiting to sync" banner sitting over an
+        // write per record, and Settings reporting a pile of pending changes for an
         // import that needed no uploading at all.
         let isSignedIn = KeychainService.shared.sessionToken != nil
 
