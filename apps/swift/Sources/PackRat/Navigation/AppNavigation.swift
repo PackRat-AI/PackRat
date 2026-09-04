@@ -118,20 +118,13 @@ struct AppNavigation: View {
             }
     }
 
-    /// The banner lives here rather than in each layout so it can't drift out of
-    /// one of them — it was previously only mounted in `splitLayout`, which left
-    /// every iPhone (compact width) with no offline indicator at all.
+    /// Connectivity and sync state are reported in Settings rather than in the
+    /// navigation chrome. A persistent banner sat on top of the toolbar (#2723),
+    /// and offline is informational rather than actionable while writes are
+    /// durably queued — Apple's guidance is to show cached data with a
+    /// non-intrusive indicator instead of interrupting.
     @ViewBuilder
     private var navigationBody: some View {
-        layoutBody
-            .safeAreaInset(edge: .top, spacing: 0) {
-                OfflineBanner()
-            }
-            .animation(.easeInOut(duration: 0.3), value: NetworkMonitor.shared.isConnected)
-    }
-
-    @ViewBuilder
-    private var layoutBody: some View {
         #if os(iOS)
         if horizontalSizeClass == .compact {
             phoneLayout
