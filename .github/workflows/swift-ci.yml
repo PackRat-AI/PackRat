@@ -95,12 +95,20 @@ jobs:
               "PACKRAT_ENV=local"
             )
           else
+            # CODE_SIGN_ENTITLEMENTS is cleared because the macOS target
+            # declares com.apple.developer.applesignin (App Store guideline
+            # 4.8). That entitlement can only be granted by a provisioning
+            # profile, so an ad-hoc signature carrying it produces a binary
+            # launchd refuses to spawn ("Runningboard error 5"). iOS is
+            # unaffected — the Simulator does not enforce entitlements. The
+            # shipping archive signs with the real profile and keeps it.
             CODE_SIGN_ARGS=(
               CODE_SIGN_STYLE=Manual
               DEVELOPMENT_TEAM=
               CODE_SIGN_IDENTITY=-
               CODE_SIGNING_ALLOWED=YES
               CODE_SIGNING_REQUIRED=NO
+              CODE_SIGN_ENTITLEMENTS=
             )
           fi
           DESTINATION="${{ matrix.destination }}"

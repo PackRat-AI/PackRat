@@ -131,9 +131,15 @@ final class AuthTests: AppUITestCase {
         XCTAssertTrue(app.secureTextFields["login_password"].exists)
         XCTAssertTrue(app.buttons["login_submit"].exists)
         XCTAssertTrue(app.buttons["forgot_password_link"].exists)
-        XCTAssertTrue(app.buttons["auth_google"].exists)
-        #if os(iOS)
+        // Sign in with Apple ships on both platforms — App Store guideline 4.8
+        // requires it wherever a third-party login is offered.
         XCTAssertTrue(app.buttons["auth_apple"].exists)
+        // Google is iOS-only: its SDK needs UIKit, so macOS offers email plus
+        // Sign in with Apple instead.
+        #if os(iOS)
+        XCTAssertTrue(app.buttons["auth_google"].exists)
+        #else
+        XCTAssertFalse(app.buttons["auth_google"].exists)
         #endif
     }
 
