@@ -26,6 +26,11 @@ struct PackDetailView: View {
     @State private var triggerShare = false
     @State private var itemPendingDeletion: PackItem?
     @State private var showingDeleteConfirmation = false
+    /// Separate from `showingDeleteConfirmation`, which is the *item* alert — the two
+    /// can never be presented together, but sharing one flag would make the alert
+    /// builder ambiguous about what is being deleted.
+    @State private var showingDeletePackConfirmation = false
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.weightUnit) private var weightUnit
     @State private var statusMessage: String?
@@ -251,6 +256,11 @@ struct PackDetailView: View {
                         }
                         .accessibilityIdentifier("pack_detail_edit_pack")
                         .keyboardShortcut("e", modifiers: .command)
+
+                        Button("Delete Pack", systemImage: "trash", role: .destructive) {
+                            showingDeletePackConfirmation = true
+                        }
+                        .accessibilityIdentifier("pack_detail_delete_pack")
                     } label: {
                         Label("More", systemImage: "ellipsis.circle")
                             .labelStyle(.iconOnly)
@@ -278,6 +288,12 @@ struct PackDetailView: View {
         // See PacksListView: alert actions must be bare `Button`s — a modifier
         // on one wraps it in `ModifiedContent` and the alert degrades into a
         // clipped popover with buttons dropped.
+        .alert(deletePackAlertTitle, isPresented: $showingDeletePackConfirmation) {
+            Button("Delete", role: .destructive) { deletePack() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(deletePackAlertMessage)
+        }
         .alert(deleteItemAlertTitle, isPresented: $showingDeleteConfirmation) {
             Button("Delete", role: .destructive) {
                 if let item = itemPendingDeletion { deleteItem(item) }
@@ -481,6 +497,27 @@ struct PackDetailView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(.bar)
+    }
+
+    private var deletePackAlertTitle: String {
+        "Delete \(currentPack.name)?"
+    }
+
+    /// Same wording as the Packs list, so deleting from either place reads the same.
+    private var deletePackAlertMessage: String {
+        let count = items.count
+        return "\"\(currentPack.name)\" and its \(count) item\(count == 1 ? "" : "s") will be deleted. This cannot be undone."
+    }
+
+    /// Deletes the pack and leaves the screen — staying would render a pack that no
+    /// longer exists. Like the list's delete, an unreachable server queues the delete
+    /// for replay rather than failing at the call site.
+    private func deletePack() {
+        let packId = currentPack.id
+        Task {
+            await viewModel.deletePack(packId, context: modelContext)
+            dismiss()
+        }
     }
 
     private var deleteItemAlertTitle: String {
