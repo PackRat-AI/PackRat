@@ -23,6 +23,27 @@ final class AppPreferences: ObservableObject {
 
 // MARK: - Settings / Preferences window (Cmd+,)
 
+/// Section order follows Apple's one explicit ordering rule for settings: the
+/// controls people are most likely to use sit at the top, with more advanced
+/// functionality last or hidden by default.
+///
+/// On iOS that yields, top to bottom:
+///
+/// 1. **Sync** — the only section that reports live state rather than setting a
+///    preference, and the reason a user opens Settings when something looks
+///    wrong. It also stays quiet when everything is synced.
+/// 2. **Units** — the most frequently changed real preference, and the one that
+///    changes numbers on every pack screen. Weight, temperature, and wind now sit
+///    together instead of temperature living alone in a "General" section: they
+///    are all measurement display, and Apple's guidance is to group related
+///    settings rather than scatter them.
+/// 3. **Notifications** — set once, rarely revisited.
+/// 4. **Advanced** — the destructive preference reset.
+/// 5. **About** — version info, the least-used content on the screen.
+/// 6. **Developer** — non-production API controls and local-data wipe, matching
+///    Apple's own placement of developer affordances at the bottom. Absent
+///    entirely from production builds.
+/// 7. **Debug** — `#if DEBUG` only, below everything shippable.
 struct PreferencesView: View {
     @Environment(AuthManager.self) private var authManager
     @AppStorage("defaultAppWeightUnit") private var defaultAppWeightUnit: AppWeightUnit = .grams
@@ -38,10 +59,11 @@ struct PreferencesView: View {
 
     var body: some View {
         #if os(macOS)
-        // Fixed-size tabbed layout for the macOS Settings window (Cmd+,).
+        // Fixed-size tabbed layout for the macOS Settings window (Cmd+,). Tab
+        // order mirrors the iOS section order.
         TabView {
-            generalTab
-                .tabItem { Label("General", systemImage: "gearshape") }
+            syncTab
+                .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
             unitsTab
                 .tabItem { Label("Units", systemImage: "scalemass") }
             advancedTab
@@ -52,7 +74,7 @@ struct PreferencesView: View {
             #endif
         }
         .padding(20)
-        .frame(width: 460, height: 320)
+        .frame(width: 460, height: 360)
         .clearDataConfirmation(isPresented: $showingClearDataConfirm, onConfirm: clearAppData)
         #else
         // iOS: a single scrolling form pushed onto a navigation stack. The
@@ -61,15 +83,17 @@ struct PreferencesView: View {
         Form {
             generalSection
             SubscriptionSettingsSection()
+            SyncStatusSection()
             unitsSection
             notificationSection
             advancedSection
+            aboutSection
+            developerSection
             #if DEBUG
             Section("Debug") {
                 NavigationLink("On-device AI") { OfflineAIView() }
             }
             #endif
-            aboutSection
         }
         .navigationTitle("Settings")
         .clearDataConfirmation(isPresented: $showingClearDataConfirm, onConfirm: clearAppData)
@@ -92,8 +116,8 @@ struct PreferencesView: View {
     }
     #endif
 
-    private var generalTab: some View {
-        Form { generalSection }
+    private var syncTab: some View {
+        Form { SyncStatusSection() }
             .packRatFormStyle()
     }
 
@@ -103,26 +127,60 @@ struct PreferencesView: View {
     }
 
     private var advancedTab: some View {
-        Form { advancedSection }
-            .packRatFormStyle()
+        Form {
+            advancedSection
+            aboutSection
+            developerSection
+        }
+        .packRatFormStyle()
     }
     #endif
 
+    // MARK: - Units
+
+    /// Weight, temperature, and wind/distance are all measurement display, so
+    /// they share one section. Temperature previously sat alone under a "General"
+    /// header, which named nothing and separated it from the settings it belongs
+    /// with. Headers here are noun phrases without ending punctuation.
     @ViewBuilder
-    private var generalSection: some View {
-        Section("Temperature") {
-            Picker("Display temperature in", selection: $temperatureUnit) {
+    private var unitsSection: some View {
+        Section {
+            Picker("Default Weight Unit", selection: $defaultAppWeightUnit) {
+                ForEach(AppWeightUnit.allCases, id: \.self) { unit in
+                    Text(unit.rawValue).tag(unit)
+                }
+            }
+            Toggle("Prefer Metric Display", isOn: $preferMetric)
+        } header: {
+            Text("Weight")
+        }
+
+        Section {
+            Picker("Temperature", selection: $temperatureUnit) {
                 ForEach(AppPreferences.TemperatureUnit.allCases, id: \.self) { unit in
                     Text(unit.label).tag(unit)
                 }
             }
             .pickerStyle(.segmented)
+
+            Picker("Wind & Distance", selection: $speedUnit) {
+                ForEach(SpeedUnit.allCases, id: \.self) { unit in
+                    Text(unit.label).tag(unit)
+                }
+            }
+            .pickerStyle(.segmented)
+        } header: {
+            Text("Weather")
+        } footer: {
+            Text("Applies to forecasts, trail conditions, and trip planning.")
         }
     }
 
+    // MARK: - Notifications
+
     @ViewBuilder
     private var notificationSection: some View {
-        Section("Notifications") {
+        Section {
             if notificationAuthStatus == .denied {
                 HStack {
                     Image(systemName: "bell.slash.fill").foregroundStyle(.secondary)
@@ -145,6 +203,8 @@ struct PreferencesView: View {
                         Task { await toggleNotifications(enabled) }
                     }
             }
+        } header: {
+            Text("Notifications")
         }
     }
 
@@ -166,26 +226,26 @@ struct PreferencesView: View {
         await refreshNotificationStatus()
     }
 
-    @ViewBuilder
-    private var unitsSection: some View {
-        Section("Weight") {
-            Picker("Default weight unit", selection: $defaultAppWeightUnit) {
-                ForEach(AppWeightUnit.allCases, id: \.self) { unit in
-                    Text(unit.rawValue).tag(unit)
-                }
-            }
-            Toggle("Prefer metric display", isOn: $preferMetric)
-        }
+    // MARK: - Advanced
 
-        Section("Wind & Distance") {
-            Picker("Wind & distance", selection: $speedUnit) {
-                ForEach(SpeedUnit.allCases, id: \.self) { unit in
-                    Text(unit.label).tag(unit)
-                }
+    /// Preference reset only. The backend controls and the local-data wipe that
+    /// used to share this section moved to `developerSection`, below About: they
+    /// are developer affordances, not user-facing advanced options, and one of
+    /// them signs the user out.
+    @ViewBuilder
+    private var advancedSection: some View {
+        Section {
+            Button("Reset All Preferences", role: .destructive) {
+                resetDefaults()
             }
-            .pickerStyle(.segmented)
+        } header: {
+            Text("Advanced")
+        } footer: {
+            Text("Returns units and notification preferences to their defaults. Your packs, trips, and sign-in are not affected.")
         }
     }
+
+    // MARK: - Developer
 
     private var effectiveURL: String {
         if !apiBaseURL.isEmpty { return apiBaseURL }
@@ -194,12 +254,12 @@ struct PreferencesView: View {
         return "http://localhost:8787"
     }
 
+    /// Developer-only backend controls. Hidden entirely in production so end
+    /// users can't repoint the app at a dev/local API or wipe their data.
     @ViewBuilder
-    private var advancedSection: some View {
-        // Developer-only backend controls. Hidden entirely in production so end
-        // users can't repoint the app at a dev/local API or wipe their data.
+    private var developerSection: some View {
         if APIClient.isNonProduction {
-            Section("API Server") {
+            Section {
                 HStack {
                     ForEach(["local", "dev", "production"], id: \.self) { env in
                         if let url = APIClient.environments[env] {
@@ -218,36 +278,32 @@ struct PreferencesView: View {
                         .font(.caption.monospaced())
                         .foregroundStyle(.secondary)
                 }
+            } header: {
+                Text("API Server")
+            } footer: {
                 Text("Empty = use build-time default (PACKRAT_ENV from xcconfig). Changes apply immediately.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
-            Section("Developer") {
+            Section {
                 Button("Clear Data", role: .destructive) {
                     showingClearDataConfirm = true
                 }
+            } header: {
+                Text("Developer")
+            } footer: {
                 Text("Erases all local data — cache, preferences, and sign-in. Signs you out and resets the app.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
-
-        Section {
-            Button("Reset All Preferences", role: .destructive) {
-                resetDefaults()
-            }
-        }
-
-        #if os(macOS)
-        aboutSection
-        #endif
     }
+
+    // MARK: - About
 
     @ViewBuilder
     private var aboutSection: some View {
-        Section("About") {
+        Section {
             LabeledContent(appName, value: appVersionString)
+        } header: {
+            Text("About")
         }
     }
 
