@@ -81,7 +81,6 @@ struct PreferencesView: View {
         // macOS tabs become grouped sections so all settings stay reachable
         // on iPhone, where there is no dedicated Settings window.
         Form {
-            generalSection
             SubscriptionSettingsSection()
             SyncStatusSection()
             unitsSection
@@ -116,9 +115,15 @@ struct PreferencesView: View {
     }
     #endif
 
+    /// Carries `SubscriptionSettingsSection` too: it lived in the old `generalTab`,
+    /// which this tab replaced, and macOS has no other Settings surface that would
+    /// keep subscription management reachable.
     private var syncTab: some View {
-        Form { SyncStatusSection() }
-            .packRatFormStyle()
+        Form {
+            SubscriptionSettingsSection()
+            SyncStatusSection()
+        }
+        .packRatFormStyle()
     }
 
     private var unitsTab: some View {
