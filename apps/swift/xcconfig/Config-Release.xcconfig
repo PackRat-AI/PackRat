@@ -5,3 +5,10 @@ PACKRAT_DISPLAY_NAME = PackRat
 // environment (CI secret, Release-build script, or Config-Release.local.xcconfig
 // — gitignored) for production crash reporting. Empty value disables Sentry.
 SENTRY_DSN =
+
+// REVENUECAT_API_KEY flows xcconfig → Info.plist → runtime, like SENTRY_DSN.
+// This is the Apple *public* SDK key. It ships inside the app binary by
+// design and is safe in version control — it can only read offerings and
+// make purchases as the signed-in user. The secret key (sk_...) is what
+// must never appear here.
+REVENUECAT_API_KEY = appl_rnWelSVCsFFZVbcedvupYEUjNyq

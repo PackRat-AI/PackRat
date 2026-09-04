@@ -10,9 +10,14 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json-summary'],
       reportsDirectory: resolve(__dirname, 'coverage'),
-      // Only the resolver carries runtime logic worth covering; the rest of the
+      // Only the resolvers carry runtime logic worth covering; the rest of the
       // package is static config tables and re-exports.
-      include: ['src/featureAccess.ts'],
+      include: [
+        'src/featureAccess.ts',
+        'src/featureFlagPlatforms.ts',
+        'src/featureFlagResolution.ts',
+        'src/featureKeys.ts',
+      ],
       exclude: ['src/**/*.test.ts'],
       thresholds: {
         statements: 100,

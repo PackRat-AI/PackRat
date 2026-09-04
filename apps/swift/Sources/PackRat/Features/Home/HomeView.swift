@@ -363,19 +363,19 @@ struct HomeView: View {
             HomeAction(title: "Catalog", subtitle: "Browse gear database", symbol: "magnifyingglass", color: .gray) { appState.navItem = .catalog },
         ]
 
-        if AppFeatureFlags.enableFeed {
+        if FeatureFlagStore.shared.isEnabled("enableFeed") {
             actions.append(HomeAction(title: "Community Feed", subtitle: "Posts & trip reports", symbol: "newspaper.fill", color: .teal) { appState.navItem = .feed })
         }
 
-        if AppFeatureFlags.enableTrailConditions {
+        if FeatureFlagStore.shared.isEnabled("enableTrailConditions") {
             actions.append(HomeAction(title: "Trail Conditions", subtitle: "Community reports", symbol: "figure.hiking", color: .red) { appState.navItem = .trailConditions })
         }
 
-        if AppFeatureFlags.enableShoppingList {
+        if FeatureFlagStore.shared.isEnabled("enableShoppingList") {
             actions.append(HomeAction(title: "Shopping List", subtitle: "Gear wishlist", symbol: "cart.fill", color: .pink) { showingShoppingList = true })
         }
 
-        if AppFeatureFlags.enableWildlifeIdentification {
+        if FeatureFlagStore.shared.isEnabled("enableWildlifeIdentification") {
             actions.append(HomeAction(title: "Wildlife ID", subtitle: "Identify animals & plants", symbol: "pawprint.fill", color: Color(red: 0.5, green: 0.3, blue: 0.1)) {
                 appState.navItem = .wildlife
             })

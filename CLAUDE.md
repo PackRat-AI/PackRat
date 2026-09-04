@@ -64,6 +64,26 @@ bun bump              # Bump monorepo version
 
 PackRat enforces coverage at two layers: each workspace's `vitest.config.ts` declares per-metric thresholds (mostly 95%+; `packages/units` 100%, `packages/{analytics,overpass}` 80%), and a **coverage ratchet** (`bun check:coverage` against `coverage-baselines.json`) blocks any PR that lowers a workspace's coverage. An **assertion-strength lint** (`bun lint:weak-assertions`) flags coverage-theater patterns (assertion-free tests, bare `.toBeDefined()`, bare `.toHaveBeenCalled()`, oversized snapshots). `packages/api` integration tests still run (`api-tests.yml`) but are not coverage-counted — V8 instrumentation is unsupported under the Cloudflare Workers pool. Full policy and patterns: **`docs/testing.md`**.
 
+## Feature Gating (every new feature)
+
+Every new feature ships with **two controls, both off, both seeded into the database**: a **feature flag** (can this be on at all?) and a **`feature_access` key** (who may use it?). Different questions, and neither substitutes for the other — a flag with no access row ships to whoever the flag lets in with nobody having decided that; an access row with no flag can't be switched off.
+
+**Adding a feature is one line in `packages/config/src/config.ts`** — a `FeatureFlag` key defaulting to `false`. Everything else is derived from it, so there is no second or third place to register anything:
+
+- `feature_flags.enabled` ← the coded default, so the seed cannot disagree with the binary
+- `feature_access.key` ← `featureAccessKeyForFlag` (drop `enable`, kebab-case; a capital run is one word). `enableSummitLog` → `summit-log`
+- `feature_access.label` ← `featureLabelForFlag`. `enableSummitLog` → "Summit Log"
+
+**CI seeds the rows automatically.** `.github/workflows/migrations.yml` runs `seed-feature-controls.ts` after migrations on pushes touching the drizzle dir, the seed script, or `config.ts`. Every insert is `ON CONFLICT DO NOTHING`, so re-running never clobbers a row an operator changed.
+
+Turning a feature on is then a **database change** — flip `feature_flags.enabled`, or set `feature_access.early_access_until` for a Pro-first window. No deploy, no code change.
+
+**A new feature seeds closed on both axes.** The flag defaults `false`, and the access row gets a real early-access window rather than `NULL` — a null `early_access_until` reads as *generally available*, so seeding null would ship a feature nobody ruled on to everyone. Widen it in the database when you decide to — that is where the audience decision belongs, not in a config file.
+
+**CI does not gate merges.** There is no required check and no merge blocking; the audience decision doesn't have to be made at merge time. The safety property comes from both defaults being closed, not from a check.
+
+Seeding is a **seed script, not a migration** — migrations own schema, this is data, so the `drizzle-kit generate` rule below stays absolute. Full contract: **`docs/feature-gating.md`**.
+
 ## Code Style
 
 Enforced by **Biome 2.0** via lefthook pre-commit hook:

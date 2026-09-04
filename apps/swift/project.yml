@@ -52,6 +52,14 @@ packages:
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS
     from: "9.0.0"
+  # Purchases only — not PurchasesUI. The paywall is deliberately out of scope
+  # for now; this is the entitlement-reading half, matching what the Expo app
+  # actually gates on today. Linked by iOS and macOS only: the watch app reads
+  # entitlement state from the phone over WatchConnectivity rather than running
+  # a second purchase surface of its own.
+  RevenueCat:
+    url: https://github.com/RevenueCat/purchases-ios
+    from: "5.14.0"
 
 targets:
   PackRat-iOS:
@@ -99,6 +107,7 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         PACKRAT_ENV: $(PACKRAT_ENV)
         SENTRY_DSN: $(SENTRY_DSN)
+        REVENUECAT_API_KEY: $(REVENUECAT_API_KEY)
         GOOGLE_IOS_CLIENT_ID: 993694750638-f2pbg3e5tkt2btn9eih6c8ah8igal55m.apps.googleusercontent.com
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
@@ -137,6 +146,10 @@ targets:
         product: Sentry
       - package: GoogleSignIn
         product: GoogleSignIn
+      - package: RevenueCat
+        product: RevenueCat
+      - package: RevenueCat
+        product: RevenueCatUI
       # PackRat-Watch is intentionally NOT embedded: the watch app is not part of
       # the first Swift release. The target still builds via its own scheme, so
       # re-embed this dependency when the watch app ships.
@@ -238,6 +251,7 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         PACKRAT_ENV: $(PACKRAT_ENV)
         SENTRY_DSN: $(SENTRY_DSN)
+        REVENUECAT_API_KEY: $(REVENUECAT_API_KEY)
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
     dependencies:
@@ -259,6 +273,10 @@ targets:
         product: Defaults
       - package: Sentry
         product: Sentry
+      - package: RevenueCat
+        product: RevenueCat
+      - package: RevenueCat
+        product: RevenueCatUI
     settings:
       base:
         SWIFT_VERSION: "5.9"

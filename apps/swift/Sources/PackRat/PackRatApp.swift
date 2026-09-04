@@ -20,6 +20,10 @@ struct PackRatApp: App {
         // errors are captured. A missing DSN silently disables the SDK.
         SentryConfig.start()
 
+        // RevenueCat is configured from AuthGateView, not here: iOS prewarms
+        // apps in the background, and configuring during launch would create a
+        // RevenueCat user record for a launch no person ever saw.
+
         #if os(macOS)
         if ProcessInfo.processInfo.arguments.contains("--reset-auth") {
             UserDefaults.standard.set(true, forKey: "ApplePersistenceIgnoreState")
@@ -35,6 +39,10 @@ struct PackRatApp: App {
             AuthGateView()
                 .environment(authManager)
                 .flushesPendingWrites()
+                // Only on the main window. The auxiliary Pack/Trip windows on
+                // macOS read the same shared stores, so attaching there too
+                // would refetch once per open window on every resume.
+                .refreshesFeatureStatesOnForeground()
                 .providesWeightUnitPreference()
         }
         .modelContainer(PersistenceController.shared.container)

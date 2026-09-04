@@ -13,6 +13,14 @@ final class WatchConnectivityStore: NSObject {
     var lastDraft: WatchTrailReportDraft?
     var isPhoneReachable = false
 
+    /// Whether the paired phone's user holds the Pro entitlement.
+    ///
+    /// Resolved entirely on the phone, which owns the RevenueCat SDK. False
+    /// until a snapshot arrives, so a watch that has never synced — or one
+    /// paired with a phone build predating this field — treats the viewer as
+    /// non-Pro rather than assuming access.
+    var isPro: Bool { snapshot.isPro }
+
     override init() {
         super.init()
         encoder.dateEncodingStrategy = .iso8601

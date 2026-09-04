@@ -49,13 +49,21 @@ enum NavItem: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Whether this destination's feature flag is on.
+    ///
+    /// Reads `FeatureFlagStore`, not the generated `AppFeatureFlags` constants,
+    /// so a flag flipped in the admin panel takes effect on the next fetch
+    /// rather than waiting for a rebuild and release. The store is seeded with
+    /// those same constants, so a cold start still renders exactly the shipped
+    /// defaults. This is the parity Expo already had via `useFeatureFlags`.
+    @MainActor
     var isFeatureEnabled: Bool {
         switch self {
-        case .trips: return AppFeatureFlags.enableTrips
-        case .templates: return AppFeatureFlags.enablePackTemplates
-        case .trailConditions: return AppFeatureFlags.enableTrailConditions
-        case .feed: return AppFeatureFlags.enableFeed
-        case .wildlife: return AppFeatureFlags.enableWildlifeIdentification
+        case .trips: return FeatureFlagStore.shared.isEnabled("enableTrips")
+        case .templates: return FeatureFlagStore.shared.isEnabled("enablePackTemplates")
+        case .trailConditions: return FeatureFlagStore.shared.isEnabled("enableTrailConditions")
+        case .feed: return FeatureFlagStore.shared.isEnabled("enableFeed")
+        case .wildlife: return FeatureFlagStore.shared.isEnabled("enableWildlifeIdentification")
         default: return true
         }
     }
@@ -250,7 +258,13 @@ struct AppNavigation: View {
         case .gearInventory:
             GearInventoryView().environment(appState)
         case .wildlife:
-            WildlifeView()
+            // Wildlife ID is the feature carrying a real early-access window,
+            // and the server enforces the same gate on /wildlife/identify — so
+            // gating the UI here keeps the client from offering something the
+            // API will refuse. Matches how Expo wraps a gated screen.
+            EarlyAccessGate(featureKey: "wildlife-identification") {
+                WildlifeView()
+            }
         case .aiPacks:
             AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
         case .packs, .trips, .templates, .trailConditions:
@@ -410,7 +424,14 @@ struct AppNavigation: View {
         case .feed:            FeedView(viewModel: appState.feedVM)
         case .guides:          GuidesView()
         case .gearInventory:   GearInventoryView().environment(appState)
-        case .wildlife:        WildlifeView()
+        case .wildlife:
+            // Same gate as the split-view path above. Both destinations have to
+            // wrap it: the phone and the iPad/Mac layouts render the feature
+            // through separate switches, so gating only one leaves the other
+            // open.
+            EarlyAccessGate(featureKey: "wildlife-identification") {
+                WildlifeView()
+            }
         case .aiPacks:         AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
         }
     }
