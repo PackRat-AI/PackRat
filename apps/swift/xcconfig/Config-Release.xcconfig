@@ -7,7 +7,8 @@ PACKRAT_DISPLAY_NAME = PackRat
 SENTRY_DSN =
 
 // REVENUECAT_API_KEY flows xcconfig → Info.plist → runtime, like SENTRY_DSN.
-// Leave blank to disable purchases entirely: the SDK is never configured, and
-// entitlement checks resolve to "not Pro" rather than erroring. Gated features
-// therefore stay closed on a build with no key, which is the safe default.
-REVENUECAT_API_KEY =
+// This is the Apple *public* SDK key. It ships inside the app binary by
+// design and is safe in version control — it can only read offerings and
+// make purchases as the signed-in user. The secret key (sk_...) is what
+// must never appear here.
+REVENUECAT_API_KEY = appl_rnWelSVCsFFZVbcedvupYEUjNyq
