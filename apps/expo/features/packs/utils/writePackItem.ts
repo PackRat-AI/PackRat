@@ -2,10 +2,13 @@
  * Store-level pack-item write.
  *
  * Extracted from `useCreatePackItem` so non-React callers — the assistant's
- * on-device `addItemToPack` tool — write through exactly the same path as a
- * user tapping "add item": local store first, outbox sync outward, pack weight
- * history recorded. Duplicating this logic is how an assistant-added item ends
- * up missing from weight totals or from the sync queue.
+ * `addItemToPack` tool — write through exactly the same path as a user tapping
+ * "add item": local store first, outbox sync outward, pack weight history
+ * recorded. Duplicating this logic is how an assistant-added item ends up
+ * missing from weight totals or from the sync queue.
+ *
+ * The record itself is built by `buildNewPackItem`, which is pure and covered
+ * by tests; this file is only the store effect around it.
  */
 
 import { packItemsStore, packsStore } from 'expo-app/features/packs/store';
@@ -13,6 +16,7 @@ import { recordPackWeight } from 'expo-app/features/packs/store/packWeightHistor
 import { obs } from 'expo-app/lib/store';
 import { nanoid } from 'nanoid';
 import type { PackItem, PackItemInput } from '../types';
+import { buildNewPackItem } from './buildNewPackItem';
 
 export function writePackItem({
   packId,
@@ -21,27 +25,9 @@ export function writePackItem({
   packId: string;
   itemData: PackItemInput;
 }): PackItem {
-  const id = nanoid();
+  const newItem = buildNewPackItem({ id: nanoid(), packId, itemData });
 
-  const newItem: PackItem = {
-    id,
-    name: itemData.name,
-    description: itemData.description ?? undefined,
-    weight: itemData.weight,
-    weightUnit: itemData.weightUnit,
-    quantity: itemData.quantity,
-    category: itemData.category || 'general',
-    consumable: itemData.consumable,
-    worn: itemData.worn,
-    notes: itemData.notes,
-    image: itemData.image,
-    catalogItemId: itemData.catalogItemId,
-    packId,
-    isAIGenerated: false,
-    deleted: false,
-  };
-
-  obs({ store: packItemsStore, id }).set(newItem);
+  obs({ store: packItemsStore, id: newItem.id }).set(newItem);
   obs({ store: packsStore, id: packId }).localUpdatedAt.set(new Date().toISOString());
   recordPackWeight(packId);
 

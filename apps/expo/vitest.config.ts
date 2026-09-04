@@ -36,6 +36,9 @@ export default defineConfig({
         '**/*.web.ts', // Browser-API files; not runnable in Node vitest environment
         // React Native file-system APIs — not runnable in Node environment
         'features/**/utils/uploadImage.ts',
+        // Legend-State store effect; the record it writes is built by
+        // buildNewPackItem.ts, which is pure and covered.
+        'features/**/utils/writePackItem.ts',
         // UI helper files that depend on React Native navigation primitives
         'features/**/utils/getPackDetailOptions.tsx',
         'features/**/utils/getPackItemDetailOptions.tsx',
