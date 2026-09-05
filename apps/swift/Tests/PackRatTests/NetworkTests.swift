@@ -7,7 +7,15 @@ import Foundation
 // Swift Testing parallelises tests across a suite by default, but the keychain
 // is a process-wide singleton. Two tests mutating `.shared` at the same time
 // flake (one test reads the other's value). Serialise.
+//
+// `.serialized` alone was not enough: it orders tests within this suite but not
+// against `ExpoLocalDataMigrationEndToEndTests`, which mutates the same
+// singleton, so the two suites could interleave and read each other's token.
+// Both are pinned to `@MainActor` — that suite already needed it for SwiftData —
+// which puts every test touching the keychain on one executor and makes them
+// mutually exclusive.
 @Suite("KeychainService", .serialized)
+@MainActor
 struct KeychainServiceTests {
     let keychain = KeychainService.shared
 

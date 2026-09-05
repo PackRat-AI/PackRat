@@ -14,6 +14,18 @@ import Testing
 //
 // `.serialized` because these tests mutate `KeychainService.shared` and a file on disk
 // at a fixed path; two of them interleaving would read each other's state.
+//
+// `.serialized` only orders tests within this suite, though — it says nothing about
+// `KeychainServiceTests`, which writes the same singleton. Left unguarded the two
+// suites ran concurrently and one read the other's token: this suite's
+// "carried-over-session" leaked into keychain assertions, and a cleared keychain
+// broke this suite's signed-in gate. Which test failed moved between runs because it
+// came down to scheduling. Both suites are now `@MainActor`, so every test touching
+// the keychain shares one executor and cannot interleave.
+//
+// The real fix is a `KeychainService` that can be instantiated per-test; it has a
+// `private init` and a hardcoded service name today, so isolating the tests is as far
+// as this can go without changing production code.
 @Suite("ExpoLocalDataMigration.runIfNeeded", .serialized)
 @MainActor
 struct ExpoLocalDataMigrationEndToEndTests {
@@ -101,7 +113,8 @@ struct ExpoLocalDataMigrationEndToEndTests {
         let cached = (try? context.fetch(FetchDescriptor<CachedPack>())) ?? []
         #expect(cached.count == 1)
         #expect(cached.first?.name == "Carried Over Pack")
-        // ...and nothing is queued, so no banner and no duplicate creates.
+        // ...and nothing is queued, so Settings stays quiet and there are no
+        // duplicate creates.
         #expect(pending(context).isEmpty)
         #expect(defaults.bool(forKey: "expoLocalDataMigrationCompleted"))
     }
