@@ -37,6 +37,14 @@
  *   APP_STORE_CURRENT_BUILD_NUMBER
  *                            Required for --replacement uploads; latest existing
  *                            PackRat App Store/TestFlight build number.
+ *   EXPORT_PROVISIONING_PROFILE
+ *                            Profile *name* for the iOS app. Set it to sign the
+ *                            export manually — automatic signing fails with
+ *                            `No Accounts` when Xcode has no Apple ID.
+ *   EXPORT_WATCH_PROVISIONING_PROFILE
+ *                            Profile *name* for the embedded watch app. Required
+ *                            alongside the above once the watch app ships, or the
+ *                            manual export fails on the watchkitapp bundle id.
  *
  * Flags:
  *   --replacement            Archive for the existing Expo/App Store iOS listing.
@@ -249,6 +257,9 @@ verifyBinary({
 // EXPORT_PROVISIONING_PROFILE to the profile's *name* to sign manually instead.
 // See docs/macos-testflight.md, which hits the same wall on the macOS lane.
 const exportProfileName = process.env.EXPORT_PROVISIONING_PROFILE?.trim();
+// The embedded watch app needs its own profile mapping; without it a manual
+// export fails on the watchkitapp bundle id even though the iOS one resolves.
+const exportWatchProfileName = process.env.EXPORT_WATCH_PROVISIONING_PROFILE?.trim();
 const exportOptions = join(work, 'ExportOptions.plist');
 writeFileSync(
   exportOptions,
@@ -265,7 +276,12 @@ ${
   <key>signingCertificate</key><string>Apple Distribution</string>
   <key>provisioningProfiles</key>
   <dict>
-    <key>${uploadConfig.bundleId}</key><string>${exportProfileName}</string>
+    <key>${uploadConfig.bundleId}</key><string>${exportProfileName}</string>${
+      exportWatchProfileName
+        ? `
+    <key>${uploadConfig.watchBundleId}</key><string>${exportWatchProfileName}</string>`
+        : ''
+    }
   </dict>`
     : '  <key>signingStyle</key><string>automatic</string>'
 }

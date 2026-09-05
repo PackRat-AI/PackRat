@@ -8,7 +8,10 @@ struct PackItemDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AuthManager.self) private var authManager
     @Environment(\.weightUnit) private var weightUnit
+    @Environment(\.modelContext) private var modelContext
     @State private var showingEdit = false
+    @State private var showingDeleteConfirmation = false
+    @State private var deleteError: String?
     @State private var showingAskAI = false
     @State private var similarItems: [CatalogItem] = []
     @State private var isLoadingSimilar = false
@@ -23,6 +26,22 @@ struct PackItemDetailView: View {
     /// reflected here on dismiss. `initialItem` is only a snapshot from when
     /// this view was constructed, so rendering it directly left the detail
     /// screen showing the pre-edit weight after saving.
+    /// Deletes the item and leaves the screen — staying would render an item that
+    /// no longer exists. Mirrors the pack delete in `PackDetailView`: an
+    /// unreachable server queues the delete for replay rather than failing here,
+    /// so only a real error keeps the user on the screen.
+    private func deleteItem() {
+        let itemId = item.id
+        Task {
+            do {
+                try await viewModel.deleteItem(itemId, from: packId, context: modelContext)
+                dismiss()
+            } catch {
+                deleteError = error.localizedDescription
+            }
+        }
+    }
+
     private var item: PackItem {
         viewModel.packs
             .first { $0.id == packId }?
@@ -54,9 +73,40 @@ struct PackItemDetailView: View {
                     Button("Done") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Edit", systemImage: "pencil") { showingEdit = true }
-                        .accessibilityIdentifier("pack_item_detail_edit_button")
+                    // A menu rather than a bare Edit button: deleting an item was
+                    // previously only reachable by swiping or long-pressing its row
+                    // in the pack, which testers could not find (#2720).
+                    Menu {
+                        Button("Edit", systemImage: "pencil") { showingEdit = true }
+                            .accessibilityIdentifier("pack_item_detail_edit_button")
+
+                        Button("Delete Item", systemImage: "trash", role: .destructive) {
+                            showingDeleteConfirmation = true
+                        }
+                        .accessibilityIdentifier("pack_item_detail_delete_button")
+                    } label: {
+                        Label("More", systemImage: "ellipsis.circle")
+                            .labelStyle(.iconOnly)
+                    }
+                    .accessibilityIdentifier("pack_item_detail_more_menu")
                 }
+            }
+            .alert("Delete \(item.name)?", isPresented: $showingDeleteConfirmation) {
+                Button("Delete", role: .destructive) { deleteItem() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("\"\(item.name)\" will be removed from this pack. This cannot be undone.")
+            }
+            .alert(
+                "Could not delete item",
+                isPresented: Binding(
+                    get: { deleteError != nil },
+                    set: { if !$0 { deleteError = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) { deleteError = nil }
+            } message: {
+                Text(deleteError ?? "")
             }
             .sheet(isPresented: $showingAskAI) {
                 PackItemAskAISheet(item: item)

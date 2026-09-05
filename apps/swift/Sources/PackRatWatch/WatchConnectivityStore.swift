@@ -62,6 +62,47 @@ final class WatchConnectivityStore: NSObject {
         session.transferUserInfo(payload)
     }
 
+    /// Records a packed/unpacked change made on the watch.
+    ///
+    /// Applied optimistically to the in-memory snapshot and written to the same
+    /// cached-snapshot key the phone's payloads land in, so the toggle survives
+    /// leaving and returning to the screen even before the phone answers
+    /// (#2694 defect 2). The change is then sent to the phone, which owns the
+    /// durable state in `PackingModeStore` and republishes a corrected snapshot.
+    func setChecklistItemPacked(_ isPacked: Bool, itemId: String) {
+        applyLocally(isPacked: isPacked, itemId: itemId)
+
+        guard let packId = snapshot.pack.packId else { return }
+        let message = WatchChecklistToggleMessage(packId: packId, itemId: itemId, isPacked: isPacked)
+        guard let session, let data = try? encoder.encode(message) else { return }
+
+        let payload = [WatchCompanionMessage.checklistToggle: data]
+        if session.isReachable {
+            session.sendMessage(payload, replyHandler: nil)
+        }
+        // Queued regardless of reachability so a toggle made out of range still
+        // reaches the phone, mirroring how trail drafts are delivered.
+        session.transferUserInfo(payload)
+    }
+
+    private func applyLocally(isPacked: Bool, itemId: String) {
+        guard let index = snapshot.pack.checklist.firstIndex(where: { $0.id == itemId }),
+              snapshot.pack.checklist[index].isPacked != isPacked
+        else { return }
+
+        var next = snapshot
+        next.pack.checklist[index].isPacked = isPacked
+        // Keep the "N of M packed" line in step with the toggles on screen.
+        next.pack.packedItemCount = max(0, next.pack.packedItemCount + (isPacked ? 1 : -1))
+        snapshot = next
+        persistSnapshot()
+    }
+
+    private func persistSnapshot() {
+        guard let data = try? encoder.encode(snapshot) else { return }
+        UserDefaults.standard.set(data, forKey: snapshotKey)
+    }
+
     private func handle(_ payload: [String: Any]) {
         guard let data = payload[WatchCompanionMessage.snapshot] as? Data,
               let next = try? decoder.decode(PackRatWatchSnapshot.self, from: data)

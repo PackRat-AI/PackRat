@@ -150,9 +150,11 @@ targets:
         product: RevenueCat
       - package: RevenueCat
         product: RevenueCatUI
-      # PackRat-Watch is intentionally NOT embedded: the watch app is not part of
-      # the first Swift release. The target still builds via its own scheme, so
-      # re-embed this dependency when the watch app ships.
+      # The watch app ships from 2.2.1 on, so it is embedded in the iOS app.
+      # WKCompanionAppBundleIdentifier must resolve to the iOS bundle id or
+      # installs fail with "Unable to Install PackRat".
+      - target: PackRat-Watch
+        embed: true
     settings:
       base:
         SWIFT_VERSION: "5.9"
