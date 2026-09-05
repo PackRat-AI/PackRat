@@ -3,7 +3,6 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   parseTestFlightUploadConfig,
-  TestFlightConfigError,
   verifyTestFlightReplacementReadiness,
   xcodeArchiveOverrides,
 } from '../lib/testflight-config';
@@ -18,51 +17,13 @@ const monorepoVersion = (
 ).version;
 
 describe('parseTestFlightUploadConfig', () => {
-  it('requires an explicit TestFlight lane', () => {
-    expect(() => parseTestFlightUploadConfig({ argv: [], env: { BUILD_NUMBER: '123' } })).toThrow(
-      TestFlightConfigError,
-    );
-  });
-
-  it('rejects conflicting lanes', () => {
-    expect(() =>
-      parseTestFlightUploadConfig({
-        argv: ['--side-by-side', '--replacement'],
-        env: { BUILD_NUMBER: '123' },
-      }),
-    ).toThrow('Choose exactly one TestFlight lane');
-  });
-
-  it('builds the side-by-side Swift beta identity', () => {
-    expect(
-      parseTestFlightUploadConfig({
-        argv: ['--side-by-side'],
-        env: { BUILD_NUMBER: '123' },
-      }),
-    ).toMatchObject({
-      lane: 'side-by-side',
-      staging: false,
-      dryRun: false,
-      scheme: 'PackRat-iOS',
-      configuration: 'Release',
-      bundleId: 'com.andrewbierman.packrat.swift',
-      watchBundleId: 'com.andrewbierman.packrat.swift.watchkitapp',
-      companionBundleId: 'com.andrewbierman.packrat.swift',
-      displayName: 'PackRat Swift',
-      marketingVersion: monorepoVersion,
-      buildNumber: '123',
-      apiEnvironment: 'production',
-    });
-  });
-
-  it('builds the replacement identity for the existing Expo listing', () => {
+  it('builds the App Store listing identity', () => {
     const config = parseTestFlightUploadConfig({
-      argv: ['--replacement'],
+      argv: [],
       env: { BUILD_NUMBER: '456' },
     });
 
     expect(config).toMatchObject({
-      lane: 'replacement',
       staging: false,
       dryRun: false,
       scheme: 'PackRat-iOS',
@@ -86,14 +47,13 @@ describe('parseTestFlightUploadConfig', () => {
     ]);
   });
 
-  it('uses the staging scheme without changing the selected lane identity', () => {
+  it('uses the staging scheme without changing the app identity', () => {
     expect(
       parseTestFlightUploadConfig({
-        argv: ['--replacement', '--staging'],
+        argv: ['--staging'],
         env: { BUILD_NUMBER: '789' },
       }),
     ).toMatchObject({
-      lane: 'replacement',
       staging: true,
       dryRun: false,
       scheme: 'PackRat-iOS-Staging',
@@ -109,11 +69,10 @@ describe('parseTestFlightUploadConfig', () => {
   it('supports dry-run preflight without changing identity', () => {
     expect(
       parseTestFlightUploadConfig({
-        argv: ['--replacement', '--dry-run'],
+        argv: ['--dry-run'],
         env: { BUILD_NUMBER: '101' },
       }),
     ).toMatchObject({
-      lane: 'replacement',
       dryRun: true,
       bundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
@@ -125,7 +84,7 @@ describe('parseTestFlightUploadConfig', () => {
 
   it('allows an explicit marketing version override for controlled release testing', () => {
     const config = parseTestFlightUploadConfig({
-      argv: ['--replacement', '--production'],
+      argv: ['--production'],
       env: { BUILD_NUMBER: '2026072101', MARKETING_VERSION: '2.1.1' },
     });
 
@@ -136,14 +95,14 @@ describe('parseTestFlightUploadConfig', () => {
   });
 
   it('rejects conflicting API profile flags', () => {
-    expect(() =>
-      parseTestFlightUploadConfig({ argv: ['--replacement', '--staging', '--production'] }),
-    ).toThrow('Use either --staging or --production, not both.');
+    expect(() => parseTestFlightUploadConfig({ argv: ['--staging', '--production'] })).toThrow(
+      'Use either --staging or --production, not both.',
+    );
   });
 
   it('verifies replacement settings for seamless TestFlight update', () => {
     const config = parseTestFlightUploadConfig({
-      argv: ['--replacement', '--production'],
+      argv: ['--production'],
       env: { BUILD_NUMBER: '2026071802' },
     });
 
@@ -155,11 +114,19 @@ describe('parseTestFlightUploadConfig', () => {
     ).toEqual({ ok: true, errors: [], warnings: [] });
   });
 
-  it('rejects side-by-side settings for replacement readiness', () => {
-    const config = parseTestFlightUploadConfig({
-      argv: ['--side-by-side', '--production'],
-      env: { BUILD_NUMBER: '2026071802' },
-    });
+  // The parser can no longer emit a non-App-Store identity, but the readiness
+  // guard is the last line of defence before an upload, so it still has to
+  // reject a hand-built config carrying the retired beta listing's bundle ids.
+  it('rejects a config carrying the retired Swift beta bundle ids', () => {
+    const config = {
+      ...parseTestFlightUploadConfig({
+        argv: ['--production'],
+        env: { BUILD_NUMBER: '2026071802' },
+      }),
+      bundleId: 'com.andrewbierman.packrat.swift',
+      companionBundleId: 'com.andrewbierman.packrat.swift',
+      watchBundleId: 'com.andrewbierman.packrat.swift.watchkitapp',
+    };
 
     const readiness = verifyTestFlightReplacementReadiness({
       config,
@@ -168,13 +135,13 @@ describe('parseTestFlightUploadConfig', () => {
 
     expect(readiness.ok).toBe(false);
     expect(readiness.errors).toContain(
-      'Use --replacement. Side-by-side Swift beta builds cannot update the Expo app.',
+      'Expected iOS bundle id com.andrewbierman.packrat, got com.andrewbierman.packrat.swift.',
     );
   });
 
   it('rejects stale replacement build numbers', () => {
     const config = parseTestFlightUploadConfig({
-      argv: ['--replacement', '--production'],
+      argv: ['--production'],
       env: { BUILD_NUMBER: '2026071801' },
     });
 
@@ -191,7 +158,7 @@ describe('parseTestFlightUploadConfig', () => {
 
   it('warns when current App Store build is not supplied', () => {
     const config = parseTestFlightUploadConfig({
-      argv: ['--replacement', '--production'],
+      argv: ['--production'],
       env: { BUILD_NUMBER: '2026071802' },
     });
 
@@ -205,7 +172,7 @@ describe('parseTestFlightUploadConfig', () => {
 
   it('rejects missing current App Store build when strict replacement readiness is required', () => {
     const config = parseTestFlightUploadConfig({
-      argv: ['--replacement', '--production'],
+      argv: ['--production'],
       env: { BUILD_NUMBER: '2026071802' },
     });
 

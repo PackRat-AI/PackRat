@@ -22,11 +22,8 @@ const SWIFT_DIR = resolve(REPO_ROOT, 'apps/swift');
 const ARTIFACT_DIR = resolve(REPO_ROOT, 'artifacts/screenshots-latest');
 const IOS_BUNDLE_ID = nodeEnv.PACKRAT_IOS_BUNDLE_ID ?? 'com.andrewbierman.packrat';
 const WATCH_BUNDLE_ID = nodeEnv.PACKRAT_WATCH_BUNDLE_ID ?? 'com.andrewbierman.packrat.watchkitapp';
-const KNOWN_IOS_BUNDLE_IDS = ['com.andrewbierman.packrat', 'com.andrewbierman.packrat.swift'];
-const KNOWN_WATCH_BUNDLE_IDS = [
-  'com.andrewbierman.packrat.watchkitapp',
-  'com.andrewbierman.packrat.swift.watchkitapp',
-];
+const KNOWN_IOS_BUNDLE_IDS = ['com.andrewbierman.packrat'];
+const KNOWN_WATCH_BUNDLE_IDS = ['com.andrewbierman.packrat.watchkitapp'];
 const WAIT_MS = Number(nodeEnv.PACKRAT_WATCH_SYNC_WAIT_MS ?? 45_000);
 
 // biome-ignore lint/complexity/useMaxParams: command wrappers read like shell invocations.
