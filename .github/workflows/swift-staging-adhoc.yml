@@ -131,7 +131,7 @@ jobs:
             <key>signingStyle</key><string>manual</string>
             <key>provisioningProfiles</key>
             <dict>
-              <key>com.andrewbierman.packrat.swift</key>
+              <key>com.andrewbierman.packrat</key>
               <string>$PROVISIONING_PROFILE_UUID</string>
             </dict>
             <key>teamID</key><string>666HGMV2LU</string>

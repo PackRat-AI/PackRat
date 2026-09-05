@@ -4,14 +4,12 @@ The native Swift app has a `PackRat-macOS` target that ships to TestFlight
 under the **production** App Store Connect record — `com.andrewbierman.packrat`,
 app id `6499243187`, the same record the Expo iPhone app ships from. One record
 hosts both platforms, so Mac testers find the build under TestFlight's **macOS**
-tab. (iOS builds of the Swift app go to a separate record,
-`com.andrewbierman.packrat.swift`, app id `6791633696`.)
+tab, and iOS builds ship from that same record.
 
 ## Uploading
 
-> **`upload-testflight.ts` has no macOS lane.** The script is built around iOS
-> lanes (`--replacement` / `--side-by-side`) whose config module is iOS-specific
-> throughout — scheme selection, `PACKRAT_IOS_BUNDLE_IDENTIFIER`, IPA
+> **`upload-testflight.ts` has no macOS support.** The script is built around the
+> iOS App Store listing, and its config module is iOS-specific — scheme selection, `PACKRAT_IOS_BUNDLE_IDENTIFIER`, IPA
 > verification. Adding a macOS lane means extending
 > `scripts/lib/testflight-config.ts`; until then, run the three steps below by
 > hand.

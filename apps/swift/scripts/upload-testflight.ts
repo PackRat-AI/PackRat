@@ -2,11 +2,9 @@
 /**
  * Archive the native Swift PackRat iOS app and upload it to TestFlight.
  *
- * Choose the App Store Connect lane explicitly:
- *   --replacement   existing Expo/App Store listing (`com.andrewbierman.packrat`,
- *                   display name `PackRat`) for true TestFlight update testing.
- *   --side-by-side  separate Swift beta listing (`com.andrewbierman.packrat.swift`,
- *                   display name `PackRat Swift`) for parallel beta installs.
+ * Uploads go to the one public App Store listing (`com.andrewbierman.packrat`,
+ * display name `PackRat`). The separate `PackRat Swift` beta listing that once
+ * ran in parallel is retired.
  *
  * Auth accepts either an App Store Connect API key or an Apple ID +
  * app-specific password (appleid.apple.com -> Sign-In & Security ->
@@ -35,12 +33,10 @@
  *                            (default: the monorepo version from the root
  *                            package.json, which `bun bump` owns)
  *   APP_STORE_CURRENT_BUILD_NUMBER
- *                            Required for --replacement uploads; latest existing
- *                            PackRat App Store/TestFlight build number.
+ *                            Required; latest existing PackRat App Store /
+ *                            TestFlight build number.
  *
  * Flags:
- *   --replacement            Archive for the existing Expo/App Store iOS listing.
- *   --side-by-side           Archive for the separate Swift beta listing.
  *   --staging                Archive the Staging config (PACKRAT_ENV=dev) so the
  *                            build targets the deployed DEV API instead of production.
  *   --production             Optional clarity flag; Release/production is the default
@@ -51,10 +47,10 @@
  *                            before reading Apple ID upload credentials.
  *
  * Usage:
- *   bun apps/swift/scripts/upload-testflight.ts --replacement
- *   bun apps/swift/scripts/upload-testflight.ts --replacement --dry-run
- *   bun apps/swift/scripts/upload-testflight.ts --replacement --verify-archive-only
- *   bun apps/swift/scripts/upload-testflight.ts --side-by-side --staging
+ *   bun apps/swift/scripts/upload-testflight.ts
+ *   bun apps/swift/scripts/upload-testflight.ts --dry-run
+ *   bun apps/swift/scripts/upload-testflight.ts --verify-archive-only
+ *   bun apps/swift/scripts/upload-testflight.ts --staging
  */
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
@@ -80,13 +76,10 @@ const VERIFY_ARCHIVE_ONLY = process.argv.includes('--verify-archive-only');
 function usage(): string {
   return [
     'Usage:',
-    '  bun apps/swift/scripts/upload-testflight.ts --replacement [--production|--staging] [--dry-run]',
-    '  bun apps/swift/scripts/upload-testflight.ts --replacement [--production|--staging] --verify-archive-only',
-    '  bun apps/swift/scripts/upload-testflight.ts --side-by-side [--production|--staging] [--dry-run]',
+    '  bun apps/swift/scripts/upload-testflight.ts [--production|--staging] [--dry-run]',
+    '  bun apps/swift/scripts/upload-testflight.ts [--production|--staging] --verify-archive-only',
     '',
-    'Lanes:',
-    '  --replacement   Existing Expo/App Store listing: com.andrewbierman.packrat, PackRat.',
-    '  --side-by-side  Separate Swift beta listing: com.andrewbierman.packrat.swift, PackRat Swift.',
+    'Uploads target the App Store listing: com.andrewbierman.packrat, PackRat.',
   ].join('\n');
 }
 
@@ -122,7 +115,6 @@ function printPreflight(input: {
   const archiveOverrides = xcodeArchiveOverrides({ config, teamId });
   console.log(
     safeJsonStringify({
-      lane: config.lane,
       bundleId: config.bundleId,
       watchBundleId: config.watchBundleId,
       companionBundleId: config.companionBundleId,
@@ -163,7 +155,7 @@ if (nodeEnv.BUILD_NUMBER) {
   uploadConfig = { ...uploadConfig, buildNumber: nodeEnv.BUILD_NUMBER };
 }
 
-if (uploadConfig.lane === 'replacement') {
+{
   const readiness = verifyTestFlightReplacementReadiness({
     config: uploadConfig,
     currentAppStoreBuildNumber: nodeEnv.APP_STORE_CURRENT_BUILD_NUMBER,
@@ -331,6 +323,6 @@ run({
 
 console.log(
   `\n✓ Uploaded build ${uploadConfig.buildNumber} to TestFlight (${uploadConfig.bundleId}, ${uploadConfig.displayName}, ${uploadConfig.configuration}` +
-    `${uploadConfig.staging ? ' -> dev API' : ' -> production'}, ${uploadConfig.lane}).`,
+    `${uploadConfig.staging ? ' -> dev API' : ' -> production'}).`,
 );
 console.log('It will appear in App Store Connect after processing (usually 5-15 min).');
