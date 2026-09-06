@@ -158,7 +158,7 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "2.2.0"
+        MARKETING_VERSION: "2.2.3"
         CURRENT_PROJECT_VERSION: "2026081101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
@@ -197,7 +197,7 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "2.2.0"
+        MARKETING_VERSION: "2.2.3"
         CURRENT_PROJECT_VERSION: "2026081101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
@@ -282,7 +282,7 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "2.2.0"
+        MARKETING_VERSION: "2.2.3"
         CURRENT_PROJECT_VERSION: "2026081101"
         # Real distribution signing: the target previously used an ad-hoc
         # identity with no team, which cannot produce a TestFlight build. E2E
