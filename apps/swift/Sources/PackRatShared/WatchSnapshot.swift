@@ -57,6 +57,7 @@ struct PackRatWatchSnapshot: Codable, Equatable, Sendable {
     static let fallback = PackRatWatchSnapshot(
         updatedAt: Date(timeIntervalSince1970: 0),
         pack: WatchPackSnapshot(
+            packId: nil,
             name: "No Pack Synced",
             baseWeightText: "--",
             packedItemCount: 0,
@@ -80,6 +81,7 @@ struct PackRatWatchSnapshot: Codable, Equatable, Sendable {
     static let visualSyncedSample = PackRatWatchSnapshot(
         updatedAt: Date(timeIntervalSince1970: 1_779_984_000),
         pack: WatchPackSnapshot(
+            packId: "visual-watch-pack",
             name: "Alpine Weekend",
             baseWeightText: "10.4 lb",
             packedItemCount: 3,
@@ -111,6 +113,12 @@ struct PackRatWatchSnapshot: Codable, Equatable, Sendable {
 }
 
 struct WatchPackSnapshot: Codable, Equatable, Sendable {
+    /// Identifier of the pack this snapshot describes, so a toggle made on the
+    /// watch can name the pack it belongs to when it travels back to the phone.
+    /// Optional for backward compatibility: a snapshot cached by an older build
+    /// decodes with `nil` and simply cannot round-trip toggles until the phone
+    /// publishes again.
+    var packId: String?
     var name: String
     var baseWeightText: String
     var packedItemCount: Int
@@ -150,7 +158,16 @@ struct WatchTrailReportDraft: Codable, Equatable, Sendable {
     var createdAt: Date
 }
 
+/// A single packed/unpacked change made on the watch, travelling back to the
+/// phone so `PackingModeStore` (the phone-side source of truth) can record it.
+struct WatchChecklistToggleMessage: Codable, Equatable, Sendable {
+    var packId: String
+    var itemId: String
+    var isPacked: Bool
+}
+
 enum WatchCompanionMessage {
     static let snapshot = "packrat.watch.snapshot"
     static let trailDraft = "packrat.watch.trailDraft"
+    static let checklistToggle = "packrat.watch.checklistToggle"
 }

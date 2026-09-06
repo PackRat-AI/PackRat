@@ -26,7 +26,7 @@ private struct WatchRootView: View {
         case "dashboard":
             TrailReadyView(snapshot: connectivity.snapshot, isPhoneReachable: connectivity.isPhoneReachable)
         case "checklist":
-            WatchChecklistView(pack: connectivity.snapshot.pack)
+            WatchChecklistView()
         case "weather":
             WatchWeatherView(weather: connectivity.snapshot.weather)
         case "trail-report":
@@ -47,7 +47,7 @@ private struct WatchDashboardView: View {
         TabView(selection: $selectedTab) {
             TrailReadyView(snapshot: connectivity.snapshot, isPhoneReachable: connectivity.isPhoneReachable)
                 .tag(0)
-            WatchChecklistView(pack: connectivity.snapshot.pack)
+            WatchChecklistView()
                 .tag(1)
             WatchWeatherView(weather: connectivity.snapshot.weather)
                 .tag(2)
@@ -124,7 +124,11 @@ private struct TrailReadyView: View {
 }
 
 private struct WatchChecklistView: View {
-    let pack: WatchPackSnapshot
+    @Environment(WatchConnectivityStore.self) private var connectivity
+
+    /// Read from the store on each render, not captured at init, so a toggle
+    /// updates both the row and the "N of M packed" line immediately.
+    private var pack: WatchPackSnapshot { connectivity.snapshot.pack }
 
     var body: some View {
         NavigationStack {
@@ -263,16 +267,22 @@ private struct WatchMetricRow: View {
 }
 
 private struct WatchChecklistToggle: View {
+    @Environment(WatchConnectivityStore.self) private var connectivity
     let item: WatchChecklistItemSnapshot
-    @State private var isOn: Bool
 
-    init(item: WatchChecklistItemSnapshot) {
-        self.item = item
-        _isOn = State(initialValue: item.isPacked)
+    /// Reads through to the store rather than a local `@State` seeded once.
+    /// The old version dropped the toggle when the view went away and never
+    /// told the phone (#2694 defect 2); binding to the store persists it and
+    /// sends it on.
+    private var isOn: Binding<Bool> {
+        Binding(
+            get: { item.isPacked },
+            set: { connectivity.setChecklistItemPacked($0, itemId: item.id) }
+        )
     }
 
     var body: some View {
-        Toggle(isOn: $isOn) {
+        Toggle(isOn: isOn) {
             Label(item.title, systemImage: item.symbolName)
         }
     }
