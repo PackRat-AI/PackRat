@@ -38,7 +38,7 @@ describe('findExportedIPA', () => {
   it('fails when export produced multiple ipa files', () => {
     const dir = makeTempDir();
     writeFileSync(join(dir, 'PackRat.ipa'), '');
-    writeFileSync(join(dir, 'PackRat Swift.ipa'), '');
+    writeFileSync(join(dir, 'PackRat-2.ipa'), '');
 
     expect(() => findExportedIPA(dir)).toThrow('Expected one .ipa file');
   });

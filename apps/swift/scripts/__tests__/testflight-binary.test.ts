@@ -6,7 +6,7 @@ import { verifyTestFlightArchive } from '../lib/testflight-binary';
 import { parseTestFlightUploadConfig } from '../lib/testflight-config';
 
 const replacementConfig = parseTestFlightUploadConfig({
-  argv: ['--replacement', '--production'],
+  argv: ['--production'],
   env: { BUILD_NUMBER: '2026071802' },
 });
 
@@ -86,7 +86,7 @@ describe('TestFlight binary verification', () => {
     }
   });
 
-  it('rejects an archive that still has side-by-side or non-production metadata', () => {
+  it('rejects an archive with the retired beta listing or non-production metadata', () => {
     const archivePath = writeArchive({
       iosBundleId: 'com.andrewbierman.packrat.swift',
       packratEnv: 'dev',

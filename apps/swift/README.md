@@ -79,34 +79,29 @@ See `docs/ci/swift-e2e-runner.md` for self-hosted Mac runner setup.
 
 ## TestFlight Identity
 
-The Swift iOS app defaults to the replacement identity for the existing Expo/App
-Store listing:
+The Swift iOS app ships to the one public App Store listing:
 
 - iOS: `com.andrewbierman.packrat`, display name `PackRat`
 - watchOS companion: `com.andrewbierman.packrat.watchkitapp`
 
 That is the only identity that validates a seamless update for existing testers.
-The upload tooling still supports an explicit side-by-side lane for unusual
-parallel QA builds, but it must be requested intentionally with `--side-by-side`;
-iOS treats that as a separate app with separate install, keychain, and app
+The separate `PackRat Swift` beta listing that once ran in parallel is retired —
+iOS treated it as a wholly separate app, with its own install, keychain, and app
 container state.
-
-Upload commands require an explicit lane so we do not accidentally target the
-wrong App Store Connect record:
 
 ```sh
 APP_STORE_CURRENT_BUILD_NUMBER=2026071801 BUILD_NUMBER=2026071802 \
-  bun swift:testflight:preflight --replacement --production
-bun apps/swift/scripts/upload-testflight.ts --replacement --dry-run
-bun apps/swift/scripts/upload-testflight.ts --replacement --verify-archive-only
-bun apps/swift/scripts/upload-testflight.ts --replacement
-bun apps/swift/scripts/upload-testflight.ts --side-by-side --staging
+  bun swift:testflight:preflight --production
+bun apps/swift/scripts/upload-testflight.ts --dry-run
+bun apps/swift/scripts/upload-testflight.ts --verify-archive-only
+bun apps/swift/scripts/upload-testflight.ts
+bun apps/swift/scripts/upload-testflight.ts --staging
 ```
 
 `--staging` uses the Staging build config (`PACKRAT_ENV=dev`). Without it, the
 script archives Release (`PACKRAT_ENV=production`).
 
-Use `--dry-run` before a real upload to verify the lane, bundle id, display
+Use `--dry-run` before a real upload to verify the bundle id, display
 name, build configuration, API environment, and Xcode archive overrides without
 requiring Apple credentials or running Xcode.
 
@@ -123,7 +118,7 @@ Use `swift:testflight:preflight` before the replacement upload when validating a
 seamless update. It fails unless the resolved archive is the existing Expo
 listing (`com.andrewbierman.packrat`, `PackRat`), Release/production, and has a
 strictly greater build number than `APP_STORE_CURRENT_BUILD_NUMBER`. Real
-`--replacement` uploads enforce the same check before reading Apple credentials
+Uploads enforce the same check before reading Apple credentials
 or archiving.
 
 The same check is available from the manual **Swift E2E Tests** GitHub workflow:
