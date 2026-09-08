@@ -149,3 +149,32 @@ extension View {
         )
     }
 }
+
+extension View {
+    /// Hosts the paywall for everything below it, and hands descendants a
+    /// `paywallTrigger` they can ask through.
+    ///
+    /// Attach at a screen root — never inside a `Form` or `Section`, which is
+    /// the bug this exists to prevent.
+    func hostsPaywall(
+        _ trigger: PaywallTrigger,
+        onEntitlementChanged: @escaping () -> Void = {}
+    ) -> some View {
+        modifier(PaywallHost(trigger: trigger, onEntitlementChanged: onEntitlementChanged))
+    }
+}
+
+private struct PaywallHost: ViewModifier {
+    @Bindable var trigger: PaywallTrigger
+    let onEntitlementChanged: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .environment(\.paywallTrigger, trigger)
+            .paywall(
+                isPresented: $trigger.isRequested,
+                featureKey: trigger.featureKey,
+                onEntitlementChanged: onEntitlementChanged
+            )
+    }
+}

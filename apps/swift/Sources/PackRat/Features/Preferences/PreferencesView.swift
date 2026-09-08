@@ -53,6 +53,9 @@ struct PreferencesView: View {
     @AppStorage("apiBaseURL") private var apiBaseURL: String = ""
 
     @State private var showingClearDataConfirm = false
+    /// Owned here, at the screen root, so the paywall presents reliably —
+    /// `SubscriptionSettingsSection` only requests it. See `PaywallTrigger`.
+    @State private var paywallTrigger = PaywallTrigger()
     @Environment(\.openURL) private var openURL
     @State private var notificationsEnabled = false
     @State private var notificationAuthStatus: UNAuthorizationStatus = .notDetermined
@@ -76,6 +79,7 @@ struct PreferencesView: View {
         .padding(20)
         .frame(width: 460, height: 360)
         .clearDataConfirmation(isPresented: $showingClearDataConfirm, onConfirm: clearAppData)
+        .hostsPaywall(paywallTrigger)
         #else
         // iOS: a single scrolling form pushed onto a navigation stack. The
         // macOS tabs become grouped sections so all settings stay reachable
@@ -96,6 +100,7 @@ struct PreferencesView: View {
         }
         .navigationTitle("Settings")
         .clearDataConfirmation(isPresented: $showingClearDataConfirm, onConfirm: clearAppData)
+        .hostsPaywall(paywallTrigger)
         .onAppear { Task { await refreshNotificationStatus() } }
         #endif
     }
