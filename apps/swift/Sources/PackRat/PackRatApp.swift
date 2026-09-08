@@ -44,12 +44,24 @@ struct PackRatApp: App {
                 // would refetch once per open window on every resume.
                 .refreshesFeatureStatesOnForeground()
                 .providesWeightUnitPreference()
+                #if os(macOS)
+                // Floor for the 2- and 3-column split: the sidebar alone asks
+                // for 160pt, and below roughly this width the detail column
+                // truncates its own labels rather than reflowing (#2668).
+                // `.contentMinSize` below turns this into the window's real
+                // resize limit — without a floor AppKit let the window shrink
+                // to 399x300, which clipped sidebar rows off the bottom with
+                // no scroll affordance and sliced the dashboard stat row
+                // through mid-glyph.
+                .frame(minWidth: 720, minHeight: 480)
+                #endif
         }
         .modelContainer(PersistenceController.shared.container)
         #if os(macOS)
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: true))
         .defaultSize(width: 1100, height: 720)
+        .windowResizability(.contentMinSize)
         .commands {
             PackRatCommands(authManager: authManager)
         }
@@ -71,10 +83,14 @@ struct PackRatApp: App {
                     .environment(authManager)
                     .flushesPendingWrites()
                     .providesWeightUnitPreference()
+                    // Single-column, so it tolerates a narrower floor than the
+                    // main window — but still needs one (#2668).
+                    .frame(minWidth: 480, minHeight: 400)
             }
         }
         .modelContainer(PersistenceController.shared.container)
         .defaultSize(width: 800, height: 600)
+        .windowResizability(.contentMinSize)
 
         WindowGroup("Trip", id: "trip", for: String.self) { $tripId in
             if let id = tripId {
@@ -82,10 +98,12 @@ struct PackRatApp: App {
                     .environment(authManager)
                     .flushesPendingWrites()
                     .providesWeightUnitPreference()
+                    .frame(minWidth: 480, minHeight: 400)
             }
         }
         .modelContainer(PersistenceController.shared.container)
         .defaultSize(width: 800, height: 600)
+        .windowResizability(.contentMinSize)
         #endif
     }
 }

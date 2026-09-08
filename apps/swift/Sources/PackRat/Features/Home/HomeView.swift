@@ -130,7 +130,7 @@ struct HomeView: View {
             } else {
                 AvatarView(
                     url: authManager.currentUser?.avatarUrl,
-                    fallbackText: authManager.currentUser?.initials ?? "?",
+                    fallbackText: authManager.currentUser?.initials ?? "",
                     size: 44
                 )
             }

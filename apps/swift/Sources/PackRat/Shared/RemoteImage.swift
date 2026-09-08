@@ -48,17 +48,35 @@ private var defaultPlaceholder: some View {
 
 struct AvatarView: View {
     let url: String?
+    /// Initials to show when there is no avatar image. Pass an empty string
+    /// when there is no person to initialise — a guest — and the view draws a
+    /// person glyph instead.
     let fallbackText: String
     var size: CGFloat = 36
+
+    private var trimmedFallback: String {
+        fallbackText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     var body: some View {
         RemoteImage(url: url, contentMode: .fill, cornerRadius: size / 2) {
             Circle()
                 .fill(.tint.opacity(0.12))
                 .overlay {
-                    Text(fallbackText.prefix(2).uppercased())
-                        .font(.system(size: size * 0.35, weight: .bold))
-                        .foregroundStyle(.tint)
+                    // A guest has no name and no email, so initials would be a
+                    // literal "?" — which reads as "something went wrong"
+                    // rather than "not signed in". The glyph is what the rest
+                    // of the app already uses for the guest identity (see
+                    // ProfileView's guest branch).
+                    if trimmedFallback.isEmpty {
+                        Image(systemName: "person.fill")
+                            .font(.system(size: size * 0.45, weight: .semibold))
+                            .foregroundStyle(.tint)
+                    } else {
+                        Text(trimmedFallback.prefix(2).uppercased())
+                            .font(.system(size: size * 0.35, weight: .bold))
+                            .foregroundStyle(.tint)
+                    }
                 }
         }
         .frame(width: size, height: size)

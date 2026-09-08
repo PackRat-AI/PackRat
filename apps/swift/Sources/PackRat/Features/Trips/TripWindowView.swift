@@ -25,6 +25,9 @@ struct TripWindowView: View {
             }
         }
         .environment(appState)
+        // The Pack section renders `packsVM`'s copy of the linked pack, which
+        // another window may edit while this one is open (#2667).
+        .adoptsPackRevisions(into: appState.packsVM)
         .task {
             await appState.tripsVM.load(context: modelContext)
             await appState.packsVM.load(context: modelContext)

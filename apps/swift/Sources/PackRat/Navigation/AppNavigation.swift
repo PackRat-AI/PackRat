@@ -145,6 +145,10 @@ struct AppNavigation: View {
         .environment(appState)
         #if os(macOS)
         .navigationSplitViewStyle(.balanced)
+        // The main window shows pack data in the Packs list/detail and in a
+        // Trip's Pack section, either of which a standalone Pack or Trip
+        // window may edit while this one is open (#2667).
+        .adoptsPackRevisions(into: appState.packsVM)
         #endif
         .sheet(isPresented: $state.isGlobalSearchPresented) {
             GlobalSearchView()
@@ -439,7 +443,7 @@ struct AppNavigation: View {
         return HStack(spacing: 8) {
             AvatarView(
                 url: authManager.currentUser?.avatarUrl,
-                fallbackText: authManager.currentUser?.initials ?? "?",
+                fallbackText: authManager.currentUser?.initials ?? "",
                 size: 30
             )
             VStack(alignment: .leading, spacing: 1) {
@@ -464,8 +468,20 @@ struct AppNavigation: View {
                     Label("Profile", systemImage: "person.circle")
                 }
                 Divider()
-                Button("Sign Out", role: .destructive) {
-                    Task { try? await authManager.logout() }
+                // A guest has no session to end, so "Sign Out" was a no-op
+                // offering to undo something that never happened. Mirror the
+                // affordance ProfileView's guest branch already uses, and
+                // which the menu-bar command already guards on.
+                if authManager.isAuthenticated {
+                    Button("Sign Out", role: .destructive) {
+                        Task { try? await authManager.logout() }
+                    }
+                } else {
+                    Button {
+                        authManager.signOut()
+                    } label: {
+                        Label("Sign In or Create Account", systemImage: "person.badge.key")
+                    }
                 }
             } label: {
                 Image(systemName: "ellipsis.circle").foregroundStyle(.secondary)
