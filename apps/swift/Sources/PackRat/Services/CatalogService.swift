@@ -6,6 +6,10 @@ import Foundation
 protocol CatalogBrowsing: Sendable {
     func categories(limit: Int) async throws -> [String]
     func browse(query: String?, category: String?, page: Int, limit: Int) async throws -> [CatalogItem]
+    /// The keyword search behind the standalone Gear Catalog screen. On the
+    /// protocol so `CatalogViewModel`'s paging can be tested without the
+    /// network, the same reason `browse` is here.
+    func search(query: String, page: Int, limit: Int) async throws -> [CatalogItem]
 }
 
 final class CatalogService: CatalogBrowsing, Sendable {
