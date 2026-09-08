@@ -468,8 +468,20 @@ struct AppNavigation: View {
                     Label("Profile", systemImage: "person.circle")
                 }
                 Divider()
-                Button("Sign Out", role: .destructive) {
-                    Task { try? await authManager.logout() }
+                // A guest has no session to end, so "Sign Out" was a no-op
+                // offering to undo something that never happened. Mirror the
+                // affordance ProfileView's guest branch already uses, and
+                // which the menu-bar command already guards on.
+                if authManager.isAuthenticated {
+                    Button("Sign Out", role: .destructive) {
+                        Task { try? await authManager.logout() }
+                    }
+                } else {
+                    Button {
+                        authManager.signOut()
+                    } label: {
+                        Label("Sign In or Create Account", systemImage: "person.badge.key")
+                    }
                 }
             } label: {
                 Image(systemName: "ellipsis.circle").foregroundStyle(.secondary)
