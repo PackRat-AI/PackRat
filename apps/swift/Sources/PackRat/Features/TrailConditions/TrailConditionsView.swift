@@ -9,6 +9,11 @@ struct TrailConditionsListView: View {
     @Environment(AuthManager.self) private var authManager
     @State private var showingSubmitSheet = false
     #if os(iOS)
+    /// Drafts captured on the paired watch, waiting for a trail name (#2721).
+    @State private var draftStore = WatchTrailDraftStore.shared
+    @State private var draftBeingCompleted: WatchTrailDraft?
+    #endif
+    #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private var isCompact: Bool {
         horizontalSizeClass == .compact && UIDevice.current.userInterfaceIdiom == .phone
@@ -33,7 +38,7 @@ struct TrailConditionsListView: View {
                 ProgressView("Loading reports…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.reports.isEmpty {
                 ErrorView(error, retry: { await viewModel.load() })
-            } else if viewModel.reports.isEmpty {
+            } else if viewModel.reports.isEmpty && !hasWatchDrafts {
                 EmptyStateView(
                     "No Trail Reports Yet",
                     subtitle: "Be the first to report conditions on a trail",
@@ -60,6 +65,17 @@ struct TrailConditionsListView: View {
         .sheet(isPresented: $showingSubmitSheet) {
             SubmitTrailConditionView(viewModel: viewModel)
         }
+        #if os(iOS)
+        // Opened by tapping a watch draft, never presented on arrival — a draft
+        // syncing in must not hijack whatever the phone is already showing.
+        .sheet(item: $draftBeingCompleted) { draft in
+            SubmitTrailConditionView(
+                viewModel: viewModel,
+                draft: draft,
+                onSubmitted: { draftStore.remove(draft.id) }
+            )
+        }
+        #endif
     }
 
     @ViewBuilder
@@ -85,14 +101,89 @@ struct TrailConditionsListView: View {
         }
     }
 
+    /// Whether the paired watch has captures waiting. Always false off iOS,
+    /// where there is no paired watch.
+    private var hasWatchDrafts: Bool {
+        #if os(iOS)
+        draftStore.hasDrafts
+        #else
+        false
+        #endif
+    }
+
     private var reportList: some View {
         List(selection: $selectedId) {
+            #if os(iOS)
+            watchDraftsSection
+            #endif
             ForEach(viewModel.filteredReports) { report in
                 reportRow(report)
             }
         }
     }
+
+    #if os(iOS)
+    /// Watch captures sit above the reports, and outside the search filter —
+    /// they carry no trail name to match on yet, so filtering them would make
+    /// them vanish the moment someone typed in the search field.
+    @ViewBuilder
+    private var watchDraftsSection: some View {
+        if draftStore.hasDrafts && viewModel.searchText.isEmpty {
+            Section("From Apple Watch") {
+                ForEach(draftStore.drafts) { draft in
+                    Button {
+                        draftBeingCompleted = draft
+                    } label: {
+                        WatchTrailDraftRow(draft: draft)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("watch_trail_draft_row_\(draft.id)")
+                    .accessibilityHint("Add a trail name to finish this report")
+                    .swipeActions(edge: .trailing) {
+                        Button("Discard", systemImage: "trash", role: .destructive) {
+                            draftStore.remove(draft.id)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    #endif
 }
+
+#if os(iOS)
+/// A watch capture awaiting a trail name, shown above the submitted reports.
+private struct WatchTrailDraftRow: View {
+    let draft: WatchTrailDraft
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "applewatch")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(TrailConditionLevel(rawValue: draft.condition)?.label ?? draft.condition.capitalized)
+                    .font(.body.weight(.medium))
+                if !draft.note.isEmpty {
+                    Text(draft.note)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+                Text("Needs a trail name")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+            }
+            Spacer(minLength: 0)
+            Text(draft.createdAt, format: .relative(presentation: .numeric))
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .contentShape(Rectangle())
+    }
+}
+#endif
 
 private struct TrailReportRow: View {
     let report: TrailConditionReport
@@ -240,17 +331,53 @@ struct TrailConditionDetailView: View {
 
 struct SubmitTrailConditionView: View {
     let viewModel: TrailConditionsViewModel
+    /// Called after a successful submit. Used to clear the originating watch
+    /// draft only once the report actually exists (#2721).
+    private let onSubmitted: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
 
     @State private var trailName = ""
     @State private var trailRegion = ""
     @State private var surface = TrailSurface.dirt.rawValue
-    @State private var condition = "good"
+    @State private var condition: String
     @State private var selectedHazards: Set<String> = []
-    @State private var notes = ""
+    @State private var notes: String
     @State private var isSubmitting = false
     @State private var error: String?
     @FocusState private var isInputFocused: Bool
+    /// Separate from `isInputFocused`, which every field in the form shares —
+    /// setting that one focuses whichever field registered last (the notes box),
+    /// scrolling the trail name off-screen instead of onto it.
+    @FocusState private var isTrailNameFocused: Bool
+    /// True when the form opened from a watch capture, so the trail field can
+    /// take focus immediately — it is the one thing the draft cannot carry.
+    private let isCompletingWatchDraft: Bool
+
+    init(viewModel: TrailConditionsViewModel) {
+        self.viewModel = viewModel
+        self.onSubmitted = nil
+        self.isCompletingWatchDraft = false
+        _condition = State(initialValue: "good")
+        _notes = State(initialValue: "")
+    }
+
+    #if os(iOS)
+    /// Opens the form pre-filled from a watch capture. The watch supplies the
+    /// condition and the note; the trail name is what the user still has to add.
+    init(
+        viewModel: TrailConditionsViewModel,
+        draft: WatchTrailDraft,
+        onSubmitted: @escaping () -> Void
+    ) {
+        self.viewModel = viewModel
+        self.onSubmitted = onSubmitted
+        self.isCompletingWatchDraft = true
+        _condition = State(
+            initialValue: TrailConditionLevel(rawValue: draft.condition)?.rawValue ?? "good"
+        )
+        _notes = State(initialValue: draft.note)
+    }
+    #endif
 
     private let hazardOptions = ["Downed trees", "Muddy sections", "Ice", "High water", "Rock slides", "Wildlife", "Washed out trail"]
     private var isValid: Bool { !trailName.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -258,17 +385,23 @@ struct SubmitTrailConditionView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Trail") {
+                Section {
                     TextField("Trail", text: $trailName)
-                        .focused($isInputFocused)
+                        .focused($isTrailNameFocused)
                         .submitLabel(.done)
-                        .onSubmit { isInputFocused = false }
+                        .onSubmit { isTrailNameFocused = false }
                         .accessibilityIdentifier("trail_report_name")
                     TextField("Region", text: $trailRegion)
                         .focused($isInputFocused)
                         .submitLabel(.done)
                         .onSubmit { isInputFocused = false }
                         .accessibilityIdentifier("trail_report_region")
+                } header: {
+                    Text("Trail")
+                } footer: {
+                    if isCompletingWatchDraft {
+                        Text("Condition and notes came from your Apple Watch. Add the trail name to submit.")
+                    }
                 }
                 Section("Conditions") {
                     Picker("Overall", selection: $condition) {
@@ -302,11 +435,19 @@ struct SubmitTrailConditionView: View {
             }
             .packRatFormStyle()
             .dismissesKeyboardOnScroll()
-            .keyboardDoneButton(isFocused: $isInputFocused)
-            .navigationTitle("Submit Report")
+            // One keyboard toolbar only — a second `keyboardDoneButton` renders a
+            // duplicate "Done". Clears whichever of the two focus flags is set.
+            .keyboardDoneButton {
+                isInputFocused = false
+                isTrailNameFocused = false
+            }
+            .navigationTitle(isCompletingWatchDraft ? "Finish Watch Report" : "Submit Report")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
+            // The trail name is the only field a watch capture cannot fill, so
+            // put the cursor there rather than making the user hunt for it.
+            .task { if isCompletingWatchDraft { isTrailNameFocused = true } }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
@@ -334,6 +475,9 @@ struct SubmitTrailConditionView: View {
                     hazards: Array(selectedHazards),
                     notes: notes.isEmpty ? nil : notes
                 )
+                // Only now — a draft cleared on a failed submit would lose the
+                // capture with nothing to show for it.
+                onSubmitted?()
                 dismiss()
             } catch { self.error = error.localizedDescription }
         }
