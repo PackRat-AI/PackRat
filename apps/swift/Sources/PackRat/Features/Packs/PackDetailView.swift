@@ -439,6 +439,9 @@ struct PackDetailView: View {
                 }
             }
             .pickerStyle(.segmented)
+            // Same reason as the Packs list pickers: the macOS leading title
+            // label compresses before the control does in a narrow column.
+            .labelsHidden()
             .accessibilityIdentifier("pack_packing_filter")
         }
         .padding(14)

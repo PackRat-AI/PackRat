@@ -110,6 +110,12 @@ struct PacksListView: View {
 
     private var categoryFilterBar: some View {
         VStack(spacing: 8) {
+            // `.labelsHidden()` on both: on macOS a Picker renders its title as
+            // a leading label, and in a narrow list column that label is what
+            // AppKit compresses first — "View" wrapped to "Vie/w" rather than
+            // the control giving up width. The segments and the trailing value
+            // text already name the control, so the title is redundant on
+            // screen; it stays as the accessibility label.
             Picker("View", selection: $isExplore) {
                 Label("My Packs", systemImage: "person.fill").tag(false)
                     .accessibilityIdentifier("packs_mode_my_packs")
@@ -117,6 +123,7 @@ struct PacksListView: View {
                     .accessibilityIdentifier("packs_mode_explore")
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
             .accessibilityIdentifier("packs_mode_picker")
 
             HStack {
@@ -129,6 +136,7 @@ struct PacksListView: View {
                     }
                 }
                 .pickerStyle(.menu)
+                .labelsHidden()
                 .accessibilityIdentifier("packs_category_filter")
 
                 Spacer()
