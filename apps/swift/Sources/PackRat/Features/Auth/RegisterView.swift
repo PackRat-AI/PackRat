@@ -3,6 +3,9 @@ import SwiftUI
 struct RegisterView: View {
     @Environment(AuthManager.self) private var authManager
     let onLoginTapped: () -> Void
+    /// Back to the welcome screen, which is the only route to guest mode.
+    /// Without it, opening sign-up was a one-way door.
+    let onBackTapped: () -> Void
 
     @State private var firstName = ""
     @State private var lastName = ""
@@ -25,6 +28,12 @@ struct RegisterView: View {
         authContainer {
             VStack(spacing: 24) {
                 AuthHeader(title: "Create Account", subtitle: "Save packs, trips, and gear across devices.", symbol: "person.crop.circle.badge.plus")
+
+                AuthProviderButtons(
+                    isLoading: $isLoading,
+                    error: $error,
+                    identifierPrefix: "register"
+                )
 
                 VStack(spacing: 0) {
                     HStack(spacing: 10) {
@@ -104,10 +113,20 @@ struct RegisterView: View {
 
                 Divider()
 
-                Button("Already have an account? Sign In", action: onLoginTapped)
+                VStack(spacing: 10) {
+                    Button("Already have an account? Sign In", action: onLoginTapped)
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.tint)
+                        .font(.callout)
+
+                    Button(action: onBackTapped) {
+                        Label("Back", systemImage: "chevron.left")
+                            .font(.callout)
+                    }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.tint)
-                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("register_back")
+                }
             }
         }
     }

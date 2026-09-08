@@ -85,10 +85,14 @@ struct AuthGateView: View {
         case .login:
             LoginView(
                 onRegisterTapped: { route = .register },
-                onForgotPasswordTapped: { route = .forgotPassword }
+                onForgotPasswordTapped: { route = .forgotPassword },
+                onBackTapped: { route = .welcome }
             )
         case .register:
-            RegisterView(onLoginTapped: { route = .login })
+            RegisterView(
+                onLoginTapped: { route = .login },
+                onBackTapped: { route = .welcome }
+            )
         case .forgotPassword:
             ForgotPasswordView(
                 onCodeSent: { email in route = .resetPassword(email: email) },
