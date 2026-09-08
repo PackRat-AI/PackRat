@@ -345,6 +345,10 @@ struct SubmitTrailConditionView: View {
     @State private var isSubmitting = false
     @State private var error: String?
     @FocusState private var isInputFocused: Bool
+    /// Separate from `isInputFocused`, which every field in the form shares —
+    /// setting that one focuses whichever field registered last (the notes box),
+    /// scrolling the trail name off-screen instead of onto it.
+    @FocusState private var isTrailNameFocused: Bool
     /// True when the form opened from a watch capture, so the trail field can
     /// take focus immediately — it is the one thing the draft cannot carry.
     private let isCompletingWatchDraft: Bool
@@ -383,9 +387,9 @@ struct SubmitTrailConditionView: View {
             Form {
                 Section {
                     TextField("Trail", text: $trailName)
-                        .focused($isInputFocused)
+                        .focused($isTrailNameFocused)
                         .submitLabel(.done)
-                        .onSubmit { isInputFocused = false }
+                        .onSubmit { isTrailNameFocused = false }
                         .accessibilityIdentifier("trail_report_name")
                     TextField("Region", text: $trailRegion)
                         .focused($isInputFocused)
@@ -431,14 +435,19 @@ struct SubmitTrailConditionView: View {
             }
             .packRatFormStyle()
             .dismissesKeyboardOnScroll()
-            .keyboardDoneButton(isFocused: $isInputFocused)
+            // One keyboard toolbar only — a second `keyboardDoneButton` renders a
+            // duplicate "Done". Clears whichever of the two focus flags is set.
+            .keyboardDoneButton {
+                isInputFocused = false
+                isTrailNameFocused = false
+            }
             .navigationTitle(isCompletingWatchDraft ? "Finish Watch Report" : "Submit Report")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             // The trail name is the only field a watch capture cannot fill, so
             // put the cursor there rather than making the user hunt for it.
-            .task { if isCompletingWatchDraft { isInputFocused = true } }
+            .task { if isCompletingWatchDraft { isTrailNameFocused = true } }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {

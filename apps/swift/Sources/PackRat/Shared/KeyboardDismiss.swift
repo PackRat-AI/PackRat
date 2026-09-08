@@ -30,6 +30,27 @@ extension View {
         #endif
     }
 
+    /// Adds a keyboard accessory toolbar whose "Done" button runs `onDone`.
+    ///
+    /// For forms with more than one `@FocusState` flag, where a single binding
+    /// cannot clear them all. Attach this once — two keyboard toolbars on the
+    /// same view render two "Done" buttons.
+    @ViewBuilder
+    func keyboardDoneButton(onDone: @escaping () -> Void) -> some View {
+        #if os(macOS)
+        self
+        #else
+        self.toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done", action: onDone)
+                    .fontWeight(.semibold)
+                    .accessibilityIdentifier("keyboard_done")
+            }
+        }
+        #endif
+    }
+
     /// Dismisses the keyboard when a scrollable container is dragged.
     /// No-op on macOS, where there is no software keyboard to dismiss.
     @ViewBuilder

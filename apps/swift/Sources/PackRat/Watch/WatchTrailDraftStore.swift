@@ -33,6 +33,18 @@ final class WatchTrailDraftStore {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.drafts = Self.load(from: defaults)
+        if VisualSampleData.isUITestFixturesEnabled, drafts.isEmpty {
+            // Lets the arrived-from-watch state be exercised without pairing a
+            // watch simulator, which is otherwise the only way to reach it.
+            drafts = [
+                WatchTrailDraft(
+                    id: "watch-fixture-1",
+                    condition: "fair",
+                    note: "Creek crossing above the saddle is knee-deep",
+                    createdAt: Date().addingTimeInterval(-20 * 60)
+                )
+            ]
+        }
     }
 
     var hasDrafts: Bool { !drafts.isEmpty }
