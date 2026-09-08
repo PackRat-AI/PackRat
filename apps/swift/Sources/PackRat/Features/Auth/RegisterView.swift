@@ -29,12 +29,6 @@ struct RegisterView: View {
             VStack(spacing: 24) {
                 AuthHeader(title: "Create Account", subtitle: "Save packs, trips, and gear across devices.", symbol: "person.crop.circle.badge.plus")
 
-                AuthProviderButtons(
-                    isLoading: $isLoading,
-                    error: $error,
-                    identifierPrefix: "register"
-                )
-
                 VStack(spacing: 0) {
                     HStack(spacing: 10) {
                         TextField("First Name", text: $firstName)
@@ -110,6 +104,12 @@ struct RegisterView: View {
                 .controlSize(.large)
                 .disabled(!isValid || isLoading)
                 .accessibilityIdentifier("register_submit")
+
+                AuthProviderButtons(
+                    isLoading: $isLoading,
+                    error: $error,
+                    identifierPrefix: "register"
+                )
 
                 Divider()
 
