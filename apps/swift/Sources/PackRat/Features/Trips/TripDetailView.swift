@@ -29,6 +29,7 @@ struct TripDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 metaCards
+                    .padding(.top, 8)
 
                 // Map — shown when the trip has coordinates
                 if let coord = coordinate {
