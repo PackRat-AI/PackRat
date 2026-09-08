@@ -34,6 +34,25 @@ final class PacksViewModel {
         }
     }
 
+    /// Picks up pack mutations made in another window (#2667).
+    ///
+    /// Reconciles in place from `PackRevisionStore` rather than refetching, so
+    /// a window that is merely displaying a pack does not issue a network call
+    /// every time a different window edits it. Only packs this view model
+    /// already holds are updated — see `PackRevisionStore.reconcile`.
+    func adoptExternalRevisions() {
+        let reconciled = PackRevisionStore.shared.reconcile(packs)
+        // Assigning unconditionally would invalidate every observing view on
+        // each publish, including the window that made the write. `Pack` comes
+        // from generated code and is not Equatable, so compare on the fields
+        // that change on a write: the id list and each pack's `updatedAt`,
+        // which `rebuildPack` restamps on every mutation.
+        let fingerprint = reconciled.map { "\($0.id)@\($0.updatedAt ?? "")#\($0.itemCount)" }
+        let current = packs.map { "\($0.id)@\($0.updatedAt ?? "")#\($0.itemCount)" }
+        guard fingerprint != current else { return }
+        packs = reconciled
+    }
+
     // Load cached packs instantly from SwiftData, then refresh from network
     func load(context: ModelContext? = nil) async {
         if VisualSampleData.isEnabled && !packs.isEmpty {
@@ -616,6 +635,12 @@ final class PacksViewModel {
     }
 
     private func upsertCachedPack(_ pack: Pack, context: ModelContext?) {
+        // Announce first, and outside the `context` guard: the other windows
+        // need the new value whether or not this call site had a ModelContext
+        // to persist through (#2667). Every mutation already funnels here, so
+        // publishing at this choke point covers them all.
+        PackRevisionStore.shared.publish(pack)
+
         guard let context else { return }
         if let existing = try? context.fetch(FetchDescriptor<CachedPack>(predicate: #Predicate { $0.id == pack.id })).first {
             existing.name = pack.name
@@ -636,6 +661,8 @@ final class PacksViewModel {
     }
 
     private func deleteCachedPack(_ packId: String, context: ModelContext?) {
+        PackRevisionStore.shared.publishDeletion(of: packId)
+
         guard let context else { return }
         if let cached = try? context.fetch(FetchDescriptor<CachedPack>(predicate: #Predicate { $0.id == packId })).first {
             context.delete(cached)

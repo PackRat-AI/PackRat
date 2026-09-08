@@ -145,6 +145,10 @@ struct AppNavigation: View {
         .environment(appState)
         #if os(macOS)
         .navigationSplitViewStyle(.balanced)
+        // The main window shows pack data in the Packs list/detail and in a
+        // Trip's Pack section, either of which a standalone Pack or Trip
+        // window may edit while this one is open (#2667).
+        .adoptsPackRevisions(into: appState.packsVM)
         #endif
         .sheet(isPresented: $state.isGlobalSearchPresented) {
             GlobalSearchView()
