@@ -12,8 +12,8 @@ struct CatalogView: View {
         return Group {
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Catalog Requires an Account",
-                    subtitle: "Gear search syncs with PackRat's catalog service. Local packs and trips still work in guest mode.",
+                    "Sign In to Search Gear",
+                    subtitle: "Search thousands of products for weights, prices, and specs. Your own packs and trips stay on this device and keep working without an account.",
                     systemImage: "magnifyingglass"
                 )
             } else if vm.isLoading && vm.items.isEmpty {

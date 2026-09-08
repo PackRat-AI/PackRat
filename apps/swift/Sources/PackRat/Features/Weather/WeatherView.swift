@@ -22,8 +22,8 @@ struct WeatherView: View {
         Group {
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Weather Requires an Account",
-                    subtitle: "Forecasts and alerts come from PackRat's weather service. Local packs and trips still work in guest mode.",
+                    "Sign In for Weather",
+                    subtitle: "Forecasts and alerts for where you are heading. Your packs and trips stay on this device and keep working without an account.",
                     systemImage: "cloud.sun"
                 )
             } else {

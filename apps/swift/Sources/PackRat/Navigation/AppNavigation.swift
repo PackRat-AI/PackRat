@@ -285,8 +285,8 @@ struct AppNavigation: View {
         case .templates:
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Templates Require an Account",
-                    subtitle: "Pack templates sync with your account so they can be reused across devices.",
+                    "Sign In to Use Templates",
+                    subtitle: "Start from a ready-made pack list instead of a blank one, and keep your own for next time. Building packs by hand works without an account.",
                     systemImage: "doc.on.doc"
                 )
             } else if let id = appState.selectedTemplateId,
@@ -298,8 +298,8 @@ struct AppNavigation: View {
         case .trailConditions:
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Trail Reports Require an Account",
-                    subtitle: "Community trail conditions are shared through your PackRat account.",
+                    "Sign In for Trail Reports",
+                    subtitle: "Read what other hikers found on the trail recently, and add your own. Your packs and trips stay on this device and keep working without an account.",
                     systemImage: "figure.hiking"
                 )
             } else if let id = appState.selectedReportId,
