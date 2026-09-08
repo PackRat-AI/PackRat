@@ -321,10 +321,10 @@ struct PackCatalogBrowserSheet: View {
                 // It also owns the paging trigger. Hanging `.task` off the last
                 // item meant the fetch and the indicator were driven by two
                 // different views: the row's task fired, `isLoading` went true,
-                // and this footer was inserted below the fold — arriving after
+                // and only then was a footer inserted — below the fold, after
                 // the scroll had already stopped, so nobody saw it. Scrolling
-                // this row into view is now the single event that both starts
-                // the fetch and puts the spinner on screen.
+                // this row into view is the single event that both starts the
+                // fetch and puts the spinner on screen.
                 if viewModel.hasMore && !viewModel.isSearching {
                     HStack {
                         Spacer()
@@ -339,7 +339,22 @@ struct PackCatalogBrowserSheet: View {
                     }
                     .padding(.vertical, 8)
                     .listRowSeparator(.hidden)
-                    .task { await viewModel.loadNextPage() }
+                    // `onAppear`, not `.task`. Both were wrong in their own
+                    // way: a bare `.task` runs once per view identity, and the
+                    // footer keeps its identity across pages, so it fired for
+                    // page 2 and never again. Keying it to `items.count` fixed
+                    // the re-running but broke the fetch — `.task(id:)` cancels
+                    // the running task whenever the id changes, so each
+                    // arriving page cancelled the request for the next one and
+                    // the spinner disappeared with it (every page was requested
+                    // four times and killed mid-flight).
+                    //
+                    // `onAppear` fires each time the footer scrolls into view
+                    // and cancels nothing. The fetch is owned by the view model,
+                    // whose `isLoading` guard makes a repeat call a no-op.
+                    .onAppear {
+                        Task { await viewModel.loadNextPage() }
+                    }
                 }
             }
             .listStyle(.plain)
