@@ -20,7 +20,7 @@ struct ComposePostView: View {
                     HStack(alignment: .top, spacing: 12) {
                         AvatarView(
                             url: authManager.currentUser?.avatarUrl,
-                            fallbackText: authManager.currentUser?.initials ?? "?",
+                            fallbackText: authManager.currentUser?.initials ?? "",
                             size: 36
                         )
                         ZStack(alignment: .topLeading) {

@@ -443,7 +443,7 @@ struct AppNavigation: View {
         return HStack(spacing: 8) {
             AvatarView(
                 url: authManager.currentUser?.avatarUrl,
-                fallbackText: authManager.currentUser?.initials ?? "?",
+                fallbackText: authManager.currentUser?.initials ?? "",
                 size: 30
             )
             VStack(alignment: .leading, spacing: 1) {
