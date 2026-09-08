@@ -173,10 +173,14 @@ final class FeatureAccessStore {
     /// without entitlement, say — would let a paying member be treated as
     /// non-Pro against a freshly-fetched gate list, which is worse than staying
     /// on the previous cached answer.
+    // `SubscriptionService.shared` is main-actor isolated and so cannot be a
+    // default argument under the Swift 6 language mode — see
+    // `PacksViewModel.init`. Resolved in the body instead.
     func refresh(
         service: FeatureAccessService = .shared,
-        subscriptions: SubscriptionService = .shared
+        subscriptions: SubscriptionService? = nil
     ) async {
+        let subscriptions = subscriptions ?? .shared
         do {
             let config = try await service.fetchConfig()
 

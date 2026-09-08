@@ -188,6 +188,12 @@ struct HomeView: View {
             HStack(spacing: 10) {
                 SummaryActionButton(title: primarySummaryActionTitle, symbol: primarySummaryActionSymbol, isProminent: true) {
                     appState.navItem = primarySummaryDestination
+                    // "Start Pack" promises a new pack, so open the create sheet
+                    // rather than dropping the user on an empty list to find the
+                    // button again.
+                    if appState.packsVM.packs.isEmpty {
+                        appState.isPackCreationRequested = true
+                    }
                 }
 
                 SummaryActionButton(title: "Search", symbol: "magnifyingglass") {

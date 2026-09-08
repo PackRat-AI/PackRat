@@ -33,10 +33,14 @@ struct PackFormView: View {
                         .submitLabel(.done)
                         .onSubmit { isInputFocused = false }
                         .accessibilityIdentifier("pack_name")
+                        // Identifier stays for E2E selectors; the label is what
+                        // VoiceOver reads, which would otherwise be "pack_name".
+                        .accessibilityLabel("Name")
                     TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
                         .focused($isInputFocused)
                         .accessibilityIdentifier("pack_description")
+                        .accessibilityLabel("Description")
                 }
 
                 Section("Category") {
