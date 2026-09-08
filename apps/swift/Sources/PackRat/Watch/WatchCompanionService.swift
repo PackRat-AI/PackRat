@@ -12,6 +12,7 @@ final class WatchCompanionService: NSObject {
     private var lastSnapshot: PackRatWatchSnapshot?
 
     private let packingModeStore: PackingModeStore
+    private let trailDraftStore: WatchTrailDraftStore
     private let defaults: UserDefaults
 
     /// Retained so a toggle arriving from the watch can push a corrected
@@ -25,9 +26,11 @@ final class WatchCompanionService: NSObject {
 
     init(
         packingModeStore: PackingModeStore = .shared,
+        trailDraftStore: WatchTrailDraftStore = .shared,
         defaults: UserDefaults = .standard
     ) {
         self.packingModeStore = packingModeStore
+        self.trailDraftStore = trailDraftStore
         self.defaults = defaults
         super.init()
         encoder.dateEncodingStrategy = .iso8601
@@ -156,10 +159,17 @@ final class WatchCompanionService: NSObject {
         return String(format: "%.1f lb", pounds)
     }
 
-    private func handleTrailDraft(_ draft: WatchTrailReportDraft) {
-        UserDefaults.standard.set(draft.condition, forKey: "watch.latestTrailDraft.condition")
-        UserDefaults.standard.set(draft.note, forKey: "watch.latestTrailDraft.note")
-        UserDefaults.standard.set(draft.createdAt, forKey: "watch.latestTrailDraft.createdAt")
+    /// Files a trail-condition draft captured on the watch.
+    ///
+    /// Returns the draft so callers (and tests) can distinguish a stored draft
+    /// from an undecodable payload. It lands in `WatchTrailDraftStore`, which
+    /// the phone's Trail Conditions list reads — this used to write three
+    /// `watch.latestTrailDraft.*` UserDefaults keys that nothing on the phone
+    /// ever read, so a watch capture silently disappeared (#2721).
+    @discardableResult
+    func handleTrailDraft(_ draft: WatchTrailReportDraft) -> WatchTrailReportDraft {
+        trailDraftStore.add(draft)
+        return draft
     }
 
     /// Applies a packed/unpacked change made on the watch to the phone's store.
