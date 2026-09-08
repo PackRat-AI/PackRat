@@ -399,15 +399,14 @@ struct PackCatalogBrowserSearchStateTests {
         let viewModel = PackCatalogBrowserViewModel(service: service)
         await viewModel.load(reset: true)
 
-        let last = try? #require(firstPage.last)
-        guard let last else { return }
-
+        // Paging is now driven by the list footer scrolling into view, not by
+        // the last row, so there is no item to pass.
         service.shouldFail = true
-        await viewModel.loadMoreIfNeeded(currentItem: last)
+        await viewModel.loadNextPage()
 
         service.shouldFail = false
         service.requestedPages.removeAll()
-        await viewModel.loadMoreIfNeeded(currentItem: last)
+        await viewModel.loadNextPage()
 
         // Page 2 is asked for again rather than being skipped for page 3.
         #expect(service.requestedPages == [2])
@@ -440,6 +439,13 @@ private final class StubCatalogService: CatalogBrowsing, @unchecked Sendable {
     func categories(limit _: Int) async throws -> [String] { [] }
 
     func browse(query _: String?, category _: String?, page: Int, limit _: Int) async throws -> [CatalogItem] {
+        requestedPages.append(page)
+        if shouldFail { throw StubError.failed }
+        let index = page - 1
+        return index < pages.count ? pages[index] : []
+    }
+
+    func search(query _: String, page: Int, limit _: Int) async throws -> [CatalogItem] {
         requestedPages.append(page)
         if shouldFail { throw StubError.failed }
         let index = page - 1

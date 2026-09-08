@@ -1,11 +1,11 @@
 import SwiftUI
-import AuthenticationServices
 
 struct LoginView: View {
     @Environment(AuthManager.self) private var authManager
-    @Environment(\.colorScheme) private var colorScheme
     let onRegisterTapped: () -> Void
     let onForgotPasswordTapped: () -> Void
+    /// Back to the welcome screen, which is the only route to guest mode.
+    let onBackTapped: () -> Void
 
     @State private var email = ""
     @State private var password = ""
@@ -76,45 +76,19 @@ struct LoginView: View {
                     .foregroundStyle(.tint)
                     .font(.callout)
 
-                if AppFeatureFlags.enableOAuth {
-                    VStack(spacing: 10) {
-                        HStack(spacing: 12) {
-                            Divider()
-                            Text("Or continue with")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                            Divider()
-                        }
+                AuthProviderButtons(
+                    isLoading: $isLoading,
+                    error: $error,
+                    identifierPrefix: "auth"
+                )
 
-                        #if os(iOS)
-                        Button {
-                            signInWithGoogle()
-                        } label: {
-                            Label("Continue with Google", systemImage: "g.circle")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
-                        .disabled(isLoading)
-                        .accessibilityIdentifier("auth_google")
-                        #endif
-
-                        // Guideline 4.8 requires Sign in with Apple to sit alongside
-                        // any third-party login on every platform we ship, macOS
-                        // included — it is not iOS-only.
-                        SignInWithAppleButton(.continue) { request in
-                            request.requestedScopes = [.fullName, .email]
-                        } onCompletion: { result in
-                            signInWithApple(result)
-                        }
-                        .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                        .frame(height: 44)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .disabled(isLoading)
-                        .accessibilityIdentifier("auth_apple")
-                    }
+                Button(action: onBackTapped) {
+                    Label("Back", systemImage: "chevron.left")
+                        .font(.callout)
                 }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("login_back")
             }
         }
     }
@@ -130,44 +104,6 @@ struct LoginView: View {
             } catch {
                 self.error = error.localizedDescription
             }
-        }
-    }
-
-    #if os(iOS)
-    private func signInWithGoogle() {
-        guard !isLoading else { return }
-        isLoading = true
-        error = nil
-        Task {
-            defer { isLoading = false }
-            do {
-                try await authManager.loginWithGoogle()
-            } catch {
-                self.error = error.localizedDescription
-            }
-        }
-    }
-    #endif
-
-    private func signInWithApple(_ result: Result<ASAuthorization, Error>) {
-        error = nil
-        switch result {
-        case .success(let authorization):
-            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
-                error = "Apple did not return a usable credential."
-                return
-            }
-            isLoading = true
-            Task {
-                defer { isLoading = false }
-                do {
-                    try await authManager.loginWithApple(credential: credential)
-                } catch {
-                    self.error = error.localizedDescription
-                }
-            }
-        case .failure(let error):
-            self.error = error.localizedDescription
         }
     }
 }

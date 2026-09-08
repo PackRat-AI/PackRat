@@ -12,8 +12,8 @@ struct CatalogView: View {
         return Group {
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Catalog Requires an Account",
-                    subtitle: "Gear search syncs with PackRat's catalog service. Local packs and trips still work in guest mode.",
+                    "Sign In to Search Gear",
+                    subtitle: "Search thousands of products for weights, prices, and specs. Your own packs and trips stay on this device and keep working without an account.",
                     systemImage: "magnifyingglass"
                 )
             } else if vm.isLoading && vm.items.isEmpty {
@@ -61,6 +61,8 @@ struct CatalogView: View {
             }
         }
         .toolbar {
+            // A re-search over an already-populated list: the footer belongs to
+            // paging, so this reports the refresh instead.
             if vm.isLoading && !vm.items.isEmpty {
                 ToolbarItem(placement: .secondaryAction) {
                     ProgressView().controlSize(.small)
@@ -73,15 +75,30 @@ struct CatalogView: View {
         LazyVStack(spacing: 0) {
             ForEach(vm.items) { item in
                 CatalogItemRow(item: item, packsViewModel: appState.packsVM)
-                Divider().padding(.leading, 76)
+                    // Paging is driven by the row, not the divider below it: the
+                    // divider is a zero-height view that LazyVStack may never
+                    // consider on-screen, so its .task could go unrun and the
+                    // list would just stop growing.
                     .task {
                         if item.id == vm.items.last?.id {
                             await vm.loadMore()
                         }
                     }
+                Divider().padding(.leading, 76)
             }
-            if vm.isLoading {
-                ProgressView().padding()
+
+            // The footer stays in the layout for the whole page fetch, so the
+            // spinner is on screen where the user is already looking — at the
+            // bottom of the list they just scrolled to. Reserving the height
+            // when idle also stops the list jumping as each page arrives.
+            if vm.isLoadingMore {
+                ProgressView()
+                    .controlSize(.small)
+                    .padding(.vertical, 16)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("catalog_loading_more")
+            } else if vm.hasMore {
+                Color.clear.frame(height: 44)
             }
         }
         .accessibilityIdentifier("catalog_results_list")

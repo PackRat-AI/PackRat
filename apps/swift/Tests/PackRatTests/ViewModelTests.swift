@@ -265,6 +265,142 @@ struct CatalogViewModelTests {
         #expect(vm.items.isEmpty)
         #expect(vm.hasSearched == false)
     }
+
+    // MARK: - Paging (issue #2726)
+    //
+    // The loading indicator only appeared on the first page because a page
+    // fetch shared `isLoading` with the initial search, and nothing tracked
+    // whether more pages existed.
+
+    @Test("a page fetch reports isLoadingMore, not isLoading")
+    @MainActor func pageFetchUsesSeparateFlag() async {
+        let service = PagingStubCatalogService(pages: [
+            PagingStubCatalogService.page(count: 20, startingAt: 1),
+            PagingStubCatalogService.page(count: 20, startingAt: 21),
+        ])
+        let vm = CatalogViewModel(service: service)
+        vm.searchText = "tent"
+        await vm.search(reset: true)
+
+        service.onRequest = { [weak vm] _ in
+            // Observed mid-flight: the footer spinner is what should be up, and
+            // the full-screen "Searching gear…" state must stay down so the
+            // already-loaded rows are not replaced.
+            #expect(vm?.isLoadingMore == true)
+            #expect(vm?.isLoading == false)
+        }
+        await vm.loadMore()
+
+        #expect(vm.items.count == 40)
+        #expect(vm.isLoadingMore == false)
+    }
+
+    @Test("a short page ends paging")
+    @MainActor func shortPageStopsPaging() async {
+        let service = PagingStubCatalogService(pages: [
+            PagingStubCatalogService.page(count: 20, startingAt: 1),
+            PagingStubCatalogService.page(count: 4, startingAt: 21),
+        ])
+        let vm = CatalogViewModel(service: service)
+        vm.searchText = "tent"
+
+        await vm.search(reset: true)
+        #expect(vm.hasMore == true)
+
+        await vm.loadMore()
+        #expect(vm.hasMore == false)
+        #expect(vm.items.count == 24)
+
+        // Scrolling at the bottom again must not ask for a page that isn't there.
+        await vm.loadMore()
+        #expect(service.requestedPages == [1, 2])
+    }
+
+    @Test("a new search restores paging")
+    @MainActor func newSearchResetsPaging() async {
+        let service = PagingStubCatalogService(pages: [
+            PagingStubCatalogService.page(count: 2, startingAt: 1),
+        ])
+        let vm = CatalogViewModel(service: service)
+        vm.searchText = "tent"
+        await vm.search(reset: true)
+        #expect(vm.hasMore == false)
+
+        service.pages = [PagingStubCatalogService.page(count: 20, startingAt: 1)]
+        await vm.search(reset: true)
+        #expect(vm.hasMore == true)
+        #expect(vm.currentPage == 1)
+    }
+
+    @Test("a failed page gives its page number back")
+    @MainActor func failedPageRewinds() async {
+        let service = PagingStubCatalogService(pages: [
+            PagingStubCatalogService.page(count: 20, startingAt: 1),
+            PagingStubCatalogService.page(count: 20, startingAt: 21),
+        ])
+        let vm = CatalogViewModel(service: service)
+        vm.searchText = "tent"
+        await vm.search(reset: true)
+
+        service.shouldFail = true
+        await vm.loadMore()
+        // Without the rewind the next scroll asks for page 3 and page 2 is
+        // never fetched.
+        #expect(vm.currentPage == 1)
+
+        service.shouldFail = false
+        await vm.loadMore()
+        #expect(service.requestedPages == [1, 2, 2])
+        #expect(vm.items.count == 40)
+    }
+}
+
+/// Serves fixed pages to `CatalogViewModel` so paging can be tested without
+/// the network.
+@MainActor
+private final class PagingStubCatalogService: CatalogBrowsing, @unchecked Sendable {
+    var pages: [[CatalogItem]]
+    var shouldFail = false
+    var requestedPages: [Int] = []
+    /// Called before a page is served, so a test can assert on the view model's
+    /// in-flight state.
+    var onRequest: ((Int) -> Void)?
+
+    init(pages: [[CatalogItem]]) {
+        self.pages = pages
+    }
+
+    static func page(count: Int, startingAt first: Int) -> [CatalogItem] {
+        (first..<(first + count)).map { id in
+            CatalogItem(
+                id: id, name: "Item \(id)", productUrl: "https://example.com/\(id)",
+                sku: "sku-\(id)", weight: 100, weightUnit: .g, description: nil,
+                categories: nil, images: nil, brand: nil, model: nil,
+                ratingValue: nil, color: nil, size: nil, price: nil,
+                availability: nil, seller: nil, reviewCount: nil
+            )
+        }
+    }
+
+    func categories(limit _: Int) async throws -> [String] { [] }
+
+    func browse(query _: String?, category _: String?, page: Int, limit _: Int) async throws -> [CatalogItem] {
+        try serve(page: page)
+    }
+
+    func search(query _: String, page: Int, limit _: Int) async throws -> [CatalogItem] {
+        try serve(page: page)
+    }
+
+    private func serve(page: Int) throws -> [CatalogItem] {
+        onRequest?(page)
+        requestedPages.append(page)
+        if shouldFail { throw StubError.failed }
+        let index = page - 1
+        return index < pages.count ? pages[index] : []
+    }
+
+    enum StubError: Error { case failed }
 }
 
 // MARK: - ChatViewModel

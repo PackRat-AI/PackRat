@@ -12,8 +12,12 @@ struct SubscriptionSettingsSection: View {
 
     @State private var store = FeatureAccessStore.shared
     @State private var isRestoring = false
-    @State private var isPaywallPresented = false
     @State private var alert: RestoreAlert?
+
+    // The paywall is presented by the screen root, not from here: a
+    // fullScreenCover attached inside a Form Section never reliably installs,
+    // which is why this button used to dim the screen and open nothing.
+    @Environment(\.paywallTrigger) private var paywallTrigger
 
     @Environment(\.openURL) private var openURL
 
@@ -26,11 +30,11 @@ struct SubscriptionSettingsSection: View {
                 // before asking for anything, and its CTA routes to sign-in.
                 // A dead label saying "sign in to subscribe" tells someone what
                 // to do without letting them do it.
-                Button("Upgrade to Pro") { isPaywallPresented = true }
+                Button("Upgrade to Pro") { paywallTrigger.request() }
             } else if store.isPro {
                 Button("Manage Subscription") { manageSubscription() }
             } else {
-                Button("Upgrade to Pro") { isPaywallPresented = true }
+                Button("Upgrade to Pro") { paywallTrigger.request() }
             }
 
             // Restore is also sign-in only: it writes the recovered
@@ -52,7 +56,6 @@ struct SubscriptionSettingsSection: View {
                 .disabled(isRestoring)
             }
         }
-        .paywall(isPresented: $isPaywallPresented)
         .alert(item: $alert) { alert in
             Alert(title: Text(alert.title), dismissButton: .default(Text("OK")))
         }

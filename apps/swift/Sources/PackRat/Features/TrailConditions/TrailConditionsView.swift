@@ -27,8 +27,8 @@ struct TrailConditionsListView: View {
             if !authManager.isAuthenticated {
                 if showsGuestLimitInList {
                     GuestLimitedView(
-                        "Trail Reports Require an Account",
-                        subtitle: "Community trail conditions are shared through your PackRat account.",
+                        "Sign In for Trail Reports",
+                        subtitle: "Read what other hikers found on the trail recently, and add your own. Your packs and trips stay on this device and keep working without an account.",
                         systemImage: "figure.hiking"
                     )
                 } else {

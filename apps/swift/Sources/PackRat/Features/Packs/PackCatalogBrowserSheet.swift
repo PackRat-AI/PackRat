@@ -34,7 +34,8 @@ final class PackCatalogBrowserViewModel {
     private let service: any CatalogBrowsing
     private let pageSize = 20
     private var page = 1
-    private var hasMore = true
+    /// Read by the list footer, which only exists while more pages remain.
+    var hasMore = true
     private var searchTask: Task<Void, Never>?
 
     init(service: any CatalogBrowsing = CatalogService.shared) {
@@ -149,8 +150,10 @@ final class PackCatalogBrowserViewModel {
         }
     }
 
-    func loadMoreIfNeeded(currentItem: CatalogItem) async {
-        guard !isLoading, hasMore, currentItem.id == items.last?.id else { return }
+    /// Called when the list footer scrolls into view. No item argument: the
+    /// footer only exists while `hasMore`, so reaching it *is* the signal.
+    func loadNextPage() async {
+        guard !isLoading, hasMore, !items.isEmpty else { return }
         page += 1
         await load(reset: false)
     }
@@ -309,16 +312,48 @@ struct PackCatalogBrowserSheet: View {
                         onToggle: { viewModel.toggleSelection(item) },
                         onQuantityChange: { viewModel.setQuantity($0, for: item) }
                     )
-                    .task { await viewModel.loadMoreIfNeeded(currentItem: item) }
                 }
-                // Paging spinner at the foot of the list. Only while appending —
-                // a search replaces the list, and its spinner belongs on top of
-                // the stale results, not below the fold.
-                if viewModel.isLoading && !viewModel.isSearching {
+
+                // A real row, not a conditional one, so the loading indicator
+                // is part of the list on every page rather than something that
+                // appears and vanishes as `isLoading` flips.
+                //
+                // It also owns the paging trigger. Hanging `.task` off the last
+                // item meant the fetch and the indicator were driven by two
+                // different views: the row's task fired, `isLoading` went true,
+                // and only then was a footer inserted — below the fold, after
+                // the scroll had already stopped, so nobody saw it. Scrolling
+                // this row into view is the single event that both starts the
+                // fetch and puts the spinner on screen.
+                if viewModel.hasMore && !viewModel.isSearching {
                     HStack {
                         Spacer()
                         ProgressView()
+                            .controlSize(.small)
+                            // On the ProgressView, not the HStack: an
+                            // identifier on a bare stack is not reliably
+                            // exposed to accessibility, which leaves the
+                            // footer untestable.
+                            .accessibilityIdentifier("pack_catalog_loading_more")
                         Spacer()
+                    }
+                    .padding(.vertical, 8)
+                    .listRowSeparator(.hidden)
+                    // `onAppear`, not `.task`. Both were wrong in their own
+                    // way: a bare `.task` runs once per view identity, and the
+                    // footer keeps its identity across pages, so it fired for
+                    // page 2 and never again. Keying it to `items.count` fixed
+                    // the re-running but broke the fetch — `.task(id:)` cancels
+                    // the running task whenever the id changes, so each
+                    // arriving page cancelled the request for the next one and
+                    // the spinner disappeared with it (every page was requested
+                    // four times and killed mid-flight).
+                    //
+                    // `onAppear` fires each time the footer scrolls into view
+                    // and cancels nothing. The fetch is owned by the view model,
+                    // whose `isLoading` guard makes a repeat call a no-op.
+                    .onAppear {
+                        Task { await viewModel.loadNextPage() }
                     }
                 }
             }

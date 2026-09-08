@@ -25,8 +25,8 @@ struct PackTemplatesListView: View {
             if !authManager.isAuthenticated {
                 if showsGuestLimitInList {
                     GuestLimitedView(
-                        "Templates Require an Account",
-                        subtitle: "Pack templates sync with your account so they can be reused across devices.",
+                        "Sign In to Use Templates",
+                        subtitle: "Start from a ready-made pack list instead of a blank one, and keep your own for next time. Building packs by hand works without an account.",
                         systemImage: "doc.on.doc"
                     )
                 } else {

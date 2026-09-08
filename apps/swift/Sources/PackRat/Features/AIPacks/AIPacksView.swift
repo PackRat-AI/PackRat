@@ -21,8 +21,8 @@ struct AIPacksView: View {
         Group {
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "AI Pack Generation Requires an Account",
-                    subtitle: "Create an account to generate packs with PackRat's AI service. Local packs and trips still work in guest mode.",
+                    "Sign In to Generate Packs",
+                    subtitle: "Describe a trip and get a starting pack list built for it. Building packs by hand works without an account.",
                     systemImage: "sparkles"
                 )
             } else if authManager.currentUser?.isAdmin == true {

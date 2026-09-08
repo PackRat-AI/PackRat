@@ -310,9 +310,15 @@ struct FriendlyErrorPresentation {
         self.accessibilityIdentifier = accessibilityIdentifier
     }
 
+    // Copy follows what / payoff / action: say plainly that this part needs a
+    // connection to PackRat, then what the account gets you, then what still
+    // works without one. Deliberately says nothing about syncing — these
+    // features are not offline data waiting to upload, they need a live
+    // server, and "syncs with your account" described a mechanism that does
+    // not exist rather than an outcome anyone wants.
     static let accountRequired = FriendlyErrorPresentation(
-        title: "Sign In Required",
-        description: "This feature syncs with your PackRat account. Local packs and trips still work in guest mode.",
+        title: "Sign In to Continue",
+        description: "This part of PackRat runs on our servers, so it needs an account. Your packs and trips stay on this device and keep working either way.",
         systemImage: "person.crop.circle.badge.exclamationmark",
         inlineSystemImage: "person.crop.circle.badge.exclamationmark",
         inlineColor: .orange,

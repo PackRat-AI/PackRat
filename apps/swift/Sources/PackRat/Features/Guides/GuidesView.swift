@@ -148,8 +148,8 @@ struct GuidesView: View {
         Group {
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Guides Require an Account",
-                    subtitle: "Guides sync with your PackRat account when you are online.",
+                    "Sign In to Read Guides",
+                    subtitle: "Gear and packing guides written for the trips you are planning. Your packs and trips stay on this device and keep working without an account.",
                     systemImage: "book"
                 )
             } else if viewModel.isLoading && viewModel.guides.isEmpty {
