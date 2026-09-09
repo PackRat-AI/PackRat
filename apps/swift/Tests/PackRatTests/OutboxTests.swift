@@ -447,3 +447,88 @@ struct LegacyLocalIDMigrationTests {
         #expect(defaults.bool(forKey: "legacyLocalIDMigrationCompleted"))
     }
 }
+
+// MARK: - Sign-out and the outbox
+
+/// The outbox has no user column, so what survives a sign-out is decided entirely
+/// by the caller. Before this, `purgeCachedUserContent` dropped only the cached
+/// packs and trips: a signed-in user's unsent writes stayed queued and
+/// `OutboxService.flush` replayed them against whichever account signed in next.
+/// Guest writes have the opposite requirement — they are queued precisely so
+/// signing in can upload them — so the two cases are pinned separately here.
+/// Shared by the iOS and macOS targets, which compile the same `AuthManager`.
+@Suite("AuthManager.purgeCachedUserContent")
+@MainActor
+struct SignOutOutboxTests {
+    private func makeContext() throws -> ModelContext {
+        let container = try ModelContainer(
+            for: PendingMutation.self, CachedPack.self, CachedTrip.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        return ModelContext(container)
+    }
+
+    private func queueWrite(_ context: ModelContext, entityId: String = "pack-1") {
+        context.insert(PendingMutation(
+            entityType: .pack,
+            entityId: entityId,
+            operation: .create,
+            payload: OutboxService.encode(PackMutationPayload(
+                name: "Sierra Overnight", description: nil, category: nil, isPublic: false
+            ))
+        ))
+    }
+
+    private func pendingCount(_ context: ModelContext) -> Int {
+        ((try? context.fetch(FetchDescriptor<PendingMutation>())) ?? []).count
+    }
+
+    private func makePack(id: String) -> Pack {
+        Pack(
+            id: id, userId: nil, name: "Pack", description: nil, category: nil,
+            isPublic: false, image: nil, tags: nil, templateId: nil,
+            deleted: false, isAIGenerated: false, items: [],
+            totalWeight: 0, baseWeight: 0, wornWeight: 0, consumableWeight: 0,
+            createdAt: Date.iso8601Now(), updatedAt: Date.iso8601Now()
+        )
+    }
+
+    @Test("a deliberate sign-out discards the account's unsent writes")
+    func deliberateSignOutClearsOutbox() throws {
+        let context = try makeContext()
+        queueWrite(context)
+        try context.save()
+
+        try AuthManager.purgeCachedUserContent(in: context, discardsPendingWrites: true)
+
+        // Otherwise the next account to sign in on this device uploads them.
+        #expect(pendingCount(context) == 0)
+    }
+
+    @Test("keeping pending writes leaves the queue intact")
+    func preservedSignOutKeepsOutbox() throws {
+        let context = try makeContext()
+        queueWrite(context)
+        try context.save()
+
+        try AuthManager.purgeCachedUserContent(in: context, discardsPendingWrites: false)
+
+        // The guest-to-sign-in path and an expired session both land here: the
+        // writes still belong to someone who never chose to discard them.
+        #expect(pendingCount(context) == 1)
+    }
+
+    @Test("cached packs and trips are dropped either way")
+    func cachedContentAlwaysPurged() throws {
+        for discards in [true, false] {
+            let context = try makeContext()
+            context.insert(CachedPack(from: makePack(id: "pack-1")))
+            try context.save()
+
+            try AuthManager.purgeCachedUserContent(in: context, discardsPendingWrites: discards)
+
+            let cached = (try? context.fetch(FetchDescriptor<CachedPack>())) ?? []
+            #expect(cached.isEmpty, "cached packs must not outlive a sign-out (discards: \(discards))")
+        }
+    }
+}
