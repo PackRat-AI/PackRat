@@ -1,3 +1,8 @@
+// `WatchCompanionService` is `#if os(iOS)` — only the phone talks to the watch.
+// The macOS target compiles this same test directory, so without a matching
+// guard the type is missing there and the whole `PackRatMacOSTests` bundle fails
+// to build, taking every unrelated test with it.
+#if os(iOS)
 import Foundation
 import Testing
 @testable import PackRat
@@ -171,3 +176,5 @@ struct WatchChecklistSyncTests {
         #expect(decoded.name == "Old Pack")
     }
 }
+
+#endif

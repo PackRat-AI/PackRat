@@ -1,3 +1,8 @@
+// `WatchTrailDraftStore` is `#if os(iOS)` — it exists only in the phone half of
+// the companion pairing. The macOS target compiles this same test directory, so
+// without a matching guard the type is missing there and the whole
+// `PackRatMacOSTests` bundle fails to build, taking every unrelated test with it.
+#if os(iOS)
 import Foundation
 import Testing
 @testable import PackRat
@@ -146,3 +151,5 @@ struct WatchTrailDraftStoreTests {
         #expect(store.drafts[0].note == "Dry and clear")
     }
 }
+
+#endif
