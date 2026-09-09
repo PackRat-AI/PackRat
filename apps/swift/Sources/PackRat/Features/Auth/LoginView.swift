@@ -165,6 +165,10 @@ struct AuthHeader: View {
                 .font(.system(size: 42, weight: .semibold))
                 .foregroundStyle(.tint)
                 .symbolRenderingMode(.hierarchical)
+                // Decorative: the title below says the same thing, and without
+                // this VoiceOver reads the raw SF Symbol name
+                // ("person.crop.circle.badge.plus" → "Add People/Follow").
+                .accessibilityHidden(true)
 
             VStack(spacing: 5) {
                 Text(title)

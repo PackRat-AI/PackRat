@@ -26,6 +26,10 @@ final class AppState {
 
     // App-wide presentation
     var isGlobalSearchPresented = false
+    /// Set to route straight into pack creation from outside the Packs screen,
+    /// so a "Start Pack" call to action starts a pack instead of only landing on
+    /// the list. `PacksListView` consumes and clears it.
+    var isPackCreationRequested = false
 
     init() {
         // Back the assistant's pack tools with the local store, so it can find

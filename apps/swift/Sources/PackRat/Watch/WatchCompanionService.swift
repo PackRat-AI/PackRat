@@ -24,13 +24,16 @@ final class WatchCompanionService: NSObject {
         WatchTemperatureUnit.fromDefaults(defaults)
     }
 
+    // Both store singletons are main-actor isolated, so they cannot be default
+    // arguments under the Swift 6 language mode — see `PacksViewModel.init`.
+    // The labels are unchanged, so existing callers and tests still compile.
     init(
-        packingModeStore: PackingModeStore = .shared,
-        trailDraftStore: WatchTrailDraftStore = .shared,
+        packingModeStore: PackingModeStore? = nil,
+        trailDraftStore: WatchTrailDraftStore? = nil,
         defaults: UserDefaults = .standard
     ) {
-        self.packingModeStore = packingModeStore
-        self.trailDraftStore = trailDraftStore
+        self.packingModeStore = packingModeStore ?? .shared
+        self.trailDraftStore = trailDraftStore ?? .shared
         self.defaults = defaults
         super.init()
         encoder.dateEncodingStrategy = .iso8601

@@ -41,15 +41,10 @@ struct CatalogView: View {
             }
         }
         .navigationTitle("Gear Catalog")
-        #if os(iOS)
-        .searchable(
-            text: $vm.searchText,
-            placement: .navigationBarDrawer(displayMode: .always),
-            prompt: "Search tents, packs, sleeping bags…"
-        )
-        #else
-        .searchable(text: $vm.searchText, prompt: "Search tents, packs, sleeping bags…")
-        #endif
+        // Guests get no search field at all: catalog search is server-backed, so
+        // an editable field above "Catalog Requires an Account" is a dead input
+        // that accepts a query it can never answer.
+        .catalogSearchable(text: $vm.searchText, enabled: authManager.isAuthenticated)
         .onChange(of: vm.searchText) {
             if authManager.isAuthenticated {
                 vm.onSearchTextChanged()
@@ -104,6 +99,29 @@ struct CatalogView: View {
         .accessibilityIdentifier("catalog_results_list")
         .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal)
+    }
+}
+
+private extension View {
+    /// Attaches the catalog search field only when it can actually search.
+    ///
+    /// `.searchable` cannot be applied conditionally inline — the two branches
+    /// are different opaque types — so the choice happens here instead.
+    @ViewBuilder
+    func catalogSearchable(text: Binding<String>, enabled: Bool) -> some View {
+        if enabled {
+            #if os(iOS)
+            searchable(
+                text: text,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "Search tents, packs, sleeping bags…"
+            )
+            #else
+            searchable(text: text, prompt: "Search tents, packs, sleeping bags…")
+            #endif
+        } else {
+            self
+        }
     }
 }
 

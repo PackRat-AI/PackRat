@@ -14,6 +14,7 @@ struct PacksListView: View {
     @State private var packPendingDeletion: Pack?
     @State private var showingDeleteConfirmation = false
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppState.self) private var appState
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private var isCompact: Bool { horizontalSizeClass == .compact }
@@ -95,6 +96,13 @@ struct PacksListView: View {
         }
         .sheet(isPresented: $showingCreateSheet) {
             PackFormView(viewModel: viewModel)
+        }
+        // A "Start Pack" tap elsewhere routes here and asks for the create sheet.
+        // Handled on appear *and* on change so it works whether this view is
+        // being built fresh or is already mounted behind another tab.
+        .onAppear { consumePackCreationRequest() }
+        .onChange(of: appState.isPackCreationRequested) { _, requested in
+            if requested { consumePackCreationRequest() }
         }
         .navigationDestination(isPresented: $showingRecentPacks) {
             RecentPacksView(packs: viewModel.packs)
@@ -232,6 +240,17 @@ struct PacksListView: View {
     private func requestDelete(_ pack: Pack) {
         packPendingDeletion = pack
         showingDeleteConfirmation = true
+    }
+
+    /// Opens the create sheet if another screen asked for it, then clears the
+    /// request so returning to this tab later does not reopen the sheet.
+    private func consumePackCreationRequest() {
+        guard appState.isPackCreationRequested else { return }
+        appState.isPackCreationRequested = false
+        // Explore shows other people's packs; creating from there would be
+        // confusing, so land the user on their own list first.
+        isExplore = false
+        showingCreateSheet = true
     }
 
     // MARK: - Delete

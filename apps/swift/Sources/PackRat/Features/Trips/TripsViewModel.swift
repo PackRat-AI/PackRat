@@ -14,9 +14,11 @@ final class TripsViewModel {
     private let service: TripService
     private let outbox: OutboxService
 
-    init(service: TripService = .shared, outbox: OutboxService = .shared) {
+    // See `PacksViewModel.init`: an isolated singleton cannot be a default
+    // argument under the Swift 6 language mode, so resolve it in the body.
+    init(service: TripService = .shared, outbox: OutboxService? = nil) {
         self.service = service
-        self.outbox = outbox
+        self.outbox = outbox ?? .shared
     }
 
     var currentPage = 1

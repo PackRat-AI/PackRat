@@ -14,9 +14,14 @@ final class PacksViewModel {
     let service: PackService
     private let outbox: OutboxService
 
-    init(service: PackService = .shared, outbox: OutboxService = .shared) {
+    // `OutboxService.shared` is main-actor isolated, and a default argument is
+    // evaluated in the *caller's* context rather than the callee's — which is a
+    // hard error in the Swift 6 language mode. Taking `nil` and resolving the
+    // singleton in the body keeps the default inside this @MainActor type while
+    // leaving the injection point open for tests.
+    init(service: PackService = .shared, outbox: OutboxService? = nil) {
         self.service = service
-        self.outbox = outbox
+        self.outbox = outbox ?? .shared
     }
 
     var currentPage = 1
