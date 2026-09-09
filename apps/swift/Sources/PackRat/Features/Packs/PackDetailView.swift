@@ -367,7 +367,11 @@ struct PackDetailView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            if isPackingMode {
+            // Reset and Mark All Packed both act on items, so on an empty pack
+            // they are two more controls that explain nothing — the same problem
+            // as the disabled Start Packing row in #2696. The empty state is the
+            // whole screen instead.
+            if isPackingMode && !items.isEmpty {
                 packingToolbar
             }
         }
