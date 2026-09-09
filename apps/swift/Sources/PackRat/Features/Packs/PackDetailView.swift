@@ -98,8 +98,13 @@ struct PackDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 if isPackingMode {
-                    packingHeader
-                        .padding(.horizontal)
+                    // "0 of 0 packed" at 0% is technically true and reads like a
+                    // bug, so an empty pack gets the empty state instead of a
+                    // progress card it cannot fill (#2696).
+                    if !items.isEmpty {
+                        packingHeader
+                            .padding(.horizontal)
+                    }
                 } else {
                     weightSummary
                         .padding(.horizontal)
@@ -146,11 +151,17 @@ struct PackDetailView: View {
                     }
 
                     if items.isEmpty {
+                        // Packing mode gets its own copy: the reason the screen
+                        // is empty is different (nothing to check off, rather
+                        // than nothing in the pack), and the way out is the same
+                        // — add gear — so the action stays. See #2696.
+                        let empty = EmptyPackPresentation(isPackingMode: isPackingMode)
                         EmptyStateView(
-                            "No Items Yet",
-                            subtitle: "Add gear to build your pack",
-                            systemImage: "archivebox",
-                            actionLabel: "Add Item",
+                            empty.title,
+                            subtitle: empty.subtitle,
+                            systemImage: empty.systemImage,
+                            actionLabel: empty.actionLabel,
+                            accessibilityIdentifier: empty.accessibilityIdentifier,
                             action: { showingAddItemSheet = true }
                         )
                         .frame(minHeight: 200)
@@ -224,10 +235,13 @@ struct PackDetailView: View {
                         }
                         .accessibilityIdentifier("pack_detail_ask_ai")
 
+                        // Deliberately enabled on an empty pack. A greyed-out
+                        // control explains nothing; the packing screen opens and
+                        // says why it is empty, matching how the rest of the app
+                        // handles emptiness. See issue #2696.
                         Button("Start Packing", systemImage: "checklist") {
                             startPackingMode()
                         }
-                        .disabled(items.isEmpty)
                         .accessibilityIdentifier("pack_detail_start_packing")
 
                         Divider()
