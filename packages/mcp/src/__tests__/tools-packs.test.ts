@@ -637,4 +637,22 @@ describe('packs error paths — apiFail returns structured error', () => {
     expect(typeof code).toBe('string');
     expect((code as string).length).toBeGreaterThan(0);
   });
+
+  it('list_pack_items surfaces an error envelope instead of an empty list', async () => {
+    // This tool does not hand the promise straight to `call` — it inspects the
+    // result so it can normalise the API's bare array into the `{ data,
+    // nextOffset }` envelope its outputSchema declares. The failure branch is
+    // therefore its own code path, and without it a failed fetch could look
+    // like a pack that simply has no items.
+    const { agent, server } = makeAgent({ apiFail: true });
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_list_pack_items')(
+      { pack_id: 'p_abc123' },
+      makeExtra(),
+    );
+    expect(result.isError).toBe(true);
+    const code = errorCodeOf(result.structuredContent);
+    expect(typeof code).toBe('string');
+    expect((code as string).length).toBeGreaterThan(0);
+  });
 });
