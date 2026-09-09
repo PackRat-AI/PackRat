@@ -20,7 +20,33 @@ final class PackItemsScanViewModel {
         case offline
     }
 
+    /// The named steps of a scan, shown instead of one generic label.
+    ///
+    /// These are the real boundaries in `ImageDetectionService.detectItems` —
+    /// the upload completes, then a single request covers vision analysis and
+    /// catalog matching. `matching` is therefore not separately observable, so
+    /// it is entered when the analyze request is issued rather than reported by
+    /// the server. Apple's guidance is to prefer a determinate indicator where
+    /// one is honest; the model pass has no progress to report, so this stays
+    /// indeterminate and names the stage instead of faking a percentage.
+    enum Stage: Int, CaseIterable, Equatable {
+        case uploading
+        case detecting
+
+        var label: String {
+            switch self {
+            case .uploading: return "Uploading your photo…"
+            case .detecting: return "Looking for gear and matching the catalog…"
+            }
+        }
+    }
+
     var phase: Phase = .picking
+    /// Which step of the analysis is running. Only meaningful in `.analyzing`.
+    var stage: Stage = .uploading
+    /// The chosen photo, kept so the wait shows the image being analyzed
+    /// rather than an empty screen with a spinner (#2695).
+    var previewImageData: Data?
     var detections: [DetectedItemWithMatches] = []
     /// Indices into `detections` that the user wants to add.
     var selectedIndices: Set<Int> = []
@@ -51,6 +77,7 @@ final class PackItemsScanViewModel {
     func analyze(imageData: Data, userId: String) async {
         detections = []
         selectedIndices = []
+        previewImageData = imageData
 
         // Scanning needs the server's vision model, so there is nothing useful to
         // do offline. Checking up front keeps the user out of a doomed upload and
@@ -60,9 +87,16 @@ final class PackItemsScanViewModel {
             return
         }
 
+        stage = .uploading
         phase = .analyzing
         do {
-            let results = try await service.detectItems(imageData: imageData, userId: userId)
+            let results = try await service.detectItems(
+                imageData: imageData,
+                userId: userId,
+                onUploadFinished: { [weak self] in
+                    Task { @MainActor in self?.stage = .detecting }
+                }
+            )
             detections = results
             // Pre-select everything, matching Expo's auto-select-all.
             selectedIndices = Set(results.indices)
@@ -89,6 +123,8 @@ final class PackItemsScanViewModel {
         phase = .picking
         detections = []
         selectedIndices = []
+        previewImageData = nil
+        stage = .uploading
     }
 }
 
@@ -169,14 +205,7 @@ struct PackItemsScanSheet: View {
         case .picking:
             pickerState
         case .analyzing:
-            VStack(spacing: 14) {
-                ProgressView()
-                Text("Looking for gear in your photo…")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .accessibilityIdentifier("pack_scan_analyzing")
+            analyzingState
         case .reviewing:
             if viewModel.detections.isEmpty {
                 noResultsState
@@ -191,6 +220,64 @@ struct PackItemsScanSheet: View {
                 retry: { viewModel.reset() }
             )
         }
+    }
+
+    /// The wait, with the photo on screen.
+    ///
+    /// The scan takes a few seconds — an upload, then a vision pass and catalog
+    /// match. NN/g puts a spinner in range for a 2–10s wait, but a bare one
+    /// gives no sense of what is happening and no confirmation that the right
+    /// photo was picked, which was the complaint in #2695. Showing the image
+    /// with the current step named answers both without inventing a percentage
+    /// the server cannot report.
+    private var analyzingState: some View {
+        VStack(spacing: 20) {
+            if let data = viewModel.previewImageData, let image = PlatformImage(data: data) {
+                Image(platformImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 260)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(.separator, lineWidth: 0.5)
+                    )
+                    .overlay(alignment: .bottom) { scanningSheen }
+                    .accessibilityLabel("The photo being scanned")
+                    .accessibilityIdentifier("pack_scan_preview_image")
+            }
+
+            VStack(spacing: 12) {
+                ProgressView()
+                Text(viewModel.stage.label)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    // Announce each step change to VoiceOver, which otherwise
+                    // hears one static label for the whole wait.
+                    .accessibilityIdentifier("pack_scan_stage_label")
+                    .id(viewModel.stage)
+                    .transition(.opacity)
+            }
+            .animation(.easeInOut(duration: 0.2), value: viewModel.stage)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityIdentifier("pack_scan_analyzing")
+    }
+
+    /// A soft band at the base of the photo, so the image reads as being worked
+    /// on rather than just displayed. Purely decorative — the stage label is
+    /// what actually communicates progress.
+    private var scanningSheen: some View {
+        LinearGradient(
+            colors: [.accentColor.opacity(0), .accentColor.opacity(0.22)],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .frame(height: 60)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .accessibilityHidden(true)
     }
 
     private var pickerState: some View {
@@ -287,6 +374,8 @@ private struct DetectedItemRow: View {
                 .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                 .accessibilityHidden(true)
 
+            matchThumbnail
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(detection.detected.name)
                     .font(.subheadline.weight(.medium))
@@ -328,6 +417,57 @@ private struct DetectedItemRow: View {
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
         .accessibilityIdentifier("pack_scan_item_\(detection.detected.name)")
+    }
+
+    /// The matched product's image beside its row, so a wrong match is obvious
+    /// without opening anything (#2695).
+    ///
+    /// The detection response carries no crop of the photo — `DetectedItemSchema`
+    /// returns name, description, quantity, category, flags and confidence, with
+    /// no geometry — so the catalog image is the only picture available for a
+    /// row. Unmatched detections fall back to the same category glyph the
+    /// catalog list uses, keeping the rows a consistent width.
+    @ViewBuilder
+    private var matchThumbnail: some View {
+        let size: CGFloat = 44
+        Group {
+            if let match, let urlString = match.images?.first, let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image.resizable().scaledToFill()
+                    case .failure:
+                        thumbnailPlaceholder
+                    case .empty:
+                        // No spinner at 44pt — it draws attention to itself and
+                        // the row is already readable without the picture.
+                        thumbnailPlaceholder
+                    @unknown default:
+                        thumbnailPlaceholder
+                    }
+                }
+            } else {
+                thumbnailPlaceholder
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(.separator, lineWidth: 0.5)
+        )
+        // Decorative: the row's text already names the item and its match, so a
+        // second announcement would just make VoiceOver more verbose.
+        .accessibilityHidden(true)
+    }
+
+    private var thumbnailPlaceholder: some View {
+        ZStack {
+            Color.secondary.opacity(0.12)
+            Image(systemName: match == nil ? "questionmark" : "photo")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
     }
 
     @ViewBuilder

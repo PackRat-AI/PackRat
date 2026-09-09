@@ -36,10 +36,16 @@ final class ImageDetectionService: Sendable {
     }
 
     /// Uploads raw JPEG data, then analyzes it.
+    ///
+    /// `onUploadFinished` fires once the PUT completes and before the analyze
+    /// request is issued — the one real step boundary in the flow, so callers
+    /// can name the stage they are waiting on instead of showing a single
+    /// generic label for the whole wait (#2695).
     func detectItems(
         imageData: Data,
         userId: String,
-        matchLimit: Int = 1
+        matchLimit: Int = 1,
+        onUploadFinished: (@Sendable () -> Void)? = nil
     ) async throws -> [DetectedItemWithMatches] {
         let fileName = "\(userId)-\(UUID().uuidString).jpg"
         let objectKey = try await uploader.upload(
@@ -47,6 +53,7 @@ final class ImageDetectionService: Sendable {
             fileName: fileName,
             mimeType: "image/jpeg"
         )
+        onUploadFinished?()
         return try await analyze(objectKey: objectKey, matchLimit: matchLimit)
     }
 }
