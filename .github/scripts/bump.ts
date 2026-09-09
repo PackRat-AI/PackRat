@@ -91,6 +91,28 @@ try {
   console.error(`❌ Failed to update project.yml:`, error);
 }
 
+// Update the MCP server's advertised version. `ServiceMeta.Version` mirrors
+// packages/mcp/package.json by hand and is asserted to match it in
+// constants.test.ts, so a bump that skipped this file left the repo on a
+// version the test suite rejects — which is exactly how it drifted to 2.2.0
+// while the monorepo moved to 2.2.3.
+const mcpConstantsPath = join(process.cwd(), 'packages/mcp/src/constants.ts');
+const RE_SERVICE_META_VERSION = /(ServiceMeta[\s\S]*?Version:\s*)'[^']*'/;
+try {
+  const content = readFileSync(mcpConstantsPath, 'utf-8');
+  if (!RE_SERVICE_META_VERSION.test(content)) {
+    console.error(
+      `❌ No ServiceMeta.Version found in ${mcpConstantsPath}; MCP version NOT bumped. constants.test.ts will fail until it matches package.json.`,
+    );
+  } else {
+    const updated = content.replace(RE_SERVICE_META_VERSION, `$1'${newVersion}'`);
+    writeFileSync(mcpConstantsPath, updated);
+    console.log(`✅ Updated ${mcpConstantsPath}`);
+  }
+} catch (error) {
+  console.error(`❌ Failed to update constants.ts:`, error);
+}
+
 // Commit and tag as last step
 try {
   await $`git add .`;
