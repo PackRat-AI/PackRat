@@ -85,6 +85,28 @@ describe('previewForLog', () => {
     circular.self = circular;
     expect(() => previewForLog(circular)).not.toThrow();
   });
+
+  // The two "must not fail a tool call" guards. `safeJsonStringify` is
+  // circular-safe, so neither is reachable through circular input — the test
+  // above passes without either guard existing.
+  it('returns the marker when serialising throws', () => {
+    // A throwing `toJSON` is the one input that still escapes
+    // safe-stable-stringify, so this is what actually exercises the catch.
+    const hostile = {
+      toJSON() {
+        throw new Error('nope');
+      },
+    };
+
+    expect(previewForLog(hostile)).toBe('[unserializable]');
+  });
+
+  it('returns the marker when serialising yields no string', () => {
+    // A bare function stringifies to `undefined`, not a string — without the
+    // isString check the scrubber would then run against a non-string.
+    expect(previewForLog(() => {})).toBe('[unserializable]');
+    expect(previewForLog(undefined)).toBe('[unserializable]');
+  });
 });
 
 describe('argKeysOf', () => {
@@ -171,6 +193,67 @@ describe('ReviewTelemetry', () => {
       expect(line?.level).toBe('error');
       expect(line?.json.errorCode).toBe('handler_threw');
       expect(line?.json.preview).toContain('kaboom');
+    } finally {
+      cap.restore();
+    }
+  });
+
+  it('logs a non-Error throw without losing the value', () => {
+    // `throw 'string'` is legal JS and reaches the same arm, where the
+    // `instanceof Error` check decides whether `.message` exists to read.
+    const cap = captureLogs();
+    try {
+      new ReviewTelemetry('session:abc').toolCall({
+        toolName: 'packrat_broken',
+        durationMs: 5,
+        args: {},
+        thrown: 'bare string failure',
+      });
+      const line = cap.lines.find((l) => l.json.msg === 'mcp.tool.call');
+      expect(line?.level).toBe('error');
+      expect(line?.json.errorCode).toBe('handler_threw');
+      expect(line?.json.preview).toContain('bare string failure');
+    } finally {
+      cap.restore();
+    }
+  });
+
+  it('reports zero chars when content is not an array', () => {
+    // A malformed result must still produce a log line — the char counter and
+    // the preview picker both guard the shape, and telemetry may not throw.
+    const cap = captureLogs();
+    try {
+      new ReviewTelemetry('session:abc').toolCall({
+        toolName: 'packrat_list_packs',
+        durationMs: 10,
+        args: {},
+        result: { content: undefined, structuredContent: { data: 'from structured' } },
+      });
+      const line = cap.lines.find((l) => l.json.msg === 'mcp.tool.call');
+      expect(line?.json.resultChars).toBe(0);
+    } finally {
+      cap.restore();
+    }
+  });
+
+  it('counts only blocks that carry text', () => {
+    const cap = captureLogs();
+    try {
+      new ReviewTelemetry('session:abc').toolCall({
+        toolName: 'packrat_list_packs',
+        durationMs: 10,
+        args: {},
+        // An image block has no `text`, so it contributes nothing rather than
+        // making the total NaN.
+        result: {
+          content: [
+            { type: 'text', text: '12345' },
+            { type: 'image', data: 'base64…' },
+          ],
+        },
+      });
+      const line = cap.lines.find((l) => l.json.msg === 'mcp.tool.call');
+      expect(line?.json.resultChars).toBe(5);
     } finally {
       cap.restore();
     }

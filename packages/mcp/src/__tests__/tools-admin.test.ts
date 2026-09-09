@@ -509,6 +509,45 @@ describe('admin auditOutcome failure branch (accept then API 500)', () => {
   });
 });
 
+// The analytics tools reshape their result into `{ data: { items } }` to match
+// their declared outputSchema, so unlike the tools that hand the promise
+// straight to `call`, their failure arm is a separate branch. Untested, a failed
+// fetch could read as "no activity" rather than an error.
+describe('admin analytics failure branches', () => {
+  it('packrat_admin_analytics_activity surfaces an error rather than empty items', async () => {
+    const { agent, server } = hMakeAgent({ apiFail: true });
+    registerAdminTools(agent);
+    const result = await hGetToolHandler(server, 'packrat_admin_analytics_activity')(
+      {},
+      hMakeExtra(),
+    );
+    expect(result.isError).toBe(true);
+    expect((result.structuredContent?.error as { code: string }).code).toBe('api_error');
+  });
+
+  it('packrat_admin_analytics_pack_breakdown surfaces an error rather than empty items', async () => {
+    const { agent, server } = hMakeAgent({ apiFail: true });
+    registerAdminTools(agent);
+    const result = await hGetToolHandler(server, 'packrat_admin_analytics_pack_breakdown')(
+      {},
+      hMakeExtra(),
+    );
+    expect(result.isError).toBe(true);
+    expect((result.structuredContent?.error as { code: string }).code).toBe('api_error');
+  });
+
+  it('packrat_admin_analytics_growth surfaces an error rather than empty items', async () => {
+    const { agent, server } = hMakeAgent({ apiFail: true });
+    registerAdminTools(agent);
+    const result = await hGetToolHandler(server, 'packrat_admin_analytics_growth')(
+      { period: 'week', range: 4 },
+      hMakeExtra(),
+    );
+    expect(result.isError).toBe(true);
+    expect((result.structuredContent?.error as { code: string }).code).toBe('api_error');
+  });
+});
+
 describe('admin audit context — getAuditContext present branch', () => {
   it('uses the agent-provided audit context when getAuditContext is defined', async () => {
     const { agent, server, calls } = hMakeAgent({ resolve: { action: 'cancel' } });
