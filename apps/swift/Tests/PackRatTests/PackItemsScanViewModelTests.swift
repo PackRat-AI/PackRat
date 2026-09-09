@@ -70,6 +70,31 @@ struct PackItemsScanViewModelTests {
         #expect(viewModel.selectedIndices.isEmpty)
     }
 
+    // MARK: - Unreadable photo
+
+    @Test("an unreadable photo is its own state, not a generic failure")
+    func unreadablePhotoIsDistinct() {
+        // The picker can hand back nothing — an iCloud photo that is not
+        // downloaded, or a simulator library entry whose file is missing. Routed
+        // through `failed`, the message hit the infrastructure error classifier,
+        // which does not recognise it and falls back to "Temporarily Unavailable"
+        // with a Try Again that retries nothing. Keeping it a separate phase is
+        // what lets the sheet offer "Choose Another Photo" instead.
+        #expect(PackItemsScanViewModel.Phase.unreadablePhoto != .failed("Couldn't read that photo. Try another one."))
+        #expect(PackItemsScanViewModel.Phase.unreadablePhoto == .unreadablePhoto)
+    }
+
+    @Test("choosing a readable photo after an unreadable one clears the state")
+    func resetFromUnreadablePhoto() {
+        let viewModel = PackItemsScanViewModel()
+        viewModel.phase = .unreadablePhoto
+
+        viewModel.reset()
+
+        #expect(viewModel.phase == .picking)
+        #expect(viewModel.previewImageData == nil)
+    }
+
     // MARK: - Selection
 
     @Test("select all then none moves every row and leaves Add disabled when empty")

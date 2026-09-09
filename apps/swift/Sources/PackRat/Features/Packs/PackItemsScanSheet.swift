@@ -15,6 +15,13 @@ final class PackItemsScanViewModel {
         case analyzing
         case reviewing
         case failed(String)
+        /// The picked photo could not be read at all, so there is nothing to
+        /// upload and "Try Again" would retry nothing. Distinct from `failed`
+        /// for the same reason `offline` is: the sheet states the case itself
+        /// rather than routing already-friendly copy through the infrastructure
+        /// error classifier, which buckets anything it does not recognise into
+        /// "Temporarily Unavailable" with a retry that cannot work.
+        case unreadablePhoto
         /// Distinct from `failed` so the sheet can show the connectivity state
         /// directly instead of round-tripping a message through string sniffing.
         case offline
@@ -161,8 +168,12 @@ struct PackItemsScanSheet: View {
                     guard let item else { return }
                     Task {
                         defer { photoItem = nil }
-                        guard let data = try? await item.loadTransferable(type: Data.self) else {
-                            viewModel.phase = .failed("Couldn't read that photo. Try another one.")
+                        guard let data = try? await item.loadTransferable(type: Data.self),
+                              !data.isEmpty else {
+                            // Common on the simulator, where a library photo's
+                            // backing file may not exist, and for iCloud photos
+                            // that are not downloaded yet.
+                            viewModel.phase = .unreadablePhoto
                             return
                         }
                         guard let userId = authManager.currentUser?.id else {
@@ -211,6 +222,21 @@ struct PackItemsScanSheet: View {
                 noResultsState
             } else {
                 reviewList
+            }
+        case .unreadablePhoto:
+            UnavailableStateView(
+                title: "Couldn't Read That Photo",
+                subtitle: "That photo could not be opened. If it is stored in iCloud, open it in Photos first so it downloads to this device, then try again.",
+                systemImage: "photo.badge.exclamationmark",
+                accessibilityIdentifier: "pack_scan_unreadable_photo"
+            ) {
+                // Choosing a different photo is the only thing that can help —
+                // there is no upload to retry.
+                PhotosPicker(selection: $photoItem, matching: .images) {
+                    Label("Choose Another Photo", systemImage: "photo.on.rectangle")
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("pack_scan_choose_another_photo")
             }
         case .failed(let message):
             ErrorView(message, retry: { viewModel.reset() })
