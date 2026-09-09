@@ -5,30 +5,55 @@ const mocks = vi.hoisted(() => {
   const platformFindMany = vi.fn();
   const insertReturning = vi.fn();
   const deleteReturning = vi.fn();
+  // Platform-override writes are fire-and-forget — no `.returning()` — so the
+  // awaited value is the builder itself. These spies record what each stage was
+  // handed so the tests can assert on the shape of the write.
+  const tags = vi.fn();
+  const insertValues = vi.fn();
+  const onConflictDoNothing = vi.fn();
+  const onConflictDoUpdate = vi.fn();
+  const deleteWhere = vi.fn();
   return {
     findMany,
     platformFindMany,
     insertReturning,
     deleteReturning,
+    tags,
+    insertValues,
+    onConflictDoNothing,
+    onConflictDoUpdate,
+    deleteWhere,
     captureApiException: vi.fn(),
     createDb: vi.fn(() => {
       const db = {
-        tag: (_label: string) => db,
+        tag: (label: string) => {
+          tags(label);
+          return db;
+        },
         query: {
           featureFlags: { findMany },
           featureFlagPlatformOverrides: { findMany: platformFindMany },
         },
         insert: (_table: unknown) => ({
-          values: (_values: unknown) => ({
-            onConflictDoUpdate: (_opts: unknown) => ({
-              returning: insertReturning,
-            }),
-          }),
+          values: (values: unknown) => {
+            insertValues(values);
+            return {
+              onConflictDoUpdate: (opts: unknown) => {
+                onConflictDoUpdate(opts);
+                return { returning: insertReturning };
+              },
+              onConflictDoNothing: (opts: unknown) => {
+                onConflictDoNothing(opts);
+                return undefined;
+              },
+            };
+          },
         }),
         delete: (_table: unknown) => ({
-          where: (_cond: unknown) => ({
-            returning: deleteReturning,
-          }),
+          where: (cond: unknown) => {
+            deleteWhere(cond);
+            return { returning: deleteReturning };
+          },
         }),
       };
       return db;
@@ -53,6 +78,7 @@ import {
   deleteFeatureFlagOverride,
   listEffectiveFeatureFlags,
   listFeatureFlagsForAdmin,
+  setFeatureFlagPlatformOverride,
   upsertFeatureFlagOverride,
 } from '../featureFlagsService';
 
@@ -246,6 +272,153 @@ describe('featureFlagsService', () => {
       await expect(deleteFeatureFlagOverride(FeatureFlag.EnableFeed)).rejects.toBe(boom);
       expect(mocks.captureApiException).toHaveBeenCalledWith(
         expect.objectContaining({ error: boom, operation: 'featureFlags.delete' }),
+      );
+    });
+  });
+
+  // Platform targeting (#2736) shipped without coverage: the platform branch of
+  // `listEffectiveFeatureFlags` and all of `setFeatureFlagPlatformOverride` were
+  // unreached, which is what dropped packages/api below its ratchet baseline.
+  describe('listEffectiveFeatureFlags() platform targeting', () => {
+    it('a platform override wins over the global value', async () => {
+      mocks.findMany.mockResolvedValue([{ key: FeatureFlag.EnableFeed, enabled: false }]);
+      mocks.platformFindMany.mockResolvedValue([{ key: FeatureFlag.EnableFeed, enabled: true }]);
+
+      const result = await listEffectiveFeatureFlags('ios');
+
+      expect(result[FeatureFlag.EnableFeed]).toBe(true);
+    });
+
+    it('flags the platform says nothing about keep the global value', async () => {
+      mocks.findMany.mockResolvedValue([{ key: FeatureFlag.EnableFeed, enabled: true }]);
+      mocks.platformFindMany.mockResolvedValue([]);
+
+      const result = await listEffectiveFeatureFlags('ios');
+
+      expect(result[FeatureFlag.EnableFeed]).toBe(true);
+    });
+
+    it('does not query platform rows for an unrecognised platform', async () => {
+      mocks.findMany.mockResolvedValue([]);
+
+      // An old client or an untargeted surface must fall back to global flags
+      // rather than having everything dark-launched, so the query is skipped
+      // entirely rather than run with a value the schema cannot match.
+      await expect(listEffectiveFeatureFlags('blackberry')).resolves.toEqual(
+        APP_CONFIG.featureFlags,
+      );
+      expect(mocks.platformFindMany).not.toHaveBeenCalled();
+    });
+
+    it('does not query platform rows when no platform is given', async () => {
+      mocks.findMany.mockResolvedValue([]);
+
+      await listEffectiveFeatureFlags();
+
+      expect(mocks.platformFindMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('setFeatureFlagPlatformOverride()', () => {
+    it('seeds the global row before writing the platform override', async () => {
+      await setFeatureFlagPlatformOverride({
+        key: FeatureFlag.EnableFeed,
+        platform: 'ios',
+        enabled: true,
+      });
+
+      // The platform table references feature_flags, so the global row has to
+      // exist first — and it is seeded at the coded default, because targeting
+      // one platform says nothing about the others. Seeding must not clobber an
+      // existing global value, hence DO NOTHING keyed on the flag.
+      expect(mocks.onConflictDoNothing).toHaveBeenCalledWith(
+        expect.objectContaining({ target: expect.anything() }),
+      );
+      expect(mocks.insertValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          key: FeatureFlag.EnableFeed,
+          enabled: APP_CONFIG.featureFlags[FeatureFlag.EnableFeed],
+        }),
+      );
+      expect(mocks.insertValues).toHaveBeenCalledWith(
+        expect.objectContaining({ key: FeatureFlag.EnableFeed, platform: 'ios', enabled: true }),
+      );
+    });
+
+    it('upserts so re-targeting the same platform updates in place', async () => {
+      await setFeatureFlagPlatformOverride({
+        key: FeatureFlag.EnableFeed,
+        platform: 'android',
+        enabled: false,
+        reason: 'crash on 14',
+      });
+
+      // Conflict is on the (key, platform) pair, and the update carries the new
+      // value through — otherwise re-targeting a platform would insert a second
+      // row or silently keep the old value.
+      expect(mocks.onConflictDoUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          target: expect.arrayContaining([expect.anything(), expect.anything()]),
+          set: expect.objectContaining({ enabled: false, reason: 'crash on 14' }),
+        }),
+      );
+      expect(mocks.insertValues).toHaveBeenCalledWith(
+        expect.objectContaining({ platform: 'android', enabled: false, reason: 'crash on 14' }),
+      );
+    });
+
+    it('a null enabled deletes the row so the platform inherits again', async () => {
+      await setFeatureFlagPlatformOverride({
+        key: FeatureFlag.EnableFeed,
+        platform: 'ios',
+        enabled: null,
+      });
+
+      // Clearing is a delete, not a stored "inherit" value — an absent row is
+      // how inheritance is already expressed, and a third state would be a
+      // second way to say the same thing. The delete is scoped to both columns
+      // so clearing one platform cannot wipe another's override.
+      expect(mocks.deleteWhere).toHaveBeenCalledWith(
+        expect.objectContaining({
+          conds: expect.arrayContaining([
+            expect.objectContaining({ val: FeatureFlag.EnableFeed }),
+            expect.objectContaining({ val: 'ios' }),
+          ]),
+        }),
+      );
+      expect(mocks.insertValues).not.toHaveBeenCalled();
+    });
+
+    it('omits a missing reason rather than writing undefined', async () => {
+      await setFeatureFlagPlatformOverride({
+        key: FeatureFlag.EnableFeed,
+        platform: 'ios',
+        enabled: true,
+      });
+
+      expect(mocks.insertValues).toHaveBeenCalledWith(
+        expect.objectContaining({ platform: 'ios', reason: null }),
+      );
+    });
+
+    it('captures and rethrows on a DB error', async () => {
+      const boom = new Error('db down');
+      mocks.onConflictDoNothing.mockImplementationOnce(() => {
+        throw boom;
+      });
+
+      await expect(
+        setFeatureFlagPlatformOverride({
+          key: FeatureFlag.EnableFeed,
+          platform: 'ios',
+          enabled: true,
+        }),
+      ).rejects.toBe(boom);
+      expect(mocks.captureApiException).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: boom,
+          operation: 'featureFlags.setPlatformOverride',
+        }),
       );
     });
   });
