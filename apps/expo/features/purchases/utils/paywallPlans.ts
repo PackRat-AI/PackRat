@@ -113,7 +113,7 @@ export function bestValuePackage<T extends RankablePackage>(packages: readonly T
 
 /** The row selected when the paywall opens. */
 export function defaultPackage<T extends RankablePackage>(packages: readonly T[]): T | undefined {
-  return bestValuePackage(packages) ?? packages[0];
+  return bestValuePackage(packages) ?? packages.at(0);
 }
 
 /** Whether buying this plan is a one-off rather than a subscription. */

@@ -1,3 +1,4 @@
+import { toRecord } from '@packrat/guards';
 import * as Sentry from '@sentry/react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { PurchasesPackage as Package } from 'react-native-purchases';
@@ -61,14 +62,9 @@ export function usePurchase() {
  * Whether a rejection is the buyer dismissing the store sheet.
  *
  * `react-native-purchases` attaches `userCancelled` to the rejected error
- * rather than resolving, so this is the only way to tell a cancellation from a
- * genuine failure.
+ * rather than resolving, so reading that flag is the only way to tell a
+ * cancellation from a genuine failure.
  */
 function isUserCancelled(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'userCancelled' in error &&
-    (error as { userCancelled?: unknown }).userCancelled === true
-  );
+  return toRecord(error).userCancelled === true;
 }
