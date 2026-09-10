@@ -7,6 +7,9 @@ import Foundation
 /// link into navigation state is a separate concern — `AuthGateView` just
 /// hands the URL to `DeepLink.parse(_:)` and logs (for now) until product
 /// signals which destinations matter most.
+///
+/// The Expo (Android) client parses the same `packrat://` scheme, so any
+/// case added here has a counterpart there — see `docs/parity.md`.
 public enum DeepLink: Equatable {
     case home
     case pack(id: String)
