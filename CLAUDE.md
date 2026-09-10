@@ -34,6 +34,13 @@ but it is not a shipping surface and is not worth fixing or validating.
 Launching an iOS simulator to check an Expo change tests a platform the project
 does not ship.
 
+Each mobile app carries its own `CLAUDE.md` (`apps/expo/CLAUDE.md`,
+`apps/swift/CLAUDE.md`) with that platform's build, validation and device
+gotchas. Those load automatically when an agent reads files in the directory,
+so platform-specific rules belong there rather than here. The same rules are
+also a path-scoped rule in `.claude/rules/platform-split.md`, which fires when
+a file under either app is opened.
+
 ### Infrastructure
 
 - **Compute**: Cloudflare Workers (API), Durable Objects (containers)
