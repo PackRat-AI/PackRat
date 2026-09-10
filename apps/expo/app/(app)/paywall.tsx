@@ -53,7 +53,8 @@ export default function PaywallRoute() {
         <PackRatPaywall
           offering={offering}
           featureName={featureName}
-          otherEarlyAccessFeatures={otherEarlyAccessFeatureNames(allFeatures, {
+          otherEarlyAccessFeatures={otherEarlyAccessFeatureNames({
+            features: allFeatures,
             excludingKey: featureKey ?? null,
           })}
           onDismiss={() => router.back()}

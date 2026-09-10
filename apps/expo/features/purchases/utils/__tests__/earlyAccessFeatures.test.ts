@@ -24,7 +24,7 @@ describe('otherEarlyAccessFeatureNames', () => {
       feature({ key: 'wildlife-id', earlyAccessUntil: FUTURE, label: 'Wildlife ID' }),
     ];
     expect(
-      otherEarlyAccessFeatureNames(features, { excludingKey: 'summit-log', now: NOW }),
+      otherEarlyAccessFeatureNames({ features, excludingKey: 'summit-log', now: NOW }),
     ).toEqual(['Wildlife ID']);
   });
 
@@ -33,7 +33,7 @@ describe('otherEarlyAccessFeatureNames', () => {
       feature({ key: 'summit-log', earlyAccessUntil: FUTURE, label: 'Summit Log' }),
       feature({ key: 'wildlife-id', earlyAccessUntil: FUTURE, label: 'Wildlife ID' }),
     ];
-    expect(otherEarlyAccessFeatureNames(features, { now: NOW })).toEqual([
+    expect(otherEarlyAccessFeatureNames({ features, now: NOW })).toEqual([
       'Summit Log',
       'Wildlife ID',
     ]);
@@ -44,7 +44,7 @@ describe('otherEarlyAccessFeatureNames', () => {
       feature({ key: 'summit-log', earlyAccessUntil: PAST, label: 'Summit Log' }),
       feature({ key: 'wildlife-id', earlyAccessUntil: FUTURE, label: 'Wildlife ID' }),
     ];
-    expect(otherEarlyAccessFeatureNames(features, { now: NOW })).toEqual(['Wildlife ID']);
+    expect(otherEarlyAccessFeatureNames({ features, now: NOW })).toEqual(['Wildlife ID']);
   });
 
   it('omits features with no window at all', () => {
@@ -52,7 +52,7 @@ describe('otherEarlyAccessFeatureNames', () => {
       feature({ key: 'always-free', earlyAccessUntil: null, label: 'Always Free' }),
       feature({ key: 'gated', earlyAccessUntil: FUTURE, label: 'Gated' }),
     ];
-    expect(otherEarlyAccessFeatureNames(features, { now: NOW })).toEqual(['Gated']);
+    expect(otherEarlyAccessFeatureNames({ features, now: NOW })).toEqual(['Gated']);
   });
 
   it('sorts by key so the order does not reshuffle between renders', () => {
@@ -61,7 +61,7 @@ describe('otherEarlyAccessFeatureNames', () => {
       feature({ key: 'alpha', earlyAccessUntil: FUTURE, label: 'Alpha' }),
       feature({ key: 'middle', earlyAccessUntil: FUTURE, label: 'Middle' }),
     ];
-    expect(otherEarlyAccessFeatureNames(features, { now: NOW })).toEqual([
+    expect(otherEarlyAccessFeatureNames({ features, now: NOW })).toEqual([
       'Alpha',
       'Middle',
       'Zebra',
@@ -72,14 +72,14 @@ describe('otherEarlyAccessFeatureNames', () => {
     const features = Array.from({ length: 10 }, (_, i) =>
       feature({ key: `feature-${i}`, earlyAccessUntil: FUTURE, label: `Feature ${i}` }),
     );
-    expect(otherEarlyAccessFeatureNames(features, { now: NOW })).toHaveLength(MAX_FEATURE_SLOTS);
+    expect(otherEarlyAccessFeatureNames({ features, now: NOW })).toHaveLength(MAX_FEATURE_SLOTS);
   });
 
   it('honours an explicit limit', () => {
     const features = Array.from({ length: 5 }, (_, i) =>
       feature({ key: `feature-${i}`, earlyAccessUntil: FUTURE, label: `Feature ${i}` }),
     );
-    expect(otherEarlyAccessFeatureNames(features, { now: NOW, limit: 2 })).toEqual([
+    expect(otherEarlyAccessFeatureNames({ features, now: NOW, limit: 2 })).toEqual([
       'Feature 0',
       'Feature 1',
     ]);
@@ -90,7 +90,7 @@ describe('otherEarlyAccessFeatureNames', () => {
       feature({ key: 'summit-log', earlyAccessUntil: FUTURE, label: null }),
       feature({ key: 'wildlife-id', earlyAccessUntil: FUTURE, label: '  ' }),
     ];
-    expect(otherEarlyAccessFeatureNames(features, { now: NOW })).toEqual([
+    expect(otherEarlyAccessFeatureNames({ features, now: NOW })).toEqual([
       'summit-log',
       'wildlife-id',
     ]);
@@ -98,7 +98,7 @@ describe('otherEarlyAccessFeatureNames', () => {
 
   it('returns nothing before the config has loaded', () => {
     expect(
-      otherEarlyAccessFeatureNames(undefined, { excludingKey: 'summit-log', now: NOW }),
+      otherEarlyAccessFeatureNames({ features: undefined, excludingKey: 'summit-log', now: NOW }),
     ).toEqual([]);
   });
 });

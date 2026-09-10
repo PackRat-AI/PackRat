@@ -120,7 +120,7 @@ export function PackRatPaywall({
 
   const bestValue = useMemo(() => bestValuePackage(packages), [packages]);
   const valueProps = useMemo(
-    () => paywallValueProps(featureName, otherEarlyAccessFeatures),
+    () => paywallValueProps({ featureName, otherEarlyAccessFeatures }),
     [featureName, otherEarlyAccessFeatures],
   );
 

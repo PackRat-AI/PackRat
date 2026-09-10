@@ -78,24 +78,33 @@ describe('paywallFinePrint', () => {
 
 describe('paywallValueProps', () => {
   it('names the other early-access features first, on a feature paywall', () => {
-    const props = paywallValueProps('Summit Log', ['Wildlife ID', 'Trail Conditions']);
+    const props = paywallValueProps({
+      featureName: 'Summit Log',
+      otherEarlyAccessFeatures: ['Wildlife ID', 'Trail Conditions'],
+    });
     expect(props[0]?.title).toBe('Everything else in early access');
     expect(props[0]?.detail).toBe('Wildlife ID · Trail Conditions');
   });
 
   it('omits the list when nothing else is in early access', () => {
-    const props = paywallValueProps('Summit Log', []);
+    const props = paywallValueProps({ featureName: 'Summit Log', otherEarlyAccessFeatures: [] });
     expect(props.map((p) => p.title)).not.toContain('Everything else in early access');
   });
 
   it('omits the list from Settings, where the headline already covers it', () => {
-    const props = paywallValueProps(null, ['Wildlife ID']);
+    const props = paywallValueProps({
+      featureName: null,
+      otherEarlyAccessFeatures: ['Wildlife ID'],
+    });
     expect(props.map((p) => p.title)).not.toContain('Everything else in early access');
   });
 
   it('always makes the three standing arguments for Pro', () => {
     for (const featureName of ['Summit Log', null]) {
-      const titles = paywallValueProps(featureName, []).map((p) => p.title);
+      const titles = paywallValueProps({
+        featureName: featureName,
+        otherEarlyAccessFeatures: [],
+      }).map((p) => p.title);
       expect(titles).toContain('Try new features weeks before everyone else');
       expect(titles).toContain('You’re supporting a small team');
       expect(titles).toContain('Cancel anytime');
@@ -117,7 +126,10 @@ describe('ADR-005 — the paywall never argues for waiting', () => {
     const strings: string[] = [];
     for (const featureName of ['Summit Log', null]) {
       strings.push(paywallHeadline(featureName), paywallSubheadline(featureName));
-      for (const prop of paywallValueProps(featureName, ['Wildlife ID'])) {
+      for (const prop of paywallValueProps({
+        featureName: featureName,
+        otherEarlyAccessFeatures: ['Wildlife ID'],
+      })) {
         strings.push(prop.title, prop.detail);
       }
       for (const isAuthenticated of [true, false]) {

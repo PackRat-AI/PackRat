@@ -106,10 +106,17 @@ export interface PaywallValueProp {
  * what they would get, which a general appeal cannot convey. From Settings the
  * headline already speaks to the whole set, so repeating it says nothing new.
  */
-export function paywallValueProps(
-  featureName: string | null,
-  otherEarlyAccessFeatures: readonly string[],
-): PaywallValueProp[] {
+export interface PaywallValuePropsInput {
+  /** The gated feature this was opened for, or null from Settings. */
+  featureName: string | null;
+  /** Other features currently in early access, already named and capped. */
+  otherEarlyAccessFeatures: readonly string[];
+}
+
+export function paywallValueProps({
+  featureName,
+  otherEarlyAccessFeatures,
+}: PaywallValuePropsInput): PaywallValueProp[] {
   const props: PaywallValueProp[] = [];
 
   if (featureName && otherEarlyAccessFeatures.length > 0) {

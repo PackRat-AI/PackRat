@@ -19,8 +19,9 @@ interface LabelledFeature extends FeatureAccessLike {
   label?: string | null;
 }
 
-/** Everything but the config, which every call has to pass. */
 export interface OtherEarlyAccessOptions {
+  /** The `feature_access` config, or undefined before it has loaded. */
+  features: readonly LabelledFeature[] | undefined;
   /**
    * The feature the paywall was opened for, excluded from the list. Null when
    * opened from Settings, where no one feature prompted it and all of them are
@@ -41,14 +42,12 @@ export interface OtherEarlyAccessOptions {
  * silently dropped from the list — a missing label is a copy gap, not a reason
  * to under-sell what the subscription includes.
  */
-export function otherEarlyAccessFeatureNames(
-  features: readonly LabelledFeature[] | undefined,
-  {
-    excludingKey = null,
-    now = new Date(),
-    limit = MAX_FEATURE_SLOTS,
-  }: OtherEarlyAccessOptions = {},
-): string[] {
+export function otherEarlyAccessFeatureNames({
+  features,
+  excludingKey = null,
+  now = new Date(),
+  limit = MAX_FEATURE_SLOTS,
+}: OtherEarlyAccessOptions): string[] {
   if (!features) return [];
 
   return features
