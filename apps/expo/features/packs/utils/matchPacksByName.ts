@@ -40,7 +40,21 @@ export type PackMatchSummary = {
  * model echoes back whatever the user typed.
  */
 function normalize(value: string): string {
-  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+  // Whitespace-split without a regex literal: apps/expo does not depend on
+  // magic-regexp, and the repo's no-raw-regex rule flags the `/\s+/` form.
+  // Any run of whitespace collapses to one space, so "Japan  Trip" === "Japan Trip".
+  const words: string[] = [];
+  let word = '';
+  for (const char of value) {
+    if (char.trim() === '') {
+      if (word) words.push(word);
+      word = '';
+    } else {
+      word += char;
+    }
+  }
+  if (word) words.push(word);
+  return words.join(' ').toLocaleLowerCase();
 }
 
 /**
