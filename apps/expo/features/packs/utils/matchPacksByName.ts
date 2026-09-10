@@ -64,7 +64,7 @@ function normalize(value: string): string {
  * "Japan Trip", asking for "Japan" resolves to the pack actually called
  * "Japan" rather than whichever happens to sort first.
  */
-function matchRank(packName: string, query: string): number | null {
+function matchRank({ packName, query }: { packName: string; query: string }): number | null {
   const name = normalize(packName);
   if (name === query) return 0;
   if (name.startsWith(query)) return 1;
@@ -96,7 +96,7 @@ export function matchPacksByName({
     query === ''
       ? live
       : live
-          .map((pack) => ({ pack, rank: matchRank(pack.name, query) }))
+          .map((pack) => ({ pack, rank: matchRank({ packName: pack.name, query }) }))
           .filter(
             (scored): scored is { pack: PackNameCandidate; rank: number } => scored.rank !== null,
           )
