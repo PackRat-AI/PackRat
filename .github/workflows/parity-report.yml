@@ -1,0 +1,58 @@
+name: Parity report
+
+# Regenerates docs/parity/OPEN-GAPS.md from the open `parity` issues.
+#
+# The report is derived, so it can't rot the way a hand-maintained matrix does.
+# The weekly run exists for the aging signal: a gap open past 30 days is
+# annotated in the table, which is the cue that a follow-up is being dropped
+# rather than scheduled.
+
+on:
+  schedule:
+    # Mondays, 08:00 UTC — a fresh gap list at the start of the week.
+    - cron: '0 8 * * 1'
+  issues:
+    types: [closed, reopened, labeled, unlabeled]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  issues: read
+
+jobs:
+  report:
+    # On issue events, only bother when the issue is actually a parity gap.
+    # The `unlabeled` arm matters: removing the last `parity` label leaves it
+    # off `issue.labels`, so without it the report would keep showing a gap
+    # that is no longer tracked until the next scheduled run.
+    if: >-
+      github.event_name != 'issues' ||
+      contains(join(github.event.issue.labels.*.name, ','), 'parity') ||
+      (github.event.action == 'unlabeled' && github.event.label.name == 'parity')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Regenerate open-gaps report
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bun scripts/lint/parity-gaps-report.ts
+
+      - name: Commit if changed
+        run: |
+          if [[ -n "$(git status --porcelain docs/parity/OPEN-GAPS.md)" ]]; then
+            git config user.name  'github-actions[bot]'
+            git config user.email 'github-actions[bot]@users.noreply.github.com'
+            git add docs/parity/OPEN-GAPS.md
+            git commit -m 'chore(parity): refresh open-gaps report'
+            git push
+          else
+            echo 'No change to the parity gap report.'
+          fi
