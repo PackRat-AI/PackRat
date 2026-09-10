@@ -361,7 +361,16 @@ class AppUITestCase: XCTestCase {
         let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
         let action = app.buttons[identifier]
 
-        XCTAssertTrue(action.waitForExistence(timeout: 8), "Home action '\(title)' must exist")
+        // A row far enough down the Home list is not in the accessibility tree
+        // at all until it scrolls into range — SwiftUI builds lazily — so
+        // waiting for existence alone times out on a fresh Home. Scroll while
+        // waiting, then let the hittability loop below do the fine positioning.
+        if !action.waitForExistence(timeout: 3) {
+            for _ in 0..<8 where !action.exists {
+                app.swipeUp()
+            }
+        }
+        XCTAssertTrue(action.exists, "Home action '\(title)' must exist")
 
         // `isHittable` is the authority on whether a tap will land: XCTest
         // resolves it against the real hit-test result, including tab-bar

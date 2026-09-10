@@ -35,6 +35,9 @@ struct AuthProviderButtons: View {
                     Divider()
                 }
 
+                // Google's SDK needs UIKit, so macOS gets a button that
+                // explains where to sign in with Google rather than one that
+                // silently cannot work.
                 #if os(iOS)
                 Button {
                     signInWithGoogle()
@@ -46,17 +49,6 @@ struct AuthProviderButtons: View {
                 .controlSize(.large)
                 .disabled(isLoading)
                 .accessibilityIdentifier("\(identifierPrefix)_google")
-
-                SignInWithAppleButton(.continue) { request in
-                    request.requestedScopes = [.fullName, .email]
-                } onCompletion: { result in
-                    signInWithApple(result)
-                }
-                .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                .frame(height: 44)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .disabled(isLoading)
-                .accessibilityIdentifier("\(identifierPrefix)_apple")
                 #else
                 Button {
                     error = "Google sign-in is available in the iOS app. Use email sign-in on macOS for now."
@@ -68,6 +60,25 @@ struct AuthProviderButtons: View {
                 .controlSize(.large)
                 .accessibilityIdentifier("\(identifierPrefix)_google")
                 #endif
+
+                // Deliberately on both platforms. App Store guideline 4.8
+                // requires Sign in with Apple wherever a third-party login is
+                // offered, and macOS offers Google above. `SignInWithAppleButton`
+                // and `loginWithApple` are both cross-platform, so nothing here
+                // needs gating — this button shipped on macOS until it was moved
+                // inside the iOS branch while extracting this view (#2749),
+                // which is what broke `AuthTests.testLoginScreenAppears` on the
+                // macOS target.
+                SignInWithAppleButton(.continue) { request in
+                    request.requestedScopes = [.fullName, .email]
+                } onCompletion: { result in
+                    signInWithApple(result)
+                }
+                .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                .frame(height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .disabled(isLoading)
+                .accessibilityIdentifier("\(identifierPrefix)_apple")
             }
         }
     }
