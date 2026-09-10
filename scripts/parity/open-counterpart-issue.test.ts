@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import {
+  defuseMarkers,
   issueBody,
   issueLabels,
   issueTitle,
@@ -48,6 +49,26 @@ describe('issueLabels', () => {
   });
 });
 
+describe('defuseMarkers', () => {
+  it("breaks a marker so it cannot answer another PR's dedupe lookup", () => {
+    expect(defuseMarkers('see parity-of:#123')).not.toContain('parity-of:#123');
+  });
+
+  it('keeps the text readable', () => {
+    expect(defuseMarkers('see parity-of:#123')).toContain('parity-of:');
+  });
+
+  it('defuses spaced and uppercase variants', () => {
+    expect(defuseMarkers('PARITY-OF: # 77')).not.toMatch(/PARITY-OF:\s*#\s*77/i);
+  });
+
+  it('leaves ordinary prose alone', () => {
+    expect(defuseMarkers('same empty state on the list screen')).toBe(
+      'same empty state on the list screen',
+    );
+  });
+});
+
 describe('issueBody', () => {
   it('names the platform that owes the work', () => {
     expect(issueBody({ pr: PR, landedOn: ['swift'], target: 'expo' })).toContain(
@@ -80,6 +101,17 @@ describe('issueBody', () => {
 
   it('omits the quote block when no note was given', () => {
     expect(issueBody({ pr: PR, landedOn: ['swift'], target: 'expo' })).not.toContain('\n> ');
+  });
+
+  it('does not let a note forge a marker for another PR', () => {
+    const body = issueBody({
+      pr: PR,
+      landedOn: ['swift'],
+      target: 'expo',
+      note: 'ignore me parity-of:#123',
+    });
+    expect(body).not.toContain('parity-of:#123');
+    expect(body).toContain('parity-of:#2760');
   });
 
   it('embeds the idempotency marker as an HTML comment', () => {

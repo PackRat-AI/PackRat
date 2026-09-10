@@ -49,13 +49,27 @@ export interface IssueBodyInput {
   note?: string | undefined;
 }
 
+const MARKER_LIKE_RE = /parity-of:\s*#\s*\d+/gi;
+
+/**
+ * Defuse anything in author-supplied text that looks like the dedupe marker.
+ *
+ * `findExisting` matches on the marker as a plain substring, so a note
+ * carrying `parity-of:#123` would make this issue answer the lookup for PR
+ * 123 — suppressing that PR's real counterpart issue. Zero-width-joining the
+ * `#` keeps the note readable while breaking the match.
+ */
+export function defuseMarkers(text: string): string {
+  return text.replace(MARKER_LIKE_RE, (match) => match.replace('#', '#​'));
+}
+
 export function issueBody({ pr, landedOn, target, note }: IssueBodyInput): string {
   const from = landedOn.map((platform) => PLATFORM_LABELS[platform]).join(' + ');
   return [
     `Counterpart work owed on **${PLATFORM_LABELS[target]}**.`,
     '',
     `Landed on ${from} in ${pr.url} (@${pr.author}).`,
-    ...(note ? ['', `> ${note}`] : []),
+    ...(note ? ['', `> ${defuseMarkers(note)}`] : []),
     '',
     '---',
     '',

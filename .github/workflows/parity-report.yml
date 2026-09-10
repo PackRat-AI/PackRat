@@ -26,9 +26,13 @@ permissions:
 jobs:
   report:
     # On issue events, only bother when the issue is actually a parity gap.
+    # The `unlabeled` arm matters: removing the last `parity` label leaves it
+    # off `issue.labels`, so without it the report would keep showing a gap
+    # that is no longer tracked until the next scheduled run.
     if: >-
       github.event_name != 'issues' ||
-      contains(join(github.event.issue.labels.*.name, ','), 'parity')
+      contains(join(github.event.issue.labels.*.name, ','), 'parity') ||
+      (github.event.action == 'unlabeled' && github.event.label.name == 'parity')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

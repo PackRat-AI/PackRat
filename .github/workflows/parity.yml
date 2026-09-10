@@ -19,8 +19,11 @@ on:
     branches: ['**']
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  # Keyed by event so an edit-triggered `validate` can never cancel an
+  # in-flight `record`. `record` is the only thing that opens the counterpart
+  # issue and it has no retry, so a cancelled run drops the gap silently.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -34,6 +37,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -42,7 +46,10 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: git diff --name-only "$BASE_SHA" "$HEAD_SHA" > /tmp/changed-files.txt
+        # Three dots: diff against the merge base, not the base tip. A two-dot
+        # diff also reports commits that landed on development after we
+        # branched, which makes a docs-only PR look like it touched a client.
+        run: git diff --name-only "$BASE_SHA...$HEAD_SHA" > /tmp/changed-files.txt
 
       - name: Write PR body
         env:
@@ -69,6 +76,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
