@@ -6,6 +6,7 @@ import {
   type Platform,
   parseParityDeclaration,
   platformsTouched,
+  stripHtmlComments,
   stripTemplateNoise,
 } from './check-parity-declaration';
 
@@ -73,6 +74,35 @@ describe('stripTemplateNoise', () => {
   });
 });
 
+describe('stripHtmlComments', () => {
+  it('removes a plain comment', () => {
+    expect(stripHtmlComments('a<!-- x -->b')).toBe('ab');
+  });
+
+  it('ends a comment at the first --> , as HTML comments do not nest', () => {
+    // A renderer closes at the first `-->`, leaving the tail visible. The
+    // linter must agree with what a reviewer actually sees.
+    expect(stripHtmlComments('<!-- <!-- --> tail -->')).toBe(' tail -->');
+  });
+
+  it('removes several comments in one string', () => {
+    expect(stripHtmlComments('a<!--x-->b<!--y-->c')).toBe('abc');
+  });
+
+  it('never leaves a live comment opener behind', () => {
+    expect(stripHtmlComments('<!--a--><!--b-->keep')).not.toContain('<!--');
+  });
+
+  it('drops the remainder after an unterminated comment opener', () => {
+    // Renders as commented-out on GitHub, so it must not be parsed as content.
+    expect(stripHtmlComments('keep<!-- hidden forever')).toBe('keep');
+  });
+
+  it('leaves text without comments untouched', () => {
+    expect(stripHtmlComments('follow: expo')).toBe('follow: expo');
+  });
+});
+
 describe('parseParityDeclaration — valid declarations', () => {
   it('accepts a follow directive naming the other platform', () => {
     const result = parseParityDeclaration(body('follow: expo'), SWIFT_ONLY);
@@ -136,6 +166,17 @@ describe('parseParityDeclaration — violations', () => {
       body('- [ ] follow: expo\n- [ ] done-both\n- [ ] n/a:'),
       SWIFT_ONLY,
     );
+    expect(result.violations.map((v) => v.kind)).toEqual(['no-directive']);
+  });
+
+  it('ignores a directive that sits entirely inside a comment', () => {
+    const result = parseParityDeclaration(body('<!-- follow: expo -->'), SWIFT_ONLY);
+    expect(result.violations.map((v) => v.kind)).toEqual(['no-directive']);
+  });
+
+  it('ignores everything after an unterminated comment opener', () => {
+    // Renders as commented-out, so CI must not credit it as a declaration.
+    const result = parseParityDeclaration(body('<!-- oops\nfollow: expo'), SWIFT_ONLY);
     expect(result.violations.map((v) => v.kind)).toEqual(['no-directive']);
   });
 

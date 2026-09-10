@@ -104,15 +104,49 @@ export function extractParityBlock(prBody: string): string | null {
   return bodyLines.join('\n');
 }
 
+const LINE_SPLIT_RE = /\r?\n/;
+const UNCHECKED_BOX_RE = /^\s*-\s*\[\s*\]/;
+
+/**
+ * Remove HTML comments the way a renderer does: a comment runs from `<!--` to
+ * the *first* following `-->`, and comments do not nest.
+ *
+ * Matching the renderer is the whole point — this linter must agree with what
+ * a reviewer actually sees on the PR. A single regex pass is not enough,
+ * because removing one comment can splice its neighbours into a new `<!--`
+ * that was never comment syntax in the source; looping to a fixed point would
+ * then delete text GitHub displays. So scan left to right instead.
+ */
+export function stripHtmlComments(input: string): string {
+  let output = '';
+  let index = 0;
+
+  while (index < input.length) {
+    const open = input.indexOf('<!--', index);
+    if (open === -1) {
+      output += input.slice(index);
+      break;
+    }
+    output += input.slice(index, open);
+
+    const close = input.indexOf('-->', open + 4);
+    // An unterminated `<!--` comments out everything after it when rendered,
+    // so drop the remainder rather than parsing text a reader never sees.
+    if (close === -1) break;
+    index = close + 3;
+  }
+
+  return output;
+}
+
 /**
  * Strip HTML comments and unchecked-checkbox scaffolding so template
  * boilerplate is never mistaken for a real declaration.
  */
 export function stripTemplateNoise(block: string): string {
-  return block
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .split(/\r?\n/)
-    .filter((line) => !/^\s*-\s*\[\s*\]/.test(line))
+  return stripHtmlComments(block)
+    .split(LINE_SPLIT_RE)
+    .filter((line) => !UNCHECKED_BOX_RE.test(line))
     .join('\n');
 }
 
