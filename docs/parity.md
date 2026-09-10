@@ -50,6 +50,14 @@ The issue carries a hidden `parity-of:#<pr>` marker, so a re-run or a re-merge
 finds the existing one instead of opening a duplicate. Duplicate gap issues
 would train everyone to ignore the label, which would end the scheme.
 
+The `record` job triggers on **push to `development`/`main`**, resolving the
+merged PR from the pushed commit. It deliberately does not use
+`pull_request_target`: that trigger is only registered from the workflow file
+already present on the base branch when the PR was opened, so it silently
+never fires for PRs opened before the workflow landed — which is exactly how
+the first end-to-end test failed (PR #2761). A push trigger always fires and
+works for forks too. A direct push with no associated PR simply no-ops.
+
 ## Where the gap list lives
 
 **The open `parity` issues _are_ the gap list.** There is no document to
@@ -112,6 +120,6 @@ kinks, the other adopts
 | `scripts/lint/check-parity-declaration.ts` | Validates it; blocks the PR |
 | `scripts/parity/open-counterpart-issue.ts` | Opens the counterpart issue on merge |
 | `scripts/lint/parity-gaps-report.ts` | Renders the derived gap report |
-| `.github/workflows/parity.yml` | Validate on PR, record on merge |
+| `.github/workflows/parity.yml` | Validate on PR; record on push to a base branch |
 | `.github/workflows/parity-report.yml` | Weekly + on-close report refresh |
 | `docs/parity/OPEN-GAPS.md` | Generated snapshot — do not edit |
