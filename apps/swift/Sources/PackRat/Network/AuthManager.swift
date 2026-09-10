@@ -77,6 +77,7 @@ final class AuthManager {
         await MainActor.run { currentUser = response.user }
         persistUser(response.user)
         SentryConfig.setUser(id: response.user.id, email: response.user.email)
+        verifySessionPersisted(path: "sign-in/email")
     }
 
     func continueWithoutLogin() {
@@ -149,6 +150,7 @@ final class AuthManager {
         }
         persistUser(response.user)
         SentryConfig.setUser(id: response.user.id, email: response.user.email)
+        verifySessionPersisted(path: "sign-in/social")
     }
 
     @MainActor
@@ -236,6 +238,7 @@ final class AuthManager {
         await MainActor.run { currentUser = response.user }
         persistUser(response.user)
         SentryConfig.setUser(id: response.user.id, email: response.user.email)
+        verifySessionPersisted(path: "sign-up/email")
     }
 
     func requestPasswordReset(email: String) async throws {
@@ -412,6 +415,24 @@ final class AuthManager {
     private func persistUser(_ user: User) {
         if let data = try? JSONEncoder().encode(user) {
             UserDefaults.standard.set(data, forKey: "current_user")
+        }
+    }
+
+    /// Reports a sign-in that produced a user but no session token.
+    ///
+    /// Every sign-in path guards `if let token`, and `APIClient` also captures
+    /// the `set-auth-token` header, so a missing token used to be silent: the
+    /// user record persisted, no session did, and the next launch showed the
+    /// authwall as if the session had simply expired. If neither source
+    /// supplied one, say so loudly at the moment it happens.
+    private func verifySessionPersisted(path: String) {
+        guard KeychainService.shared.sessionToken == nil else { return }
+        let message = "Sign-in via \(path) stored no session token — the next launch will show the authwall"
+        print("[Auth] \(message)")
+        SentrySDK.capture(message: message) { scope in
+            scope.setLevel(.error)
+            scope.setTag(value: "auth", key: "subsystem")
+            scope.setContext(value: ["path": path], key: "auth")
         }
     }
 

@@ -1,5 +1,6 @@
 import Foundation
 import Security
+import Sentry
 
 final class KeychainService: Sendable {
     static let shared = KeychainService()
@@ -69,7 +70,25 @@ final class KeychainService: Sendable {
         SecItemDelete(query as CFDictionary)
         var attributes = query
         attributes[kSecValueData] = data
-        SecItemAdd(attributes as CFDictionary, nil)
+        // Keep the item readable after first unlock so a launch straight from a
+        // locked device can still restore the session. The default
+        // (`kSecAttrAccessibleWhenUnlocked`) is evaluated at write time, which
+        // is fine, but being explicit documents the intent.
+        attributes[kSecAttrAccessible] = kSecAttrAccessibleAfterFirstUnlock
+        let status = SecItemAdd(attributes as CFDictionary, nil)
+        guard status != errSecSuccess else { return }
+
+        // A discarded status here is why "log in, reopen, back at the authwall"
+        // looked like a session bug with nothing in the logs: the write failed,
+        // login still reported success, and the next launch found no token. Never
+        // log `value` — it is the session token.
+        let message = "Keychain write failed for \(key.rawValue): OSStatus \(status)"
+        print("[Keychain] \(message)")
+        SentrySDK.capture(message: message) { scope in
+            scope.setLevel(.error)
+            scope.setTag(value: "keychain", key: "subsystem")
+            scope.setContext(value: ["status": Int(status), "key": key.rawValue], key: "keychain")
+        }
     }
 
     private func read(_ key: Key) -> String? {
