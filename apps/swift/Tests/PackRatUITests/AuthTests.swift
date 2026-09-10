@@ -165,6 +165,15 @@ final class AuthTests: AppUITestCase {
         XCTAssertTrue(app.secureTextFields["register_password"].exists)
         XCTAssertTrue(app.buttons["register_submit"].exists)
 
+        // Sign-up offers the same providers as sign-in, from the same shared
+        // `AuthProviderButtons`. Asserted here because only the sign-in screen
+        // had this check, and that asymmetry is exactly how #2749 shipped a
+        // macOS build with no Sign in with Apple on either screen: the shared
+        // component regressed, sign-in's assertion caught it, and sign-up had
+        // nothing watching. Guideline 4.8 applies to both.
+        XCTAssertTrue(app.buttons["register_apple"].exists)
+        XCTAssertTrue(app.buttons["register_google"].exists)
+
         // Tap "Already have an account" back link
         let loginLink = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Sign In' OR label CONTAINS 'Log In' OR label CONTAINS 'account'")).firstMatch
         loginLink.tapIfExists()
