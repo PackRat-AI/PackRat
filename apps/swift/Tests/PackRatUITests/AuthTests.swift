@@ -113,13 +113,11 @@ final class AuthTests: AppUITestCase {
         // Sign in with Apple ships on both platforms — App Store guideline 4.8
         // requires it wherever a third-party login is offered.
         XCTAssertTrue(app.buttons["auth_apple"].exists)
-        // Google is iOS-only: its SDK needs UIKit, so macOS offers email plus
-        // Sign in with Apple instead.
-        #if os(iOS)
+        // A Google button is present on both platforms too. On macOS its SDK
+        // cannot run, so the button explains where Google sign-in works rather
+        // than being hidden — asserting its absence here described an older
+        // build and would now fail on macOS for the wrong reason.
         XCTAssertTrue(app.buttons["auth_google"].exists)
-        #else
-        XCTAssertFalse(app.buttons["auth_google"].exists)
-        #endif
     }
 
     func testLoginWithBadCredentialShowsError() {
