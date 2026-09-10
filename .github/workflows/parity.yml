@@ -1,0 +1,101 @@
+name: Parity
+
+# Two jobs, one concern: keep the two clients from drifting.
+#
+#   validate — on every PR touching a client, the `## Parity` block must declare
+#              what happens to the other one. Blocks the PR if it doesn't.
+#   record   — on merge, if the PR declared `follow: <platform>`, open the
+#              counterpart issue. This is the step that means nobody has to
+#              remember.
+#
+# See docs/parity.md.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: ['**']
+  pull_request_target:
+    types: [closed]
+    branches: ['**']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate parity declaration
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Collect changed files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git diff --name-only "$BASE_SHA" "$HEAD_SHA" > /tmp/changed-files.txt
+
+      - name: Write PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" > /tmp/pr-body.txt
+
+      - name: Check parity declaration
+        run: |
+          bun scripts/lint/check-parity-declaration.ts \
+            --body /tmp/pr-body.txt \
+            --changed-files /tmp/changed-files.txt
+
+  record:
+    name: Open counterpart issue
+    # pull_request_target so the token can write issues on merge. Safe here:
+    # nothing from the PR head is checked out or executed — only the base repo's
+    # own scripts run, against the PR body as data.
+    if: github.event_name == 'pull_request_target' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Collect changed files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh api "repos/$REPO/pulls/$PR_NUMBER/files" --paginate \
+            --jq '.[].filename' > /tmp/changed-files.txt
+
+      - name: Write PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" > /tmp/pr-body.txt
+
+      - name: Open counterpart issue if one is owed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO: ${{ github.repository }}
+        run: |
+          bun scripts/parity/open-counterpart-issue.ts \
+            --body /tmp/pr-body.txt \
+            --changed-files /tmp/changed-files.txt
