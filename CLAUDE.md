@@ -6,15 +6,40 @@ Outdoor adventure planning platform — helps users plan trips, manage packing l
 
 ## Architecture
 
-Bun workspace monorepo with three apps and two packages:
+Bun workspace monorepo. **Mobile is split by platform: iOS ships from
+`apps/swift`, Android ships from `apps/expo`.**
 
 | Workspace | Stack | Purpose |
 |---|---|---|
-| `apps/expo` | React Native 0.83 / Expo 55 / Expo Router 55 | Mobile app (iOS + Android) |
+| `apps/swift` | SwiftUI / SwiftData | **iOS app (and watchOS, macOS)** |
+| `apps/expo` | React Native 0.83 / Expo 55 / Expo Router 55 | **Android app** |
 | `apps/guides` | Next.js 15 / React 19 / Radix UI / Shadcn | Content/guides site |
 | `apps/landing` | Next.js 15 / React 19 / Framer Motion | Marketing site |
+| `apps/web` | Next.js / React | Web app |
+| `apps/admin` | Next.js / React | Admin console |
+| `apps/trails` | Next.js / React | Trails site |
 | `packages/api` | Elysia on Cloudflare Workers / Drizzle ORM / Neon PostgreSQL | Backend API |
 | `packages/ui` | `@expo/ui` wrappers + plain RN components | Shared UI components |
+
+### Platform split — read before testing mobile work
+
+iOS is **no longer shipped from Expo**. The Expo app's iOS target still builds,
+but it is not a shipping surface and is not worth fixing or validating.
+
+- Work in `apps/expo` is **Android** work — validate it on an Android emulator
+  or device, never an iOS simulator.
+- Work in `apps/swift` is **iOS/watchOS/macOS** work — validate it on an iOS
+  simulator or device.
+
+Launching an iOS simulator to check an Expo change tests a platform the project
+does not ship.
+
+Each mobile app carries its own `CLAUDE.md` (`apps/expo/CLAUDE.md`,
+`apps/swift/CLAUDE.md`) with that platform's build, validation and device
+gotchas. Those load automatically when an agent reads files in the directory,
+so platform-specific rules belong there rather than here. The same rules are
+also a path-scoped rule in `.claude/rules/platform-split.md`, which fires when
+a file under either app is opened.
 
 ### Infrastructure
 
@@ -24,15 +49,16 @@ Bun workspace monorepo with three apps and two packages:
 - **Queues**: `packrat-etl-queue` (serial), `packrat-embeddings-queue` (batch 100)
 - **AI**: Vercel AI SDK (OpenAI, Google, Perplexity, Workers AI), on-device llama.rn
 - **Monitoring**: Sentry (mobile + API)
-- **Mobile CI/CD**: EAS Build (dev, preview, e2e, production profiles)
+- **Android CI/CD**: EAS Build (dev, preview, e2e, production profiles)
+- **iOS CI/CD**: Xcode + App Store Connect from `apps/swift`
 
 ## Commands
 
 ```bash
 # Dev
-bun expo              # Start Expo dev server
-bun ios               # iOS simulator
-bun android           # Android emulator
+bun expo              # Start Expo dev server (Android)
+bun android           # Android emulator — the Expo app's shipping target
+bun ios               # Expo on iOS simulator — NOT a shipping target, see Platform split
 bun api               # API dev server (wrangler)
 cd apps/guides && bun dev   # Guides dev server
 cd apps/landing && bun dev  # Landing dev server
@@ -126,7 +152,7 @@ When a service or compute helper reads only a subset of columns, extract a proje
 
 **Lint:** `bun packages/api/scripts/lint/no-unprojected-fat-table-queries.ts` (runs in CI) fails the build on new `SELECT *` / no-`columns:` / no-arg `.returning()` against the fat tables. Use the inline opt-out `// lint:allow-unprojected-fat-table reason: <text>` only when the full row is genuinely needed (e.g., embedding regen text, detail endpoint).
 
-### Mobile (apps/expo)
+### Android (apps/expo)
 
 Feature module structure:
 ```
@@ -271,8 +297,11 @@ If you find a migration in the repo that was hand-written (no `drizzle-kit` prov
 |---|---|---|
 | `development` | Dev client | Internal |
 | `preview` | QA testing | Internal (auto-increment) |
-| `e2e` | Maestro E2E tests | iOS Simulator / Android APK |
-| `production` | App Store / Play Store | Store (auto-increment) |
+| `e2e` | Maestro E2E tests | Android APK |
+| `production` | Play Store | Store (auto-increment) |
+
+EAS builds the **Android** app. iOS/watchOS/macOS ship from `apps/swift` via
+Xcode and App Store Connect, not EAS.
 
 ## Common Issues
 
