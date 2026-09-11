@@ -1,37 +1,11 @@
-import { packItemsStore, packsStore } from 'expo-app/features/packs/store';
-import { obs } from 'expo-app/lib/store';
-import { nanoid } from 'nanoid';
 import { useCallback } from 'react';
-import { recordPackWeight } from '../store/packWeightHistory';
-import type { PackItem, PackItemInput } from '../types';
+import type { PackItemInput } from '../types';
+import { writePackItem } from '../utils/writePackItem';
 
 export function useCreatePackItem() {
   const createPackItem = useCallback(
-    ({ packId, itemData }: { packId: string; itemData: PackItemInput }) => {
-      const id = nanoid();
-
-      const newItem: PackItem = {
-        id,
-        name: itemData.name,
-        description: itemData.description ?? undefined,
-        weight: itemData.weight,
-        weightUnit: itemData.weightUnit,
-        quantity: itemData.quantity,
-        category: itemData.category || 'general',
-        consumable: itemData.consumable,
-        worn: itemData.worn,
-        notes: itemData.notes,
-        image: itemData.image,
-        catalogItemId: itemData.catalogItemId,
-        packId,
-        isAIGenerated: false,
-        deleted: false,
-      };
-
-      obs({ store: packItemsStore, id: id }).set(newItem);
-      obs({ store: packsStore, id: packId }).localUpdatedAt.set(new Date().toISOString());
-      recordPackWeight(packId);
-    },
+    ({ packId, itemData }: { packId: string; itemData: PackItemInput }) =>
+      writePackItem({ packId, itemData }),
     [],
   );
 

@@ -3,6 +3,7 @@ import { clientEnvs } from '@packrat/env/expo-client';
 import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
+import * as Sentry from '@sentry/react-native';
 import {
   DefaultChatTransport,
   lastAssistantMessageIsCompleteWithToolCalls,
@@ -33,8 +34,16 @@ import { createLocalTools } from 'expo-app/features/ai/lib/tools';
 import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
+import { useCreatePackItem } from 'expo-app/features/packs/hooks/useCreatePackItem';
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
 import { packsStore } from 'expo-app/features/packs/store/packs';
+import {
+  type AddItemToPackInput,
+  describeAddedItem,
+  type ListUserPacksInput,
+  listUserPacksFromStore,
+  prepareAddItemToPack,
+} from 'expo-app/features/packs/utils/chatPackTools';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
@@ -94,6 +103,7 @@ export default function AIChat() {
   const aiMode = useAtomValue(aiModeAtom);
   const modelStatus = useAtomValue(localModelStatusAtom);
   const enableLocalAI = useFeatureFlag('enableLocalAI');
+  const createPackItem = useCreatePackItem();
 
   const context = React.useMemo(
     () => ({
@@ -191,16 +201,36 @@ export default function AIChat() {
     if (enableLocalAI && aiMode === 'local' && isLocalReady) {
       const model = getLocalModel();
       if (model) {
-        let systemPrompt = `You are PackRat AI, a helpful assistant for hikers and outdoor enthusiasts.
-      You help users manage their hiking packs and gear efficiently using ultralight principles.
+        let systemPrompt = `You are PackRat AI, a helpful trip planning and packing assistant.
+      You help users plan trips of any kind and manage their packs and gear — city and
+      business travel, beach trips, camping, hiking and backpacking, climbing, water sports,
+      skiing and winter trips, desert trips, and anything else they are packing for.
+      You have deep outdoor and ultralight backpacking expertise, but never assume that is
+      the trip the user is asking about.
 
       Guidelines:
-      - Focus on ultralight hiking principles when appropriate
+      - Treat the trip type and activity as an INPUT you learn from the user, their pack, or
+        the conversation — never as a default. Do not assume a trip is a hike or a
+        backpacking trip, and do not recommend tents, sleeping bags, sleeping pads or other
+        backcountry gear unless the user's actual trip calls for them.
+      - When the trip type or activity is ambiguous, either give advice that holds across
+        trip types, or ask ONE brief clarifying question before recommending specific gear.
+        Ask at most one question — never interrogate the user with a list of questions.
+      - Apply ultralight principles and multi-purpose gear when the trip really is
+        backpacking, hiking, or another carry-everything activity — there they matter a lot.
+        For travel where weight is not the binding constraint, prioritise what does matter,
+        such as documents, electronics, dress code, and airline restrictions.
       - For beginners, emphasize safety and comfort over weight savings
       - Always consider weather conditions in your recommendations
-      - Suggest multi-purpose items to reduce pack weight
       - Be concise but helpful in your responses
       - Use tools proactively to provide accurate, up-to-date information
+      - When the user refers to one of their packs by name (for example "my Japan Trip
+        pack"), call listUserPacks to resolve that name to a pack id first, then pass that id
+        to getPackDetails or addItemToPack. Never invent or guess a pack id, and never tell
+        the user a pack does not exist without checking listUserPacks.
+      - After addItemToPack succeeds, confirm what you added in one short sentence, including
+        the quantity and which pack. If it fails, say what went wrong instead of implying the
+        item was added.
 
       Context:
       - User id is ${userId}
@@ -283,6 +313,81 @@ export default function AIChat() {
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     onToolCall: ({ toolCall }) => {
       if (toolCall.dynamic) return;
+
+      // listUserPacks and addItemToPack are declared server-side with no
+      // `execute`, so they are answered here. Every branch must call
+      // addToolOutput exactly once: an unanswered tool call never resolves,
+      // sendAutomaticallyWhen never fires, and the turn hangs (issue #2710).
+      if (toolCall.toolName === 'listUserPacks') {
+        const { nameQuery } = toolCall.input as ListUserPacksInput;
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'listUserPacks called',
+          level: 'info',
+          data: { nameQuery },
+        });
+        try {
+          addToolOutput({
+            tool: 'listUserPacks',
+            toolCallId: toolCall.toolCallId,
+            output: listUserPacksFromStore({ packs: packsStore.get(), nameQuery }),
+          });
+        } catch (error) {
+          Sentry.captureException(error, {
+            tags: { feature: 'ai.tool', action: 'listUserPacks' },
+            extra: { nameQuery },
+          });
+          addToolOutput({
+            tool: 'listUserPacks',
+            toolCallId: toolCall.toolCallId,
+            output: { success: false, error: 'Failed to list packs on this device' },
+          });
+        }
+        return;
+      }
+
+      if (toolCall.toolName === 'addItemToPack') {
+        const input = toolCall.input as AddItemToPackInput;
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'addItemToPack called',
+          level: 'info',
+          data: { packId: input.packId, name: input.name },
+        });
+        try {
+          const prepared = prepareAddItemToPack({ packs: packsStore.get(), input });
+          if (!prepared.success) {
+            addToolOutput({
+              tool: 'addItemToPack',
+              toolCallId: toolCall.toolCallId,
+              output: prepared,
+            });
+            return;
+          }
+
+          const { pack, itemData } = prepared.data;
+          // Same write path the UI uses: writes to the local store first and
+          // syncs outward through the outbox, so this works offline.
+          const created = createPackItem({ packId: pack.id, itemData });
+
+          addToolOutput({
+            tool: 'addItemToPack',
+            toolCallId: toolCall.toolCallId,
+            output: { success: true, data: describeAddedItem({ pack, item: created }) },
+          });
+        } catch (error) {
+          Sentry.captureException(error, {
+            tags: { feature: 'ai.tool', action: 'addItemToPack' },
+            extra: { packId: input.packId, itemName: input.name },
+          });
+          addToolOutput({
+            tool: 'addItemToPack',
+            toolCallId: toolCall.toolCallId,
+            output: { success: false, error: 'Failed to add the item on this device' },
+          });
+        }
+        return;
+      }
 
       if (toolCall.toolName === 'getPackDetails') {
         const { packId } = toolCall.input as { packId: string };
