@@ -13,6 +13,11 @@ export interface NeonBranch {
   current_state: string;
 }
 
+export interface NeonDatabase {
+  name: string;
+  owner_name: string;
+}
+
 export interface NeonEndpoint {
   id: string;
   branch_id: string;
@@ -72,12 +77,15 @@ export class NeonClient {
 
   /**
    * Create a copy-on-write branch off `parentId` with a read-write endpoint.
-   * Neon returns the endpoint and connection URIs in the same response.
+   *
+   * The branch-create response carries the endpoint, roles and databases but
+   * no connection URI — `connection_uris` is only returned by project create.
+   * The URI is fetched separately via `connectionUri` below.
    */
   async createBranch(opts: {
     name: string;
     parentId: string;
-  }): Promise<{ branch: NeonBranch; connectionUris: { connection_uri: string }[] }> {
+  }): Promise<{ branch: NeonBranch; databases: NeonDatabase[] }> {
     return this.call(`/projects/${this.projectId}/branches`, {
       method: 'POST',
       body: JSON.stringify({
@@ -85,6 +93,28 @@ export class NeonClient {
         endpoints: [{ type: 'read_write' }],
       }),
     });
+  }
+
+  /**
+   * Full connection URI (credentials included) for a branch's database.
+   * Neon mints the role password here; it is not exposed by the roles list.
+   */
+  async connectionUri(opts: {
+    branchId: string;
+    databaseName: string;
+    roleName: string;
+    pooled: boolean;
+  }): Promise<string> {
+    const query = new URLSearchParams({
+      branch_id: opts.branchId,
+      database_name: opts.databaseName,
+      role_name: opts.roleName,
+      pooled: String(opts.pooled),
+    });
+    const { uri } = await this.call<{ uri: string }>(
+      `/projects/${this.projectId}/connection_uri?${query}`,
+    );
+    return uri;
   }
 
   async deleteBranch(branchId: string): Promise<void> {

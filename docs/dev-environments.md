@@ -126,3 +126,23 @@ generated `.env.local` at all. Both are now included.
 `https://api.packratai.com`, so a local run with no env silently read and wrote
 **production** data. It now defaults to the local API, which fails visibly when
 nothing is running — the safe direction for a default.
+
+## Notes from the first end-to-end run
+
+- **Connection URIs.** Neon's branch-create response does not include
+  `connection_uris` — that field is only returned by project create. The URI
+  comes from `GET /projects/{id}/connection_uri`, which mints the role password
+  (the roles list does not expose it).
+- **Containers are off by default.** The `wrangler.jsonc` container binding makes
+  `wrangler dev` require a running Docker daemon. `devenv` passes
+  `--enable-containers=false`; set `DEVENV_CONTAINERS=1` when you actually need
+  to exercise container routes.
+- **Detached output goes to a log**, `~/.packrat/devenv/<name>.log`, not
+  `/dev/null` — a backgrounded API that dies at startup would otherwise leave a
+  record claiming `running` with nothing behind it.
+- **Partial failures roll back.** If anything throws after the Neon branch is
+  created but before the record is saved, the branch is deleted rather than
+  stranded. `bun devenv prune` also sweeps any `devenv/` branch with no local
+  record, which covers an interrupted run or a hand-deleted record.
+- **`down` regenerates the client env**, so a torn-down environment stops
+  leaving the worktree pointed at a dead port.

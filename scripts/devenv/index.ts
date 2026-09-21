@@ -11,8 +11,8 @@
 // couple of seconds and carries that branch's seed data with no copy cost.
 
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import {
   allocatePort,
   BRANCH_PREFIX,
@@ -30,6 +30,7 @@ import {
   isAlive,
   listRecords,
   readRecord,
+  STATE_DIR,
   saveRecord,
 } from './state';
 
@@ -110,15 +111,36 @@ async function migrate(databaseUrl: string): Promise<void> {
   if (code !== 0) throw new Error(`db:migrate exited with ${code}`);
 }
 
+/** Where a detached environment's API output is written. */
+export function logPath(name: string): string {
+  return join(STATE_DIR, `${name}.log`);
+}
+
 function startApi(opts: { record: DevEnvRecord; varsFile: string; detach: boolean }) {
   const { record, varsFile, detach } = opts;
+  const logFd = detach ? openSync(logPath(record.name), 'a') : undefined;
   const proc = spawn(
     'bunx',
-    ['wrangler', 'dev', '-e=dev', '--port', String(record.port), '--env-file', varsFile],
+    [
+      'wrangler',
+      'dev',
+      '-e=dev',
+      '--port',
+      String(record.port),
+      '--env-file',
+      varsFile,
+      // The container binding makes wrangler require a running Docker daemon,
+      // which a dev environment for API work does not need. Opt in with
+      // DEVENV_CONTAINERS=1 when actually exercising container routes.
+      ...(process.env.DEVENV_CONTAINERS === '1' ? [] : ['--enable-containers=false']),
+    ],
     {
       cwd: API_DIR,
       env: { ...process.env, PORT: String(record.port) },
-      stdio: detach ? 'ignore' : 'inherit',
+      // Detached output goes to a log rather than /dev/null: a backgrounded API
+      // that dies on startup would otherwise fail completely silently, leaving
+      // a record that claims 'running' with nothing behind it.
+      stdio: detach ? ['ignore', logFd, logFd] : 'inherit',
       detached: detach,
     },
   );
@@ -154,9 +176,28 @@ async function up(args: Args): Promise<void> {
 
   console.log(`→ Branching Neon "${args.parent}" → "${branchName}"`);
   const created = await neon.createBranch({ name: branchName, parentId: parent.id });
-  const rawUri = created.connectionUris[0]?.connection_uri;
-  if (!rawUri) throw new Error('Neon created the branch but returned no connection URI.');
-  const databaseUrl = NeonClient.toPooled(rawUri);
+
+  // From here on the branch exists remotely. Anything that throws before the
+  // record is persisted would strand it — invisible to `down` and `prune`,
+  // which both work off the local registry — so roll back explicitly.
+  let databaseUrl: string;
+  try {
+    const database = created.databases[0];
+    if (!database) throw new Error('Neon created the branch but reported no database on it.');
+    // Pooled: the Worker opens a connection per request, so pgbouncer is what
+    // keeps a branch from exhausting its connection limit under load.
+    databaseUrl = await neon.connectionUri({
+      branchId: created.branch.id,
+      databaseName: database.name,
+      roleName: database.owner_name,
+      pooled: true,
+    });
+  } catch (error) {
+    await neon.deleteBranch(created.branch.id).catch(() => {
+      console.warn(`  Could not remove the partial Neon branch ${branchName} — delete it by hand.`);
+    });
+    throw error;
+  }
 
   const port = await allocatePort();
   const record: DevEnvRecord = {
@@ -193,6 +234,7 @@ async function up(args: Args): Promise<void> {
   const proc = startApi({ record, varsFile, detach: args.detach });
   if (args.detach) {
     saveRecord({ ...record, apiPid: proc.pid });
+    console.log(`  API log: ${logPath(name)}`);
     return;
   }
   saveRecord({ ...record, apiPid: proc.pid });
@@ -230,6 +272,14 @@ async function down(args: Args): Promise<void> {
   const varsFile = resolve(API_DIR, `.dev.vars.devenv-${name}`);
   if (existsSync(varsFile)) rmSync(varsFile);
   deleteRecord(name);
+
+  // Regenerate the client env from the shared source, so the worktree's
+  // generated files stop pointing at a port that no longer serves anything.
+  execFileSync('bun', ['run', resolve(REPO_ROOT, '.github', 'scripts', 'env.ts')], {
+    cwd: REPO_ROOT,
+    stdio: 'ignore',
+  });
+
   console.log(`✓ Removed ${name}`);
 }
 
@@ -271,15 +321,27 @@ function url(args: Args): void {
  * agent's worktree is removed without a `devenv down`.
  */
 async function prune(): Promise<void> {
-  const stale = listRecords().filter((r) => !existsSync(r.worktree));
-  if (stale.length === 0) {
-    console.log('Nothing to prune.');
-    return;
-  }
+  const records = listRecords();
+  const stale = records.filter((r) => !existsSync(r.worktree));
   for (const record of stale) {
     console.log(`→ Pruning ${record.name} (worktree gone: ${record.worktree})`);
     await down({ ...parseArgs([]), command: 'down', name: record.name });
   }
+
+  // Also sweep `devenv/` branches with no local record at all. An interrupted
+  // `up`, or a record deleted by hand, leaves a branch that nothing else knows
+  // to clean up — it would otherwise sit on the Neon project indefinitely.
+  const known = new Set(listRecords().map((r) => r.neonBranchName));
+  const neon = client();
+  const orphans = (await neon.listBranches()).filter(
+    (b) => b.name.startsWith(BRANCH_PREFIX) && !known.has(b.name),
+  );
+  for (const branch of orphans) {
+    console.log(`→ Deleting orphaned Neon branch ${branch.name}`);
+    await neon.deleteBranch(branch.id);
+  }
+
+  if (stale.length === 0 && orphans.length === 0) console.log('Nothing to prune.');
 }
 
 function help(): void {
