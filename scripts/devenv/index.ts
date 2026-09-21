@@ -173,6 +173,17 @@ async function up(args: Args): Promise<void> {
   saveRecord(record);
 
   const varsFile = writeDevVars(name, databaseUrl);
+
+  // Regenerate the client env files pointed at this environment's own port, so
+  // Expo and the Next apps in this worktree talk to this API rather than the
+  // shared default port another agent may own.
+  console.log(`→ Pointing clients at http://localhost:${port}`);
+  execFileSync('bun', ['run', resolve(REPO_ROOT, '.github', 'scripts', 'env.ts')], {
+    cwd: REPO_ROOT,
+    env: { ...process.env, DEVENV_API_URL: `http://localhost:${port}` },
+    stdio: 'inherit',
+  });
+
   console.log('→ Applying migrations');
   await migrate(databaseUrl);
 
@@ -250,7 +261,9 @@ function url(args: Args): void {
     return;
   }
   console.log(`NEON_DATABASE_URL=${record.databaseUrl}`);
-  console.log(`API_URL=http://localhost:${record.port}`);
+  console.log(`PUBLIC_API_URL=http://localhost:${record.port}`);
+  console.log(`EXPO_PUBLIC_API_URL=http://localhost:${record.port}`);
+  console.log(`NEXT_PUBLIC_API_URL=http://localhost:${record.port}`);
 }
 
 /**

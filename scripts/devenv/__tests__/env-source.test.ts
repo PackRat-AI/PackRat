@@ -90,3 +90,43 @@ describe('resolveEnvSource', () => {
     expect(mainCheckoutRoot(dir)).toBe(dir);
   });
 });
+
+describe('devenv API URL override', () => {
+  /**
+   * Mirrors the override in .github/scripts/env.ts. A devenv environment owns
+   * its own port, so a static API URL in the shared .env.local would point every
+   * worktree at whichever agent happens to hold the default port.
+   */
+  function applyOverride(opts: { content: string; key: string; value: string }): string {
+    const { content, key, value } = opts;
+    const pattern = new RegExp(`^${key}=.*$`, 'm');
+    const line = `${key}=${value}`;
+    return pattern.test(content) ? content.replace(pattern, line) : `${content}\n${line}`;
+  }
+
+  it('replaces an existing key rather than duplicating it', () => {
+    const out = applyOverride({
+      content: 'EXPO_PUBLIC_API_URL=http://localhost:8787',
+      key: 'EXPO_PUBLIC_API_URL',
+      value: 'http://localhost:8791',
+    });
+    expect(out).toBe('EXPO_PUBLIC_API_URL=http://localhost:8791');
+  });
+
+  it('appends the key when the source does not define it', () => {
+    expect(
+      applyOverride({ content: 'A=1', key: 'PUBLIC_API_URL', value: 'http://localhost:8791' }),
+    ).toBe('A=1\nPUBLIC_API_URL=http://localhost:8791');
+  });
+
+  it('does not let PUBLIC_API_URL clobber EXPO_PUBLIC_API_URL', () => {
+    // The keys share a suffix; only ^-anchoring keeps them distinct.
+    const out = applyOverride({
+      content: 'EXPO_PUBLIC_API_URL=http://keep\nPUBLIC_API_URL=http://old',
+      key: 'PUBLIC_API_URL',
+      value: 'http://new',
+    });
+    expect(out).toContain('EXPO_PUBLIC_API_URL=http://keep');
+    expect(out).toContain('PUBLIC_API_URL=http://new');
+  });
+});

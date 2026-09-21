@@ -93,3 +93,36 @@ The generator refuses to run when the source `.env.local` still contains
 `.env.example` placeholder values (`postgres://username:password@host…`).
 Without that guard, running `bun install` against an unfilled `.env.local`
 silently overwrites a working `.dev.vars` with placeholders.
+
+## Client API URLs
+
+The API URL cannot be a static value in the shared `.env.local`: every `devenv`
+environment allocates its own port (8788+, so parallel agents do not collide),
+and a fixed `EXPO_PUBLIC_API_URL=http://localhost:8787` points every worktree at
+whichever agent happens to hold the default port.
+
+`bun devenv up` therefore regenerates the client env files with
+`DEVENV_API_URL` set to its own port. The shim overrides `PUBLIC_API_URL` and
+`EXPO_PUBLIC_API_URL` for that generation only — the shared `.env.local` is
+never written to, so environments cannot corrupt each other's source of truth.
+
+`bun devenv url` prints the values a client needs:
+
+```
+NEON_DATABASE_URL=...
+PUBLIC_API_URL=http://localhost:8791
+EXPO_PUBLIC_API_URL=http://localhost:8791
+NEXT_PUBLIC_API_URL=http://localhost:8791
+```
+
+### Apps that were missing from the fan-out
+
+`apps/trails` and `apps/web` were never in the shim's app list, so they had no
+generated `.env.local` at all. Both are now included.
+
+### No production fallback
+
+`apps/trails` previously defaulted `NEXT_PUBLIC_API_URL` to
+`https://api.packratai.com`, so a local run with no env silently read and wrote
+**production** data. It now defaults to the local API, which fails visibly when
+nothing is running — the safe direction for a default.
