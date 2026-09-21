@@ -127,6 +127,10 @@ export function PackRatPaywall({
     defaultPackage(packages),
   );
 
+  // Seeded high enough that the first paint never hides content behind the
+  // dock; replaced by the real height on layout.
+  const [dockHeight, setDockHeight] = useState(320);
+
   const { mutateAsync: purchase, isPending: isPurchasing } = usePurchase();
   const { mutateAsync: restore, isPending: isRestoring } = useRestorePurchases();
   const isBusy = isPurchasing || isRestoring;
@@ -216,7 +220,15 @@ export function PackRatPaywall({
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 56, paddingBottom: 280 }}
+        // Bottom padding is the dock's measured height, not a guess. The dock
+        // grows and shrinks with its contents — the plan cards, and a Restore
+        // row only signed-in viewers see — so a hardcoded clearance is wrong
+        // for somebody the moment any of that changes.
+        contentContainerStyle={{
+          paddingHorizontal: 22,
+          paddingTop: 56,
+          paddingBottom: dockHeight + 24,
+        }}
       >
         {/* Hero. The app's own icon rather than a generic symbol: this is
             PackRat asking, and the mark is what people already recognise. */}
@@ -263,24 +275,12 @@ export function PackRatPaywall({
             </View>
           ))}
         </View>
-
-        {/* Plans, side by side so the prices can be compared at a glance
-            rather than by scrolling between rows. */}
-        <View style={{ marginTop: 26, flexDirection: 'row', gap: 10 }}>
-          {packages.map((pkg) => (
-            <PlanCard
-              key={pkg.identifier}
-              pkg={pkg}
-              isSelected={selected?.identifier === pkg.identifier}
-              isBestValue={pkg.identifier === bestValue?.identifier}
-              onSelect={() => setSelected(pkg)}
-            />
-          ))}
-        </View>
       </ScrollView>
 
-      {/* Purchase dock */}
+      {/* Purchase dock — the plans and the button that buys them, pinned
+          together so neither can scroll away from the other. */}
       <View
+        onLayout={(event) => setDockHeight(event.nativeEvent.layout.height)}
         style={{
           position: 'absolute',
           bottom: 0,
@@ -295,6 +295,22 @@ export function PackRatPaywall({
           borderTopColor: 'rgba(255,255,255,0.08)',
         }}
       >
+        {/* Plans live in the dock rather than in the scrolling content, so the
+            thing being bought is on screen at the same moment as the button
+            that buys it. Scrolled away, the CTA asks for money for a plan the
+            viewer can no longer see or change. */}
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 5 }}>
+          {packages.map((pkg) => (
+            <PlanCard
+              key={pkg.identifier}
+              pkg={pkg}
+              isSelected={selected?.identifier === pkg.identifier}
+              isBestValue={pkg.identifier === bestValue?.identifier}
+              onSelect={() => setSelected(pkg)}
+            />
+          ))}
+        </View>
+
         <Button
           testID={testIds.paywall.ctaBtn}
           disabled={isBusy || (isAuthenticated && !selected)}
@@ -382,21 +398,30 @@ function PlanCard({ pkg, isSelected, isBestValue, onSelect }: PlanCardProps) {
       {/* Badge slot. Always occupies its height, whether or not a badge is in
           it, so the names and prices stay level across the row.
 
-          The badge shows only on the best-value plan while it is the selected
-          one. It is a label for what you are about to buy, not a permanent
-          rosette: left on an unselected card it argues against the choice the
-          viewer has just made. */}
+          The badge stays on the best-value plan whether or not it is selected —
+          it is a fact about the plan, and hiding it once the viewer picks
+          something else removes the very comparison it exists to make. But it
+          only wears the accent while that plan is the active one: a solid
+          accent badge on an unselected card reads as the selection, which
+          leaves two cards looking chosen at once. Unselected, it keeps the
+          shape and drops to a muted outline. */}
       <View style={{ height: 18, justifyContent: 'center' }}>
-        {isBestValue && isSelected && (
+        {isBestValue && (
           <View
             style={{
               paddingHorizontal: 7,
               paddingVertical: 2,
               borderRadius: 999,
-              backgroundColor: ACCENT,
+              backgroundColor: isSelected ? ACCENT : 'transparent',
+              borderWidth: 1,
+              borderColor: isSelected ? ACCENT : 'rgba(255,255,255,0.28)',
             }}
           >
-            <Text variant="caption2" className="font-bold" textColor="#ffffff">
+            <Text
+              variant="caption2"
+              className="font-bold"
+              textColor={isSelected ? '#ffffff' : 'rgba(255,255,255,0.55)'}
+            >
               BEST VALUE
             </Text>
           </View>
