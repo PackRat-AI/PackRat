@@ -18,6 +18,17 @@ import { ENV_FILE_NAME, parseEnv, resolveEnvSource } from './env-source';
 
 const checkoutRoot = path.join(import.meta.dirname, '..', '..');
 
+// `bun api` targets the database every other agent is also using. Say so at the
+// point of use — a worktree is a strong signal this should have been `devenv`.
+function warnIfSharedDatabase(): void {
+  if (!source.inherited) return;
+  console.log(
+    '\n⚠️  This is a linked worktree and `bun api` uses the SHARED dev database.\n' +
+      '   For anything that writes (migrations, seeds, destructive tests), use:\n' +
+      '     bun devenv up     # isolated Neon branch + API on its own port\n',
+  );
+}
+
 interface SafeParseResult {
   success: boolean;
   error?: { issues: { path: PropertyKey[]; message: string }[] };
@@ -62,6 +73,7 @@ try {
   ({ apiEnvSchema } = await import('../../packages/api/src/utils/env-validation'));
 } catch {
   console.log('⚠️  Skipping schema validation — run `bun install` to enable it.');
+  warnIfSharedDatabase();
   process.exit(0);
 }
 
@@ -83,12 +95,4 @@ if (!result.success) {
 
 console.log(`✅ Environment ready${source.inherited ? ' (inherited from the main checkout)' : ''}`);
 
-// `bun api` targets the database every other agent is also using. Say so at the
-// point of use — a worktree is a strong signal this should have been `devenv`.
-if (source.inherited) {
-  console.log(
-    '\n⚠️  This is a linked worktree and `bun api` uses the SHARED dev database.\n' +
-      '   For anything that writes (migrations, seeds, destructive tests), use:\n' +
-      '     bun devenv up     # isolated Neon branch + API on its own port\n',
-  );
-}
+warnIfSharedDatabase();
