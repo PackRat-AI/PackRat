@@ -24,7 +24,10 @@ import { ScrollView, View } from 'react-native';
  */
 export default function GatedFeatureScreen() {
   const { featureKey } = useLocalSearchParams<{ featureKey?: string }>();
-  const key = featureKey ?? 'summit-log';
+  // Defaults to a key that is actually gated. A key with no `feature_access`
+  // row resolves as free, so defaulting to one that does not exist made this
+  // screen open straight through and look like the gate was broken.
+  const key = featureKey ?? 'wildlife-identification';
 
   return (
     <>
@@ -61,17 +64,25 @@ function UnlockedContent({ featureKey }: { featureKey: string }) {
           <Row label="Label" value={feature?.label ?? '—'} />
           <Row
             label="Early access until"
-            value={until ? until.toLocaleString() : 'not set (generally available)'}
+            value={until ? until.toLocaleString() : 'NOT SET — nobody has ruled on this'}
           />
           <Row
             label="Window"
-            value={until ? (until > new Date() ? 'open — Pro only' : 'graduated — free') : 'none'}
+            value={
+              until
+                ? until > new Date()
+                  ? 'open — Pro only'
+                  : 'graduated — free for everyone'
+                : 'none — resolves as free, but by omission'
+            }
           />
         </View>
 
         <Text variant="footnote" color="secondary" wrap>
-          A key with no config row is generally available by design, so it should always let you
-          through. To see the paywall, use a key whose window is still open.
+          An unset window resolves as free, but that is not the same as a decision to make the
+          feature free. It means no audience call was ever recorded, and the resolver has nothing to
+          gate on. A feature meant to be free should carry a window that has passed, which says so.
+          See docs/feature-gating.md.
         </Text>
       </View>
     </ScrollView>
