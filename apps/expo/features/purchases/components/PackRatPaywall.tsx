@@ -6,9 +6,10 @@ import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { testIds } from 'expo-app/lib/testIds';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { Image, Pressable, ScrollView, View } from 'react-native';
 import type { PurchasesOffering, PurchasesPackage } from 'react-native-purchases';
 import { usePurchase } from '../hooks/usePurchase';
 import { useRestorePurchases } from '../hooks/useRestorePurchases';
@@ -23,7 +24,8 @@ import {
   bestValuePackage,
   defaultPackage,
   isLifetime,
-  planBillingDetail,
+  planPeriodSuffix,
+  planPricePerMonth,
   planTitle,
 } from '../utils/paywallPlans';
 
@@ -55,10 +57,22 @@ import {
  * not follow the app's light/dark setting.
  */
 
-/** The app's own green, matching the Swift paywall's accent. */
-const ACCENT = 'rgb(88, 194, 125)';
-const BACKDROP_TOP = 'rgb(15, 28, 23)';
-const BACKDROP_BOTTOM = 'rgb(8, 10, 10)';
+/**
+ * The app's own blue — `primary` from `theme/colors.ts` for Android dark.
+ * Hardcoded rather than read from the theme because this screen is fixed dark
+ * and must not follow the light/dark setting; see the note above.
+ */
+const ACCENT = 'rgb(3, 133, 255)';
+
+/**
+ * The backdrop, as gradient stops from top to bottom.
+ *
+ * This was previously two flat blocks — a tinted one absolutely positioned over
+ * the top 55% of the screen, and the base colour below it. With no blend
+ * between them the seam was plainly visible as a horizontal line across the
+ * middle of the paywall. These are fed to a real gradient instead.
+ */
+const BACKDROP_GRADIENT = ['rgb(10, 22, 40)', 'rgb(7, 12, 20)', 'rgb(6, 8, 11)'] as const;
 
 interface PackRatPaywallProps {
   /** The offering to sell. Loaded before the paywall opens. */
@@ -107,7 +121,6 @@ export function PackRatPaywall({
 }: PackRatPaywallProps) {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  const { height } = useWindowDimensions();
 
   const packages = offering.availablePackages;
   const [selected, setSelected] = useState<PurchasesPackage | undefined>(() =>
@@ -170,19 +183,13 @@ export function PackRatPaywall({
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: BACKDROP_BOTTOM }}>
-      {/* Backdrop. A plain two-tone fill rather than a gradient dependency:
-          expo-linear-gradient is not currently a dependency of this app, and a
-          radial accent bloom is not worth adding one for. */}
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: height * 0.55,
-          backgroundColor: BACKDROP_TOP,
-        }}
+    <View style={{ flex: 1 }}>
+      {/* Backdrop. A real gradient over the whole screen: the previous
+          two-block fill met at a hard edge partway down and read as the screen
+          being split in half. */}
+      <LinearGradient
+        colors={BACKDROP_GRADIENT}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
       <Pressable
@@ -257,10 +264,11 @@ export function PackRatPaywall({
           ))}
         </View>
 
-        {/* Plans */}
-        <View style={{ marginTop: 26, gap: 10 }}>
+        {/* Plans, side by side so the prices can be compared at a glance
+            rather than by scrolling between rows. */}
+        <View style={{ marginTop: 26, flexDirection: 'row', gap: 10 }}>
           {packages.map((pkg) => (
-            <PlanRow
+            <PlanCard
               key={pkg.identifier}
               pkg={pkg}
               isSelected={selected?.identifier === pkg.identifier}
@@ -328,15 +336,26 @@ export function PackRatPaywall({
   );
 }
 
-interface PlanRowProps {
+interface PlanCardProps {
   pkg: PurchasesPackage;
   isSelected: boolean;
   isBestValue: boolean;
   onSelect: () => void;
 }
 
-function PlanRow({ pkg, isSelected, isBestValue, onSelect }: PlanRowProps) {
-  const detail = planBillingDetail(pkg);
+/**
+ * One plan, as a card in a row of them.
+ *
+ * Every card reserves the same vertical slots — badge, name, price, per-month —
+ * whether or not it has something to put in each. A card with no "BEST VALUE"
+ * badge still holds that row's height, so the plan names sit on one line across
+ * the row and the prices line up with each other. Letting each card size itself
+ * would stagger the prices and make two plans harder to compare, which is the
+ * one thing this layout exists to make easy.
+ */
+function PlanCard({ pkg, isSelected, isBestValue, onSelect }: PlanCardProps) {
+  const periodSuffix = planPeriodSuffix(pkg);
+  const pricePerMonth = planPricePerMonth(pkg);
 
   return (
     <Pressable
@@ -345,60 +364,75 @@ function PlanRow({ pkg, isSelected, isBestValue, onSelect }: PlanRowProps) {
       accessibilityState={{ selected: isSelected }}
       testID={testIds.paywall.planRow(pkg.identifier)}
       style={{
-        flexDirection: 'row',
+        flex: 1,
+        paddingHorizontal: 10,
+        paddingTop: 10,
+        paddingBottom: 14,
+        borderRadius: 16,
         alignItems: 'center',
-        gap: 13,
-        padding: 15,
-        borderRadius: 14,
         borderWidth: isSelected ? 1.6 : 1,
-        borderColor: isSelected ? 'rgba(88,194,125,0.7)' : 'rgba(255,255,255,0.08)',
-        backgroundColor: isSelected ? 'rgba(88,194,125,0.12)' : 'rgba(255,255,255,0.05)',
+        borderColor: isSelected ? ACCENT : 'rgba(255,255,255,0.10)',
+        backgroundColor: isSelected ? 'rgba(3,133,255,0.14)' : 'rgba(255,255,255,0.05)',
       }}
     >
-      <View
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: 11,
-          borderWidth: 2,
-          borderColor: isSelected ? ACCENT : 'rgba(255,255,255,0.28)',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {isSelected && (
-          <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: ACCENT }} />
-        )}
-      </View>
-
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text className="font-semibold" textColor="#ffffff">
-          {planTitle(pkg)}
-        </Text>
-        {detail && (
-          <Text variant="caption1" textColor="rgba(255,255,255,0.55)">
-            {detail}
-          </Text>
-        )}
-      </View>
-
-      <View style={{ alignItems: 'flex-end', gap: 3 }}>
-        <Text className="font-semibold" textColor="#ffffff">
-          {pkg.product.priceString}
-        </Text>
+      {/* Badge slot. Always present so the cards stay the same height and the
+          names line up, even when only one card carries a badge. */}
+      <View style={{ height: 18, justifyContent: 'center' }}>
         {isBestValue && (
           <View
             style={{
-              paddingHorizontal: 6,
+              paddingHorizontal: 7,
               paddingVertical: 2,
               borderRadius: 999,
               backgroundColor: ACCENT,
             }}
           >
-            <Text variant="caption2" className="font-bold tracking-wider" textColor="#000000">
+            <Text variant="caption2" className="font-bold" textColor="#ffffff">
               BEST VALUE
             </Text>
           </View>
+        )}
+      </View>
+
+      <Text
+        variant="subhead"
+        className="mt-2 text-center font-semibold"
+        numberOfLines={1}
+        textColor="#ffffff"
+      >
+        {planTitle(pkg)}
+      </Text>
+
+      {/* The price, anchored to its own slot so switching plans does not shift
+          it around. `adjustsFontSizeToFit` keeps a long localized amount on one
+          line rather than wrapping and pushing the card taller than its
+          neighbours. */}
+      <Text
+        className="mt-2 text-center text-[19px] font-bold"
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+        textColor="#ffffff"
+      >
+        {pkg.product.priceString}
+      </Text>
+
+      <View style={{ height: 16, justifyContent: 'center' }}>
+        {periodSuffix && (
+          <Text variant="caption2" textColor="rgba(255,255,255,0.55)">
+            {periodSuffix}
+          </Text>
+        )}
+      </View>
+
+      {/* Per-month equivalent — the figure that makes a longer plan legible as
+          the cheaper one. Blank where it would say nothing (a monthly plan
+          repeating itself, or a lifetime purchase). */}
+      <View style={{ height: 15, justifyContent: 'center' }}>
+        {pricePerMonth && (
+          <Text variant="caption2" numberOfLines={1} textColor="rgba(255,255,255,0.45)">
+            {pricePerMonth} / mo
+          </Text>
         )}
       </View>
     </Pressable>
