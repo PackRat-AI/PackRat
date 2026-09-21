@@ -14,10 +14,14 @@
 import { execFileSync } from 'node:child_process';
 import * as path from 'node:path';
 import * as fs from 'fs-extra';
-import { apiEnvSchema } from '../../packages/api/src/utils/env-validation';
 import { ENV_FILE_NAME, parseEnv, resolveEnvSource } from './env-source';
 
 const checkoutRoot = path.join(import.meta.dirname, '..', '..');
+
+interface SafeParseResult {
+  success: boolean;
+  error?: { issues: { path: PropertyKey[]; message: string }[] };
+}
 
 function fail(lines: string[]): never {
   console.error('\n✗ Environment is not ready\n');
@@ -50,9 +54,20 @@ if (!fs.existsSync(devVarsPath)) {
   fail([`Expected ${devVarsPath} to exist after generation, but it does not.`]);
 }
 
+// Imported lazily: the schema pulls in workspace packages, and a worktree that
+// has not been installed yet would otherwise die with an opaque module-resolution
+// error instead of being told to run `bun install`.
+let apiEnvSchema: { safeParse: (input: unknown) => SafeParseResult };
+try {
+  ({ apiEnvSchema } = await import('../../packages/api/src/utils/env-validation'));
+} catch {
+  console.log('⚠️  Skipping schema validation — run `bun install` to enable it.');
+  process.exit(0);
+}
+
 const result = apiEnvSchema.safeParse(parseEnv(fs.readFileSync(devVarsPath, 'utf8')));
 if (!result.success) {
-  const problems = result.error.issues.map((issue) => {
+  const problems = (result.error?.issues ?? []).map((issue) => {
     const key = issue.path.join('.') || '(root)';
     return `· ${key} — ${issue.message}`;
   });
@@ -67,3 +82,13 @@ if (!result.success) {
 }
 
 console.log(`✅ Environment ready${source.inherited ? ' (inherited from the main checkout)' : ''}`);
+
+// `bun api` targets the database every other agent is also using. Say so at the
+// point of use — a worktree is a strong signal this should have been `devenv`.
+if (source.inherited) {
+  console.log(
+    '\n⚠️  This is a linked worktree and `bun api` uses the SHARED dev database.\n' +
+      '   For anything that writes (migrations, seeds, destructive tests), use:\n' +
+      '     bun devenv up     # isolated Neon branch + API on its own port\n',
+  );
+}
