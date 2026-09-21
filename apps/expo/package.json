@@ -122,7 +122,7 @@
     "expo-store-review": "~57.0.1",
     "expo-symbols": "~57.0.1",
     "expo-system-ui": "~57.0.2",
-    "expo-updates": "~57.0.12",
+    "expo-updates": "~57.0.23",
     "expo-web-browser": "~57.0.2",
     "google-auth-library": "catalog:",
     "he": "^1.2.0",
