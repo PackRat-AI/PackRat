@@ -23,7 +23,11 @@ import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
-import { useEntitlement, useRestorePurchases } from 'expo-app/features/purchases';
+import {
+  PACKRAT_PRO_ENTITLEMENT,
+  useEntitlement,
+  useRestorePurchases,
+} from 'expo-app/features/purchases';
 import { FEATURE_ACCESS_QUERY_KEY } from 'expo-app/features/purchases/hooks/useFeatureAccess';
 import { FEATURE_FLAGS_QUERY_KEY } from 'expo-app/hooks/useFeatureFlags';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
@@ -66,7 +70,7 @@ export default function SettingsScreen() {
   const handleRestore = () => {
     restorePurchases(undefined, {
       onSuccess: (info) => {
-        const isPro = !!info.entitlements.active['PackRat Pro'];
+        const isPro = !!info.entitlements.active[PACKRAT_PRO_ENTITLEMENT];
         Burnt.toast({
           title: isPro ? 'Pro access restored!' : 'No purchases found',
           preset: isPro ? 'done' : 'error',
@@ -246,6 +250,7 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 className="flex-row items-center justify-between p-4"
                 onPress={handleManageSubscription}
+                testID={testIds.settings.manageSubscriptionBtn}
               >
                 <Text className="font-medium" textColor={colors.primary}>
                   Manage Subscription
@@ -256,6 +261,7 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 className="flex-row items-center justify-between p-4"
                 onPress={() => router.push('/paywall')}
+                testID={testIds.settings.upgradeToProBtn}
               >
                 <Text className="font-medium" textColor={colors.primary}>
                   Upgrade to Pro
@@ -264,18 +270,24 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             )}
 
-            <View className="h-px bg-border mx-4" />
-
-            {/* Restore purchases */}
-            <TouchableOpacity
-              className="flex-row items-center justify-between p-4"
-              onPress={handleRestore}
-              disabled={isRestoring}
-            >
-              <Text className="font-medium text-muted-foreground">
-                {isRestoring ? 'Restoring…' : 'Restore Purchases'}
-              </Text>
-            </TouchableOpacity>
+            {/* Restore is sign-in only: it writes the recovered entitlement to
+                whichever identity is current, and for a guest that is an
+                anonymous id they may never return to. Matches Swift. */}
+            {isAuthenticated && (
+              <>
+                <View className="h-px bg-border mx-4" />
+                <TouchableOpacity
+                  className="flex-row items-center justify-between p-4"
+                  onPress={handleRestore}
+                  disabled={isRestoring}
+                  testID={testIds.settings.restorePurchasesBtn}
+                >
+                  <Text className="font-medium text-muted-foreground">
+                    {isRestoring ? 'Restoring…' : 'Restore Purchases'}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
 
