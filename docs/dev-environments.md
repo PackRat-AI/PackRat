@@ -60,3 +60,36 @@ export EXPO_PUBLIC_API_URL="$(bun devenv url --json | jq -r '"http://localhost:"
 `down` deletes the Neon branch; pass `--keep-branch` to keep the data and only
 stop the API. If a worktree is deleted without a `down`, its Neon branch is
 orphaned — `bun devenv prune` removes every environment whose worktree is gone.
+
+## How environment variables reach a worktree
+
+`.env.local` at the **main checkout** is the only place secrets live. Everything
+else is generated from it.
+
+`git worktree add` never copies `.env.local` — it is gitignored — so resolving it
+relative to the current checkout leaves a new worktree with no environment at
+all. `.github/scripts/env-source.ts` therefore resolves it via
+`git rev-parse --git-common-dir`, which points at the main checkout from
+anywhere inside any linked worktree:
+
+1. A `.env.local` in the worktree itself wins, if you deliberately put one there.
+2. Otherwise the main checkout's `.env.local` is used.
+
+The postinstall shim (`.github/scripts/env.ts`) fans that one file out into
+`packages/api/.dev.vars`, `apps/expo/.env.local`, and the Next apps. Adding a key
+to the main checkout's `.env.local` therefore reaches every worktree — no copying.
+
+### Fail-fast validation
+
+`bun api` and `bun devenv up` run `.github/scripts/env-check.ts` first. It
+regenerates the derived files from the resolved source, then validates
+`.dev.vars` against the API's own Zod schema (`apiEnvSchema`) — the same schema
+the Worker parses at boot, which is what distinguishes genuinely required keys
+from optional ones. A missing key stops the boot and is named in the error.
+
+### Placeholder guard
+
+The generator refuses to run when the source `.env.local` still contains
+`.env.example` placeholder values (`postgres://username:password@host…`).
+Without that guard, running `bun install` against an unfilled `.env.local`
+silently overwrites a working `.dev.vars` with placeholders.

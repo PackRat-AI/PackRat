@@ -10,7 +10,7 @@
 // The Neon branch is copy-on-write off `development`, so it is created in a
 // couple of seconds and carries that branch's seed data with no copy cost.
 
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
@@ -127,6 +127,14 @@ function startApi(opts: { record: DevEnvRecord; varsFile: string; detach: boolea
 }
 
 async function up(args: Args): Promise<void> {
+  // Validate + regenerate env before provisioning anything on Neon, so a
+  // misconfigured checkout fails in a second rather than after creating a
+  // branch it cannot use.
+  execFileSync('bun', ['run', resolve(REPO_ROOT, '.github', 'scripts', 'env-check.ts')], {
+    cwd: REPO_ROOT,
+    stdio: 'inherit',
+  });
+
   const name = args.name ?? defaultName(process.cwd());
   const existing = readRecord(name);
   if (existing) {

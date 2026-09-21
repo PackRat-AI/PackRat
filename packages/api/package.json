@@ -41,6 +41,7 @@
     "dev:e2e:node": "bun run scripts/e2e-node-server.ts",
     "dev:e2e:reset": "bun run scripts/e2e-local-stop.ts --volumes && bun run scripts/e2e-local-start.ts",
     "dev:e2e:stop": "bun run scripts/e2e-local-stop.ts",
+    "predev": "bun run ../../.github/scripts/env-check.ts",
     "test": "vitest run",
     "test:unit": "vitest run --config vitest.unit.config.ts",
     "test:unit:coverage": "vitest run --config vitest.unit.config.ts --coverage",
