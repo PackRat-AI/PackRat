@@ -370,15 +370,24 @@ function PlanCard({ pkg, isSelected, isBestValue, onSelect }: PlanCardProps) {
         paddingBottom: 14,
         borderRadius: 16,
         alignItems: 'center',
-        borderWidth: isSelected ? 1.6 : 1,
+        // Constant width, colour-only selection. The border is laid out inside
+        // the card, so growing it on selection shrinks the content box and
+        // nudges the price and name by a fraction of a point — which reads as
+        // the plans twitching every time one is tapped.
+        borderWidth: 1.6,
         borderColor: isSelected ? ACCENT : 'rgba(255,255,255,0.10)',
         backgroundColor: isSelected ? 'rgba(3,133,255,0.14)' : 'rgba(255,255,255,0.05)',
       }}
     >
-      {/* Badge slot. Always present so the cards stay the same height and the
-          names line up, even when only one card carries a badge. */}
+      {/* Badge slot. Always occupies its height, whether or not a badge is in
+          it, so the names and prices stay level across the row.
+
+          The badge shows only on the best-value plan while it is the selected
+          one. It is a label for what you are about to buy, not a permanent
+          rosette: left on an unselected card it argues against the choice the
+          viewer has just made. */}
       <View style={{ height: 18, justifyContent: 'center' }}>
-        {isBestValue && (
+        {isBestValue && isSelected && (
           <View
             style={{
               paddingHorizontal: 7,
@@ -394,28 +403,35 @@ function PlanCard({ pkg, isSelected, isBestValue, onSelect }: PlanCardProps) {
         )}
       </View>
 
-      <Text
-        variant="subhead"
-        className="mt-2 text-center font-semibold"
-        numberOfLines={1}
-        textColor="#ffffff"
-      >
-        {planTitle(pkg)}
-      </Text>
+      {/* Name and price each sit in a slot of fixed height. Left to size
+          themselves they would be as tall as whatever they happen to contain,
+          so a price that shrinks to fit — see `adjustsFontSizeToFit` below —
+          would pull everything under it upward, and one card's longer name
+          would push its own price below its neighbours'. */}
+      <View style={{ height: 22, justifyContent: 'center' }}>
+        <Text
+          variant="subhead"
+          className="text-center font-semibold"
+          numberOfLines={1}
+          textColor="#ffffff"
+        >
+          {planTitle(pkg)}
+        </Text>
+      </View>
 
-      {/* The price, anchored to its own slot so switching plans does not shift
-          it around. `adjustsFontSizeToFit` keeps a long localized amount on one
-          line rather than wrapping and pushing the card taller than its
-          neighbours. */}
-      <Text
-        className="mt-2 text-center text-[19px] font-bold"
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.7}
-        textColor="#ffffff"
-      >
-        {pkg.product.priceString}
-      </Text>
+      {/* `adjustsFontSizeToFit` keeps a long localized amount on one line
+          instead of wrapping. It changes the glyph size, not the slot. */}
+      <View style={{ height: 28, justifyContent: 'center', alignSelf: 'stretch' }}>
+        <Text
+          className="text-center text-[19px] font-bold"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+          textColor="#ffffff"
+        >
+          {pkg.product.priceString}
+        </Text>
+      </View>
 
       <View style={{ height: 16, justifyContent: 'center' }}>
         {periodSuffix && (
