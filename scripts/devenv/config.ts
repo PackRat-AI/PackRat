@@ -54,7 +54,19 @@ function parseEnvFile(path: string): Record<string, string> {
  * editing a shared file.
  */
 export function setting(key: string): string | undefined {
-  const envFile = resolve(mainCheckoutRoot(REPO_ROOT), '.env.local');
+  return settingFrom(key, REPO_ROOT);
+}
+
+/**
+ * `setting`, with the root to resolve from passed in.
+ *
+ * Exists so the rule can be tested against a real worktree fixture. `setting`
+ * closes over `REPO_ROOT`, a module constant equal to the main checkout
+ * whenever the suite runs there — which makes the correct and the broken
+ * lookup indistinguishable, and is how the original defect passed unnoticed.
+ */
+export function settingFrom(key: string, root: string): string | undefined {
+  const envFile = resolve(mainCheckoutRoot(root), '.env.local');
   return process.env[key] || parseEnvFile(envFile)[key] || undefined;
 }
 
