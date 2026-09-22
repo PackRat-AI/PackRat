@@ -17,6 +17,12 @@ import { tool } from 'ai';
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
 import { packsStore } from 'expo-app/features/packs/store/packs';
 import {
+  describeAddedItem,
+  listUserPacksFromStore,
+  prepareAddItemToPack,
+} from 'expo-app/features/packs/utils/chatPackTools';
+import { writePackItem } from 'expo-app/features/packs/utils/writePackItem';
+import {
   formatWeatherData,
   getWeatherData,
   searchLocations,
@@ -43,6 +49,42 @@ function trimCatalogItem(item: unknown) {
 
 export function createLocalTools(isAuthenticated = false) {
   const allTools = {
+    listUserPacks: tool({
+      description:
+        "List the signed-in user's own packs. Use this to resolve a pack the user mentions by " +
+        'NAME (for example "my Japan Trip pack") into a pack id before calling getPackDetails ' +
+        'or addItemToPack. Returns id, name, category and description for each match.',
+      inputSchema: z.object({
+        nameQuery: z
+          .string()
+          .optional()
+          .describe(
+            'Optional fuzzy/partial name filter, matched case-insensitively against the pack ' +
+              "name. Omit to list all of the user's packs.",
+          ),
+      }),
+      execute: async ({ nameQuery }) => {
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'listUserPacks called',
+          level: 'info',
+          data: { nameQuery },
+        });
+        try {
+          return listUserPacksFromStore({ packs: packsStore.get(), nameQuery });
+        } catch (error) {
+          Sentry.captureException(error, {
+            tags: { feature: 'ai.tool', action: 'listUserPacks' },
+            extra: { nameQuery },
+          });
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to list packs',
+          };
+        }
+      },
+    }),
+
     getPackDetails: tool({
       description:
         'Get detailed information about a specific pack including all its items, weights, and categories. Use this when the user asks about a specific pack by name or ID.',
@@ -91,6 +133,63 @@ export function createLocalTools(isAuthenticated = false) {
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to get pack details',
+          };
+        }
+      },
+    }),
+
+    addItemToPack: tool({
+      description:
+        "Add a gear item to one of the signed-in user's packs. Resolve the pack by name with " +
+        'listUserPacks first and pass its id — never guess a pack id. Prefer filling in weight ' +
+        "and category from a catalog lookup so the pack's weight totals stay meaningful.",
+      inputSchema: z.object({
+        packId: z.string().describe('The ID of the pack to add the item to'),
+        name: z.string().describe('Name of the item, for example "Merino T-Shirt"'),
+        weight: z
+          .number()
+          .optional()
+          .describe('Weight of a single unit, in the unit given by weightUnit'),
+        weightUnit: z
+          .enum(['g', 'kg', 'oz', 'lb'])
+          .optional()
+          .describe('Unit for weight. Required when weight is given.'),
+        quantity: z.number().int().min(1).optional().describe('How many to add. Defaults to 1.'),
+        category: z
+          .string()
+          .optional()
+          .describe('Category such as clothing, shelter, cooking, electronics'),
+        consumable: z.boolean().optional().describe('True for items used up on the trip'),
+        worn: z.boolean().optional().describe('True for items worn rather than carried'),
+        notes: z.string().optional().describe('Optional free-text notes'),
+        catalogItemId: z
+          .string()
+          .optional()
+          .describe('Catalog item id, when chosen from the catalog'),
+      }),
+      execute: async (input) => {
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'addItemToPack called',
+          level: 'info',
+          data: { packId: input.packId, name: input.name },
+        });
+        try {
+          const prepared = prepareAddItemToPack({ packs: packsStore.get(), input });
+          if (!prepared.success) return prepared;
+
+          const { pack, itemData } = prepared.data;
+          const created = writePackItem({ packId: pack.id, itemData });
+
+          return { success: true, data: describeAddedItem({ pack, item: created }) };
+        } catch (error) {
+          Sentry.captureException(error, {
+            tags: { feature: 'ai.tool', action: 'addItemToPack' },
+            extra: { packId: input.packId, itemName: input.name },
+          });
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to add the item',
           };
         }
       },
@@ -383,8 +482,8 @@ export function createLocalTools(isAuthenticated = false) {
   }
 
   // For unauthenticated users, only expose tools that operate on local device data.
-  const { getPackDetails, getPackItemDetails } = allTools;
-  return { getPackDetails, getPackItemDetails };
+  const { listUserPacks, getPackDetails, getPackItemDetails, addItemToPack } = allTools;
+  return { listUserPacks, getPackDetails, getPackItemDetails, addItemToPack };
 }
 
 export type LocalTools = ReturnType<typeof createLocalTools>;
