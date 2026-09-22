@@ -4,6 +4,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { basename, resolve } from 'node:path';
+import { mainCheckoutRoot } from '../../.github/scripts/env-source';
 import { listRecords } from './state';
 
 /** Neon project that owns every PackRat database branch. */
@@ -38,11 +39,23 @@ function parseEnvFile(path: string): Record<string, string> {
 }
 
 /**
- * Resolve a setting from the process env first, then the repo's .env.local.
- * Lets an agent override per-invocation without editing shared files.
+ * Resolve a setting from the process env first, then `.env.local`.
+ *
+ * The file is read from the **main checkout**, not from `REPO_ROOT`. This is
+ * the one place that distinction bites: `REPO_ROOT` is derived from this
+ * script's own location, so in a linked worktree it points at the worktree —
+ * which by design has no `.env.local`, since secrets live in the main checkout
+ * and are inherited. Reading `REPO_ROOT` there finds nothing and reports a key
+ * as missing when it is sitting in the main checkout all along. Worktrees are
+ * exactly what `devenv` exists to serve, so that is the common case, not an
+ * edge one.
+ *
+ * Process env still wins, so an agent can override per-invocation without
+ * editing a shared file.
  */
 export function setting(key: string): string | undefined {
-  return process.env[key] || parseEnvFile(resolve(REPO_ROOT, '.env.local'))[key] || undefined;
+  const envFile = resolve(mainCheckoutRoot(REPO_ROOT), '.env.local');
+  return process.env[key] || parseEnvFile(envFile)[key] || undefined;
 }
 
 export function requireNeonApiKey(): string {
