@@ -31,7 +31,7 @@
     },
     "apps/admin": {
       "name": "packrat-admin-app",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@elysiajs/eden": "catalog:",
         "@packrat/api-client": "workspace:*",
@@ -81,7 +81,7 @@
     },
     "apps/expo": {
       "name": "packrat-expo-app",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@ai-sdk/react": "^3.0.170",
         "@better-auth/expo": "^1.6.9",
@@ -217,7 +217,7 @@
     },
     "apps/guides": {
       "name": "packrat-guides-app",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@ai-sdk/openai": "catalog:",
         "@elysiajs/eden": "catalog:",
@@ -307,7 +307,7 @@
     },
     "apps/landing": {
       "name": "packrat-landing-app",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@emotion/is-prop-valid": "^1.3.1",
         "@hookform/resolvers": "catalog:",
@@ -346,7 +346,7 @@
         "cmdk": "catalog:",
         "date-fns": "catalog:",
         "embla-carousel-react": "catalog:",
-        "framer-motion": "^12.19.1",
+        "framer-motion": "^13.4.0",
         "input-otp": "catalog:",
         "lucide-react": "catalog:",
         "next": "catalog:",
@@ -377,7 +377,7 @@
     },
     "apps/trails": {
       "name": "packrat-trails-app",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@packrat/api-client": "workspace:*",
         "@packrat/app": "workspace:*",
@@ -452,7 +452,7 @@
     },
     "packages/analytics": {
       "name": "@packrat/analytics",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@duckdb/node-api": "catalog:",
         "@packrat/env": "workspace:*",
@@ -469,7 +469,7 @@
     },
     "packages/api": {
       "name": "@packrat/api",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@ai-sdk/google": "^3.0.64",
         "@ai-sdk/openai": "catalog:",
@@ -537,7 +537,7 @@
     },
     "packages/api-client": {
       "name": "@packrat/api-client",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@elysiajs/eden": "catalog:",
         "@packrat/guards": "workspace:*",
@@ -556,7 +556,7 @@
     },
     "packages/app": {
       "name": "@packrat/app",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@packrat/api-client": "workspace:*",
         "@packrat/schemas": "workspace:*",
@@ -577,11 +577,11 @@
     },
     "packages/checks": {
       "name": "@packrat/checks",
-      "version": "2.1.0",
+      "version": "2.2.3",
     },
     "packages/cli": {
       "name": "@packrat/cli",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "bin": {
         "packrat": "./src/index.ts",
       },
@@ -606,14 +606,14 @@
     },
     "packages/config": {
       "name": "@packrat/config",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@packrat/guards": "workspace:*",
       },
     },
     "packages/consent-ui": {
       "name": "@packrat/consent-ui",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@kitajs/html": "^4.2.13",
         "@packrat/guards": "workspace:*",
@@ -624,14 +624,14 @@
     },
     "packages/constants": {
       "name": "@packrat/constants",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "devDependencies": {
         "typescript": "catalog:",
       },
     },
     "packages/db": {
       "name": "@packrat/db",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@packrat/constants": "workspace:*",
         "drizzle-orm": "catalog:",
@@ -643,14 +643,14 @@
     },
     "packages/env": {
       "name": "@packrat/env",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "zod": "catalog:",
       },
     },
     "packages/guards": {
       "name": "@packrat/guards",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@packrat/utils": "workspace:*",
         "ts-extras": "catalog:",
@@ -659,7 +659,7 @@
     },
     "packages/mcp": {
       "name": "@packrat/mcp",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.29.0",
         "@packrat/api-client": "workspace:*",
@@ -683,7 +683,7 @@
     },
     "packages/osm-db": {
       "name": "@packrat/osm-db",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@neondatabase/serverless": "catalog:",
         "drizzle-orm": "catalog:",
@@ -697,7 +697,7 @@
     },
     "packages/osm-import": {
       "name": "@packrat/osm-import",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@packrat/env": "workspace:*",
         "pg": "catalog:",
@@ -705,7 +705,7 @@
     },
     "packages/overpass": {
       "name": "@packrat/overpass",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@packrat/guards": "workspace:*",
         "zod": "catalog:",
@@ -717,7 +717,7 @@
     },
     "packages/schemas": {
       "name": "@packrat/schemas",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@packrat/config": "workspace:*",
         "@packrat/constants": "workspace:*",
@@ -732,7 +732,7 @@
     },
     "packages/types": {
       "name": "@packrat/types",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@packrat/constants": "workspace:*",
         "@packrat/schemas": "workspace:*",
@@ -743,11 +743,11 @@
     },
     "packages/typescript-config": {
       "name": "@packrat/typescript-config",
-      "version": "2.1.0",
+      "version": "2.2.3",
     },
     "packages/ui": {
       "name": "@packrat/ui",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@expo/ui": "~57.0.9",
         "@packrat/guards": "workspace:*",
@@ -764,7 +764,7 @@
     },
     "packages/units": {
       "name": "@packrat/units",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@packrat/constants": "workspace:*",
         "@packrat/guards": "workspace:*",
@@ -776,7 +776,7 @@
     },
     "packages/utils": {
       "name": "@packrat/utils",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "destr": "^2.0.5",
         "es-toolkit": "^1.47.0",
@@ -793,7 +793,7 @@
     },
     "packages/web-ui": {
       "name": "@packrat/web-ui",
-      "version": "2.1.0",
+      "version": "2.2.3",
       "dependencies": {
         "@packrat/guards": "workspace:*",
         "@radix-ui/react-accordion": "catalog:",
@@ -3269,7 +3269,7 @@
 
     "fraction.js": ["fraction.js@5.3.4", "", {}, "sha512-1X1NTtiJphryn/uLQz3whtY6jK3fTqoE3ohKs0tT+Ujr1W59oopxmoEh7Lu5p6vBaPbgoM0bzveAW4Qi5RyWDQ=="],
 
-    "framer-motion": ["framer-motion@12.38.0", "", { "dependencies": { "motion-dom": "^12.38.0", "motion-utils": "^12.36.0", "tslib": "^2.4.0" }, "peerDependencies": { "@emotion/is-prop-valid": "*", "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["@emotion/is-prop-valid", "react", "react-dom"] }, "sha512-rFYkY/pigbcswl1XQSb7q424kSTQ8q6eAC+YUsSKooHQYuLdzdHjrt6uxUC+PRAO++q5IS7+TamgIw1AphxR+g=="],
+    "framer-motion": ["framer-motion@13.4.0", "", { "dependencies": { "motion-dom": "^13.3.0", "motion-utils": "^13.3.0", "tslib": "^2.4.0" }, "peerDependencies": { "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["react", "react-dom"] }, "sha512-HCpqKM9BTu6UYKtj0u6J1QNxojnnirNcghcSDZ+SkpiL3myxvtsgXPS3ZGEELC2eSma7YiA937rAEXtRyydSXQ=="],
 
     "fresh": ["fresh@2.0.0", "", {}, "sha512-Rx/WycZ60HOaqLKAi6cHRKKI7zxWbJ31MhntmtwMoaTeF7XFH9hhBp8vITaMidfljRQ6eYWCKkaTK+ykVJHP2A=="],
 
@@ -3955,9 +3955,9 @@
 
     "morgan": ["morgan@1.10.1", "", { "dependencies": { "basic-auth": "~2.0.1", "debug": "2.6.9", "depd": "~2.0.0", "on-finished": "~2.3.0", "on-headers": "~1.1.0" } }, "sha512-223dMRJtI/l25dJKWpgij2cMtywuG/WiUKXdvwfbhGKBhy1puASqXwFzmWZ7+K73vUPoR7SS2Qz2cI/g9MKw0A=="],
 
-    "motion-dom": ["motion-dom@12.38.0", "", { "dependencies": { "motion-utils": "^12.36.0" } }, "sha512-pdkHLD8QYRp8VfiNLb8xIBJis1byQ9gPT3Jnh2jqfFtAsWUA3dEepDlsWe/xMpO8McV+VdpKVcp+E+TGJEtOoA=="],
+    "motion-dom": ["motion-dom@13.3.0", "", { "dependencies": { "motion-utils": "^13.3.0" } }, "sha512-AmAnB6pHdZ1vHGzWzuzteG6Q3j1lHKeX/lbST6jGlgm0cjvLUgaCk1xhOuPMOy5SgovN6wnnUdwFrkcsus7Ftg=="],
 
-    "motion-utils": ["motion-utils@12.36.0", "", {}, "sha512-eHWisygbiwVvf6PZ1vhaHCLamvkSbPIeAYxWUuL3a2PD/TROgE7FvfHWTIH4vMl798QLfMw15nRqIaRDXTlYRg=="],
+    "motion-utils": ["motion-utils@13.3.0", "", {}, "sha512-sgSschQp7EseHInIlR7hBbMuvet3RA0bs28KPZAXJcGKGdxHGvh1ogpYDilY3bOMtl73EqPNmp75sAKHYPU5sg=="],
 
     "ms": ["ms@2.1.3", "", {}, "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA=="],
 
