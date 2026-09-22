@@ -35,6 +35,7 @@
     "db:seed:oauth-clients": "bun run ./src/db/seed-claude-oauth-client.ts",
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e=dev",
+    "predev": "bun run ../../.github/scripts/env-check.ts",
     "dev": "wrangler dev -e=dev --port ${PORT:-8787}",
     "dev:e2e": "bun run scripts/e2e-local-start.ts",
     "dev:e2e:init": "bun run scripts/e2e-local-init.ts",

@@ -36,6 +36,7 @@
     "check-types:tsgo": "bun scripts/check-types.ts --tsgo",
     "check-types-watch": "tsc --noEmit --watch",
     "clean": "bun run .github/scripts/clean.ts",
+    "devenv": "bun scripts/devenv/index.ts",
     "e2e:swift": "bun run apps/swift/scripts/run-e2e.ts",
     "e2e:swift:ios": "bun run apps/swift/scripts/run-e2e.ts --plan full",
     "e2e:swift:ios-sanity": "bun run apps/swift/scripts/run-e2e.ts --plan sanity",

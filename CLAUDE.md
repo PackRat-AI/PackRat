@@ -56,10 +56,13 @@ a file under either app is opened.
 
 ```bash
 # Dev
+bun devenv up         # Isolated Neon branch + API on a free port (use this in a worktree)
+bun devenv down       # Tear the environment down (deletes the Neon branch)
+bun devenv list       # Every live environment on this machine
 bun expo              # Start Expo dev server (Android)
 bun android           # Android emulator — the Expo app's shipping target
 bun ios               # Expo on iOS simulator — NOT a shipping target, see Platform split
-bun api               # API dev server (wrangler)
+bun api               # API dev server against the SHARED dev database
 cd apps/guides && bun dev   # Guides dev server
 cd apps/landing && bun dev  # Landing dev server
 
@@ -269,6 +272,41 @@ Defined in root `tsconfig.json`:
 - `guides-app/*` → `apps/guides/*`
 - `landing-app/*` → `apps/landing/*`
 - `nativewindui/*` → `apps/expo/components/ui/*`
+
+## Local Development Environments
+
+**Working in a worktree, or anything that writes to the database? Run `bun devenv up`.**
+It creates a copy-on-write Neon branch off `development`, picks a free port,
+migrates, points this worktree's clients at it, and starts the API. `bun devenv down`
+deletes the branch. Full contract: **`docs/dev-environments.md`**.
+
+- **`bun api` uses the SHARED dev database.** Fine for read-only work. Any agent
+  writing to it — migrations, seeds, destructive tests — is writing to the same
+  rows every other agent is reading. Use `devenv` instead.
+- **Never create Neon branches by hand** (console or the generic `neon` skill).
+  A hand-made branch has no local record, so `down` and `prune` cannot clean it
+  up and it sits on the project indefinitely. `bun devenv up` is the only path.
+- **Ports are allocated, not chosen.** The registry in `~/.packrat/devenv/` is
+  shared across worktrees, so parallel agents never collide. Don't hardcode a
+  port or assume 8787 is yours.
+- **`bun devenv list`** shows every environment on the machine. Tear down what
+  you started; `bun devenv prune` sweeps orphans.
+
+### Environment variables — never hand-copy them
+
+`.env.local` in the **main checkout** is the only place secrets live. Worktrees
+resolve it automatically via `git rev-parse --git-common-dir`, so a fresh
+worktree needs no setup.
+
+- **Do not copy `.env.local` or `.dev.vars` between worktrees.** That is what
+  caused the drift this system replaced — copies silently fall behind as keys
+  are added.
+- Add a new key **once**, to the main checkout's `.env.local`. Every worktree
+  inherits it.
+- `.dev.vars` and the apps' `.env.local` are **generated artifacts**. Editing
+  them is pointless; the next generation overwrites your change.
+- Verify with `bun .github/scripts/env-check.ts` — it validates against the
+  API's own Zod schema and names any missing key.
 
 ## Database
 
