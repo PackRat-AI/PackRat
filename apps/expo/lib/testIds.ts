@@ -146,6 +146,18 @@ export const testIds = Object.freeze({
     weightUnitControl: 'settings:weight-unit',
     temperatureUnitControl: 'settings:temperature-unit',
     speedUnitControl: 'settings:speed-unit',
+    upgradeToProBtn: 'settings:upgrade-to-pro',
+    manageSubscriptionBtn: 'settings:manage-subscription',
+    restorePurchasesBtn: 'settings:restore-purchases',
+  }),
+
+  // ── Paywall ───────────────────────────────────────────────────────────────
+  paywall: Object.freeze({
+    headline: 'paywall:headline',
+    ctaBtn: 'paywall:cta',
+    restoreBtn: 'paywall:restore',
+    closeBtn: 'paywall:close',
+    planRow: (identifier: string) => `paywall:plan-${identifier}`,
   }),
 
   // ── AI Chat ───────────────────────────────────────────────────────────────

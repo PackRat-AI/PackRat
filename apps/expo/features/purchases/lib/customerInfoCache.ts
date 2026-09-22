@@ -34,3 +34,21 @@ export async function readPersistedCustomerInfo(): Promise<CustomerInfo | null> 
     return null;
   }
 }
+
+/**
+ * Forget the cached entitlement.
+ *
+ * Called when the signed-in identity changes. The entitlement is cached per
+ * device but belongs to an account, so leaving it in place would hand the next
+ * person on a shared device the previous one's Pro for as long as the cache
+ * outlives them. Mirrors `FeatureAccessStore.forgetEntitlement` in Swift.
+ */
+export async function clearPersistedCustomerInfo(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { feature: 'purchases', action: 'clearPersistedCustomerInfo' },
+    });
+  }
+}

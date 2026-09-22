@@ -120,7 +120,7 @@ If any trigger fires, hold the swap. Diagnose, fix, re-run the audit gate at #3 
 - `docs/audits/2026-05-20-swift-baseline.md` — baseline + deployed-API gap
 - `docs/audits/2026-05-20-deep-linking-parity.md` — U10
 - `docs/audits/2026-05-20-better-auth-swift-migration.md` — Better Auth subagent's report
-- `docs/audits/2026-05-20-feature-parity-matrix.md` — companion to this doc
+- `docs/parity.md` — ongoing parity management (the migration-era companion matrix was deleted once parity was reached)
 - `docs/plans/2026-05-20-001-feat-swift-mac-and-ios-ship-readiness-plan.md` — the audit plan (this doc closes it out)
 
 ## What's explicitly NOT closed by this audit

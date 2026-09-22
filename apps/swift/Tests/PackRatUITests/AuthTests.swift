@@ -69,27 +69,15 @@ final class AuthTests: AppUITestCase {
 
         goToHomeAction("Pack Templates")
 
-        XCTAssertTrue(
-            app.staticTexts["Templates Require an Account"].waitForExistence(timeout: 10),
-            "Guest-only account-backed screens should show a native sign-in state instead of a network error"
-        )
-        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
-        XCTAssertFalse(app.buttons["Try Again"].exists)
-        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
+        expectGuestAuthwall(titled: "Sign In to Use Templates")
 
         app.buttons["Done"].tapIfExists()
         goToHomeAction("Catalog")
-        XCTAssertTrue(app.staticTexts["Catalog Requires an Account"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
-        XCTAssertFalse(app.buttons["Try Again"].exists)
-        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
+        expectGuestAuthwall(titled: "Sign In to Search Gear")
 
         app.buttons["Done"].tapIfExists()
         goToHomeAction("Weather")
-        XCTAssertTrue(app.staticTexts["Weather Requires an Account"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
-        XCTAssertFalse(app.buttons["Try Again"].exists)
-        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
+        expectGuestAuthwall(titled: "Sign In for Weather")
     }
 
     func testGuestSeesNativeSignInStateForAITools() {
@@ -99,24 +87,15 @@ final class AuthTests: AppUITestCase {
         XCTAssertTrue(waitForLoggedIn(timeout: 10), "Guest mode should enter the main app shell")
 
         goToTab("Assistant")
-        XCTAssertTrue(app.staticTexts["Assistant Requires an Account"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
-        XCTAssertFalse(app.buttons["Try Again"].exists)
-        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
+        expectGuestAuthwall(titled: "Sign In to Ask the Assistant")
 
         goToHomeAction("Season Suggestions")
-        XCTAssertTrue(app.staticTexts["Season Suggestions Require an Account"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
-        XCTAssertFalse(app.buttons["Try Again"].exists)
-        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
+        expectGuestAuthwall(titled: "Sign In for Season Suggestions")
         app.buttons["Done"].tapIfExists()
 
         if UITestFeatureFlags.enableWildlifeIdentification {
             goToHomeAction("Wildlife ID")
-            XCTAssertTrue(app.staticTexts["Wildlife ID Requires an Account"].waitForExistence(timeout: 10))
-            XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
-            XCTAssertFalse(app.buttons["Try Again"].exists)
-            XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
+            expectGuestAuthwall(titled: "Sign In to Identify Wildlife")
         } else {
             goToTab("Home")
             XCTAssertFalse(app.buttons["home_action_wildlifeid"].waitForExistence(timeout: 2))
@@ -134,13 +113,11 @@ final class AuthTests: AppUITestCase {
         // Sign in with Apple ships on both platforms — App Store guideline 4.8
         // requires it wherever a third-party login is offered.
         XCTAssertTrue(app.buttons["auth_apple"].exists)
-        // Google is iOS-only: its SDK needs UIKit, so macOS offers email plus
-        // Sign in with Apple instead.
-        #if os(iOS)
+        // A Google button is present on both platforms too. On macOS its SDK
+        // cannot run, so the button explains where Google sign-in works rather
+        // than being hidden — asserting its absence here described an older
+        // build and would now fail on macOS for the wrong reason.
         XCTAssertTrue(app.buttons["auth_google"].exists)
-        #else
-        XCTAssertFalse(app.buttons["auth_google"].exists)
-        #endif
     }
 
     func testLoginWithBadCredentialShowsError() {
@@ -187,6 +164,15 @@ final class AuthTests: AppUITestCase {
         XCTAssertTrue(app.textFields["register_email"].exists)
         XCTAssertTrue(app.secureTextFields["register_password"].exists)
         XCTAssertTrue(app.buttons["register_submit"].exists)
+
+        // Sign-up offers the same providers as sign-in, from the same shared
+        // `AuthProviderButtons`. Asserted here because only the sign-in screen
+        // had this check, and that asymmetry is exactly how #2749 shipped a
+        // macOS build with no Sign in with Apple on either screen: the shared
+        // component regressed, sign-in's assertion caught it, and sign-up had
+        // nothing watching. Guideline 4.8 applies to both.
+        XCTAssertTrue(app.buttons["register_apple"].exists)
+        XCTAssertTrue(app.buttons["register_google"].exists)
 
         // Tap "Already have an account" back link
         let loginLink = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Sign In' OR label CONTAINS 'Log In' OR label CONTAINS 'account'")).firstMatch
@@ -265,6 +251,59 @@ final class AuthTests: AppUITestCase {
         if e2eLoginSeedAllowed {
             app.launchEnvironment["PACKRAT_E2E_ALLOW_LOGIN_SEED"] = "1"
         }
+    }
+
+    /// Asserts a guest sees the native sign-in state on an account-backed
+    /// screen, rather than a network error.
+    ///
+    /// Anchored on `guest_limited_state` / `guest_limited_sign_in` rather than
+    /// the visible copy. These tests broke because the authwall titles were
+    /// rewritten in e43fd07b1 and the assertions were not, so asserting the
+    /// strings again would rebuild the same trap for the next rewrite; the house
+    /// rule is to prefer app-controlled test IDs over visible text. The title is
+    /// still checked, because the identifier alone cannot tell one screen's
+    /// authwall from another's.
+    ///
+    /// The negative half asserts `connection_needed_state` is absent instead of
+    /// a "Try Again" label: that label is a default argument
+    /// (`retryTitle: String = "Try Again"`), so a rename would make a
+    /// label-based assertion pass vacuously and quietly stop protecting the
+    /// distinction this test exists to protect.
+    private func expectGuestAuthwall(
+        titled title: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertTrue(
+            app.descendants(matching: .any)
+                .matching(identifier: "guest_limited_state")
+                .firstMatch
+                .waitForExistence(timeout: 10),
+            "\(title): a guest should get the native sign-in state, not a network error",
+            file: file,
+            line: line
+        )
+        XCTAssertTrue(
+            app.staticTexts[title].exists,
+            "\(title): the authwall should be the one belonging to this screen",
+            file: file,
+            line: line
+        )
+        XCTAssertTrue(
+            app.buttons["guest_limited_sign_in"].exists,
+            "\(title): the authwall should offer a way to sign in",
+            file: file,
+            line: line
+        )
+        XCTAssertFalse(
+            app.descendants(matching: .any)
+                .matching(identifier: "connection_needed_state")
+                .firstMatch
+                .exists,
+            "\(title): a signed-out guest is not an offline device",
+            file: file,
+            line: line
+        )
     }
 
     #if os(iOS)

@@ -343,4 +343,4 @@ _To be populated by U11._
 
 ## Decision artifact reference (U13)
 
-Final decision lives at `docs/audits/2026-05-20-decision-ios-swap.md`; parity matrix at `docs/audits/2026-05-20-feature-parity-matrix.md`.
+Final decision lives at `docs/audits/2026-05-20-decision-ios-swap.md`. The migration-era parity matrix was deleted once parity was reached; ongoing parity is managed per-change — see `docs/parity.md`.
