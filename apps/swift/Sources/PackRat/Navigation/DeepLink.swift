@@ -10,6 +10,8 @@ import Foundation
 ///
 /// The Expo (Android) client parses the same `packrat://` scheme, so any
 /// case added here has a counterpart there — see `docs/parity.md`.
+/// Keep the case names aligned across both clients so a link that works on
+/// one is not silently inert on the other.
 public enum DeepLink: Equatable {
     case home
     case pack(id: String)
