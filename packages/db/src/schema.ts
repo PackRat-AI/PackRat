@@ -918,6 +918,99 @@ export const entitlements = pgTable(
 export type Entitlement = InferSelectModel<typeof entitlements>;
 export type NewEntitlement = InferInsertModel<typeof entitlements>;
 
+// A user-chosen location to monitor for weather alerts. Watching is always
+// explicit — nothing here is derived from search history or trips. See
+// docs/features/weather-alerts.md ADR-002.
+export const weatherWatchedLocations = pgTable(
+  'weather_watched_locations',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    // WeatherAPI.com's numeric location id — the key used to poll this
+    // location's forecast/alerts.
+    weatherLocationId: integer('weather_location_id').notNull(),
+    locationName: text('location_name').notNull(),
+    region: text('region'),
+    country: text('country'),
+    lat: real('lat').notNull(),
+    lon: real('lon').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('weather_watched_locations_user_location_unique').on(
+      table.userId,
+      table.weatherLocationId,
+    ),
+    index('weather_watched_locations_weather_location_id_idx').on(table.weatherLocationId),
+  ],
+);
+
+export type WeatherWatchedLocation = InferSelectModel<typeof weatherWatchedLocations>;
+export type NewWeatherWatchedLocation = InferInsertModel<typeof weatherWatchedLocations>;
+
+// Last-seen alert state per watched location, keyed by the location itself
+// rather than per-user — the alert is a property of the place, so this row
+// is shared by every user watching it and lets the polling cron dedupe both
+// its own API calls and its notification fan-out across users. Poll tier
+// tracks whether this location currently has an active alert, so the cron
+// can check it more often while something is happening and fall back to a
+// slower cadence once it resolves.
+export const weatherLocationAlertState = pgTable('weather_location_alert_state', {
+  weatherLocationId: integer('weather_location_id').primaryKey(),
+  // Hash of the currently-active alert set (sorted headline+effective+expires
+  // per alert), used to detect a new or changed alert without storing the
+  // full payload here.
+  lastAlertHash: text('last_alert_hash'),
+  // Identifiers of the alerts currently considered active, for diffing
+  // new-vs-resolved on the next poll.
+  lastAlertIds: jsonb('last_alert_ids').$type<string[]>().notNull().default([]),
+  pollTier: text('poll_tier', { enum: ['baseline', 'elevated'] })
+    .notNull()
+    .default('baseline'),
+  activeSince: timestamp('active_since'),
+  lastPolledAt: timestamp('last_polled_at'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export type WeatherLocationAlertState = InferSelectModel<typeof weatherLocationAlertState>;
+export type NewWeatherLocationAlertState = InferInsertModel<typeof weatherLocationAlertState>;
+
+// A device registered to receive push notifications. Genuinely new — no push
+// infrastructure predates this feature. 'ios' is the only platform in use
+// today; 'android' is reserved for when the Expo app adopts the same
+// monitoring pipeline.
+export const userDeviceTokens = pgTable(
+  'user_device_tokens',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    platform: text('platform', { enum: ['ios', 'android'] }).notNull(),
+    deviceToken: text('device_token').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    lastSeenAt: timestamp('last_seen_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('user_device_tokens_user_id_device_token_unique').on(table.userId, table.deviceToken),
+    index('user_device_tokens_user_id_idx').on(table.userId),
+  ],
+);
+
+export type UserDeviceToken = InferSelectModel<typeof userDeviceTokens>;
+export type NewUserDeviceToken = InferInsertModel<typeof userDeviceTokens>;
+
+export const weatherWatchedLocationsRelations = relations(weatherWatchedLocations, ({ one }) => ({
+  user: one(users, { fields: [weatherWatchedLocations.userId], references: [users.id] }),
+}));
+
+export const userDeviceTokensRelations = relations(userDeviceTokens, ({ one }) => ({
+  user: one(users, { fields: [userDeviceTokens.userId], references: [users.id] }),
+}));
+
 // CapturedQuery is the per-query record stored in D1 metrics (packages/api/src/db/metricsDb.ts).
 // Defined here so both the API (queryMetrics.ts) and the D1 schema (packages/db/src/d1Schema.ts)
 // share the same type without a circular dependency.

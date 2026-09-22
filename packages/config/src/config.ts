@@ -15,6 +15,7 @@ const FeatureFlag = Object.freeze({
   EnableLocalAI: 'enableLocalAI',
   EnableTrails: 'enableTrails',
   EnableRevenueCat: 'enableRevenueCat',
+  EnableWeatherMonitoring: 'enableWeatherMonitoring',
 });
 
 const DashboardTileId = Object.freeze({
@@ -75,6 +76,7 @@ const APP_CONFIG_SOURCE = {
     [FeatureFlag.EnableLocalAI]: true,
     [FeatureFlag.EnableTrails]: false,
     [FeatureFlag.EnableRevenueCat]: true,
+    [FeatureFlag.EnableWeatherMonitoring]: false,
   },
   dashboard: {
     gapPrefix: GAP_PREFIX,
