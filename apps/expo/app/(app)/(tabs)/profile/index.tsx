@@ -161,6 +161,7 @@ function ListHeaderComponent() {
   const { pickImage } = useImagePicker();
   const [isUploading, setIsUploading] = useState(false);
   const { t } = useTranslation();
+  const { colors } = useColorScheme();
 
   const initials =
     user?.firstName && user?.lastName
@@ -251,6 +252,14 @@ function ListHeaderComponent() {
         {isUploading && (
           <View className="absolute inset-0 items-center justify-center rounded-full bg-black/40">
             <ActivityIndicator color="white" />
+          </View>
+        )}
+        {!isUploading && (
+          <View
+            className="absolute bottom-0 right-0 items-center justify-center rounded-full bg-primary p-1.5"
+            style={{ borderWidth: 2, borderColor: colors.background }}
+          >
+            <Icon name="camera" size={14} color={colors.background} />
           </View>
         )}
       </TouchableOpacity>
