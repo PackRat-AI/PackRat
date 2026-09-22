@@ -34,17 +34,27 @@ Each alert shows:
 - **Details and guidance** — a plain-language description and, where
   available, what to do about it (e.g. "stay hydrated," "carry an umbrella").
 
-## Severity you can trust
-
-Alerts aren't just pulled from a weather source verbatim — the app also
-recognizes conditions that are risky for someone outdoors even when no
-official warning has been issued: extreme heat or cold, strong wind, rain or
-low visibility either happening now or expected in the next few hours, high
-UV, and poor air quality. This means a user planning a trip gets a heads-up
-even in places or moments an official alert system hasn't caught up to.
-
 ## Staying current
 
 Alerts refresh whenever the selected location changes, so switching between a
 home location and a trip destination always reflects that location's own
 conditions rather than stale data from wherever the user checked last.
+
+## Cross-platform differences
+
+The core experience — bell icon, Alerts screen, severity, detail — is the
+same on iOS and Android. They diverge on what happens when there's no
+official alert for a location:
+
+- **iOS** shows only official alerts. No official warning means a plain "no
+  active alerts" state, full stop.
+- **Android** goes further: when there's no official alert, it also checks
+  the raw conditions itself — extreme heat or cold, strong wind, rain or low
+  visibility either happening now or expected in the next few hours, high UV,
+  and poor air quality — and raises its own advisory if any of those are
+  present. Only when none of those apply either does it fall back to "no
+  active alerts."
+
+In practice, an Android user is more likely to get a heads-up in borderline
+conditions an official alert system hasn't caught up to; an iOS user only
+ever sees what the official source has actually issued.
