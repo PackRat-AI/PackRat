@@ -13,6 +13,27 @@ import { isRevenueCatConfigured } from '../lib/revenueCat';
 // mounting simultaneously, or a focus effect re-running mid-navigation).
 let isPaywallPresenting = false;
 
+/**
+ * Header options for any state where the feature itself is not on screen.
+ *
+ * The child screen declares its own header actions (a "+ Report" button, a
+ * search bar) when it mounts, and those stay put behind the gate — offering a
+ * gated viewer an action for a feature they cannot reach. Clearing them here
+ * covers every gated screen at once, so no screen has to remember to do it.
+ *
+ * The title has to be set alongside them: overriding the header before the
+ * child mounts means the child's own `title` never lands, and Expo Router
+ * falls back to the route slug ("trail-conditions"). `label` is the same
+ * human name the fallback copy uses, so the two always agree.
+ */
+function blockedHeaderOptions(label: string | undefined) {
+  return {
+    headerRight: () => null,
+    headerSearchBarOptions: null as unknown as undefined,
+    ...(label ? { title: label } : {}),
+  };
+}
+
 interface EarlyAccessGateProps {
   /** Feature key matching a FeatureFlag / feature_access row. */
   featureKey: string;
@@ -127,6 +148,7 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
   if (showFallback) {
     return (
       <View className="flex-1 items-center justify-center gap-4 p-6">
+        <Stack.Screen options={blockedHeaderOptions(label)} />
         <Text variant="title3" className="text-center">
           {cannotVerify ? "Can't verify your access" : "You're offline"}
         </Text>
@@ -158,6 +180,7 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
   if (isLoading || !resolved) {
     return (
       <View className="flex-1 items-center justify-center">
+        <Stack.Screen options={blockedHeaderOptions(label)} />
         <ActivityIndicator size="large" />
       </View>
     );
@@ -170,11 +193,7 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
       <View style={{ flex: 1, opacity: 0 }} pointerEvents="none">
         {children}
       </View>
-      <Stack.Screen
-        options={{
-          headerSearchBarOptions: null as unknown as undefined,
-        }}
-      />
+      <Stack.Screen options={blockedHeaderOptions(label)} />
     </View>
   );
 }
