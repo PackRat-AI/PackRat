@@ -6,9 +6,10 @@ import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { testIds } from 'expo-app/lib/testIds';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { Image, Pressable, ScrollView, View } from 'react-native';
 import type { PurchasesOffering, PurchasesPackage } from 'react-native-purchases';
 import { usePurchase } from '../hooks/usePurchase';
 import { useRestorePurchases } from '../hooks/useRestorePurchases';
@@ -23,7 +24,8 @@ import {
   bestValuePackage,
   defaultPackage,
   isLifetime,
-  planBillingDetail,
+  planPeriodSuffix,
+  planPricePerMonth,
   planTitle,
 } from '../utils/paywallPlans';
 
@@ -55,10 +57,22 @@ import {
  * not follow the app's light/dark setting.
  */
 
-/** The app's own green, matching the Swift paywall's accent. */
-const ACCENT = 'rgb(88, 194, 125)';
-const BACKDROP_TOP = 'rgb(15, 28, 23)';
-const BACKDROP_BOTTOM = 'rgb(8, 10, 10)';
+/**
+ * The app's own blue — `primary` from `theme/colors.ts` for Android dark.
+ * Hardcoded rather than read from the theme because this screen is fixed dark
+ * and must not follow the light/dark setting; see the note above.
+ */
+const ACCENT = 'rgb(3, 133, 255)';
+
+/**
+ * The backdrop, as gradient stops from top to bottom.
+ *
+ * This was previously two flat blocks — a tinted one absolutely positioned over
+ * the top 55% of the screen, and the base colour below it. With no blend
+ * between them the seam was plainly visible as a horizontal line across the
+ * middle of the paywall. These are fed to a real gradient instead.
+ */
+const BACKDROP_GRADIENT = ['rgb(10, 22, 40)', 'rgb(7, 12, 20)', 'rgb(6, 8, 11)'] as const;
 
 interface PackRatPaywallProps {
   /** The offering to sell. Loaded before the paywall opens. */
@@ -107,12 +121,15 @@ export function PackRatPaywall({
 }: PackRatPaywallProps) {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  const { height } = useWindowDimensions();
 
   const packages = offering.availablePackages;
   const [selected, setSelected] = useState<PurchasesPackage | undefined>(() =>
     defaultPackage(packages),
   );
+
+  // Seeded high enough that the first paint never hides content behind the
+  // dock; replaced by the real height on layout.
+  const [dockHeight, setDockHeight] = useState(320);
 
   const { mutateAsync: purchase, isPending: isPurchasing } = usePurchase();
   const { mutateAsync: restore, isPending: isRestoring } = useRestorePurchases();
@@ -170,19 +187,13 @@ export function PackRatPaywall({
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: BACKDROP_BOTTOM }}>
-      {/* Backdrop. A plain two-tone fill rather than a gradient dependency:
-          expo-linear-gradient is not currently a dependency of this app, and a
-          radial accent bloom is not worth adding one for. */}
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: height * 0.55,
-          backgroundColor: BACKDROP_TOP,
-        }}
+    <View style={{ flex: 1 }}>
+      {/* Backdrop. A real gradient over the whole screen: the previous
+          two-block fill met at a hard edge partway down and read as the screen
+          being split in half. */}
+      <LinearGradient
+        colors={BACKDROP_GRADIENT}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
       <Pressable
@@ -209,7 +220,15 @@ export function PackRatPaywall({
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 56, paddingBottom: 280 }}
+        // Bottom padding is the dock's measured height, not a guess. The dock
+        // grows and shrinks with its contents — the plan cards, and a Restore
+        // row only signed-in viewers see — so a hardcoded clearance is wrong
+        // for somebody the moment any of that changes.
+        contentContainerStyle={{
+          paddingHorizontal: 22,
+          paddingTop: 56,
+          paddingBottom: dockHeight + 24,
+        }}
       >
         {/* Hero. The app's own icon rather than a generic symbol: this is
             PackRat asking, and the mark is what people already recognise. */}
@@ -256,23 +275,12 @@ export function PackRatPaywall({
             </View>
           ))}
         </View>
-
-        {/* Plans */}
-        <View style={{ marginTop: 26, gap: 10 }}>
-          {packages.map((pkg) => (
-            <PlanRow
-              key={pkg.identifier}
-              pkg={pkg}
-              isSelected={selected?.identifier === pkg.identifier}
-              isBestValue={pkg.identifier === bestValue?.identifier}
-              onSelect={() => setSelected(pkg)}
-            />
-          ))}
-        </View>
       </ScrollView>
 
-      {/* Purchase dock */}
+      {/* Purchase dock — the plans and the button that buys them, pinned
+          together so neither can scroll away from the other. */}
       <View
+        onLayout={(event) => setDockHeight(event.nativeEvent.layout.height)}
         style={{
           position: 'absolute',
           bottom: 0,
@@ -287,6 +295,22 @@ export function PackRatPaywall({
           borderTopColor: 'rgba(255,255,255,0.08)',
         }}
       >
+        {/* Plans live in the dock rather than in the scrolling content, so the
+            thing being bought is on screen at the same moment as the button
+            that buys it. Scrolled away, the CTA asks for money for a plan the
+            viewer can no longer see or change. */}
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 5 }}>
+          {packages.map((pkg) => (
+            <PlanCard
+              key={pkg.identifier}
+              pkg={pkg}
+              isSelected={selected?.identifier === pkg.identifier}
+              isBestValue={pkg.identifier === bestValue?.identifier}
+              onSelect={() => setSelected(pkg)}
+            />
+          ))}
+        </View>
+
         <Button
           testID={testIds.paywall.ctaBtn}
           disabled={isBusy || (isAuthenticated && !selected)}
@@ -328,15 +352,26 @@ export function PackRatPaywall({
   );
 }
 
-interface PlanRowProps {
+interface PlanCardProps {
   pkg: PurchasesPackage;
   isSelected: boolean;
   isBestValue: boolean;
   onSelect: () => void;
 }
 
-function PlanRow({ pkg, isSelected, isBestValue, onSelect }: PlanRowProps) {
-  const detail = planBillingDetail(pkg);
+/**
+ * One plan, as a card in a row of them.
+ *
+ * Every card reserves the same vertical slots — badge, name, price, per-month —
+ * whether or not it has something to put in each. A card with no "BEST VALUE"
+ * badge still holds that row's height, so the plan names sit on one line across
+ * the row and the prices line up with each other. Letting each card size itself
+ * would stagger the prices and make two plans harder to compare, which is the
+ * one thing this layout exists to make easy.
+ */
+function PlanCard({ pkg, isSelected, isBestValue, onSelect }: PlanCardProps) {
+  const periodSuffix = planPeriodSuffix(pkg);
+  const pricePerMonth = planPricePerMonth(pkg);
 
   return (
     <Pressable
@@ -345,60 +380,100 @@ function PlanRow({ pkg, isSelected, isBestValue, onSelect }: PlanRowProps) {
       accessibilityState={{ selected: isSelected }}
       testID={testIds.paywall.planRow(pkg.identifier)}
       style={{
-        flexDirection: 'row',
+        flex: 1,
+        paddingHorizontal: 10,
+        paddingTop: 10,
+        paddingBottom: 14,
+        borderRadius: 16,
         alignItems: 'center',
-        gap: 13,
-        padding: 15,
-        borderRadius: 14,
-        borderWidth: isSelected ? 1.6 : 1,
-        borderColor: isSelected ? 'rgba(88,194,125,0.7)' : 'rgba(255,255,255,0.08)',
-        backgroundColor: isSelected ? 'rgba(88,194,125,0.12)' : 'rgba(255,255,255,0.05)',
+        // Constant width, colour-only selection. The border is laid out inside
+        // the card, so growing it on selection shrinks the content box and
+        // nudges the price and name by a fraction of a point — which reads as
+        // the plans twitching every time one is tapped.
+        borderWidth: 1.6,
+        borderColor: isSelected ? ACCENT : 'rgba(255,255,255,0.10)',
+        backgroundColor: isSelected ? 'rgba(3,133,255,0.14)' : 'rgba(255,255,255,0.05)',
       }}
     >
-      <View
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: 11,
-          borderWidth: 2,
-          borderColor: isSelected ? ACCENT : 'rgba(255,255,255,0.28)',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {isSelected && (
-          <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: ACCENT }} />
+      {/* Badge slot. Always occupies its height, whether or not a badge is in
+          it, so the names and prices stay level across the row.
+
+          The badge stays on the best-value plan whether or not it is selected —
+          it is a fact about the plan, and hiding it once the viewer picks
+          something else removes the very comparison it exists to make. But it
+          only wears the accent while that plan is the active one: a solid
+          accent badge on an unselected card reads as the selection, which
+          leaves two cards looking chosen at once. Unselected, it keeps the
+          shape and drops to a muted outline. */}
+      <View style={{ height: 18, justifyContent: 'center' }}>
+        {isBestValue && (
+          <View
+            style={{
+              paddingHorizontal: 7,
+              paddingVertical: 2,
+              borderRadius: 999,
+              backgroundColor: isSelected ? ACCENT : 'transparent',
+              borderWidth: 1,
+              borderColor: isSelected ? ACCENT : 'rgba(255,255,255,0.28)',
+            }}
+          >
+            <Text
+              variant="caption2"
+              className="font-bold"
+              textColor={isSelected ? '#ffffff' : 'rgba(255,255,255,0.55)'}
+            >
+              BEST VALUE
+            </Text>
+          </View>
         )}
       </View>
 
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text className="font-semibold" textColor="#ffffff">
+      {/* Name and price each sit in a slot of fixed height. Left to size
+          themselves they would be as tall as whatever they happen to contain,
+          so a price that shrinks to fit — see `adjustsFontSizeToFit` below —
+          would pull everything under it upward, and one card's longer name
+          would push its own price below its neighbours'. */}
+      <View style={{ height: 22, justifyContent: 'center' }}>
+        <Text
+          variant="subhead"
+          className="text-center font-semibold"
+          numberOfLines={1}
+          textColor="#ffffff"
+        >
           {planTitle(pkg)}
         </Text>
-        {detail && (
-          <Text variant="caption1" textColor="rgba(255,255,255,0.55)">
-            {detail}
+      </View>
+
+      {/* `adjustsFontSizeToFit` keeps a long localized amount on one line
+          instead of wrapping. It changes the glyph size, not the slot. */}
+      <View style={{ height: 28, justifyContent: 'center', alignSelf: 'stretch' }}>
+        <Text
+          className="text-center text-[19px] font-bold"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+          textColor="#ffffff"
+        >
+          {pkg.product.priceString}
+        </Text>
+      </View>
+
+      <View style={{ height: 16, justifyContent: 'center' }}>
+        {periodSuffix && (
+          <Text variant="caption2" textColor="rgba(255,255,255,0.55)">
+            {periodSuffix}
           </Text>
         )}
       </View>
 
-      <View style={{ alignItems: 'flex-end', gap: 3 }}>
-        <Text className="font-semibold" textColor="#ffffff">
-          {pkg.product.priceString}
-        </Text>
-        {isBestValue && (
-          <View
-            style={{
-              paddingHorizontal: 6,
-              paddingVertical: 2,
-              borderRadius: 999,
-              backgroundColor: ACCENT,
-            }}
-          >
-            <Text variant="caption2" className="font-bold tracking-wider" textColor="#000000">
-              BEST VALUE
-            </Text>
-          </View>
+      {/* Per-month equivalent — the figure that makes a longer plan legible as
+          the cheaper one. Blank where it would say nothing (a monthly plan
+          repeating itself, or a lifetime purchase). */}
+      <View style={{ height: 15, justifyContent: 'center' }}>
+        {pricePerMonth && (
+          <Text variant="caption2" numberOfLines={1} textColor="rgba(255,255,255,0.45)">
+            {pricePerMonth} / mo
+          </Text>
         )}
       </View>
     </Pressable>

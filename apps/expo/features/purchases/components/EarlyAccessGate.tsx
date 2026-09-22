@@ -2,7 +2,7 @@ import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useConnectivity } from '../hooks/useConnectivity';
 import { useEntitlement } from '../hooks/useEntitlement';
@@ -12,6 +12,27 @@ import { isRevenueCatConfigured } from '../lib/revenueCat';
 // Prevents concurrent paywall pushes from stacking (e.g. multiple tabs
 // mounting simultaneously, or a focus effect re-running mid-navigation).
 let isPaywallPresenting = false;
+
+/**
+ * Header options for any state where the feature itself is not on screen.
+ *
+ * The child screen declares its own header actions (a "+ Report" button, a
+ * search bar) when it mounts, and those stay put behind the gate — offering a
+ * gated viewer an action for a feature they cannot reach. Clearing them here
+ * covers every gated screen at once, so no screen has to remember to do it.
+ *
+ * The title has to be set alongside them: overriding the header before the
+ * child mounts means the child's own `title` never lands, and Expo Router
+ * falls back to the route slug ("trail-conditions"). `label` is the same
+ * human name the fallback copy uses, so the two always agree.
+ */
+function blockedHeaderOptions(label: string | undefined) {
+  return {
+    headerRight: () => null,
+    headerSearchBarOptions: null as unknown as undefined,
+    ...(label ? { title: label } : {}),
+  };
+}
 
 interface EarlyAccessGateProps {
   /** Feature key matching a FeatureFlag / feature_access row. */
@@ -55,6 +76,10 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
   // the invisible children forever (paywall never opens, no fallback).
   const [paywallUnavailable, setPaywallUnavailable] = useState(false);
 
+  // Whether this gate has already sent the viewer to the paywall. Distinguishes
+  // "first visit, present it" from "they came back still gated, let them out".
+  const hasPresentedRef = useRef(false);
+
   // In production RevenueCat is always configured; the only reason it wouldn't
   // be is a local dev build without keys, where we let the feature through so
   // development isn't blocked. In prod this is always true.
@@ -86,10 +111,19 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
         return;
       }
 
+      // Focus returning here after we already presented means the user
+      // dismissed the paywall without subscribing. Re-pushing would trap them
+      // in a loop with no way back, so leave the gated screen instead.
+      if (hasPresentedRef.current) {
+        if (router.canGoBack()) router.back();
+        return;
+      }
+
       // The paywall owns its own copy and loads its own offering; the gate
       // hands it only the feature it was holding back. Everything the paywall
       // says about that feature is resolved there, from the same config this
       // gate read, so the two can never disagree.
+      hasPresentedRef.current = true;
       isPaywallPresenting = true;
       router.push({ pathname: '/paywall', params: { featureKey } });
 
@@ -114,6 +148,7 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
   if (showFallback) {
     return (
       <View className="flex-1 items-center justify-center gap-4 p-6">
+        <Stack.Screen options={blockedHeaderOptions(label)} />
         <Text variant="title3" className="text-center">
           {cannotVerify ? "Can't verify your access" : "You're offline"}
         </Text>
@@ -145,6 +180,7 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
   if (isLoading || !resolved) {
     return (
       <View className="flex-1 items-center justify-center">
+        <Stack.Screen options={blockedHeaderOptions(label)} />
         <ActivityIndicator size="large" />
       </View>
     );
@@ -157,11 +193,7 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
       <View style={{ flex: 1, opacity: 0 }} pointerEvents="none">
         {children}
       </View>
-      <Stack.Screen
-        options={{
-          headerSearchBarOptions: null as unknown as undefined,
-        }}
-      />
+      <Stack.Screen options={blockedHeaderOptions(label)} />
     </View>
   );
 }

@@ -26,6 +26,19 @@ export interface TitleablePackage extends RankablePackage {
   product: { title?: string | null };
 }
 
+/** The package fields a plan card's prices are read from. */
+export interface PricedPackage extends RankablePackage {
+  product: {
+    /** The headline price, already formatted by the store. */
+    priceString: string;
+    /**
+     * The same price expressed per month, formatted by the store. Null for a
+     * lifetime purchase, and absent on older SDKs.
+     */
+    pricePerMonthString?: string | null;
+  };
+}
+
 /**
  * Package type identifiers as `react-native-purchases` reports them. The SDK
  * types these as a loose string union, so the ones the paywall names are
@@ -119,4 +132,43 @@ export function defaultPackage<T extends RankablePackage>(packages: readonly T[]
 /** Whether buying this plan is a one-off rather than a subscription. */
 export function isLifetime(pkg: RankablePackage | undefined): boolean {
   return pkg?.packageType === PACKAGE_TYPE.lifetime;
+}
+
+/**
+ * A short label for the billing period, shown under the headline price so a
+ * card reads "$49.99 / yr" rather than leaving the reader to infer the term
+ * from the plan name.
+ */
+const PERIOD_SUFFIX: Readonly<Record<string, string>> = Object.freeze({
+  [PACKAGE_TYPE.annual]: '/ yr',
+  [PACKAGE_TYPE.sixMonth]: '/ 6 mo',
+  [PACKAGE_TYPE.threeMonth]: '/ 3 mo',
+  [PACKAGE_TYPE.twoMonth]: '/ 2 mo',
+  [PACKAGE_TYPE.monthly]: '/ mo',
+  [PACKAGE_TYPE.weekly]: '/ wk',
+});
+
+/** How the headline price is billed, or null where there is no period. */
+export function planPeriodSuffix(pkg: RankablePackage): string | null {
+  return PERIOD_SUFFIX[pkg.packageType] ?? null;
+}
+
+/**
+ * The per-month price, for comparing plans of different lengths at a glance —
+ * the number that makes a yearly plan legible as the cheaper one.
+ *
+ * Taken from the store's own `pricePerMonthString` rather than divided here:
+ * dividing would mean choosing a rounding rule and a currency format per
+ * locale, and getting either wrong puts a wrong price in front of a buyer.
+ *
+ * Returns null where the figure would not mean anything — a lifetime purchase
+ * has no monthly rate, a monthly plan would just repeat its own price, and an
+ * older SDK may not supply one at all.
+ */
+export function planPricePerMonth(pkg: PricedPackage): string | null {
+  if (pkg.packageType === PACKAGE_TYPE.lifetime) return null;
+  if (pkg.packageType === PACKAGE_TYPE.monthly) return null;
+
+  const perMonth = pkg.product.pricePerMonthString?.trim();
+  return perMonth || null;
 }

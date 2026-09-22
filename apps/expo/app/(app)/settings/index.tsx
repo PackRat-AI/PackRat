@@ -434,6 +434,21 @@ export default function SettingsScreen() {
               <View className="h-px bg-border mx-4" />
               <TouchableOpacity
                 className="flex-row items-center gap-3 p-4"
+                onPress={() => router.navigate('/dev/gated-feature')}
+              >
+                <View className="h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+                  <Icon name="lock-outline" size={22} color="#f59e0b" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-medium">Gated Feature</Text>
+                  <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                    A stub feature behind the early-access gate, for testing the paywall
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              <View className="h-px bg-border mx-4" />
+              <TouchableOpacity
+                className="flex-row items-center gap-3 p-4"
                 onPress={() => router.navigate('/dev/paywall-state')}
               >
                 <View className="h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10">
