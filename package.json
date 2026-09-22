@@ -100,9 +100,6 @@
     "react": "19.2.3"
   },
   "dependencies": {
-    "@tailwindcss/typography": "^0.5.20",
-    "@tanstack/query-async-storage-persister": "^5.103.2",
-    "@types/mdx": "^2.0.14",
     "react-native-purchases": "^10.4.0",
     "react-native-purchases-ui": "^10.4.0"
   },
