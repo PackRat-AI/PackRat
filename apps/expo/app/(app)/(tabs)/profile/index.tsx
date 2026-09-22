@@ -118,7 +118,6 @@ function Profile() {
       <Stack.Screen options={SCREEN_OPTIONS} />
 
       <List
-        contentContainerClassName="pt-8"
         variant="insets"
         data={DATA}
         sectionHeaderAsGap={Platform.OS === 'ios'}
@@ -233,7 +232,7 @@ function ListHeaderComponent() {
   }
 
   return (
-    <SafeAreaView className="ios:pb-8 items-center pb-4 pt-4">
+    <SafeAreaView className="ios:pb-8 items-center pb-4" edges={['bottom']}>
       <TouchableOpacity onPress={handleAvatarPress} disabled={isUploading}>
         <Avatar alt={`${displayName}'s Profile`} className="h-24 w-24">
           {renderAvatarImage()}
