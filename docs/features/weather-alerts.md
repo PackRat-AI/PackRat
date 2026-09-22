@@ -20,7 +20,9 @@ state rather than an empty or confusing screen.
   something active — otherwise it stays neutral.
 - A dedicated Alerts screen listing every current alert for the selected
   location, each one expandable for full detail.
-- Alert Preferences, where a user controls how they're notified.
+- Alert Preferences, where a user can choose which alert types they want to
+  be notified about and toggle notifications and location monitoring on or
+  off.
 
 ## What an alert tells you
 
@@ -58,3 +60,15 @@ official alert for a location:
 In practice, an Android user is more likely to get a heads-up in borderline
 conditions an official alert system hasn't caught up to; an iOS user only
 ever sees what the official source has actually issued.
+
+One smaller difference: on iOS, a user's Alert Preferences choices persist
+across app launches. On Android, they reset each time the Alert Preferences
+screen is reopened, so a user has to re-set them every visit.
+
+## Known limitation
+
+On both platforms, Alert Preferences is not yet connected to anything —
+turning off a specific alert type (e.g. Tornado Warnings) or disabling
+Weather Notifications does not currently change which alerts are shown or
+change any notification behavior. The screen exists and saves a choice, but
+nothing downstream reads it yet.
