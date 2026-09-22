@@ -2,7 +2,7 @@ import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useConnectivity } from '../hooks/useConnectivity';
 import { useEntitlement } from '../hooks/useEntitlement';
@@ -55,6 +55,10 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
   // the invisible children forever (paywall never opens, no fallback).
   const [paywallUnavailable, setPaywallUnavailable] = useState(false);
 
+  // Whether this gate has already sent the viewer to the paywall. Distinguishes
+  // "first visit, present it" from "they came back still gated, let them out".
+  const hasPresentedRef = useRef(false);
+
   // In production RevenueCat is always configured; the only reason it wouldn't
   // be is a local dev build without keys, where we let the feature through so
   // development isn't blocked. In prod this is always true.
@@ -86,10 +90,19 @@ export function EarlyAccessGate({ featureKey, children }: EarlyAccessGateProps) 
         return;
       }
 
+      // Focus returning here after we already presented means the user
+      // dismissed the paywall without subscribing. Re-pushing would trap them
+      // in a loop with no way back, so leave the gated screen instead.
+      if (hasPresentedRef.current) {
+        if (router.canGoBack()) router.back();
+        return;
+      }
+
       // The paywall owns its own copy and loads its own offering; the gate
       // hands it only the feature it was holding back. Everything the paywall
       // says about that feature is resolved there, from the same config this
       // gate read, so the two can never disagree.
+      hasPresentedRef.current = true;
       isPaywallPresenting = true;
       router.push({ pathname: '/paywall', params: { featureKey } });
 
