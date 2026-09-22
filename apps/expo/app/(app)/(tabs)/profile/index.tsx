@@ -233,7 +233,7 @@ function ListHeaderComponent() {
   }
 
   return (
-    <SafeAreaView className="ios:pb-8 items-center pb-4 pt-8">
+    <SafeAreaView className="ios:pb-8 items-center pb-4 pt-4">
       <TouchableOpacity onPress={handleAvatarPress} disabled={isUploading}>
         <Avatar alt={`${displayName}'s Profile`} className="h-24 w-24">
           {renderAvatarImage()}
@@ -256,8 +256,12 @@ function ListHeaderComponent() {
         )}
         {!isUploading && (
           <View
-            className="absolute bottom-0 right-0 items-center justify-center rounded-full bg-primary p-1.5"
-            style={{ borderWidth: 2, borderColor: colors.background }}
+            className="absolute bottom-0 right-0 items-center justify-center rounded-full p-1.5"
+            style={{
+              backgroundColor: colors.grey,
+              borderWidth: 2,
+              borderColor: colors.background,
+            }}
           >
             <Icon name="camera" size={14} color={colors.background} />
           </View>
