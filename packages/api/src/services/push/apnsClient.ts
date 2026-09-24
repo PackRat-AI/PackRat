@@ -1,4 +1,5 @@
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
+import { safeJsonStringify } from '@packrat/utils';
 
 const PRODUCTION_HOST = 'https://api.push.apple.com';
 const SANDBOX_HOST = 'https://api.sandbox.push.apple.com';
@@ -55,9 +56,9 @@ async function getApnsJwt(env: ValidatedEnv): Promise<string> {
     throw new Error('APNs is not configured (APNS_KEY_ID/APNS_TEAM_ID/APNS_PRIVATE_KEY unset)');
   }
 
-  const header = base64UrlEncodeString(JSON.stringify({ alg: 'ES256', kid: APNS_KEY_ID }));
+  const header = base64UrlEncodeString(safeJsonStringify({ alg: 'ES256', kid: APNS_KEY_ID }));
   const payload = base64UrlEncodeString(
-    JSON.stringify({ iss: APNS_TEAM_ID, iat: Math.floor(now / 1000) }),
+    safeJsonStringify({ iss: APNS_TEAM_ID, iat: Math.floor(now / 1000) }),
   );
   const signingInput = `${header}.${payload}`;
 
@@ -112,7 +113,7 @@ export async function sendApnsPush({
       'apns-push-type': 'alert',
       'apns-priority': '10',
     },
-    body: JSON.stringify({
+    body: safeJsonStringify({
       aps: {
         alert: payload.alert,
         sound: payload.sound ?? 'default',
