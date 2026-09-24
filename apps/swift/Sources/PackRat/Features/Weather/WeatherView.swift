@@ -121,10 +121,42 @@ struct WeatherView: View {
                     }
                     .accessibilityIdentifier("weather_alert_preferences_button")
                 }
+                if AppFeatureFlags.enableWeatherMonitoring {
+                    ToolbarItem(placement: preferencesToolbarPlacement) {
+                        NavigationLink {
+                            WeatherWatchListView(viewModel: viewModel)
+                        } label: {
+                            Label("Watch List", systemImage: "eye")
+                        }
+                        .accessibilityIdentifier("weather_watch_list_button")
+                    }
+                }
             }
         }
         .sheet(isPresented: $showingAlerts) {
             WeatherAlertsView(alerts: activeAlerts)
+        }
+        .safeAreaInset(edge: .bottom) {
+            if AppFeatureFlags.enableWeatherMonitoring && viewModel.shouldOfferToWatchSelectedLocation {
+                WatchLocationPromptBanner(
+                    locationName: viewModel.selectedLocation?.displayName ?? "this location",
+                    onWatch: { Task { await viewModel.watchSelectedLocation() } },
+                    onDismiss: { viewModel.dismissWatchPromptForSelectedLocation() }
+                )
+            }
+        }
+        .task(id: viewModel.pendingAlertDeepLinkLocationId) {
+            guard let locationId = viewModel.pendingAlertDeepLinkLocationId else { return }
+            await viewModel.selectLocation(WeatherLocation(
+                id: locationId,
+                name: viewModel.watchedLocations.first { $0.weatherLocationId == locationId }?.locationName ?? "",
+                region: nil,
+                country: nil,
+                lat: nil,
+                lon: nil
+            ))
+            showingAlerts = true
+            viewModel.pendingAlertDeepLinkLocationId = nil
         }
     }
 

@@ -13,6 +13,8 @@ struct PackRatApp: App {
     @State private var authManager = AuthManager()
     #if os(macOS)
     @NSApplicationDelegateAdaptor(PackRatMacAppDelegate.self) private var appDelegate
+    #elseif os(iOS)
+    @UIApplicationDelegateAdaptor(PackRatIOSAppDelegate.self) private var appDelegate
     #endif
 
     init() {
