@@ -51,7 +51,14 @@ export const authClient = createAuthClient({
       storagePrefix: 'packrat',
       // secureStore wraps expo-secure-store; its web variant backs to
       // localStorage so the auth client works in the browser.
-      storage: { setItem: SecureStore.setItem, getItem: SecureStore.getItem },
+      // 1.7 requires the async variants too — the plugin prefers them and
+      // falls back to the sync pair.
+      storage: {
+        setItem: SecureStore.setItem,
+        getItem: SecureStore.getItem,
+        setItemAsync: SecureStore.setItemAsync,
+        getItemAsync: SecureStore.getItemAsync,
+      },
     }),
   ],
 });

@@ -372,6 +372,13 @@
       "when": 1788431743202,
       "tag": "0051_nostalgic_surge",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1790236829781,
+      "tag": "0052_big_mad_thinker",
+      "breakpoints": true
     }
   ]
 }

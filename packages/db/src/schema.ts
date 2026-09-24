@@ -16,6 +16,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   vector,
 } from 'drizzle-orm/pg-core';
 import type { ValidationError } from './validation';
@@ -114,7 +115,7 @@ export const jwks = pgTable('jwks', {
 // Added in U1 of the MCP OAuth consolidation refactor
 // (docs/plans/2026-05-25-001-refactor-mcp-auth-onto-better-auth-plan.md).
 //
-// The plugin (`@better-auth/oauth-provider@1.6.x`) auto-registers these four
+// The plugin (`@better-auth/oauth-provider@1.7.x`) auto-registers these seven
 // models when present in the drizzle schema map (see packages/api/src/auth/index.ts
 // `database.schema`). Column shapes mirror `node_modules/@better-auth/oauth-provider/
 // dist/index.mjs` schema declarations — keep this in sync if upgrading the plugin.
@@ -134,11 +135,21 @@ export const oauthClient = pgTable(
     id: text('id').primaryKey(),
     clientId: text('client_id').notNull().unique(),
     clientSecret: text('client_secret'),
+    // Discovery provenance (1.7). Non-null only for clients created through a
+    // registered `clientDiscovery` (e.g. CIMD). PackRat registers via DCR, so
+    // this stays null — but the column must exist for the plugin's fail-closed
+    // ownership check.
+    clientDiscoveryId: text('client_discovery_id'),
     disabled: boolean('disabled').default(false),
     skipConsent: boolean('skip_consent'),
     enableEndSession: boolean('enable_end_session'),
     subjectType: text('subject_type'),
     scopes: jsonb('scopes').$type<string[]>(),
+    // Machine-to-machine (`client_credentials`) scope authority (1.7). Stored
+    // separately from `scopes` and deny-by-default: NULL and [] both refuse
+    // client_credentials issuance. PackRat issues no M2M tokens, so every row
+    // is backfilled to [] and left there.
+    clientCredentialsScopes: jsonb('client_credentials_scopes').$type<string[]>().default([]),
     userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at'),
     updatedAt: timestamp('updated_at'),
@@ -153,12 +164,19 @@ export const oauthClient = pgTable(
     softwareStatement: text('software_statement'),
     redirectUris: jsonb('redirect_uris').$type<string[]>().notNull(),
     postLogoutRedirectUris: jsonb('post_logout_redirect_uris').$type<string[]>(),
+    backchannelLogoutUri: text('backchannel_logout_uri'),
+    backchannelLogoutSessionRequired: boolean('backchannel_logout_session_required'),
     tokenEndpointAuthMethod: text('token_endpoint_auth_method'),
+    // Replaces the removed `public` + `type` columns (1.7). `tokenEndpointAuthMethod`
+    // alone decides confidential vs public ('none' = public); applicationType is
+    // 'web' | 'native' and is metadata only.
+    applicationType: text('application_type'),
+    jwks: text('jwks'),
+    jwksUri: text('jwks_uri'),
     grantTypes: jsonb('grant_types').$type<string[]>(),
     responseTypes: jsonb('response_types').$type<string[]>(),
-    public: boolean('public'),
-    type: text('type'),
     requirePKCE: boolean('require_pkce'),
+    dpopBoundAccessTokens: boolean('dpop_bound_access_tokens'),
     referenceId: text('reference_id'),
     metadata: jsonb('metadata'),
   },
@@ -181,10 +199,20 @@ export const oauthRefreshToken = pgTable(
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     referenceId: text('reference_id'),
+    authorizationCodeId: text('authorization_code_id'),
+    // RFC 8707 resource indicators the token was issued for (1.7) — replaces
+    // the plugin-level `validAudiences` allowlist.
+    resources: jsonb('resources').$type<string[]>(),
+    requestedUserInfoClaims: jsonb('requested_user_info_claims').$type<string[]>(),
     expiresAt: timestamp('expires_at').notNull(),
     createdAt: timestamp('created_at').notNull(),
     revoked: timestamp('revoked'),
+    // Refresh-token rotation replay detection (1.7).
+    rotatedAt: timestamp('rotated_at'),
+    rotationReplayResponse: jsonb('rotation_replay_response'),
+    rotationReplayExpiresAt: timestamp('rotation_replay_expires_at'),
     authTime: timestamp('auth_time'),
+    confirmation: jsonb('confirmation'),
     scopes: jsonb('scopes').$type<string[]>().notNull(),
   },
   (t) => [
@@ -208,9 +236,16 @@ export const oauthAccessToken = pgTable(
     sessionId: text('session_id').references(() => session.id, { onDelete: 'set null' }),
     userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
     referenceId: text('reference_id'),
+    authorizationCodeId: text('authorization_code_id'),
+    resources: jsonb('resources').$type<string[]>(),
+    requestedUserInfoClaims: jsonb('requested_user_info_claims').$type<string[]>(),
     refreshId: text('refresh_id').references(() => oauthRefreshToken.id, { onDelete: 'set null' }),
     expiresAt: timestamp('expires_at').notNull(),
     createdAt: timestamp('created_at').notNull(),
+    // Back-channel logout / revocation marker (1.7): introspection returns
+    // { active: false } once the originating session ends.
+    revoked: timestamp('revoked'),
+    confirmation: jsonb('confirmation'),
     scopes: jsonb('scopes').$type<string[]>().notNull(),
   },
   (t) => [
@@ -233,6 +268,8 @@ export const oauthConsent = pgTable(
       .notNull(),
     userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
     referenceId: text('reference_id'),
+    resources: jsonb('resources').$type<string[]>(),
+    requestedUserInfoClaims: jsonb('requested_user_info_claims').$type<string[]>(),
     scopes: jsonb('scopes').$type<string[]>().notNull(),
     createdAt: timestamp('created_at').notNull(),
     updatedAt: timestamp('updated_at').notNull(),
@@ -242,6 +279,63 @@ export const oauthConsent = pgTable(
     index('oauth_consent_user_id_idx').on(t.userId),
   ],
 );
+
+// OAuth Resource (1.7) — protected resources are now a first-class persisted
+// entity instead of the plugin-level `validAudiences` string array. The
+// `identifier` IS the RFC 8707 `resource` parameter value a client sends.
+// Rows are seeded from the `resources` option at plugin init under
+// `resourceSeedMode: 'insertOnly'`, so admin edits are never reverted on deploy.
+// NULL policy columns mean "inherit the plugin default at issuance time".
+export const oauthResource = pgTable('oauthResource', {
+  id: text('id').primaryKey(),
+  identifier: text('identifier').notNull().unique(),
+  name: text('name').notNull(),
+  accessTokenTtl: integer('access_token_ttl'),
+  refreshTokenTtl: integer('refresh_token_ttl'),
+  signingAlgorithm: text('signing_algorithm'),
+  signingKeyId: text('signing_key_id'),
+  allowedScopes: jsonb('allowed_scopes').$type<string[]>(),
+  customClaims: jsonb('custom_claims'),
+  dpopBoundAccessTokensRequired: boolean('dpop_bound_access_tokens_required').default(false),
+  disabled: boolean('disabled').default(false),
+  createdAt: timestamp('created_at'),
+  updatedAt: timestamp('updated_at'),
+  policyVersion: integer('policy_version').default(1),
+  metadata: jsonb('metadata'),
+});
+
+// OAuth Client ↔ Resource join (1.7) — authoritative only when
+// `enforcePerClientResources` is true, which is the plugin default and what we
+// run. The composite uniqueness on (client_id, resource_id) is load-bearing:
+// the linkage check assumes one row per pair, and the registration endpoint
+// converts the resulting UNIQUE violation into an idempotent "alreadyLinked".
+export const oauthClientResource = pgTable(
+  'oauthClientResource',
+  {
+    id: text('id').primaryKey(),
+    clientId: text('client_id')
+      .references(() => oauthClient.clientId, { onDelete: 'cascade' })
+      .notNull(),
+    resourceId: text('resource_id')
+      .references(() => oauthResource.id, { onDelete: 'cascade' })
+      .notNull(),
+    metadata: jsonb('metadata'),
+    createdAt: timestamp('created_at'),
+  },
+  (t) => [
+    uniqueIndex('oauth_client_resource_client_resource_idx').on(t.clientId, t.resourceId),
+    index('oauth_client_resource_resource_id_idx').on(t.resourceId),
+  ],
+);
+
+// OAuth Client Assertion (1.7) — replay cache for `private_key_jwt` client
+// authentication (the assertion `jti` is the primary key). PackRat's clients
+// authenticate with `none` (public + PKCE), so this stays empty; the plugin
+// still requires the model to be registered.
+export const oauthClientAssertion = pgTable('oauthClientAssertion', {
+  id: text('id').primaryKey(),
+  expiresAt: timestamp('expires_at').notNull(),
+});
 
 // Packs table
 export const packs = pgTable('packs', {
