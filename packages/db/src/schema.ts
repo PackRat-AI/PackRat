@@ -960,9 +960,9 @@ export type NewWeatherWatchedLocation = InferInsertModel<typeof weatherWatchedLo
 // slower cadence once it resolves.
 export const weatherLocationAlertState = pgTable('weather_location_alert_state', {
   weatherLocationId: integer('weather_location_id').primaryKey(),
-  // Hash of the currently-active alert set (sorted headline+effective+expires
-  // per alert), used to detect a new or changed alert without storing the
-  // full payload here.
+  // Hash of the currently-active alert set (sorted event+effective per
+  // alert — see diffAlerts.ts alertSetHash), used to detect a new or
+  // changed alert without storing the full payload here.
   lastAlertHash: text('last_alert_hash'),
   // Identifiers of the alerts currently considered active, for diffing
   // new-vs-resolved on the next poll.
