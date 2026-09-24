@@ -38,9 +38,10 @@ export function HazardChips({ label, options, selected, onChange }: HazardChipsP
       <Text variant="caption1" className="uppercase tracking-wide text-muted-foreground">
         {label}
       </Text>
-      {/* Two rows of chips at typical widths; explicit height because a full-width native
-          container collapses under `matchContents`. */}
-      <Host style={{ height: 112 }}>
+      {/* Height follows the chips, width fills the row. A fixed height clipped the last chip
+          whenever the labels wrapped to a third line; `matchContents` on the vertical axis only
+          avoids that without reintroducing the collapse a fully intrinsic `Host` causes. */}
+      <Host matchContents={{ vertical: true, horizontal: false }} style={{ width: '100%' }}>
         <FlowRow horizontalArrangement={{ spacedBy: 8 }} verticalArrangement={{ spacedBy: 8 }}>
           {options.map((hazard) => {
             const isSelected = selected.includes(hazard);

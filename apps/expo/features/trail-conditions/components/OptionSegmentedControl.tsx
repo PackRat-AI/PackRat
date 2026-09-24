@@ -26,8 +26,11 @@ interface OptionSegmentedControlProps<T extends string> {
  * around a self-contained native row with no React Native children. The label above it stays RN
  * so it keeps the app's typography.
  *
- * `Host` is given an explicit height rather than `matchContents` — a full-width native control
- * collapses under intrinsic sizing (verified on-device; the same fix as `toggle.android.tsx`).
+ * The `Host` carries an explicit height. Intrinsic sizing does not work here in either axis:
+ * `matchContents` collapses a full-width native control, and matching only the vertical axis
+ * reports no usable height to Yoga, so the row renders on top of the label above it (both seen
+ * on-device). A segmented row is a single line of fixed-height buttons, so a fixed height is
+ * correct — unlike the wrapping chip grid in `HazardChips`.
  */
 export function OptionSegmentedControl<T extends string>({
   label,
@@ -42,7 +45,7 @@ export function OptionSegmentedControl<T extends string>({
       <Text variant="caption1" className="uppercase tracking-wide text-muted-foreground">
         {label}
       </Text>
-      <Host style={{ height: 48 }}>
+      <Host style={{ height: 52 }}>
         <SingleChoiceSegmentedButtonRow>
           {options.map((option) => (
             <SegmentedButton
