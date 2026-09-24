@@ -1,9 +1,10 @@
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
+import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import { Pressable, View } from 'react-native';
-import { timeAgo } from '../lib/timeAgo';
 import type { TrailConditionReport } from '../types';
 import { ConditionBadge } from './ConditionBadge';
 
@@ -23,6 +24,7 @@ interface TrailConditionReportRowProps {
  */
 export function TrailConditionReportRow({ report, onPress }: TrailConditionReportRowProps) {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   return (
     <Pressable
@@ -49,7 +51,7 @@ export function TrailConditionReportRow({ report, onPress }: TrailConditionRepor
             </View>
           ) : null}
           <Text variant="caption1" className="text-muted-foreground">
-            {timeAgo(report.createdAt ?? report.localCreatedAt)}
+            {getRelativeTime({ dateValue: report.createdAt ?? report.localCreatedAt, t })}
           </Text>
         </View>
       </View>

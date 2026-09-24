@@ -2,10 +2,10 @@ import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import type { ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 import { capitalizeFirst, surfaceIcon } from '../lib/display';
-import { timeAgo } from '../lib/timeAgo';
 import type { TrailConditionReport } from '../types';
 import { ConditionBadge } from './ConditionBadge';
 
@@ -51,7 +51,7 @@ export function TrailConditionDetail({ report }: TrailConditionDetailProps) {
             </View>
           ) : null}
           <Text variant="caption1" className="text-muted-foreground">
-            {timeAgo(createdAt)}
+            {getRelativeTime({ dateValue: createdAt, t })}
           </Text>
         </View>
         <ConditionBadge condition={report.overallCondition} size="lg" />
