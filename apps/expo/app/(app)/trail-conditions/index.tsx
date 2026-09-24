@@ -19,7 +19,8 @@ import { FlatList, Pressable, RefreshControl, View } from 'react-native';
  * The trail conditions list — `TrailConditionsListView` in `TrailConditionsView.swift`.
  *
  * Follows the Swift screen's shape: a searchable list of community reports, pull to refresh,
- * tap a row for detail, and one action to submit a report. The previous Expo screen filtered by
+ * tap a row for detail, and a `+` in the app bar to submit one — the same toolbar placement the
+ * Swift screen uses, and the convention the weather and feed screens already follow here. The previous Expo screen filtered by
  * trail surface instead of searching; search matches iOS and is the more useful filter, since it
  * spans trail name, region and notes.
  */
@@ -112,7 +113,7 @@ export default function TrailConditionsScreen() {
           />
         )}
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerClassName="pb-28"
+        contentContainerClassName="pb-6"
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -137,28 +138,23 @@ export default function TrailConditionsScreen() {
         options={{
           ...getAppBarOptions(),
           title: t('trailConditions.title'),
+          headerRight: isAuthenticated
+            ? () => (
+                <Pressable
+                  onPress={() => router.push('/trail-conditions/submit')}
+                  testID={testIds.trailConditions.submitReportBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('trailConditions.reportConditionsTitle')}
+                  style={{ padding: 14 }}
+                >
+                  <Icon name="plus" size={28} color={colors.foreground} />
+                </Pressable>
+              )
+            : undefined,
         }}
       />
 
       {renderContent()}
-
-      {/* Material 3 puts a screen's single primary action in a FAB rather than the app bar.
-          Submitting a report is that action here, and the app bar is left to the search bar —
-          which on Android can displace header buttons when it expands. */}
-      {isAuthenticated ? (
-        <Pressable
-          onPress={() => router.push('/trail-conditions/submit')}
-          testID={testIds.trailConditions.submitReportBtn}
-          accessibilityRole="button"
-          accessibilityLabel={t('trailConditions.reportConditionsTitle')}
-          className="absolute bottom-6 right-6 flex-row items-center gap-2 rounded-2xl bg-primary px-5 py-4 shadow-lg active:opacity-90"
-        >
-          <Icon name="plus" size={20} color="#FFFFFF" />
-          <Text variant="body" className="font-semibold text-white">
-            {t('trailConditions.report')}
-          </Text>
-        </Pressable>
-      ) : null}
     </View>
   );
 }
