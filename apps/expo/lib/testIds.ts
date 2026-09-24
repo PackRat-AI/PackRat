@@ -188,7 +188,9 @@ export const testIds = Object.freeze({
     notesInput: 'trail-conditions:notes-input',
     conditionOption: (condition: string) => `trail-conditions:condition-${condition}`,
     surfaceOption: (surface: string) => `trail-conditions:surface-${surface}`,
-    hazardChip: (hazard: string) => `trail-conditions:hazard-${hazard.replace(/\s+/g, '-')}`,
+    // Hazards are a fixed, space-separated vocabulary ("downed trees"), so splitting on the
+    // space is enough to slug them — no regex needed.
+    hazardChip: (hazard: string) => `trail-conditions:hazard-${hazard.split(' ').join('-')}`,
     formSubmitBtn: 'trail-conditions:form-submit',
     formCancelBtn: 'trail-conditions:form-cancel',
   }),
