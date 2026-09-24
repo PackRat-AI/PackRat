@@ -22,15 +22,9 @@ export function ConditionBadge({ condition, size = 'sm', className }: ConditionB
   const display = conditionDisplay(condition);
   const isLarge = size === 'lg';
 
-  // The icon takes a colour value rather than a class, so resolve the same four states here.
-  // `fair` has no theme token — amber-600, matching the Tailwind class the label uses.
-  const iconColor =
-    {
-      excellent: colors.green,
-      good: colors.primary,
-      fair: '#d97706',
-      poor: colors.destructive,
-    }[condition as OverallCondition] ?? colors.grey;
+  // The icon takes a colour value rather than a class, so the display map names which theme
+  // token each state uses and the value is resolved here.
+  const iconColor = display.iconColor(colors);
 
   if (isLarge) {
     return (
