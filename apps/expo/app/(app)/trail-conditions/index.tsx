@@ -1,5 +1,6 @@
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { SearchInput } from '@packrat/ui/src/search-input';
 import { Text } from '@packrat/ui/src/text';
 import { ErrorState } from 'expo-app/components/ErrorState';
 import { Icon } from 'expo-app/components/Icon';
@@ -8,11 +9,9 @@ import { TrailConditionReportRow } from 'expo-app/features/trail-conditions/comp
 import { useTrailConditions } from 'expo-app/features/trail-conditions/hooks/useTrailConditions';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useHeaderSearchBar } from 'expo-app/lib/hooks/useHeaderSearchBar';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
-import { useEffect } from 'react';
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 
 /**
@@ -42,14 +41,6 @@ export default function TrailConditionsScreen() {
     error,
     refetch,
   } = useTrailConditions();
-
-  // Native Material search bar in the app bar — the Android counterpart of SwiftUI's
-  // `.searchable`. react-native-screens installs a real `CustomSearchView` as the toolbar's
-  // action view on Android, so this is the platform control, not a styled TextInput.
-  const search = useHeaderSearchBar({ placeholder: t('trailConditions.searchPlaceholder') });
-  useEffect(() => {
-    setSearchText(search);
-  }, [search, setSearchText]);
 
   if (!enableTrailConditions) return null;
 
@@ -113,6 +104,17 @@ export default function TrailConditionsScreen() {
           />
         )}
         contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={
+          <View className="px-4 py-3">
+            <SearchInput
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder={t('trailConditions.searchPlaceholder')}
+              containerTestID={testIds.trailConditions.searchInput}
+            />
+          </View>
+        }
         contentContainerClassName="pb-6"
         refreshControl={
           <RefreshControl

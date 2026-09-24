@@ -178,6 +178,7 @@ export const testIds = Object.freeze({
   // ── Trail conditions ──────────────────────────────────────────────────────
   trailConditions: Object.freeze({
     submitReportBtn: 'trail-conditions:submit-report',
+    searchInput: 'trail-conditions:search-input',
     reportRow: (id: string) => `trail-conditions:report-${id}`,
     deleteReportBtn: (id: string) => `trail-conditions:delete-report-${id}`,
     emptyStateSubmitBtn: 'trail-conditions:empty-submit-report',
