@@ -16,11 +16,34 @@ final class WeatherViewModel {
     var searchError: String?
     var forecastError: String?
 
+    /// The server-backed weather-alert watch list — distinct from
+    /// `savedLocations` above, which is a local-only list of places the user
+    /// has looked up. Watching is always explicit (see
+    /// docs/features/weather-alerts.md ADR-002); this array is empty until
+    /// `loadWatchedLocations()` succeeds.
+    var watchedLocations: [WatchedLocation] = []
+    var isLoadingWatchedLocations = false
+    /// Suppresses the contextual "add to watch list?" banner for a location
+    /// dismissed this session, without persisting a permanent opt-out — a
+    /// still-active alert can prompt again on next launch (see ADR-003).
+    var dismissedWatchPromptLocationIds: Set<Int> = []
+
+    /// Set by a weather-alert push notification's tap handler via
+    /// `DeepLink.weatherAlert` — `WeatherView` consumes this to select the
+    /// location and open its alert detail, then clears it.
+    var pendingAlertDeepLinkLocationId: Int?
+
     private let service: any WeatherServicing
+    private let monitoringService: any WeatherMonitoringServicing
     private var searchTask: Task<Void, Never>?
 
-    init(service: any WeatherServicing = WeatherService.shared, loadPersistedState: Bool = true) {
+    init(
+        service: any WeatherServicing = WeatherService.shared,
+        monitoringService: any WeatherMonitoringServicing = WeatherMonitoringService.shared,
+        loadPersistedState: Bool = true
+    ) {
         self.service = service
+        self.monitoringService = monitoringService
         if VisualSampleData.isUITestFixturesEnabled {
             UserDefaults.standard.removeObject(forKey: savedLocationsKey)
             UserDefaults.standard.removeObject(forKey: activeLocationKey)
@@ -142,5 +165,104 @@ final class WeatherViewModel {
     func refresh() async {
         guard let location = selectedLocation else { return }
         await loadForecast(for: location)
+    }
+
+    // MARK: - Watch list
+
+    func loadWatchedLocations() async {
+        if VisualSampleData.isEnabled || VisualSampleData.isUITestFixturesEnabled {
+            watchedLocations = VisualSampleData.watchedLocations
+            return
+        }
+        guard await FeatureFlagStore.shared.isEnabled("enableWeatherMonitoring") else { return }
+        isLoadingWatchedLocations = true
+        defer { isLoadingWatchedLocations = false }
+        do {
+            watchedLocations = try await monitoringService.listWatchedLocations()
+        } catch {
+            // Silent: the watch-list screen and badge simply show nothing
+            // until the next successful load. Not a blocking error for the
+            // user — they can still see the current forecast either way.
+        }
+    }
+
+    var isSelectedLocationWatched: Bool {
+        guard let selectedLocation else { return false }
+        return watchedLocations.contains { $0.weatherLocationId == selectedLocation.id }
+    }
+
+    /// True only when the current lookup has an active alert for a location
+    /// that isn't already watched and hasn't been dismissed this session —
+    /// the single trigger condition for the contextual add-to-watch-list
+    /// banner (see ADR-003).
+    var shouldOfferToWatchSelectedLocation: Bool {
+        guard let selectedLocation else { return false }
+        guard !isSelectedLocationWatched else { return false }
+        guard !dismissedWatchPromptLocationIds.contains(selectedLocation.id) else { return false }
+        return !(forecast?.alerts?.alert ?? []).isEmpty
+    }
+
+    func dismissWatchPromptForSelectedLocation() {
+        guard let selectedLocation else { return }
+        dismissedWatchPromptLocationIds.insert(selectedLocation.id)
+    }
+
+    @discardableResult
+    func watchSelectedLocation() async -> Bool {
+        guard let selectedLocation else { return false }
+        return await watchLocation(selectedLocation)
+    }
+
+    /// Adds an arbitrary location to the watch list without disturbing
+    /// `selectedLocation`/`forecast` — used by the watch-list screen's own
+    /// "add a location" search, which must not silently change what
+    /// `WeatherView` shows underneath once its sheet dismisses.
+    @discardableResult
+    func watchLocation(_ location: WeatherLocation) async -> Bool {
+        if VisualSampleData.isEnabled || VisualSampleData.isUITestFixturesEnabled {
+            guard !watchedLocations.contains(where: { $0.weatherLocationId == location.id }) else { return true }
+            watchedLocations.append(WatchedLocation(
+                id: "visual-watch-\(location.id)",
+                weatherLocationId: location.id,
+                locationName: location.name,
+                region: location.region,
+                country: location.country,
+                lat: location.lat ?? 0,
+                lon: location.lon ?? 0,
+                createdAt: Date.iso8601Now()
+            ))
+            return true
+        }
+        let request = AddWatchedLocationRequest(
+            weatherLocationId: location.id,
+            locationName: location.name,
+            region: location.region,
+            country: location.country,
+            lat: location.lat ?? 0,
+            lon: location.lon ?? 0
+        )
+        do {
+            let watched = try await monitoringService.addWatchedLocation(request)
+            watchedLocations.append(watched)
+            await PushRegistrationService.registerForPushIfNeeded()
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    @discardableResult
+    func unwatchLocation(_ location: WatchedLocation) async -> Bool {
+        if VisualSampleData.isEnabled || VisualSampleData.isUITestFixturesEnabled {
+            watchedLocations.removeAll { $0.id == location.id }
+            return true
+        }
+        do {
+            try await monitoringService.removeWatchedLocation(id: location.id)
+            watchedLocations.removeAll { $0.id == location.id }
+            return true
+        } catch {
+            return false
+        }
     }
 }

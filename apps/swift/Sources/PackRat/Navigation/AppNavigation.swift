@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 enum NavItem: String, CaseIterable, Identifiable {
@@ -109,6 +110,13 @@ struct AppNavigation: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var phoneTab: PhoneTab = .home
     @State private var phoneHomePath: [NavItem] = []
+    // Count, not the rows themselves — the Weather tab badge only needs
+    // "how many watched locations currently have an active alert."
+    @Query(filter: #Predicate<CachedWeatherAlertState> { $0.hasActiveAlert })
+    private var activeAlertStates: [CachedWeatherAlertState]
+    private var activeWeatherAlertCount: Int {
+        activeAlertStates.filter(\.isStillActive).count
+    }
     #endif
 
     var body: some View {
@@ -116,6 +124,12 @@ struct AppNavigation: View {
             .onOpenURL { url in
                 appState.apply(DeepLink.parse(url))
             }
+            #if os(iOS)
+            .onReceive(NotificationCenter.default.publisher(for: .weatherAlertNotificationTapped)) { notification in
+                guard let weatherLocationId = notification.userInfo?["weatherLocationId"] as? Int else { return }
+                appState.apply(.weatherAlert(weatherLocationId: weatherLocationId))
+            }
+            #endif
     }
 
     /// Connectivity and sync state are reported in Settings rather than in the
@@ -349,6 +363,7 @@ struct AppNavigation: View {
                 }
                 .tabItem { Label(item.label, systemImage: item.symbol) }
                 .tag(PhoneTab(navItem: item)!)
+                .badge(item == .weather ? activeWeatherAlertCount : 0)
             }
 
             NavigationStack {
