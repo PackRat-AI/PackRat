@@ -30,6 +30,9 @@ CREATE TABLE "oauthResource" (
 	CONSTRAINT "oauthResource_identifier_unique" UNIQUE("identifier")
 );
 --> statement-breakpoint
+ALTER TABLE "jwks" ADD COLUMN "expires_at" timestamp;--> statement-breakpoint
+ALTER TABLE "jwks" ADD COLUMN "alg" text;--> statement-breakpoint
+ALTER TABLE "jwks" ADD COLUMN "crv" text;--> statement-breakpoint
 ALTER TABLE "oauthAccessToken" ADD COLUMN "authorization_code_id" text;--> statement-breakpoint
 ALTER TABLE "oauthAccessToken" ADD COLUMN "resources" jsonb;--> statement-breakpoint
 ALTER TABLE "oauthAccessToken" ADD COLUMN "requested_user_info_claims" jsonb;--> statement-breakpoint
@@ -53,7 +56,7 @@ ALTER TABLE "oauthRefreshToken" ADD COLUMN "rotation_replay_response" jsonb;--> 
 ALTER TABLE "oauthRefreshToken" ADD COLUMN "rotation_replay_expires_at" timestamp;--> statement-breakpoint
 ALTER TABLE "oauthRefreshToken" ADD COLUMN "confirmation" jsonb;--> statement-breakpoint
 ALTER TABLE "oauthClientResource" ADD CONSTRAINT "oauthClientResource_client_id_oauthClient_client_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."oauthClient"("client_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "oauthClientResource" ADD CONSTRAINT "oauthClientResource_resource_id_oauthResource_id_fk" FOREIGN KEY ("resource_id") REFERENCES "public"."oauthResource"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "oauthClientResource" ADD CONSTRAINT "oauthClientResource_resource_id_oauthResource_identifier_fk" FOREIGN KEY ("resource_id") REFERENCES "public"."oauthResource"("identifier") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "oauth_client_resource_client_resource_idx" ON "oauthClientResource" USING btree ("client_id","resource_id");--> statement-breakpoint
 CREATE INDEX "oauth_client_resource_resource_id_idx" ON "oauthClientResource" USING btree ("resource_id");--> statement-breakpoint
 ALTER TABLE "oauthClient" DROP COLUMN "public";--> statement-breakpoint

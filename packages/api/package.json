@@ -32,7 +32,6 @@
     "db:seed:e2e-catalog": "bun run ./src/db/seed-e2e-catalog.ts",
     "db:seed:e2e-user": "bun run ./src/db/seed-e2e-user.ts",
     "db:seed:feature-controls": "bun run ./src/db/seed-feature-controls.ts",
-    "db:backfill:oauth-client-1-7": "bun run ./src/db/backfill-oauth-client-1-7.ts",
     "db:seed:oauth-clients": "bun run ./src/db/seed-claude-oauth-client.ts",
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e=dev",

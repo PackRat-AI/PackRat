@@ -1,5 +1,5 @@
 {
-  "id": "77905781-ae6a-4e65-a2ac-377d2ab5e8be",
+  "id": "51949b9d-0f9b-4bec-b9be-d3e3f1458ba5",
   "prevId": "58ccd92b-c22e-4f87-b8a9-4288bb606182",
   "version": "7",
   "dialect": "postgresql",
@@ -1029,6 +1029,24 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alg": {
+          "name": "alg",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "crv": {
+          "name": "crv",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -1617,12 +1635,12 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "oauthClientResource_resource_id_oauthResource_id_fk": {
-          "name": "oauthClientResource_resource_id_oauthResource_id_fk",
+        "oauthClientResource_resource_id_oauthResource_identifier_fk": {
+          "name": "oauthClientResource_resource_id_oauthResource_identifier_fk",
           "tableFrom": "oauthClientResource",
           "tableTo": "oauthResource",
           "columnsFrom": ["resource_id"],
-          "columnsTo": ["id"],
+          "columnsTo": ["identifier"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

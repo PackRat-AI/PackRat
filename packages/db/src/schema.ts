@@ -108,6 +108,12 @@ export const jwks = pgTable('jwks', {
   publicKey: text('public_key').notNull(),
   privateKey: text('private_key').notNull(),
   createdAt: timestamp('created_at').notNull(),
+  // Added by the Better Auth 1.7 jwt plugin — all optional. `expiresAt` drives
+  // key rotation; `alg`/`crv` record which algorithm a stored key was minted
+  // for, so a key outlives a change to the configured default.
+  expiresAt: timestamp('expires_at'),
+  alg: text('alg'),
+  crv: text('crv'),
 });
 
 // ─── @better-auth/oauth-provider tables (OAuth 2.1 + OIDC AS) ────────────────
@@ -316,8 +322,13 @@ export const oauthClientResource = pgTable(
     clientId: text('client_id')
       .references(() => oauthClient.clientId, { onDelete: 'cascade' })
       .notNull(),
+    // References `oauthResource.identifier`, NOT its `id`. The plugin resolves
+    // a resource by identifier and writes that identifier straight into this
+    // column (see resolveClientRegistrationResources -> adapter.create in
+    // @better-auth/oauth-provider). Pointing the FK at `id` makes every DCR
+    // registration fail with a 23503 foreign-key violation.
     resourceId: text('resource_id')
-      .references(() => oauthResource.id, { onDelete: 'cascade' })
+      .references(() => oauthResource.identifier, { onDelete: 'cascade' })
       .notNull(),
     metadata: jsonb('metadata'),
     createdAt: timestamp('created_at'),
