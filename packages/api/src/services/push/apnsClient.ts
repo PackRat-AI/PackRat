@@ -80,10 +80,17 @@ export type ApnsSendResult =
   | { outcome: 'error'; status: number; body: string };
 
 /**
- * Sends one push to one device via APNs' HTTP/2 API. Cloudflare's `fetch`
- * multiplexes HTTP/2 automatically — no persistent-socket APNs library is
- * needed, matching this repo's preference for Workers-native primitives
- * over Node-only SDKs (see record() vs @elysiajs/opentelemetry).
+ * Sends one push to one device via APNs' HTTP/2 API. A deployed Worker's `fetch`
+ * egresses through Cloudflare's proxy stack, which upgrades to HTTP/2 before it
+ * reaches the origin — no persistent-socket APNs library is needed, matching
+ * this repo's preference for Workers-native primitives over Node-only SDKs
+ * (see record() vs @elysiajs/opentelemetry).
+ *
+ * Under `wrangler dev` this call fails with "Network connection lost": workerd
+ * has no HTTP/2 client and APNs refuses HTTP/1.1. That is a local-runtime gap,
+ * not a defect here — see cloudflare/workerd#4841 and
+ * docs/solutions/integration-issues/apns-push-fails-locally-workerd-no-http2.md.
+ * Verify local sends with `curl --http2`; do not swap the transport.
  */
 export async function sendApnsPush({
   env,
