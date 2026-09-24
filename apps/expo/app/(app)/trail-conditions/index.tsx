@@ -37,6 +37,7 @@ export default function TrailConditionsScreen() {
     setSearchText,
     isLoading,
     isRefreshing,
+    isSignedOut,
     error,
     refetch,
   } = useTrailConditions();
@@ -55,6 +56,32 @@ export default function TrailConditionsScreen() {
   const isSearching = searchText.trim().length > 0;
 
   const renderContent = () => {
+    // Trail reports are a server-backed, community feature, so there is nothing to show a
+    // signed-out user. Say so and offer sign-in rather than spinning on a query that is disabled
+    // and will never resolve. Mirrors `GuestLimitedView` on the Swift screen.
+    if (isSignedOut) {
+      return (
+        <View className="flex-1 items-center justify-center gap-3 px-8">
+          <Icon name="hiking" size={40} color={colors.grey} />
+          <Text variant="heading" className="text-center font-semibold">
+            {t('trailConditions.signedOutTitle')}
+          </Text>
+          <Text variant="subhead" className="text-center text-muted-foreground" wrap>
+            {t('trailConditions.signedOutMessage')}
+          </Text>
+          <Pressable
+            onPress={() => router.push('/auth')}
+            accessibilityRole="button"
+            className="mt-2 rounded-xl bg-primary px-5 py-3 active:opacity-90"
+          >
+            <Text variant="body" className="font-semibold text-white">
+              {t('auth.signIn')}
+            </Text>
+          </Pressable>
+        </View>
+      );
+    }
+
     if (isLoading && !hasReports) {
       return (
         <View className="flex-1 items-center justify-center py-12">

@@ -47,8 +47,12 @@ export function useTrailConditions() {
     filteredReports,
     searchText,
     setSearchText,
-    isLoading: query.isPending,
+    // A disabled query stays `pending` forever, so `isPending` alone would spin indefinitely for
+    // a signed-out user. Gate on actual fetching — the caller renders the signed-out state from
+    // `isQueryEnabledWithAccessToken` instead.
+    isLoading: query.isLoading,
     isRefreshing: query.isRefetching,
+    isSignedOut: !isQueryEnabledWithAccessToken,
     error: query.error,
     refetch: query.refetch,
   };

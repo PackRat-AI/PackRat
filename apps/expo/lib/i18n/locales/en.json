@@ -1161,7 +1161,9 @@
     "loadErrorTitle": "Couldn't Load Reports",
     "reportNotFound": "This report is no longer available.",
     "deleteReportTitle": "Delete Report",
-    "deleteReportMessage": "This removes your trail condition report for everyone. This can't be undone."
+    "deleteReportMessage": "This removes your trail condition report for everyone. This can't be undone.",
+    "signedOutTitle": "Sign In for Trail Reports",
+    "signedOutMessage": "Read what other hikers found on the trail recently, and add your own. Your packs and trips stay on this device and keep working without an account."
   },
   "feed": {
     "feed": "Feed",
