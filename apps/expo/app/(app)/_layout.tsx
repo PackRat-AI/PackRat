@@ -207,6 +207,8 @@ export default function AppLayout() {
           options={{
             presentation: 'card',
             animation: 'slide_from_bottom',
+            // The nested stack owns the headers for the list, detail and submit routes.
+            headerShown: false,
           }}
         />
         <Stack.Screen

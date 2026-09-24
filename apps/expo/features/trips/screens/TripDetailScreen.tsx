@@ -4,14 +4,13 @@ import { Card } from '@packrat/ui/src/card';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
-import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Modal, ScrollView, View } from 'react-native';
+import { useMemo } from 'react';
+import { ScrollView, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
@@ -24,7 +23,6 @@ export function TripDetailScreen() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
 
-  const [showConditionReport, setShowConditionReport] = useState(false);
   const enableTrailConditions = useFeatureFlag('enableTrailConditions');
 
   // safe-cast: trip may be undefined before the store is hydrated; the guard at line ~38 handles
@@ -208,7 +206,15 @@ export function TripDetailScreen() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onPress={() => setShowConditionReport(true)}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/trail-conditions/submit',
+                        params: {
+                          tripId: trip.id,
+                          trailName: trip.location?.name ?? trip.name,
+                        },
+                      })
+                    }
                     className="flex-row items-center gap-2"
                   >
                     <Text className="text-sm">{t('trailConditions.submitReport')}</Text>
@@ -219,30 +225,6 @@ export function TripDetailScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* Trail Condition Report Modal */}
-      <Modal
-        visible={showConditionReport}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowConditionReport(false)}
-      >
-        <View className="flex-1 bg-background">
-          <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
-            <Text className="text-base font-semibold text-foreground">
-              {t('trailConditions.reportConditionsTitle')}
-            </Text>
-            <Button variant="plain" size="sm" onPress={() => setShowConditionReport(false)}>
-              <Text className="font-semibold text-primary">{t('common.cancel')}</Text>
-            </Button>
-          </View>
-          <SubmitConditionReportForm
-            tripId={trip.id}
-            initialTrailName={trip.location?.name ?? trip.name}
-            onSuccess={() => setShowConditionReport(false)}
-          />
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }

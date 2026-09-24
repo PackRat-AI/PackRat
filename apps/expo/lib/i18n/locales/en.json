@@ -1086,9 +1086,9 @@
     "updated": "Updated",
     "conditionHistory": "Condition History",
     "reports": "reports",
-    "noReports": "No trail condition reports yet. Be the first to report!",
+    "noReports": "Be the first to report conditions on a trail.",
     "recentReports": "Recent Reports",
-    "noResults": "No trails match the selected filter.",
+    "noResults": "Try a different trail name, region or keyword.",
     "parking": "Parking",
     "facilities": "Facilities",
     "obstacles": "Obstacles",
@@ -1153,7 +1153,15 @@
       "rocky": "Rocky",
       "snow": "Snow",
       "mud": "Mud"
-    }
+    },
+    "searchPlaceholder": "Search trails",
+    "submit": "Submit",
+    "noReportsTitle": "No Trail Reports Yet",
+    "noResultsTitle": "No Matching Trails",
+    "loadErrorTitle": "Couldn't Load Reports",
+    "reportNotFound": "This report is no longer available.",
+    "deleteReportTitle": "Delete Report",
+    "deleteReportMessage": "This removes your trail condition report for everyone. This can't be undone."
   },
   "feed": {
     "feed": "Feed",

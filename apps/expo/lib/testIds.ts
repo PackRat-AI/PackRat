@@ -174,4 +174,21 @@ export const testIds = Object.freeze({
     addLocationBtn: 'weather:add-location',
     location: (id: string | number) => `weather:location-${id}`,
   }),
+
+  // ── Trail conditions ──────────────────────────────────────────────────────
+  trailConditions: Object.freeze({
+    submitReportBtn: 'trail-conditions:submit-report',
+    reportRow: (id: string) => `trail-conditions:report-${id}`,
+    deleteReportBtn: (id: string) => `trail-conditions:delete-report-${id}`,
+    emptyStateSubmitBtn: 'trail-conditions:empty-submit-report',
+    // Submit form
+    trailNameInput: 'trail-conditions:trail-name-input',
+    trailRegionInput: 'trail-conditions:trail-region-input',
+    notesInput: 'trail-conditions:notes-input',
+    conditionOption: (condition: string) => `trail-conditions:condition-${condition}`,
+    surfaceOption: (surface: string) => `trail-conditions:surface-${surface}`,
+    hazardChip: (hazard: string) => `trail-conditions:hazard-${hazard.replace(/\s+/g, '-')}`,
+    formSubmitBtn: 'trail-conditions:form-submit',
+    formCancelBtn: 'trail-conditions:form-cancel',
+  }),
 });
