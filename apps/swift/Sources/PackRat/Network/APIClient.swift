@@ -22,6 +22,7 @@ actor APIClient {
         "local":      "http://localhost:8787",
         "dev-local":  "http://localhost:8791",
         "dev":        "https://packrat-api-dev.orange-frost-d665.workers.dev",
+        "weather":    "https://packrat-api-weather.orange-frost-d665.workers.dev",
         "production": "https://packrat-api.orange-frost-d665.workers.dev",
     ]
 

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://developers.cloudflare.com/schemas/wrangler.json",
+  "name": "packrat-api-weather",
+  "account_id": "a0e238a64b4bb8d9ca35c30149c26893",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-06-01",
+  "compatibility_flags": ["nodejs_compat", "nodejs_als", "global_fetch_strictly_public"],
+  "keep_vars": true,
+  "logpush": true,
+  "upload_source_maps": true,
+  "alias": {
+    "bun": "./src/shims/bun-empty.ts"
+  },
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "limits": {
+    "cpu_ms": 300000
+  },
+  "kv_namespaces": [
+    {
+      "binding": "AUTH_KV",
+      "id": "0d0dd76cec764c81be58ae7b871b47cb",
+      "preview_id": "f3441ec9f4b044e6b6c6a087251e3f00"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "PACKRAT_BUCKET",
+      "bucket_name": "packrat-bucket-preview",
+      "preview_bucket_name": "packrat-bucket-preview"
+    },
+    {
+      "binding": "PACKRAT_SCRAPY_BUCKET",
+      "bucket_name": "packrat-scrapy-bucket",
+      "preview_bucket_name": "packrat-scrapy-bucket"
+    },
+    {
+      "binding": "PACKRAT_GUIDES_BUCKET",
+      "bucket_name": "packrat-guides",
+      "preview_bucket_name": "packrat-guides"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "d1_databases": [
+    {
+      "binding": "METRICS_DB",
+      "database_name": "packrat-metrics-dev",
+      "database_id": "92447d92-56fa-431b-aa33-659269f632de"
+    }
+  ],
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+  "vars": {
+    "ENVIRONMENT": "dev"
+  },
+  "unsafe": {
+    "bindings": [
+      {
+        "name": "TOKEN_RATE_LIMITER",
+        "type": "ratelimit",
+        "namespace_id": "1",
+        "simple": {
+          "limit": 5,
+          "period": 60
+        }
+      }
+    ]
+  }
+}
