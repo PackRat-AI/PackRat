@@ -22,16 +22,42 @@ function single(key: string): string | null {
   return v;
 }
 
+// Every non-binding key the API's Zod env schema requires. The long-lived
+// workers receive most of these as dashboard vars, which a brand-new worker
+// inherits nothing of — so they are uploaded here instead.
 const SINGLE_LINE = [
   'APNS_BUNDLE_ID',
   'APNS_ENVIRONMENT',
   'APNS_KEY_ID',
   'APNS_TEAM_ID',
   'BETTER_AUTH_SECRET',
+  'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
   'GOOGLE_GENERATIVE_AI_API_KEY',
   'WEATHER_API_KEY',
   'PACKRAT_MCP_URL',
+  'APPLE_CLIENT_ID',
+  'APPLE_KEY_ID',
+  'APPLE_TEAM_ID',
+  'ADMIN_USERNAME',
+  'ADMIN_PASSWORD',
+  'PACKRAT_API_KEY',
+  'EMAIL_PROVIDER',
+  'RESEND_API_KEY',
+  'EMAIL_FROM',
+  'OPENAI_API_KEY',
+  'AI_PROVIDER',
+  'PERPLEXITY_API_KEY',
+  'OPENWEATHER_KEY',
+  'CLOUDFLARE_ACCOUNT_ID',
+  'R2_ACCESS_KEY_ID',
+  'R2_SECRET_ACCESS_KEY',
+  'PACKRAT_BUCKET_R2_BUCKET_NAME',
+  'PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME',
+  'PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME',
+  'R2_PUBLIC_URL',
+  'PACKRAT_GUIDES_RAG_NAME',
+  'PACKRAT_GUIDES_BASE_URL',
 ];
 
 const out: Record<string, string> = {};
@@ -54,6 +80,8 @@ for (const key of ['APNS_PRIVATE_KEY', 'APPLE_PRIVATE_KEY']) {
 const branch = JSON.parse(fs.readFileSync(REGISTRY, 'utf8')) as { databaseUrl: string };
 out.NEON_DATABASE_URL = branch.databaseUrl;
 out.NEON_DATABASE_URL_READONLY = branch.databaseUrl;
+// ENVIRONMENT is deliberately NOT set here — wrangler.weather.jsonc declares it
+// as a plaintext var, and a secret of the same name collides (API code 10053).
 out.PACKRAT_API_URL = WORKER_URL;
 
 if (missing.length) {
