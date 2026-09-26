@@ -15,7 +15,7 @@ enum AppFeatureFlags {
     static let enableTrailConditions = true
     static let enableTrails = false
     static let enableTrips = true
-    static let enableWeatherMonitoring = false
+    static let enableWeatherMonitoring = true
     static let enableWildlifeIdentification = false
 
     /// Coded defaults keyed by wire name. Defines the known key set that
@@ -32,7 +32,7 @@ enum AppFeatureFlags {
         "enableTrailConditions": true,
         "enableTrails": false,
         "enableTrips": true,
-        "enableWeatherMonitoring": false,
+        "enableWeatherMonitoring": true,
         "enableWildlifeIdentification": false,
     ]
 }

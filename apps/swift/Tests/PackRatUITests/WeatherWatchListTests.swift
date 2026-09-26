@@ -89,48 +89,73 @@ final class WeatherWatchListTests: AppUITestCase {
         )
     }
 
-    /// The contextual banner's one trigger condition: an active alert for a
-    /// location not already watched. Fixture forecasts always carry an
-    /// alert, so searching for a not-yet-watched location and selecting it
-    /// on the main Weather screen should surface the banner.
-    func testAddToWatchListBannerAppearsForUnwatchedLocationWithActiveAlert() {
+    /// An active alert renders as a section inside the forecast, carrying the
+    /// watch call to action while the location is not yet watched (ADR-006).
+    /// Fixture forecasts always carry an alert, so selecting a not-yet-watched
+    /// location surfaces both the section and its CTA.
+    func testForecastAlertSectionAppearsForLocationWithActiveAlert() {
         goToWeather()
-
-        let searchField = app.searchFields.firstMatch
-        XCTAssertTrue(searchField.waitForExistence(timeout: 5))
-        searchField.tap()
-        searchField.typeText("Salt Lake City")
-
-        let result = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Salt Lake City'")).firstMatch
-        XCTAssertTrue(result.waitForExistence(timeout: 8))
-        result.tap()
+        selectSearchResult("Salt Lake City")
 
         XCTAssertTrue(
-            app.otherElements["watch_location_prompt_banner"].waitForExistence(timeout: 8),
-            "Banner should offer to watch a location with an active alert that isn't watched yet"
+            app.otherElements["forecast_alert_section"].waitForExistence(timeout: 8),
+            "An active alert should render as a section inside the forecast"
+        )
+        XCTAssertTrue(
+            app.buttons["forecast_alert_watch_button"].waitForExistence(timeout: 3),
+            "The alert section should offer to watch a location that isn't watched yet"
         )
     }
 
-    func testDismissingBannerHidesItForTheSession() {
+    /// The alert section is part of the forecast, not an interruption laid
+    /// over it — there is no way to dismiss it (ADR-006).
+    func testForecastAlertSectionCannotBeDismissed() {
         goToWeather()
+        selectSearchResult("Salt Lake City")
 
-        let searchField = app.searchFields.firstMatch
-        XCTAssertTrue(searchField.waitForExistence(timeout: 5))
-        searchField.tap()
-        searchField.typeText("Salt Lake City")
+        let section = app.otherElements["forecast_alert_section"]
+        XCTAssertTrue(section.waitForExistence(timeout: 8))
+        XCTAssertFalse(
+            app.buttons["watch_location_prompt_dismiss_button"].exists,
+            "The inline alert section should expose no dismiss affordance"
+        )
+    }
 
-        let result = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Salt Lake City'")).firstMatch
-        XCTAssertTrue(result.waitForExistence(timeout: 8))
-        result.tap()
+    /// Watching must not depend on catching a hazard in progress: the toolbar
+    /// control is present on any selected location (ADR-006).
+    func testWatchToggleIsAvailableOnASelectedLocation() {
+        goToWeather()
+        selectSearchResult("Salt Lake City")
 
-        let banner = app.otherElements["watch_location_prompt_banner"]
-        XCTAssertTrue(banner.waitForExistence(timeout: 8))
+        let toggle = app.buttons["weather_watch_toggle_button"]
+        XCTAssertTrue(
+            toggle.waitForExistence(timeout: 8),
+            "The watch toggle should be available on any selected location"
+        )
+        toggle.tap()
 
-        app.buttons["watch_location_prompt_dismiss_button"].tap()
-        XCTAssertFalse(banner.waitForExistence(timeout: 3), "Banner should disappear once dismissed")
+        XCTAssertTrue(
+            app.otherElements["forecast_alert_watched_confirmation"].waitForExistence(timeout: 8),
+            "Watching from the toolbar should retire the alert section's call to action"
+        )
+        XCTAssertFalse(
+            app.buttons["forecast_alert_watch_button"].exists,
+            "The in-section CTA and the toolbar control should never both be actionable"
+        )
     }
 
     // MARK: - Helpers
+
+    private func selectSearchResult(_ name: String) {
+        let searchField = app.searchFields.firstMatch
+        XCTAssertTrue(searchField.waitForExistence(timeout: 5))
+        searchField.tap()
+        searchField.typeText(name)
+
+        let result = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 8))
+        result.tap()
+    }
 
     private func goToWeather() {
         goToHomeAction("Weather")

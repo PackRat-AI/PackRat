@@ -23,10 +23,10 @@ final class WeatherViewModel {
     /// `loadWatchedLocations()` succeeds.
     var watchedLocations: [WatchedLocation] = []
     var isLoadingWatchedLocations = false
-    /// Suppresses the contextual "add to watch list?" banner for a location
-    /// dismissed this session, without persisting a permanent opt-out — a
-    /// still-active alert can prompt again on next launch (see ADR-003).
-    var dismissedWatchPromptLocationIds: Set<Int> = []
+    /// True while a watch/unwatch round-trip is in flight for the selected
+    /// location, so the toolbar control can disable itself rather than let a
+    /// double-tap queue two conflicting writes.
+    var isUpdatingWatchForSelectedLocation = false
 
     /// Set by a weather-alert push notification's tap handler via
     /// `DeepLink.weatherAlert` — `WeatherView` consumes this to select the
@@ -191,26 +191,43 @@ final class WeatherViewModel {
         return watchedLocations.contains { $0.weatherLocationId == selectedLocation.id }
     }
 
-    /// True only when the current lookup has an active alert for a location
-    /// that isn't already watched and hasn't been dismissed this session —
-    /// the single trigger condition for the contextual add-to-watch-list
-    /// banner (see ADR-003).
-    var shouldOfferToWatchSelectedLocation: Bool {
-        guard let selectedLocation else { return false }
-        guard !isSelectedLocationWatched else { return false }
-        guard !dismissedWatchPromptLocationIds.contains(selectedLocation.id) else { return false }
-        return !(forecast?.alerts?.alert ?? []).isEmpty
+    /// The watch-list row for the current lookup, when there is one. Lets the
+    /// forecast screen unwatch without going through the watch-list screen.
+    var watchedEntryForSelectedLocation: WatchedLocation? {
+        guard let selectedLocation else { return nil }
+        return watchedLocations.first { $0.weatherLocationId == selectedLocation.id }
     }
 
-    func dismissWatchPromptForSelectedLocation() {
-        guard let selectedLocation else { return }
-        dismissedWatchPromptLocationIds.insert(selectedLocation.id)
+    /// True when the inline alert section should carry a watch call to action:
+    /// there is something active to watch for, and the user isn't already
+    /// watching this place (see ADR-006). The ambient toolbar control stays
+    /// available either way — this only decides whether the high-intent
+    /// in-section CTA is actionable.
+    var shouldOfferToWatchSelectedLocation: Bool {
+        guard selectedLocation != nil else { return false }
+        guard !isSelectedLocationWatched else { return false }
+        return !(forecast?.alerts?.alert ?? []).isEmpty
     }
 
     @discardableResult
     func watchSelectedLocation() async -> Bool {
         guard let selectedLocation else { return false }
         return await watchLocation(selectedLocation)
+    }
+
+    /// Watches or unwatches the current lookup, whichever the current state
+    /// implies. Backs the always-present forecast toolbar control, which is
+    /// available on any location regardless of alert state (ADR-006).
+    func toggleWatchForSelectedLocation() async {
+        guard selectedLocation != nil else { return }
+        guard !isUpdatingWatchForSelectedLocation else { return }
+        isUpdatingWatchForSelectedLocation = true
+        defer { isUpdatingWatchForSelectedLocation = false }
+        if let watched = watchedEntryForSelectedLocation {
+            await unwatchLocation(watched)
+        } else {
+            await watchSelectedLocation()
+        }
     }
 
     /// Adds an arbitrary location to the watch list without disturbing

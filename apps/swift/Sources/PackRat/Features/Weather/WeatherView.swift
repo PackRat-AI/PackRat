@@ -121,6 +121,28 @@ struct WeatherView: View {
                     }
                     .accessibilityIdentifier("weather_alert_preferences_button")
                 }
+                // The ambient watch affordance: present on every location
+                // regardless of whether anything is currently active, so
+                // watching never depends on catching a hazard in progress
+                // (ADR-006). Stateful, so it doubles as the "am I watching
+                // this?" indicator.
+                if AppFeatureFlags.enableWeatherMonitoring, viewModel.selectedLocation != nil {
+                    ToolbarItem(placement: alertsToolbarPlacement) {
+                        Button {
+                            Task { await viewModel.toggleWatchForSelectedLocation() }
+                        } label: {
+                            Label(
+                                viewModel.isSelectedLocationWatched ? "Watching" : "Watch Location",
+                                systemImage: viewModel.isSelectedLocationWatched ? "bell.fill" : "bell.slash"
+                            )
+                        }
+                        .disabled(viewModel.isUpdatingWatchForSelectedLocation)
+                        .accessibilityLabel(viewModel.isSelectedLocationWatched
+                            ? "Stop watching this location"
+                            : "Watch this location for alerts")
+                        .accessibilityIdentifier("weather_watch_toggle_button")
+                    }
+                }
                 if AppFeatureFlags.enableWeatherMonitoring {
                     ToolbarItem(placement: preferencesToolbarPlacement) {
                         NavigationLink {
@@ -135,15 +157,6 @@ struct WeatherView: View {
         }
         .sheet(isPresented: $showingAlerts) {
             WeatherAlertsView(alerts: activeAlerts)
-        }
-        .safeAreaInset(edge: .bottom) {
-            if AppFeatureFlags.enableWeatherMonitoring && viewModel.shouldOfferToWatchSelectedLocation {
-                WatchLocationPromptBanner(
-                    locationName: viewModel.selectedLocation?.displayName ?? "this location",
-                    onWatch: { Task { await viewModel.watchSelectedLocation() } },
-                    onDismiss: { viewModel.dismissWatchPromptForSelectedLocation() }
-                )
-            }
         }
         .task(id: viewModel.pendingAlertDeepLinkLocationId) {
             guard let locationId = viewModel.pendingAlertDeepLinkLocationId else { return }
@@ -293,6 +306,20 @@ struct WeatherView: View {
     private func forecastContent(_ data: WeatherForecastResponse) -> some View {
         if let current = data.current, let location = data.location {
             currentWeatherCard(current: current, location: location)
+        }
+
+        // Alerts sit directly under the current conditions and above the
+        // 10-day forecast: a hazard outranks the rest of the forecast, but it
+        // is still part of it, not an interruption laid over it (ADR-006).
+        if !activeAlerts.isEmpty {
+            ForecastAlertSection(
+                alerts: activeAlerts,
+                showsWatchCallToAction: AppFeatureFlags.enableWeatherMonitoring
+                    && viewModel.shouldOfferToWatchSelectedLocation,
+                isWatched: AppFeatureFlags.enableWeatherMonitoring && viewModel.isSelectedLocationWatched,
+                isUpdatingWatch: viewModel.isUpdatingWatchForSelectedLocation,
+                onWatch: { Task { await viewModel.toggleWatchForSelectedLocation() } }
+            )
         }
 
         if let days = data.forecast?.forecastday, !days.isEmpty {
