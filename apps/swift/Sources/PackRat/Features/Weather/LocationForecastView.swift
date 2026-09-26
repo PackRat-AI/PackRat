@@ -53,7 +53,8 @@ struct LocationForecastView: View {
                             isWatched: AppFeatureFlags.enableWeatherMonitoring
                                 && viewModel.isSelectedLocationWatched,
                             isUpdatingWatch: viewModel.isUpdatingWatchForSelectedLocation,
-                            onWatch: { Task { await viewModel.toggleWatchForSelectedLocation() } }
+                            onWatch: { Task { await viewModel.toggleWatchForSelectedLocation() } },
+                            onSeeAllAlerts: { showingAlerts = true }
                         )
                     }
 

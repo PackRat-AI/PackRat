@@ -15,10 +15,12 @@ struct WeatherView: View {
     @State private var isSearchPresented = false
     @State private var isEditing = false
     @State private var showingAlertPreferences = false
-    /// The location a push notification asked us to open. Bound to a
-    /// `navigationDestination(item:)` so a deep link can push the forecast
-    /// screen without this view owning the host stack's path.
-    @State private var deepLinkedLocation: WeatherLocation?
+    /// The location whose forecast is currently pushed, whether it was opened
+    /// from the saved list, from a search result, or by a push notification.
+    /// A single binding rather than one per entry point, so going back always
+    /// returns to whatever was on screen when the forecast was opened —
+    /// search results included.
+    @State private var selectedLocation: WeatherLocation?
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
 
     var body: some View {
@@ -36,16 +38,16 @@ struct WeatherView: View {
         .navigationTitle("Weather")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
-        // The list sits on a dark recessed surface. The bar has to adopt that
-        // surface and a dark scheme together — a colour scheme alone leaves
-        // the large title dark-on-dark, since the bar keeps its own default
-        // background behind it.
-        .toolbarBackground(
-            authManager.isAuthenticated ? WeatherSkyGradient.ListBackground.color : Color.clear,
-            for: .navigationBar
-        )
-        .toolbarBackground(authManager.isAuthenticated ? .visible : .automatic, for: .navigationBar)
-        .toolbarColorScheme(authManager.isAuthenticated ? .dark : nil, for: .navigationBar)
+        // The list sits on a dark recessed surface, so the bar has to adopt
+        // that surface *and* a dark scheme: a colour scheme alone leaves the
+        // large title dark-on-dark. Both are pinned unconditionally rather
+        // than toggled on `isAuthenticated` — a toolbar background that
+        // changes identity mid-render makes the large title animate out and
+        // never return, which is what made the title vanish a moment after
+        // each appearance.
+        .toolbarBackground(WeatherSkyGradient.ListBackground.color, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         #endif
         .searchable(
             text: $viewModel.searchText,
@@ -65,7 +67,7 @@ struct WeatherView: View {
                 }
             }
         }
-        .navigationDestination(item: $deepLinkedLocation) { location in
+        .navigationDestination(item: $selectedLocation) { location in
             LocationForecastView(location: location, viewModel: viewModel)
         }
         .sheet(isPresented: $showingAlertPreferences) {
@@ -96,7 +98,7 @@ struct WeatherView: View {
                         )
                     }
             guard let target else { return }
-            deepLinkedLocation = target
+            selectedLocation = target
         }
     }
 
@@ -165,7 +167,11 @@ struct WeatherView: View {
 
     @ViewBuilder
     private var locationList: some View {
-        if !viewModel.searchResults.isEmpty || viewModel.isSearching || viewModel.searchError != nil {
+        // Search is a mode the field enters, not a state inferred from whether
+        // results exist. Keying off results alone left the saved list showing
+        // behind an empty query, so the screen flipped between two contents
+        // while the user was still typing.
+        if isSearchPresented {
             searchResultsList
         } else if viewModel.savedLocations.isEmpty {
             EmptyStateView(
@@ -181,8 +187,12 @@ struct WeatherView: View {
                     // the current layout provides (the phone home stack, a tab
                     // stack, or the split view's column), none of which route
                     // a path this screen owns.
-                    NavigationLink {
-                        LocationForecastView(location: location, viewModel: viewModel)
+                    // Deliberately not a NavigationLink: a link inside a List
+                    // draws a disclosure caret, and the card is already a
+                    // self-evident tap target. Apple's Weather list has no
+                    // chevron either.
+                    Button {
+                        selectedLocation = location
                     } label: {
                         WeatherLocationCard(
                             location: location,
@@ -242,14 +252,16 @@ struct WeatherView: View {
             }
 
             ForEach(viewModel.searchResults) { location in
-                Button {
-                    viewModel.saveLocation(location)
-                    viewModel.searchText = ""
-                    isSearchPresented = false
-                    Task { await viewModel.loadSummary(for: location) }
-                    deepLinkedLocation = location
-                } label: {
-                    HStack {
+                let isSaved = viewModel.savedLocations.contains { $0.id == location.id }
+                HStack(spacing: 12) {
+                    // Tapping the row opens the forecast without saving, so a
+                    // user can look before committing. Search stays presented
+                    // underneath, which is what makes Back return here rather
+                    // than to the saved list.
+                    Button {
+                        Task { await viewModel.loadSummary(for: location) }
+                        selectedLocation = location
+                    } label: {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(location.name).font(.body)
                             if let region = location.region, let country = location.country {
@@ -258,16 +270,31 @@ struct WeatherView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        Spacer()
-                        if viewModel.savedLocations.contains(where: { $0.id == location.id }) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(Color.green)
-                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
-                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("weather_search_result_\(location.id)")
+
+                    // Saving is its own explicit action rather than a side
+                    // effect of opening a result — the two intents are
+                    // different, and inferring one from the other silently
+                    // grew the user's list every time they looked something up.
+                    Button {
+                        viewModel.saveLocation(location)
+                        Task { await viewModel.loadSummary(for: location) }
+                    } label: {
+                        Image(systemName: isSaved ? "checkmark.circle.fill" : "plus.circle")
+                            .font(.title3)
+                            .foregroundStyle(isSaved ? Color.green : Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isSaved)
+                    .accessibilityLabel(isSaved
+                        ? "\(location.name) is already saved"
+                        : "Save \(location.name)")
+                    .accessibilityIdentifier("weather_search_save_\(location.id)")
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("weather_search_result_\(location.id)")
             }
         }
         .listStyle(.plain)
