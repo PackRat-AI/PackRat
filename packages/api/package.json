@@ -53,7 +53,7 @@
     "@ai-sdk/perplexity": "^3.0.29",
     "@aws-sdk/client-s3": "~3.787.0",
     "@aws-sdk/s3-request-presigner": "~3.1048.0",
-    "@better-auth/oauth-provider": "1.6.11",
+    "@better-auth/oauth-provider": "1.7.5",
     "@cloudflare/containers": "^0.0.30",
     "@elysiajs/cors": "catalog:",
     "@elysiajs/eden": "catalog:",
@@ -92,7 +92,7 @@
     "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
-    "@better-auth/drizzle-adapter": "^1.6.9",
+    "@better-auth/drizzle-adapter": "^1.7.5",
     "@cloudflare/vitest-pool-workers": "0.8.71",
     "@cloudflare/workers-types": "catalog:",
     "@types/bun": "catalog:",

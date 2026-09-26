@@ -101,7 +101,11 @@ export const auth = betterAuth({
         'mcp:write',
         'mcp:admin',
       ],
-      validAudiences: ['https://mcp.packratai.com/mcp'],
+      // 1.7: persisted `oauthResource` rows replaced `validAudiences`. Mirrors
+      // the runtime list in index.ts (prod identifier only — this config exists
+      // purely so the Better Auth CLI can generate schema).
+      resources: ['https://mcp.packratai.com/mcp'],
+      clientRegistrationDefaultResources: ['https://mcp.packratai.com/mcp'],
       allowDynamicClientRegistration: false,
       allowUnauthenticatedClientRegistration: false,
       consentPage: '/oauth/consent',
