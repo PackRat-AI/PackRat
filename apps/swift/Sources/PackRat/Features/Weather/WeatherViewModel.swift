@@ -33,6 +33,15 @@ final class WeatherViewModel {
     /// location and open its alert detail, then clears it.
     var pendingAlertDeepLinkLocationId: Int?
 
+    /// Per-location summaries backing the list cards, keyed by location id.
+    /// The list shows every saved location's conditions at once, which the
+    /// single `forecast` property cannot represent — it only ever holds the
+    /// location currently being viewed in detail.
+    var locationSummaries: [Int: WeatherLocationSummary] = [:]
+    /// Locations with a summary load in flight, so a card can show progress
+    /// without the whole list blocking on the slowest request.
+    var loadingSummaryLocationIds: Set<Int> = []
+
     private let service: any WeatherServicing
     private let monitoringService: any WeatherMonitoringServicing
     private var searchTask: Task<Void, Never>?
@@ -67,6 +76,7 @@ final class WeatherViewModel {
 
     func removeLocation(_ location: WeatherLocation) {
         savedLocations.removeAll { $0.id == location.id }
+        locationSummaries[location.id] = nil
         persistSavedLocations()
         if selectedLocation?.id == location.id {
             if let next = savedLocations.first {
@@ -77,6 +87,13 @@ final class WeatherViewModel {
                 searchText = ""
             }
         }
+    }
+
+    /// Reorders the saved list, backing Edit List's drag handles. The order is
+    /// the user's own arrangement, so it persists like any other saved state.
+    func moveLocations(fromOffsets source: IndexSet, toOffset destination: Int) {
+        savedLocations.move(fromOffsets: source, toOffset: destination)
+        persistSavedLocations()
     }
 
     private func loadSavedLocations() {
@@ -160,11 +177,65 @@ final class WeatherViewModel {
                 forecastError = error.localizedDescription
             }
         }
+        // The detail screen just paid for a full forecast; fold it into the
+        // list's summary so the card behind it is never staler than the screen
+        // the user just came from.
+        if let forecast {
+            locationSummaries[location.id] = WeatherLocationSummary(forecast: forecast)
+        }
     }
 
     func refresh() async {
         guard let location = selectedLocation else { return }
         await loadForecast(for: location)
+    }
+
+    // MARK: - List summaries
+
+    /// Loads a card summary for every saved location that doesn't have one.
+    /// Requests run concurrently — the list is as slow as its slowest card
+    /// otherwise, and a user with eight saved places would watch them appear
+    /// one at a time.
+    func loadMissingLocationSummaries() async {
+        let missing = savedLocations.filter {
+            locationSummaries[$0.id] == nil && !loadingSummaryLocationIds.contains($0.id)
+        }
+        guard !missing.isEmpty else { return }
+        await withTaskGroup(of: Void.self) { group in
+            for location in missing {
+                group.addTask { [weak self] in
+                    await self?.loadSummary(for: location)
+                }
+            }
+        }
+    }
+
+    /// Refreshes every saved location's summary, discarding what's cached.
+    /// Backs pull-to-refresh on the list.
+    func refreshAllLocationSummaries() async {
+        locationSummaries.removeAll()
+        await loadMissingLocationSummaries()
+    }
+
+    func loadSummary(for location: WeatherLocation) async {
+        if VisualSampleData.isEnabled || VisualSampleData.isUITestFixturesEnabled {
+            locationSummaries[location.id] = WeatherLocationSummary(
+                forecast: VisualSampleData.weatherForecast(for: location)
+            )
+            return
+        }
+        guard !VisualSampleData.isScreenshotCapture else { return }
+
+        loadingSummaryLocationIds.insert(location.id)
+        defer { loadingSummaryLocationIds.remove(location.id) }
+        do {
+            let forecast = try await service.getForecast(locationId: location.id)
+            locationSummaries[location.id] = WeatherLocationSummary(forecast: forecast)
+        } catch {
+            // Silent by design: a card that can't load shows its name and a
+            // placeholder rather than an error, so one unreachable location
+            // never turns the whole list into a failure state.
+        }
     }
 
     // MARK: - Watch list

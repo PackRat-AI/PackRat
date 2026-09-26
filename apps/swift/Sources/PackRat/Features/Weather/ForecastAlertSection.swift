@@ -21,8 +21,9 @@ struct ForecastAlertSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(alerts.count == 1 ? "Active Alert" : "Active Alerts")
-                .font(.headline)
+            Text(alerts.count == 1 ? "ACTIVE ALERT" : "ACTIVE ALERTS")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.7))
                 .padding(.horizontal, 4)
 
             VStack(spacing: 8) {
@@ -47,7 +48,7 @@ struct ForecastAlertSection: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Get notified about new alerts here, even when the app is closed.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white.opacity(0.8))
             Button(action: onWatch) {
                 if isUpdatingWatch {
                     ProgressView().controlSize(.small)
@@ -68,7 +69,7 @@ struct ForecastAlertSection: View {
     private var watchedConfirmation: some View {
         Label("You are watching this location", systemImage: "checkmark.circle.fill")
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.white.opacity(0.8))
             .padding(.horizontal, 4)
             .accessibilityIdentifier("forecast_alert_watched_confirmation")
     }
@@ -107,11 +108,12 @@ private struct ForecastAlertCard: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(alert.event ?? alert.headline ?? "Weather Alert")
                                 .font(.subheadline.bold())
+                                .foregroundStyle(.white)
                                 .multilineTextAlignment(.leading)
                             if let severity = alert.severity, !severity.isEmpty {
                                 Text(severity.capitalized)
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(.white.opacity(0.75))
                             }
                         }
 
@@ -119,23 +121,25 @@ private struct ForecastAlertCard: View {
 
                         Image(systemName: expanded ? "chevron.up" : "chevron.down")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.white.opacity(0.75))
                     }
 
                     if expanded {
                         if let areas = alert.areas, !areas.isEmpty {
                             Text(areas)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.white.opacity(0.75))
                         }
                         if let desc = alert.desc, !desc.isEmpty {
                             Text(desc)
                                 .font(.caption)
+                                .foregroundStyle(.white.opacity(0.9))
                                 .multilineTextAlignment(.leading)
                         }
                         if let instruction = alert.instruction, !instruction.isEmpty {
                             Text(instruction)
                                 .font(.caption.bold())
+                                .foregroundStyle(.white)
                                 .multilineTextAlignment(.leading)
                         }
                     }
@@ -144,7 +148,7 @@ private struct ForecastAlertCard: View {
             }
         }
         .buttonStyle(.plain)
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12))
+        .background(WeatherGlassCard.fill, in: RoundedRectangle(cornerRadius: 12))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .accessibilityIdentifier("forecast_alert_card")
     }
