@@ -52,7 +52,7 @@ final class WeatherTests: AppUITestCase {
         )
     }
 
-    func testSavedLocationAppearsAsChip() {
+    func testSavedLocationAppearsAsCard() {
         goToWeather()
 
         let searchField = app.searchFields["Search for a city or place"]
@@ -64,17 +64,14 @@ final class WeatherTests: AppUITestCase {
         waitFor(firstResult, timeout: weatherSearchTimeout)
         firstResult.tap()
 
-        // Clear search to show saved locations section
-        let clearButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS 'xmark' OR label == 'Clear'")
-        ).firstMatch
-        clearButton.tapIfExists()
+        // Selecting a result saves it and pushes its forecast; going back
+        // lands on the list, where the saved location is now a card.
+        app.navigationBars.buttons.firstMatch.tap()
 
-        // Saved location chip should appear
         XCTAssertTrue(
-            app.staticTexts.matching(NSPredicate(format: "label CONTAINS '\(testCityFull)'")).firstMatch
-                .waitForExistence(timeout: 5),
-            "Saved location chip must appear after selecting a location"
+            app.cells.matching(NSPredicate(format: "label CONTAINS '\(testCityFull)'")).firstMatch
+                .waitForExistence(timeout: 8),
+            "A selected location must appear as a card on the Weather list"
         )
     }
 
@@ -119,14 +116,12 @@ final class WeatherTests: AppUITestCase {
             app.descendants(matching: .any)["weather_current_card"].waitForExistence(timeout: 20),
             "Current weather card must appear before checking forecast rows"
         )
-        let list = app.collectionViews.firstMatch
-        for _ in 0..<4 where !app.staticTexts["10-Day Forecast"].exists {
-            list.swipeUp()
+        for _ in 0..<4 where !app.staticTexts["10-DAY FORECAST"].exists {
+            app.swipeUp()
         }
-        // 10-day forecast header
         XCTAssertTrue(
-            app.staticTexts["10-Day Forecast"].waitForExistence(timeout: 20),
-            "10-Day Forecast section header must appear"
+            app.staticTexts["10-DAY FORECAST"].waitForExistence(timeout: 20),
+            "10-day forecast section header must appear"
         )
     }
 
@@ -147,16 +142,18 @@ final class WeatherTests: AppUITestCase {
         assertCelsiusValue(identifier: "weather_current_temperature")
         assertCelsiusValue(identifier: "weather_feels_like_temperature")
 
-        let list = app.collectionViews.firstMatch
-        for _ in 0..<4 where !app.staticTexts["10-Day Forecast"].exists {
-            list.swipeUp()
+        for _ in 0..<4 where !app.staticTexts["10-DAY FORECAST"].exists {
+            app.swipeUp()
         }
-        XCTAssertTrue(app.staticTexts["10-Day Forecast"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["10-DAY FORECAST"].waitForExistence(timeout: 20))
         assertCelsiusValue(identifierPrefix: "weather_forecast_high_")
         assertCelsiusValue(identifierPrefix: "weather_forecast_low_")
     }
 
-    func testWeatherAlertsButtonAppearsWithForecast() {
+    /// The forecast screen carries the per-location watch control in its
+    /// navigation bar. The old standalone Alerts bell is gone: it sat on the
+    /// list screen, where "this location" had no referent.
+    func testWatchToggleAppearsOnTheForecastScreen() {
         goToWeather()
 
         let searchField = app.searchFields["Search for a city or place"]
@@ -172,13 +169,9 @@ final class WeatherTests: AppUITestCase {
             app.descendants(matching: .any)["weather_current_card"].waitForExistence(timeout: 20),
             "Current weather card must appear before checking toolbar actions"
         )
-        // Alerts toolbar button appears once forecast is loaded
-        let alertsButton = app.buttons["weather_alerts_button"].firstMatch.exists
-            ? app.buttons["weather_alerts_button"].firstMatch
-            : app.buttons.matching(NSPredicate(format: "label == 'Alerts' OR label CONTAINS 'bell'")).firstMatch
         XCTAssertTrue(
-            alertsButton.waitForExistence(timeout: 20),
-            "Alerts button must appear in toolbar after forecast loads"
+            app.buttons["weather_watch_toggle_button"].waitForExistence(timeout: 20),
+            "The watch toggle must appear in the forecast screen's toolbar"
         )
     }
 

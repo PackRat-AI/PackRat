@@ -44,7 +44,7 @@ final class WeatherMacOSTests: AppUITestCase {
         )
     }
 
-    func testSavedLocationAppearsAsChip() {
+    func testSavedLocationAppearsAsCard() {
         goToSidebar("Weather")
 
         let searchField = app.searchFields["Search for a city or place"]
@@ -59,7 +59,7 @@ final class WeatherMacOSTests: AppUITestCase {
         XCTAssertTrue(
             app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'weather_saved_location_'")).firstMatch
                 .waitForExistence(timeout: 10),
-            "Saved location chip must appear after selecting a location"
+            "A selected location must appear on the Weather list"
         )
     }
 
@@ -98,8 +98,8 @@ final class WeatherMacOSTests: AppUITestCase {
         firstResult.click()
 
         XCTAssertTrue(
-            app.staticTexts["10-Day Forecast"].waitForExistence(timeout: 20),
-            "10-Day Forecast section header must appear"
+            app.staticTexts["10-DAY FORECAST"].waitForExistence(timeout: 20),
+            "10-day forecast section header must appear"
         )
     }
 

@@ -26,7 +26,7 @@ final class ScreenshotSmokeTests: AppUITestCase {
         ).firstMatch
         XCTAssertTrue(firstResult.waitForExistence(timeout: 10))
         firstResult.tap()
-        XCTAssertTrue(app.staticTexts["10-Day Forecast"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["10-DAY FORECAST"].waitForExistence(timeout: 20))
         if app.keyboards.firstMatch.exists {
             app.keyboards.buttons["Return"].tapIfExists()
         }
