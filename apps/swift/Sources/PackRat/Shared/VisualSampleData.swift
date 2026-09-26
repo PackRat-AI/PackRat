@@ -633,6 +633,13 @@ enum VisualSampleData {
             ])
         )
         appState.weatherVM.forecastError = nil
+        // The list cards read from `locationSummaries`, not `forecast`. This
+        // seeder assigns the forecast directly rather than going through
+        // `loadForecast`, so the summary has to be derived here too or the
+        // Weather list renders a card with a name and no conditions.
+        if let seeded = appState.weatherVM.forecast {
+            appState.weatherVM.locationSummaries[denver.id] = WeatherLocationSummary(forecast: seeded)
+        }
 
         appState.selectedPackId = alpinePack.id
         appState.selectedTripId = appState.tripsVM.trips.first?.id

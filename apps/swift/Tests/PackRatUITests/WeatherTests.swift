@@ -18,7 +18,7 @@ final class WeatherTests: AppUITestCase {
     func testLocationSearchReturnsResults() {
         goToWeather()
 
-        let searchField = app.searchFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search for a city or place"]
         waitFor(searchField, message: "Weather search field must appear")
         searchField.tap()
         searchField.typeText(testCity)
@@ -34,7 +34,7 @@ final class WeatherTests: AppUITestCase {
     func testSelectLocationLoadsForecast() {
         goToWeather()
 
-        let searchField = app.searchFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search for a city or place"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText(testCity)
@@ -55,7 +55,7 @@ final class WeatherTests: AppUITestCase {
     func testSavedLocationAppearsAsChip() {
         goToWeather()
 
-        let searchField = app.searchFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search for a city or place"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText(testCity)
@@ -81,7 +81,7 @@ final class WeatherTests: AppUITestCase {
     func testSearchClearButtonRemovesResults() {
         goToWeather()
 
-        let searchField = app.searchFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search for a city or place"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText(testCity)
@@ -106,7 +106,7 @@ final class WeatherTests: AppUITestCase {
     func testForecastShowsDailyRows() {
         goToWeather()
 
-        let searchField = app.searchFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search for a city or place"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText(testCity)
@@ -133,7 +133,7 @@ final class WeatherTests: AppUITestCase {
     func testCelsiusPreferenceAppliesToCurrentFeelsLikeAndForecast() {
         goToWeather()
 
-        let searchField = app.searchFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search for a city or place"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText(testCity)
@@ -159,7 +159,7 @@ final class WeatherTests: AppUITestCase {
     func testWeatherAlertsButtonAppearsWithForecast() {
         goToWeather()
 
-        let searchField = app.searchFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search for a city or place"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText(testCity)

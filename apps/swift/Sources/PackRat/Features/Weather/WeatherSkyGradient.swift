@@ -33,6 +33,14 @@ enum WeatherSkyGradient {
         }
     }
 
+    /// The recessed surface the Weather list's cards sit on. Deliberately not a
+    /// system background: the cards are themselves colored skies, so they need
+    /// something darker than white behind them to read as raised in both
+    /// appearances.
+    enum ListBackground {
+        static let color = Color(red: 0.13, green: 0.15, blue: 0.19)
+    }
+
     static func gradient(conditionCode: Int?, isDay: Bool) -> LinearGradient {
         LinearGradient(
             colors: colors(conditionCode: conditionCode, isDay: isDay),

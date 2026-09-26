@@ -15,7 +15,10 @@ struct WeatherView: View {
     @State private var isSearchPresented = false
     @State private var isEditing = false
     @State private var showingAlertPreferences = false
-    @State private var path: [WeatherLocation] = []
+    /// The location a push notification asked us to open. Bound to a
+    /// `navigationDestination(item:)` so a deep link can push the forecast
+    /// screen without this view owning the host stack's path.
+    @State private var deepLinkedLocation: WeatherLocation?
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
 
     var body: some View {
@@ -33,6 +36,16 @@ struct WeatherView: View {
         .navigationTitle("Weather")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
+        // The list sits on a dark recessed surface. The bar has to adopt that
+        // surface and a dark scheme together — a colour scheme alone leaves
+        // the large title dark-on-dark, since the bar keeps its own default
+        // background behind it.
+        .toolbarBackground(
+            authManager.isAuthenticated ? WeatherSkyGradient.ListBackground.color : Color.clear,
+            for: .navigationBar
+        )
+        .toolbarBackground(authManager.isAuthenticated ? .visible : .automatic, for: .navigationBar)
+        .toolbarColorScheme(authManager.isAuthenticated ? .dark : nil, for: .navigationBar)
         #endif
         .searchable(
             text: $viewModel.searchText,
@@ -52,7 +65,7 @@ struct WeatherView: View {
                 }
             }
         }
-        .navigationDestination(for: WeatherLocation.self) { location in
+        .navigationDestination(item: $deepLinkedLocation) { location in
             LocationForecastView(location: location, viewModel: viewModel)
         }
         .sheet(isPresented: $showingAlertPreferences) {
@@ -83,16 +96,9 @@ struct WeatherView: View {
                         )
                     }
             guard let target else { return }
-            if path.last?.id != target.id {
-                path.append(target)
-            }
+            deepLinkedLocation = target
         }
     }
-
-    /// `WeatherView` is hosted inside the app's existing navigation container
-    /// on some layouts and needs its own stack on others. Binding the path
-    /// here keeps deep links working in both.
-    var navigationPath: Binding<[WeatherLocation]> { $path }
 
     private var searchPlacement: SearchFieldPlacement {
         #if os(iOS)
@@ -170,8 +176,13 @@ struct WeatherView: View {
         } else {
             List {
                 ForEach(viewModel.savedLocations) { location in
-                    Button {
-                        path.append(location)
+                    // A destination-based link rather than a path append:
+                    // WeatherView is hosted inside whichever NavigationStack
+                    // the current layout provides (the phone home stack, a tab
+                    // stack, or the split view's column), none of which route
+                    // a path this screen owns.
+                    NavigationLink {
+                        LocationForecastView(location: location, viewModel: viewModel)
                     } label: {
                         WeatherLocationCard(
                             location: location,
@@ -204,6 +215,11 @@ struct WeatherView: View {
                 }
             }
             .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            // The cards carry their own sky, so they need a recessed surface
+            // behind them to read as raised. On the system background they
+            // float on white and the screen loses its depth.
+            .background(WeatherSkyGradient.ListBackground.color.ignoresSafeArea())
             .environment(\.editMode, .constant(isEditing ? .active : .inactive))
             .refreshable { await viewModel.refreshAllLocationSummaries() }
         }
@@ -231,7 +247,7 @@ struct WeatherView: View {
                     viewModel.searchText = ""
                     isSearchPresented = false
                     Task { await viewModel.loadSummary(for: location) }
-                    path.append(location)
+                    deepLinkedLocation = location
                 } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {

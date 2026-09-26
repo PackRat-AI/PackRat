@@ -60,15 +60,22 @@ struct WeatherLocationCard: View {
                 Spacer(minLength: 8)
 
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(summary.map {
-                        WeatherTemperatureDisplay.format(
-                            celsius: $0.tempC,
-                            fahrenheit: $0.tempF,
+                    if let summary {
+                        Text(WeatherTemperatureDisplay.degrees(
+                            celsius: summary.tempC,
+                            fahrenheit: summary.tempF,
                             unit: temperatureUnit
-                        )
-                    } ?? "—")
-                    .font(.system(size: 48, weight: .thin))
-                    .foregroundStyle(.white)
+                        ))
+                        .font(.system(size: 48, weight: .thin))
+                        .foregroundStyle(.white)
+                    } else {
+                        // A card whose conditions haven't arrived yet shows
+                        // progress rather than an em dash, which reads as
+                        // "no data" instead of "not yet".
+                        ProgressView()
+                            .tint(.white)
+                            .frame(height: 48)
+                    }
 
                     Spacer(minLength: 10)
 
@@ -107,12 +114,12 @@ struct WeatherLocationSummary: Equatable, Sendable {
 
     func highLabel(unit: AppPreferences.TemperatureUnit) -> String? {
         guard highC != nil || highF != nil else { return nil }
-        return WeatherTemperatureDisplay.format(celsius: highC, fahrenheit: highF, unit: unit)
+        return WeatherTemperatureDisplay.degrees(celsius: highC, fahrenheit: highF, unit: unit)
     }
 
     func lowLabel(unit: AppPreferences.TemperatureUnit) -> String? {
         guard lowC != nil || lowF != nil else { return nil }
-        return WeatherTemperatureDisplay.format(celsius: lowC, fahrenheit: lowF, unit: unit)
+        return WeatherTemperatureDisplay.degrees(celsius: lowC, fahrenheit: lowF, unit: unit)
     }
 
     init(forecast: WeatherForecastResponse) {
@@ -143,10 +150,18 @@ struct WeatherLocationSummary: Equatable, Sendable {
             formatter.timeZone = zone
             return Date(timeIntervalSince1970: TimeInterval(epoch)).formatted(formatter)
         }
-        // `localtime` arrives as "YYYY-MM-DD HH:MM" already in local time.
+        // `localtime` arrives as "YYYY-MM-DD HH:MM" already in local time, in
+        // 24-hour form. Reformat rather than passing it through, so the card
+        // never shows "09:00" next to the rest of the app's 12-hour times.
         guard let localtime = location.localtime,
               let timePart = localtime.split(separator: " ").last
         else { return nil }
-        return String(timePart)
+        let pieces = timePart.split(separator: ":")
+        guard pieces.count >= 2, let hour = Int(pieces[0]) else { return String(timePart) }
+        var components = DateComponents()
+        components.hour = hour
+        components.minute = Int(pieces[1]) ?? 0
+        guard let date = Calendar.current.date(from: components) else { return String(timePart) }
+        return date.formatted(.dateTime.hour().minute())
     }
 }

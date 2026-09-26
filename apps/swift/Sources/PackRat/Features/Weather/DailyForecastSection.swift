@@ -46,6 +46,9 @@ struct DailyForecastSection: View {
                 }
             }
         }
+        // The final row's precipitation percentage sits below its icon and
+        // would otherwise touch the card's bottom edge.
+        .padding(.bottom, 6)
         .weatherGlassCard()
         .accessibilityIdentifier("weather_daily_forecast")
     }
@@ -65,19 +68,23 @@ private struct DailyForecastRow: View {
             Text(day.displayDate)
                 .font(.body.weight(.medium))
                 .foregroundStyle(.white)
-                .frame(width: 66, alignment: .leading)
+                .lineLimit(1)
+                // Wide enough for "Tomorrow", which otherwise hyphenates
+                // across two lines and breaks the row rhythm.
+                .frame(width: 96, alignment: .leading)
 
-            VStack(spacing: 1) {
+            VStack(spacing: 2) {
                 Image(systemName: day.day?.condition?.sfSymbol ?? "cloud")
                     .font(.body)
-                    .symbolRenderingMode(.multicolor)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.white)
                 if let rain = day.day?.dailyChanceOfRain, rain >= 20 {
                     Text("\(rain)%")
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(Color(red: 0.4, green: 0.78, blue: 1.0))
                 }
             }
-            .frame(width: 34)
+            .frame(width: 38)
 
             Text(low.map { "\(Int($0.rounded()))°" } ?? "—")
                 .font(.body)
@@ -94,7 +101,11 @@ private struct DailyForecastRow: View {
                 .accessibilityIdentifier("weather_forecast_high_\(day.id)")
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 9)
+        .padding(.vertical, 10)
+        // The icon column is taller than the rest of the row whenever it
+        // carries a precipitation percentage. Without a floor the row sizes to
+        // the temperature bar instead and clips that percentage off.
+        .frame(minHeight: 52)
         .accessibilityElement(children: .combine)
     }
 

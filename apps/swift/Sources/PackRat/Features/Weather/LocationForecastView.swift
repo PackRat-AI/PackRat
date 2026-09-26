@@ -147,7 +147,7 @@ struct LocationForecastView: View {
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
 
-            Text(WeatherTemperatureDisplay.format(
+            Text(WeatherTemperatureDisplay.degrees(
                 celsius: forecast?.current?.tempC,
                 fahrenheit: forecast?.current?.tempF,
                 unit: temperatureUnit
@@ -174,7 +174,7 @@ struct LocationForecastView: View {
     }
 
     private func formatted(_ celsius: Double?, _ fahrenheit: Double?) -> String {
-        WeatherTemperatureDisplay.format(celsius: celsius, fahrenheit: fahrenheit, unit: temperatureUnit)
+        WeatherTemperatureDisplay.degrees(celsius: celsius, fahrenheit: fahrenheit, unit: temperatureUnit)
     }
 
     /// The narrative line Apple shows above the hourly strip. WeatherAPI has no
@@ -196,7 +196,7 @@ struct LocationForecastView: View {
 
     private func conditionDetailGrid(_ current: WeatherCurrent) -> some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
-            detailTile("FEELS LIKE", systemImage: "thermometer.medium", value: WeatherTemperatureDisplay.format(
+            detailTile("FEELS LIKE", systemImage: "thermometer.medium", value: WeatherTemperatureDisplay.degrees(
                 celsius: current.feelslikeC,
                 fahrenheit: current.feelslikeF,
                 unit: temperatureUnit

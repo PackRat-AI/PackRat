@@ -64,7 +64,11 @@ struct HourlyForecastStrip: View {
             VStack(spacing: 2) {
                 Image(systemName: hour.condition?.sfSymbol ?? "cloud")
                     .font(.title3)
-                    .symbolRenderingMode(.multicolor)
+                    // Not .multicolor: these glyphs render near-black over a
+                    // sky and disappear. White keeps them legible on every
+                    // gradient, day or night.
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.white)
                     .frame(height: 24)
 
                 // Precipitation chance rides under the icon like Apple's,
@@ -79,7 +83,7 @@ struct HourlyForecastStrip: View {
                 }
             }
 
-            Text(WeatherTemperatureDisplay.format(
+            Text(WeatherTemperatureDisplay.degrees(
                 celsius: hour.tempC,
                 fahrenheit: hour.tempF,
                 unit: temperatureUnit
