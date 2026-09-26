@@ -34,7 +34,12 @@ final class AuthManager {
             UserDefaults.standard.removeObject(forKey: "current_user")
             UserDefaults.standard.removeObject(forKey: skippedLoginKey)
         }
-        if ProcessInfo.processInfo.arguments.contains("--seed-e2e-auth"),
+        // Accepts an environment variable as well as the launch argument. Every
+        // other E2E control here already honours both, and some simulator
+        // drivers can set the environment but not forward launch arguments.
+        // Still gated on `e2eLoginSeedAllowed`, so this opens no new door.
+        if ProcessInfo.processInfo.arguments.contains("--seed-e2e-auth")
+            || ProcessInfo.processInfo.environment["PACKRAT_E2E_SEED_AUTH"] == "1",
            Self.e2eLoginSeedAllowed {
             seedE2EAuthenticatedUser()
             return
