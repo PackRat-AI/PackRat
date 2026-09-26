@@ -26,7 +26,10 @@ struct ForecastAlertSection: View {
                 .padding(.horizontal, 4)
 
             VStack(spacing: 8) {
-                ForEach(alerts) { alert in
+                // Keyed by offset as well as identity: two genuinely
+                // identical alerts would otherwise collide onto one row and
+                // share its expand/collapse state.
+                ForEach(Array(alerts.enumerated()), id: \.offset) { _, alert in
                     ForecastAlertCard(alert: alert)
                 }
             }
