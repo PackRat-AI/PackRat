@@ -22,16 +22,23 @@ inferred from where they've searched, where they're headed on a trip, or how
 often they've looked something up — a location is watched because they chose
 to watch it, full stop.
 
-The natural moment to offer that choice is when it's obviously worth taking:
-looking up a location that already has an active alert. At that point the
-app offers to keep watching it going forward, so the user doesn't have to
-remember to check back. A location with nothing going on doesn't prompt —
-there's nothing yet to make the offer land, and asking anyway just trains
-people to dismiss it.
+Any location can be watched at any time, whether or not anything is
+currently happening there. The forecast screen carries a watch control for
+whatever location is on screen, always — a user who wants to keep an eye on
+a trailhead in calm weather can do that in one tap, without waiting for a
+hazard to appear first. The control shows whether the location is already
+watched, so it doubles as the answer to "am I watching this?" and the way
+to stop.
+
+When a location does have something active, the alert section in the
+forecast repeats the offer in the moment it means the most: the user is
+looking at a real hazard, and watching is how they hear about the next one.
+That offer only appears while the location isn't already watched — once it
+is, the section says so quietly instead, so the user is never shown two
+live ways to do the same thing.
 
 A dedicated watch list holds everything a user has chosen, and any location
-can be added or removed from it at any time, independent of whether it
-currently has anything active.
+can be added or removed from it there too.
 
 ## Getting notified
 
@@ -49,6 +56,15 @@ is, in fact, over.
 
 ## What a user sees in the app
 
+- An alert section inside the forecast itself, shown whenever the location
+  on screen has something active. It sits between the current conditions and
+  the 10-day outlook — above the rest of the forecast because a hazard
+  outranks it, inside the forecast because it is part of what the forecast
+  for this place says. It cannot be dismissed, and it carries the offer to
+  watch the location while the location isn't watched yet.
+- A watch control on the forecast screen for the location on screen,
+  present whether or not anything is active, showing whether that location
+  is currently watched.
 - A bell icon, wherever the weather screen is reached, that fills in and
   turns red the instant any watched location has an active alert — including
   one learned about while the app was closed, not only the location
@@ -127,6 +143,11 @@ mute.
 
 ## ADR-003 — The offer to watch appears only when there's already something to watch for
 
+> **Superseded by ADR-006.** The reasoning below about *where the offer lands
+> hardest* still holds and still drives the call to action inside the alert
+> section. What it got wrong was treating that moment as the *only* way in,
+> which made watching a calm location impossible.
+
 **Decision.** The prompt to add a location to the watch list surfaces when a
 user looks up a location that currently has an active alert. It does not
 appear on ordinary lookups, and it does not wait for a repeat visit.
@@ -191,3 +212,49 @@ That's the intended behavior — muting is about interruption, not visibility
 — but it does mean the two surfaces can disagree about how "seen" the same
 alert is, worth knowing before assuming a filled-in bell and a fully caught
 up Alerts screen always mean the same category set was checked.
+
+## ADR-006 — Watching is always available; the alert lives inside the forecast
+
+**Decision.** Two changes that only make sense together. Watching a location
+is available on any location at any time, through a persistent control on the
+forecast screen, rather than only through a prompt conditioned on an active
+alert. And an active alert is rendered as a non-dismissible section within the
+forecast content, rather than as a dismissible banner laid over it. The
+in-section watch call to action survives, but only while the location isn't
+already watched.
+
+**Why.** ADR-003 was right that the moment a hazard is on screen is when the
+offer converts, and wrong that it should therefore be the only moment the
+offer exists. Gating the entire capability on that moment means a user who
+wants to watch a trailhead before a trip — exactly the user this feature is
+for — simply cannot, and has to wait for the weather to turn to be given a
+control that should have been there all along. Conditioning *discovery* on a
+high-intent moment is good practice; conditioning *access* on it is a
+capability gap wearing the costume of a conversion tactic.
+
+The banner had a matching problem. A dismissible overlay is the right
+treatment for a suggestion the user can decline, which is what the banner
+originally was, but it is the wrong treatment for a hazard: dismissible
+alerts are the ones users miss, because dismissal is cheap and the cost of
+being wrong is asymmetric. Making the alert a section of the forecast also
+tells the truth about what it is — not an interruption over the forecast, but
+the most important thing the forecast currently has to say. Severity is
+carried on the leading edge of each card rather than by flooding it, which
+keeps several simultaneous alerts readable without turning the screen into an
+alarm.
+
+Keeping both affordances live at once would have been the obvious failure
+mode — an ambient toolbar control and an in-section button that do the same
+thing read as a nag. Hence the split: the toolbar control is always present
+and always the stateful indicator, while the in-section call to action is
+only ever actionable when it adds something the toolbar doesn't, and
+collapses to a confirmation the moment it doesn't.
+
+**Consequence.** Discoverability of watching no longer depends on a user
+eventually hitting an alerting location, which retires the cost ADR-002 and
+ADR-003 both accepted. In exchange, the watch control is now visible to users
+who will never use it, which is the ordinary price of an ambient affordance.
+The alert section also means a user can no longer clear a hazard off their
+screen — intended, but it does mean a long-running alert is permanently
+present in the forecast for as long as it is active, so the collapsed card
+has to stay compact enough not to bury the 10-day outlook behind it.
