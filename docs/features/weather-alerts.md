@@ -258,3 +258,54 @@ The alert section also means a user can no longer clear a hazard off their
 screen — intended, but it does mean a long-running alert is permanently
 present in the forecast for as long as it is active, so the collapsed card
 has to stay compact enough not to bury the 10-day outlook behind it.
+
+---
+
+## ADR-007 — The location list and a location's forecast are separate screens
+
+**Decision.** Weather is two screens. The first is a list: every saved
+location as a card showing its conditions, local time, temperature range and
+any active alert. The second is one location's forecast — hero, alert
+section, hourly strip, 10-day outlook, condition detail. The per-location
+watch control lives in the forecast screen's navigation bar. The list
+screen's navigation bar carries a single overflow menu holding the
+list-level actions: Edit List, Notifications, Watch List, and units.
+
+**Why.** The previous screen was the list, the search, *and* the forecast for
+whichever location happened to be selected. That is a structural problem, not
+a layout one: a control that acts on one location had nowhere to sit except a
+navigation bar belonging to every saved location at once. The symptom was
+four competing toolbar items, two of them bells meaning different things —
+one opening the alerts sheet, one toggling whether this location is watched.
+No arrangement of those four fixes it, because the ambiguity is in the
+screen's scope rather than in the buttons.
+
+Apple's guidance is that a navigation bar should carry only actions relating
+to the content currently on screen. A single screen showing all locations and
+one location simultaneously cannot satisfy that, so the fix is to give a
+location its own screen. Once there is exactly one location on screen, the
+watch toggle in its navigation bar is unambiguous, and the list's bar is free
+to carry only what applies to the list.
+
+ADR-006's reasoning survives this intact — watching is still always
+available, still stateful, still not gated on a hazard being in progress, and
+the alert is still a non-dismissible section inside the forecast. What
+changes is only *which* navigation bar the ambient control belongs to. The
+in-section call to action keeps the same relationship to it.
+
+Saved locations and watched locations stay separate concepts. Merging them
+would have made the list simpler and closer to Apple's, but it would also
+make watching implicit — saving a place you wanted to look at once would
+silently opt you into push notifications for it, which is exactly what
+ADR-002 rules out. The card shows a bell when a location is watched, so the
+list still answers "what am I watching?" at a glance without conflating the
+two.
+
+**Consequence.** There is one more screen to navigate, so a user checking a
+single location's forecast now taps once more than before. That is the cost
+of the list being a real list; it is also what makes a second, third and
+fourth saved location legible, which the old horizontal chip row handled
+poorly. The forecast screen renders over a condition-driven sky gradient
+rather than the system background, so everything drawn on it — including the
+shared alert section — has to hold contrast against colour rather than
+against a neutral surface.
