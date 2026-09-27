@@ -16,6 +16,12 @@ struct LocationForecastView: View {
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
     @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
     @State private var showingAlerts = false
+    /// Whether this location was carrying an unread alert when the screen
+    /// opened. Held in `@State` rather than read live: opening the forecast
+    /// immediately marks the alert seen, so a live read would flip to false
+    /// before the bell ever drew red. The red bell is meant to say "this is
+    /// why you are here", which is a fact about arrival, not about now.
+    @State private var arrivedWithUnseenAlert = false
 
     private var forecast: WeatherForecastResponse? {
         // The view model holds one forecast at a time, for whichever location
@@ -93,6 +99,23 @@ struct LocationForecastView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         #endif
         .toolbar {
+            // Saving is reachable from the forecast as well as from the search
+            // row: a location previewed from search is most often decided on
+            // *here*, after looking at it, and going back to the results to
+            // save what you are already reading is a step backwards.
+            if !isSaved {
+                ToolbarItem(placement: watchToolbarPlacement) {
+                    Button {
+                        viewModel.saveLocation(location)
+                    } label: {
+                        Label("Add Location", systemImage: "plus")
+                    }
+                    .tint(.white)
+                    .accessibilityLabel("Add \(location.name) to your locations")
+                    .accessibilityIdentifier("weather_add_location_button")
+                }
+            }
+
             // The per-location watch control, on the only screen where
             // "this location" is unambiguous.
             if AppFeatureFlags.enableWeatherMonitoring {
@@ -100,25 +123,51 @@ struct LocationForecastView: View {
                     Button {
                         Task { await viewModel.toggleWatchForSelectedLocation() }
                     } label: {
-                        Label(
-                            viewModel.isSelectedLocationWatched ? "Watching" : "Watch Location",
-                            systemImage: viewModel.isSelectedLocationWatched ? "bell.fill" : "bell"
-                        )
+                        // A watch round-trip hits the network and can take a
+                        // visible moment. Without progress the bell looks
+                        // simply unresponsive, so the tap gets repeated.
+                        if viewModel.isUpdatingWatchForSelectedLocation {
+                            ProgressView()
+                                .controlSize(.small)
+                                .tint(.white)
+                        } else {
+                            Label(
+                                viewModel.isSelectedLocationWatched ? "Watching" : "Watch Location",
+                                systemImage: viewModel.isSelectedLocationWatched ? "bell.fill" : "bell"
+                            )
+                        }
                     }
                     .disabled(viewModel.isUpdatingWatchForSelectedLocation)
-                    .tint(.white)
+                    // Red only while an alert is unread — the bell's job then
+                    // is to point at the hazard, not to report a setting.
+                    .tint(arrivedWithUnseenAlert ? Color.alertRed : .white)
                     .accessibilityLabel(viewModel.isSelectedLocationWatched
                         ? "Stop watching this location"
                         : "Watch this location for alerts")
+                    .accessibilityValue(viewModel.isUpdatingWatchForSelectedLocation ? "Updating" : "")
                     .accessibilityIdentifier("weather_watch_toggle_button")
                 }
             }
         }
+        .overlay(alignment: .bottom) { watchStatusToast }
         .refreshable { await viewModel.refresh() }
         .task {
+            arrivedWithUnseenAlert = viewModel.hasUnseenAlert(locationId: location.id)
             if viewModel.selectedLocation?.id != location.id {
                 await viewModel.selectLocation(location)
             }
+            // Opening the forecast is the moment the alert has actually been
+            // put in front of the user, so it stops counting as new — for the
+            // red marker on the list behind, and for the next visit here.
+            viewModel.markAlertsSeen(for: location.id)
+        }
+        .onChange(of: activeAlerts.map(\.id)) { previous, current in
+            // A refresh that brings in a genuinely different alert is new
+            // again, even without leaving the screen.
+            if !previous.isEmpty && previous != current {
+                arrivedWithUnseenAlert = true
+            }
+            viewModel.markAlertsSeen(for: location.id)
         }
         .task(id: viewModel.pendingAlertDeepLinkLocationId) {
             // A push tap that targets this location opens its alerts directly.
@@ -128,6 +177,43 @@ struct LocationForecastView: View {
         }
         .sheet(isPresented: $showingAlerts) {
             WeatherAlertsView(alerts: activeAlerts)
+        }
+        .animation(.spring(duration: 0.3), value: viewModel.watchStatusMessage)
+    }
+
+    private var isSaved: Bool {
+        viewModel.savedLocations.contains { $0.id == location.id }
+    }
+
+    /// Confirms a watch/unwatch in words. Mirrors the pack detail toast so the
+    /// two read as the same affordance.
+    @ViewBuilder
+    private var watchStatusToast: some View {
+        if let message = viewModel.watchStatusMessage {
+            Text(message)
+                .font(.callout.weight(.medium))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(.regularMaterial, in: Capsule())
+                .shadow(radius: 8, y: 2)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .accessibilityIdentifier("weather_watch_status_toast")
+                .task(id: message) {
+                    // Bail on cancellation rather than swallowing it: a
+                    // replacing message cancels this task, and clearing then
+                    // would cut the new message short.
+                    do {
+                        try await Task.sleep(for: .seconds(2.5))
+                    } catch {
+                        return
+                    }
+                    if viewModel.watchStatusMessage == message {
+                        withAnimation { viewModel.watchStatusMessage = nil }
+                    }
+                }
         }
     }
 

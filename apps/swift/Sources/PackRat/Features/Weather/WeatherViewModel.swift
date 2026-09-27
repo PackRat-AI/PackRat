@@ -3,6 +3,7 @@ import Observation
 
 private let savedLocationsKey = "savedWeatherLocations"
 private let activeLocationKey = "activeWeatherLocationId"
+private let seenAlertIdsKey = "seenWeatherAlertIds"
 
 @Observable
 final class WeatherViewModel {
@@ -42,6 +43,17 @@ final class WeatherViewModel {
     /// without the whole list blocking on the slowest request.
     var loadingSummaryLocationIds: Set<Int> = []
 
+    /// Alert ids the user has already been shown, keyed by location. An alert
+    /// is "new" until its location's forecast has been opened — that is the
+    /// moment the user has actually had a chance to read it. Keyed by the same
+    /// `event|effective|…` identity the server notifies on, so a re-issued
+    /// alert for the same hazard does not re-light the badge.
+    var seenAlertIds: [Int: Set<String>] = [:]
+
+    /// A short-lived message shown over the forecast after a watch action, so
+    /// a successful subscription says so rather than only flipping an icon.
+    var watchStatusMessage: String?
+
     private let service: any WeatherServicing
     private let monitoringService: any WeatherMonitoringServicing
     private var searchTask: Task<Void, Never>?
@@ -60,6 +72,7 @@ final class WeatherViewModel {
         guard loadPersistedState else { return }
         guard !VisualSampleData.isScreenshotCapture else { return }
         loadSavedLocations()
+        loadSeenAlertIds()
         if let active = savedLocations.first(where: { $0.id == UserDefaults.standard.integer(forKey: activeLocationKey) })
             ?? savedLocations.first {
             Task { await selectLocation(active) }
@@ -117,10 +130,10 @@ final class WeatherViewModel {
             searchResults = []
             return
         }
-        searchTask = Task {
+        searchTask = Task { [weak self, searchText] in
             try? await Task.sleep(for: .milliseconds(400))
             guard !Task.isCancelled else { return }
-            await search(query: searchText)
+            await self?.search(query: searchText)
         }
     }
 
@@ -138,8 +151,24 @@ final class WeatherViewModel {
         do {
             searchResults = try await service.searchLocations(query: query)
         } catch {
+            // A superseded keystroke cancels the in-flight request, and
+            // URLSession reports that as a normal error. Surfacing it put
+            // "cancelled" under the search field on nearly every word typed,
+            // describing the app's own debounce as a failure the user could
+            // do something about. Only a genuine failure is worth reporting.
+            guard !Self.isCancellation(error) else { return }
             searchError = error.localizedDescription
         }
+    }
+
+    /// True for the cancellation a replaced search task causes, in either of
+    /// the two shapes it arrives in: Swift's own `CancellationError` when the
+    /// task is torn down before the request starts, and `NSURLErrorCancelled`
+    /// when URLSession drops a request already in flight.
+    static func isCancellation(_ error: any Error) -> Bool {
+        if error is CancellationError { return true }
+        let nsError = error as NSError
+        return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
     }
 
     func selectLocation(_ location: WeatherLocation) async {
@@ -290,14 +319,25 @@ final class WeatherViewModel {
     /// implies. Backs the always-present forecast toolbar control, which is
     /// available on any location regardless of alert state (ADR-006).
     func toggleWatchForSelectedLocation() async {
-        guard selectedLocation != nil else { return }
+        guard let selectedLocation else { return }
         guard !isUpdatingWatchForSelectedLocation else { return }
         isUpdatingWatchForSelectedLocation = true
         defer { isUpdatingWatchForSelectedLocation = false }
+        // The icon alone doesn't say what subscribing actually bought the
+        // user, and a bell that fills is easy to read as a display toggle.
+        // Confirm the outcome in words, naming the location and the promise.
         if let watched = watchedEntryForSelectedLocation {
-            await unwatchLocation(watched)
+            if await unwatchLocation(watched) {
+                watchStatusMessage = "You'll no longer get alerts for \(selectedLocation.name)"
+            } else {
+                watchStatusMessage = "Couldn't stop watching \(selectedLocation.name). Try again."
+            }
         } else {
-            await watchSelectedLocation()
+            if await watchSelectedLocation() {
+                watchStatusMessage = "You'll get alerts for \(selectedLocation.name)"
+            } else {
+                watchStatusMessage = "Couldn't watch \(selectedLocation.name). Try again."
+            }
         }
     }
 
@@ -336,6 +376,43 @@ final class WeatherViewModel {
             return true
         } catch {
             return false
+        }
+    }
+
+    // MARK: - New-alert badging
+
+    /// True when this location has an active alert the user has not yet seen.
+    /// Drives the red accents on the list card and the forecast's bell, which
+    /// exist to pull attention to a hazard that arrived since the user last
+    /// looked — not merely to restate that an alert exists.
+    func hasUnseenAlert(locationId: Int) -> Bool {
+        guard let headlineId = locationSummaries[locationId]?.alertId else { return false }
+        return !(seenAlertIds[locationId] ?? []).contains(headlineId)
+    }
+
+    /// Marks every alert currently active for a location as seen. Called when
+    /// its forecast opens, which is the only point at which the alert has
+    /// actually been put in front of the user.
+    func markAlertsSeen(for locationId: Int) {
+        let ids = Set((forecast?.alerts?.alert ?? []).map(\.id))
+        let summaryId = locationSummaries[locationId]?.alertId
+        let all = summaryId.map { ids.union([$0]) } ?? ids
+        guard !all.isEmpty else { return }
+        guard seenAlertIds[locationId] != all else { return }
+        seenAlertIds[locationId] = all
+        persistSeenAlertIds()
+    }
+
+    private func loadSeenAlertIds() {
+        guard let data = UserDefaults.standard.data(forKey: seenAlertIdsKey),
+              let stored = try? JSONDecoder().decode([Int: Set<String>].self, from: data)
+        else { return }
+        seenAlertIds = stored
+    }
+
+    private func persistSeenAlertIds() {
+        if let data = try? JSONEncoder().encode(seenAlertIds) {
+            UserDefaults.standard.set(data, forKey: seenAlertIdsKey)
         }
     }
 

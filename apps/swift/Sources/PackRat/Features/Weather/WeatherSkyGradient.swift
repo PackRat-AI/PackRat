@@ -41,6 +41,14 @@ enum WeatherSkyGradient {
         static let color = Color(red: 0.13, green: 0.15, blue: 0.19)
     }
 
+    /// The attention colour for a new, unread alert.
+    ///
+    /// Deliberately not `.red`: the system red is tuned for tinted controls on
+    /// a system background, and over these desaturated skies it reads dull. A
+    /// slightly hotter, brighter red holds against every palette above, in
+    /// both appearances, which is the only place this colour is ever drawn.
+    static let alertRed = Color(red: 1.0, green: 0.23, blue: 0.19)
+
     static func gradient(conditionCode: Int?, isDay: Bool) -> LinearGradient {
         LinearGradient(
             colors: colors(conditionCode: conditionCode, isDay: isDay),
@@ -92,4 +100,10 @@ enum WeatherSkyGradient {
             ? [Color(red: 0.20, green: 0.24, blue: 0.33), Color(red: 0.36, green: 0.40, blue: 0.48)]
             : [Color(red: 0.04, green: 0.06, blue: 0.11), Color(red: 0.13, green: 0.15, blue: 0.22)]
     }
+}
+
+extension Color {
+    /// Shorthand for `WeatherSkyGradient.alertRed`, so alert accents read the
+    /// same at every call site without importing the gradient namespace.
+    static var alertRed: Color { WeatherSkyGradient.alertRed }
 }

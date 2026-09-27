@@ -10,6 +10,10 @@ struct WeatherLocationCard: View {
     let location: WeatherLocation
     let summary: WeatherLocationSummary?
     let isWatched: Bool
+    /// True when this location's active alert has not been opened yet. Drives
+    /// the red marker, which exists to catch the eye mid-scroll — an alert the
+    /// user has already read still shows, but stops shouting.
+    let hasNewAlert: Bool
     let temperatureUnit: AppPreferences.TemperatureUnit
 
     private var isDay: Bool { summary?.isDay ?? true }
@@ -32,8 +36,10 @@ struct WeatherLocationCard: View {
                         if isWatched {
                             Image(systemName: "bell.fill")
                                 .font(.caption2)
-                                .foregroundStyle(.white.opacity(0.85))
-                                .accessibilityLabel("Watched for alerts")
+                                .foregroundStyle(hasNewAlert ? Color.alertRed : .white.opacity(0.85))
+                                .accessibilityLabel(hasNewAlert
+                                    ? "Watched for alerts, new alert"
+                                    : "Watched for alerts")
                         }
                     }
 
@@ -47,7 +53,7 @@ struct WeatherLocationCard: View {
                     if let alert = summary?.alertHeadline {
                         Label(alert, systemImage: "exclamationmark.triangle.fill")
                             .font(.footnote.weight(.medium))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(hasNewAlert ? Color.alertRed : .white)
                             .lineLimit(1)
                     } else if let condition = summary?.conditionText {
                         Text(condition)
@@ -88,11 +94,29 @@ struct WeatherLocationCard: View {
                 }
             }
             .padding(16)
+
+            // The red brick: a full-height bar down the card's leading edge.
+            // The headline alone competes with the temperature for attention
+            // and loses; an edge marker reads at a glance while scrolling a
+            // list of otherwise similar cards, and it survives being the only
+            // red thing on screen without turning the card into an alarm.
+            if hasNewAlert {
+                HStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color.alertRed)
+                        .frame(width: 5)
+                        .accessibilityHidden(true)
+                    Spacer(minLength: 0)
+                }
+            }
         }
         .frame(height: 118)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .accessibilityElement(children: .combine)
+        // The identifier stays stable so existing selectors keep resolving;
+        // the new-alert state is exposed as a value instead of a second id.
         .accessibilityIdentifier("weather_saved_location_\(location.id)")
+        .accessibilityValue(hasNewAlert ? "New alert" : "")
     }
 }
 
@@ -110,6 +134,9 @@ struct WeatherLocationSummary: Equatable, Sendable {
     let conditionCode: Int?
     let isDay: Bool
     let alertHeadline: String?
+    /// Identity of the alert the headline came from, so the list can tell a
+    /// hazard the user has already read from one that has just arrived.
+    let alertId: String?
     let localTimeLabel: String?
 
     func highLabel(unit: AppPreferences.TemperatureUnit) -> String? {
@@ -135,6 +162,7 @@ struct WeatherLocationSummary: Equatable, Sendable {
         isDay = (forecast.current?.isDay ?? 1) == 1
         let alerts = forecast.alerts?.alert ?? []
         alertHeadline = alerts.first.flatMap { $0.event ?? $0.headline }
+        alertId = alerts.first?.id
         localTimeLabel = Self.timeLabel(from: forecast.location)
     }
 

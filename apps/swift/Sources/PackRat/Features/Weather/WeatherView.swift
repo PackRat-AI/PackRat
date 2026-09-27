@@ -38,17 +38,16 @@ struct WeatherView: View {
         .navigationTitle("Weather")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
-        // The list sits on a dark recessed surface, so the bar has to adopt
-        // that surface *and* a dark scheme: a colour scheme alone leaves the
-        // large title dark-on-dark. Both are pinned unconditionally rather
-        // than toggled on `isAuthenticated` — a toolbar background that
-        // changes identity mid-render makes the large title animate out and
-        // never return, which is what made the title vanish a moment after
-        // each appearance.
-        .toolbarBackground(WeatherSkyGradient.ListBackground.color, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        // The recessed list surface is carried by the *screen*, not by the
+        // navigation bar. Forcing a `.visible` toolbar background here is what
+        // made the large title disappear: a pinned opaque bar suppresses the
+        // large-title area that UIKit expands into, so the title collapsed to
+        // nothing while the bar itself stayed dark. Extending the same colour
+        // behind the whole screen — including under the bar — gives the bar
+        // that surface without pinning a background over the title.
         .toolbarColorScheme(.dark, for: .navigationBar)
         #endif
+        .background(WeatherSkyGradient.ListBackground.color.ignoresSafeArea())
         .searchable(
             text: $viewModel.searchText,
             isPresented: $isSearchPresented,
@@ -200,6 +199,7 @@ struct WeatherView: View {
                             isWatched: viewModel.watchedLocations.contains {
                                 $0.weatherLocationId == location.id
                             },
+                            hasNewAlert: viewModel.hasUnseenAlert(locationId: location.id),
                             temperatureUnit: temperatureUnit
                         )
                     }
@@ -231,6 +231,13 @@ struct WeatherView: View {
             // float on white and the screen loses its depth.
             .background(WeatherSkyGradient.ListBackground.color.ignoresSafeArea())
             .environment(\.editMode, .constant(isEditing ? .active : .inactive))
+            // The list's surface is dark in both appearances, but the drag
+            // handles and delete affordances Edit List draws are system
+            // chrome, tinted for the *environment's* scheme. In light mode
+            // they came out near-black on the dark surface and vanished.
+            // Pinning the scheme dark for this list matches the chrome to the
+            // background it is actually drawn on.
+            .environment(\.colorScheme, .dark)
             .refreshable { await viewModel.refreshAllLocationSummaries() }
         }
     }
@@ -298,5 +305,14 @@ struct WeatherView: View {
             }
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        // The search field's container is drawn by the navigation bar, which
+        // takes the screen background behind it. Giving the results the same
+        // surface makes the field and the list it filters read as one area
+        // rather than a light bar floating over a dark one.
+        .background(WeatherSkyGradient.ListBackground.color.ignoresSafeArea())
+        // Same reason as the saved list: the surface is dark in both
+        // appearances, so the rows' text and chrome have to be too.
+        .environment(\.colorScheme, .dark)
     }
 }
