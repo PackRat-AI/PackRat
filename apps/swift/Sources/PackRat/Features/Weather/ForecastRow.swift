@@ -17,6 +17,20 @@ enum WeatherTemperatureDisplay {
         guard let value else { return "—" }
         return "\(Int(value.rounded()))\(unit.label)"
     }
+
+    /// Bare degrees, no C/F suffix — for the weather surfaces where the unit is
+    /// already established by context (a hero, a card, an hourly column).
+    /// Repeating "°F" on every number there is noise Apple's Weather app
+    /// deliberately drops.
+    static func degrees(
+        celsius: Double?,
+        fahrenheit: Double?,
+        unit: AppPreferences.TemperatureUnit
+    ) -> String {
+        let formatted = format(celsius: celsius, fahrenheit: fahrenheit, unit: unit)
+        guard formatted != "—" else { return formatted }
+        return formatted.replacingOccurrences(of: unit.label, with: "°")
+    }
 }
 
 struct ForecastRow: View {

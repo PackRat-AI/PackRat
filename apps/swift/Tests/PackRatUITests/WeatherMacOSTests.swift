@@ -13,7 +13,7 @@ final class WeatherMacOSTests: AppUITestCase {
     func testLocationSearchReturnsResults() {
         goToSidebar("Weather")
 
-        let searchField = app.searchFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search for a city or place"]
         waitFor(searchField, message: "Weather search field must appear")
         searchField.click()
         searchField.typeText(testCity)
@@ -28,7 +28,7 @@ final class WeatherMacOSTests: AppUITestCase {
     func testSelectLocationLoadsForecast() {
         goToSidebar("Weather")
 
-        let searchField = app.searchFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search for a city or place"]
         waitFor(searchField)
         searchField.click()
         searchField.typeText(testCity)
@@ -44,10 +44,10 @@ final class WeatherMacOSTests: AppUITestCase {
         )
     }
 
-    func testSavedLocationAppearsAsChip() {
+    func testSavedLocationAppearsAsCard() {
         goToSidebar("Weather")
 
-        let searchField = app.searchFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search for a city or place"]
         waitFor(searchField)
         searchField.click()
         searchField.typeText(testCity)
@@ -59,14 +59,14 @@ final class WeatherMacOSTests: AppUITestCase {
         XCTAssertTrue(
             app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'weather_saved_location_'")).firstMatch
                 .waitForExistence(timeout: 10),
-            "Saved location chip must appear after selecting a location"
+            "A selected location must appear on the Weather list"
         )
     }
 
     func testSearchClearButtonRemovesResults() {
         goToSidebar("Weather")
 
-        let searchField = app.searchFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search for a city or place"]
         waitFor(searchField)
         searchField.click()
         searchField.typeText(testCity)
@@ -88,7 +88,7 @@ final class WeatherMacOSTests: AppUITestCase {
     func testForecastShowsDailyRows() {
         goToSidebar("Weather")
 
-        let searchField = app.searchFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search for a city or place"]
         waitFor(searchField)
         searchField.click()
         searchField.typeText(testCity)
@@ -98,15 +98,15 @@ final class WeatherMacOSTests: AppUITestCase {
         firstResult.click()
 
         XCTAssertTrue(
-            app.staticTexts["10-Day Forecast"].waitForExistence(timeout: 20),
-            "10-Day Forecast section header must appear"
+            app.staticTexts["10-DAY FORECAST"].waitForExistence(timeout: 20),
+            "10-day forecast section header must appear"
         )
     }
 
     func testWeatherAlertsButtonAppearsWithForecast() {
         goToSidebar("Weather")
 
-        let searchField = app.searchFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search for a city or place"]
         waitFor(searchField)
         searchField.click()
         searchField.typeText(testCity)

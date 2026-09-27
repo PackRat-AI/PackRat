@@ -633,6 +633,13 @@ enum VisualSampleData {
             ])
         )
         appState.weatherVM.forecastError = nil
+        // The list cards read from `locationSummaries`, not `forecast`. This
+        // seeder assigns the forecast directly rather than going through
+        // `loadForecast`, so the summary has to be derived here too or the
+        // Weather list renders a card with a name and no conditions.
+        if let seeded = appState.weatherVM.forecast {
+            appState.weatherVM.locationSummaries[denver.id] = WeatherLocationSummary(forecast: seeded)
+        }
 
         appState.selectedPackId = alpinePack.id
         appState.selectedTripId = appState.tripsVM.trips.first?.id
@@ -718,7 +725,41 @@ enum VisualSampleData {
                 dailyChanceOfRain: rain,
                 dailyChanceOfSnow: 0
             ),
-            astro: AstroForecast(sunrise: "5:38 AM", sunset: "8:18 PM")
+            astro: AstroForecast(sunrise: "5:38 AM", sunset: "8:18 PM"),
+            hour: forecastHours(for: date, high: high, low: low, condition: condition, code: code, rain: rain)
         )
+    }
+
+    /// 24 hours of plausible detail for a sample day, so the hourly strip has
+    /// something to render in screenshots and UI tests. Temperature follows a
+    /// simple diurnal curve between the day's low and high rather than sitting
+    /// flat, which would make the strip look broken.
+    private static func forecastHours(
+        for date: Date,
+        high: Double,
+        low: Double,
+        condition: String,
+        code: Int,
+        rain: Int
+    ) -> [ForecastHour] {
+        var calendar = Calendar.current
+        calendar.timeZone = .current
+        let startOfDay = calendar.startOfDay(for: date)
+        return (0..<24).map { hour in
+            // Coolest around 05:00, warmest around 15:00.
+            let phase = cos(Double(hour - 15) / 24 * 2 * .pi)
+            let temperature = low + (high - low) * ((phase + 1) / 2)
+            let hourDate = calendar.date(byAdding: .hour, value: hour, to: startOfDay) ?? startOfDay
+            let isDaylight = hour >= 6 && hour < 20
+            return ForecastHour(
+                timeEpoch: Int(hourDate.timeIntervalSince1970),
+                time: nil,
+                tempC: nil,
+                tempF: temperature.rounded(),
+                condition: WeatherCondition(text: condition, icon: nil, code: code),
+                chanceOfRain: rain,
+                isDay: isDaylight ? 1 : 0
+            )
+        }
     }
 }

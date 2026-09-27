@@ -1,22 +1,29 @@
 import SwiftUI
 
+/// The Weather list: every saved location as a card, each one a way into that
+/// location's own forecast screen.
+///
+/// This screen used to be the list *and* the search *and* the forecast for
+/// whichever location happened to be selected, which is why its navigation bar
+/// accumulated four competing controls — two of them bells meaning different
+/// things. Splitting the forecast onto `LocationForecastView` leaves this
+/// screen with one job, so its navigation bar carries only list-level actions,
+/// collected in a single overflow menu.
 struct WeatherView: View {
     @Environment(AuthManager.self) private var authManager
     @Bindable var viewModel: WeatherViewModel
-    @State private var showingAlerts = false
-    @State private var showingAlertPreferences = false
     @State private var isSearchPresented = false
+    @State private var isEditing = false
+    /// The location whose forecast is currently pushed, whether it was opened
+    /// from the saved list, from a search result, or by a push notification.
+    /// A single binding rather than one per entry point, so going back always
+    /// returns to whatever was on screen when the forecast was opened —
+    /// search results included.
+    @State private var selectedLocation: WeatherLocation?
+    /// Whether `selectedLocation` was opened from a search result, so the
+    /// forecast can avoid clearing the results Back returns to.
+    @State private var openedFromSearch = false
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
-    @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
-
-    /// Renders an API wind value (always mph) in the user's preferred unit.
-    private func windDisplay(mph: Double) -> String {
-        speedUnit == .kmh ? "\(Int((mph * 1.609344).rounded())) km/h" : "\(Int(mph.rounded())) mph"
-    }
-
-    private var activeAlerts: [WeatherAlert] {
-        viewModel.forecast?.alerts?.alert ?? []
-    }
 
     var body: some View {
         Group {
@@ -27,153 +34,86 @@ struct WeatherView: View {
                     systemImage: "cloud.sun"
                 )
             } else {
-                List {
-                    // Only add the search row when it actually has something to
-                    // show. An unconditional row still reserves inset-grouped row
-                    // height and padding while empty, which rendered as a large
-                    // blank gap between the search field and Saved Locations.
-                    if hasSearchStateContent {
-                        searchStateContent
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                    }
-
-                    if !viewModel.savedLocations.isEmpty && viewModel.searchText.isEmpty && viewModel.searchResults.isEmpty {
-                        savedLocationsSection
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                    }
-
-                    if let forecast = viewModel.forecast {
-                        forecastContent(forecast)
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                    } else if viewModel.isLoadingForecast {
-                        ProgressView("Loading forecast…")
-                            .frame(maxWidth: .infinity)
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                    } else if let error = viewModel.forecastError {
-                        ErrorView(error, retry: { await viewModel.refresh() })
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                    } else if viewModel.savedLocations.isEmpty {
-                        EmptyStateView(
-                            "No Saved Locations",
-                            subtitle: "Search for a city or ZIP code and save it to track the weather",
-                            systemImage: "cloud.sun"
-                        )
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                    }
-                }
-                #if os(iOS)
-                .listStyle(.insetGrouped)
-                #else
-                .listStyle(.inset)
-                #endif
+                locationList
             }
         }
         .navigationTitle("Weather")
         #if os(iOS)
+        .navigationBarTitleDisplayMode(.large)
+        // The recessed list surface is carried by the *screen*, not by the
+        // navigation bar. Forcing a `.visible` toolbar background here is what
+        // made the large title disappear: a pinned opaque bar suppresses the
+        // large-title area that UIKit expands into, so the title collapsed to
+        // nothing while the bar itself stayed dark. Extending the same colour
+        // behind the whole screen — including under the bar — gives the bar
+        // that surface without pinning a background over the title.
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        #endif
+        .background(WeatherSkyGradient.ListBackground.color.ignoresSafeArea())
         .searchable(
             text: $viewModel.searchText,
             isPresented: $isSearchPresented,
-            placement: .navigationBarDrawer(displayMode: .always),
-            prompt: "Search locations…"
+            placement: searchPlacement,
+            prompt: "Search for a city or place"
         )
-        #else
-        .searchable(text: $viewModel.searchText, isPresented: $isSearchPresented, prompt: "Search locations…")
-        #endif
         .onChange(of: viewModel.searchText) {
             if authManager.isAuthenticated {
                 viewModel.onSearchTextChanged()
             }
         }
-        .refreshable {
-            if authManager.isAuthenticated {
-                await viewModel.refresh()
-            }
-        }
         .toolbar {
             if authManager.isAuthenticated {
-                ToolbarItem(placement: alertsToolbarPlacement) {
-                    Button {
-                        showingAlerts = true
-                    } label: {
-                        Label("Alerts", systemImage: activeAlerts.isEmpty ? "bell" : "bell.badge.fill")
-                            .foregroundStyle(activeAlerts.isEmpty ? Color.secondary : Color.red)
-                    }
-                    .disabled(viewModel.forecast == nil)
-                    .accessibilityLabel("Alerts")
-                    .accessibilityIdentifier("weather_alerts_button")
-                }
-                if viewModel.isLoadingForecast && viewModel.forecast != nil {
-                    ToolbarItem(placement: .secondaryAction) {
-                        ProgressView().controlSize(.small)
-                    }
-                }
-                ToolbarItem(placement: preferencesToolbarPlacement) {
-                    NavigationLink {
-                        WeatherAlertPreferencesView()
-                    } label: {
-                        Label("Alert Preferences", systemImage: "slider.horizontal.3")
-                    }
-                    .accessibilityIdentifier("weather_alert_preferences_button")
-                }
-                // The ambient watch affordance: present on every location
-                // regardless of whether anything is currently active, so
-                // watching never depends on catching a hazard in progress
-                // (ADR-006). Stateful, so it doubles as the "am I watching
-                // this?" indicator.
-                if AppFeatureFlags.enableWeatherMonitoring, viewModel.selectedLocation != nil {
-                    ToolbarItem(placement: alertsToolbarPlacement) {
-                        Button {
-                            Task { await viewModel.toggleWatchForSelectedLocation() }
-                        } label: {
-                            Label(
-                                viewModel.isSelectedLocationWatched ? "Watching" : "Watch Location",
-                                systemImage: viewModel.isSelectedLocationWatched ? "bell.fill" : "bell.slash"
-                            )
-                        }
-                        .disabled(viewModel.isUpdatingWatchForSelectedLocation)
-                        .accessibilityLabel(viewModel.isSelectedLocationWatched
-                            ? "Stop watching this location"
-                            : "Watch this location for alerts")
-                        .accessibilityIdentifier("weather_watch_toggle_button")
-                    }
-                }
-                if AppFeatureFlags.enableWeatherMonitoring {
-                    ToolbarItem(placement: preferencesToolbarPlacement) {
-                        NavigationLink {
-                            WeatherWatchListView(viewModel: viewModel)
-                        } label: {
-                            Label("Watch List", systemImage: "eye")
-                        }
-                        .accessibilityIdentifier("weather_watch_list_button")
-                    }
+                ToolbarItem(placement: overflowPlacement) {
+                    overflowMenu
                 }
             }
         }
-        .sheet(isPresented: $showingAlerts) {
-            WeatherAlertsView(alerts: activeAlerts)
+        .navigationDestination(item: $selectedLocation) { location in
+            LocationForecastView(
+                location: location,
+                openedFromSearch: openedFromSearch,
+                viewModel: viewModel
+            )
+        }
+        .task {
+            guard authManager.isAuthenticated else { return }
+            await viewModel.loadWatchedLocations()
+            await viewModel.loadMissingLocationSummaries()
         }
         .task(id: viewModel.pendingAlertDeepLinkLocationId) {
+            // A push tap names a location; push its forecast screen, which
+            // then opens the alert detail itself.
             guard let locationId = viewModel.pendingAlertDeepLinkLocationId else { return }
-            await viewModel.selectLocation(WeatherLocation(
-                id: locationId,
-                name: viewModel.watchedLocations.first { $0.weatherLocationId == locationId }?.locationName ?? "",
-                region: nil,
-                country: nil,
-                lat: nil,
-                lon: nil
-            ))
-            showingAlerts = true
-            viewModel.pendingAlertDeepLinkLocationId = nil
+            let target = viewModel.savedLocations.first { $0.id == locationId }
+                ?? viewModel.watchedLocations
+                    .first { $0.weatherLocationId == locationId }
+                    .map { watched in
+                        WeatherLocation(
+                            id: watched.weatherLocationId,
+                            name: watched.locationName,
+                            region: watched.region,
+                            country: watched.country,
+                            lat: watched.lat,
+                            lon: watched.lon
+                        )
+                    }
+            guard let target else { return }
+            openedFromSearch = false
+            selectedLocation = target
         }
     }
 
-    private var alertsToolbarPlacement: ToolbarItemPlacement {
+    private var searchPlacement: SearchFieldPlacement {
+        #if os(iOS)
+        // Apple puts the Weather search field at the bottom of the list, in
+        // thumb reach, rather than under the title.
+        .navigationBarDrawer(displayMode: .always)
+        #else
+        .automatic
+        #endif
+    }
+
+    private var overflowPlacement: ToolbarItemPlacement {
         #if os(iOS)
         .topBarTrailing
         #else
@@ -181,233 +121,198 @@ struct WeatherView: View {
         #endif
     }
 
-    private var preferencesToolbarPlacement: ToolbarItemPlacement {
-        #if os(iOS)
-        .topBarTrailing
-        #else
-        .secondaryAction
-        #endif
-    }
+    // MARK: - Overflow menu
 
-    // MARK: - Search
-
-    /// Mirrors the three branches inside `searchStateContent`; when none of them
-    /// would render, the row is omitted entirely rather than left empty.
-    private var hasSearchStateContent: Bool {
-        viewModel.isSearching || !viewModel.searchResults.isEmpty || viewModel.searchError != nil
-    }
-
-    private var searchStateContent: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if viewModel.isSearching {
-                HStack(spacing: 8) {
-                    ProgressView().controlSize(.small)
-                    Text("Searching locations…")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+    /// Every list-level action, in one menu — the arrangement Apple Weather
+    /// uses. Per-location actions deliberately do not appear here; they live
+    /// on the location's own screen, where "this location" has a referent.
+    private var overflowMenu: some View {
+        Menu {
+            Button {
+                withAnimation { isEditing.toggle() }
+            } label: {
+                Label(isEditing ? "Done" : "Edit List", systemImage: "pencil")
             }
+            .disabled(viewModel.savedLocations.isEmpty)
 
-            if !viewModel.searchResults.isEmpty {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(viewModel.searchResults) { location in
-                        Button {
-                            viewModel.saveLocation(location)
-                            isSearchPresented = false
-                            Task {
-                                await viewModel.selectLocation(location)
-                            }
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(location.name).font(.body)
-                                    if let region = location.region, let country = location.country {
-                                        Text("\(region), \(country)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                Spacer()
-                                Image(systemName: viewModel.savedLocations.contains(where: { $0.id == location.id })
-                                      ? "checkmark.circle.fill"
-                                      : "plus.circle")
-                                    .foregroundStyle(viewModel.savedLocations.contains(where: { $0.id == location.id }) ? Color.green : Color.accentColor)
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("weather_search_result_\(location.id)")
-                        Divider().padding(.leading, 12)
-                    }
-                }
-                .background(.background.secondary, in: RoundedRectangle(cornerRadius: 10))
-            }
-
-            if let error = viewModel.searchError {
-                InlineErrorView(message: error)
-            }
-        }
-    }
-
-    // MARK: - Saved Locations
-
-    private var savedLocationsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Saved Locations")
-                .font(.caption.uppercaseSmallCaps())
-                .foregroundStyle(.secondary)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(viewModel.savedLocations) { location in
-                        savedLocationChip(location)
-                    }
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func savedLocationChip(_ location: WeatherLocation) -> some View {
-        let isActive = viewModel.selectedLocation?.id == location.id
-        return Button {
-            Task { await viewModel.selectLocation(location) }
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: "mappin")
-                    .font(.caption2)
-                Text(location.name)
-                    .font(.caption.bold())
-                Button {
-                    viewModel.removeLocation(location)
+            if AppFeatureFlags.enableWeatherMonitoring {
+                NavigationLink {
+                    WeatherWatchListView(viewModel: viewModel)
                 } label: {
-                    Image(systemName: "xmark")
-                        .font(.caption2)
-                        .foregroundStyle(isActive ? .white.opacity(0.7) : .secondary)
+                    Label("Watch List", systemImage: "eye")
                 }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(isActive ? Color.accentColor : Color.accentColor.opacity(0.1),
-                        in: Capsule())
-            .foregroundStyle(isActive ? Color.white : Color.accentColor)
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("weather_saved_location_\(location.id)")
-    }
-
-    // MARK: - Forecast Content
-
-    @ViewBuilder
-    private func forecastContent(_ data: WeatherForecastResponse) -> some View {
-        if let current = data.current, let location = data.location {
-            currentWeatherCard(current: current, location: location)
-        }
-
-        // Alerts sit directly under the current conditions and above the
-        // 10-day forecast: a hazard outranks the rest of the forecast, but it
-        // is still part of it, not an interruption laid over it (ADR-006).
-        if !activeAlerts.isEmpty {
-            ForecastAlertSection(
-                alerts: activeAlerts,
-                showsWatchCallToAction: AppFeatureFlags.enableWeatherMonitoring
-                    && viewModel.shouldOfferToWatchSelectedLocation,
-                isWatched: AppFeatureFlags.enableWeatherMonitoring && viewModel.isSelectedLocationWatched,
-                isUpdatingWatch: viewModel.isUpdatingWatchForSelectedLocation,
-                onWatch: { Task { await viewModel.toggleWatchForSelectedLocation() } }
-            )
-        }
-
-        if let days = data.forecast?.forecastday, !days.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("10-Day Forecast")
-                    .font(.headline)
-                    .padding(.horizontal, 4)
-                VStack(spacing: 0) {
-                    ForEach(days) { day in
-                        ForecastRow(day: day, temperatureUnit: temperatureUnit)
-                        if day.id != days.last?.id {
-                            Divider().padding(.horizontal)
-                        }
-                    }
-                }
-                .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12))
-            }
-        }
-    }
-
-    private func currentWeatherCard(current: WeatherCurrent, location: WeatherResponseLocation) -> some View {
-        VStack(spacing: 12) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(location.name ?? "")
-                        .font(.title2.bold())
-                    Text([location.region, location.country].compactMap { $0 }.joined(separator: ", "))
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: current.condition?.sfSymbol ?? "cloud")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.tint)
-                    .symbolRenderingMode(.multicolor)
-            }
-
-            Text(WeatherTemperatureDisplay.format(
-                celsius: current.tempC,
-                fahrenheit: current.tempF,
-                unit: temperatureUnit
-            ))
-            .font(.system(size: 64, weight: .thin))
-            .accessibilityIdentifier("weather_current_temperature")
-
-            if let condition = current.condition?.text {
-                Text(condition)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                .accessibilityIdentifier("weather_watch_list_button")
             }
 
             Divider()
 
-            HStack(spacing: 0) {
-                weatherDetail(
-                    "Feels Like",
-                    value: WeatherTemperatureDisplay.format(
-                        celsius: current.feelslikeC,
-                        fahrenheit: current.feelslikeF,
-                        unit: temperatureUnit
-                    ),
-                    symbol: "thermometer"
-                )
-                .accessibilityIdentifier("weather_feels_like_temperature")
-                Divider().frame(height: 32)
-                weatherDetail("Humidity", value: "\(current.humidity ?? 0)%", symbol: "humidity")
-                Divider().frame(height: 32)
-                weatherDetail("Wind", value: windDisplay(mph: current.windMph ?? 0), symbol: "wind")
-                Divider().frame(height: 32)
-                weatherDetail("UV Index", value: String(format: "%.0f", current.uv ?? 0), symbol: "sun.max")
+            Picker("Temperature", selection: $temperatureUnit) {
+                Text("Celsius").tag(AppPreferences.TemperatureUnit.celsius)
+                Text("Fahrenheit").tag(AppPreferences.TemperatureUnit.fahrenheit)
             }
+        } label: {
+            Label("More", systemImage: "ellipsis.circle")
         }
-        .padding(20)
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 16))
-        .accessibilityIdentifier("weather_current_card")
+        .accessibilityLabel("More")
+        .accessibilityIdentifier("weather_more_menu_button")
     }
 
-    private func weatherDetail(_ label: String, value: String, symbol: String) -> some View {
-        VStack(spacing: 4) {
-            Image(systemName: symbol)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.callout.bold())
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+    // MARK: - List
+
+    @ViewBuilder
+    private var locationList: some View {
+        // Search is a mode the field enters, not a state inferred from whether
+        // results exist. Keying off results alone left the saved list showing
+        // behind an empty query, so the screen flipped between two contents
+        // while the user was still typing.
+        if isSearchPresented {
+            searchResultsList
+        } else if viewModel.savedLocations.isEmpty {
+            EmptyStateView(
+                "No Saved Locations",
+                subtitle: "Search for a city or place to see its forecast and get hazard alerts.",
+                systemImage: "cloud.sun"
+            )
+        } else {
+            List {
+                ForEach(viewModel.savedLocations) { location in
+                    // A destination-based link rather than a path append:
+                    // WeatherView is hosted inside whichever NavigationStack
+                    // the current layout provides (the phone home stack, a tab
+                    // stack, or the split view's column), none of which route
+                    // a path this screen owns.
+                    // Deliberately not a NavigationLink: a link inside a List
+                    // draws a disclosure caret, and the card is already a
+                    // self-evident tap target. Apple's Weather list has no
+                    // chevron either.
+                    Button {
+                        openedFromSearch = false
+                        selectedLocation = location
+                    } label: {
+                        WeatherLocationCard(
+                            location: location,
+                            summary: viewModel.locationSummaries[location.id],
+                            isWatched: viewModel.watchedLocations.contains {
+                                $0.weatherLocationId == location.id
+                            },
+                            hasNewAlert: viewModel.hasUnseenAlert(locationId: location.id),
+                            temperatureUnit: temperatureUnit
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            viewModel.removeLocation(location)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                }
+                .onDelete { offsets in
+                    for index in offsets {
+                        viewModel.removeLocation(viewModel.savedLocations[index])
+                    }
+                }
+                .onMove { source, destination in
+                    viewModel.moveLocations(fromOffsets: source, toOffset: destination)
+                }
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            // The cards carry their own sky, so they need a recessed surface
+            // behind them to read as raised. On the system background they
+            // float on white and the screen loses its depth.
+            .background(WeatherSkyGradient.ListBackground.color.ignoresSafeArea())
+            // `editMode` is iOS-only; macOS drives row editing from the
+            // List's own selection chrome, so there is nothing to bind there.
+            #if os(iOS)
+            .environment(\.editMode, .constant(isEditing ? .active : .inactive))
+            #endif
+            // The list's surface is dark in both appearances, but the drag
+            // handles and delete affordances Edit List draws are system
+            // chrome, tinted for the *environment's* scheme. In light mode
+            // they came out near-black on the dark surface and vanished.
+            // Pinning the scheme dark for this list matches the chrome to the
+            // background it is actually drawn on.
+            .environment(\.colorScheme, .dark)
+            .refreshable { await viewModel.refreshAllLocationSummaries() }
         }
-        .frame(maxWidth: .infinity)
+    }
+
+    private var searchResultsList: some View {
+        List {
+            if viewModel.isSearching {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Searching…")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if let error = viewModel.searchError {
+                InlineErrorView(message: error)
+                    .listRowSeparator(.hidden)
+            }
+
+            ForEach(viewModel.searchResults) { location in
+                let isSaved = viewModel.savedLocations.contains { $0.id == location.id }
+                HStack(spacing: 12) {
+                    // Tapping the row opens the forecast without saving, so a
+                    // user can look before committing. Search stays presented
+                    // underneath, which is what makes Back return here rather
+                    // than to the saved list.
+                    Button {
+                        openedFromSearch = true
+                        selectedLocation = location
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(location.name).font(.body)
+                            if let region = location.region, let country = location.country {
+                                Text("\(region), \(country)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("weather_search_result_\(location.id)")
+
+                    // Saving is its own explicit action rather than a side
+                    // effect of opening a result — the two intents are
+                    // different, and inferring one from the other silently
+                    // grew the user's list every time they looked something up.
+                    Button {
+                        viewModel.saveLocation(location)
+                        Task { await viewModel.loadSummary(for: location) }
+                    } label: {
+                        Image(systemName: isSaved ? "checkmark.circle.fill" : "plus.circle")
+                            .font(.title3)
+                            .foregroundStyle(isSaved ? Color.green : Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isSaved)
+                    .accessibilityLabel(isSaved
+                        ? "\(location.name) is already saved"
+                        : "Save \(location.name)")
+                    .accessibilityIdentifier("weather_search_save_\(location.id)")
+                }
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        // The search field's container is drawn by the navigation bar, which
+        // takes the screen background behind it. Giving the results the same
+        // surface makes the field and the list it filters read as one area
+        // rather than a light bar floating over a dark one.
+        .background(WeatherSkyGradient.ListBackground.color.ignoresSafeArea())
+        // Same reason as the saved list: the surface is dark in both
+        // appearances, so the rows' text and chrome have to be too.
+        .environment(\.colorScheme, .dark)
     }
 }
