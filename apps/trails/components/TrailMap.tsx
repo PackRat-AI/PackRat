@@ -17,7 +17,7 @@ export function TrailMap({ center, trails, selectedOsmId, onTrailClick }: TrailM
   const mapRef = useRef<import('leaflet').Map | null>(null);
   const markersRef = useRef<import('leaflet').LayerGroup | null>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally runs once; center changes handled by flyTo effect below
+  // Intentionally runs once; center changes are handled by the flyTo effect below.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
