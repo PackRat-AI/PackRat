@@ -54,27 +54,34 @@ enum IdentificationRanker {
             return regionIsCovered ? .noConfidentMatch : .outsideLoadedPacks
         }
 
-        let scored = kept.map { candidate -> (entry: SpeciesEntry, confidence: Double, score: Double) in
-            (candidate.entry, candidate.confidence, score(for: candidate.entry, confidence: candidate.confidence, region: region))
+        var scored: [Scored] = []
+        for candidate in kept {
+            let rankingScore = score(for: candidate.entry, confidence: candidate.confidence, region: region)
+            scored.append(Scored(entry: candidate.entry, confidence: candidate.confidence, score: rankingScore))
         }
 
-        let ranked = scored
-            .sorted {
-                // Ties broken by name so the order is stable across runs —
-                // a list that reshuffles between identical photos reads as
-                // the app being unsure of itself.
-                $0.score == $1.score ? $0.entry.commonName < $1.entry.commonName : $0.score > $1.score
-            }
-            .prefix(ConfidencePolicy.maximumResults)
-            .map {
-                // The reported confidence is the model's, not the
-                // region-adjusted score. The prior decides ordering; it is not
-                // evidence about the photo, so it must not inflate or deflate
-                // what the app claims to be sure of.
-                IdentificationResult(species: $0.entry, confidence: $0.confidence, source: source)
-            }
+        // Ties broken by name so the order is stable across runs — a list that
+        // reshuffles between identical photos reads as the app being unsure of
+        // itself.
+        scored.sort { lhs, rhs in
+            lhs.score == rhs.score ? lhs.entry.commonName < rhs.entry.commonName : lhs.score > rhs.score
+        }
+
+        // The reported confidence is the model's, not the region-adjusted
+        // score. The prior decides ordering; it is not evidence about the
+        // photo, so it must not inflate or deflate what the app claims to be
+        // sure of.
+        let ranked = scored.prefix(ConfidencePolicy.maximumResults).map { candidate in
+            IdentificationResult(species: candidate.entry, confidence: candidate.confidence, source: source)
+        }
 
         return .ranked(Array(ranked))
+    }
+
+    private struct Scored {
+        let entry: SpeciesEntry
+        let confidence: Double
+        let score: Double
     }
 
     /// Ordering score: confidence, demoted when the species is not known to
