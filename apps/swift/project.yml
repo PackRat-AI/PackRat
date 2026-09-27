@@ -73,6 +73,11 @@ targets:
         buildPhase: resources
       - path: Resources/PrivacyInfo.xcprivacy
         buildPhase: resources
+      # Bundled core species pack — the feature must identify something on
+      # first launch with no network and no prior download. Regional packs
+      # arrive later via Background Assets; this one ships in the binary.
+      - path: Resources/SpeciesPacks
+        buildPhase: resources
     entitlements:
       path: Resources/PackRat-iOS.entitlements
       properties:
@@ -227,6 +232,11 @@ targets:
       # as a source (no buildPhase override) puts it in the compile phase.
       - Resources/Assets.xcassets
       - path: Resources/PrivacyInfo.xcprivacy
+        buildPhase: resources
+      # Bundled core species pack — the feature must identify something on
+      # first launch with no network and no prior download. Regional packs
+      # arrive later via Background Assets; this one ships in the binary.
+      - path: Resources/SpeciesPacks
         buildPhase: resources
     entitlements:
       path: Resources/PackRat-macOS.entitlements
