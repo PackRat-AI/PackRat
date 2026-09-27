@@ -14,7 +14,7 @@ struct WeatherAlertsView: View {
                         systemImage: "checkmark.shield"
                     )
                 } else {
-                    List(alerts) { alert in
+                    List(Array(alerts.enumerated()), id: \.offset) { _, alert in
                         AlertRow(alert: alert)
                     }
                     #if os(iOS)

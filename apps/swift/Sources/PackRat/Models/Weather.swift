@@ -25,7 +25,22 @@ struct WeatherAlertsWrapper: Codable, Sendable {
 }
 
 struct WeatherAlert: Codable, Identifiable, Sendable {
-    var id: String { headline ?? UUID().uuidString }
+    /// Stable identity derived from the fields that actually distinguish one
+    /// alert from another. Must never be random: a fresh value per access
+    /// makes SwiftUI rebuild the row on every render, discarding its
+    /// expand/collapse `@State`. Must never collapse two distinct alerts onto
+    /// one value either, or they share that state and expand together — the
+    /// backend can and does issue several alerts with the same headline.
+    ///
+    /// Matches the server's alert key (`event|effective`, see
+    /// docs/features/weather-alerts.md), widened with the remaining
+    /// identifying fields so simultaneous same-event alerts for different
+    /// areas stay distinct.
+    var id: String {
+        [event, effective, expires, areas, headline]
+            .map { $0 ?? "" }
+            .joined(separator: "|")
+    }
     let headline: String?
     let event: String?
     let severity: String?

@@ -345,6 +345,7 @@ Xcode and App Store Connect, not EAS.
 
 - **Next.js build failures**: `apps/guides` and `apps/landing` may fail without internet (fetches remote data)
 - **Bun install hangs**: Normal — takes 120+ seconds. Never cancel mid-install.
+- **A fresh worktree silently resolves workspace packages from the main checkout**: `EnterWorktree` and `bun devenv up` do not run `bun install`. A new worktree has no `node_modules` of its own, and Bun/Node module resolution walks up parent directories to find one — since `.claude/worktrees/` lives inside the main checkout, an uninstalled worktree quietly resolves `@packrat/*` packages from the main checkout instead of its own copy. Edits to a workspace package (e.g. `packages/db/src/schema.ts`) then appear invisible to tools run from the worktree (`drizzle-kit generate` reports "no schema changes" against real new tables) until `bun install` is run inside the worktree. Run `bun install` right after entering any new worktree, before touching Drizzle, tests, or anything else that imports a workspace package.
 
 ## Documented Solutions
 

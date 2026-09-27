@@ -24,6 +24,10 @@ extension AppState {
         case .weather:
             navItem = .weather
             return true
+        case .weatherAlert(let weatherLocationId):
+            navItem = .weather
+            weatherVM.pendingAlertDeepLinkLocationId = weatherLocationId
+            return true
         case .unknown:
             return false
         }

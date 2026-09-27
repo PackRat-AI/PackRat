@@ -213,6 +213,24 @@ enum VisualSampleData {
         ]
     }
 
+    /// Fixture watch list — Denver only, pre-watched, so UI tests can exercise
+    /// the watch-list screen and the "already watched" state without a live
+    /// `/api/weather/watch-list` round trip.
+    static var watchedLocations: [WatchedLocation] {
+        [
+            WatchedLocation(
+                id: "visual-watch-denver",
+                weatherLocationId: 5419384,
+                locationName: "Denver",
+                region: "Colorado",
+                country: "United States",
+                lat: 39.74,
+                lon: -104.98,
+                createdAt: "2026-01-01T00:00:00Z"
+            ),
+        ]
+    }
+
     static func weatherLocations(matching query: String) -> [WeatherLocation] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return weatherLocations }
