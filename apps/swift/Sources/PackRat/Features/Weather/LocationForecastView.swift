@@ -12,6 +12,10 @@ import SwiftUI
 /// navigation bar is unambiguous.
 struct LocationForecastView: View {
     let location: WeatherLocation
+    /// True when this screen was pushed from a search result rather than a
+    /// saved card. The results behind it are what Back returns to, so loading
+    /// this forecast must leave the query and its results intact.
+    var openedFromSearch = false
     @Bindable var viewModel: WeatherViewModel
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
     @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
@@ -154,7 +158,7 @@ struct LocationForecastView: View {
         .task {
             arrivedWithUnseenAlert = viewModel.hasUnseenAlert(locationId: location.id)
             if viewModel.selectedLocation?.id != location.id {
-                await viewModel.selectLocation(location)
+                await viewModel.selectLocation(location, clearingSearch: !openedFromSearch)
             }
             // Opening the forecast is the moment the alert has actually been
             // put in front of the user, so it stops counting as new — for the

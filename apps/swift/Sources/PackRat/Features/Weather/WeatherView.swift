@@ -21,6 +21,9 @@ struct WeatherView: View {
     /// returns to whatever was on screen when the forecast was opened —
     /// search results included.
     @State private var selectedLocation: WeatherLocation?
+    /// Whether `selectedLocation` was opened from a search result, so the
+    /// forecast can avoid clearing the results Back returns to.
+    @State private var openedFromSearch = false
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
 
     var body: some View {
@@ -67,7 +70,11 @@ struct WeatherView: View {
             }
         }
         .navigationDestination(item: $selectedLocation) { location in
-            LocationForecastView(location: location, viewModel: viewModel)
+            LocationForecastView(
+                location: location,
+                openedFromSearch: openedFromSearch,
+                viewModel: viewModel
+            )
         }
         .sheet(isPresented: $showingAlertPreferences) {
             NavigationStack {
@@ -97,6 +104,7 @@ struct WeatherView: View {
                         )
                     }
             guard let target else { return }
+            openedFromSearch = false
             selectedLocation = target
         }
     }
@@ -191,6 +199,7 @@ struct WeatherView: View {
                     // self-evident tap target. Apple's Weather list has no
                     // chevron either.
                     Button {
+                        openedFromSearch = false
                         selectedLocation = location
                     } label: {
                         WeatherLocationCard(
@@ -266,7 +275,7 @@ struct WeatherView: View {
                     // underneath, which is what makes Back return here rather
                     // than to the saved list.
                     Button {
-                        Task { await viewModel.loadSummary(for: location) }
+                        openedFromSearch = true
                         selectedLocation = location
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {

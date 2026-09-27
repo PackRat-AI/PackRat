@@ -171,10 +171,19 @@ final class WeatherViewModel {
         return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
     }
 
-    func selectLocation(_ location: WeatherLocation) async {
+    /// Opens a location's forecast.
+    ///
+    /// `clearingSearch` exists because the two entry points want opposite
+    /// things. Tapping a saved card is done with the search field, so it
+    /// should close. Tapping a *search result* only previews that location —
+    /// the results are what Back returns to, so clearing them there left the
+    /// user staring at an empty list with their query gone.
+    func selectLocation(_ location: WeatherLocation, clearingSearch: Bool = true) async {
         selectedLocation = location
-        searchResults = []
-        searchText = ""
+        if clearingSearch {
+            searchResults = []
+            searchText = ""
+        }
         UserDefaults.standard.set(location.id, forKey: activeLocationKey)
         await loadForecast(for: location)
     }
@@ -388,6 +397,13 @@ final class WeatherViewModel {
     func hasUnseenAlert(locationId: Int) -> Bool {
         guard let headlineId = locationSummaries[locationId]?.alertId else { return false }
         return !(seenAlertIds[locationId] ?? []).contains(headlineId)
+    }
+
+    /// True when any saved location is carrying an unseen alert. Backs the
+    /// dashboard's weather tile, which has no per-location surface of its own
+    /// and only needs to know whether there is anything to come and look at.
+    var hasAnyUnseenAlert: Bool {
+        savedLocations.contains { hasUnseenAlert(locationId: $0.id) }
     }
 
     /// Marks every alert currently active for a location as seen. Called when

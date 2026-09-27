@@ -348,7 +348,13 @@ struct HomeView: View {
                 color: .blue
             ) { appState.navItem = .packs },
             HomeAction(title: "Trips", subtitle: upcomingTripsSubtitle, symbol: "map.fill", color: .green) { appState.navItem = .trips },
-            HomeAction(title: "Weather", subtitle: "Forecasts & alerts", symbol: "cloud.sun.fill", color: .cyan) { appState.navItem = .weather },
+            HomeAction(
+                title: "Weather",
+                subtitle: "Forecasts & alerts",
+                symbol: "cloud.sun.fill",
+                color: .cyan,
+                showsAlertBadge: appState.weatherVM.hasAnyUnseenAlert
+            ) { appState.navItem = .weather },
             HomeAction(title: "AI Assistant", subtitle: "Ask about gear & trips", symbol: "bubble.left.and.text.bubble.right", color: .purple) {
                 if let onOpenAssistant {
                     onOpenAssistant()
@@ -419,6 +425,10 @@ struct HomeAction: Identifiable {
     let subtitle: String
     let symbol: String
     let color: Color
+    /// Draws an unread marker on the tile. The dashboard is where a user
+    /// starts, so something that arrived while they were away has to be
+    /// visible before they have chosen where to go.
+    var showsAlertBadge = false
     let action: () -> Void
 
     var id: String { title }
@@ -498,6 +508,18 @@ private struct HomeActionRow: View {
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white)
                             .symbolRenderingMode(.hierarchical)
+                    }
+                    // A dot rather than a count: the dashboard's job is to
+                    // say "there is something here", and the number only
+                    // means anything once you are on the screen itself.
+                    .overlay(alignment: .topTrailing) {
+                        if action.showsAlertBadge {
+                            Circle()
+                                .fill(Color.alertRed)
+                                .frame(width: 9, height: 9)
+                                .overlay(Circle().strokeBorder(.background, lineWidth: 1.5))
+                                .offset(x: 3, y: -3)
+                        }
                     }
 
                 VStack(alignment: .leading, spacing: 2) {
