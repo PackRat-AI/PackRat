@@ -86,11 +86,6 @@ expands to its area, active window and guidance. The navigation bar carries
 state, because on this screen the alert is already in front of the user
 (ADR-009).
 
-**Alert Preferences**, where a user chooses which categories of hazard they
-want to hear about — severe storms, tornado warnings, flood, fire danger,
-winter weather, extreme temperature, high winds, fog — and can turn
-notifications off entirely without losing the in-app view (ADR-005).
-
 If there's nothing to report, the user sees the ordinary forecast with no
 alert section, never an empty or confusing screen.
 
@@ -103,11 +98,11 @@ the time it's opened again.
 
 ## Known limitation
 
-Alert category preferences govern which hazards a user is *notified* about.
-They do not filter the alert section inside a forecast, which always shows
-everything active for that location. A user who has muted Fog Alerts still
-sees a fog alert on the forecast screen; they simply won't be pushed a
-notification about it.
+There is no per-category control over which hazards notify. Watching a
+location means being notified about every hazard that location reports
+(ADR-005). A user who only cares about tornado warnings still gets a fog
+alert push for a location they watch; the only control is whether the
+location is watched at all.
 
 ---
 
@@ -204,6 +199,17 @@ they have to look at, not an active one. Accepted, because the asymmetry matches
 how much each event actually deserves an interruption.
 
 ## ADR-005 — Category preferences shape what interrupts, not what's shown
+
+> **Reversed 2026-09-27.** The Alert Preferences screen has been removed.
+> It was never wired to anything: the toggles wrote to `@AppStorage` and no
+> code — client or server — ever read them, so a user who muted Fog Alerts
+> was still pushed fog alerts. The screen stated a promise the system did not
+> keep, which is worse than not offering the control. Watching a location is
+> now the only notification control: watched means every hazard for that
+> location notifies. The reasoning below stands on its own merits and is the
+> starting point if per-category muting is built for real, in which case the
+> filter belongs in the server-side poller that decides what to push, not in
+> device-local storage the backend cannot see.
 
 **Decision.** Alert Preferences govern which hazard categories can trigger a
 notification. They do not filter the alert section inside a forecast, which

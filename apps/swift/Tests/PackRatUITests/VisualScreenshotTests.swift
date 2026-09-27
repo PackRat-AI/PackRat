@@ -563,7 +563,6 @@ final class VisualScreenshotTests: XCTestCase {
             dismissAfterCapture: false
         )
         tapAndCapture(identifier: "forecast_alert_card", fallbackButton: "Alerts", name: "92-data-weather-alerts-sheet")
-        tapAndCapture(identifier: "weather_alert_preferences_button", fallbackButton: "Alert Preferences", name: "93-data-weather-alert-preferences")
 
         if UITestFeatureFlags.enableFeed {
             captureHomeAction(
@@ -1073,8 +1072,6 @@ final class VisualScreenshotTests: XCTestCase {
     private func captureMacExpandedConnectedStates() {
         resetMacSampleDataSidebar("Weather")
         tapAndCapture(identifier: "forecast_alert_card", fallbackButton: "Alerts", name: "92-data-weather-alerts-sheet")
-        resetMacSampleDataSidebar("Weather")
-        tapElementAndCapture(identifier: "weather_alert_preferences_button", name: "93-data-weather-alert-preferences", dismissAfterCapture: false)
 
         if UITestFeatureFlags.enableFeed {
             resetMacSampleDataSidebar("Feed")

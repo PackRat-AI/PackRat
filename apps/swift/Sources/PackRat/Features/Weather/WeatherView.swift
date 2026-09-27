@@ -14,7 +14,6 @@ struct WeatherView: View {
     @Bindable var viewModel: WeatherViewModel
     @State private var isSearchPresented = false
     @State private var isEditing = false
-    @State private var showingAlertPreferences = false
     /// The location whose forecast is currently pushed, whether it was opened
     /// from the saved list, from a search result, or by a push notification.
     /// A single binding rather than one per entry point, so going back always
@@ -76,11 +75,6 @@ struct WeatherView: View {
                 viewModel: viewModel
             )
         }
-        .sheet(isPresented: $showingAlertPreferences) {
-            NavigationStack {
-                WeatherAlertPreferencesView()
-            }
-        }
         .task {
             guard authManager.isAuthenticated else { return }
             await viewModel.loadWatchedLocations()
@@ -140,13 +134,6 @@ struct WeatherView: View {
                 Label(isEditing ? "Done" : "Edit List", systemImage: "pencil")
             }
             .disabled(viewModel.savedLocations.isEmpty)
-
-            Button {
-                showingAlertPreferences = true
-            } label: {
-                Label("Notifications", systemImage: "bell.badge")
-            }
-            .accessibilityIdentifier("weather_alert_preferences_button")
 
             if AppFeatureFlags.enableWeatherMonitoring {
                 NavigationLink {
