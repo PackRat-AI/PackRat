@@ -43,7 +43,7 @@ export function AIScreen() {
 
   const isTyping = status === 'submitted' || status === 'streaming';
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to bottom when message count changes
+  // Scrolls to the bottom when the message count changes.
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
