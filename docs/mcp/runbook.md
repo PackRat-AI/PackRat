@@ -80,6 +80,53 @@ plugin config / JWKS endpoint is picked up immediately rather than
 waiting on natural isolate churn. See § "Forcing isolate rotation
 after a deploy" further down for the pattern.
 
+## Better Auth 1.7 upgrade — deploy notes
+
+Migration `0052_big_mad_thinker` carries the schema half of the
+`@better-auth/oauth-provider` 1.6 → 1.7 upgrade. Two things an operator should
+know before and after running it.
+
+### `oauthClient.type` and `.public` are dropped, with no backfill
+
+1.7 removed both columns. `application_type` replaces `type`; there is no
+replacement for `public`, because public-vs-confidential is now derived solely
+from `token_endpoint_auth_method` (`'none'` = public), which is unchanged.
+
+The migration is `drizzle-kit`-generated and adds `application_type` and drops
+`type` in the same file, so nothing can read the old value across the boundary
+— any script that pre-creates the destination column makes the migration itself
+fail with a duplicate-column error. **We accept the loss.** It is safe because:
+
+- `application_type` is metadata. No authorization decision reads it.
+- The pre-registered clients are restored by re-running the seed, which now
+  writes `application_type` directly:
+
+  ```bash
+  cd packages/api && bun run db:seed:oauth-clients
+  ```
+
+- Only DCR-registered clients (Claude's self-registrations) end with a null
+  `application_type`, and 1.7 treats an omitted `application_type` as `web` for
+  dynamic registrations anyway.
+
+`client_credentials_scopes` defaults to `'[]'` in the migration, which is the
+deny-by-default 1.7 wants — PackRat issues no machine-to-machine tokens, so
+leave it empty unless a client is deliberately approved for one.
+
+### Resources replaced `validAudiences`
+
+The `resources` option in `packages/api/src/auth/index.ts` seeds `oauthResource`
+rows at plugin init, under the default `resourceSeedMode: 'insertOnly'` — so a
+policy edited in the database (TTL, allowed scopes) survives every later deploy
+rather than being reverted to the config value.
+
+`enforcePerClientResources` defaults to **true** in 1.7: a client may only
+request a resource it is linked to through `oauthClientResource`. Because
+PackRat's clients self-register via DCR and never call the admin link endpoint,
+`clientRegistrationDefaultResources` is set to the same identifier list so each
+registration is linked on creation. Removing that option would make every fresh
+Claude registration fail `/oauth2/token` with `invalid_target`.
+
 ## One-time operator setup
 
 These steps are required before `wrangler deploy --env prod` can succeed.

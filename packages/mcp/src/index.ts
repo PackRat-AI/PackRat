@@ -498,9 +498,10 @@ const mcpDoHandler = PackRatMCP.serve('/mcp', { binding: 'PackRatMCP' });
  *   `props.betterAuthToken` forwards the MCP JWT as-is to the PackRat API
  *   for proxied calls. The JWT's `aud` is `https://mcp.packratai.com/mcp`,
  *   NOT `api.packrat.world`, so the API's `bearer()` plugin may reject
- *   it. The fix (when surfaced during U7+ runtime testing) is to extend
- *   `validAudiences` in `packages/api/src/auth/index.ts:oauthProvider({
- *   validAudiences: [...both URLs...] })` — option (a) per the plan.
+ *   it. The fix (when surfaced during U7+ runtime testing) is to add
+ *   `api.packrat.world` to `mcpResourceIdentifiers` in
+ *   `packages/api/src/auth/index.ts` (fed to `oauthProvider({ resources })`)
+ *   — option (a) per the plan.
  *   For now the token forwards unchanged; if proxied calls 401 in U6/U7,
  *   that's the one-line fix.
  */
