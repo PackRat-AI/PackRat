@@ -347,7 +347,6 @@ struct HomeView: View {
                 symbol: "backpack.fill",
                 color: .blue
             ) { appState.navItem = .packs },
-            HomeAction(title: "Trips", subtitle: upcomingTripsSubtitle, symbol: "map.fill", color: .green) { appState.navItem = .trips },
             HomeAction(
                 title: "Weather",
                 subtitle: "Forecasts & alerts",
@@ -355,6 +354,7 @@ struct HomeView: View {
                 color: .cyan,
                 showsAlertBadge: appState.weatherVM.hasAnyUnseenAlert
             ) { appState.navItem = .weather },
+            HomeAction(title: "Trips", subtitle: upcomingTripsSubtitle, symbol: "map.fill", color: .green) { appState.navItem = .trips },
             HomeAction(title: "AI Assistant", subtitle: "Ask about gear & trips", symbol: "bubble.left.and.text.bubble.right", color: .purple) {
                 if let onOpenAssistant {
                     onOpenAssistant()
@@ -509,18 +509,6 @@ private struct HomeActionRow: View {
                             .foregroundStyle(.white)
                             .symbolRenderingMode(.hierarchical)
                     }
-                    // A dot rather than a count: the dashboard's job is to
-                    // say "there is something here", and the number only
-                    // means anything once you are on the screen itself.
-                    .overlay(alignment: .topTrailing) {
-                        if action.showsAlertBadge {
-                            Circle()
-                                .fill(Color.alertRed)
-                                .frame(width: 9, height: 9)
-                                .overlay(Circle().strokeBorder(.background, lineWidth: 1.5))
-                                .offset(x: 3, y: -3)
-                        }
-                    }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(action.title)
@@ -536,6 +524,19 @@ private struct HomeActionRow: View {
 
                 Spacer(minLength: 8)
 
+                // A dot rather than a count: the dashboard's job is to say
+                // "there is something here", and the number only means
+                // anything once you are on the screen itself. It sits at the
+                // trailing edge beside the chevron, where the eye already
+                // travels to find the row's affordance — on the icon it read
+                // as part of the icon's own artwork.
+                if action.showsAlertBadge {
+                    Circle()
+                        .fill(Color.alertRed)
+                        .frame(width: 9, height: 9)
+                        .accessibilityHidden(true)
+                }
+
                 Image(systemName: "chevron.right")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.tertiary)
@@ -546,6 +547,7 @@ private struct HomeActionRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("home_action_\(action.title.accessibilityIdentifierFragment)")
+        .accessibilityValue(action.showsAlertBadge ? "New alert" : "")
     }
 }
 

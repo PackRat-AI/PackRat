@@ -62,11 +62,17 @@ over.
 
 ## What a user sees in the app
 
-**The dashboard.** The Weather tile carries a red dot while any saved
+**The dashboard.** The Weather row carries a red dot while any saved
 location has an alert the user hasn't opened yet. The dashboard is where a
 session starts, so something that arrived while they were away is visible
 before they've chosen where to go. A dot rather than a count — the number
-only means something once you're on the screen itself.
+only means something once you're on the screen itself. The dot sits at the
+row's trailing edge beside the chevron, where the eye already travels to find
+the row's affordance; on the icon it read as part of the icon's own artwork.
+Weather is the second row, so the indicator is on screen without scrolling.
+
+**The Weather tab.** Its badge counts locations carrying an unread alert, on
+the same unread rule as everything else (ADR-010).
 
 **The weather list.** One card per saved location. A card whose location has
 an *unread* alert carries a red bar down its leading edge and shows the alert
@@ -96,7 +102,17 @@ what was true the last time someone happened to look. A hazard that starts
 while the app is closed is already reflected — markers and notification — by
 the time it's opened again.
 
-## Known limitation
+The app re-checks every saved location when it launches and each time it
+returns to the foreground, before the user has navigated anywhere (ADR-011).
+That is what makes the markers correct on a cold open rather than only after
+a visit to the weather screen.
+
+## Known limitations
+
+The at-rest markers are driven by the locations saved on *this* device. A
+watched location that isn't in this device's saved list still pushes, but
+produces no dot or badge once the notification is gone — the refresh has
+nothing local to check it against.
 
 There is no per-category control over which hazards notify. Watching a
 location means being notified about every hazard that location reports
@@ -420,3 +436,30 @@ on the card, in white. That is the intended reading: the alert is still
 there, it just isn't news anymore. It also means the markers depend on local
 state, so a user with the same account on two devices clears the marker
 independently on each.
+
+## ADR-011 — The at-rest markers are refreshed on app open, not by push
+
+**Decision.** Alert state for every saved location is re-fetched at the
+navigation root when the app launches and whenever it returns to the
+foreground. The markers do not depend on the user visiting the weather
+screen, and they are not driven by a background push.
+
+**Why.** The markers exist for exactly one situation: the push was missed —
+swiped away, or delivered while the phone was off. Deriving them from the
+weather screen's own fetch inverted that. The user who never opened the
+weather screen was the only user the markers were for, and the only one who
+never saw them.
+
+A silent background push would keep the state fresh without the app being
+opened, but it is the wrong mechanism here. Delivery is best-effort and
+throttled by the system, so it cannot be relied on to have arrived — and a
+marker cannot be *seen* until the app is open regardless. The app opening is
+therefore the one event guaranteed to precede the need, which makes a pull at
+that moment strictly more reliable than a push before it. Push keeps its own
+job: interrupting the user when a hazard is issued.
+
+**Consequence.** Every foreground refetches all saved locations, so a user
+with many saved places pays a burst of requests on each open. Acceptable at
+realistic list sizes; if it becomes chatter, the fix is a minimum interval
+between refreshes, not a move to push. There is also a brief window on a cold
+start where the markers are not yet drawn — the fetch has to return first.
