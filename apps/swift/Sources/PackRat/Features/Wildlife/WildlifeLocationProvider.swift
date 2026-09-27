@@ -79,7 +79,7 @@ final class WildlifeLocationProvider: NSObject, CLLocationManagerDelegate {
     /// only needs to be right at continent scale to be useful as a prior.
     /// A coordinate that falls outside every box yields nil, which the ranker
     /// treats as "no prior" rather than "nowhere".
-    static func region(for coordinate: CLLocationCoordinate2D) -> String? {
+    nonisolated static func region(for coordinate: CLLocationCoordinate2D) -> String? {
         let lat = coordinate.latitude
         let lon = coordinate.longitude
 
