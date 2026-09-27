@@ -226,7 +226,11 @@ struct WeatherView: View {
             // behind them to read as raised. On the system background they
             // float on white and the screen loses its depth.
             .background(WeatherSkyGradient.ListBackground.color.ignoresSafeArea())
+            // `editMode` is iOS-only; macOS drives row editing from the
+            // List's own selection chrome, so there is nothing to bind there.
+            #if os(iOS)
             .environment(\.editMode, .constant(isEditing ? .active : .inactive))
+            #endif
             // The list's surface is dark in both appearances, but the drag
             // handles and delete affordances Edit List draws are system
             // chrome, tinted for the *environment's* scheme. In light mode
