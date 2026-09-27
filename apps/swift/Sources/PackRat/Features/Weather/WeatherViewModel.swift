@@ -404,6 +404,32 @@ final class WeatherViewModel {
 
     // MARK: - New-alert badging
 
+    /// Refreshes every saved location's summary so the unseen-alert badge is
+    /// correct the moment the app opens, rather than only after the user has
+    /// visited the Weather tab.
+    ///
+    /// The badge exists to catch a hazard the user *missed* — a push that was
+    /// swiped away, or one that arrived while the phone was off. Deriving it
+    /// from the Weather screen's own fetch meant the one user who most needed
+    /// it (the one who never opened Weather) was the one who never saw it.
+    /// Called on launch and on every foreground; it is a no-op when there are
+    /// no saved locations, so the common cold-start costs nothing.
+    ///
+    /// Deliberately not push-driven: a silent push is best-effort delivery and
+    /// cannot be relied on to have arrived, so the check is a pull on the one
+    /// event that always happens before the badge can be seen — the app being
+    /// opened. Push still handles the foreground case via the tap handler.
+    func refreshAlertBadgeState() async {
+        guard !savedLocations.isEmpty else { return }
+        await withTaskGroup(of: Void.self) { group in
+            for location in savedLocations {
+                group.addTask { [weak self] in
+                    await self?.loadSummary(for: location)
+                }
+            }
+        }
+    }
+
     /// True when this location has an active alert the user has not yet seen.
     /// Drives the red accents on the list card and the forecast's bell, which
     /// exist to pull attention to a hazard that arrived since the user last

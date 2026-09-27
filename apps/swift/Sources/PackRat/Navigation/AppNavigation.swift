@@ -108,14 +108,26 @@ struct AppNavigation: View {
 
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
     @State private var phoneTab: PhoneTab = .home
     @State private var phoneHomePath: [NavItem] = []
     // Count, not the rows themselves — the Weather tab badge only needs
     // "how many watched locations currently have an active alert."
     @Query(filter: #Predicate<CachedWeatherAlertState> { $0.hasActiveAlert })
     private var activeAlertStates: [CachedWeatherAlertState]
+    /// Unseen alerts across saved locations, plus any push-learned state in
+    /// the SwiftData cache for a location the user has not saved locally.
+    /// The badge counts *unseen* rather than *active*: an alert the user has
+    /// already opened still exists, but no longer needs to shout.
     private var activeWeatherAlertCount: Int {
-        activeAlertStates.filter(\.isStillActive).count
+        let unseenSaved = appState.weatherVM.savedLocations
+            .filter { appState.weatherVM.hasUnseenAlert(locationId: $0.id) }
+            .map(\.id)
+        let savedIds = Set(appState.weatherVM.savedLocations.map(\.id))
+        let cachedOnly = activeAlertStates
+            .filter { $0.isStillActive && !savedIds.contains($0.weatherLocationId) }
+            .map(\.weatherLocationId)
+        return Set(unseenSaved).union(cachedOnly).count
     }
     #endif
 
@@ -125,6 +137,15 @@ struct AppNavigation: View {
                 appState.apply(DeepLink.parse(url))
             }
             #if os(iOS)
+            // The alert badge has to be right before the user has been
+            // anywhere — its whole job is to catch a hazard whose push was
+            // missed. Checking here, at the navigation root, means it is
+            // populated on launch instead of only after a visit to Weather.
+            .task { await appState.weatherVM.refreshAlertBadgeState() }
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active else { return }
+                Task { await appState.weatherVM.refreshAlertBadgeState() }
+            }
             .onReceive(NotificationCenter.default.publisher(for: .weatherAlertNotificationTapped)) { notification in
                 guard let weatherLocationId = notification.userInfo?["weatherLocationId"] as? Int else { return }
                 appState.apply(.weatherAlert(weatherLocationId: weatherLocationId))
