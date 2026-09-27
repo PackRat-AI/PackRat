@@ -20,6 +20,7 @@ import { tripsRoutes } from './trips';
 import { uploadRoutes } from './upload';
 import { userRoutes } from './user';
 import { weatherRoutes } from './weather';
+import { weatherMonitoringRoutes } from './weatherMonitoring';
 import { wildlifeRoutes } from './wildlife';
 
 /**
@@ -37,6 +38,7 @@ export const routes = new Elysia({ prefix: '/api' })
   .use(aiRoutes)
   .use(chatRoutes)
   .use(weatherRoutes)
+  .use(weatherMonitoringRoutes)
   .use(packTemplatesRoutes)
   .use(seasonSuggestionsRoutes)
   .use(passwordResetRoutes)

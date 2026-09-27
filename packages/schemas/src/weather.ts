@@ -197,27 +197,25 @@ export const WeatherForecastDaySchema = z.object({
   hour: z.array(WeatherHourSchema),
 });
 
+export const WeatherAlertItemSchema = z.object({
+  headline: z.string(),
+  msgtype: z.string(),
+  severity: z.string(),
+  urgency: z.string(),
+  areas: z.string(),
+  category: z.string(),
+  certainty: z.string(),
+  event: z.string(),
+  note: z.string().optional(),
+  effective: z.string(),
+  expires: z.string(),
+  desc: z.string(),
+  instruction: z.string().optional(),
+});
+
 export const WeatherAlertSchema = z
   .object({
-    alert: z
-      .array(
-        z.object({
-          headline: z.string(),
-          msgtype: z.string(),
-          severity: z.string(),
-          urgency: z.string(),
-          areas: z.string(),
-          category: z.string(),
-          certainty: z.string(),
-          event: z.string(),
-          note: z.string().optional(),
-          effective: z.string(),
-          expires: z.string(),
-          desc: z.string(),
-          instruction: z.string().optional(),
-        }),
-      )
-      .optional(),
+    alert: z.array(WeatherAlertItemSchema).optional(),
   })
   .optional();
 
@@ -268,6 +266,7 @@ export type WeatherDay = z.infer<typeof WeatherDaySchema>;
 export type WeatherHour = z.infer<typeof WeatherHourSchema>;
 export type WeatherForecastDay = z.infer<typeof WeatherForecastDaySchema>;
 export type WeatherAlert = z.infer<typeof WeatherAlertSchema>;
+export type WeatherAlertItem = z.infer<typeof WeatherAlertItemSchema>;
 export type WeatherForecast = z.infer<typeof WeatherForecastSchema>;
 export type WeatherAPISearchResponse = z.infer<typeof WeatherAPISearchResponseSchema>;
 export type WeatherAPICurrentResponse = z.infer<typeof WeatherAPICurrentResponseSchema>;

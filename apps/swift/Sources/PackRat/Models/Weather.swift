@@ -1,6 +1,6 @@
 import Foundation
 
-struct WeatherLocation: Codable, Identifiable, Sendable {
+struct WeatherLocation: Codable, Identifiable, Hashable, Sendable {
     let id: Int
     let name: String
     let region: String?
@@ -25,7 +25,22 @@ struct WeatherAlertsWrapper: Codable, Sendable {
 }
 
 struct WeatherAlert: Codable, Identifiable, Sendable {
-    var id: String { headline ?? UUID().uuidString }
+    /// Stable identity derived from the fields that actually distinguish one
+    /// alert from another. Must never be random: a fresh value per access
+    /// makes SwiftUI rebuild the row on every render, discarding its
+    /// expand/collapse `@State`. Must never collapse two distinct alerts onto
+    /// one value either, or they share that state and expand together — the
+    /// backend can and does issue several alerts with the same headline.
+    ///
+    /// Matches the server's alert key (`event|effective`, see
+    /// docs/features/weather-alerts.md), widened with the remaining
+    /// identifying fields so simultaneous same-event alerts for different
+    /// areas stay distinct.
+    var id: String {
+        [event, effective, expires, areas, headline]
+            .map { $0 ?? "" }
+            .joined(separator: "|")
+    }
     let headline: String?
     let event: String?
     let severity: String?
@@ -105,6 +120,10 @@ struct ForecastDay: Codable, Identifiable, Sendable {
     let dateEpoch: Int?
     let day: DayForecast?
     let astro: AstroForecast?
+    /// Hour-by-hour detail for this day. The API has always returned this
+    /// (`forecast.json?days=10`); it simply wasn't decoded until the hourly
+    /// strip needed it, so no backend change was required to populate it.
+    let hour: [ForecastHour]?
 
     var displayDate: String {
         guard let str = date,
@@ -114,6 +133,35 @@ struct ForecastDay: Codable, Identifiable, Sendable {
         if cal.isDateInToday(d) { return "Today" }
         if cal.isDateInTomorrow(d) { return "Tomorrow" }
         return d.formatted(.dateTime.weekday(.wide))
+    }
+}
+
+/// A single hour of a day's forecast, backing the hourly strip on the
+/// location detail screen.
+struct ForecastHour: Codable, Identifiable, Sendable {
+    var id: Int { timeEpoch ?? 0 }
+    let timeEpoch: Int?
+    let time: String?
+    let tempC: Double?
+    let tempF: Double?
+    let condition: WeatherCondition?
+    let chanceOfRain: Int?
+    let isDay: Int?
+
+    var date: Date? {
+        timeEpoch.map { Date(timeIntervalSince1970: TimeInterval($0)) }
+    }
+
+    /// "9AM"-style label matching Apple's hourly strip. The caller supplies the
+    /// location's own time zone so an hour reads in local time for the place
+    /// being viewed, not wherever the user happens to be.
+    func displayHour(timeZone: TimeZone) -> String {
+        guard let date else { return "" }
+        var calendar = Calendar.current
+        calendar.timeZone = timeZone
+        let hour = calendar.component(.hour, from: date)
+        let hour12 = hour % 12 == 0 ? 12 : hour % 12
+        return "\(hour12)\(hour < 12 ? "AM" : "PM")"
     }
 }
 

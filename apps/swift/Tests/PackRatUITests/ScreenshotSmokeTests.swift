@@ -17,7 +17,7 @@ final class ScreenshotSmokeTests: AppUITestCase {
 
         goToDestination("Weather")
         assertDestinationLoaded("Weather")
-        let searchField = app.searchFields["Search locations…"]
+        let searchField = app.searchFields["Search for a city or place"]
         XCTAssertTrue(searchField.waitForExistence(timeout: 10))
         searchField.tap()
         searchField.typeText("Denver")
@@ -26,7 +26,7 @@ final class ScreenshotSmokeTests: AppUITestCase {
         ).firstMatch
         XCTAssertTrue(firstResult.waitForExistence(timeout: 10))
         firstResult.tap()
-        XCTAssertTrue(app.staticTexts["10-Day Forecast"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["10-DAY FORECAST"].waitForExistence(timeout: 20))
         if app.keyboards.firstMatch.exists {
             app.keyboards.buttons["Return"].tapIfExists()
         }
@@ -55,7 +55,7 @@ final class ScreenshotSmokeTests: AppUITestCase {
         case "Packs":
             XCTAssertTrue(app.buttons["New Pack"].waitForExistence(timeout: 8), file: file, line: line)
         case "Weather":
-            XCTAssertTrue(app.searchFields["Search locations…"].waitForExistence(timeout: 8), file: file, line: line)
+            XCTAssertTrue(app.searchFields["Search for a city or place"].waitForExistence(timeout: 8), file: file, line: line)
         default:
             XCTAssertTrue(app.staticTexts[label].waitForExistence(timeout: 8), file: file, line: line)
         }

@@ -18,6 +18,12 @@ public enum DeepLink: Equatable {
     case trip(id: String)
     case feed
     case weather
+    /// Opens straight to a watched location's alert detail — used by the
+    /// weather-alert push notification's tap handler. Swift/iOS-only for
+    /// now: proactive weather monitoring has no Android counterpart yet
+    /// (see docs/features/weather-alerts.md), so this case has no Expo
+    /// parity to keep in sync with until that work starts.
+    case weatherAlert(weatherLocationId: Int)
     case unknown(URL)
 
     public static let scheme = "packrat"
@@ -37,6 +43,9 @@ public enum DeepLink: Equatable {
         case "feed":
             return .feed
         case "weather":
+            if let idString = pathSegments.first, let id = Int(idString) {
+                return .weatherAlert(weatherLocationId: id)
+            }
             return .weather
         default:
             return .unknown(url)

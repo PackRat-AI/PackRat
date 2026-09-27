@@ -187,6 +187,126 @@ struct WeatherViewModelTests {
         #expect(await service.idForecastRequests == 1)
         #expect(await service.nameForecastQueries == ["Denver, Colorado"])
     }
+
+    @Test("loading a forecast also refreshes that location's list summary")
+    @MainActor func forecastPopulatesListSummary() async {
+        let service = FallbackWeatherService()
+        let vm = WeatherViewModel(service: service, loadPersistedState: false)
+        let denver = WeatherLocation(
+            id: 5419384,
+            name: "Denver",
+            region: "Colorado",
+            country: "United States",
+            lat: 39.74,
+            lon: -104.98
+        )
+
+        await vm.selectLocation(denver)
+
+        // The list card reads from `locationSummaries`, so a detail load that
+        // didn't fold into it would leave the card behind showing stale or
+        // missing conditions.
+        #expect(vm.locationSummaries[denver.id]?.tempF == 72)
+        #expect(vm.locationSummaries[denver.id]?.conditionText == "Partly cloudy")
+    }
+
+    @Test("removing a location drops its cached summary")
+    @MainActor func removingLocationClearsSummary() async {
+        let service = FallbackWeatherService()
+        let vm = WeatherViewModel(service: service, loadPersistedState: false)
+        let denver = WeatherLocation(
+            id: 5419384,
+            name: "Denver",
+            region: "Colorado",
+            country: "United States",
+            lat: 39.74,
+            lon: -104.98
+        )
+        vm.saveLocation(denver)
+        await vm.selectLocation(denver)
+        #expect(vm.locationSummaries[denver.id] != nil)
+
+        vm.removeLocation(denver)
+
+        // A stale summary would resurface as real conditions if the same
+        // location were added back later.
+        #expect(vm.locationSummaries[denver.id] == nil)
+    }
+
+    @Test("reordering saved locations keeps the user's arrangement")
+    @MainActor func moveLocationsReorders() {
+        let vm = WeatherViewModel(loadPersistedState: false)
+        let denver = WeatherLocation(id: 1, name: "Denver", region: nil, country: nil, lat: nil, lon: nil)
+        let seattle = WeatherLocation(id: 2, name: "Seattle", region: nil, country: nil, lat: nil, lon: nil)
+        vm.saveLocation(denver)
+        vm.saveLocation(seattle)
+
+        vm.moveLocations(fromOffsets: IndexSet(integer: 1), toOffset: 0)
+
+        #expect(vm.savedLocations.map(\.id) == [2, 1])
+    }
+}
+
+// MARK: - Weather display formatting
+
+@Suite("WeatherTemperatureDisplay.degrees")
+struct WeatherDegreesTests {
+    @Test("drops the unit suffix where context already establishes it")
+    func dropsUnitSuffix() {
+        #expect(WeatherTemperatureDisplay.degrees(celsius: 20, fahrenheit: 99, unit: .celsius) == "20°")
+        #expect(WeatherTemperatureDisplay.degrees(celsius: 99, fahrenheit: 68, unit: .fahrenheit) == "68°")
+    }
+
+    @Test("converts before stripping, like format does")
+    func convertsBeforeStripping() {
+        #expect(WeatherTemperatureDisplay.degrees(celsius: nil, fahrenheit: 68, unit: .celsius) == "20°")
+    }
+
+    @Test("keeps the em dash when there is no reading")
+    func preservesMissingValue() {
+        #expect(WeatherTemperatureDisplay.degrees(celsius: nil, fahrenheit: nil, unit: .celsius) == "—")
+    }
+
+    @Test("handles negative temperatures without mangling the sign")
+    func handlesNegatives() {
+        #expect(WeatherTemperatureDisplay.degrees(celsius: -12, fahrenheit: nil, unit: .celsius) == "-12°")
+    }
+}
+
+@Suite("ForecastHour")
+struct ForecastHourTests {
+    private func hour(epoch: Int) -> ForecastHour {
+        ForecastHour(
+            timeEpoch: epoch,
+            time: nil,
+            tempC: 10,
+            tempF: 50,
+            condition: nil,
+            chanceOfRain: 0,
+            isDay: 1
+        )
+    }
+
+    @Test("labels hours in the location's own time zone, not the viewer's")
+    func labelsInLocationTimeZone() {
+        // 2026-09-29 15:00 UTC.
+        let sample = hour(epoch: 1790694000)
+        let utc = TimeZone(identifier: "UTC")!
+        let denver = TimeZone(identifier: "America/Denver")!
+
+        // Same instant, different local hour — a viewer in London must still
+        // see Denver's clock when looking at Denver.
+        #expect(sample.displayHour(timeZone: utc) == "3PM")
+        #expect(sample.displayHour(timeZone: denver) == "9AM")
+    }
+
+    @Test("renders midnight and noon as 12, not 0")
+    func rendersTwelveHourBoundaries() {
+        let utc = TimeZone(identifier: "UTC")!
+        // 2026-09-29 00:00 UTC and 12:00 UTC.
+        #expect(hour(epoch: 1790640000).displayHour(timeZone: utc) == "12AM")
+        #expect(hour(epoch: 1790683200).displayHour(timeZone: utc) == "12PM")
+    }
 }
 
 private actor FallbackWeatherService: WeatherServicing {
