@@ -78,6 +78,12 @@ targets:
       properties:
         com.apple.developer.applesignin:
           - Default
+        # Required for the weather watch list's push alerts. XcodeGen
+        # generates the entitlements file from this block, so editing the
+        # .entitlements directly is overwritten on the next `bun swift`.
+        # `development` pairs with a Development profile and the APNs
+        # sandbox; store builds get `production` from the export profile.
+        aps-environment: development
     info:
       path: Resources/Info-iOS.plist
       properties:

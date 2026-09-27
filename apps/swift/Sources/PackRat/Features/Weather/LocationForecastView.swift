@@ -19,13 +19,6 @@ struct LocationForecastView: View {
     @Bindable var viewModel: WeatherViewModel
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
     @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
-    @State private var showingAlerts = false
-    /// Whether this location was carrying an unread alert when the screen
-    /// opened. Held in `@State` rather than read live: opening the forecast
-    /// immediately marks the alert seen, so a live read would flip to false
-    /// before the bell ever drew red. The red bell is meant to say "this is
-    /// why you are here", which is a fact about arrival, not about now.
-    @State private var arrivedWithUnseenAlert = false
 
     private var forecast: WeatherForecastResponse? {
         // The view model holds one forecast at a time, for whichever location
@@ -63,8 +56,7 @@ struct LocationForecastView: View {
                             isWatched: AppFeatureFlags.enableWeatherMonitoring
                                 && viewModel.isSelectedLocationWatched,
                             isUpdatingWatch: viewModel.isUpdatingWatchForSelectedLocation,
-                            onWatch: { Task { await viewModel.toggleWatchForSelectedLocation() } },
-                            onSeeAllAlerts: { showingAlerts = true }
+                            onWatch: { Task { await viewModel.toggleWatchForSelectedLocation() } }
                         )
                     }
 
@@ -121,8 +113,11 @@ struct LocationForecastView: View {
             }
 
             // The per-location watch control, on the only screen where
-            // "this location" is unambiguous.
-            if AppFeatureFlags.enableWeatherMonitoring {
+            // "this location" is unambiguous — and only once the location is
+            // saved. Watching a place absent from your list is a subscription
+            // with no home, so the nav bar offers one thing at a time: add
+            // first, then watch.
+            if AppFeatureFlags.enableWeatherMonitoring && isSaved {
                 ToolbarItem(placement: watchToolbarPlacement) {
                     Button {
                         Task { await viewModel.toggleWatchForSelectedLocation() }
@@ -142,9 +137,11 @@ struct LocationForecastView: View {
                         }
                     }
                     .disabled(viewModel.isUpdatingWatchForSelectedLocation)
-                    // Red only while an alert is unread — the bell's job then
-                    // is to point at the hazard, not to report a setting.
-                    .tint(arrivedWithUnseenAlert ? Color.alertRed : .white)
+                    // Never tinted by alert state: on this screen the alert
+                    // is already in front of the user, so a red bell adds
+                    // alarm without adding information. The bell reports one
+                    // thing — whether you are subscribed.
+                    .tint(.white)
                     .accessibilityLabel(viewModel.isSelectedLocationWatched
                         ? "Stop watching this location"
                         : "Watch this location for alerts")
@@ -156,7 +153,6 @@ struct LocationForecastView: View {
         .overlay(alignment: .bottom) { watchStatusToast }
         .refreshable { await viewModel.refresh() }
         .task {
-            arrivedWithUnseenAlert = viewModel.hasUnseenAlert(locationId: location.id)
             if viewModel.selectedLocation?.id != location.id {
                 await viewModel.selectLocation(location, clearingSearch: !openedFromSearch)
             }
@@ -165,22 +161,16 @@ struct LocationForecastView: View {
             // red marker on the list behind, and for the next visit here.
             viewModel.markAlertsSeen(for: location.id)
         }
-        .onChange(of: activeAlerts.map(\.id)) { previous, current in
-            // A refresh that brings in a genuinely different alert is new
-            // again, even without leaving the screen.
-            if !previous.isEmpty && previous != current {
-                arrivedWithUnseenAlert = true
-            }
+        .onChange(of: activeAlerts.map(\.id)) {
             viewModel.markAlertsSeen(for: location.id)
         }
         .task(id: viewModel.pendingAlertDeepLinkLocationId) {
-            // A push tap that targets this location opens its alerts directly.
+            // Arriving here from a push tap is the whole deep link. The alert
+            // section is already on this screen, so opening a sheet over it
+            // showed the same hazard twice and made the forecast the user was
+            // sent to something they had to dismiss their way into.
             guard viewModel.pendingAlertDeepLinkLocationId == location.id else { return }
-            showingAlerts = true
             viewModel.pendingAlertDeepLinkLocationId = nil
-        }
-        .sheet(isPresented: $showingAlerts) {
-            WeatherAlertsView(alerts: activeAlerts)
         }
         .animation(.spring(duration: 0.3), value: viewModel.watchStatusMessage)
     }

@@ -18,30 +18,17 @@ struct ForecastAlertSection: View {
     let isWatched: Bool
     let isUpdatingWatch: Bool
     let onWatch: () -> Void
-    /// Opens the full Alerts screen. The inline cards are a summary in the
-    /// forecast's flow; the dedicated screen is where every active alert is
-    /// listed with its area, window and guidance.
-    let onSeeAllAlerts: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(alerts.count == 1 ? "ACTIVE ALERT" : "ACTIVE ALERTS")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-
-                Spacer()
-
-                Button(action: onSeeAllAlerts) {
-                    Text("See All")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("See all alerts")
-                .accessibilityIdentifier("forecast_see_all_alerts_button")
-            }
-            .padding(.horizontal, 4)
+            // No "See All": every active alert is already listed below, each
+            // expanding to its own area, window and guidance. A separate
+            // screen showing the same cards was a second route to what the
+            // user is already looking at.
+            Text(alerts.count == 1 ? "ACTIVE ALERT" : "ACTIVE ALERTS")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.7))
+                .padding(.horizontal, 4)
 
             VStack(spacing: 8) {
                 // Keyed by offset as well as identity: two genuinely
@@ -63,7 +50,7 @@ struct ForecastAlertSection: View {
 
     private var watchCallToAction: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Get notified about new alerts here, even when the app is closed.")
+            Text("Save this location and get notified about new alerts here, even when the app is closed.")
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.8))
             Button(action: onWatch) {

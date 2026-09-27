@@ -179,6 +179,15 @@ final class WeatherViewModel {
     /// the results are what Back returns to, so clearing them there left the
     /// user staring at an empty list with their query gone.
     func selectLocation(_ location: WeatherLocation, clearingSearch: Bool = true) async {
+        // Clear the outgoing forecast *before* adopting the new location.
+        // `selectedLocation` is what the detail screen matches on to decide
+        // the forecast is its own, so setting it first made the previous
+        // location's numbers pass that check — you saw the place you just
+        // left, under the new place's name, until the fetch landed.
+        if selectedLocation?.id != location.id {
+            forecast = nil
+            forecastError = nil
+        }
         selectedLocation = location
         if clearingSearch {
             searchResults = []
@@ -356,6 +365,11 @@ final class WeatherViewModel {
     /// `WeatherView` shows underneath once its sheet dismisses.
     @discardableResult
     func watchLocation(_ location: WeatherLocation) async -> Bool {
+        // Watching a location you haven't saved leaves a subscription with
+        // nowhere to live: it sends alerts for a place absent from the list.
+        // The alert section's CTA is the one path that can still reach here
+        // unsaved, so saving is folded in rather than refused.
+        saveLocation(location)
         if VisualSampleData.isEnabled || VisualSampleData.isUITestFixturesEnabled {
             guard !watchedLocations.contains(where: { $0.weatherLocationId == location.id }) else { return true }
             watchedLocations.append(WatchedLocation(
