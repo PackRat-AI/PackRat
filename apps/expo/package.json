@@ -146,7 +146,7 @@
     "react-native-ios-utilities": "^5.2.0",
     "react-native-keyboard-controller": "1.21.9",
     "react-native-maps": "1.27.2",
-    "react-native-pager-view": "8.0.2",
+    "react-native-pager-view": "9.0.5",
     "react-native-purchases": "*",
     "react-native-purchases-ui": "*",
     "react-native-reanimated": "4.5.1",
