@@ -73,7 +73,7 @@
     "@types/nodemailer": "^6.4.17",
     "ai": "catalog:",
     "bcryptjs": "^3.0.2",
-    "csv-parse": "^6.2.1",
+    "csv-parse": "^7.0.2",
     "drizzle-kit": "catalog:",
     "drizzle-orm": "catalog:",
     "drizzle-zod": "catalog:",
