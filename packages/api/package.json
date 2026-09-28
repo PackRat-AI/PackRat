@@ -80,7 +80,7 @@
     "elysia": "catalog:",
     "google-auth-library": "catalog:",
     "gray-matter": "catalog:",
-    "jose": "^6.0.0",
+    "jose": "^6.2.12",
     "linkedom": "^0.18.11",
     "nodemailer": "^6.10.0",
     "pg": "catalog:",
