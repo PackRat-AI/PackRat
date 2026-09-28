@@ -48,7 +48,7 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.64",
     "@ai-sdk/openai": "catalog:",
-    "@ai-sdk/perplexity": "^3.0.29",
+    "@ai-sdk/perplexity": "^4.0.50",
     "@aws-sdk/client-s3": "~3.787.0",
     "@aws-sdk/s3-request-presigner": "~3.787.0",
     "@better-auth/oauth-provider": "1.6.11",
