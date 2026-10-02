@@ -1,6 +1,6 @@
 {
   "name": "packrat-expo-app",
-  "version": "2.2.3",
+  "version": "2.3.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
