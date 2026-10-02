@@ -137,8 +137,15 @@ async function seedClaudeOAuthClient(): Promise<void> {
           responseTypes: ['code'],
           tokenEndpointAuthMethod: 'none',
           scopes: CLAUDE_SCOPES,
-          type: 'web',
-          public: true,
+          // 1.7 dropped `type` and `public`. `applicationType` carries the old
+          // `type`; public-vs-confidential is now derived solely from
+          // `tokenEndpointAuthMethod: 'none'` above, so `public: true` has no
+          // replacement field.
+          applicationType: 'web',
+          // Deny client_credentials explicitly — Claude uses authorization_code
+          // only, and a NULL here would deny anyway. Set so the intent is read
+          // from the row rather than inferred from absence.
+          clientCredentialsScopes: [],
           requirePKCE: true,
           disabled: false,
           skipConsent: false,
@@ -175,8 +182,8 @@ async function seedClaudeOAuthClient(): Promise<void> {
           responseTypes: f.default({ defaultValue: ['code'] }),
           tokenEndpointAuthMethod: f.default({ defaultValue: 'none' }),
           scopes: f.default({ defaultValue: CLAUDE_SCOPES }),
-          type: f.default({ defaultValue: 'web' }),
-          public: f.default({ defaultValue: true }),
+          applicationType: f.default({ defaultValue: 'web' }),
+          clientCredentialsScopes: f.default({ defaultValue: [] }),
           requirePKCE: f.default({ defaultValue: true }),
           disabled: f.default({ defaultValue: false }),
           skipConsent: f.default({ defaultValue: false }),

@@ -33,6 +33,7 @@ export function registerTrailTools(agent: AgentContext): void {
       annotations: {
         title: 'Search Trails',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -59,6 +60,7 @@ export function registerTrailTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Trail',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -84,6 +86,7 @@ export function registerTrailTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Trail Geometry',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },

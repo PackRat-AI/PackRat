@@ -9,6 +9,34 @@ export async function createTools(userId: string) {
   const aiService = new AIService();
 
   return {
+    // ── Tools over the user's own packs and items ────────────────────────
+    //
+    // These are declared with no `execute`, so the model's call is streamed to
+    // the client and answered from the device's local store.
+    //
+    // That placement is deliberate. The local store is what the user is
+    // actually looking at, and it is the write path: mutations land there
+    // first and sync outward through the outbox. A server-side version of
+    // these would read and write Postgres behind the UI's back — an item the
+    // assistant "added" would not appear until the next refresh, and nothing
+    // would work offline.
+    listUserPacks: tool({
+      description:
+        "List the signed-in user's own packs. Use this to resolve a pack the user mentions by " +
+        'NAME (for example "my Japan Trip pack") into a pack id before calling getPackDetails ' +
+        'or addItemToPack. Returns id, name, category and description for each match. ' +
+        "Executed client-side from local device data, so it sees packs that haven't synced yet.",
+      inputSchema: z.object({
+        nameQuery: z
+          .string()
+          .optional()
+          .describe(
+            'Optional fuzzy/partial name filter, matched case-insensitively against the pack ' +
+              "name. Omit to list all of the user's packs.",
+          ),
+      }),
+    }),
+
     getPackDetails: tool({
       description:
         'Get detailed information about a specific pack including all items, weights, and categories. Executed client-side from local device data.',
@@ -22,6 +50,43 @@ export async function createTools(userId: string) {
         'Get detailed information about a specific item in a pack including its catalog details. Executed client-side from local device data.',
       inputSchema: z.object({
         itemId: z.string().describe('The ID of the item to get details for'),
+      }),
+    }),
+
+    addItemToPack: tool({
+      description:
+        "Add a gear item to one of the signed-in user's packs. Resolve the pack by name with " +
+        'listUserPacks first and pass its id — never guess a pack id. Prefer filling in weight ' +
+        'and category from a catalog lookup (getCatalogItems or catalogVectorSearch) so the ' +
+        "pack's weight totals stay meaningful; pass catalogItemId when the item came from the " +
+        'catalog. Executed client-side, so the item appears in the app immediately and syncs ' +
+        'when the device is next online.',
+      inputSchema: z.object({
+        packId: z.string().describe('The ID of the pack to add the item to'),
+        name: z.string().describe('Name of the item, for example "Merino T-Shirt"'),
+        weight: z
+          .number()
+          .optional()
+          .describe('Weight of a single unit, in the unit given by weightUnit'),
+        weightUnit: z
+          .enum(['g', 'kg', 'oz', 'lb'])
+          .optional()
+          .describe('Unit for weight. Required when weight is given.'),
+        quantity: z.number().int().min(1).optional().describe('How many to add. Defaults to 1.'),
+        category: z
+          .string()
+          .optional()
+          .describe('Category such as clothing, shelter, cooking, electronics'),
+        consumable: z
+          .boolean()
+          .optional()
+          .describe('True for items used up on the trip, such as food or fuel'),
+        worn: z.boolean().optional().describe('True for items worn rather than carried'),
+        notes: z.string().optional().describe('Optional free-text notes'),
+        catalogItemId: z
+          .string()
+          .optional()
+          .describe('Catalog item id, when this item was chosen from the gear catalog'),
       }),
     }),
 

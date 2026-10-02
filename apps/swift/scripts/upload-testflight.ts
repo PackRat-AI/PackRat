@@ -2,20 +2,28 @@
 /**
  * Archive the native Swift PackRat iOS app and upload it to TestFlight.
  *
- * Choose the App Store Connect lane explicitly:
- *   --replacement   existing Expo/App Store listing (`com.andrewbierman.packrat`,
- *                   display name `PackRat`) for true TestFlight update testing.
- *   --side-by-side  separate Swift beta listing (`com.andrewbierman.packrat.swift`,
- *                   display name `PackRat Swift`) for parallel beta installs.
+ * Uploads go to the one public App Store listing (`com.andrewbierman.packrat`,
+ * display name `PackRat`). The separate `PackRat Swift` beta listing that once
+ * ran in parallel is retired.
  *
- * Auth uses an Apple ID + app-specific password (no App Store Connect API key
- * required). Generate a password at appleid.apple.com -> Sign-In & Security ->
- * App-Specific Passwords.
+ * Auth accepts either an App Store Connect API key or an Apple ID +
+ * app-specific password (appleid.apple.com -> Sign-In & Security ->
+ * App-Specific Passwords). See the env block below.
  *
  * Required env (put in apps/swift/.env.local, gitignored):
+ *   APPLE_TEAM_ID            Apple Developer Team ID used for signing
+ *
+ * Then EITHER an App Store Connect API key (preferred — no Apple ID password,
+ * no interactive account required):
+ *   APPLE_ASC_API_KEY_ID     ASC API key id, e.g. 8WXNXX6SWS
+ *   APPLE_ASC_API_ISSUER_ID  issuer UUID for that key (differs per team)
+ * altool only finds the matching `AuthKey_<id>.p8` in one of these dirs:
+ *   ./private_keys, ~/private_keys, ~/.private_keys,
+ *   ~/.appstoreconnect/private_keys
+ *
+ * OR an Apple ID + app-specific password:
  *   APPLE_ID                 your Apple ID email
  *   APPLE_APP_PASSWORD       app-specific password (xxxx-xxxx-xxxx-xxxx)
- *   APPLE_TEAM_ID            Apple Developer Team ID used for signing
  *
  * Optional env:
  *   APPLE_ASC_PROVIDER       App Store Connect provider short name for altool;
@@ -25,12 +33,18 @@
  *                            (default: the monorepo version from the root
  *                            package.json, which `bun bump` owns)
  *   APP_STORE_CURRENT_BUILD_NUMBER
- *                            Required for --replacement uploads; latest existing
- *                            PackRat App Store/TestFlight build number.
+ *                            Required; latest existing PackRat App Store /
+ *                            TestFlight build number.
+ *   EXPORT_PROVISIONING_PROFILE
+ *                            Profile *name* for the iOS app. Set it to sign the
+ *                            export manually — automatic signing fails with
+ *                            `No Accounts` when Xcode has no Apple ID.
+ *   EXPORT_WATCH_PROVISIONING_PROFILE
+ *                            Profile *name* for the embedded watch app. Required
+ *                            alongside the above once the watch app ships, or the
+ *                            manual export fails on the watchkitapp bundle id.
  *
  * Flags:
- *   --replacement            Archive for the existing Expo/App Store iOS listing.
- *   --side-by-side           Archive for the separate Swift beta listing.
  *   --staging                Archive the Staging config (PACKRAT_ENV=dev) so the
  *                            build targets the deployed DEV API instead of production.
  *   --production             Optional clarity flag; Release/production is the default
@@ -41,10 +55,10 @@
  *                            before reading Apple ID upload credentials.
  *
  * Usage:
- *   bun apps/swift/scripts/upload-testflight.ts --replacement
- *   bun apps/swift/scripts/upload-testflight.ts --replacement --dry-run
- *   bun apps/swift/scripts/upload-testflight.ts --replacement --verify-archive-only
- *   bun apps/swift/scripts/upload-testflight.ts --side-by-side --staging
+ *   bun apps/swift/scripts/upload-testflight.ts
+ *   bun apps/swift/scripts/upload-testflight.ts --dry-run
+ *   bun apps/swift/scripts/upload-testflight.ts --verify-archive-only
+ *   bun apps/swift/scripts/upload-testflight.ts --staging
  */
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
@@ -70,13 +84,10 @@ const VERIFY_ARCHIVE_ONLY = process.argv.includes('--verify-archive-only');
 function usage(): string {
   return [
     'Usage:',
-    '  bun apps/swift/scripts/upload-testflight.ts --replacement [--production|--staging] [--dry-run]',
-    '  bun apps/swift/scripts/upload-testflight.ts --replacement [--production|--staging] --verify-archive-only',
-    '  bun apps/swift/scripts/upload-testflight.ts --side-by-side [--production|--staging] [--dry-run]',
+    '  bun apps/swift/scripts/upload-testflight.ts [--production|--staging] [--dry-run]',
+    '  bun apps/swift/scripts/upload-testflight.ts [--production|--staging] --verify-archive-only',
     '',
-    'Lanes:',
-    '  --replacement   Existing Expo/App Store listing: com.andrewbierman.packrat, PackRat.',
-    '  --side-by-side  Separate Swift beta listing: com.andrewbierman.packrat.swift, PackRat Swift.',
+    'Uploads target the App Store listing: com.andrewbierman.packrat, PackRat.',
   ].join('\n');
 }
 
@@ -112,7 +123,6 @@ function printPreflight(input: {
   const archiveOverrides = xcodeArchiveOverrides({ config, teamId });
   console.log(
     safeJsonStringify({
-      lane: config.lane,
       bundleId: config.bundleId,
       watchBundleId: config.watchBundleId,
       companionBundleId: config.companionBundleId,
@@ -129,7 +139,14 @@ function printPreflight(input: {
 }
 
 if (uploadConfig.dryRun) {
-  printPreflight({ config: uploadConfig, ascProvider: nodeEnv.APPLE_ASC_PROVIDER });
+  // Pass the resolved team id so the dry run shows the real archive overrides.
+  // Without it the preflight always printed `DEVELOPMENT_TEAM=<APPLE_TEAM_ID>`,
+  // which hides exactly the misconfiguration a dry run exists to catch.
+  printPreflight({
+    config: uploadConfig,
+    teamId: nodeEnv.APPLE_TEAM_ID,
+    ascProvider: nodeEnv.APPLE_ASC_PROVIDER ?? nodeEnv.APPLE_TEAM_ID,
+  });
   process.exit(0);
 }
 
@@ -146,7 +163,7 @@ if (nodeEnv.BUILD_NUMBER) {
   uploadConfig = { ...uploadConfig, buildNumber: nodeEnv.BUILD_NUMBER };
 }
 
-if (uploadConfig.lane === 'replacement') {
+{
   const readiness = verifyTestFlightReplacementReadiness({
     config: uploadConfig,
     currentAppStoreBuildNumber: nodeEnv.APP_STORE_CURRENT_BUILD_NUMBER,
@@ -160,8 +177,18 @@ if (uploadConfig.lane === 'replacement') {
 }
 
 const teamId = req({ name: 'APPLE_TEAM_ID' });
-const appleId = VERIFY_ARCHIVE_ONLY ? undefined : req({ name: 'APPLE_ID' });
-const appPassword = VERIFY_ARCHIVE_ONLY ? undefined : req({ name: 'APPLE_APP_PASSWORD' });
+
+// Two auth paths. An App Store Connect API key is preferred — it needs no Apple
+// ID password and no interactive account in Xcode. `altool` only finds the `.p8`
+// in fixed directories, so the key must be in one of: ./private_keys,
+// ~/private_keys, ~/.private_keys, ~/.appstoreconnect/private_keys.
+const ascApiKeyId = nodeEnv.APPLE_ASC_API_KEY_ID;
+const ascApiIssuer = nodeEnv.APPLE_ASC_API_ISSUER_ID;
+const usesApiKey = Boolean(ascApiKeyId && ascApiIssuer);
+
+const appleId = VERIFY_ARCHIVE_ONLY || usesApiKey ? undefined : req({ name: 'APPLE_ID' });
+const appPassword =
+  VERIFY_ARCHIVE_ONLY || usesApiKey ? undefined : req({ name: 'APPLE_APP_PASSWORD' });
 const ascProvider = nodeEnv.APPLE_ASC_PROVIDER ?? teamId;
 printPreflight({ config: uploadConfig, teamId, ascProvider });
 
@@ -184,7 +211,8 @@ function verifyBinary(input: {
     for (const error of result.errors) console.error(`${label} verification failed: ${error}`);
     process.exit(1);
   }
-  console.log(`✓ Verified ${label} metadata (${result.iosApp}, ${result.watchApp})`);
+  const watch = result.watchApp ?? 'no embedded watch app';
+  console.log(`✓ Verified ${label} metadata (${result.iosApp}, ${watch})`);
 }
 
 // 1. Archive for a real device (TestFlight cannot accept a simulator build).
@@ -214,6 +242,16 @@ verifyBinary({
 });
 
 // 2. Export a signed .ipa for App Store distribution.
+//
+// Automatic signing asks Xcode's account system for a profile. On a machine with
+// no Apple ID configured in Xcode that fails with `No Accounts` / `No profiles
+// for '<bundle id>' were found`, even when the profile is installed. Set
+// EXPORT_PROVISIONING_PROFILE to the profile's *name* to sign manually instead.
+// See docs/macos-testflight.md, which hits the same wall on the macOS lane.
+const exportProfileName = process.env.EXPORT_PROVISIONING_PROFILE?.trim();
+// The embedded watch app needs its own profile mapping; without it a manual
+// export fails on the watchkitapp bundle id even though the iOS one resolves.
+const exportWatchProfileName = process.env.EXPORT_WATCH_PROVISIONING_PROFILE?.trim();
 const exportOptions = join(work, 'ExportOptions.plist');
 writeFileSync(
   exportOptions,
@@ -224,7 +262,21 @@ writeFileSync(
   <key>method</key><string>app-store-connect</string>
   <key>teamID</key><string>${teamId}</string>
   <key>destination</key><string>export</string>
-  <key>signingStyle</key><string>automatic</string>
+${
+  exportProfileName
+    ? `  <key>signingStyle</key><string>manual</string>
+  <key>signingCertificate</key><string>Apple Distribution</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>${uploadConfig.bundleId}</key><string>${exportProfileName}</string>${
+      exportWatchProfileName
+        ? `
+    <key>${uploadConfig.watchBundleId}</key><string>${exportWatchProfileName}</string>`
+        : ''
+    }
+  </dict>`
+    : '  <key>signingStyle</key><string>automatic</string>'
+}
   <key>uploadSymbols</key><true/>
 </dict>
 </plist>
@@ -270,17 +322,23 @@ run({
     'ios',
     '--file',
     ipa,
-    '--username',
-    appleId ?? '',
-    '--password',
-    appPassword ?? '',
-    '--asc-provider',
-    ascProvider,
+    // `--apiKey`/`--apiIssuer` and `--username`/`--password` are mutually
+    // exclusive; altool rejects a mix of the two.
+    ...(usesApiKey
+      ? ['--apiKey', ascApiKeyId ?? '', '--apiIssuer', ascApiIssuer ?? '']
+      : [
+          '--username',
+          appleId ?? '',
+          '--password',
+          appPassword ?? '',
+          '--asc-provider',
+          ascProvider,
+        ]),
   ],
 });
 
 console.log(
   `\n✓ Uploaded build ${uploadConfig.buildNumber} to TestFlight (${uploadConfig.bundleId}, ${uploadConfig.displayName}, ${uploadConfig.configuration}` +
-    `${uploadConfig.staging ? ' -> dev API' : ' -> production'}, ${uploadConfig.lane}).`,
+    `${uploadConfig.staging ? ' -> dev API' : ' -> production'}).`,
 );
 console.log('It will appear in App Store Connect after processing (usually 5-15 min).');

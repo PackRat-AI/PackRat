@@ -58,12 +58,32 @@ export const computePacksWeights = <
 }): (TPack & { baseWeight: number; totalWeight: number })[] =>
   packs.map((pack) => computePackWeights({ pack, preferredUnit }));
 
+/**
+ * One item inside a category breakdown.
+ *
+ * `label` is the human-readable `<name> (<weight><unit> × <qty>)` string this
+ * shape used to be. `id` is the pack-item id, added so a caller that spots
+ * the heaviest item in a breakdown can act on it — `packrat_similar_pack_items`
+ * takes a pack-item id, and before this the breakdown was the one place that
+ * named the heaviest item while giving no way to reference it.
+ *
+ * `grams` is the quantity-adjusted contribution, so it matches how the item
+ * ranks inside `totalGrams` rather than the per-unit figure printed in `label`.
+ */
+export interface PackBreakdownItem {
+  id: string;
+  name: string;
+  label: string;
+  grams: number;
+  quantity: number;
+}
+
 export interface PackCategoryBreakdown {
   category: string;
   totalGrams: number;
   totalLbs: number;
   itemCount: number;
-  items: string[];
+  items: PackBreakdownItem[];
 }
 
 export interface PackWeightBreakdown {
@@ -118,12 +138,22 @@ export const computePackBreakdown = <
     };
     entry.totalGrams += itemGrams;
     entry.itemCount += item.quantity;
-    entry.items.push(`${item.name} (${item.weight}${item.weightUnit ?? 'g'} × ${item.quantity})`);
+    entry.items.push({
+      id: item.id,
+      name: item.name,
+      label: `${item.name} (${item.weight}${item.weightUnit ?? 'g'} × ${item.quantity})`,
+      grams: Math.round(itemGrams),
+      quantity: item.quantity,
+    });
     byCategory[cat] = entry;
   }
 
   for (const entry of Object.values(byCategory)) {
     entry.totalLbs = Math.round((entry.totalGrams / GRAMS_PER_LB) * 100) / 100;
+    // Heaviest first, mirroring the category-level sort below — a consumer
+    // looking for "the heaviest item" reads entry.items[0] rather than
+    // scanning.
+    entry.items.sort((a, b) => b.grams - a.grams);
   }
 
   // Quantity-aware so the top-level total matches the sum of byCategory

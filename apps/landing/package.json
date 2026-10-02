@@ -1,6 +1,6 @@
 {
   "name": "packrat-landing-app",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "scripts": {
     "build": "bun run generate-og-images && next build",
@@ -53,7 +53,7 @@
     "cmdk": "catalog:",
     "date-fns": "catalog:",
     "embla-carousel-react": "catalog:",
-    "framer-motion": "^12.19.1",
+    "framer-motion": "^13.4.0",
     "input-otp": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",

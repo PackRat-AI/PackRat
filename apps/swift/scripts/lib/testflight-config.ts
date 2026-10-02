@@ -3,10 +3,7 @@ import { join } from 'node:path';
 import { isString, toRecord } from '@packrat/guards';
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 
-export type TestFlightLane = 'side-by-side' | 'replacement';
-
 export type TestFlightUploadConfig = {
-  lane: TestFlightLane;
   staging: boolean;
   dryRun: boolean;
   scheme: string;
@@ -39,10 +36,12 @@ export class TestFlightConfigError extends Error {
   }
 }
 
-const SIDE_BY_SIDE_BUNDLE_ID = 'com.andrewbierman.packrat.swift';
-const REPLACEMENT_BUNDLE_ID = 'com.andrewbierman.packrat';
-const SIDE_BY_SIDE_WATCH_BUNDLE_ID = 'com.andrewbierman.packrat.swift.watchkitapp';
-const REPLACEMENT_WATCH_BUNDLE_ID = 'com.andrewbierman.packrat.watchkitapp';
+// The Swift app ships to the one public App Store listing. The separate
+// `com.andrewbierman.packrat.swift` beta listing that once ran in parallel is
+// retired — every upload now targets the real app.
+const BUNDLE_ID = 'com.andrewbierman.packrat';
+const WATCH_BUNDLE_ID = 'com.andrewbierman.packrat.watchkitapp';
+const DISPLAY_NAME = 'PackRat';
 /**
  * The Swift marketing version tracks the monorepo version in the root
  * `package.json`, which `bun bump` owns. Reading it here instead of hardcoding a
@@ -75,35 +74,26 @@ export function parseTestFlightUploadConfig(input: {
   env?: { BUILD_NUMBER?: string | undefined; MARKETING_VERSION?: string | undefined };
 }): TestFlightUploadConfig {
   const { argv, env = {} } = input;
-  const sideBySide = argv.includes('--side-by-side');
-  const replacement = argv.includes('--replacement');
   const staging = argv.includes('--staging');
   const production = argv.includes('--production');
   const dryRun = argv.includes('--dry-run');
 
-  if (sideBySide === replacement) {
-    throw new TestFlightConfigError(
-      'Choose exactly one TestFlight lane: --replacement for the existing Expo/App Store listing, or --side-by-side for the separate Swift beta app.',
-    );
-  }
   if (staging && production) {
     throw new TestFlightConfigError('Use either --staging or --production, not both.');
   }
 
-  const lane: TestFlightLane = replacement ? 'replacement' : 'side-by-side';
   const marketingVersion = env.MARKETING_VERSION ?? readMonorepoVersion();
   const buildNumber = env.BUILD_NUMBER ?? String(Math.floor(Date.now() / 1000));
 
   return {
-    lane,
     staging,
     dryRun,
     scheme: staging ? 'PackRat-iOS-Staging' : 'PackRat-iOS',
     configuration: staging ? 'Staging' : 'Release',
-    bundleId: replacement ? REPLACEMENT_BUNDLE_ID : SIDE_BY_SIDE_BUNDLE_ID,
-    watchBundleId: replacement ? REPLACEMENT_WATCH_BUNDLE_ID : SIDE_BY_SIDE_WATCH_BUNDLE_ID,
-    companionBundleId: replacement ? REPLACEMENT_BUNDLE_ID : SIDE_BY_SIDE_BUNDLE_ID,
-    displayName: replacement ? 'PackRat' : 'PackRat Swift',
+    bundleId: BUNDLE_ID,
+    watchBundleId: WATCH_BUNDLE_ID,
+    companionBundleId: BUNDLE_ID,
+    displayName: DISPLAY_NAME,
     marketingVersion,
     buildNumber,
     apiEnvironment: staging ? 'dev' : 'production',
@@ -138,9 +128,6 @@ export function verifyTestFlightReplacementReadiness(
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  if (config.lane !== 'replacement') {
-    errors.push('Use --replacement. Side-by-side Swift beta builds cannot update the Expo app.');
-  }
   if (
     config.staging ||
     config.configuration !== 'Release' ||
@@ -148,17 +135,15 @@ export function verifyTestFlightReplacementReadiness(
   ) {
     errors.push('Use the production Release archive for a seamless TestFlight update.');
   }
-  if (config.bundleId !== REPLACEMENT_BUNDLE_ID) {
-    errors.push(`Expected iOS bundle id ${REPLACEMENT_BUNDLE_ID}, got ${config.bundleId}.`);
+  if (config.bundleId !== BUNDLE_ID) {
+    errors.push(`Expected iOS bundle id ${BUNDLE_ID}, got ${config.bundleId}.`);
   }
-  if (config.watchBundleId !== REPLACEMENT_WATCH_BUNDLE_ID) {
-    errors.push(
-      `Expected watch bundle id ${REPLACEMENT_WATCH_BUNDLE_ID}, got ${config.watchBundleId}.`,
-    );
+  if (config.watchBundleId !== WATCH_BUNDLE_ID) {
+    errors.push(`Expected watch bundle id ${WATCH_BUNDLE_ID}, got ${config.watchBundleId}.`);
   }
-  if (config.companionBundleId !== REPLACEMENT_BUNDLE_ID) {
+  if (config.companionBundleId !== BUNDLE_ID) {
     errors.push(
-      `Expected watch companion bundle id ${REPLACEMENT_BUNDLE_ID}, got ${config.companionBundleId}.`,
+      `Expected watch companion bundle id ${BUNDLE_ID}, got ${config.companionBundleId}.`,
     );
   }
   if (config.displayName !== 'PackRat') {

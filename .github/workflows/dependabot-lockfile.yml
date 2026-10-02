@@ -1,0 +1,47 @@
+name: Dependabot Lockfile
+
+# Dependabot edits `package.json` but cannot regenerate `bun.lock` — it has no
+# native bun support. Every other workflow installs with
+# `bun install --frozen-lockfile`, so a dependency PR fails at the install step
+# before a single test runs. This job regenerates the lockfile and pushes it
+# back onto the PR branch, which re-triggers CI with a consistent tree.
+
+on:
+  pull_request:
+    branches: ["**"]
+    paths:
+      - "package.json"
+      - "apps/**/package.json"
+      - "packages/**/package.json"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  relock:
+    # Only Dependabot's own PRs. A human changing package.json is expected to
+    # commit the matching lockfile, and pushing to a fork branch would fail.
+    if: >-
+      github.actor == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Regenerate lockfile
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --lockfile-only
+      - name: Commit lockfile
+        uses: stefanzweifel/git-auto-commit-action@v6
+        with:
+          commit_message: "chore(deps): regenerate bun.lock"
+          file_pattern: bun.lock

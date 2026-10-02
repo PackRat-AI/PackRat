@@ -95,6 +95,10 @@ function TextField({
           clearButtonMode="while-editing"
           accessibilityHint={accessibilityHint ?? errorMessage}
           {...props}
+          // After the spread so testID (which arrives via props) can seed it. XCTest only
+          // resolves an element it can name, so a bare testID leaves the input untypeable
+          // for automation; an explicit accessibilityLabel still wins.
+          accessibilityLabel={props.accessibilityLabel ?? props.testID}
         />
         {rightView}
       </View>

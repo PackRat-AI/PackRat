@@ -21,8 +21,6 @@ if (__DEV__ && clientEnvs.EXPO_PUBLIC_DISABLE_LOGBOX === 'true') {
   LogBox.ignoreAllLogs(true);
 }
 
-configureRevenueCat();
-
 Sentry.init({
   dsn: clientEnvs.EXPO_PUBLIC_SENTRY_DSN,
   enabled: clientEnvs.NODE_ENV !== 'development' && !!clientEnvs.EXPO_PUBLIC_SENTRY_DSN,
@@ -67,6 +65,15 @@ function RootLayout() {
   useInitialAndroidBarSync();
 
   appAlert = useRef<AlertMethods>(null);
+
+  // Configured from the first render rather than at module scope. Android may
+  // start the process in the background — a push, a widget update, a
+  // BOOT_COMPLETED receiver — and configuring there mints a RevenueCat customer
+  // record for a launch no person ever saw. Matches Swift, which configures
+  // once the first view is on screen for the same reason.
+  useEffect(() => {
+    configureRevenueCat();
+  }, []);
 
   const { colorScheme, isDarkColorScheme } = useColorScheme();
 

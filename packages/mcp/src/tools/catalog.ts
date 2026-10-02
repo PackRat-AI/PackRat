@@ -1,95 +1,113 @@
 import { z } from 'zod';
-import { call, clampLimit, PAGINATION_LIMIT_MAX } from '../client';
-import { CatalogSortField, SortOrder } from '../enums';
-import {
-  CatalogSimilarityOutputSchema,
-  GetCatalogItemOutputSchema,
-  SearchGearCatalogOutputSchema,
-} from '../output-schemas';
+import { call } from '../client';
+import { CatalogSimilarityOutputSchema, GetCatalogItemOutputSchema } from '../output-schemas';
 import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerCatalogTools(agent: AgentContext): void {
-  // ── Text search ───────────────────────────────────────────────────────────
+  // ── Text search ─────────────────────────────────────────────────────────
+  // DISABLED — keyword catalog search is not shipped on the connector surface.
+  //
+  // The matcher treats the ENTIRE query string as one literal phrase (see the
+  // `wordBoundary` regex in CatalogService.getCatalogItems), so it has no
+  // tokenisation: `"2 person tent"` returns 111 hits while
+  // `"ultralight 2-person tent under 1.5 kg"` and `"FreeLite 2 Person"` both
+  // return 0 — even though the catalog holds 7 FreeLite tents. During an
+  // OpenAI Apps review run the model read those empty results as "PackRat has
+  // no such gear" and offered to search the web instead, which is the worst
+  // outcome an app review can produce.
+  //
+  // The vector-backed replacement below (which now carries this same name)
+  // handles the natural-language
+  // queries correctly — it returned 30 relevant hits on the identical prompt —
+  // so the keyword path is withdrawn rather than shipped alongside it. Re-enable
+  // once the matcher tokenises the query and ranks per-token instead of
+  // requiring a contiguous phrase match.
+  //
+  // tool<{
+  //   query?: string;
+  //   category?: string;
+  //   limit: number;
+  //   page: number;
+  //   sort_by?: CatalogSortField;
+  //   sort_order: SortOrder;
+  // }>(
+  //   agent.server,
+  //   'packrat_search_gear_catalog',
+  //   {
+  //     title: 'Search Gear Catalog',
+  //     description:
+  //       `Search the PackRat gear catalog of outdoor products with specs, weights, prices, and user reviews. Use this to find specific gear, compare products, or browse categories. ` +
+  //       `Paginated via \`page\` (1-indexed); page size is capped at ${PAGINATION_LIMIT_MAX} server-side.`,
+  //     inputSchema: {
+  //       query: z
+  //         .string()
+  //         .optional()
+  //         .describe('Search keywords (e.g. "ultralight sleeping bag 20°F")'),
+  //       category: z
+  //         .string()
+  //         .optional()
+  //         .describe(
+  //           'Filter by category (e.g. "sleeping bags", "tents", "backpacks", "footwear", "apparel")',
+  //         ),
+  //       limit: z
+  //         .number()
+  //         .int()
+  //         .min(1)
+  //         .max(50)
+  //         .default(10)
+  //         .describe(`Page size (clamped to ${PAGINATION_LIMIT_MAX} server-side).`),
+  //       page: z.number().int().min(1).default(1),
+  //       sort_by: z.nativeEnum(CatalogSortField).optional(),
+  //       sort_order: z.nativeEnum(SortOrder).default(SortOrder.Asc),
+  //     },
+  //     outputSchema: SearchGearCatalogOutputSchema.shape,
+  //     annotations: {
+  //       title: 'Search Gear Catalog',
+  //       readOnlyHint: true,
+  //       destructiveHint: false,
+  //       idempotentHint: true,
+  //       openWorldHint: false,
+  //     },
+  //   },
+  //   async ({ query, category, limit, page, sort_by, sort_order }) =>
+  //     call({
+  //       promise: agent.api.user.catalog.get({
+  //         query: {
+  //           q: query,
+  //           category,
+  //           limit: clampLimit({ value: limit }),
+  //           page,
+  //           sort: sort_by ? { field: sort_by, order: sort_order } : undefined,
+  //         },
+  //       }),
+  //       action: 'search catalog',
+  //       structured: true,
+  //     }),
+  // );
 
-  tool<{
-    query?: string;
-    category?: string;
-    limit: number;
-    page: number;
-    sort_by?: CatalogSortField;
-    sort_order: SortOrder;
-  }>(
+  // ── Semantic/vector search ────────────────────────────────────────────────
+
+  // Named `packrat_search_gear_catalog` — the plain, discoverable name for
+  // "search the gear catalog" — even though the implementation is vector
+  // search. The former keyword tool owned this name and is now disabled
+  // (see above); the name is reused rather than retired because it is what
+  // a model reaches for when a user says "search PackRat for X", and the
+  // semantic path is the one that actually answers such queries well.
+  tool<{ query: string; limit: number }>(
     agent.server,
     'packrat_search_gear_catalog',
     {
       title: 'Search Gear Catalog',
       description:
-        `Search the PackRat gear catalog of outdoor products with specs, weights, prices, and user reviews. Use this to find specific gear, compare products, or browse categories. ` +
-        `Paginated via \`page\` (1-indexed); page size is capped at ${PAGINATION_LIMIT_MAX} server-side.`,
-      inputSchema: {
-        query: z
-          .string()
-          .optional()
-          .describe('Search keywords (e.g. "ultralight sleeping bag 20°F")'),
-        category: z
-          .string()
-          .optional()
-          .describe(
-            'Filter by category (e.g. "sleeping bags", "tents", "backpacks", "footwear", "apparel")',
-          ),
-        limit: z
-          .number()
-          .int()
-          .min(1)
-          .max(50)
-          .default(10)
-          .describe(`Page size (clamped to ${PAGINATION_LIMIT_MAX} server-side).`),
-        page: z.number().int().min(1).default(1),
-        sort_by: z.nativeEnum(CatalogSortField).optional(),
-        sort_order: z.nativeEnum(SortOrder).default(SortOrder.Asc),
-      },
-      outputSchema: SearchGearCatalogOutputSchema.shape,
-      annotations: {
-        title: 'Search Gear Catalog',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-    },
-    async ({ query, category, limit, page, sort_by, sort_order }) =>
-      call({
-        promise: agent.api.user.catalog.get({
-          query: {
-            q: query,
-            category,
-            limit: clampLimit({ value: limit }),
-            page,
-            sort: sort_by ? { field: sort_by, order: sort_order } : undefined,
-          },
-        }),
-        action: 'search catalog',
-        structured: true,
-      }),
-  );
-
-  // ── Semantic/vector search ────────────────────────────────────────────────
-
-  tool<{ query: string; limit: number }>(
-    agent.server,
-    'packrat_semantic_gear_search',
-    {
-      title: 'Semantic Gear Search',
-      description:
-        'Search the gear catalog using vector/semantic search. Good for natural-language queries like "warm but lightweight insulation layer for cold shoulder-season camping" or "minimalist trail running shoe for rocky terrain".',
+        'Search the PackRat gear catalog of outdoor products with specs, weights, prices, and reviews. Pass the user\'s natural-language phrasing directly — the search is semantic, so full descriptive queries like "ultralight 2-person tent under 1.5kg" or "warm but lightweight insulation layer for shoulder-season camping" work better than reduced keywords.',
       inputSchema: {
         query: z.string().min(3),
         limit: z.number().int().min(1).max(30).default(8),
       },
       outputSchema: CatalogSimilarityOutputSchema.shape,
       annotations: {
-        title: 'Semantic Gear Search',
+        title: 'Search Gear Catalog',
         readOnlyHint: true,
         destructiveHint: false,
         idempotentHint: true,
@@ -275,28 +293,38 @@ export function registerCatalogTools(agent: AgentContext): void {
   // NOTE: this duplicates work the API could do in a single `/catalog/compare`
   // endpoint that accepts an `ids[]` query. Tracked in the API thickening list.
 
-  tool<{ item_ids: number[] }>(
-    agent.server,
-    'packrat_compare_gear_items',
-    {
-      title: 'Compare Gear Items',
-      description:
-        'Compare multiple gear items side-by-side on weight, price, and rating. Provide 2–10 catalog item IDs.',
-      inputSchema: {
-        item_ids: z.array(z.number().int()).min(2).max(10),
-      },
-      annotations: {
-        title: 'Compare Gear Items',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-    },
-    async ({ item_ids }) =>
-      call({
-        promise: agent.api.user.catalog.compare.post({ ids: item_ids }),
-        action: 'compare catalog items',
-      }),
-  );
+  // DISABLED — gear comparison is not shipped on the connector surface.
+  //
+  // The tool takes `item_ids`, which the model can only obtain from a prior
+  // catalog search. Across three OpenAI Apps review runs of the gear-comparison
+  // test case it was never invoked once: the model formatted its own markdown
+  // table from search results instead of round-tripping IDs through another
+  // call. Declaring a tool that never fires is a submission-review liability,
+  // so it is withdrawn until the comparison path is something the model
+  // actually reaches for.
+  //
+  // tool<{ item_ids: number[] }>(
+  //   agent.server,
+  //   'packrat_compare_gear_items',
+  //   {
+  //     title: 'Compare Gear Items',
+  //     description:
+  //       'Compare multiple gear items side-by-side on weight, price, and rating. Provide 2–10 catalog item IDs.',
+  //     inputSchema: {
+  //       item_ids: z.array(z.number().int()).min(2).max(10),
+  //     },
+  //     annotations: {
+  //       title: 'Compare Gear Items',
+  //       readOnlyHint: true,
+  //       destructiveHint: false,
+  //       idempotentHint: true,
+  //       openWorldHint: false,
+  //     },
+  //   },
+  //   async ({ item_ids }) =>
+  //     call({
+  //       promise: agent.api.user.catalog.compare.post({ ids: item_ids }),
+  //       action: 'compare catalog items',
+  //     }),
+  // );
 }

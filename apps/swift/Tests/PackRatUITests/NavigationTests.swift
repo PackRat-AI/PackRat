@@ -50,7 +50,7 @@ final class NavigationTests: AppUITestCase {
     func testWeatherTabShowsSearchField() {
         goToHomeAction("Weather")
         XCTAssertTrue(
-            app.searchFields["Search locations\u{2026}"].waitForExistence(timeout: 8),
+            app.searchFields["Search for a city or place"].waitForExistence(timeout: 8),
             "Weather destination must show location search field"
         )
     }

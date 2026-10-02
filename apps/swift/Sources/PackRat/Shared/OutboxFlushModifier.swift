@@ -11,13 +11,10 @@ private struct OutboxFlushModifier: ViewModifier {
     private var isConnected: Bool { NetworkMonitor.shared.isConnected }
 
     func body(content: Content) -> some View {
-        VStack(spacing: 0) {
-            // Queued and failed writes are otherwise invisible: an offline write
-            // succeeds locally and replays silently, so a server rejection would
-            // never reach the user.
-            PendingWritesBanner()
-            content
-        }
+        // Queued and failed writes are reported in Settings → Sync rather than in
+        // a chrome banner. Failed writes are the one genuinely actionable case, so
+        // that surface is where the user acknowledges or retries them.
+        content
             .task {
                 outbox.refreshCounts(modelContext)
                 await outbox.flush(context: modelContext)

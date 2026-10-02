@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 enum NavItem: String, CaseIterable, Identifiable {
@@ -49,13 +50,21 @@ enum NavItem: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Whether this destination's feature flag is on.
+    ///
+    /// Reads `FeatureFlagStore`, not the generated `AppFeatureFlags` constants,
+    /// so a flag flipped in the admin panel takes effect on the next fetch
+    /// rather than waiting for a rebuild and release. The store is seeded with
+    /// those same constants, so a cold start still renders exactly the shipped
+    /// defaults. This is the parity Expo already had via `useFeatureFlags`.
+    @MainActor
     var isFeatureEnabled: Bool {
         switch self {
-        case .trips: return AppFeatureFlags.enableTrips
-        case .templates: return AppFeatureFlags.enablePackTemplates
-        case .trailConditions: return AppFeatureFlags.enableTrailConditions
-        case .feed: return AppFeatureFlags.enableFeed
-        case .wildlife: return AppFeatureFlags.enableWildlifeIdentification
+        case .trips: return FeatureFlagStore.shared.isEnabled("enableTrips")
+        case .templates: return FeatureFlagStore.shared.isEnabled("enablePackTemplates")
+        case .trailConditions: return FeatureFlagStore.shared.isEnabled("enableTrailConditions")
+        case .feed: return FeatureFlagStore.shared.isEnabled("enableFeed")
+        case .wildlife: return FeatureFlagStore.shared.isEnabled("enableWildlifeIdentification")
         default: return true
         }
     }
@@ -99,8 +108,27 @@ struct AppNavigation: View {
 
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
     @State private var phoneTab: PhoneTab = .home
     @State private var phoneHomePath: [NavItem] = []
+    // Count, not the rows themselves — the Weather tab badge only needs
+    // "how many watched locations currently have an active alert."
+    @Query(filter: #Predicate<CachedWeatherAlertState> { $0.hasActiveAlert })
+    private var activeAlertStates: [CachedWeatherAlertState]
+    /// Unseen alerts across saved locations, plus any push-learned state in
+    /// the SwiftData cache for a location the user has not saved locally.
+    /// The badge counts *unseen* rather than *active*: an alert the user has
+    /// already opened still exists, but no longer needs to shout.
+    private var activeWeatherAlertCount: Int {
+        let unseenSaved = appState.weatherVM.savedLocations
+            .filter { appState.weatherVM.hasUnseenAlert(locationId: $0.id) }
+            .map(\.id)
+        let savedIds = Set(appState.weatherVM.savedLocations.map(\.id))
+        let cachedOnly = activeAlertStates
+            .filter { $0.isStillActive && !savedIds.contains($0.weatherLocationId) }
+            .map(\.weatherLocationId)
+        return Set(unseenSaved).union(cachedOnly).count
+    }
     #endif
 
     var body: some View {
@@ -108,8 +136,28 @@ struct AppNavigation: View {
             .onOpenURL { url in
                 appState.apply(DeepLink.parse(url))
             }
+            #if os(iOS)
+            // The alert badge has to be right before the user has been
+            // anywhere — its whole job is to catch a hazard whose push was
+            // missed. Checking here, at the navigation root, means it is
+            // populated on launch instead of only after a visit to Weather.
+            .task { await appState.weatherVM.refreshAlertBadgeState() }
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active else { return }
+                Task { await appState.weatherVM.refreshAlertBadgeState() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .weatherAlertNotificationTapped)) { notification in
+                guard let weatherLocationId = notification.userInfo?["weatherLocationId"] as? Int else { return }
+                appState.apply(.weatherAlert(weatherLocationId: weatherLocationId))
+            }
+            #endif
     }
 
+    /// Connectivity and sync state are reported in Settings rather than in the
+    /// navigation chrome. A persistent banner sat on top of the toolbar (#2723),
+    /// and offline is informational rather than actionable while writes are
+    /// durably queued — Apple's guidance is to show cached data with a
+    /// non-intrusive indicator instead of interrupting.
     @ViewBuilder
     private var navigationBody: some View {
         #if os(iOS)
@@ -128,14 +176,14 @@ struct AppNavigation: View {
     private var splitLayout: some View {
         @Bindable var state = appState
 
-        return VStack(spacing: 0) {
-            OfflineBanner()
-            splitNavigation
-        }
-        .animation(.easeInOut(duration: 0.3), value: NetworkMonitor.shared.isConnected)
+        return splitNavigation
         .environment(appState)
         #if os(macOS)
         .navigationSplitViewStyle(.balanced)
+        // The main window shows pack data in the Packs list/detail and in a
+        // Trip's Pack section, either of which a standalone Pack or Trip
+        // window may edit while this one is open (#2667).
+        .adoptsPackRevisions(into: appState.packsVM)
         #endif
         .sheet(isPresented: $state.isGlobalSearchPresented) {
             GlobalSearchView()
@@ -242,7 +290,13 @@ struct AppNavigation: View {
         case .gearInventory:
             GearInventoryView().environment(appState)
         case .wildlife:
-            WildlifeView()
+            // Wildlife ID is the feature carrying a real early-access window,
+            // and the server enforces the same gate on /wildlife/identify — so
+            // gating the UI here keeps the client from offering something the
+            // API will refuse. Matches how Expo wraps a gated screen.
+            EarlyAccessGate(featureKey: "wildlife-identification") {
+                WildlifeView()
+            }
         case .aiPacks:
             AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
         case .packs, .trips, .templates, .trailConditions:
@@ -270,8 +324,8 @@ struct AppNavigation: View {
         case .templates:
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Templates Require an Account",
-                    subtitle: "Pack templates sync with your account so they can be reused across devices.",
+                    "Sign In to Use Templates",
+                    subtitle: "Start from a ready-made pack list instead of a blank one, and keep your own for next time. Building packs by hand works without an account.",
                     systemImage: "doc.on.doc"
                 )
             } else if let id = appState.selectedTemplateId,
@@ -283,8 +337,8 @@ struct AppNavigation: View {
         case .trailConditions:
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Trail Reports Require an Account",
-                    subtitle: "Community trail conditions are shared through your PackRat account.",
+                    "Sign In for Trail Reports",
+                    subtitle: "Read what other hikers found on the trail recently, and add your own. Your packs and trips stay on this device and keep working without an account.",
                     systemImage: "figure.hiking"
                 )
             } else if let id = appState.selectedReportId,
@@ -330,6 +384,7 @@ struct AppNavigation: View {
                 }
                 .tabItem { Label(item.label, systemImage: item.symbol) }
                 .tag(PhoneTab(navItem: item)!)
+                .badge(item == .weather ? activeWeatherAlertCount : 0)
             }
 
             NavigationStack {
@@ -402,7 +457,14 @@ struct AppNavigation: View {
         case .feed:            FeedView(viewModel: appState.feedVM)
         case .guides:          GuidesView()
         case .gearInventory:   GearInventoryView().environment(appState)
-        case .wildlife:        WildlifeView()
+        case .wildlife:
+            // Same gate as the split-view path above. Both destinations have to
+            // wrap it: the phone and the iPad/Mac layouts render the feature
+            // through separate switches, so gating only one leaves the other
+            // open.
+            EarlyAccessGate(featureKey: "wildlife-identification") {
+                WildlifeView()
+            }
         case .aiPacks:         AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
         }
     }
@@ -417,7 +479,7 @@ struct AppNavigation: View {
         return HStack(spacing: 8) {
             AvatarView(
                 url: authManager.currentUser?.avatarUrl,
-                fallbackText: authManager.currentUser?.initials ?? "?",
+                fallbackText: authManager.currentUser?.initials ?? "",
                 size: 30
             )
             VStack(alignment: .leading, spacing: 1) {
@@ -442,8 +504,20 @@ struct AppNavigation: View {
                     Label("Profile", systemImage: "person.circle")
                 }
                 Divider()
-                Button("Sign Out", role: .destructive) {
-                    Task { try? await authManager.logout() }
+                // A guest has no session to end, so "Sign Out" was a no-op
+                // offering to undo something that never happened. Mirror the
+                // affordance ProfileView's guest branch already uses, and
+                // which the menu-bar command already guards on.
+                if authManager.isAuthenticated {
+                    Button("Sign Out", role: .destructive) {
+                        Task { try? await authManager.logout() }
+                    }
+                } else {
+                    Button {
+                        authManager.signOut()
+                    } label: {
+                        Label("Sign In or Create Account", systemImage: "person.badge.key")
+                    }
                 }
             } label: {
                 Image(systemName: "ellipsis.circle").foregroundStyle(.secondary)

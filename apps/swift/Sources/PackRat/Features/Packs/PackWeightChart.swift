@@ -4,6 +4,8 @@ import Charts
 struct PackWeightChart: View {
     let pack: Pack
 
+    @Environment(\.weightUnit) private var weightUnit
+
     private var categoryData: [CategoryWeight] {
         let groups = Dictionary(grouping: pack.activeItems, by: { $0.category ?? "Other" })
         return groups.compactMap { key, items -> CategoryWeight? in
@@ -131,8 +133,7 @@ struct PackWeightChart: View {
     }
 
     private func formattedGrams(_ g: Double) -> String {
-        if g >= 1_000 { return String(format: "%.2f kg", g / 1_000) }
-        return String(format: "%.0f g", g)
+        weightUnit.display(grams: g)
     }
 }
 

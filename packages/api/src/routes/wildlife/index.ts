@@ -5,6 +5,7 @@ import { WildlifeIdentificationService } from '@packrat/api/services/wildlifeIde
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
 import { captureApiException } from '@packrat/api/utils/sentry';
+import { FeatureFlag, featureAccessKeyForFlag } from '@packrat/config';
 import { WildlifeIdentifyRequestSchema } from '@packrat/schemas/wildlife';
 import { Elysia, status } from 'elysia';
 
@@ -30,7 +31,10 @@ export const wildlifeRoutes = new Elysia({ prefix: '/wildlife' })
       // window, only Pro members may run this (expensive) identification. The
       // mobile UI gates too, but the server enforces so the check can't be
       // bypassed. Resolves via the entitlements table populated by the RC webhook.
-      const denied = await enforceFeatureAccess('wildlife', user.userId);
+      const denied = await enforceFeatureAccess(
+        featureAccessKeyForFlag(FeatureFlag.EnableWildlifeIdentification),
+        user.userId,
+      );
       if (denied) return denied;
 
       const { PACKRAT_BUCKET_R2_BUCKET_NAME, PACKRAT_BUCKET } = getEnv();

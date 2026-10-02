@@ -1,15 +1,18 @@
 import { isInEarlyAccess, PACKRAT_PRO_ENTITLEMENT } from '@packrat/config';
 import { Text } from '@packrat/ui/src/text';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useConnectivity } from 'expo-app/features/purchases/hooks/useConnectivity';
 import { useCustomerInfo } from 'expo-app/features/purchases/hooks/useCustomerInfo';
 import { useFeatureAccessConfig } from 'expo-app/features/purchases/hooks/useFeatureAccess';
 import { isRevenueCatConfigured } from 'expo-app/features/purchases/lib/revenueCat';
+import { FEATURE_FLAGS_QUERY_KEY, useFeatureFlags } from 'expo-app/hooks/useFeatureFlags';
 import { Stack } from 'expo-router';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { Platform, RefreshControl, ScrollView, View } from 'react-native';
 
 /**
- * Dev-only inspector for the two signals that drive the early-access paywall:
- * the RevenueCat `customerInfo` and the `feature-access` config. Shows their
+ * Dev-only inspector for the three signals that decide what a viewer may use:
+ * the RevenueCat `customerInfo`, the `feature-access` config, and the effective
+ * `feature-flags` map. Shows their
  * live query/resolution state so you can see exactly what the gate would decide
  * (offline vs online, cached vs live, Pro vs not, which features are gated).
  * Reached from Settings → Developer → Paywall State (dev builds only).
@@ -41,10 +44,24 @@ export default function PaywallStateScreen() {
   const isProMember = !!customerInfo?.entitlements.active[PACKRAT_PRO_ENTITLEMENT];
   const proEntitlement = customerInfo?.entitlements.active[PACKRAT_PRO_ENTITLEMENT];
 
-  const refreshing = ciFetching || cfgFetching;
+  const flags = useFeatureFlags();
+  const queryClient = useQueryClient();
+  // Read-only view of the flags query's own fetch state; `useFeatureFlags`
+  // returns the resolved map rather than the query, and mounting the same key
+  // here shares that single in-flight request rather than issuing a second one.
+  const { isFetching: flagsFetching, dataUpdatedAt: flagsUpdatedAt } = useQuery({
+    queryKey: FEATURE_FLAGS_QUERY_KEY,
+    enabled: false,
+  });
+
+  const refreshing = ciFetching || cfgFetching || flagsFetching;
+  // Refreshes all three signals together. Resolving a fresh flag map against a
+  // stale entitlement is exactly the case that shows a subscriber a paywall, so
+  // the inspector never refreshes a subset.
   const onRefresh = () => {
     void refetchCustomerInfo();
     void refetchConfig();
+    void queryClient.invalidateQueries({ queryKey: FEATURE_FLAGS_QUERY_KEY });
   };
 
   return (
@@ -95,6 +112,14 @@ export default function PaywallStateScreen() {
             <Row label="isError" value={yesNo(cfgError)} highlight={cfgError} />
             <Row label="updated at" value={fmtTime(cfgUpdatedAt)} />
             <Row label="feature count" value={String(config?.length ?? 0)} />
+          </Section>
+
+          <Section title={`feature-flags (platform: ${Platform.OS})`}>
+            <Row label="isFetching" value={yesNo(flagsFetching)} />
+            <Row label="updated at" value={fmtTime(flagsUpdatedAt)} />
+            {Object.entries(flags).map(([key, enabled]) => (
+              <Row key={key} label={key} value={yesNo(enabled)} highlight={enabled} />
+            ))}
           </Section>
 
           {(config ?? []).map((f) => {

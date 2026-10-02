@@ -101,8 +101,8 @@ struct WildlifeView: View {
         Group {
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Wildlife ID Requires an Account",
-                    subtitle: "Wildlife identification uses PackRat's image service. You can still manage local packs and trips as a guest.",
+                    "Sign In to Identify Wildlife",
+                    subtitle: "Photograph a plant or animal and find out what it is. Your packs and trips stay on this device and keep working without an account.",
                     systemImage: "pawprint"
                 )
             } else if viewModel.isLoading {

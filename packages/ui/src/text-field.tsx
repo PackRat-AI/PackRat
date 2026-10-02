@@ -152,6 +152,9 @@ function TextField({
             value={value}
             accessibilityHint={accessibilityHint ?? errorMessage}
             {...props}
+            // After the spread so testID (which arrives via props) can seed it — keeps the
+            // input reachable by automation, matching text-field.ios.tsx.
+            accessibilityLabel={props.accessibilityLabel ?? props.testID}
           />
         </FilledWrapper>
         {!materialHideActionIcons && (

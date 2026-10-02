@@ -22,9 +22,31 @@ final class TrailConditionsService: Sendable {
         hazards: [String],
         notes: String?
     ) async throws -> TrailConditionReport {
+        try await createReport(
+            id: UUID().uuidString.lowercased(),
+            trailName: trailName,
+            trailRegion: trailRegion,
+            surface: surface,
+            overallCondition: overallCondition,
+            hazards: hazards,
+            notes: notes
+        )
+    }
+
+    /// Creates a report under a caller-supplied id, for replaying a queued create whose
+    /// id the device already recorded.
+    func createReport(
+        id: String,
+        trailName: String,
+        trailRegion: String?,
+        surface: String?,
+        overallCondition: String,
+        hazards: [String],
+        notes: String?
+    ) async throws -> TrailConditionReport {
         let now = Date.iso8601Now()
         let body = CreateTrailConditionRequest(
-            id: UUID().uuidString.lowercased(),
+            id: id,
             trailName: trailName,
             trailRegion: trailRegion,
             surface: surface,

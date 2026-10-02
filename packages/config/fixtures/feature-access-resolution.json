@@ -1,0 +1,87 @@
+{
+  "$comment": [
+    "Shared parity fixture for the early-access resolver.",
+    "",
+    "Read by BOTH implementations' test suites:",
+    "  - packages/config/src/featureAccess.parity.test.ts (TypeScript)",
+    "  - apps/swift/Tests/PackRatTests/FeatureAccessTests.swift (Swift)",
+    "",
+    "The API enforces this server-side and the clients gate UI with it. If the",
+    "two implementations disagree, a user sees a feature the server then refuses",
+    "to serve, or vice versa. Add cases here rather than to one suite alone.",
+    "",
+    "`now` and `earlyAccessUntil` are ISO-8601. `earlyAccessUntil: null` means the",
+    "feature has no config row, or a row that never placed it under early access.",
+    "",
+    "Note what is NOT modelled here: 'we could not resolve the signals'. This",
+    "resolver is a pure decision over inputs it trusts to be resolved already.",
+    "Callers own the unresolved case and must deny - see the fail-closed guard in",
+    "useFeatureAccess.ts and FeatureAccessStore.swift."
+  ],
+  "now": "2026-08-31T12:00:00.000Z",
+  "cases": [
+    {
+      "name": "no config row — generally available, free for everyone",
+      "earlyAccessUntil": null,
+      "hasPro": false,
+      "expectedInEarlyAccess": false,
+      "expectedHasAccess": true
+    },
+    {
+      "name": "no config row — Pro member also allowed",
+      "earlyAccessUntil": null,
+      "hasPro": true,
+      "expectedInEarlyAccess": false,
+      "expectedHasAccess": true
+    },
+    {
+      "name": "window passed — graduated to free for all",
+      "earlyAccessUntil": "2026-08-01T00:00:00.000Z",
+      "hasPro": false,
+      "expectedInEarlyAccess": false,
+      "expectedHasAccess": true
+    },
+    {
+      "name": "inside the window — non-Pro is gated",
+      "earlyAccessUntil": "2026-10-01T00:00:00.000Z",
+      "hasPro": false,
+      "expectedInEarlyAccess": true,
+      "expectedHasAccess": false
+    },
+    {
+      "name": "inside the window — Pro member is allowed",
+      "earlyAccessUntil": "2026-10-01T00:00:00.000Z",
+      "hasPro": true,
+      "expectedInEarlyAccess": true,
+      "expectedHasAccess": true
+    },
+    {
+      "name": "expiry exactly equals now — boundary counts as graduated",
+      "earlyAccessUntil": "2026-08-31T12:00:00.000Z",
+      "hasPro": false,
+      "expectedInEarlyAccess": false,
+      "expectedHasAccess": true
+    },
+    {
+      "name": "one millisecond before expiry — still gated",
+      "earlyAccessUntil": "2026-08-31T12:00:00.001Z",
+      "hasPro": false,
+      "expectedInEarlyAccess": true,
+      "expectedHasAccess": false
+    },
+    {
+      "name": "unparseable timestamp — treated as no window, not as gated",
+      "earlyAccessUntil": "not-a-date",
+      "hasPro": false,
+      "expectedInEarlyAccess": false,
+      "expectedHasAccess": true
+    },
+    {
+      "name": "far-future window — non-Pro gated",
+      "earlyAccessUntil": "2099-01-01T00:00:00.000Z",
+      "hasPro": false,
+      "expectedInEarlyAccess": true,
+      "expectedHasAccess": false
+    }
+  ]
+}

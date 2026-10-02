@@ -14,7 +14,7 @@ const verifyScript = resolve(repoRoot, 'apps/swift/scripts/verify-testflight-rep
 
 describe('upload-testflight CLI', () => {
   it('uses BUILD_NUMBER in dry-run preflight output', () => {
-    const output = execFileSync('bun', [script, '--replacement', '--production', '--dry-run'], {
+    const output = execFileSync('bun', [script, '--production', '--dry-run'], {
       cwd: repoRoot,
       encoding: 'utf8',
       env: { ...currentEnv, APPLE_ASC_PROVIDER: 'PackRatProvider', BUILD_NUMBER: '2026071801' },
@@ -22,7 +22,6 @@ describe('upload-testflight CLI', () => {
 
     const preflight = JSON.parse(output);
     expect(preflight).toMatchObject({
-      lane: 'replacement',
       bundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
       marketingVersion: monorepoVersion,
@@ -35,7 +34,7 @@ describe('upload-testflight CLI', () => {
   });
 
   it('verifies replacement TestFlight readiness from the CLI', () => {
-    const output = execFileSync('bun', [verifyScript, '--replacement', '--production'], {
+    const output = execFileSync('bun', [verifyScript, '--production'], {
       cwd: repoRoot,
       encoding: 'utf8',
       env: {
@@ -47,7 +46,6 @@ describe('upload-testflight CLI', () => {
 
     const report = JSON.parse(output);
     expect(report).toMatchObject({
-      lane: 'replacement',
       bundleId: 'com.andrewbierman.packrat',
       displayName: 'PackRat',
       apiEnvironment: 'production',
@@ -63,7 +61,7 @@ describe('upload-testflight CLI', () => {
     const env = { ...currentEnv, BUILD_NUMBER: '2026071802' };
     delete env.APP_STORE_CURRENT_BUILD_NUMBER;
 
-    const result = spawnSync('bun', [verifyScript, '--replacement', '--production'], {
+    const result = spawnSync('bun', [verifyScript, '--production'], {
       cwd: repoRoot,
       encoding: 'utf8',
       env,
@@ -87,7 +85,7 @@ describe('upload-testflight CLI', () => {
     };
     delete env.APP_STORE_CURRENT_BUILD_NUMBER;
 
-    const result = spawnSync('bun', [script, '--replacement', '--production'], {
+    const result = spawnSync('bun', [script, '--production'], {
       cwd: repoRoot,
       encoding: 'utf8',
       env,

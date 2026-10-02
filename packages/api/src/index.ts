@@ -24,7 +24,9 @@ import { AppContainer } from '@packrat/api/containers';
 import { createDb } from '@packrat/api/db';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
+import { listEffectiveFeatureFlags } from '@packrat/api/services/featureFlagsService';
 import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
+import { pollWatchedLocations } from '@packrat/api/services/weatherMonitoring/pollWatchedLocations';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
 import {
@@ -35,6 +37,7 @@ import {
 } from '@packrat/api/utils/queryMetrics';
 import { captureApiException, record } from '@packrat/api/utils/sentry';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
+import { FeatureFlag } from '@packrat/config';
 import { renderConsentPage, renderSignInPage } from '@packrat/consent-ui';
 import * as dbSchema from '@packrat/db/schema';
 import { isString, toRecord, toString as toStr } from '@packrat/guards';
@@ -557,6 +560,22 @@ const workerHandler = {
                 `remaining expired rows will be swept on the next run`,
             );
           }
+          return;
+        }
+        if (controller.cron === '*/5 * * * *') {
+          const flags = await listEffectiveFeatureFlags();
+          if (!flags[FeatureFlag.EnableWeatherMonitoring]) return;
+
+          const result = await record({
+            operation: 'weatherMonitoring.poll',
+            tags: { trigger: 'cron' },
+            extra: { cron: controller.cron },
+            fn: async () => pollWatchedLocations({ env }),
+          });
+          console.log(
+            `[weatherMonitoring] poll: checked=${result.checked} skipped=${result.skipped} ` +
+              `failed=${result.failed} notified=${result.notified}`,
+          );
           return;
         }
         throw new Error(`Unknown cron: ${controller.cron}`);

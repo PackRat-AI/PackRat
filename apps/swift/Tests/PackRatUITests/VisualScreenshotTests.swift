@@ -522,7 +522,9 @@ final class VisualScreenshotTests: XCTestCase {
     private func capturePhoneExpandedPackStates() {
         captureTab("Packs", name: "home-before-81-data-pack-expanded")
         tapTextAndCapture("Alpine Weekend", name: "81-data-pack-detail-expanded")
-        tapAndCapture(identifier: "pack_detail_add_item_button", fallbackButton: "Add Item", name: "82-data-pack-add-item-sheet")
+        // Add Item is a pull-down menu (Add Manually / Scan / Catalog), not a
+        // button that opens the form directly, so capture the open menu.
+        openMenuAndCapture(identifier: "pack_detail_add_item_button", fallbackButton: "Add Item", name: "82-data-pack-add-item-menu")
         openMenuAndCapture(identifier: "pack_detail_more_menu", fallbackButton: "More", name: "83-data-pack-more-menu")
         captureTab("Packs", name: "home-before-84-data-pack-item-detail")
         tapTextAndCapture("Alpine Weekend", name: "84-data-pack-detail-before-item")
@@ -560,8 +562,7 @@ final class VisualScreenshotTests: XCTestCase {
             name: "home-before-92-data-weather-expanded",
             dismissAfterCapture: false
         )
-        tapAndCapture(identifier: "weather_alerts_button", fallbackButton: "Alerts", name: "92-data-weather-alerts-sheet")
-        tapAndCapture(identifier: "weather_alert_preferences_button", fallbackButton: "Alert Preferences", name: "93-data-weather-alert-preferences")
+        tapAndCapture(identifier: "forecast_alert_card", fallbackButton: "Alerts", name: "92-data-weather-alerts-sheet")
 
         if UITestFeatureFlags.enableFeed {
             captureHomeAction(
@@ -1023,7 +1024,9 @@ final class VisualScreenshotTests: XCTestCase {
     private func captureMacExpandedPackStates() {
         resetMacSampleDataSidebar("Packs")
         capture("81-data-pack-detail-expanded")
-        tapAndCapture(identifier: "pack_detail_add_item_button", fallbackButton: "Add Item", name: "82-data-pack-add-item-sheet")
+        // Add Item is a pull-down menu (Add Manually / Scan / Catalog), not a
+        // button that opens the form directly, so capture the open menu.
+        openMenuAndCapture(identifier: "pack_detail_add_item_button", fallbackButton: "Add Item", name: "82-data-pack-add-item-menu")
         resetMacSampleDataSidebar("Packs")
         scrollToElement(identifier: "pack_item_row_visual-item-shelter")
         if isPadVisualRun {
@@ -1068,9 +1071,7 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func captureMacExpandedConnectedStates() {
         resetMacSampleDataSidebar("Weather")
-        tapAndCapture(identifier: "weather_alerts_button", fallbackButton: "Alerts", name: "92-data-weather-alerts-sheet")
-        resetMacSampleDataSidebar("Weather")
-        tapElementAndCapture(identifier: "weather_alert_preferences_button", name: "93-data-weather-alert-preferences", dismissAfterCapture: false)
+        tapAndCapture(identifier: "forecast_alert_card", fallbackButton: "Alerts", name: "92-data-weather-alerts-sheet")
 
         if UITestFeatureFlags.enableFeed {
             resetMacSampleDataSidebar("Feed")

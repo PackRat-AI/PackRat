@@ -7,7 +7,7 @@
  *
  * Usage:
  *   APP_STORE_CURRENT_BUILD_NUMBER=123 BUILD_NUMBER=456 \
- *     bun apps/swift/scripts/verify-testflight-replacement.ts --replacement --production
+ *     bun apps/swift/scripts/verify-testflight-replacement.ts --production
  */
 import { nodeEnv } from '@packrat/env/node';
 import { safeJsonStringify } from '@packrat/utils';
@@ -22,7 +22,7 @@ const HELP = process.argv.includes('--help') || process.argv.includes('-h');
 function usage(): string {
   return [
     'Usage:',
-    '  bun apps/swift/scripts/verify-testflight-replacement.ts --replacement --production',
+    '  bun apps/swift/scripts/verify-testflight-replacement.ts --production',
     '',
     'Recommended env:',
     '  BUILD_NUMBER                    build number intended for upload',

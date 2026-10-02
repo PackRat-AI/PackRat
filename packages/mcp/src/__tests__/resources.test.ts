@@ -227,6 +227,27 @@ describe('U9 pack list provider', () => {
     expect(nth(result.resources, 0).name).toBe('Pack p_no_name');
   });
 
+  it('treats a blank name as missing rather than listing an empty label', async () => {
+    // A whitespace-only name is present and a string, so only the `.trim()`
+    // check stops it becoming an unclickable blank row in the resource list.
+    const { agent, server } = makeAgent({
+      packsGet: () =>
+        Promise.resolve({
+          data: [{ id: 'p_blank', name: '   ' }],
+          error: null,
+          status: 200,
+        }),
+    });
+    registerResources(agent);
+    const template = templateByName(server, 'pack');
+    const result = await (
+      template.resourceTemplate.listCallback as () => Promise<{
+        resources: Array<{ uri: string; name: string }>;
+      }>
+    )();
+    expect(nth(result.resources, 0).name).toBe('Pack p_blank');
+  });
+
   it('skips entries without a string id', async () => {
     const { agent, server } = makeAgent({
       packsGet: () =>
@@ -325,6 +346,27 @@ describe('U9 trip list provider', () => {
     expect(nth(result.resources, 0).name).toBe('JMT 2026');
     expect(nth(result.resources, 1).name).toBe('Wind River Range');
     expect(nth(result.resources, 2).name).toBe('Trip t_three');
+  });
+
+  it('treats blank name and destination as missing', async () => {
+    // Both fields are strings here, so the two `.trim()` checks are the only
+    // thing between a whitespace value and a blank row in the resource list.
+    const { agent, server } = makeAgent({
+      tripsGet: () =>
+        Promise.resolve({
+          data: [{ id: 't_blank', name: '  ', destination: '\t' }],
+          error: null,
+          status: 200,
+        }),
+    });
+    registerResources(agent);
+    const template = templateByName(server, 'trip');
+    const result = await (
+      template.resourceTemplate.listCallback as () => Promise<{
+        resources: Array<{ uri: string; name: string }>;
+      }>
+    )();
+    expect(nth(result.resources, 0).name).toBe('Trip t_blank');
   });
 
   it('returns empty array on API error (no propagation)', async () => {

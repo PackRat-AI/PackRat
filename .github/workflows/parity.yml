@@ -1,0 +1,123 @@
+name: Parity
+
+# Two jobs, one concern: keep the two clients from drifting.
+#
+#   validate — on every PR touching a client, the `## Parity` block must declare
+#              what happens to the other one. Blocks the PR if it doesn't.
+#   record   — on merge, if the PR declared `follow: <platform>`, open the
+#              counterpart issue. This is the step that means nobody has to
+#              remember.
+#
+# See docs/parity.md.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: ['**']
+  # `record` runs on push, not `pull_request_target`. A pull_request_target
+  # trigger is only registered from the workflow file already on the base
+  # branch when the PR was opened, so it silently never fires for PRs opened
+  # before this workflow landed — and it is awkward for forks besides. Push
+  # always fires, and the merge commit carries the PR number we need.
+  push:
+    branches: [development, main]
+
+concurrency:
+  # Keyed by event so an edit-triggered `validate` can never cancel an
+  # in-flight `record`. `record` is the only thing that opens the counterpart
+  # issue and it has no retry, so a cancelled run drops the gap silently.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate parity declaration
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Collect changed files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # Three dots: diff against the merge base, not the base tip. A two-dot
+        # diff also reports commits that landed on development after we
+        # branched, which makes a docs-only PR look like it touched a client.
+        run: git diff --name-only "$BASE_SHA...$HEAD_SHA" > /tmp/changed-files.txt
+
+      - name: Write PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" > /tmp/pr-body.txt
+
+      - name: Check parity declaration
+        run: |
+          bun scripts/lint/check-parity-declaration.ts \
+            --body /tmp/pr-body.txt \
+            --changed-files /tmp/changed-files.txt
+
+  record:
+    name: Open counterpart issue
+    # Runs from the merged commit on the base branch, so only base-repo code
+    # executes; the PR body is fetched via the API and treated purely as data.
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # A direct push carries no PR, so this resolves to empty and every
+      # later step no-ops — only merges of a PR record anything.
+      - name: Resolve the PR this push merged
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          pr=$(gh api "repos/$REPO/commits/${{ github.sha }}/pulls" \
+            --jq '[.[] | select(.merged_at != null)][0].number // empty')
+          if [[ -z "$pr" ]]; then
+            echo 'No merged PR for this commit — nothing to record.'
+            echo 'number=' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "number=$pr" >> "$GITHUB_OUTPUT"
+
+          gh api "repos/$REPO/pulls/$pr" > /tmp/pr.json
+          jq -r '.title'     /tmp/pr.json > /tmp/pr-title.txt
+          jq -r '.body // ""' /tmp/pr.json > /tmp/pr-body.txt
+          jq -r '.html_url'  /tmp/pr.json > /tmp/pr-url.txt
+          jq -r '.user.login' /tmp/pr.json > /tmp/pr-author.txt
+          gh api "repos/$REPO/pulls/$pr/files" --paginate \
+            --jq '.[].filename' > /tmp/changed-files.txt
+
+      - name: Open counterpart issue if one is owed
+        if: steps.pr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          PR_TITLE="$(cat /tmp/pr-title.txt)" \
+          PR_URL="$(cat /tmp/pr-url.txt)" \
+          PR_AUTHOR="$(cat /tmp/pr-author.txt)" \
+          bun scripts/parity/open-counterpart-issue.ts \
+            --body /tmp/pr-body.txt \
+            --changed-files /tmp/changed-files.txt

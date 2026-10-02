@@ -14,9 +14,14 @@ final class PacksViewModel {
     let service: PackService
     private let outbox: OutboxService
 
-    init(service: PackService = .shared, outbox: OutboxService = .shared) {
+    // `OutboxService.shared` is main-actor isolated, and a default argument is
+    // evaluated in the *caller's* context rather than the callee's — which is a
+    // hard error in the Swift 6 language mode. Taking `nil` and resolving the
+    // singleton in the body keeps the default inside this @MainActor type while
+    // leaving the injection point open for tests.
+    init(service: PackService = .shared, outbox: OutboxService? = nil) {
         self.service = service
-        self.outbox = outbox
+        self.outbox = outbox ?? .shared
     }
 
     var currentPage = 1
@@ -32,6 +37,25 @@ final class PacksViewModel {
             $0.name.localizedCaseInsensitiveContains(searchText)
             || ($0.description?.localizedCaseInsensitiveContains(searchText) ?? false)
         }
+    }
+
+    /// Picks up pack mutations made in another window (#2667).
+    ///
+    /// Reconciles in place from `PackRevisionStore` rather than refetching, so
+    /// a window that is merely displaying a pack does not issue a network call
+    /// every time a different window edits it. Only packs this view model
+    /// already holds are updated — see `PackRevisionStore.reconcile`.
+    func adoptExternalRevisions() {
+        let reconciled = PackRevisionStore.shared.reconcile(packs)
+        // Assigning unconditionally would invalidate every observing view on
+        // each publish, including the window that made the write. `Pack` comes
+        // from generated code and is not Equatable, so compare on the fields
+        // that change on a write: the id list and each pack's `updatedAt`,
+        // which `rebuildPack` restamps on every mutation.
+        let fingerprint = reconciled.map { "\($0.id)@\($0.updatedAt ?? "")#\($0.itemCount)" }
+        let current = packs.map { "\($0.id)@\($0.updatedAt ?? "")#\($0.itemCount)" }
+        guard fingerprint != current else { return }
+        packs = reconciled
     }
 
     // Load cached packs instantly from SwiftData, then refresh from network
@@ -53,10 +77,14 @@ final class PacksViewModel {
             // Clear rows from the retired `local-` id scheme before reading the cache,
             // so they never reach the UI or the outbox.
             LegacyLocalIDMigration.runIfNeeded(context: context)
+            // Import packs the Expo build kept only on device — guest-mode content and
+            // writes that never synced — before the cache read, so they show up on this
+            // first launch rather than after a restart.
+            ExpoLocalDataMigration.runIfNeeded(context: context, outbox: outbox)
             let cached = (try? context.fetch(FetchDescriptor<CachedPack>(
                 sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]
             ))) ?? []
-            let cachedPacks = cached.compactMap { $0.toPack() }
+            let cachedPacks = cached.compactMap { $0.toPack() }.activePacks
             if !cachedPacks.isEmpty {
                 packs = cachedPacks
             }
@@ -74,11 +102,15 @@ final class PacksViewModel {
 
         do {
             let fresh = try await service.listPacks(page: 1, limit: pageSize)
-            packs = fresh
+            let active = fresh.activePacks
+            packs = active
             currentPage = 1
+            // Page-size comparison stays on the raw response: filtering shrinks
+            // the array, and testing the filtered count would end pagination
+            // early on a page that happened to contain tombstones.
             hasMore = fresh.count == pageSize
             if let context {
-                writeCachePacks(fresh, context: context)
+                writeCachePacks(active, context: context)
             }
         } catch {
             if packs.isEmpty {
@@ -99,10 +131,34 @@ final class PacksViewModel {
         defer { isLoading = false }
         do {
             let more = try await service.listPacks(page: nextPage, limit: pageSize)
-            packs.append(contentsOf: more)
+            // Dedupe by id: `load()` can reassign `packs` while this page is in
+            // flight, and appending blindly then showed the same pack twice —
+            // duplicate ids also collide in `ForEach` identity, so the duplicates
+            // were visible rather than harmless.
+            let known = Set(packs.map(\.id))
+            packs.append(contentsOf: more.activePacks.filter { !known.contains($0.id) })
             currentPage = nextPage
             hasMore = more.count == pageSize
         } catch { }
+    }
+
+    /// Clears every trace of the signed-in user's packs, including the on-disk
+    /// cache. Without this, signing in as a different user briefly showed the
+    /// previous user's packs from SwiftData, and a re-sign-in as the same user
+    /// kept stale pagination state.
+    func reset(context: ModelContext? = nil) {
+        packs = []
+        isLoading = false
+        isCacheLoaded = false
+        error = nil
+        searchText = ""
+        currentPage = 1
+        hasMore = true
+
+        if let context {
+            try? context.delete(model: CachedPack.self)
+            try? context.save()
+        }
     }
 
     private func writeCachePacks(_ freshPacks: [Pack], context: ModelContext) {
@@ -255,14 +311,17 @@ final class PacksViewModel {
 
     func addItem(to packId: String, name: String, weight: Double?, weightUnit: String?,
                  quantity: Int?, category: String?, consumable: Bool, worn: Bool, notes: String?,
+                 catalogItemId: Int? = nil, image: String? = nil,
                  context: ModelContext? = nil) async throws {
         let localItem = makeLocalItem(
             packId: packId, name: name, weight: weight, weightUnit: weightUnit,
-            quantity: quantity, category: category, consumable: consumable, worn: worn, notes: notes
+            quantity: quantity, category: category, consumable: consumable, worn: worn, notes: notes,
+            catalogItemId: catalogItemId, image: image
         )
         let payload = PackItemMutationPayload(
             name: name, weight: weight, weightUnit: weightUnit, quantity: quantity,
-            category: category, consumable: consumable, worn: worn, notes: notes
+            category: category, consumable: consumable, worn: worn, notes: notes,
+            catalogItemId: catalogItemId, image: image
         )
         func queueCreate() {
             outbox.enqueue(
@@ -280,7 +339,8 @@ final class PacksViewModel {
             do {
                 item = try await service.addItem(
                     to: packId, id: localItem.id, name: name, weight: weight, weightUnit: weightUnit,
-                    quantity: quantity, category: category, consumable: consumable, worn: worn, notes: notes
+                    quantity: quantity, category: category, consumable: consumable, worn: worn, notes: notes,
+                    catalogItemId: catalogItemId, image: image
                 )
             } catch {
                 item = localItem
@@ -296,6 +356,91 @@ final class PacksViewModel {
             packs[idx] = rebuildPack(packs[idx], items: items)
             upsertCachedPack(packs[idx], context: context)
         }
+    }
+
+    /// Adds several catalog items to a pack in one pass.
+    ///
+    /// Sequential rather than concurrent, matching Expo's `useBulkAddCatalogItems`:
+    /// each add mutates the same pack row server-side, so parallel writes race on
+    /// the pack's recomputed weights. Returns the number added — a partial
+    /// failure still keeps whatever succeeded rather than rolling back, so the
+    /// caller can report "added 3 of 5".
+    @discardableResult
+    func addCatalogItems(
+        _ selections: [(item: CatalogItem, quantity: Int)],
+        to packId: String,
+        context: ModelContext? = nil
+    ) async -> (added: Int, failed: Int) {
+        var added = 0
+        var failed = 0
+        for selection in selections {
+            let item = selection.item
+            do {
+                try await addItem(
+                    to: packId,
+                    name: item.name,
+                    weight: item.weight,
+                    // Catalog weight/unit are both optional — an item with no
+                    // published weight is added at 0 g for the user to fill in
+                    // rather than being skipped.
+                    weightUnit: item.weightUnit?.rawValue,
+                    quantity: selection.quantity,
+                    // Expo sends the item's own category or '' and lets the
+                    // server bucket it; keep the first catalog facet instead so
+                    // the pack's category grouping stays meaningful.
+                    category: item.categories?.first,
+                    consumable: false,
+                    worn: false,
+                    notes: nil,
+                    catalogItemId: item.id,
+                    image: item.primaryImage,
+                    context: context
+                )
+                added += 1
+            } catch {
+                failed += 1
+            }
+        }
+        return (added, failed)
+    }
+
+    /// Adds vision-detected items to a pack.
+    ///
+    /// Weight comes from the best catalog match when there is one — the vision
+    /// model returns a name/category/quantity but never a weight, so an
+    /// unmatched detection lands at 0 g for the user to fill in.
+    @discardableResult
+    func addDetectedItems(
+        _ detections: [DetectedItemWithMatches],
+        to packId: String,
+        context: ModelContext? = nil
+    ) async -> (added: Int, failed: Int) {
+        var added = 0
+        var failed = 0
+        for detection in detections {
+            let detected = detection.detected
+            let match = detection.primaryMatch
+            do {
+                try await addItem(
+                    to: packId,
+                    name: detected.name,
+                    weight: match?.weight,
+                    weightUnit: match?.weightUnit?.rawValue,
+                    quantity: detected.quantity,
+                    category: detected.category.isEmpty ? match?.categories?.first : detected.category,
+                    consumable: detected.consumable,
+                    worn: detected.worn,
+                    notes: detected.notes,
+                    catalogItemId: match?.id,
+                    image: match?.primaryImage,
+                    context: context
+                )
+                added += 1
+            } catch {
+                failed += 1
+            }
+        }
+        return (added, failed)
     }
 
     func updateItem(_ itemId: String, in packId: String, name: String, weight: Double?,
@@ -315,7 +460,12 @@ final class PacksViewModel {
                 category: category ?? current?.category,
                 consumable: consumable,
                 worn: worn,
-                notes: notes ?? current?.notes
+                notes: notes ?? current?.notes,
+                // Carry these over like every other field above. makeLocalItem
+                // defaults them to nil, so without this an edit to a
+                // catalog-added item erases its catalog link and image.
+                catalogItemId: current?.catalogItemId,
+                image: current?.image
             )
             let payload = PackItemMutationPayload(
                 name: name,
@@ -325,7 +475,9 @@ final class PacksViewModel {
                 category: category ?? current?.category,
                 consumable: consumable,
                 worn: worn,
-                notes: notes ?? current?.notes
+                notes: notes ?? current?.notes,
+                catalogItemId: current?.catalogItemId,
+                image: current?.image
             )
             func queueUpdate() {
                 outbox.enqueue(
@@ -415,7 +567,9 @@ final class PacksViewModel {
         category: String?,
         consumable: Bool,
         worn: Bool,
-        notes: String?
+        notes: String?,
+        catalogItemId: Int? = nil,
+        image: String? = nil
     ) -> PackItem {
         let now = Date.iso8601Now()
         return PackItem(
@@ -429,9 +583,9 @@ final class PacksViewModel {
             category: category,
             consumable: consumable,
             worn: worn,
-            image: nil,
+            image: image,
             notes: notes,
-            catalogItemId: nil,
+            catalogItemId: catalogItemId,
             userId: nil,
             deleted: false,
             isAIGenerated: false,
@@ -486,6 +640,12 @@ final class PacksViewModel {
     }
 
     private func upsertCachedPack(_ pack: Pack, context: ModelContext?) {
+        // Announce first, and outside the `context` guard: the other windows
+        // need the new value whether or not this call site had a ModelContext
+        // to persist through (#2667). Every mutation already funnels here, so
+        // publishing at this choke point covers them all.
+        PackRevisionStore.shared.publish(pack)
+
         guard let context else { return }
         if let existing = try? context.fetch(FetchDescriptor<CachedPack>(predicate: #Predicate { $0.id == pack.id })).first {
             existing.name = pack.name
@@ -506,6 +666,8 @@ final class PacksViewModel {
     }
 
     private func deleteCachedPack(_ packId: String, context: ModelContext?) {
+        PackRevisionStore.shared.publishDeletion(of: packId)
+
         guard let context else { return }
         if let cached = try? context.fetch(FetchDescriptor<CachedPack>(predicate: #Predicate { $0.id == packId })).first {
             context.delete(cached)

@@ -14,9 +14,11 @@ final class TripsViewModel {
     private let service: TripService
     private let outbox: OutboxService
 
-    init(service: TripService = .shared, outbox: OutboxService = .shared) {
+    // See `PacksViewModel.init`: an isolated singleton cannot be a default
+    // argument under the Swift 6 language mode, so resolve it in the body.
+    init(service: TripService = .shared, outbox: OutboxService? = nil) {
         self.service = service
-        self.outbox = outbox
+        self.outbox = outbox ?? .shared
     }
 
     var currentPage = 1
@@ -68,7 +70,7 @@ final class TripsViewModel {
             let cached = (try? context.fetch(FetchDescriptor<CachedTrip>(
                 sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]
             ))) ?? []
-            let cachedTrips = cached.compactMap { $0.toTrip() }
+            let cachedTrips = cached.compactMap { $0.toTrip() }.activeTrips
             if !cachedTrips.isEmpty {
                 trips = cachedTrips
             }
@@ -86,11 +88,13 @@ final class TripsViewModel {
 
         do {
             let fresh = try await service.listTrips(page: 1, limit: pageSize)
-            trips = fresh
+            let active = fresh.activeTrips
+            trips = active
             currentPage = 1
+            // Page-size comparison stays on the raw response — see PacksViewModel.
             hasMore = fresh.count == pageSize
             if let context {
-                writeCacheTrips(fresh, context: context)
+                writeCacheTrips(active, context: context)
             }
         } catch {
             if trips.isEmpty {
@@ -111,10 +115,34 @@ final class TripsViewModel {
         defer { isLoading = false }
         do {
             let more = try await service.listTrips(page: nextPage, limit: pageSize)
-            trips.append(contentsOf: more)
+            // Dedupe by id: `load()` can reassign `trips` while this page is in
+            // flight, and appending blindly then showed the same trip twice —
+            // duplicate ids also collide in `ForEach` identity, so the duplicates
+            // were visible rather than harmless.
+            let known = Set(trips.map(\.id))
+            trips.append(contentsOf: more.activeTrips.filter { !known.contains($0.id) })
             currentPage = nextPage
             hasMore = more.count == pageSize
         } catch { }
+    }
+
+    /// Clears every trace of the signed-in user's trips, including the on-disk
+    /// cache. Without this, signing in as a different user briefly showed the
+    /// previous user's trips from SwiftData, and a re-sign-in as the same user
+    /// kept stale pagination state.
+    func reset(context: ModelContext? = nil) {
+        trips = []
+        isLoading = false
+        isCacheLoaded = false
+        error = nil
+        searchText = ""
+        currentPage = 1
+        hasMore = true
+
+        if let context {
+            try? context.delete(model: CachedTrip.self)
+            try? context.save()
+        }
     }
 
     private func writeCacheTrips(_ freshTrips: [Trip], context: ModelContext) {

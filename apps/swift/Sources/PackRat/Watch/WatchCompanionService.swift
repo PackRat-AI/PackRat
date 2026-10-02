@@ -11,7 +11,30 @@ final class WatchCompanionService: NSObject {
     private var session: WCSession?
     private var lastSnapshot: PackRatWatchSnapshot?
 
-    private override init() {
+    private let packingModeStore: PackingModeStore
+    private let trailDraftStore: WatchTrailDraftStore
+    private let defaults: UserDefaults
+
+    /// Retained so a toggle arriving from the watch can push a corrected
+    /// snapshot straight back without waiting for the phone UI's 15s republish
+    /// loop — the watch needs to see its own change confirmed.
+    private weak var lastPublishedAppState: AppState?
+
+    private var temperatureUnit: WatchTemperatureUnit {
+        WatchTemperatureUnit.fromDefaults(defaults)
+    }
+
+    // Both store singletons are main-actor isolated, so they cannot be default
+    // arguments under the Swift 6 language mode — see `PacksViewModel.init`.
+    // The labels are unchanged, so existing callers and tests still compile.
+    init(
+        packingModeStore: PackingModeStore? = nil,
+        trailDraftStore: WatchTrailDraftStore? = nil,
+        defaults: UserDefaults = .standard
+    ) {
+        self.packingModeStore = packingModeStore ?? .shared
+        self.trailDraftStore = trailDraftStore ?? .shared
+        self.defaults = defaults
         super.init()
         encoder.dateEncodingStrategy = .iso8601
         decoder.dateDecodingStrategy = .iso8601
@@ -26,6 +49,7 @@ final class WatchCompanionService: NSObject {
     }
 
     func publishSnapshot(from appState: AppState) {
+        lastPublishedAppState = appState
         let snapshot = makeSnapshot(from: appState)
         guard snapshot != lastSnapshot else { return }
         lastSnapshot = snapshot
@@ -52,13 +76,7 @@ final class WatchCompanionService: NSObject {
 
         return PackRatWatchSnapshot(
             updatedAt: Date(),
-            pack: WatchPackSnapshot(
-                name: pack?.name ?? "No Pack Selected",
-                baseWeightText: formatWeight(pack?.baseWeight ?? pack?.totalWeight),
-                packedItemCount: pack?.activeItems.count ?? 0,
-                totalItemCount: pack?.activeItems.count ?? 0,
-                checklist: makeChecklist(from: pack)
-            ),
+            pack: makePackSnapshot(from: pack),
             trip: trip.map {
                 WatchTripSnapshot(
                     name: $0.name,
@@ -70,7 +88,10 @@ final class WatchCompanionService: NSObject {
                 locationName: appState.weatherVM.selectedLocation?.displayName
                     ?? weather?.location?.name
                     ?? "No Location",
-                temperatureText: weather?.current?.tempF.map { "\(Int($0.rounded()))°" } ?? "--",
+                temperatureText: temperatureUnit.format(
+                    celsius: weather?.current?.tempC,
+                    fahrenheit: weather?.current?.tempF
+                ),
                 conditionText: weather?.current?.condition?.text ?? "Open iPhone app to sync weather.",
                 symbolName: weather?.current?.condition?.sfSymbol ?? "cloud"
             ),
@@ -78,7 +99,12 @@ final class WatchCompanionService: NSObject {
                 title: report?.trailName ?? "Trail Report",
                 conditionText: report?.overallCondition.capitalized ?? "Ready for a field note.",
                 hazardCount: report?.hazards.count ?? 0
-            )
+            ),
+            // Resolved on the phone, which owns the RevenueCat SDK. Reads the
+            // store's cached answer rather than the network, so publishing a
+            // snapshot never blocks on a fetch; an unresolved store reports
+            // false, leaving the watch fail-closed.
+            isPro: FeatureAccessStore.shared.isPro
         )
     }
 
@@ -102,31 +128,32 @@ final class WatchCompanionService: NSObject {
         return appState.tripsVM.trips.first
     }
 
-    private func makeChecklist(from pack: Pack?) -> [WatchChecklistItemSnapshot] {
-        (pack?.activeItems ?? [])
-            .prefix(8)
-            .map {
-                WatchChecklistItemSnapshot(
-                    id: $0.id,
-                    title: $0.name,
-                    symbolName: symbol(for: $0.category),
-                    isPacked: true
-                )
-            }
-    }
-
-    private func symbol(for category: String?) -> String {
-        switch category?.lowercased() {
-        case "shelter": return "tent"
-        case "sleep": return "bed.double"
-        case "water": return "drop"
-        case "food": return "fork.knife"
-        case "clothing": return "jacket"
-        case "safety": return "cross.case"
-        case "kitchen": return "flame"
-        case "pack": return "backpack"
-        default: return "checkmark.circle"
+    /// Builds the pack half of the snapshot from real packed state.
+    ///
+    /// Packed state comes from `PackingModeStore`, the phone's source of truth
+    /// (see #2694/#2718 — this used to hardcode `isPacked: true`, so the watch
+    /// showed a fully ticked list and a count that disagreed with the phone).
+    private func makePackSnapshot(from pack: Pack?) -> WatchPackSnapshot {
+        guard let pack else {
+            return WatchSnapshotBuilder.makePackSnapshot(
+                packId: nil,
+                name: "No Pack Selected",
+                baseWeightText: formatWeight(nil),
+                items: [],
+                isPacked: { _ in false }
+            )
         }
+
+        let packingMode = packingModeStore
+        return WatchSnapshotBuilder.makePackSnapshot(
+            packId: pack.id,
+            name: pack.name,
+            baseWeightText: formatWeight(pack.baseWeight ?? pack.totalWeight),
+            items: pack.activeItems.map {
+                WatchSnapshotBuilder.Item(id: $0.id, name: $0.name, category: $0.category)
+            },
+            isPacked: { packingMode.isPacked($0, in: pack.id) }
+        )
     }
 
     private func formatWeight(_ grams: Double?) -> String {
@@ -135,10 +162,49 @@ final class WatchCompanionService: NSObject {
         return String(format: "%.1f lb", pounds)
     }
 
-    private func handleTrailDraft(_ draft: WatchTrailReportDraft) {
-        UserDefaults.standard.set(draft.condition, forKey: "watch.latestTrailDraft.condition")
-        UserDefaults.standard.set(draft.note, forKey: "watch.latestTrailDraft.note")
-        UserDefaults.standard.set(draft.createdAt, forKey: "watch.latestTrailDraft.createdAt")
+    /// Files a trail-condition draft captured on the watch.
+    ///
+    /// Returns the draft so callers (and tests) can distinguish a stored draft
+    /// from an undecodable payload. It lands in `WatchTrailDraftStore`, which
+    /// the phone's Trail Conditions list reads — this used to write three
+    /// `watch.latestTrailDraft.*` UserDefaults keys that nothing on the phone
+    /// ever read, so a watch capture silently disappeared (#2721).
+    @discardableResult
+    func handleTrailDraft(_ draft: WatchTrailReportDraft) -> WatchTrailReportDraft {
+        trailDraftStore.add(draft)
+        return draft
+    }
+
+    /// Applies a packed/unpacked change made on the watch to the phone's store.
+    ///
+    /// Returns the applied message so callers (and tests) can tell a real change
+    /// from an ignored payload. Idempotent: WatchConnectivity delivers a toggle
+    /// over both `sendMessage` and `transferUserInfo` so it survives the phone
+    /// being unreachable, which means the same change can arrive twice.
+    @discardableResult
+    func applyChecklistToggle(_ message: WatchChecklistToggleMessage) -> WatchChecklistToggleMessage {
+        packingModeStore.setPacked(
+            message.isPacked,
+            itemId: message.itemId,
+            in: message.packId
+        )
+        return message
+    }
+
+    private func handleChecklistTogglePayload(_ payload: [String: Any]) {
+        guard let data = payload[WatchCompanionMessage.checklistToggle] as? Data,
+              let message = try? decoder.decode(WatchChecklistToggleMessage.self, from: data)
+        else { return }
+
+        applyChecklistToggle(message)
+
+        // Push the corrected state back so the watch's optimistic toggle is
+        // confirmed by the phone rather than left to drift until the next
+        // periodic republish. `lastSnapshot` is cleared because the pack half
+        // changed underneath the equality check that normally suppresses sends.
+        guard let appState = lastPublishedAppState else { return }
+        lastSnapshot = nil
+        publishSnapshot(from: appState)
     }
 
     private func handleTrailDraftPayload(_ payload: [String: Any]) {
@@ -168,12 +234,14 @@ extension WatchCompanionService: WCSessionDelegate {
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
         Task { @MainActor in
             WatchCompanionService.shared.handleTrailDraftPayload(userInfo)
+            WatchCompanionService.shared.handleChecklistTogglePayload(userInfo)
         }
     }
 
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         Task { @MainActor in
             WatchCompanionService.shared.handleTrailDraftPayload(message)
+            WatchCompanionService.shared.handleChecklistTogglePayload(message)
         }
     }
 }

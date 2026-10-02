@@ -36,6 +36,13 @@ import Foundation
 enum AppFeatureFlags {
     static let enableFeed = false
     static let enableTrips = true
+
+    /// Coded defaults keyed by wire name. Defines the known key set that
+    /// \`FeatureFlagResolution\` normalizes a fetched or cached map against.
+    static let codedDefaults: [String: Bool] = [
+        "enableFeed": false,
+        "enableTrips": true,
+    ]
 }
 `);
   });

@@ -18,6 +18,31 @@ struct ChatView: View {
         viewModel.sendMessage()
     }
 
+    /// Pack-scoped chats are presented inside their own sheet, which supplies
+    /// the "Ask AI" title — leaving the generic one here would override it.
+    private var navigationTitleText: String {
+        if viewModel.context.packName != nil { return "Ask AI" }
+        if let itemName = viewModel.context.itemName { return itemName }
+        return "AI Assistant"
+    }
+
+    /// The generic starter prompts assume no pack context. When scoped to a
+    /// pack, offer prompts that exercise the `getPackDetails` tool instead; when
+    /// scoped to a single item, the item's own prompts come from `ChatContext`.
+    private var activeSuggestions: [(String, String)] {
+        guard let packName = viewModel.context.packName else {
+            let itemSuggestions = viewModel.context.itemSuggestions
+            return itemSuggestions.isEmpty ? Self.suggestions : itemSuggestions
+        }
+        return [
+            ("What's missing?", "Review “\(packName)” and tell me what essential gear is missing."),
+            ("Cut weight", "How can I reduce the weight of “\(packName)”? Suggest the biggest wins."),
+            ("Heaviest items", "What are the heaviest items in “\(packName)” and what are lighter alternatives?"),
+            ("Redundant gear", "Is there anything redundant or unnecessary in “\(packName)”?"),
+            ("Rain ready", "Is “\(packName)” ready for wet weather? What should I add?"),
+        ]
+    }
+
     var body: some View {
         Group {
             if authManager.isAuthenticated {
@@ -31,13 +56,13 @@ struct ChatView: View {
                 }
             } else {
                 GuestLimitedView(
-                    "Assistant Requires an Account",
-                    subtitle: "PackRat AI uses your account and trip context. Local packs and trips still work in guest mode.",
+                    "Sign In to Ask the Assistant",
+                    subtitle: "The assistant reads your packs and trips to answer questions about them, and that runs on our servers. Your packs and trips stay on this device either way.",
                     systemImage: "sparkles"
                 )
             }
         }
-        .navigationTitle("AI Assistant")
+        .navigationTitle(navigationTitleText)
         .toolbar {
             if authManager.isAuthenticated {
                 ToolbarItem(placement: .automatic) {
@@ -46,7 +71,11 @@ struct ChatView: View {
                 }
             }
         }
-        .keyboardDoneButton(isFocused: $isInputFocused)
+        // No `keyboardDoneButton` here on purpose: the keyboard accessory bar it
+        // adds sits in the same place as the composer, so its trailing "Done"
+        // landed on top of the send button. Chat already has two dismissal
+        // paths — `dismissesKeyboardOnScroll` on the message list, and `send()`
+        // clearing `isInputFocused` — so the accessory bar was pure overlap.
     }
 
     // MARK: - Message List
@@ -81,6 +110,16 @@ struct ChatView: View {
         }
     }
 
+    private var welcomeSubtitle: String {
+        if viewModel.context.packName != nil {
+            return "I can see this pack's contents — ask about gaps, weight, or what to leave behind"
+        }
+        if let itemName = viewModel.context.itemName {
+            return "Ask about \(itemName) — alternatives, weight savings, or how to care for it"
+        }
+        return "Ask me anything about gear, trips, or packing strategy"
+    }
+
     private var welcomeHeader: some View {
         VStack(spacing: 10) {
             Circle()
@@ -91,9 +130,10 @@ struct ChatView: View {
                         .font(.title2)
                         .foregroundStyle(Color.accentColor)
                 }
-            Text("PackRat AI")
+            Text(viewModel.context.packName ?? viewModel.context.itemName ?? "PackRat AI")
                 .font(.title3.bold())
-            Text("Ask me anything about gear, trips, or packing strategy")
+                .multilineTextAlignment(.center)
+            Text(welcomeSubtitle)
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -117,7 +157,7 @@ struct ChatView: View {
     private var suggestionsBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(Self.suggestions, id: \.0) { label, prompt in
+                ForEach(activeSuggestions, id: \.0) { label, prompt in
                     Button {
                         viewModel.inputText = prompt
                         send()

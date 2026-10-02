@@ -94,6 +94,19 @@ export const apiEnvObjectSchema = z.object({
   OPENWEATHER_KEY: z.string(),
   WEATHER_API_KEY: z.string(),
 
+  // APNs push delivery (weather alert monitoring). A distinct Apple Auth Key
+  // from APPLE_PRIVATE_KEY above — that one signs Sign in with Apple tokens,
+  // this one authenticates calls to Apple's push gateway. Optional so
+  // deploys/tests without push configured still validate; notifyWatchers
+  // no-ops (captures a warning) when unset rather than failing the poll.
+  APNS_KEY_ID: z.string().optional(),
+  APNS_TEAM_ID: z.string().optional(),
+  APNS_BUNDLE_ID: z.string().optional(),
+  APNS_PRIVATE_KEY: z.string().optional(), // .p8 key contents — store via wrangler secret
+  // 'production' targets api.push.apple.com; anything else (incl. unset)
+  // targets the sandbox gateway, api.sandbox.push.apple.com.
+  APNS_ENVIRONMENT: z.enum(['production', 'sandbox']).optional(),
+
   // Cloudflare R2 Storage (config values)
   CLOUDFLARE_ACCOUNT_ID: z.string(),
   CLOUDFLARE_AI_GATEWAY_ID: z.string().optional(),

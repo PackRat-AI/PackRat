@@ -507,9 +507,9 @@ function expandedStateRequirements(platform: Platform): ScreenshotRequirement[] 
       area: 'crud',
       flow: 'Pack detail expanded review baseline',
     }),
-    requirement('82-data-pack-add-item-sheet', {
-      area: 'crud',
-      flow: 'Pack item create sheet from pack detail',
+    requirement('82-data-pack-add-item-menu', {
+      area: 'modal',
+      flow: 'Pack detail add-item menu (manual / scan / catalog)',
     }),
     requirement('83-data-pack-more-menu', {
       area: 'modal',

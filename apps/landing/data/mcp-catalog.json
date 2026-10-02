@@ -1,29 +1,27 @@
 {
-  "generatedAt": "2026-06-27T21:18:15.733Z",
-  "totalTools": 103,
+  "generatedAt": "2026-08-29T17:24:59.184Z",
+  "totalTools": 93,
   "counts": {
     "byClassification": {
-      "read": 43,
-      "write": 30,
-      "admin": 30
+      "read": 41,
+      "write": 26,
+      "admin": 26
     },
     "byDomain": {
       "Packs": 18,
-      "Pack Templates": 11,
+      "Pack Templates": 9,
       "Admin & Analytics": 16,
-      "Gear & Catalog": 11,
+      "Gear & Catalog": 7,
       "Trail Conditions": 7,
       "Trails": 7,
-      "Feed": 9,
+      "Feed": 8,
       "Trips": 5,
-      "Database (Admin)": 2,
       "Knowledge & Search": 2,
       "Guides": 5,
       "Account": 3,
       "Seasons": 1,
       "Weather": 4,
-      "Wildlife": 1,
-      "Uploads": 1
+      "Wildlife": 1
     }
   },
   "scopes": [
@@ -76,7 +74,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -89,7 +87,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -102,7 +100,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -115,7 +113,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -128,7 +126,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -141,7 +139,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -154,7 +152,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -167,7 +165,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -180,7 +178,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -193,7 +191,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -206,7 +204,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -284,7 +282,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -297,7 +295,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -323,7 +321,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -336,7 +334,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -349,7 +347,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -362,7 +360,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -375,7 +373,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -388,7 +386,7 @@
       "classification": "admin",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -409,27 +407,14 @@
     {
       "name": "packrat_analyze_pack_gaps",
       "title": "Analyze Pack Gaps",
-      "description": "Identify missing essential gear categories for a specific trip context. Compares the pack's current categories against recommended essentials and returns what's missing.",
+      "description": "Identify missing essential gear categories for a specific trip context. Compares the pack's current categories against recommended essentials and returns what's missing. Only pack_id is required — when the user doesn't state a destination, trip type, or duration, this falls back to a general 2-day backpacking context rather than failing.",
       "domain": "Packs",
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
-      }
-    },
-    {
-      "name": "packrat_analyze_pack_image",
-      "title": "Analyze Pack Image",
-      "description": "Submit a gear image (R2 key from packrat_upload_image_url) for item detection. Returns detected items with catalog matches.",
-      "domain": "Gear & Catalog",
-      "classification": "write",
-      "annotations": {
-        "readOnlyHint": true,
-        "destructiveHint": null,
-        "idempotentHint": false,
-        "openWorldHint": true
       }
     },
     {
@@ -440,47 +425,8 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
-        "idempotentHint": true,
-        "openWorldHint": false
-      }
-    },
-    {
-      "name": "packrat_compare_gear_items",
-      "title": "Compare Gear Items",
-      "description": "Compare multiple gear items side-by-side on weight, price, and rating. Provide 2–10 catalog item IDs.",
-      "domain": "Gear & Catalog",
-      "classification": "read",
-      "annotations": {
-        "readOnlyHint": true,
-        "destructiveHint": null,
-        "idempotentHint": true,
-        "openWorldHint": false
-      }
-    },
-    {
-      "name": "packrat_create_app_pack_template",
-      "title": "Create App Pack Template (Admin)",
-      "description": "Create a curated app-level pack template visible to all users. Admin-only — requires the mcp:admin OAuth scope. Prompts for confirmation before creating (visible to every PackRat user). For personal templates use packrat_create_pack_template.",
-      "domain": "Pack Templates",
-      "classification": "admin",
-      "annotations": {
-        "readOnlyHint": false,
         "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      }
-    },
-    {
-      "name": "packrat_create_catalog_item",
-      "title": "Create Catalog Item",
-      "description": "Submit a new gear item to the catalog. The API will embed and dedupe automatically. Use this for custom items not yet in the catalog.",
-      "domain": "Gear & Catalog",
-      "classification": "write",
-      "annotations": {
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
+        "idempotentHint": true,
         "openWorldHint": false
       }
     },
@@ -488,19 +434,6 @@
       "name": "packrat_create_feed_comment",
       "title": "Create Feed Comment",
       "description": "Add a comment to a feed post (or reply to a parent comment).",
-      "domain": "Feed",
-      "classification": "write",
-      "annotations": {
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      }
-    },
-    {
-      "name": "packrat_create_feed_post",
-      "title": "Create Feed Post",
-      "description": "Create a feed post with a caption and optional image keys.",
       "domain": "Feed",
       "classification": "write",
       "annotations": {
@@ -641,19 +574,6 @@
       }
     },
     {
-      "name": "packrat_execute_sql_query",
-      "title": "Execute Read-Only SQL Query",
-      "description": "Execute a read-only SQL SELECT query against the PackRat database for advanced analytics. Only SELECT statements are allowed. Admin-only.",
-      "domain": "Database (Admin)",
-      "classification": "admin",
-      "annotations": {
-        "readOnlyHint": true,
-        "destructiveHint": null,
-        "idempotentHint": true,
-        "openWorldHint": false
-      }
-    },
-    {
       "name": "packrat_extract_url_content",
       "title": "Extract URL Content",
       "description": "Extract the readable article content from any URL using Readability. Useful for ingesting blog posts, trip reports, or gear reviews.",
@@ -661,19 +581,6 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
-        "idempotentHint": false,
-        "openWorldHint": true
-      }
-    },
-    {
-      "name": "packrat_generate_pack_template_from_url",
-      "title": "Generate Pack Template From URL (Admin)",
-      "description": "Generate a pack template from a TikTok or YouTube link. Admin-only — requires the mcp:admin OAuth scope; the server also gates this on the authenticated user having role ADMIN. Prompts for confirmation before fetching and processing the URL content.",
-      "domain": "Pack Templates",
-      "classification": "admin",
-      "annotations": {
-        "readOnlyHint": false,
         "destructiveHint": false,
         "idempotentHint": false,
         "openWorldHint": true
@@ -687,20 +594,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
-        "idempotentHint": true,
-        "openWorldHint": false
-      }
-    },
-    {
-      "name": "packrat_get_database_schema",
-      "title": "Get Database Schema",
-      "description": "Get the PackRat DB schema — table names, columns, types. Admin-only.",
-      "domain": "Database (Admin)",
-      "classification": "admin",
-      "annotations": {
-        "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -713,7 +607,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -726,7 +620,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -739,7 +633,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -752,7 +646,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -765,7 +659,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -778,7 +672,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -791,7 +685,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -804,7 +698,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -817,7 +711,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -830,7 +724,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -843,7 +737,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -856,7 +750,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -869,7 +763,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": true
       }
@@ -882,7 +776,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": true
       }
@@ -895,7 +789,7 @@
       "classification": "write",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": false,
         "openWorldHint": true
       }
@@ -908,7 +802,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -921,7 +815,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -934,7 +828,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -947,7 +841,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -960,7 +854,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -973,7 +867,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -986,7 +880,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -999,7 +893,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -1012,7 +906,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -1025,7 +919,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -1038,7 +932,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -1051,7 +945,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": false,
         "openWorldHint": true
       }
@@ -1085,12 +979,12 @@
     {
       "name": "packrat_search_gear_catalog",
       "title": "Search Gear Catalog",
-      "description": "Search the PackRat gear catalog of outdoor products with specs, weights, prices, and user reviews. Use this to find specific gear, compare products, or browse categories. Paginated via `page` (1-indexed); page size is capped at 50 server-side.",
+      "description": "Search the PackRat gear catalog of outdoor products with specs, weights, prices, and reviews. Pass the user's natural-language phrasing directly — the search is semantic, so full descriptive queries like \"ultralight 2-person tent under 1.5kg\" or \"warm but lightweight insulation layer for shoulder-season camping\" work better than reduced keywords.",
       "domain": "Gear & Catalog",
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -1103,7 +997,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -1116,7 +1010,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -1129,7 +1023,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -1142,7 +1036,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": true
       }
@@ -1155,22 +1049,9 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": true
-      }
-    },
-    {
-      "name": "packrat_semantic_gear_search",
-      "title": "Semantic Gear Search",
-      "description": "Search the gear catalog using vector/semantic search. Good for natural-language queries like \"warm but lightweight insulation layer for cold shoulder-season camping\" or \"minimalist trail running shoe for rocky terrain\".",
-      "domain": "Gear & Catalog",
-      "classification": "read",
-      "annotations": {
-        "readOnlyHint": true,
-        "destructiveHint": null,
-        "idempotentHint": true,
-        "openWorldHint": false
       }
     },
     {
@@ -1181,7 +1062,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -1194,7 +1075,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -1220,7 +1101,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }
@@ -1343,19 +1224,6 @@
       }
     },
     {
-      "name": "packrat_upload_image_url",
-      "title": "Create Image Upload URL",
-      "description": "Generate a presigned R2 URL the caller can PUT an image to (jpeg/png/webp, ≤10MB). Returns { uploadUrl, key } — use `key` in downstream tools (packrat_analyze_pack_image, packrat_identify_wildlife, etc.).",
-      "domain": "Uploads",
-      "classification": "write",
-      "annotations": {
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      }
-    },
-    {
       "name": "packrat_web_search",
       "title": "Web Search",
       "description": "Search the public web for current, real-time information. Use this for current trail conditions, recent news, current gear prices and deals, permit availability, or anything requiring up-to-date info not in the PackRat knowledge base.",
@@ -1363,7 +1231,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": false,
         "openWorldHint": true
       }
@@ -1376,7 +1244,7 @@
       "classification": "read",
       "annotations": {
         "readOnlyHint": true,
-        "destructiveHint": null,
+        "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
       }

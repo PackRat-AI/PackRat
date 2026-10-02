@@ -6,15 +6,40 @@ Outdoor adventure planning platform — helps users plan trips, manage packing l
 
 ## Architecture
 
-Bun workspace monorepo with three apps and two packages:
+Bun workspace monorepo. **Mobile is split by platform: iOS ships from
+`apps/swift`, Android ships from `apps/expo`.**
 
 | Workspace | Stack | Purpose |
 |---|---|---|
-| `apps/expo` | React Native 0.83 / Expo 55 / Expo Router 55 | Mobile app (iOS + Android) |
+| `apps/swift` | SwiftUI / SwiftData | **iOS app (and watchOS, macOS)** |
+| `apps/expo` | React Native 0.83 / Expo 55 / Expo Router 55 | **Android app** |
 | `apps/guides` | Next.js 15 / React 19 / Radix UI / Shadcn | Content/guides site |
 | `apps/landing` | Next.js 15 / React 19 / Framer Motion | Marketing site |
+| `apps/web` | Next.js / React | Web app |
+| `apps/admin` | Next.js / React | Admin console |
+| `apps/trails` | Next.js / React | Trails site |
 | `packages/api` | Elysia on Cloudflare Workers / Drizzle ORM / Neon PostgreSQL | Backend API |
 | `packages/ui` | `@expo/ui` wrappers + plain RN components | Shared UI components |
+
+### Platform split — read before testing mobile work
+
+iOS is **no longer shipped from Expo**. The Expo app's iOS target still builds,
+but it is not a shipping surface and is not worth fixing or validating.
+
+- Work in `apps/expo` is **Android** work — validate it on an Android emulator
+  or device, never an iOS simulator.
+- Work in `apps/swift` is **iOS/watchOS/macOS** work — validate it on an iOS
+  simulator or device.
+
+Launching an iOS simulator to check an Expo change tests a platform the project
+does not ship.
+
+Each mobile app carries its own `CLAUDE.md` (`apps/expo/CLAUDE.md`,
+`apps/swift/CLAUDE.md`) with that platform's build, validation and device
+gotchas. Those load automatically when an agent reads files in the directory,
+so platform-specific rules belong there rather than here. The same rules are
+also a path-scoped rule in `.claude/rules/platform-split.md`, which fires when
+a file under either app is opened.
 
 ### Infrastructure
 
@@ -24,16 +49,20 @@ Bun workspace monorepo with three apps and two packages:
 - **Queues**: `packrat-etl-queue` (serial), `packrat-embeddings-queue` (batch 100)
 - **AI**: Vercel AI SDK (OpenAI, Google, Perplexity, Workers AI), on-device llama.rn
 - **Monitoring**: Sentry (mobile + API)
-- **Mobile CI/CD**: EAS Build (dev, preview, e2e, production profiles)
+- **Android CI/CD**: EAS Build (dev, preview, e2e, production profiles)
+- **iOS CI/CD**: Xcode + App Store Connect from `apps/swift`
 
 ## Commands
 
 ```bash
 # Dev
-bun expo              # Start Expo dev server
-bun ios               # iOS simulator
-bun android           # Android emulator
-bun api               # API dev server (wrangler)
+bun devenv up         # Isolated Neon branch + API on a free port (use this in a worktree)
+bun devenv down       # Tear the environment down (deletes the Neon branch)
+bun devenv list       # Every live environment on this machine
+bun expo              # Start Expo dev server (Android)
+bun android           # Android emulator — the Expo app's shipping target
+bun ios               # Expo on iOS simulator — NOT a shipping target, see Platform split
+bun api               # API dev server against the SHARED dev database
 cd apps/guides && bun dev   # Guides dev server
 cd apps/landing && bun dev  # Landing dev server
 
@@ -63,6 +92,26 @@ bun bump              # Bump monorepo version
 ## Testing Policy (summary)
 
 PackRat enforces coverage at two layers: each workspace's `vitest.config.ts` declares per-metric thresholds (mostly 95%+; `packages/units` 100%, `packages/{analytics,overpass}` 80%), and a **coverage ratchet** (`bun check:coverage` against `coverage-baselines.json`) blocks any PR that lowers a workspace's coverage. An **assertion-strength lint** (`bun lint:weak-assertions`) flags coverage-theater patterns (assertion-free tests, bare `.toBeDefined()`, bare `.toHaveBeenCalled()`, oversized snapshots). `packages/api` integration tests still run (`api-tests.yml`) but are not coverage-counted — V8 instrumentation is unsupported under the Cloudflare Workers pool. Full policy and patterns: **`docs/testing.md`**.
+
+## Feature Gating (every new feature)
+
+Every new feature ships with **two controls, both off, both seeded into the database**: a **feature flag** (can this be on at all?) and a **`feature_access` key** (who may use it?). Different questions, and neither substitutes for the other — a flag with no access row ships to whoever the flag lets in with nobody having decided that; an access row with no flag can't be switched off.
+
+**Adding a feature is one line in `packages/config/src/config.ts`** — a `FeatureFlag` key defaulting to `false`. Everything else is derived from it, so there is no second or third place to register anything:
+
+- `feature_flags.enabled` ← the coded default, so the seed cannot disagree with the binary
+- `feature_access.key` ← `featureAccessKeyForFlag` (drop `enable`, kebab-case; a capital run is one word). `enableSummitLog` → `summit-log`
+- `feature_access.label` ← `featureLabelForFlag`. `enableSummitLog` → "Summit Log"
+
+**CI seeds the rows automatically.** `.github/workflows/migrations.yml` runs `seed-feature-controls.ts` after migrations on pushes touching the drizzle dir, the seed script, or `config.ts`. Every insert is `ON CONFLICT DO NOTHING`, so re-running never clobbers a row an operator changed.
+
+Turning a feature on is then a **database change** — flip `feature_flags.enabled`, or set `feature_access.early_access_until` for a Pro-first window. No deploy, no code change.
+
+**A new feature seeds closed on both axes.** The flag defaults `false`, and the access row gets a real early-access window rather than `NULL` — a null `early_access_until` reads as *generally available*, so seeding null would ship a feature nobody ruled on to everyone. Widen it in the database when you decide to — that is where the audience decision belongs, not in a config file.
+
+**CI does not gate merges.** There is no required check and no merge blocking; the audience decision doesn't have to be made at merge time. The safety property comes from both defaults being closed, not from a check.
+
+Seeding is a **seed script, not a migration** — migrations own schema, this is data, so the `drizzle-kit generate` rule below stays absolute. Full contract: **`docs/feature-gating.md`**.
 
 ## Code Style
 
@@ -106,7 +155,7 @@ When a service or compute helper reads only a subset of columns, extract a proje
 
 **Lint:** `bun packages/api/scripts/lint/no-unprojected-fat-table-queries.ts` (runs in CI) fails the build on new `SELECT *` / no-`columns:` / no-arg `.returning()` against the fat tables. Use the inline opt-out `// lint:allow-unprojected-fat-table reason: <text>` only when the full row is genuinely needed (e.g., embedding regen text, detail endpoint).
 
-### Mobile (apps/expo)
+### Android (apps/expo)
 
 Feature module structure:
 ```
@@ -224,6 +273,41 @@ Defined in root `tsconfig.json`:
 - `landing-app/*` → `apps/landing/*`
 - `nativewindui/*` → `apps/expo/components/ui/*`
 
+## Local Development Environments
+
+**Working in a worktree, or anything that writes to the database? Run `bun devenv up`.**
+It creates a copy-on-write Neon branch off `development`, picks a free port,
+migrates, points this worktree's clients at it, and starts the API. `bun devenv down`
+deletes the branch. Full contract: **`docs/dev-environments.md`**.
+
+- **`bun api` uses the SHARED dev database.** Fine for read-only work. Any agent
+  writing to it — migrations, seeds, destructive tests — is writing to the same
+  rows every other agent is reading. Use `devenv` instead.
+- **Never create Neon branches by hand** (console or the generic `neon` skill).
+  A hand-made branch has no local record, so `down` and `prune` cannot clean it
+  up and it sits on the project indefinitely. `bun devenv up` is the only path.
+- **Ports are allocated, not chosen.** The registry in `~/.packrat/devenv/` is
+  shared across worktrees, so parallel agents never collide. Don't hardcode a
+  port or assume 8787 is yours.
+- **`bun devenv list`** shows every environment on the machine. Tear down what
+  you started; `bun devenv prune` sweeps orphans.
+
+### Environment variables — never hand-copy them
+
+`.env.local` in the **main checkout** is the only place secrets live. Worktrees
+resolve it automatically via `git rev-parse --git-common-dir`, so a fresh
+worktree needs no setup.
+
+- **Do not copy `.env.local` or `.dev.vars` between worktrees.** That is what
+  caused the drift this system replaced — copies silently fall behind as keys
+  are added.
+- Add a new key **once**, to the main checkout's `.env.local`. Every worktree
+  inherits it.
+- `.dev.vars` and the apps' `.env.local` are **generated artifacts**. Editing
+  them is pointless; the next generation overwrites your change.
+- Verify with `bun .github/scripts/env-check.ts` — it validates against the
+  API's own Zod schema and names any missing key.
+
 ## Database
 
 - ORM: Drizzle (`packages/db/src/schema/` after the schema extraction)
@@ -251,13 +335,17 @@ If you find a migration in the repo that was hand-written (no `drizzle-kit` prov
 |---|---|---|
 | `development` | Dev client | Internal |
 | `preview` | QA testing | Internal (auto-increment) |
-| `e2e` | Maestro E2E tests | iOS Simulator / Android APK |
-| `production` | App Store / Play Store | Store (auto-increment) |
+| `e2e` | Maestro E2E tests | Android APK |
+| `production` | Play Store | Store (auto-increment) |
+
+EAS builds the **Android** app. iOS/watchOS/macOS ship from `apps/swift` via
+Xcode and App Store Connect, not EAS.
 
 ## Common Issues
 
 - **Next.js build failures**: `apps/guides` and `apps/landing` may fail without internet (fetches remote data)
 - **Bun install hangs**: Normal — takes 120+ seconds. Never cancel mid-install.
+- **A fresh worktree silently resolves workspace packages from the main checkout**: `EnterWorktree` and `bun devenv up` do not run `bun install`. A new worktree has no `node_modules` of its own, and Bun/Node module resolution walks up parent directories to find one — since `.claude/worktrees/` lives inside the main checkout, an uninstalled worktree quietly resolves `@packrat/*` packages from the main checkout instead of its own copy. Edits to a workspace package (e.g. `packages/db/src/schema.ts`) then appear invisible to tools run from the worktree (`drizzle-kit generate` reports "no schema changes" against real new tables) until `bun install` is run inside the worktree. Run `bun install` right after entering any new worktree, before touching Drizzle, tests, or anything else that imports a workspace package.
 
 ## Documented Solutions
 

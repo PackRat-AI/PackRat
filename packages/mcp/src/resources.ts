@@ -336,9 +336,13 @@ export function registerResources(agent: AgentContext): void {
   );
 
   // ── Search resource template ──────────────────────────────────────────────
-  // Delegates to `packrat_search_gear_catalog` (the text-search endpoint).
+  // Calls the API's *keyword* text-search endpoint directly. NOTE: this is a
+  // different code path from the `packrat_search_gear_catalog` TOOL, which is
+  // now backed by vector search. This resource keeps the literal-phrase
+  // matching behaviour, so multi-word natural-language queries may return
+  // nothing — prefer the tool for those.
   // Returns a JSON payload of up to SEARCH_RESULT_CAP hits — the model
-  // can refine with `packrat_semantic_gear_search` for vector queries or
+  // can refine with `packrat_search_gear_catalog` for semantic queries or
   // `packrat_search_outdoor_guides` for trail/route research. Reviewers
   // see a single discoverable URI shape rather than having to learn
   // which tool to call first.
@@ -350,7 +354,7 @@ export function registerResources(agent: AgentContext): void {
       list: undefined,
     }),
     {
-      description: `Free-text search across the PackRat gear catalog. Delegates to packrat_search_gear_catalog; returns up to ${SEARCH_RESULT_CAP} hits as JSON. Use packrat_semantic_gear_search for vector queries.`,
+      description: `Literal-phrase keyword search across the PackRat gear catalog; returns up to ${SEARCH_RESULT_CAP} hits as JSON. Prefer the packrat_search_gear_catalog tool for natural-language queries — it uses semantic matching.`,
       mimeType: 'application/json',
     },
     (uri, { query }) =>

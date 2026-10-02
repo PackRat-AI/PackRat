@@ -1,7 +1,13 @@
 import SwiftUI
 
+// Menu-bar commands are a macOS concept; `.windowList` in particular does not
+// exist on iOS. The focused-value keys below are shared by both platforms and
+// stay outside the guard.
+#if os(macOS)
 struct PackRatCommands: Commands {
     let authManager: AuthManager
+
+    @Environment(\.openWindow) private var openWindow
 
     // Bool bindings avoid recreating function closures on every render,
     // which caused "FocusedValue update tried to update multiple times per frame."
@@ -12,7 +18,15 @@ struct PackRatCommands: Commands {
     @FocusedBinding(\.globalSearchAction) private var showingSearch: Bool?
 
     var body: some Commands {
+        // Guideline 4 — replacing `.newItem` wholesale removed AppKit's default
+        // "New Window", leaving no way to reopen the app after closing its last
+        // window. Put an explicit one back at the top of the File menu.
         CommandGroup(replacing: .newItem) {
+            Button("New Window") { openWindow(id: PackRatApp.mainWindowSceneID) }
+                .keyboardShortcut("n", modifiers: [.command, .option])
+
+            Divider()
+
             Button("New Pack") { showingNewPack = true }
                 .keyboardShortcut("n", modifiers: .command)
                 .disabled(showingNewPack == nil)
@@ -37,6 +51,13 @@ struct PackRatCommands: Commands {
                 .disabled(triggerShare == nil)
         }
 
+        // Also surface it under Window, which is where macOS users look for a
+        // closed main window.
+        CommandGroup(after: .windowList) {
+            Divider()
+            Button("PackRat") { openWindow(id: PackRatApp.mainWindowSceneID) }
+        }
+
         CommandGroup(after: .appInfo) {
             Divider()
             Button("Sign Out", role: .destructive) {
@@ -46,6 +67,8 @@ struct PackRatCommands: Commands {
         }
     }
 }
+
+#endif
 
 // MARK: - Focused Value Keys
 // @FocusedBinding requires Value = Binding<T> so SwiftUI compares the wrapped

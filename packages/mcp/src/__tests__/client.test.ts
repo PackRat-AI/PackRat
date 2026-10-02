@@ -187,6 +187,28 @@ describe('call()', () => {
     expect(nth(result.content, 0).text.toLowerCase()).toContain('conflict');
   });
 
+  it('still formats an error when the body cannot be serialised', async () => {
+    // No `.message` and no `.error`, so extractErrorMessage falls through to
+    // stringifying the whole body — and a throwing `toJSON` is the one input
+    // that still escapes safeJsonStringify. The tool must report the status
+    // rather than propagate the serialisation failure.
+    const hostile = {
+      toJSON() {
+        throw new Error('nope');
+      },
+    };
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 500, value: hostile },
+      status: 500,
+    });
+
+    const result = await call({ promise: mockPromise, action: 'update pack' });
+
+    expect(result.isError).toBe(true);
+    expect(nth(result.content, 0).text.length).toBeGreaterThan(0);
+  });
+
   it('formats 422 validation error', async () => {
     const mockPromise = Promise.resolve({
       data: null,

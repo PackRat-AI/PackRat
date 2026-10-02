@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 struct HomeView: View {
@@ -5,6 +6,7 @@ struct HomeView: View {
 
     @Environment(AppState.self) private var appState
     @Environment(AuthManager.self) private var authManager
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showingSeasonSuggestions = false
     @State private var showingShoppingList = false
@@ -27,12 +29,36 @@ struct HomeView: View {
         return firstName
     }
 
-    @ViewBuilder
     var body: some View {
+        sizedBody
+            // Home shows Packs/Trips/Items counts but used to have no loader of its
+            // own, relying on the Packs and Trips tabs to populate the view models.
+            // Those tabs are built lazily, so a fresh sign-in landed on Home with
+            // empty arrays and rendered zeros until the user switched tabs.
+            .task { await loadSummaryData() }
+    }
+
+    @ViewBuilder
+    private var sizedBody: some View {
         if horizontalSizeClass == .compact {
             compactBody
         } else {
             regularBody
+        }
+    }
+
+    /// Loads only when empty: returning to Home from another tab shouldn't refetch
+    /// what that tab just loaded. `AuthManager.signOut` clears the view models, so
+    /// after a re-sign-in these are genuinely empty and this does fetch.
+    /// Sequential rather than `async let`: both view models are main-actor
+    /// isolated, so the two loads cannot overlap anyway, and reading `appState`
+    /// from inside an implicitly-async closure needs an extra actor hop.
+    private func loadSummaryData() async {
+        if appState.packsVM.packs.isEmpty {
+            await appState.packsVM.load(context: modelContext)
+        }
+        if appState.tripsVM.trips.isEmpty {
+            await appState.tripsVM.load(context: modelContext)
         }
     }
 
@@ -104,7 +130,7 @@ struct HomeView: View {
             } else {
                 AvatarView(
                     url: authManager.currentUser?.avatarUrl,
-                    fallbackText: authManager.currentUser?.initials ?? "?",
+                    fallbackText: authManager.currentUser?.initials ?? "",
                     size: 44
                 )
             }
@@ -162,6 +188,12 @@ struct HomeView: View {
             HStack(spacing: 10) {
                 SummaryActionButton(title: primarySummaryActionTitle, symbol: primarySummaryActionSymbol, isProminent: true) {
                     appState.navItem = primarySummaryDestination
+                    // "Start Pack" promises a new pack, so open the create sheet
+                    // rather than dropping the user on an empty list to find the
+                    // button again.
+                    if appState.packsVM.packs.isEmpty {
+                        appState.isPackCreationRequested = true
+                    }
                 }
 
                 SummaryActionButton(title: "Search", symbol: "magnifyingglass") {
@@ -315,8 +347,14 @@ struct HomeView: View {
                 symbol: "backpack.fill",
                 color: .blue
             ) { appState.navItem = .packs },
+            HomeAction(
+                title: "Weather",
+                subtitle: "Forecasts & alerts",
+                symbol: "cloud.sun.fill",
+                color: .cyan,
+                showsAlertBadge: appState.weatherVM.hasAnyUnseenAlert
+            ) { appState.navItem = .weather },
             HomeAction(title: "Trips", subtitle: upcomingTripsSubtitle, symbol: "map.fill", color: .green) { appState.navItem = .trips },
-            HomeAction(title: "Weather", subtitle: "Forecasts & alerts", symbol: "cloud.sun.fill", color: .cyan) { appState.navItem = .weather },
             HomeAction(title: "AI Assistant", subtitle: "Ask about gear & trips", symbol: "bubble.left.and.text.bubble.right", color: .purple) {
                 if let onOpenAssistant {
                     onOpenAssistant()
@@ -337,19 +375,19 @@ struct HomeView: View {
             HomeAction(title: "Catalog", subtitle: "Browse gear database", symbol: "magnifyingglass", color: .gray) { appState.navItem = .catalog },
         ]
 
-        if AppFeatureFlags.enableFeed {
+        if FeatureFlagStore.shared.isEnabled("enableFeed") {
             actions.append(HomeAction(title: "Community Feed", subtitle: "Posts & trip reports", symbol: "newspaper.fill", color: .teal) { appState.navItem = .feed })
         }
 
-        if AppFeatureFlags.enableTrailConditions {
+        if FeatureFlagStore.shared.isEnabled("enableTrailConditions") {
             actions.append(HomeAction(title: "Trail Conditions", subtitle: "Community reports", symbol: "figure.hiking", color: .red) { appState.navItem = .trailConditions })
         }
 
-        if AppFeatureFlags.enableShoppingList {
+        if FeatureFlagStore.shared.isEnabled("enableShoppingList") {
             actions.append(HomeAction(title: "Shopping List", subtitle: "Gear wishlist", symbol: "cart.fill", color: .pink) { showingShoppingList = true })
         }
 
-        if AppFeatureFlags.enableWildlifeIdentification {
+        if FeatureFlagStore.shared.isEnabled("enableWildlifeIdentification") {
             actions.append(HomeAction(title: "Wildlife ID", subtitle: "Identify animals & plants", symbol: "pawprint.fill", color: Color(red: 0.5, green: 0.3, blue: 0.1)) {
                 appState.navItem = .wildlife
             })
@@ -387,6 +425,10 @@ struct HomeAction: Identifiable {
     let subtitle: String
     let symbol: String
     let color: Color
+    /// Draws an unread marker on the tile. The dashboard is where a user
+    /// starts, so something that arrived while they were away has to be
+    /// visible before they have chosen where to go.
+    var showsAlertBadge = false
     let action: () -> Void
 
     var id: String { title }
@@ -482,6 +524,19 @@ private struct HomeActionRow: View {
 
                 Spacer(minLength: 8)
 
+                // A dot rather than a count: the dashboard's job is to say
+                // "there is something here", and the number only means
+                // anything once you are on the screen itself. It sits at the
+                // trailing edge beside the chevron, where the eye already
+                // travels to find the row's affordance — on the icon it read
+                // as part of the icon's own artwork.
+                if action.showsAlertBadge {
+                    Circle()
+                        .fill(Color.alertRed)
+                        .frame(width: 9, height: 9)
+                        .accessibilityHidden(true)
+                }
+
                 Image(systemName: "chevron.right")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.tertiary)
@@ -492,6 +547,7 @@ private struct HomeActionRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("home_action_\(action.title.accessibilityIdentifierFragment)")
+        .accessibilityValue(action.showsAlertBadge ? "New alert" : "")
     }
 }
 

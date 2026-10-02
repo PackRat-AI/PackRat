@@ -1,12 +1,20 @@
 import Foundation
 import Security
+import Sentry
 
 final class KeychainService: Sendable {
     static let shared = KeychainService()
     private init() {}
 
     private let service = "com.andrewbierman.packrat"
-    private let legacyExpoService = "app"
+    /// expo-secure-store's default service, and the two suffixed variants it
+    /// actually writes under. `query(with:options:requireAuthentication:)` appends
+    /// ":no-auth"/":auth" whenever `requireAuthentication` is non-nil, which it is
+    /// on every write — so a real Expo install stores `packrat_cookie` under
+    /// "app:no-auth", never bare "app". Its own reader tries all three in this
+    /// order (no-auth, auth, then the legacy unsuffixed name), and so must we, or
+    /// a signed-in user is logged out by the update.
+    private let legacyExpoServices = ["app:no-auth", "app:auth", "app"]
     private let legacyExpoCookieAccount = "packrat_cookie"
     private let legacyExpoSessionCookieNames = [
         "better-auth.session_token",
@@ -62,7 +70,25 @@ final class KeychainService: Sendable {
         SecItemDelete(query as CFDictionary)
         var attributes = query
         attributes[kSecValueData] = data
-        SecItemAdd(attributes as CFDictionary, nil)
+        // Keep the item readable after first unlock so a launch straight from a
+        // locked device can still restore the session. The default
+        // (`kSecAttrAccessibleWhenUnlocked`) is evaluated at write time, which
+        // is fine, but being explicit documents the intent.
+        attributes[kSecAttrAccessible] = kSecAttrAccessibleAfterFirstUnlock
+        let status = SecItemAdd(attributes as CFDictionary, nil)
+        guard status != errSecSuccess else { return }
+
+        // A discarded status here is why "log in, reopen, back at the authwall"
+        // looked like a session bug with nothing in the logs: the write failed,
+        // login still reported success, and the next launch found no token. Never
+        // log `value` — it is the session token.
+        let message = "Keychain write failed for \(key.rawValue): OSStatus \(status)"
+        print("[Keychain] \(message)")
+        SentrySDK.capture(message: message) { scope in
+            scope.setLevel(.error)
+            scope.setTag(value: "keychain", key: "subsystem")
+            scope.setContext(value: ["status": Int(status), "key": key.rawValue], key: "keychain")
+        }
     }
 
     private func read(_ key: Key) -> String? {
@@ -100,19 +126,32 @@ final class KeychainService: Sendable {
         "\(userDefaultsPrefix)\(key.rawValue)"
     }
 
+    /// Reads Expo's `packrat_cookie` across every service name expo-secure-store
+    /// may have written it under. The generic attribute is tried first because
+    /// that is what expo-secure-store sets, then omitted for items written by
+    /// older versions that left it unset.
+    private func readLegacyExpoCookieData() -> Data? {
+        for service in legacyExpoServices {
+            if let data = readRawKeychainValue(
+                service: service,
+                account: legacyExpoCookieAccount,
+                generic: legacyExpoCookieAccount
+            ) ?? readRawKeychainValue(
+                service: service,
+                account: legacyExpoCookieAccount,
+                generic: nil
+            ) {
+                return data
+            }
+        }
+        return nil
+    }
+
     private func readLegacyExpoSessionToken() -> String? {
         if usesUserDefaultsStorage {
             return nil
         }
-        guard let cookieData = readRawKeychainValue(
-            service: legacyExpoService,
-            account: legacyExpoCookieAccount,
-            generic: legacyExpoCookieAccount
-        ) ?? readRawKeychainValue(
-            service: legacyExpoService,
-            account: legacyExpoCookieAccount,
-            generic: nil
-        ),
+        guard let cookieData = readLegacyExpoCookieData(),
             let cookieString = String(data: cookieData, encoding: .utf8),
             let data = cookieString.data(using: .utf8),
             let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -170,27 +209,34 @@ final class KeychainService: Sendable {
         if usesUserDefaultsStorage {
             return
         }
-        let preciseQuery: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: legacyExpoService,
-            kSecAttrAccount: legacyExpoCookieAccount,
-            kSecAttrGeneric: legacyExpoCookieAccount.data(using: .utf8) as Any,
-        ]
-        SecItemDelete(preciseQuery as CFDictionary)
+        // Every service variant, or logout leaves a cookie behind that the next
+        // `sessionToken` read would silently promote back into a live session.
+        for service in legacyExpoServices {
+            let preciseQuery: [CFString: Any] = [
+                kSecClass: kSecClassGenericPassword,
+                kSecAttrService: service,
+                kSecAttrAccount: legacyExpoCookieAccount,
+                kSecAttrGeneric: legacyExpoCookieAccount.data(using: .utf8) as Any,
+            ]
+            SecItemDelete(preciseQuery as CFDictionary)
 
-        let fallbackQuery: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: legacyExpoService,
-            kSecAttrAccount: legacyExpoCookieAccount,
-        ]
-        SecItemDelete(fallbackQuery as CFDictionary)
+            let fallbackQuery: [CFString: Any] = [
+                kSecClass: kSecClassGenericPassword,
+                kSecAttrService: service,
+                kSecAttrAccount: legacyExpoCookieAccount,
+            ]
+            SecItemDelete(fallbackQuery as CFDictionary)
+        }
     }
 
     #if DEBUG
-    func saveLegacyExpoCookieForTesting(_ value: String) {
+    /// Writes under the service a real expo-secure-store install uses, so tests
+    /// exercise the same lookup a shipped update performs. Pass an explicit
+    /// service to cover the other variants.
+    func saveLegacyExpoCookieForTesting(_ value: String, service: String = "app:no-auth") {
         saveRawKeychainValue(
             value,
-            service: legacyExpoService,
+            service: service,
             account: legacyExpoCookieAccount,
             generic: legacyExpoCookieAccount
         )

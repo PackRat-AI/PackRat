@@ -68,6 +68,8 @@
 	<string>This app needs access to your photo library to let you upload or choose photos.</string>
 	<key>PACKRAT_ENV</key>
 	<string>$(PACKRAT_ENV)</string>
+	<key>REVENUECAT_API_KEY</key>
+	<string>$(REVENUECAT_API_KEY)</string>
 	<key>SENTRY_DSN</key>
 	<string>$(SENTRY_DSN)</string>
 	<key>UIApplicationSceneManifest</key>

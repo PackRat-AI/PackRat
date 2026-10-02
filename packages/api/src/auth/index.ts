@@ -37,7 +37,7 @@ const MCP_OAUTH_SCOPES = [
 // RFC 8707 audience — JWT access tokens are bound to this `aud` claim.
 // The MCP worker verifies tokens carry exactly this audience; any other
 // `resource` parameter results in `invalid_request` (400) from the plugin's
-// `checkResource` (validAudiences enforcement).
+// `checkResource` (enforced against the seeded `oauthResource` rows).
 const MCP_AUDIENCE = 'https://mcp.packratai.com/mcp';
 // In local dev the MCP worker's `/.well-known/oauth-protected-resource` advertises
 // `resource: "http://localhost:8788/mcp"` (via MCP_PUBLIC_URL). Inspector sends that
@@ -96,6 +96,15 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
 
   const db = createConnection({ url: env.NEON_DATABASE_URL, useNeonHttp: true });
 
+  // RFC 8707 resource identifiers this AS issues access tokens for. Same list
+  // that was `validAudiences` before the 1.7 upgrade — see the `resources`
+  // option below for why it is now seeded as rows rather than matched inline.
+  const mcpResourceIdentifiers = [MCP_AUDIENCE];
+  if (env.PACKRAT_API_URL.startsWith('http://localhost'))
+    mcpResourceIdentifiers.push(MCP_AUDIENCE_LOCAL_DEV);
+  if (env.PACKRAT_MCP_URL)
+    mcpResourceIdentifiers.push(`${env.PACKRAT_MCP_URL.replace(TRAILING_SLASH_RE, '')}/mcp`);
+
   const auth = betterAuth({
     baseURL: env.PACKRAT_API_URL,
     secret: env.PACKRAT_AUTH_SECRET,
@@ -132,6 +141,33 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
             );
           },
           delete: async (key: string) => env.AUTH_KV.delete(key),
+          // Both methods are new required members of Better Auth 1.7's
+          // SecondaryStorage interface.
+          getAndDelete: async (key: string) => {
+            const value = await env.AUTH_KV.get(key);
+            if (value !== null) await env.AUTH_KV.delete(key);
+            return value;
+          },
+          // NOT atomic. Workers KV offers no compare-and-swap or INCR, so this
+          // is a read-modify-write and concurrent requests on the same key can
+          // interleave and undercount. Better Auth wants this atomic so
+          // secondary-storage rate limiting is exact under concurrency; with KV
+          // the limit is approximate and can be exceeded by roughly the number
+          // of in-flight requests. Accepted because `rateLimit` here is abuse
+          // dampening, not a security control — the real controls are auth and
+          // per-route authorization. Moving rate limiting to a Durable Object
+          // is the fix if it ever needs to be exact.
+          increment: async (key: string, ttl: number) => {
+            const current = await env.AUTH_KV.get(key);
+            const next = (current === null ? 0 : Number.parseInt(current, 10) || 0) + 1;
+            await env.AUTH_KV.put(key, String(next), {
+              // TTL applies on creation only, per the interface contract: an
+              // existing counter must expire a fixed window after it started,
+              // so don't extend it on later increments.
+              ...(current === null ? { expirationTtl: Math.max(60, ttl) } : {}),
+            });
+            return next;
+          },
         }
       : undefined,
 
@@ -143,13 +179,18 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
         account: schema.account,
         verification: schema.verification,
         jwks: schema.jwks,
-        // OAuth provider (@better-auth/oauth-provider@1.6.x) tables.
+        // OAuth provider (@better-auth/oauth-provider@1.7.x) tables.
         // The plugin auto-registers these models when present, gating its
         // discovery + token + consent endpoints on their availability.
         oauthClient: schema.oauthClient,
         oauthAccessToken: schema.oauthAccessToken,
         oauthRefreshToken: schema.oauthRefreshToken,
         oauthConsent: schema.oauthConsent,
+        // Added in 1.7: protected resources became a persisted entity, and
+        // private_key_jwt client auth gained a replay cache.
+        oauthResource: schema.oauthResource,
+        oauthClientResource: schema.oauthClientResource,
+        oauthClientAssertion: schema.oauthClientAssertion,
       },
     }),
 
@@ -278,8 +319,9 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       // docs/mcp/better-auth-oauth-provider-spike-2026-05-25.md):
       //  - `scopes`: declares the MCP scope catalog; advertised under
       //    `scopes_supported` in the AS metadata.
-      //  - `validAudiences`: RFC 8707 — `/oauth2/authorize` rejects any
-      //    `resource` parameter not in this list with 400 invalid_request.
+      //  - `resources`: RFC 8707 — `/oauth2/authorize` rejects any `resource`
+      //    parameter without a matching enabled `oauthResource` row with 400
+      //    invalid_request (1.7 replaced the `validAudiences` array with rows).
       //  - `allowDynamicClientRegistration: true` (+ unauthenticated) so the
       //    Claude connector can self-register; see the security note at the
       //    option below. The pre-registered client seeded by
@@ -304,14 +346,20 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       //    spec. Verified in U9 dev verification.
       oauthProvider({
         scopes: [...MCP_OAUTH_SCOPES],
-        validAudiences: (() => {
-          const audiences = [MCP_AUDIENCE];
-          if (env.PACKRAT_API_URL.startsWith('http://localhost'))
-            audiences.push(MCP_AUDIENCE_LOCAL_DEV);
-          if (env.PACKRAT_MCP_URL)
-            audiences.push(`${env.PACKRAT_MCP_URL.replace(TRAILING_SLASH_RE, '')}/mcp`);
-          return audiences;
-        })(),
+        // 1.7 replaced the `validAudiences` string allowlist with persisted
+        // `oauthResource` rows. These identifiers ARE the RFC 8707 `resource`
+        // values Claude sends; the plugin seeds them at init under the default
+        // `resourceSeedMode: 'insertOnly'`, so a later admin edit of a row's
+        // policy survives every deploy.
+        resources: mcpResourceIdentifiers,
+        // `enforcePerClientResources` defaults to TRUE in 1.7: a client may
+        // only request a resource it is linked to via `oauthClientResource`.
+        // PackRat's clients self-register through DCR and never call the admin
+        // link endpoint, so without this every freshly registered Claude client
+        // would fail /oauth2/token with `invalid_target`. Listing the same
+        // identifiers here links them at registration time, preserving the 1.6
+        // behaviour where any registered client could target any audience.
+        clientRegistrationDefaultResources: mcpResourceIdentifiers,
         // DCR enabled so the Claude connector can self-register instead of
         // requiring Anthropic to pre-provision our static client_id (the
         // "Anthropic-held client credentials" listing path needs a manual

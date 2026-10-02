@@ -29,16 +29,59 @@ final class OutboxService {
     private(set) var failedCount: Int = 0
     private(set) var isFlushing = false
 
+    /// When a flush last landed at least one queued write on the server.
+    ///
+    /// Persisted in `UserDefaults` so it survives relaunch — a timestamp that
+    /// resets to "never" on every cold start tells the user nothing. It is
+    /// deliberately *not* a general "last contacted the server" marker: it only
+    /// moves when a queued write actually drained, which is the fact a user
+    /// checking on unsynced work needs.
+    ///
+    /// `nil` means no queued write has ever drained on this install — a fresh
+    /// install and an install that has only ever written online both read as
+    /// `nil`, so the UI must omit the row rather than claim "never synced".
+    ///
+    /// Backed by an observed stored property rather than reading `UserDefaults`
+    /// on each access: a computed accessor would never invalidate the views
+    /// reading it, so a completed sync would not refresh the UI. Hydrated from
+    /// `defaults` at init; `recordSync` writes through to both.
+    private(set) var lastSyncedAt: Date?
+
+    static let lastSyncedAtKey = "outboxLastSyncedAt"
+    private let defaults: UserDefaults
+
+    /// Marks now as the moment a queued write last reached the server, in memory
+    /// and on disk.
+    private func recordSync(at date: Date = Date()) {
+        lastSyncedAt = date
+        defaults.set(date.timeIntervalSince1970, forKey: Self.lastSyncedAtKey)
+    }
+
     /// Transport failures beyond this count mark the mutation `failed` rather than
     /// retrying indefinitely.
     static let maxAttempts = 5
 
     private let packService: PackService
     private let tripService: TripService
+    private let templateService: PackTemplateService
+    private let trailConditionsService: TrailConditionsService
 
-    init(packService: PackService = .shared, tripService: TripService = .shared) {
+    init(
+        packService: PackService = .shared,
+        tripService: TripService = .shared,
+        templateService: PackTemplateService = .shared,
+        trailConditionsService: TrailConditionsService = .shared,
+        defaults: UserDefaults = .standard
+    ) {
+        self.defaults = defaults
+        let storedSync = defaults.double(forKey: Self.lastSyncedAtKey)
+        // Assigned directly rather than via `recordSync` so hydration doesn't
+        // rewrite the value it just read.
+        self.lastSyncedAt = storedSync > 0 ? Date(timeIntervalSince1970: storedSync) : nil
         self.packService = packService
         self.tripService = tripService
+        self.templateService = templateService
+        self.trailConditionsService = trailConditionsService
     }
 
     // MARK: - Enqueue
@@ -131,8 +174,13 @@ final class OutboxService {
         }
 
         isFlushing = true
+        // `didSync` is captured by the defer so the timestamp is recorded even on
+        // the early `break` when connectivity drops mid-drain: those writes did
+        // reach the server, and the user should see that they did.
+        var didSync = false
         defer {
             isFlushing = false
+            if didSync { recordSync() }
             refreshCounts(context)
         }
 
@@ -149,7 +197,6 @@ final class OutboxService {
         // so a transient parent failure would permanently fail the child.
         var blockedParents = Set<String>()
 
-        var didSync = false
         for mutation in queued {
             // Connectivity can drop mid-drain; stop and keep the rest queued.
             guard NetworkMonitor.shared.isConnected else { break }
@@ -294,7 +341,9 @@ final class OutboxService {
                     category: payload.category,
                     consumable: payload.consumable,
                     worn: payload.worn,
-                    notes: payload.notes
+                    notes: payload.notes,
+                    catalogItemId: payload.catalogItemId,
+                    image: payload.image
                 )
             case (.packItem, .update):
                 let payload: PackItemMutationPayload = try decode(mutation.payload)
@@ -345,6 +394,77 @@ final class OutboxService {
                 )
             case (.trip, .delete):
                 try await tripService.deleteTrip(mutation.entityId)
+
+            case (.packTemplate, .create):
+                let payload: PackTemplateMutationPayload = try decode(mutation.payload)
+                _ = try await templateService.createTemplate(
+                    id: mutation.entityId,
+                    name: payload.name,
+                    description: payload.description,
+                    category: payload.category
+                )
+            case (.packTemplate, .update):
+                let payload: PackTemplateMutationPayload = try decode(mutation.payload)
+                _ = try await templateService.updateTemplate(
+                    mutation.entityId,
+                    name: payload.name,
+                    description: payload.description,
+                    category: payload.category
+                )
+            case (.packTemplate, .delete):
+                try await templateService.deleteTemplate(mutation.entityId)
+
+            case (.packTemplateItem, .create):
+                let payload: PackTemplateItemMutationPayload = try decode(mutation.payload)
+                guard let templateId = mutation.parentId else {
+                    return .terminal("Queued template item has no template")
+                }
+                _ = try await templateService.addItem(
+                    toTemplate: templateId,
+                    id: mutation.entityId,
+                    name: payload.name,
+                    weight: payload.weight ?? 0,
+                    weightUnit: payload.weightUnit ?? WeightUnit.g.rawValue,
+                    quantity: payload.quantity,
+                    category: payload.category,
+                    consumable: payload.consumable,
+                    worn: payload.worn,
+                    notes: payload.notes
+                )
+            case (.packTemplateItem, .update):
+                let payload: PackTemplateItemMutationPayload = try decode(mutation.payload)
+                _ = try await templateService.updateItem(
+                    mutation.entityId,
+                    name: payload.name,
+                    weight: payload.weight ?? 0,
+                    weightUnit: payload.weightUnit ?? WeightUnit.g.rawValue,
+                    quantity: payload.quantity,
+                    category: payload.category,
+                    consumable: payload.consumable,
+                    worn: payload.worn,
+                    notes: payload.notes
+                )
+            case (.packTemplateItem, .delete):
+                try await templateService.deleteItem(mutation.entityId)
+
+            case (.trailConditionReport, .create):
+                let payload: TrailConditionReportMutationPayload = try decode(mutation.payload)
+                _ = try await trailConditionsService.createReport(
+                    id: mutation.entityId,
+                    trailName: payload.trailName,
+                    trailRegion: payload.trailRegion,
+                    surface: payload.surface,
+                    overallCondition: payload.overallCondition,
+                    hazards: payload.hazards ?? [],
+                    notes: payload.notes
+                )
+            case (.trailConditionReport, .delete):
+                try await trailConditionsService.deleteReport(mutation.entityId)
+            case (.trailConditionReport, .update):
+                // No update endpoint exists on the Swift client, and nothing enqueues
+                // one — reports are create-or-delete here. Dropping rather than
+                // retrying forever: a retry could never succeed.
+                return .terminal("Trail condition reports cannot be updated")
             }
             return .success
         } catch {

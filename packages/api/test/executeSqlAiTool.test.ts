@@ -128,6 +128,49 @@ describe('executeSqlAiTool', () => {
       expect(mockExecute).not.toHaveBeenCalled();
     });
 
+    it('allows a soft-delete-aware query filtering on the `deleted` column', async () => {
+      // Regression: the forbidden-keyword check used a bare substring
+      // `includes('delete')`, so `deleted` — a column on every soft-deleted
+      // table — always tripped the mutation guard and the correct query was
+      // rejected. Word boundaries fix it.
+      mockExecute.mockResolvedValueOnce({
+        rows: [{ id: 'p1', name: 'Japan Trip' }],
+        rowCount: 1,
+      });
+
+      const result = await executeSqlAiTool({
+        query: "SELECT id, name FROM packs WHERE user_id = 'u1' AND deleted = false",
+        limit: 100,
+        userId: TEST_USER_ID,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
+      expect(result.data).toEqual([{ id: 'p1', name: 'Japan Trip' }]);
+    });
+
+    it.each([
+      ['DELETE', 'SELECT 1; DELETE FROM users'],
+      ['DELETE with newline', 'SELECT 1;\nDELETE\tFROM users'],
+      ['mixed-case DeLeTe', 'SELECT 1; DeLeTe FROM users'],
+      ['DROP', 'SELECT 1; DROP TABLE users'],
+      ['INSERT', 'SELECT 1; INSERT INTO users (id) VALUES (1)'],
+      ['UPDATE', 'SELECT 1; UPDATE users SET id = 2'],
+      ['TRUNCATE', 'SELECT 1; TRUNCATE users'],
+      ['ALTER', 'SELECT 1; ALTER TABLE users ADD COLUMN x int'],
+      ['GRANT', 'SELECT 1; GRANT ALL ON users TO public'],
+      ['REVOKE', 'SELECT 1; REVOKE ALL ON users FROM public'],
+      ['CREATE', 'SELECT 1; CREATE TABLE t (id int)'],
+      ['COMMIT', 'SELECT 1; COMMIT'],
+      ['ROLLBACK', 'SELECT 1; ROLLBACK'],
+    ])('still rejects a piggybacked %s statement', async (_label, query) => {
+      const result = await executeSqlAiTool({ query, limit: 100, userId: TEST_USER_ID });
+
+      expect(result.success).toBeUndefined();
+      expect(result.error).toBe('Only SELECT queries are allowed');
+      expect(mockExecute).not.toHaveBeenCalled();
+    });
+
     it('appends LIMIT when not present', async () => {
       mockExecute.mockResolvedValueOnce({ rows: [], rowCount: 0 });
 

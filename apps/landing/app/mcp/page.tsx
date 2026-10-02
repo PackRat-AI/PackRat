@@ -383,7 +383,7 @@ export default function McpDocsPage() {
             <p className="text-sm text-muted-foreground">
               Exercises <code className="text-xs">packrat_list_packs</code>,{' '}
               <code className="text-xs">packrat_list_pack_items</code>,{' '}
-              <code className="text-xs">packrat_compare_gear_items</code>. Claude reads your current
+              <code className="text-xs">packrat_similar_pack_items</code>. Claude reads your current
               pack, finds the three heaviest items (shelter, sleep, pack), and proposes a single
               lighter substitute from the gear catalog.
             </p>
@@ -443,8 +443,7 @@ export default function McpDocsPage() {
           </p>
           <p className="text-sm text-muted-foreground">
             Catalog list views and resource lists are capped at 25 items to keep context lean; reach
-            deeper with <code className="text-xs">packrat_search_gear_catalog</code> /{' '}
-            <code className="text-xs">packrat_semantic_gear_search</code>.
+            deeper with <code className="text-xs">packrat_search_gear_catalog</code>.
           </p>
           <p className="text-xs text-muted-foreground">
             Catalog generated {new Date(typedCatalog.generatedAt).toISOString().slice(0, 10)} from

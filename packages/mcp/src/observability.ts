@@ -134,6 +134,43 @@ const TOP_LEVEL_ALLOWLIST = new Set<string>([
   // Tool surface.
   'tool',
   'toolName',
+  // ── Review-observability surface (OpenAI Apps submission) ────────────
+  // Added so an OpenAI reviewer's session can be reconstructed after the
+  // fact: which tools fired, in what order, what came back, and why any
+  // failure happened. EVERY field below is non-PII by construction —
+  // sizes, counts, durations, enum-ish codes, and a bounded preview that
+  // is itself scrubbed at the source (see `previewForLog` in telemetry.ts).
+  //
+  // NOTE: this allowlist is default-deny. Any field logged but NOT listed
+  // here silently becomes the literal string '[redacted]' — it does not
+  // throw and does not warn. If you add a structured log field anywhere
+  // in this package, add its key here IN THE SAME COMMIT or you will
+  // deploy a log line full of '[redacted]' and only find out afterwards.
+  'sessionId',
+  'phase',
+  'seq',
+  'durationMs',
+  'ok',
+  'isError',
+  'errorCode',
+  'resultChars',
+  'structured',
+  'truncated',
+  'argKeys',
+  'preview',
+  'toolCount',
+  'toolNames',
+  'protocolVersion',
+  'clientName',
+  'clientVersion',
+  'upstreamStatus',
+  'upstreamOperation',
+  'httpStatus',
+  'authEvent',
+  'authOk',
+  'authReason',
+  'scopeCount',
+  'hasToken',
 ]);
 
 /**

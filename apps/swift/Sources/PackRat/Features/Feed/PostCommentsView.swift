@@ -58,7 +58,7 @@ struct PostCommentsView: View {
         HStack(spacing: 10) {
             AvatarView(
                 url: authManager.currentUser?.avatarUrl,
-                fallbackText: authManager.currentUser?.initials ?? "?",
+                fallbackText: authManager.currentUser?.initials ?? "",
                 size: 32
             )
             TextField("Add a comment…", text: $newComment)

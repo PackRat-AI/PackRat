@@ -24,6 +24,9 @@ struct PackWindowView: View {
                     .frame(minWidth: 600, minHeight: 400)
             }
         }
+        // A standalone pack window can be open alongside the main window
+        // showing the same pack, or a Trip window linking it (#2667).
+        .adoptsPackRevisions(into: viewModel)
         .task { await viewModel.load(context: modelContext) }
     }
 }

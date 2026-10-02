@@ -15,6 +15,7 @@ export function registerWildlifeTools(agent: AgentContext): void {
       annotations: {
         title: 'Identify Wildlife From Image',
         readOnlyHint: true,
+        destructiveHint: false,
         idempotentHint: false,
         openWorldHint: true,
       },

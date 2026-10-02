@@ -186,6 +186,7 @@ const PAGINATED_OFFSET_FIELD = z
  */
 const READ_ADMIN_ANNOTATIONS = {
   readOnlyHint: true,
+  destructiveHint: false,
   idempotentHint: true,
   openWorldHint: false,
 } as const;

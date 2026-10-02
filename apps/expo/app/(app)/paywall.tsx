@@ -1,74 +1,80 @@
-import * as Sentry from '@sentry/react-native';
-import { useQueryClient } from '@tanstack/react-query';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { appAlert } from 'expo-app/app/_layout';
+import { PackRatPaywall } from 'expo-app/features/purchases/components/PackRatPaywall';
+import { useFeatureAccessConfig } from 'expo-app/features/purchases/hooks/useFeatureAccess';
 import {
-  CUSTOMER_INFO_QUERY_KEY,
-  PACKRAT_EARLY_ACCESS_OFFERING_ID,
-} from 'expo-app/features/purchases';
-import { Stack, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import Purchases, { type PurchasesOffering } from 'react-native-purchases';
-import RevenueCatUI from 'react-native-purchases-ui';
+  PAYWALL_FAILURE_COPY,
+  usePaywallOffering,
+} from 'expo-app/features/purchases/hooks/usePaywallOffering';
+import { otherEarlyAccessFeatureNames } from 'expo-app/features/purchases/utils/earlyAccessFeatures';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useRef } from 'react';
+import { View } from 'react-native';
 
+/**
+ * The paywall screen — PackRat's own, not RevenueCat's template.
+ *
+ * Reached from Settings' *Upgrade to Pro* (no feature, a general upgrade) and
+ * from `EarlyAccessGate` (carrying the gated feature, so the paywall can speak
+ * to what the viewer was reaching for).
+ *
+ * The offering loads first and the paywall only opens once there is something
+ * to sell. When it cannot be loaded the viewer is returned where they came from
+ * with a short alert, rather than being left on an empty screen — the same
+ * behaviour as Swift's `PaywallPresenter`.
+ */
 export default function PaywallRoute() {
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const [offering, setOffering] = useState<PurchasesOffering | undefined>();
+  const { featureKey } = useLocalSearchParams<{ featureKey?: string }>();
+
+  const { offering, isLoading, failure } = usePaywallOffering(true);
+  const { data: allFeatures } = useFeatureAccessConfig();
+
+  // A failure closes the screen, and closing it must happen once. Without this
+  // the alert re-fires on every render while the route unwinds.
+  const hasReportedFailure = useRef(false);
 
   useEffect(() => {
-    Purchases.getOfferings()
-      .then((offerings) => {
-        setOffering(offerings.all[PACKRAT_EARLY_ACCESS_OFFERING_ID] ?? undefined);
-      })
-      .catch((error) => {
-        Sentry.captureException(error, {
-          tags: { feature: 'purchases', action: 'getOfferingsPaywallScreen' },
-        });
-      });
-  }, []);
+    if (!failure || hasReportedFailure.current) return;
+    hasReportedFailure.current = true;
 
-  const handlePurchaseCompleted: React.ComponentProps<
-    typeof RevenueCatUI.Paywall
-  >['onPurchaseCompleted'] = ({ customerInfo }) => {
-    queryClient.setQueryData(CUSTOMER_INFO_QUERY_KEY, customerInfo);
-    Sentry.addBreadcrumb({
-      category: 'purchases',
-      message: 'Purchase completed from paywall screen',
-      level: 'info',
-    });
+    const copy = PAYWALL_FAILURE_COPY[failure];
+    appAlert.current?.alert({ ...copy, buttons: [{ text: 'OK', style: 'default' }] });
     router.back();
-  };
+  }, [failure, router]);
 
-  const handleRestoreCompleted: React.ComponentProps<
-    typeof RevenueCatUI.Paywall
-  >['onRestoreCompleted'] = ({ customerInfo }) => {
-    queryClient.setQueryData(CUSTOMER_INFO_QUERY_KEY, customerInfo);
-    Sentry.addBreadcrumb({
-      category: 'purchases',
-      message: 'Purchases restored from paywall screen',
-      level: 'info',
-    });
-    router.back();
-  };
-
-  const handleError: React.ComponentProps<typeof RevenueCatUI.Paywall>['onPurchaseError'] = ({
-    error,
-  }) => {
-    Sentry.captureException(error, {
-      tags: { feature: 'purchases', action: 'paywallScreenPurchase' },
-    });
-  };
+  const feature = featureKey ? allFeatures?.find((f) => f.key === featureKey) : undefined;
+  const featureName = featureKey ? feature?.label?.trim() || featureKey : null;
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
-      <RevenueCatUI.Paywall
-        style={{ flex: 1 }}
-        options={{ offering }}
-        onPurchaseCompleted={handlePurchaseCompleted}
-        onRestoreCompleted={handleRestoreCompleted}
-        onPurchaseError={handleError}
-        onDismiss={() => router.back()}
-      />
+      {offering ? (
+        <PackRatPaywall
+          offering={offering}
+          featureName={featureName}
+          otherEarlyAccessFeatures={otherEarlyAccessFeatureNames({
+            features: allFeatures,
+            excludingKey: featureKey ?? null,
+          })}
+          onDismiss={() => router.back()}
+          onEntitlementChanged={() => router.back()}
+        />
+      ) : (
+        // Loading, or unwinding after a failure. A bare spinner on the
+        // paywall's own backdrop rather than the app's, so there is no flash of
+        // a differently-coloured screen before the paywall paints.
+        <View
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgb(8, 10, 10)',
+          }}
+        >
+          {isLoading && <ActivityIndicator size="large" />}
+        </View>
+      )}
     </>
   );
 }

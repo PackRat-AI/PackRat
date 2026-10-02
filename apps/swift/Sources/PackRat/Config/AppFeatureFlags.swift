@@ -15,5 +15,24 @@ enum AppFeatureFlags {
     static let enableTrailConditions = true
     static let enableTrails = false
     static let enableTrips = true
+    static let enableWeatherMonitoring = false
     static let enableWildlifeIdentification = false
+
+    /// Coded defaults keyed by wire name. Defines the known key set that
+    /// `FeatureFlagResolution` normalizes a fetched or cached map against.
+    static let codedDefaults: [String: Bool] = [
+        "enableFeed": false,
+        "enableLocalAI": true,
+        "enableOAuth": true,
+        "enablePackInsights": false,
+        "enablePackTemplates": true,
+        "enableRevenueCat": true,
+        "enableSharedPacks": false,
+        "enableShoppingList": false,
+        "enableTrailConditions": true,
+        "enableTrails": false,
+        "enableTrips": true,
+        "enableWeatherMonitoring": false,
+        "enableWildlifeIdentification": false,
+    ]
 }

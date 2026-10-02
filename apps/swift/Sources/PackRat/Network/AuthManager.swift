@@ -1,7 +1,9 @@
+import AuthenticationServices
 import Foundation
 import Observation
+import Sentry
+import SwiftData
 #if os(iOS)
-import AuthenticationServices
 import GoogleSignIn
 import UIKit
 #endif
@@ -10,6 +12,12 @@ import UIKit
 final class AuthManager {
     var currentUser: User?
     var isGuest = false
+
+    /// Set when a guest leaves guest mode to do something that needs an
+    /// account, so the auth flow can open on sign-in rather than the welcome
+    /// screen. Someone who tapped "Sign In to Subscribe" has already made that
+    /// choice; showing them the welcome screen again asks it twice.
+    var wantsSignInDirectly = false
     var isRestoringSession = false
     var isAuthenticated: Bool { currentUser != nil }
     var canUseApp: Bool { isAuthenticated || isGuest }
@@ -26,7 +34,12 @@ final class AuthManager {
             UserDefaults.standard.removeObject(forKey: "current_user")
             UserDefaults.standard.removeObject(forKey: skippedLoginKey)
         }
-        if ProcessInfo.processInfo.arguments.contains("--seed-e2e-auth"),
+        // Accepts an environment variable as well as the launch argument. Every
+        // other E2E control here already honours both, and some simulator
+        // drivers can set the environment but not forward launch arguments.
+        // Still gated on `e2eLoginSeedAllowed`, so this opens no new door.
+        if ProcessInfo.processInfo.arguments.contains("--seed-e2e-auth")
+            || ProcessInfo.processInfo.environment["PACKRAT_E2E_SEED_AUTH"] == "1",
            Self.e2eLoginSeedAllowed {
             seedE2EAuthenticatedUser()
             return
@@ -69,6 +82,7 @@ final class AuthManager {
         await MainActor.run { currentUser = response.user }
         persistUser(response.user)
         SentryConfig.setUser(id: response.user.id, email: response.user.email)
+        verifySessionPersisted(path: "sign-in/email")
     }
 
     func continueWithoutLogin() {
@@ -141,9 +155,9 @@ final class AuthManager {
         }
         persistUser(response.user)
         SentryConfig.setUser(id: response.user.id, email: response.user.email)
+        verifySessionPersisted(path: "sign-in/social")
     }
 
-    #if os(iOS)
     @MainActor
     func loginWithApple(credential: ASAuthorizationAppleIDCredential) async throws {
         guard let data = credential.identityToken,
@@ -162,6 +176,7 @@ final class AuthManager {
         )
     }
 
+    #if os(iOS)
     @MainActor
     func loginWithGoogle() async throws {
         guard let clientID = Bundle.main.object(forInfoDictionaryKey: "GOOGLE_IOS_CLIENT_ID") as? String,
@@ -228,6 +243,7 @@ final class AuthManager {
         await MainActor.run { currentUser = response.user }
         persistUser(response.user)
         SentryConfig.setUser(id: response.user.id, email: response.user.email)
+        verifySessionPersisted(path: "sign-up/email")
     }
 
     func requestPasswordReset(email: String) async throws {
@@ -291,13 +307,92 @@ final class AuthManager {
         }
     }
 
-    func signOut() {
+    /// Leaves guest mode straight into the sign-in screen.
+    ///
+    /// For flows where the person has already said they want an account —
+    /// subscribing, for instance — so the welcome screen does not re-ask.
+    func signOutForSignIn() {
+        wantsSignInDirectly = true
+        // The point of this flow is to carry a guest's work into a new account,
+        // so anything queued offline has to outlive the transition. Stated
+        // explicitly rather than relying on the guest check inside `signOut`,
+        // since the intent is this flow's, not a side effect of who is calling.
+        signOut(discardsPendingWrites: false)
+    }
+
+    /// Clears the local session.
+    ///
+    /// `discardsPendingWrites` decides the fate of the outbox, which has no user
+    /// column and so cannot tell one account's queued writes from another's:
+    ///
+    /// - `true` (the default) for a deliberate sign-out by a signed-in user. Their
+    ///   unsent writes are theirs alone, and leaving them queued would replay them
+    ///   into the *next* account to sign in on this device.
+    /// - `false` when no signed-in user's writes are at stake, or when the person
+    ///   never chose to leave: a guest exiting guest mode still needs the packs
+    ///   they made offline so signing in can upload them, and an expired session
+    ///   is not consent to destroy work that never reached the server.
+    func signOut(discardsPendingWrites: Bool = true) {
+        // Read before the flags are cleared: a guest has no account to own the
+        // queue, so their writes always survive to be claimed on sign-in.
+        let discardsOutbox = discardsPendingWrites && !isGuest
+
         KeychainService.shared.clearTokens()
         UserDefaults.standard.removeObject(forKey: "current_user")
         UserDefaults.standard.removeObject(forKey: skippedLoginKey)
         isGuest = false
         currentUser = nil
         SentryConfig.clearUser()
+        // `signOut` is reachable from non-main contexts (see `MainActor.run`
+        // callers), while the SwiftData container is main-actor isolated.
+        Task { @MainActor in Self.purgeCachedUserContent(discardsPendingWrites: discardsOutbox) }
+    }
+
+    /// Drops the SwiftData mirror of the signed-out user's packs and trips, and —
+    /// when the sign-out was theirs to make — the writes they never got to send.
+    ///
+    /// `CachedPack`/`CachedTrip` are keyed only by server id with no user column,
+    /// and the view models seed themselves from that cache before the network
+    /// responds. Left in place, the next user to sign in on this device sees the
+    /// previous user's packs and trips flash up first.
+    ///
+    /// `PendingMutation` has the same missing-user-column problem with worse
+    /// consequences: `OutboxService.flush` replays the queue against whatever
+    /// session token is present, so one account's unsent writes would be uploaded
+    /// into the next account to sign in here. Callers that pass
+    /// `discardsPendingWrites: false` keep the queue precisely because the writes
+    /// still belong to someone — see `signOut(discardsPendingWrites:)`.
+    @MainActor
+    private static func purgeCachedUserContent(discardsPendingWrites: Bool) {
+        let context = PersistenceController.shared.container.mainContext
+        do {
+            try purgeCachedUserContent(in: context, discardsPendingWrites: discardsPendingWrites)
+            if discardsPendingWrites {
+                OutboxService.shared.refreshCounts(context)
+            }
+        } catch {
+            SentrySDK.capture(error: error) { scope in
+                scope.setTag(value: "auth", key: "feature")
+                scope.setTag(value: "purgeCachedUserContent", key: "action")
+            }
+        }
+    }
+
+    /// The deletion itself, against a caller-supplied context.
+    ///
+    /// Split from the singleton lookup above so the rules about what survives a
+    /// sign-out can be tested against an in-memory store.
+    @MainActor
+    static func purgeCachedUserContent(
+        in context: ModelContext,
+        discardsPendingWrites: Bool
+    ) throws {
+        try context.delete(model: CachedPack.self)
+        try context.delete(model: CachedTrip.self)
+        if discardsPendingWrites {
+            try context.delete(model: PendingMutation.self)
+        }
+        try context.save()
     }
 
     /// Android-style "Clear Data": wipes *everything* the app stores locally —
@@ -328,6 +423,24 @@ final class AuthManager {
         }
     }
 
+    /// Reports a sign-in that produced a user but no session token.
+    ///
+    /// Every sign-in path guards `if let token`, and `APIClient` also captures
+    /// the `set-auth-token` header, so a missing token used to be silent: the
+    /// user record persisted, no session did, and the next launch showed the
+    /// authwall as if the session had simply expired. If neither source
+    /// supplied one, say so loudly at the moment it happens.
+    private func verifySessionPersisted(path: String) {
+        guard KeychainService.shared.sessionToken == nil else { return }
+        let message = "Sign-in via \(path) stored no session token — the next launch will show the authwall"
+        print("[Auth] \(message)")
+        SentrySDK.capture(message: message) { scope in
+            scope.setLevel(.error)
+            scope.setTag(value: "auth", key: "subsystem")
+            scope.setContext(value: ["path": path], key: "auth")
+        }
+    }
+
     private func loadStoredUser() {
         guard KeychainService.shared.sessionToken != nil,
               let data = UserDefaults.standard.data(forKey: "current_user"),
@@ -355,7 +468,10 @@ final class AuthManager {
                 try await refreshProfile()
             } catch PackRatError.unauthorized {
                 await MainActor.run {
-                    signOut()
+                    // The session expired rather than the user choosing to leave.
+                    // Their queued writes are still theirs and still unsent, so
+                    // they survive to replay once the account signs back in.
+                    signOut(discardsPendingWrites: false)
                 }
             } catch {
                 // Preserve the token for transient network failures. The app

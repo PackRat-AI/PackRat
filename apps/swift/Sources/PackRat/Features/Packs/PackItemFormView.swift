@@ -60,6 +60,9 @@ struct PackItemFormView: View {
                     .submitLabel(.done)
                     .onSubmit { isInputFocused = false }
                     .accessibilityIdentifier("pack_item_name")
+                    // Identifier stays for E2E selectors; the label is what
+                    // VoiceOver reads, which would otherwise be the testID.
+                    .accessibilityLabel("Name")
 
                 Picker("Category", selection: $category) {
                     Text("None").tag("")
@@ -80,6 +83,7 @@ struct PackItemFormView: View {
                             #endif
                             .focused($isInputFocused)
                             .accessibilityIdentifier("item_weight")
+                            .accessibilityLabel("Weight")
 
                         Picker("Unit", selection: $weightUnit) {
                             ForEach(AppWeightUnit.allCases, id: \.rawValue) { u in
@@ -108,6 +112,7 @@ struct PackItemFormView: View {
                     .lineLimit(3, reservesSpace: true)
                     .focused($isInputFocused)
                     .accessibilityIdentifier("pack_item_notes")
+                    .accessibilityLabel("Notes")
             }
 
             if let error {

@@ -1,6 +1,7 @@
 import {
   deleteFeatureFlagOverride,
   listFeatureFlagsForAdmin,
+  setFeatureFlagPlatformOverride,
   upsertFeatureFlagOverride,
 } from '@packrat/api/services/featureFlagsService';
 import { captureApiException } from '@packrat/api/utils/sentry';
@@ -8,6 +9,8 @@ import {
   AdminErrorResponses,
   AdminFeatureFlagListSchema,
   FeatureFlagKeyParamSchema,
+  FeatureFlagPlatformOverrideBodySchema,
+  FeatureFlagPlatformParamSchema,
   FeatureFlagUpsertBodySchema,
   SuccessSchema,
 } from '@packrat/schemas/admin';
@@ -22,6 +25,15 @@ export const adminFeatureFlagsRoutes = new Elysia({ prefix: '/feature-flags' })
         return items.map((item) => ({
           ...item,
           updatedAt: item.updatedAt?.toISOString() ?? null,
+          // The nested timestamps need serialising too — the spread above
+          // copies Date objects straight through, which the response schema
+          // (rightly) rejects.
+          platformOverrides: Object.fromEntries(
+            Object.entries(item.platformOverrides).map(([platform, override]) => [
+              platform,
+              override && { ...override, updatedAt: override.updatedAt.toISOString() },
+            ]),
+          ),
         }));
       } catch (error) {
         captureApiException({
@@ -84,5 +96,39 @@ export const adminFeatureFlagsRoutes = new Elysia({ prefix: '/feature-flags' })
       params: FeatureFlagKeyParamSchema,
       response: { 200: SuccessSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Reset a feature flag to its coded default' },
+    },
+  )
+  // One route sets and clears: `enabled: null` means "inherit the global
+  // value", which is stored as the absence of a row. A separate DELETE would
+  // be a second way to say the same thing.
+  .put(
+    '/:key/platforms/:platform',
+    async ({ params, body }) => {
+      try {
+        await setFeatureFlagPlatformOverride({
+          key: params.key,
+          platform: params.platform,
+          enabled: body.enabled,
+          reason: body.reason,
+        });
+        return { success: true as const };
+      } catch (error) {
+        captureApiException({
+          error,
+          operation: 'featureFlags.setPlatformOverride.route',
+          tags: { feature: 'featureFlags' },
+          extra: { key: params.key, platform: params.platform, enabled: body.enabled },
+        });
+        return status(500, { error: 'Failed to update platform override' });
+      }
+    },
+    {
+      params: FeatureFlagPlatformParamSchema,
+      body: FeatureFlagPlatformOverrideBodySchema,
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
+      detail: {
+        tags: ['Admin'],
+        summary: 'Set or clear a per-platform override for a feature flag',
+      },
     },
   );

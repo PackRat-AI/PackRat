@@ -38,7 +38,10 @@ export type PackForWeights<TItem extends PackItemForWeights = PackItem> = {
 };
 
 /** Minimum item fields the pack-weight breakdown reads (adds name + category). */
-export type PackItemForBreakdown = PackItemForWeights & Pick<PackItem, 'name' | 'category'>;
+// `id` is required so the breakdown can emit a per-item identifier that
+// `packrat_similar_pack_items` accepts — without it the MCP surface can
+// name the heaviest item but not act on it.
+export type PackItemForBreakdown = PackItemForWeights & Pick<PackItem, 'id' | 'name' | 'category'>;
 
 /** Pack shape minimal enough to drive the per-category weight breakdown. */
 export type PackForBreakdown<TItem extends PackItemForBreakdown = PackItem> = {

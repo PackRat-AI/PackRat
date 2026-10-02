@@ -10,11 +10,13 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   real,
   serial,
   text,
   timestamp,
   unique,
+  uniqueIndex,
   vector,
 } from 'drizzle-orm/pg-core';
 import type { ValidationError } from './validation';
@@ -106,6 +108,12 @@ export const jwks = pgTable('jwks', {
   publicKey: text('public_key').notNull(),
   privateKey: text('private_key').notNull(),
   createdAt: timestamp('created_at').notNull(),
+  // Added by the Better Auth 1.7 jwt plugin — all optional. `expiresAt` drives
+  // key rotation; `alg`/`crv` record which algorithm a stored key was minted
+  // for, so a key outlives a change to the configured default.
+  expiresAt: timestamp('expires_at'),
+  alg: text('alg'),
+  crv: text('crv'),
 });
 
 // ─── @better-auth/oauth-provider tables (OAuth 2.1 + OIDC AS) ────────────────
@@ -113,7 +121,7 @@ export const jwks = pgTable('jwks', {
 // Added in U1 of the MCP OAuth consolidation refactor
 // (docs/plans/2026-05-25-001-refactor-mcp-auth-onto-better-auth-plan.md).
 //
-// The plugin (`@better-auth/oauth-provider@1.6.x`) auto-registers these four
+// The plugin (`@better-auth/oauth-provider@1.7.x`) auto-registers these seven
 // models when present in the drizzle schema map (see packages/api/src/auth/index.ts
 // `database.schema`). Column shapes mirror `node_modules/@better-auth/oauth-provider/
 // dist/index.mjs` schema declarations — keep this in sync if upgrading the plugin.
@@ -133,11 +141,21 @@ export const oauthClient = pgTable(
     id: text('id').primaryKey(),
     clientId: text('client_id').notNull().unique(),
     clientSecret: text('client_secret'),
+    // Discovery provenance (1.7). Non-null only for clients created through a
+    // registered `clientDiscovery` (e.g. CIMD). PackRat registers via DCR, so
+    // this stays null — but the column must exist for the plugin's fail-closed
+    // ownership check.
+    clientDiscoveryId: text('client_discovery_id'),
     disabled: boolean('disabled').default(false),
     skipConsent: boolean('skip_consent'),
     enableEndSession: boolean('enable_end_session'),
     subjectType: text('subject_type'),
     scopes: jsonb('scopes').$type<string[]>(),
+    // Machine-to-machine (`client_credentials`) scope authority (1.7). Stored
+    // separately from `scopes` and deny-by-default: NULL and [] both refuse
+    // client_credentials issuance. PackRat issues no M2M tokens, so every row
+    // is backfilled to [] and left there.
+    clientCredentialsScopes: jsonb('client_credentials_scopes').$type<string[]>().default([]),
     userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at'),
     updatedAt: timestamp('updated_at'),
@@ -152,12 +170,19 @@ export const oauthClient = pgTable(
     softwareStatement: text('software_statement'),
     redirectUris: jsonb('redirect_uris').$type<string[]>().notNull(),
     postLogoutRedirectUris: jsonb('post_logout_redirect_uris').$type<string[]>(),
+    backchannelLogoutUri: text('backchannel_logout_uri'),
+    backchannelLogoutSessionRequired: boolean('backchannel_logout_session_required'),
     tokenEndpointAuthMethod: text('token_endpoint_auth_method'),
+    // Replaces the removed `public` + `type` columns (1.7). `tokenEndpointAuthMethod`
+    // alone decides confidential vs public ('none' = public); applicationType is
+    // 'web' | 'native' and is metadata only.
+    applicationType: text('application_type'),
+    jwks: text('jwks'),
+    jwksUri: text('jwks_uri'),
     grantTypes: jsonb('grant_types').$type<string[]>(),
     responseTypes: jsonb('response_types').$type<string[]>(),
-    public: boolean('public'),
-    type: text('type'),
     requirePKCE: boolean('require_pkce'),
+    dpopBoundAccessTokens: boolean('dpop_bound_access_tokens'),
     referenceId: text('reference_id'),
     metadata: jsonb('metadata'),
   },
@@ -180,10 +205,20 @@ export const oauthRefreshToken = pgTable(
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     referenceId: text('reference_id'),
+    authorizationCodeId: text('authorization_code_id'),
+    // RFC 8707 resource indicators the token was issued for (1.7) — replaces
+    // the plugin-level `validAudiences` allowlist.
+    resources: jsonb('resources').$type<string[]>(),
+    requestedUserInfoClaims: jsonb('requested_user_info_claims').$type<string[]>(),
     expiresAt: timestamp('expires_at').notNull(),
     createdAt: timestamp('created_at').notNull(),
     revoked: timestamp('revoked'),
+    // Refresh-token rotation replay detection (1.7).
+    rotatedAt: timestamp('rotated_at'),
+    rotationReplayResponse: jsonb('rotation_replay_response'),
+    rotationReplayExpiresAt: timestamp('rotation_replay_expires_at'),
     authTime: timestamp('auth_time'),
+    confirmation: jsonb('confirmation'),
     scopes: jsonb('scopes').$type<string[]>().notNull(),
   },
   (t) => [
@@ -207,9 +242,16 @@ export const oauthAccessToken = pgTable(
     sessionId: text('session_id').references(() => session.id, { onDelete: 'set null' }),
     userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
     referenceId: text('reference_id'),
+    authorizationCodeId: text('authorization_code_id'),
+    resources: jsonb('resources').$type<string[]>(),
+    requestedUserInfoClaims: jsonb('requested_user_info_claims').$type<string[]>(),
     refreshId: text('refresh_id').references(() => oauthRefreshToken.id, { onDelete: 'set null' }),
     expiresAt: timestamp('expires_at').notNull(),
     createdAt: timestamp('created_at').notNull(),
+    // Back-channel logout / revocation marker (1.7): introspection returns
+    // { active: false } once the originating session ends.
+    revoked: timestamp('revoked'),
+    confirmation: jsonb('confirmation'),
     scopes: jsonb('scopes').$type<string[]>().notNull(),
   },
   (t) => [
@@ -232,6 +274,8 @@ export const oauthConsent = pgTable(
       .notNull(),
     userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
     referenceId: text('reference_id'),
+    resources: jsonb('resources').$type<string[]>(),
+    requestedUserInfoClaims: jsonb('requested_user_info_claims').$type<string[]>(),
     scopes: jsonb('scopes').$type<string[]>().notNull(),
     createdAt: timestamp('created_at').notNull(),
     updatedAt: timestamp('updated_at').notNull(),
@@ -241,6 +285,68 @@ export const oauthConsent = pgTable(
     index('oauth_consent_user_id_idx').on(t.userId),
   ],
 );
+
+// OAuth Resource (1.7) — protected resources are now a first-class persisted
+// entity instead of the plugin-level `validAudiences` string array. The
+// `identifier` IS the RFC 8707 `resource` parameter value a client sends.
+// Rows are seeded from the `resources` option at plugin init under
+// `resourceSeedMode: 'insertOnly'`, so admin edits are never reverted on deploy.
+// NULL policy columns mean "inherit the plugin default at issuance time".
+export const oauthResource = pgTable('oauthResource', {
+  id: text('id').primaryKey(),
+  identifier: text('identifier').notNull().unique(),
+  name: text('name').notNull(),
+  accessTokenTtl: integer('access_token_ttl'),
+  refreshTokenTtl: integer('refresh_token_ttl'),
+  signingAlgorithm: text('signing_algorithm'),
+  signingKeyId: text('signing_key_id'),
+  allowedScopes: jsonb('allowed_scopes').$type<string[]>(),
+  customClaims: jsonb('custom_claims'),
+  dpopBoundAccessTokensRequired: boolean('dpop_bound_access_tokens_required').default(false),
+  disabled: boolean('disabled').default(false),
+  createdAt: timestamp('created_at'),
+  updatedAt: timestamp('updated_at'),
+  policyVersion: integer('policy_version').default(1),
+  metadata: jsonb('metadata'),
+});
+
+// OAuth Client ↔ Resource join (1.7) — authoritative only when
+// `enforcePerClientResources` is true, which is the plugin default and what we
+// run. The composite uniqueness on (client_id, resource_id) is load-bearing:
+// the linkage check assumes one row per pair, and the registration endpoint
+// converts the resulting UNIQUE violation into an idempotent "alreadyLinked".
+export const oauthClientResource = pgTable(
+  'oauthClientResource',
+  {
+    id: text('id').primaryKey(),
+    clientId: text('client_id')
+      .references(() => oauthClient.clientId, { onDelete: 'cascade' })
+      .notNull(),
+    // References `oauthResource.identifier`, NOT its `id`. The plugin resolves
+    // a resource by identifier and writes that identifier straight into this
+    // column (see resolveClientRegistrationResources -> adapter.create in
+    // @better-auth/oauth-provider). Pointing the FK at `id` makes every DCR
+    // registration fail with a 23503 foreign-key violation.
+    resourceId: text('resource_id')
+      .references(() => oauthResource.identifier, { onDelete: 'cascade' })
+      .notNull(),
+    metadata: jsonb('metadata'),
+    createdAt: timestamp('created_at'),
+  },
+  (t) => [
+    uniqueIndex('oauth_client_resource_client_resource_idx').on(t.clientId, t.resourceId),
+    index('oauth_client_resource_resource_id_idx').on(t.resourceId),
+  ],
+);
+
+// OAuth Client Assertion (1.7) — replay cache for `private_key_jwt` client
+// authentication (the assertion `jti` is the primary key). PackRat's clients
+// authenticate with `none` (public + PKCE), so this stays empty; the plugin
+// still requires the model to be registered.
+export const oauthClientAssertion = pgTable('oauthClientAssertion', {
+  id: text('id').primaryKey(),
+  expiresAt: timestamp('expires_at').notNull(),
+});
 
 // Packs table
 export const packs = pgTable('packs', {
@@ -838,6 +944,45 @@ export const featureFlags = pgTable('feature_flags', {
 export type FeatureFlagRow = InferSelectModel<typeof featureFlags>;
 export type NewFeatureFlagRow = InferInsertModel<typeof featureFlags>;
 
+// The client surfaces a flag can be targeted at. `ios` and `android` cover the
+// Expo app; `ios` and `macos` cover the Swift app.
+//
+// Two absences are deliberate. The watch has no network of its own — it reads
+// what the phone sends — so it inherits the phone's answer. Expo's web build
+// reads flags too, but web is not a targetable platform here: an unrecognised
+// platform resolves to the global value, so web keeps working without being
+// separately steerable.
+export const clientPlatformEnum = pgEnum('client_platform', ['ios', 'android', 'macos']);
+
+// Per-platform overrides layered on top of `feature_flags`. A row here wins for
+// that platform only; a platform with no row inherits the global value, which
+// in turn falls back to the coded default. Kept as a separate table rather than
+// columns on feature_flags so adding a platform is a migration on one enum
+// instead of a schema change per surface, and so a flag with no platform
+// targeting costs no extra storage.
+export const featureFlagPlatformOverrides = pgTable(
+  'feature_flag_platform_overrides',
+  {
+    key: text('key')
+      .notNull()
+      .references(() => featureFlags.key, { onDelete: 'cascade' }),
+    platform: clientPlatformEnum('platform').notNull(),
+    enabled: boolean('enabled').notNull(),
+    // Why this platform differs. Worth recording: a platform-specific override
+    // usually encodes a temporary reason (a broken build, a staged rollout)
+    // that is otherwise lost the moment whoever set it moves on.
+    reason: text('reason'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.key, table.platform] })],
+);
+
+export type FeatureFlagPlatformOverrideRow = InferSelectModel<typeof featureFlagPlatformOverrides>;
+export type NewFeatureFlagPlatformOverrideRow = InferInsertModel<
+  typeof featureFlagPlatformOverrides
+>;
+
 // Per-user RevenueCat entitlement state, kept in sync by the RevenueCat webhook
 // (packages/api's revenuecatWebhook route). This is the server's source of
 // truth for `hasPro`: server-side gating resolves a viewer's Pro status from an
@@ -877,6 +1022,99 @@ export const entitlements = pgTable(
 
 export type Entitlement = InferSelectModel<typeof entitlements>;
 export type NewEntitlement = InferInsertModel<typeof entitlements>;
+
+// A user-chosen location to monitor for weather alerts. Watching is always
+// explicit — nothing here is derived from search history or trips. See
+// docs/features/weather-alerts.md ADR-002.
+export const weatherWatchedLocations = pgTable(
+  'weather_watched_locations',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    // WeatherAPI.com's numeric location id — the key used to poll this
+    // location's forecast/alerts.
+    weatherLocationId: integer('weather_location_id').notNull(),
+    locationName: text('location_name').notNull(),
+    region: text('region'),
+    country: text('country'),
+    lat: real('lat').notNull(),
+    lon: real('lon').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('weather_watched_locations_user_location_unique').on(
+      table.userId,
+      table.weatherLocationId,
+    ),
+    index('weather_watched_locations_weather_location_id_idx').on(table.weatherLocationId),
+  ],
+);
+
+export type WeatherWatchedLocation = InferSelectModel<typeof weatherWatchedLocations>;
+export type NewWeatherWatchedLocation = InferInsertModel<typeof weatherWatchedLocations>;
+
+// Last-seen alert state per watched location, keyed by the location itself
+// rather than per-user — the alert is a property of the place, so this row
+// is shared by every user watching it and lets the polling cron dedupe both
+// its own API calls and its notification fan-out across users. Poll tier
+// tracks whether this location currently has an active alert, so the cron
+// can check it more often while something is happening and fall back to a
+// slower cadence once it resolves.
+export const weatherLocationAlertState = pgTable('weather_location_alert_state', {
+  weatherLocationId: integer('weather_location_id').primaryKey(),
+  // Hash of the currently-active alert set (sorted event+effective per
+  // alert — see diffAlerts.ts alertSetHash), used to detect a new or
+  // changed alert without storing the full payload here.
+  lastAlertHash: text('last_alert_hash'),
+  // Identifiers of the alerts currently considered active, for diffing
+  // new-vs-resolved on the next poll.
+  lastAlertIds: jsonb('last_alert_ids').$type<string[]>().notNull().default([]),
+  pollTier: text('poll_tier', { enum: ['baseline', 'elevated'] })
+    .notNull()
+    .default('baseline'),
+  activeSince: timestamp('active_since'),
+  lastPolledAt: timestamp('last_polled_at'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export type WeatherLocationAlertState = InferSelectModel<typeof weatherLocationAlertState>;
+export type NewWeatherLocationAlertState = InferInsertModel<typeof weatherLocationAlertState>;
+
+// A device registered to receive push notifications. Genuinely new — no push
+// infrastructure predates this feature. 'ios' is the only platform in use
+// today; 'android' is reserved for when the Expo app adopts the same
+// monitoring pipeline.
+export const userDeviceTokens = pgTable(
+  'user_device_tokens',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    platform: text('platform', { enum: ['ios', 'android'] }).notNull(),
+    deviceToken: text('device_token').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    lastSeenAt: timestamp('last_seen_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('user_device_tokens_user_id_device_token_unique').on(table.userId, table.deviceToken),
+    index('user_device_tokens_user_id_idx').on(table.userId),
+  ],
+);
+
+export type UserDeviceToken = InferSelectModel<typeof userDeviceTokens>;
+export type NewUserDeviceToken = InferInsertModel<typeof userDeviceTokens>;
+
+export const weatherWatchedLocationsRelations = relations(weatherWatchedLocations, ({ one }) => ({
+  user: one(users, { fields: [weatherWatchedLocations.userId], references: [users.id] }),
+}));
+
+export const userDeviceTokensRelations = relations(userDeviceTokens, ({ one }) => ({
+  user: one(users, { fields: [userDeviceTokens.userId], references: [users.id] }),
+}));
 
 // CapturedQuery is the per-query record stored in D1 metrics (packages/api/src/db/metricsDb.ts).
 // Defined here so both the API (queryMetrics.ts) and the D1 schema (packages/db/src/d1Schema.ts)

@@ -14,6 +14,7 @@ struct PacksListView: View {
     @State private var packPendingDeletion: Pack?
     @State private var showingDeleteConfirmation = false
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppState.self) private var appState
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private var isCompact: Bool { horizontalSizeClass == .compact }
@@ -96,6 +97,13 @@ struct PacksListView: View {
         .sheet(isPresented: $showingCreateSheet) {
             PackFormView(viewModel: viewModel)
         }
+        // A "Start Pack" tap elsewhere routes here and asks for the create sheet.
+        // Handled on appear *and* on change so it works whether this view is
+        // being built fresh or is already mounted behind another tab.
+        .onAppear { consumePackCreationRequest() }
+        .onChange(of: appState.isPackCreationRequested) { _, requested in
+            if requested { consumePackCreationRequest() }
+        }
         .navigationDestination(isPresented: $showingRecentPacks) {
             RecentPacksView(packs: viewModel.packs)
         }
@@ -110,6 +118,12 @@ struct PacksListView: View {
 
     private var categoryFilterBar: some View {
         VStack(spacing: 8) {
+            // `.labelsHidden()` on both: on macOS a Picker renders its title as
+            // a leading label, and in a narrow list column that label is what
+            // AppKit compresses first — "View" wrapped to "Vie/w" rather than
+            // the control giving up width. The segments and the trailing value
+            // text already name the control, so the title is redundant on
+            // screen; it stays as the accessibility label.
             Picker("View", selection: $isExplore) {
                 Label("My Packs", systemImage: "person.fill").tag(false)
                     .accessibilityIdentifier("packs_mode_my_packs")
@@ -117,6 +131,7 @@ struct PacksListView: View {
                     .accessibilityIdentifier("packs_mode_explore")
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
             .accessibilityIdentifier("packs_mode_picker")
 
             HStack {
@@ -129,6 +144,7 @@ struct PacksListView: View {
                     }
                 }
                 .pickerStyle(.menu)
+                .labelsHidden()
                 .accessibilityIdentifier("packs_category_filter")
 
                 Spacer()
@@ -158,8 +174,16 @@ struct PacksListView: View {
         }
     }
 
+    /// Compact iOS navigates by pushing from `packRow`'s `NavigationLink`, so the
+    /// list must not also track a selection — the tapped row would stay rendered
+    /// in its selected (gray) state after the pop back. Selection is only
+    /// meaningful on the split-view layouts, where it drives the detail pane.
+    private var listSelection: Binding<String?>? {
+        isCompact ? nil : $selectedId
+    }
+
     private var packList: some View {
-        List(displayedPacks, selection: $selectedId) { pack in
+        List(displayedPacks, selection: listSelection) { pack in
             packRow(pack)
                 .contextMenu {
                     #if os(macOS)
@@ -218,13 +242,24 @@ struct PacksListView: View {
         showingDeleteConfirmation = true
     }
 
+    /// Opens the create sheet if another screen asked for it, then clears the
+    /// request so returning to this tab later does not reopen the sheet.
+    private func consumePackCreationRequest() {
+        guard appState.isPackCreationRequested else { return }
+        appState.isPackCreationRequested = false
+        // Explore shows other people's packs; creating from there would be
+        // confusing, so land the user on their own list first.
+        isExplore = false
+        showingCreateSheet = true
+    }
+
     // MARK: - Delete
 
     private func deletePack(_ pack: Pack) {
         packPendingDeletion = nil
         Task {
             // Deleting never fails at the call site — an unreachable server queues the
-            // delete for replay. Failures surface via the pending-writes banner.
+            // delete for replay. Failures surface in Settings → Sync.
             await viewModel.deletePack(pack.id, context: modelContext)
             if selectedId == pack.id { selectedId = nil }
         }
@@ -237,12 +272,15 @@ struct PacksListView: View {
         defer { isLoadingPublic = false }
         do {
             publicPacks = try await viewModel.service.listPacks(page: 1, limit: 30, includePublic: true)
+                .activePacks
         } catch { }
     }
 }
 
 private struct PackRowView: View {
     let pack: Pack
+
+    @Environment(\.weightUnit) private var weightUnit
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -253,7 +291,7 @@ private struct PackRowView: View {
                     .layoutPriority(1)
                 Spacer()
                 if let total = pack.totalWeight, total > 0 {
-                    Text(pack.formattedWeight(total))
+                    Text(pack.formattedWeight(total, in: weightUnit))
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 7)

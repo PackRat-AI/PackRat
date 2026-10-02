@@ -130,7 +130,7 @@ jobs:
             echo "::error::Required TestFlight preflight inputs missing: ${missing[*]}"
             exit 1
           fi
-          bun swift:testflight:preflight --replacement --production
+          bun swift:testflight:preflight --production
 
   testflight-replacement-archive:
     name: TestFlight replacement archive verification
@@ -177,7 +177,7 @@ jobs:
             echo "::error::Required TestFlight archive verification inputs missing: ${missing[*]}"
             exit 1
           fi
-          bun apps/swift/scripts/upload-testflight.ts --replacement --production --verify-archive-only
+          bun apps/swift/scripts/upload-testflight.ts --production --verify-archive-only
 
   macos-ui:
     name: macOS Swift UI E2E

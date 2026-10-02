@@ -17,6 +17,7 @@ struct GearItem: Identifiable {
 struct GearInventoryView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.weightUnit) private var weightUnit
     @State private var searchText = ""
     @State private var sortOrder: SortOrder = .name
 
@@ -146,10 +147,7 @@ struct GearInventoryView: View {
     }
 
     private func formattedWeight(_ grams: Double) -> String {
-        if grams >= 1000 {
-            return String(format: "%.1fkg", grams / 1000)
-        }
-        return String(format: "%.0fg", grams)
+        weightUnit.display(grams: grams)
     }
 }
 
@@ -157,6 +155,8 @@ struct GearInventoryView: View {
 
 private struct GearItemRow: View {
     let item: GearItem
+
+    @Environment(\.weightUnit) private var weightUnit
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -207,7 +207,6 @@ private struct GearItemRow: View {
     }
 
     private func formattedWeight(_ grams: Double) -> String {
-        if grams >= 1000 { return String(format: "%.1fkg", grams / 1000) }
-        return String(format: "%.0fg", grams)
+        weightUnit.display(grams: grams)
     }
 }

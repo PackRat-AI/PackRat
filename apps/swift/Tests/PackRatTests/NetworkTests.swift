@@ -7,7 +7,15 @@ import Foundation
 // Swift Testing parallelises tests across a suite by default, but the keychain
 // is a process-wide singleton. Two tests mutating `.shared` at the same time
 // flake (one test reads the other's value). Serialise.
+//
+// `.serialized` alone was not enough: it orders tests within this suite but not
+// against `ExpoLocalDataMigrationEndToEndTests`, which mutates the same
+// singleton, so the two suites could interleave and read each other's token.
+// Both are pinned to `@MainActor` — that suite already needed it for SwiftData —
+// which puts every test touching the keychain on one executor and makes them
+// mutually exclusive.
 @Suite("KeychainService", .serialized)
+@MainActor
 struct KeychainServiceTests {
     let keychain = KeychainService.shared
 
@@ -38,6 +46,22 @@ struct KeychainServiceTests {
         keychain.clearTokens()
     }
 
+    /// `ExpoLocalDataMigration.runIfNeeded` decides whether to queue the imported Expo
+    /// rows for upload by reading exactly this expression. Its own tests inject
+    /// `isSignedIn` directly, so this pins the wiring they cannot reach: a carried-over
+    /// session has to read as signed in, or the import re-queues every record the
+    /// server already owns.
+    @Test("a carried-over session reads as signed in for the Expo import gate")
+    func sessionTokenDrivesMigrationGate() {
+        keychain.clearTokens()
+        #expect((KeychainService.shared.sessionToken != nil) == false)
+
+        keychain.saveSessionToken("carried-over-session")
+        #expect((KeychainService.shared.sessionToken != nil) == true)
+
+        keychain.clearTokens()
+    }
+
     @Test("reads and migrates Expo Better Auth session cookie")
     func readsAndMigratesExpoBetterAuthCookie() {
         keychain.saveLegacyExpoCookieForTesting("""
@@ -49,6 +73,41 @@ struct KeychainServiceTests {
         keychain.clearLegacyExpoCookieForTesting()
         #expect(keychain.sessionToken == "legacy-session-token")
         keychain.clearTokens()
+    }
+
+    // expo-secure-store appends ":no-auth" to its default "app" service on every
+    // write, so this is the service a shipped Expo install actually uses. Reading
+    // only bare "app" logged real users out across the update.
+    @Test("migrates the cookie from every service expo-secure-store writes")
+    func migratesCookieFromSuffixedExpoServices() {
+        for service in ["app:no-auth", "app:auth", "app"] {
+            keychain.clearTokens()
+            keychain.saveLegacyExpoCookieForTesting(
+                """
+                {"better-auth.session_token":{"value":"token-from-\(service)"}}
+                """,
+                service: service
+            )
+
+            #expect(keychain.sessionToken == "token-from-\(service)")
+        }
+        keychain.clearTokens()
+    }
+
+    @Test("clearTokens removes the cookie from every expo service variant")
+    func clearTokensRemovesSuffixedExpoCookies() {
+        for service in ["app:no-auth", "app:auth", "app"] {
+            keychain.saveLegacyExpoCookieForTesting(
+                """
+                {"better-auth.session_token":{"value":"token-from-\(service)"}}
+                """,
+                service: service
+            )
+        }
+
+        keychain.clearTokens()
+
+        #expect(keychain.sessionToken == nil)
     }
 
     @Test("reads Expo secure Better Auth session cookie")

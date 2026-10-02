@@ -17,9 +17,27 @@ final class PackTemplateService: Sendable {
     }
 
     func createTemplate(name: String, description: String? = nil, category: String = "custom") async throws -> PackTemplate {
+        try await createTemplate(
+            id: UUID().uuidString.lowercased(),
+            name: name,
+            description: description,
+            category: category
+        )
+    }
+
+    /// Creates a template under a caller-supplied id.
+    ///
+    /// Used when replaying a queued create: the id already exists on the device (and in
+    /// any child template items' foreign keys), so minting a fresh one would orphan them.
+    func createTemplate(
+        id: String,
+        name: String,
+        description: String? = nil,
+        category: String = "custom"
+    ) async throws -> PackTemplate {
         let now = Date.iso8601Now()
         let body = CreateTemplateRequest(
-            id: UUID().uuidString.lowercased(),
+            id: id,
             name: name, description: description, category: category,
             localCreatedAt: now, localUpdatedAt: now
         )
@@ -38,8 +56,19 @@ final class PackTemplateService: Sendable {
 
     func addItem(toTemplate templateId: String, name: String, weight: Double, weightUnit: String,
                  quantity: Int, category: String?, consumable: Bool, worn: Bool, notes: String?) async throws -> PackTemplateItem {
+        try await addItem(
+            toTemplate: templateId, id: UUID().uuidString.lowercased(), name: name,
+            weight: weight, weightUnit: weightUnit, quantity: quantity,
+            category: category, consumable: consumable, worn: worn, notes: notes
+        )
+    }
+
+    /// Adds a template item under a caller-supplied id, for replaying a queued create.
+    func addItem(toTemplate templateId: String, id: String, name: String, weight: Double,
+                 weightUnit: String, quantity: Int, category: String?, consumable: Bool,
+                 worn: Bool, notes: String?) async throws -> PackTemplateItem {
         let body = CreateTemplateItemRequest(
-            id: UUID().uuidString.lowercased(),
+            id: id,
             name: name, weight: weight, weightUnit: weightUnit, quantity: quantity,
             category: category, consumable: consumable, worn: worn, notes: notes
         )
@@ -70,7 +99,10 @@ final class PackTemplateService: Sendable {
     /// Applies a template to an existing pack by copying all template items.
     func applyToPack(templateId: String, packId: String) async throws {
         let template = try await getTemplate(templateId)
-        guard let items = template.items else { return }
+        // `activeItems`, not `items`: copying tombstoned template items would
+        // resurrect deleted gear into the target pack.
+        let items = template.activeItems
+        guard !items.isEmpty else { return }
         let packService = PackService.shared
         for item in items {
             _ = try await packService.addItem(

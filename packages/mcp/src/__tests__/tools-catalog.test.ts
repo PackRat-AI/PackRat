@@ -15,7 +15,6 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { CatalogSortField, SortOrder } from '../enums';
 import { registerCatalogTools } from '../tools/catalog';
 import { type ApiCall, firstText, getToolHandler, makeAgent, makeExtra } from './_tool-harness';
 
@@ -30,46 +29,15 @@ function countCalls(calls: ApiCall[], segments: string[]): number {
   return calls.filter((c) => pathEndsWith(c, segments)).length;
 }
 
+// packrat_search_gear_catalog tests removed: the tool is disabled on the connector
+// surface (see tools/catalog.ts for the rationale). Restore these
+// alongside the registration if the tool is ever re-enabled.
+
 describe('packrat_search_gear_catalog', () => {
-  it('GETs the catalog with enum sort and returns a text block', async () => {
-    const { agent, server, calls } = makeAgent();
-    registerCatalogTools(agent);
-    const result = await getToolHandler(server, 'packrat_search_gear_catalog')(
-      {
-        query: 'ultralight sleeping bag',
-        category: 'sleeping bags',
-        limit: 10,
-        page: 1,
-        sort_by: CatalogSortField.Price,
-        sort_order: SortOrder.Desc,
-      },
-      makeExtra(),
-    );
-
-    expect(result.content[0]?.type).toBe('text');
-    expect(firstText(result).length).toBeGreaterThan(0);
-    expect(countCalls(calls, ['user', 'catalog', 'get'])).toBe(1);
-  });
-
-  it('GETs the catalog without a sort field (sort omitted) and returns a text block', async () => {
-    const { agent, server, calls } = makeAgent();
-    registerCatalogTools(agent);
-    const result = await getToolHandler(server, 'packrat_search_gear_catalog')(
-      { limit: 10, page: 1, sort_order: SortOrder.Asc },
-      makeExtra(),
-    );
-
-    expect(result.content[0]?.type).toBe('text');
-    expect(firstText(result).length).toBeGreaterThan(0);
-    expect(countCalls(calls, ['user', 'catalog', 'get'])).toBe(1);
-  });
-});
-
-describe('packrat_semantic_gear_search', () => {
   it('GETs the vector-search endpoint and returns a text block', async () => {
     const { agent, server, calls } = makeAgent();
     registerCatalogTools(agent);
-    const result = await getToolHandler(server, 'packrat_semantic_gear_search')(
+    const result = await getToolHandler(server, 'packrat_search_gear_catalog')(
       { query: 'warm lightweight insulation layer', limit: 8 },
       makeExtra(),
     );
@@ -167,17 +135,6 @@ describe.skip('packrat_create_catalog_item', () => {
   });
 });
 
-describe('packrat_compare_gear_items', () => {
-  it('POSTs to the compare endpoint and returns a text block', async () => {
-    const { agent, server, calls } = makeAgent();
-    registerCatalogTools(agent);
-    const result = await getToolHandler(server, 'packrat_compare_gear_items')(
-      { item_ids: [1, 2, 3] },
-      makeExtra(),
-    );
-
-    expect(result.content[0]?.type).toBe('text');
-    expect(firstText(result).length).toBeGreaterThan(0);
-    expect(countCalls(calls, ['user', 'catalog', 'compare', 'post'])).toBe(1);
-  });
-});
+// packrat_compare_gear_items tests removed: the tool is disabled on the connector
+// surface (see tools/catalog.ts for the rationale). Restore these
+// alongside the registration if the tool is ever re-enabled.

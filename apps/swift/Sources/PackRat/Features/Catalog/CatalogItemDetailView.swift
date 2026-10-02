@@ -7,6 +7,7 @@ struct CatalogItemDetailView: View {
     @State private var showingAddToPack = false
     @State private var selectedImageIndex = 0
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.weightUnit) private var weightUnit
 
     var body: some View {
         NavigationStack {
@@ -97,7 +98,7 @@ struct CatalogItemDetailView: View {
 
             HStack(spacing: 12) {
                 if !item.displayWeight.isEmpty {
-                    Label(item.displayWeight, systemImage: "scalemass")
+                    Label(item.displayWeight(in: weightUnit), systemImage: "scalemass")
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 if let rating = item.ratingValue, rating > 0 {

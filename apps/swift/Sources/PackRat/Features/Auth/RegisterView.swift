@@ -3,6 +3,9 @@ import SwiftUI
 struct RegisterView: View {
     @Environment(AuthManager.self) private var authManager
     let onLoginTapped: () -> Void
+    /// Back to the welcome screen, which is the only route to guest mode.
+    /// Without it, opening sign-up was a one-way door.
+    let onBackTapped: () -> Void
 
     @State private var firstName = ""
     @State private var lastName = ""
@@ -33,12 +36,14 @@ struct RegisterView: View {
                             .padding(.horizontal, 14)
                             .padding(.vertical, 12)
                             .accessibilityIdentifier("register_first_name")
+                            .accessibilityLabel("First Name")
                         Divider()
                         TextField("Last Name", text: $lastName)
                             .textContentType(.familyName)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 12)
                             .accessibilityIdentifier("register_last_name")
+                            .accessibilityLabel("Last Name")
                     }
 
                     Divider().padding(.leading, 14)
@@ -53,14 +58,29 @@ struct RegisterView: View {
                         .padding(.horizontal, 14)
                         .padding(.vertical, 12)
                         .accessibilityIdentifier("register_email")
+                        .accessibilityLabel("Email")
 
                     Divider().padding(.leading, 14)
 
-                    SecureField("Password", text: $password)
-                        .textContentType(.newPassword)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
-                        .accessibilityIdentifier("register_password")
+                    // State the rule up front — 8 characters matches both
+                    // `isValid` here and Better Auth's `minPasswordLength`
+                    // server-side, so the user is not left to discover it by
+                    // failing.
+                    VStack(alignment: .leading, spacing: 4) {
+                        SecureField("Password", text: $password)
+                            .textContentType(.newPassword)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .accessibilityIdentifier("register_password")
+                            .accessibilityLabel("Password")
+                        if password.isEmpty || password.count < 8 {
+                            Text("At least 8 characters")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 14)
+                                .padding(.bottom, 10)
+                        }
+                    }
 
                     Divider().padding(.leading, 14)
 
@@ -71,6 +91,7 @@ struct RegisterView: View {
                             .padding(.horizontal, 14)
                             .padding(.vertical, 12)
                             .accessibilityIdentifier("register_confirm_password")
+                            .accessibilityLabel("Confirm Password")
                         if passwordMismatch {
                             Text("Passwords don't match")
                                 .font(.caption)
@@ -102,12 +123,28 @@ struct RegisterView: View {
                 .disabled(!isValid || isLoading)
                 .accessibilityIdentifier("register_submit")
 
+                AuthProviderButtons(
+                    isLoading: $isLoading,
+                    error: $error,
+                    identifierPrefix: "register"
+                )
+
                 Divider()
 
-                Button("Already have an account? Sign In", action: onLoginTapped)
+                VStack(spacing: 10) {
+                    Button("Already have an account? Sign In", action: onLoginTapped)
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.tint)
+                        .font(.callout)
+
+                    Button(action: onBackTapped) {
+                        Label("Back", systemImage: "chevron.left")
+                            .font(.callout)
+                    }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.tint)
-                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("register_back")
+                }
             }
         }
     }

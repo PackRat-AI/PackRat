@@ -11,8 +11,14 @@ import { status } from 'elysia';
  * `status` response to return early from the handler when access is denied, or
  * `null` when the viewer may proceed.
  *
- * Usage inside an authenticated handler:
- *   const denied = await enforceFeatureAccess('wildlife', user.userId);
+ * Usage inside an authenticated handler. Derive the key from the feature's flag
+ * rather than writing a literal, so the route cannot drift from the naming rule
+ * (see packages/config/src/featureKeys.ts):
+ *
+ *   const denied = await enforceFeatureAccess(
+ *     featureAccessKeyForFlag(FeatureFlag.EnableWildlifeIdentification),
+ *     user.userId,
+ *   );
  *   if (denied) return denied;
  */
 export async function enforceFeatureAccess(featureKey: string, userId: string) {

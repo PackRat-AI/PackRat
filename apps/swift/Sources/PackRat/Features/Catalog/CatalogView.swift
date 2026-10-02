@@ -12,8 +12,8 @@ struct CatalogView: View {
         return Group {
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Catalog Requires an Account",
-                    subtitle: "Gear search syncs with PackRat's catalog service. Local packs and trips still work in guest mode.",
+                    "Sign In to Search Gear",
+                    subtitle: "Search thousands of products for weights, prices, and specs. Your own packs and trips stay on this device and keep working without an account.",
                     systemImage: "magnifyingglass"
                 )
             } else if vm.isLoading && vm.items.isEmpty {
@@ -41,15 +41,10 @@ struct CatalogView: View {
             }
         }
         .navigationTitle("Gear Catalog")
-        #if os(iOS)
-        .searchable(
-            text: $vm.searchText,
-            placement: .navigationBarDrawer(displayMode: .always),
-            prompt: "Search tents, packs, sleeping bags…"
-        )
-        #else
-        .searchable(text: $vm.searchText, prompt: "Search tents, packs, sleeping bags…")
-        #endif
+        // Guests get no search field at all: catalog search is server-backed, so
+        // an editable field above "Catalog Requires an Account" is a dead input
+        // that accepts a query it can never answer.
+        .catalogSearchable(text: $vm.searchText, enabled: authManager.isAuthenticated)
         .onChange(of: vm.searchText) {
             if authManager.isAuthenticated {
                 vm.onSearchTextChanged()
@@ -61,6 +56,8 @@ struct CatalogView: View {
             }
         }
         .toolbar {
+            // A re-search over an already-populated list: the footer belongs to
+            // paging, so this reports the refresh instead.
             if vm.isLoading && !vm.items.isEmpty {
                 ToolbarItem(placement: .secondaryAction) {
                     ProgressView().controlSize(.small)
@@ -73,20 +70,58 @@ struct CatalogView: View {
         LazyVStack(spacing: 0) {
             ForEach(vm.items) { item in
                 CatalogItemRow(item: item, packsViewModel: appState.packsVM)
-                Divider().padding(.leading, 76)
+                    // Paging is driven by the row, not the divider below it: the
+                    // divider is a zero-height view that LazyVStack may never
+                    // consider on-screen, so its .task could go unrun and the
+                    // list would just stop growing.
                     .task {
                         if item.id == vm.items.last?.id {
                             await vm.loadMore()
                         }
                     }
+                Divider().padding(.leading, 76)
             }
-            if vm.isLoading {
-                ProgressView().padding()
+
+            // The footer stays in the layout for the whole page fetch, so the
+            // spinner is on screen where the user is already looking — at the
+            // bottom of the list they just scrolled to. Reserving the height
+            // when idle also stops the list jumping as each page arrives.
+            if vm.isLoadingMore {
+                ProgressView()
+                    .controlSize(.small)
+                    .padding(.vertical, 16)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("catalog_loading_more")
+            } else if vm.hasMore {
+                Color.clear.frame(height: 44)
             }
         }
         .accessibilityIdentifier("catalog_results_list")
         .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal)
+    }
+}
+
+private extension View {
+    /// Attaches the catalog search field only when it can actually search.
+    ///
+    /// `.searchable` cannot be applied conditionally inline — the two branches
+    /// are different opaque types — so the choice happens here instead.
+    @ViewBuilder
+    func catalogSearchable(text: Binding<String>, enabled: Bool) -> some View {
+        if enabled {
+            #if os(iOS)
+            searchable(
+                text: text,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "Search tents, packs, sleeping bags…"
+            )
+            #else
+            searchable(text: text, prompt: "Search tents, packs, sleeping bags…")
+            #endif
+        } else {
+            self
+        }
     }
 }
 
@@ -97,6 +132,7 @@ struct CatalogItemRow: View {
     let packsViewModel: PacksViewModel
     @State private var showingAddToPack = false
     @State private var showingDetail = false
+    @Environment(\.weightUnit) private var weightUnit
 
     var body: some View {
         rowContent
@@ -196,7 +232,7 @@ struct CatalogItemRow: View {
                 .lineLimit(1)
         }
         if !item.displayWeight.isEmpty {
-            Label(item.displayWeight, systemImage: "scalemass")
+            Label(item.displayWeight(in: weightUnit), systemImage: "scalemass")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -256,6 +292,7 @@ struct AddCatalogItemToPackSheet: View {
     let packsViewModel: PacksViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.weightUnit) private var weightUnit
 
     @State private var selectedPackId: String?
     @State private var quantity = 1
@@ -268,7 +305,7 @@ struct AddCatalogItemToPackSheet: View {
                 Section("Item") {
                     LabeledContent("Name") { Text(item.displayName) }
                     if !item.displayWeight.isEmpty {
-                        LabeledContent("Weight") { Text(item.displayWeight) }
+                        LabeledContent("Weight") { Text(item.displayWeight(in: weightUnit)) }
                     }
                     if let brand = item.displayBrand {
                         LabeledContent("Brand") { Text(brand) }

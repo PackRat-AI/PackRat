@@ -146,6 +146,18 @@ export const testIds = Object.freeze({
     weightUnitControl: 'settings:weight-unit',
     temperatureUnitControl: 'settings:temperature-unit',
     speedUnitControl: 'settings:speed-unit',
+    upgradeToProBtn: 'settings:upgrade-to-pro',
+    manageSubscriptionBtn: 'settings:manage-subscription',
+    restorePurchasesBtn: 'settings:restore-purchases',
+  }),
+
+  // ── Paywall ───────────────────────────────────────────────────────────────
+  paywall: Object.freeze({
+    headline: 'paywall:headline',
+    ctaBtn: 'paywall:cta',
+    restoreBtn: 'paywall:restore',
+    closeBtn: 'paywall:close',
+    planRow: (identifier: string) => `paywall:plan-${identifier}`,
   }),
 
   // ── AI Chat ───────────────────────────────────────────────────────────────
@@ -161,5 +173,25 @@ export const testIds = Object.freeze({
     searchInput: 'weather:search-input',
     addLocationBtn: 'weather:add-location',
     location: (id: string | number) => `weather:location-${id}`,
+  }),
+
+  // ── Trail conditions ──────────────────────────────────────────────────────
+  trailConditions: Object.freeze({
+    submitReportBtn: 'trail-conditions:submit-report',
+    searchInput: 'trail-conditions:search-input',
+    reportRow: (id: string) => `trail-conditions:report-${id}`,
+    deleteReportBtn: (id: string) => `trail-conditions:delete-report-${id}`,
+    emptyStateSubmitBtn: 'trail-conditions:empty-submit-report',
+    // Submit form
+    trailNameInput: 'trail-conditions:trail-name-input',
+    trailRegionInput: 'trail-conditions:trail-region-input',
+    notesInput: 'trail-conditions:notes-input',
+    conditionOption: (condition: string) => `trail-conditions:condition-${condition}`,
+    surfaceOption: (surface: string) => `trail-conditions:surface-${surface}`,
+    // Hazards are a fixed, space-separated vocabulary ("downed trees"), so splitting on the
+    // space is enough to slug them — no regex needed.
+    hazardChip: (hazard: string) => `trail-conditions:hazard-${hazard.split(' ').join('-')}`,
+    formSubmitBtn: 'trail-conditions:form-submit',
+    formCancelBtn: 'trail-conditions:form-cancel',
   }),
 });

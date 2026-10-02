@@ -10,8 +10,8 @@ struct FeedView: View {
         Group {
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Community Feed Requires an Account",
-                    subtitle: "Posts, comments, and likes sync with your PackRat account.",
+                    "Sign In to Join the Feed",
+                    subtitle: "See what other people are packing and carrying, and post your own. Your packs and trips stay on this device and keep working without an account.",
                     systemImage: "person.2"
                 )
             } else if viewModel.isLoading && viewModel.posts.isEmpty {

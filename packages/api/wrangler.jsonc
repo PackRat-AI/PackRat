@@ -17,6 +17,11 @@
   // unminified stack traces. Sentry symbolication uses a separate
   // @sentry/cli sourcemaps upload step in CI (see deploy workflow).
   "upload_source_maps": true,
+  "alias": {
+    // See src/shims/bun-empty.ts — drizzle-orm/bun-sql pulls in the `bun`
+    // builtin, which esbuild cannot resolve for the Workers bundle.
+    "bun": "./src/shims/bun-empty.ts"
+  },
   "version_metadata": {
     "binding": "CF_VERSION_METADATA"
   },
@@ -119,10 +124,12 @@
       "class_name": "CatalogEtlWorkflow"
     }
   ],
-  // Daily 09:00 UTC retention sweep of invalid_item_logs (>90 days old).
-  // Handled by the `scheduled` arm in src/index.ts.
+  // Daily 09:00 UTC retention sweep of invalid_item_logs (>90 days old), plus
+  // the 5-minute weather-alert watch-list poll (elevated-tier locations need
+  // 5-minute granularity; baseline-tier locations are simply skipped inside
+  // the handler when not yet due). Handled by the `scheduled` arm in src/index.ts.
   "triggers": {
-    "crons": ["0 9 * * *"]
+    "crons": ["0 9 * * *", "*/5 * * * *"]
   },
   // OSM / trail database — dedicated Postgres instance with PostGIS.
   // Add a Hyperdrive binding when ready:
@@ -251,7 +258,7 @@
         }
       ],
       "triggers": {
-        "crons": ["0 9 * * *"]
+        "crons": ["0 9 * * *", "*/5 * * * *"]
       },
       "containers": [
         {
