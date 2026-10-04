@@ -26,34 +26,39 @@ Featured-pack curation is an admin job and belongs in the admin web app
 ## Plan / checklist
 
 ### 1. Admin web curation — this branch
-- [ ] Service: move the import pipeline out of the route into
+- [x] Service: move the import pipeline out of the route into
       `packages/api/src/services/packTemplateImportService.ts` so the user route and
       the admin route share it.
-- [ ] Admin API `packages/api/src/routes/admin/packTemplates.ts`, mounted under
+- [x] Admin API `packages/api/src/routes/admin/packTemplates.ts`, mounted under
       `/api/admin/pack-templates`: list app templates (published + drafts), get one,
       import from URL, update metadata + publish toggle, soft-delete, edit/delete
       items.
-- [ ] Admin imports land as **drafts** (`is_app_template = false`) so a human
+- [x] Admin imports land as **drafts** (`is_app_template = false`) so a human
       reviews AI output before users see it; "Publish" flips the flag.
       Owner of admin-created templates = first `ADMIN` user (same rule as
       `packages/api/src/db/seed.ts`), because the admin JWT carries no user id.
-- [ ] Admin UI `apps/admin/app/dashboard/featured-packs/`: list + import box,
-      detail page with metadata, tags (trip duration / environment / use),
-      item table with inline edit/remove, publish/unpublish, delete.
+- [x] Admin UI `apps/admin/app/dashboard/featured-packs/` (sidebar: "Featured
+      Packs"): list + import box, detail at `?id=` (static export, no `[id]`
+      segment) with metadata, tags (trip duration / environment / use), item
+      table with inline edit/remove, publish/unpublish, delete. Components live
+      in `apps/admin/components/featured-packs/`.
+- [ ] Verify end-to-end against `bun devenv up`: import one of the #1829 links,
+      edit, publish, confirm it appears in the Android Featured Packs row.
 
 ### 2. Remove import from the Expo app — this branch
-- [ ] Delete `OnlineContentImportModal` + `useGenerateTemplateFromOnlineContent`
-      and the admin-only entry in `TemplateCreationOptions`.
-- [ ] Keep the API route for now so older Android builds don't 404; remove it in
+- [x] Delete `OnlineContentImportModal` + `useGenerateTemplateFromOnlineContent`.
+      `TemplateCreationOptions` sheet removed too — with one option left, "+"
+      now goes straight to `/pack-templates/new`.
+- [x] Keep the API route for now so older Android builds don't 404; remove it in
       a follow-up once those builds age out.
 
 ### 3. Swift (iOS) parity with Expo's Featured Packs — after 1 and 2
 - [ ] See "Swift gap" below (filled in from the code survey).
 
 ### 4. Follow-up issue (tracked separately)
-- [ ] Issue: move the remaining admin-management functions out of the mobile apps
+- [x] Issue: move the remaining admin-management functions out of the mobile apps
       into admin web (in-app "App template" toggle, admin edits of app templates,
-      reported-content moderation, …). Link: _TBD_
+      reported-content moderation, Swift AI Packs). #2816
 
 ## Swift gap
 
@@ -91,3 +96,5 @@ sections, with a seal icon for official ones. Templates are gated by
 ## Log
 
 - 2026-10-04 — Plan written; branch cut from `development` @ `98e225bb7`.
+- 2026-10-04 — Steps 1 (code) and 2 done; #2816 opened. Next: end-to-end verify,
+  then Swift (step 3). Not pushed, no PR yet.
