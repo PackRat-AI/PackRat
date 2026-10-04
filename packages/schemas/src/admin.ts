@@ -530,3 +530,76 @@ export type QueryMetricsSummary = z.infer<typeof QueryMetricsSummarySchema>;
 export type QueryMetricsRecent = z.infer<typeof QueryMetricsRecentSchema>;
 export type QueryMetricsByCallSite = z.infer<typeof QueryMetricsByCallSiteSchema>;
 export type QueryMetricsByMonth = z.infer<typeof QueryMetricsByMonthSchema>;
+
+// ─── Featured packs (app pack templates) ─────────────────────────────────────
+
+const WeightUnitSchema = z.enum(['g', 'kg', 'oz', 'lb']);
+
+export const AdminPackTemplateItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  weight: z.number(),
+  weightUnit: z.string(),
+  quantity: z.number(),
+  category: z.string().nullable(),
+  consumable: z.boolean(),
+  worn: z.boolean(),
+  image: z.string().nullable(),
+  notes: z.string().nullable(),
+  catalogItemId: z.number().nullable(),
+});
+export type AdminPackTemplateItem = z.infer<typeof AdminPackTemplateItemSchema>;
+
+export const AdminPackTemplateSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  category: z.string(),
+  image: z.string().nullable(),
+  tags: z.array(z.string()),
+  isAppTemplate: z.boolean(),
+  contentSource: z.string().nullable(),
+  contentId: z.string().nullable(),
+  itemCount: z.number(),
+  totalWeightGrams: z.number(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type AdminPackTemplateSummary = z.infer<typeof AdminPackTemplateSummarySchema>;
+
+export const AdminPackTemplateListSchema = z.array(AdminPackTemplateSummarySchema);
+
+export const AdminPackTemplateDetailSchema = AdminPackTemplateSummarySchema.extend({
+  items: z.array(AdminPackTemplateItemSchema),
+});
+export type AdminPackTemplateDetail = z.infer<typeof AdminPackTemplateDetailSchema>;
+
+export const AdminPackTemplateImportBodySchema = z.object({
+  contentUrl: z.string().url(),
+});
+
+export const AdminPackTemplateUpdateBodySchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().nullable().optional(),
+  category: z.string().min(1).optional(),
+  image: z.string().url().nullable().optional(),
+  tags: z.array(z.string().min(1)).optional(),
+  isAppTemplate: z.boolean().optional(),
+});
+export type AdminPackTemplateUpdateBody = z.infer<typeof AdminPackTemplateUpdateBodySchema>;
+
+export const AdminPackTemplateItemUpdateBodySchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().nullable().optional(),
+  weight: z.number().nonnegative().optional(),
+  weightUnit: WeightUnitSchema.optional(),
+  quantity: z.number().int().positive().optional(),
+  category: z.string().nullable().optional(),
+  consumable: z.boolean().optional(),
+  worn: z.boolean().optional(),
+  notes: z.string().nullable().optional(),
+});
+export type AdminPackTemplateItemUpdateBody = z.infer<typeof AdminPackTemplateItemUpdateBodySchema>;
+
+export const AdminPackTemplateIdParamSchema = z.object({ id: z.string().min(1) });
