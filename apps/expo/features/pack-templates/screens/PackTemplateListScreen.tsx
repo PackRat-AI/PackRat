@@ -1,4 +1,3 @@
-import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { SegmentedControl } from '@packrat/ui/src/segmented-control';
@@ -10,7 +9,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -22,7 +21,6 @@ import {
 } from 'react-native';
 import { FeaturedPacksSection } from '../components/FeaturedPacksSection';
 import { PackTemplateCard } from '../components/PackTemplateCard';
-import TemplateCreationOptions from '../components/TemplateCreationOptions';
 import { usePackTemplates } from '../hooks';
 import { activeTemplateFilterAtom, templateSearchValueAtom } from '../packTemplateListAtoms';
 import type { PackTemplate } from '../types';
@@ -52,7 +50,6 @@ export function PackTemplateListScreen() {
   const _isAdmin = user?.role === 'ADMIN';
   const [selectedTemplateTypeIndex, setSelectedTemplateTypeIndex] = useState(0);
   const { t } = useTranslation();
-  const templateOptionsRef = useRef<BottomSheetModal>(null);
 
   // Filter options with translations
   const filterOptions: FilterOption[] = [
@@ -187,18 +184,14 @@ export function PackTemplateListScreen() {
         options={{
           ...getAppBarOptions(),
           title: t('packTemplates.packTemplates'),
-          headerRight: () => (
-            <CreateTemplateIconButton onPress={() => templateOptionsRef.current?.present()} />
-          ),
+          headerRight: () => <CreateTemplateIconButton onPress={handleCreatePackTemplate} />,
         }}
       />
       <SearchOverlay
         placeholder={t('packTemplates.searchPlaceholder')}
         value={searchValue}
         onChangeText={setSearchValue}
-        androidHeaderRightActions={
-          <CreateTemplateIconButton onPress={() => templateOptionsRef.current?.present()} />
-        }
+        androidHeaderRightActions={<CreateTemplateIconButton onPress={handleCreatePackTemplate} />}
       >
         {renderSearchContent()}
       </SearchOverlay>
@@ -255,7 +248,6 @@ export function PackTemplateListScreen() {
         }
         // contentContainerStyle={{ flexGrow: 1 }}
       />
-      <TemplateCreationOptions ref={templateOptionsRef} />
     </SafeAreaView>
   );
 }
