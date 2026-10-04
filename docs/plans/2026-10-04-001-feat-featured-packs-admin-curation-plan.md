@@ -57,7 +57,30 @@ Featured-pack curation is an admin job and belongs in the admin web app
 
 ## Swift gap
 
-_TBD — filled in when step 3 starts._
+Paths are under `apps/swift/Sources/PackRat`.
+
+**What Swift already has:** `PackTemplate` decodes `isAppTemplate`/`isOfficial`
+(`Models/PackTemplate.swift`). `PackTemplateService` covers CRUD +
+`applyToPack`. `PackTemplatesView` lists templates in "Official" and "Mine"
+sections, with a seal icon for official ones. Templates are gated by
+`enablePackTemplates`, and Home has a "Pack Templates" tile.
+
+**What's missing vs Expo** (Expo reference:
+`apps/expo/features/pack-templates`):
+- [ ] **Featured Packs carousel.** A horizontal row of image cards showing name,
+      category, up to 3 tags, base weight and item count, plus a "View all" link.
+      Expo mounts it as the header of the template list: only on the "All"
+      segment, and only when the user isn't searching. In Swift it goes above
+      "Official" in `PackTemplatesListView.templateList`
+      (`Features/PackTemplates/PackTemplatesView.swift`).
+- [ ] **"App template" badge** on rows and on the detail view, with the image
+      shown in the detail view.
+- [ ] **All / App / Yours segmented filter** and category filter chips.
+- [ ] **Create a new pack from a template.** Swift can only apply a template to
+      an existing pack. Extend `PackFormView` / `PacksViewModel.createPack` to
+      accept a template, then reuse `PackTemplateService.applyToPack`.
+- [ ] **Add one template item to a pack.** Expo can't do this either; issue
+      #1829 asks for it.
 
 ## How to pick this up in a fresh session
 
