@@ -8,6 +8,11 @@ import type {
   AdminFeatureAccessItem,
   AdminFeatureFlagItem,
   AdminPackItem,
+  AdminPackTemplateDetail,
+  AdminPackTemplateItem,
+  AdminPackTemplateItemUpdateBody,
+  AdminPackTemplateSummary,
+  AdminPackTemplateUpdateBody,
   AdminStats,
   AdminTrailConditionReport,
   AdminUserItem,
@@ -542,4 +547,68 @@ export function getQueryMetricsByCallSite({
 } = {}): Promise<QueryMetricsByCallSite> {
   const q = month ? `month=${month}&limit=${limit}` : `hours=${hours}&limit=${limit}`;
   return adminFetch({ path: `/analytics/query-metrics/by-callsite?${q}` });
+}
+
+// ─── Featured packs ───────────────────────────────────────────────────────────
+
+export type {
+  AdminPackTemplateDetail,
+  AdminPackTemplateItem,
+  AdminPackTemplateItemUpdateBody,
+  AdminPackTemplateSummary,
+  AdminPackTemplateUpdateBody,
+};
+
+export async function getFeaturedPacks(): Promise<AdminPackTemplateSummary[]> {
+  const { data, error } = await adminClient['pack-templates'].get();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'featuredPacks' });
+}
+
+export async function getFeaturedPack(id: string): Promise<AdminPackTemplateDetail> {
+  const { data, error } = await adminClient['pack-templates']({ id }).get();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'featuredPack' });
+}
+
+export async function importFeaturedPack(contentUrl: string): Promise<AdminPackTemplateDetail> {
+  const { data, error } = await adminClient['pack-templates'].import.post({ contentUrl });
+  if (error) throwOnError({ error, fallback: 'Import failed' });
+  return unwrap({ data, name: 'importFeaturedPack' });
+}
+
+export async function updateFeaturedPack({
+  id,
+  changes,
+}: {
+  id: string;
+  changes: AdminPackTemplateUpdateBody;
+}): Promise<AdminPackTemplateDetail> {
+  const { data, error } = await adminClient['pack-templates']({ id }).patch(changes);
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'updateFeaturedPack' });
+}
+
+export async function deleteFeaturedPack(id: string): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient['pack-templates']({ id }).delete();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'deleteFeaturedPack' });
+}
+
+export async function updateFeaturedPackItem({
+  id,
+  changes,
+}: {
+  id: string;
+  changes: AdminPackTemplateItemUpdateBody;
+}): Promise<AdminPackTemplateItem> {
+  const { data, error } = await adminClient['pack-templates'].items({ id }).patch(changes);
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'updateFeaturedPackItem' });
+}
+
+export async function deleteFeaturedPackItem(id: string): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient['pack-templates'].items({ id }).delete();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'deleteFeaturedPackItem' });
 }
