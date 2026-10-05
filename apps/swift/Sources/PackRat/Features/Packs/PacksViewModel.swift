@@ -230,6 +230,52 @@ final class PacksViewModel {
         upsertCachedPack(pack, context: context)
     }
 
+    // MARK: Templates
+
+    /// Copies a template's items into an existing pack and merges them into the
+    /// local pack so the list and detail reflect the new items without a reload.
+    @discardableResult
+    func applyTemplate(
+        _ templateId: String,
+        toPack packId: String,
+        templateService: PackTemplateService = .shared,
+        context: ModelContext? = nil
+    ) async throws -> Pack? {
+        let added = try await templateService.applyToPack(templateId: templateId, packId: packId)
+        guard let idx = packs.firstIndex(where: { $0.id == packId }) else { return nil }
+        let updated = rebuildPack(packs[idx], items: packs[idx].activeItems + added)
+        packs[idx] = updated
+        upsertCachedPack(updated, context: context)
+        return updated
+    }
+
+    /// Creates a pack named `name` and fills it from the template.
+    ///
+    /// Unlike `createPack`, this needs the server: the copy happens there, so an
+    /// offline create can't be queued and completed later. If the copy fails
+    /// after the pack exists, the error carries the pack so the caller can retry
+    /// against it instead of creating a second one.
+    func createPack(
+        fromTemplate template: PackTemplate,
+        name: String,
+        templateService: PackTemplateService = .shared,
+        context: ModelContext? = nil
+    ) async throws -> Pack {
+        let category = template.category.flatMap(PackCategory.init(rawValue:))?.rawValue
+        let pack = try await service.createPack(
+            name: name, description: template.description, category: category, isPublic: false
+        )
+        packs.insert(pack, at: 0)
+        upsertCachedPack(pack, context: context)
+        do {
+            return try await applyTemplate(
+                template.id, toPack: pack.id, templateService: templateService, context: context
+            ) ?? pack
+        } catch {
+            throw TemplateApplyError.itemsNotAdded(pack: pack, underlying: error)
+        }
+    }
+
     func updatePack(
         _ packId: String,
         name: String,
@@ -672,6 +718,18 @@ final class PacksViewModel {
         if let cached = try? context.fetch(FetchDescriptor<CachedPack>(predicate: #Predicate { $0.id == packId })).first {
             context.delete(cached)
             try? context.save()
+        }
+    }
+}
+
+enum TemplateApplyError: LocalizedError {
+    /// The pack was created but copying the template's items into it failed.
+    case itemsNotAdded(pack: Pack, underlying: Error)
+
+    var errorDescription: String? {
+        switch self {
+        case .itemsNotAdded(let pack, _):
+            return "\u{201C}\(pack.name)\u{201D} was created, but its gear couldn\u{2019}t be added. Try again to add it."
         }
     }
 }

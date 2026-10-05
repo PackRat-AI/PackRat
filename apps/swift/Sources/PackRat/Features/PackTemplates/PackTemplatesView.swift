@@ -11,6 +11,9 @@ struct PackTemplatesListView: View {
     var showsGuestLimitInList = true
     @Environment(AuthManager.self) private var authManager
     @State private var showingNewTemplate = false
+    /// Last segment the user picked, restored next visit. Empty until they pick
+    /// one, so the default can follow what they have (see `scope`).
+    @AppStorage("packTemplates.scope") private var storedScope = ""
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private var isCompact: Bool {
@@ -56,48 +59,113 @@ struct PackTemplatesListView: View {
         }
         .sheet(isPresented: $showingNewTemplate) {
             PackTemplateFormView(viewModel: viewModel) { saved in
+                // A new template is the user's own — switch to Mine so it's
+                // on screen rather than hidden behind the Featured segment.
+                storedScope = TemplateScope.mine.rawValue
                 selectedId = saved.id
             }
         }
     }
 
+    /// Mine vs Featured, as a segmented control — HIG's pattern for switching
+    /// between closely related views of one screen (Shortcuts keeps its Gallery
+    /// apart from My Shortcuts the same way). Replaces stacked sections, which
+    /// made people scroll past every featured template to reach their own.
+    /// Defaults to Mine once the user has any, otherwise Featured.
+    private var scope: Binding<TemplateScope> {
+        Binding(
+            get: {
+                TemplateScope(rawValue: storedScope)
+                    ?? (viewModel.myTemplates.isEmpty && viewModel.searchText.isEmpty ? .featured : .mine)
+            },
+            set: { storedScope = $0.rawValue }
+        )
+    }
+
+    private func templates(in scope: TemplateScope) -> [PackTemplate] {
+        scope == .mine ? viewModel.myTemplates : viewModel.officialTemplates
+    }
+
+    private var scopePicker: some View {
+        Picker("Templates", selection: scope) {
+            ForEach(TemplateScope.allCases) { scope in
+                Text(scope.title).tag(scope)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(.bar)
+        .accessibilityIdentifier("templates_scope_picker")
+    }
+
     private var templateList: some View {
-        List(selection: $selectedId) {
-            if viewModel.filteredTemplates.isEmpty {
+        let current = scope.wrappedValue
+        let shown = templates(in: current)
+        return List(selection: $selectedId) {
+            if shown.isEmpty {
                 Section {
-                    if viewModel.searchText.isEmpty {
-                        EmptyStateView(
-                            "No Templates Yet",
-                            subtitle: "Templates let you quickly populate a pack with a standard gear list",
-                            systemImage: "doc.on.doc",
-                            actionLabel: "New Template",
-                            action: { showingNewTemplate = true }
-                        )
-                    } else {
-                        ContentUnavailableView.search(text: viewModel.searchText)
-                    }
+                    emptyState(for: current)
                 }
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
-            } else if !viewModel.officialTemplates.isEmpty {
-                Section("Official") {
-                    ForEach(viewModel.officialTemplates) { t in
-                        templateRow(t)
-                    }
-                }
-            }
-            if !viewModel.myTemplates.isEmpty {
-                Section("Mine") {
-                    ForEach(viewModel.myTemplates) { t in
-                        templateRow(t)
-                            .contextMenu {
-                                Button("Delete", systemImage: "trash", role: .destructive) {
-                                    Task { try? await viewModel.deleteTemplate(t.id) }
+            } else {
+                Section {
+                    ForEach(shown) { t in
+                        if current == .mine {
+                            templateRow(t)
+                                .contextMenu {
+                                    Button("Delete", systemImage: "trash", role: .destructive) {
+                                        Task { try? await viewModel.deleteTemplate(t.id) }
+                                    }
                                 }
-                            }
+                        } else {
+                            templateRow(t)
+                        }
                     }
                 }
             }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) { scopePicker }
+    }
+
+    @ViewBuilder
+    private func emptyState(for current: TemplateScope) -> some View {
+        let other: TemplateScope = current == .mine ? .featured : .mine
+        let otherCount = templates(in: other).count
+        if !viewModel.searchText.isEmpty {
+            // Search runs inside the selected segment; point at matches in the
+            // other one rather than claiming there are none.
+            if otherCount > 0 {
+                ContentUnavailableView {
+                    Label("No Results in \(current.title)", systemImage: "magnifyingglass")
+                } description: {
+                    Text("\(otherCount) \(otherCount == 1 ? "match" : "matches") in \(other.title).")
+                } actions: {
+                    Button("Show \(other.title)") { scope.wrappedValue = other }
+                }
+            } else {
+                ContentUnavailableView.search(text: viewModel.searchText)
+            }
+        } else if current == .mine {
+            ContentUnavailableView {
+                Label("No Templates Yet", systemImage: "doc.on.doc")
+            } description: {
+                Text("Save a gear list you reuse, or start from a featured one.")
+            } actions: {
+                Button("New Template") { showingNewTemplate = true }
+                    .buttonStyle(.borderedProminent)
+                if !viewModel.officialTemplates.isEmpty {
+                    Button("Browse Featured") { scope.wrappedValue = .featured }
+                }
+            }
+        } else {
+            ContentUnavailableView(
+                "No Featured Templates",
+                systemImage: "checkmark.seal",
+                description: Text("Curated gear lists will appear here.")
+            )
         }
     }
 
@@ -132,6 +200,12 @@ private extension View {
         self.searchable(text: text, prompt: "Search templates")
         #endif
     }
+}
+
+enum TemplateScope: String, CaseIterable, Identifiable {
+    case mine, featured
+    var id: String { rawValue }
+    var title: String { self == .mine ? "Mine" : "Featured" }
 }
 
 private struct TemplateRowView: View {
@@ -172,12 +246,23 @@ struct PackTemplateDetailView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.weightUnit) private var weightUnit
+    @Environment(AppState.self) private var appState
     @State private var showingApplySheet = false
     @State private var showingEditTemplate = false
     @State private var showingAddItem = false
     @State private var editingItem: PackTemplateItem?
-    @State private var applyError: String?
-    @State private var applySuccess = false
+    /// The pack a template was just applied to, pushed onto this stack on
+    /// iPhone so the result is the confirmation (no toast).
+    @State private var appliedPackId: String?
+    @State private var applyCount = 0
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    private var isCompact: Bool {
+        horizontalSizeClass == .compact && UIDevice.current.userInterfaceIdiom == .phone
+    }
+    #else
+    private var isCompact: Bool { false }
+    #endif
 
     // Reactive: reads from viewModel so updates propagate live
     private var currentTemplate: PackTemplate {
@@ -195,6 +280,12 @@ struct PackTemplateDetailView: View {
                 }
 
                 HStack(spacing: 10) {
+                    if currentTemplate.isOfficial {
+                        Label("Featured", systemImage: "checkmark.seal.fill")
+                            .font(.callout)
+                            .foregroundStyle(.tint)
+                            .accessibilityIdentifier("template_detail_featured_badge")
+                    }
                     if let cat = currentTemplate.category {
                         Label(cat.capitalized, systemImage: PackCategory(rawValue: cat)?.symbol ?? "backpack")
                             .font(.callout)
@@ -215,15 +306,6 @@ struct PackTemplateDetailView: View {
                     TemplateWeightChart(template: currentTemplate)
                 }
 
-                if let error = applyError {
-                    InlineErrorView(message: error).padding(.horizontal)
-                }
-                if applySuccess {
-                    Label("Applied to pack!", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                        .padding(.horizontal)
-                }
-
                 if let items = currentTemplate.items, !items.isEmpty {
                     itemsSection(items)
                 } else if !currentTemplate.isOfficial {
@@ -238,21 +320,18 @@ struct PackTemplateDetailView: View {
         .navigationTitle(currentTemplate.name)
         .toolbar { toolbarContent }
         .sheet(isPresented: $showingApplySheet) {
-            ApplyTemplateSheet(
-                template: currentTemplate,
-                packs: packsVM.packs,
-                onApply: { packId in
-                    applyError = nil
-                    applySuccess = false
-                    do {
-                        try await viewModel.applyTemplate(currentTemplate.id, toPack: packId)
-                        applySuccess = true
-                    } catch {
-                        applyError = error.localizedDescription
-                    }
-                }
-            )
+            ApplyTemplateSheet(template: currentTemplate, packsVM: packsVM) { pack in
+                showingApplySheet = false
+                applyCount += 1
+                openPack(pack)
+            }
         }
+        .navigationDestination(item: $appliedPackId) { id in
+            if let pack = packsVM.packs.first(where: { $0.id == id }) {
+                PackDetailView(pack: pack, viewModel: packsVM)
+            }
+        }
+        .sensoryFeedback(.success, trigger: applyCount)
         .sheet(isPresented: $showingEditTemplate) {
             PackTemplateFormView(viewModel: viewModel, existingTemplate: currentTemplate)
         }
@@ -263,6 +342,18 @@ struct PackTemplateDetailView: View {
             PackTemplateItemFormView(viewModel: viewModel, templateId: currentTemplate.id, existingItem: item)
         }
         .task { if packsVM.packs.isEmpty { await packsVM.load(context: modelContext) } }
+    }
+
+    /// Lands the user in the pack they just filled. iPhone pushes it onto the
+    /// templates stack (Back returns here); the split layouts select it in the
+    /// Packs column, the same way choosing it from the sidebar would.
+    private func openPack(_ pack: Pack) {
+        if isCompact {
+            appliedPackId = pack.id
+        } else {
+            appState.selectedPackId = pack.id
+            appState.navItem = .packs
+        }
     }
 
     @ToolbarContentBuilder
@@ -365,52 +456,203 @@ private struct TemplateItemRow: View {
     }
 }
 
+/// "Apply to Pack": add the template to an existing pack, or start a new one
+/// from it. Modelled on Photos' "Add to Album" and Music's "Add to Playlist" —
+/// "New Pack" is the first row, existing packs follow — with the new-pack name
+/// step from Reminders' "Use Template" (prefilled with the template's name).
 private struct ApplyTemplateSheet: View {
     let template: PackTemplate
-    let packs: [Pack]
-    let onApply: (String) async -> Void
+    let packsVM: PacksViewModel
+    let onApplied: (Pack) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedPackId: String?
-    @State private var isApplying = false
+    @Environment(\.modelContext) private var modelContext
+    @State private var path: [Route] = []
+    /// Pack currently being filled; locks the sheet while set.
+    @State private var applyingPackId: String?
+    @State private var error: String?
+
+    enum Route: Hashable { case newPack }
+
+    private var itemCount: Int { template.itemCount }
+    private var isWorking: Bool { applyingPackId != nil }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if packs.isEmpty {
-                    UnavailableStateView(
-                        title: "No Packs",
-                        subtitle: "Create a pack first, then apply this template.",
-                        systemImage: "backpack"
-                    )
-                } else {
-                    List(packs, selection: $selectedPackId) { pack in
-                        Text(pack.name).tag(pack.id)
+        NavigationStack(path: $path) {
+            List {
+                if let error {
+                    Section { InlineErrorView(message: error) }
+                }
+                Section {
+                    NavigationLink(value: Route.newPack) {
+                        Label("New Pack", systemImage: "plus")
+                            .foregroundStyle(.tint)
+                    }
+                    .disabled(isWorking)
+                    .accessibilityIdentifier("apply_template_new_pack")
+                } footer: {
+                    Text("Adds \(itemCount) \(itemCount == 1 ? "item" : "items") from \u{201C}\(template.name)\u{201D}.")
+                }
+                if !packsVM.packs.isEmpty {
+                    Section("Your Packs") {
+                        ForEach(packsVM.packs) { pack in
+                            existingPackRow(pack)
+                        }
                     }
                 }
             }
-            .navigationTitle("Apply \"\(template.name)\"")
+            .navigationTitle("Apply to Pack")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .disabled(isWorking)
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Apply") {
-                        guard let id = selectedPackId else { return }
-                        isApplying = true
-                        Task {
-                            await onApply(id)
-                            dismiss()
-                        }
-                    }
-                    .disabled(selectedPackId == nil || isApplying)
+            }
+            .navigationDestination(for: Route.self) { _ in
+                NewPackFromTemplateForm(template: template) { name in
+                    try await createPack(named: name)
                 }
             }
         }
+        .interactiveDismissDisabled(isWorking)
         .formSheetSize(minWidth: 480, minHeight: 420)
+    }
+
+    private func existingPackRow(_ pack: Pack) -> some View {
+        Button {
+            Task { await apply(to: pack) }
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(pack.name).foregroundStyle(.primary)
+                    Text(applyingPackId == pack.id
+                         ? "Adding \(itemCount) \(itemCount == 1 ? "item" : "items")\u{2026}"
+                         : "\(pack.itemCount) \(pack.itemCount == 1 ? "item" : "items")")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .contentTransition(.opacity)
+                }
+                Spacer()
+                if applyingPackId == pack.id {
+                    ProgressView()
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .disabled(isWorking)
+        .accessibilityIdentifier("apply_template_pack_\(pack.id)")
+    }
+
+    private func apply(to pack: Pack) async {
+        error = nil
+        applyingPackId = pack.id
+        defer { applyingPackId = nil }
+        do {
+            let updated = try await packsVM.applyTemplate(
+                template.id, toPack: pack.id, context: modelContext
+            )
+            onApplied(updated ?? pack)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    /// Returns normally on success (the sheet closes) and on a failed copy (the
+    /// form pops back so the half-made pack, now first in "Your Packs", can be
+    /// retried with one tap). Throws only when the pack itself wasn't created,
+    /// so the form keeps the user's name for another try.
+    private func createPack(named name: String) async throws {
+        error = nil
+        applyingPackId = ""
+        defer { applyingPackId = nil }
+        do {
+            let pack = try await packsVM.createPack(
+                fromTemplate: template, name: name, context: modelContext
+            )
+            onApplied(pack)
+        } catch let failure as TemplateApplyError {
+            error = failure.localizedDescription
+            path.removeAll()
+        }
+    }
+}
+
+private struct NewPackFromTemplateForm: View {
+    let template: PackTemplate
+    let onCreate: (String) async throws -> Void
+
+    @State private var name: String
+    @State private var isCreating = false
+    @State private var error: String?
+    @FocusState private var nameFocused: Bool
+
+    init(template: PackTemplate, onCreate: @escaping (String) async throws -> Void) {
+        self.template = template
+        self.onCreate = onCreate
+        _name = State(initialValue: template.name)
+    }
+
+    private var trimmed: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    var body: some View {
+        Form {
+            if let error {
+                Section { InlineErrorView(message: error) }
+            }
+            Section {
+                TextField("Pack Name", text: $name)
+                    .focused($nameFocused)
+                    .submitLabel(.done)
+                    .onSubmit { Task { await create() } }
+                    .disabled(isCreating)
+                    .accessibilityIdentifier("apply_template_new_pack_name")
+            } footer: {
+                Text("Starts with the \(template.itemCount) items from \u{201C}\(template.name)\u{201D}. You can change them anytime.")
+            }
+        }
+        .navigationTitle("New Pack")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .navigationBarBackButtonHiddenIfAvailable(isCreating)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                if isCreating {
+                    ProgressView()
+                } else {
+                    Button("Create") { Task { await create() } }
+                        .disabled(trimmed.isEmpty)
+                        .accessibilityIdentifier("apply_template_create_button")
+                }
+            }
+        }
+        .onAppear { nameFocused = true }
+    }
+
+    private func create() async {
+        guard !trimmed.isEmpty, !isCreating else { return }
+        error = nil
+        isCreating = true
+        defer { isCreating = false }
+        do {
+            try await onCreate(trimmed)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func navigationBarBackButtonHiddenIfAvailable(_ hidden: Bool) -> some View {
+        #if os(iOS)
+        self.navigationBarBackButtonHidden(hidden)
+        #else
+        self
+        #endif
     }
 }
 

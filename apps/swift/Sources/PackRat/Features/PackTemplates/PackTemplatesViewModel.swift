@@ -58,10 +58,6 @@ final class PackTemplatesViewModel {
         templates.removeAll { $0.id == id }
     }
 
-    func applyTemplate(_ templateId: String, toPack packId: String) async throws {
-        try await service.applyToPack(templateId: templateId, packId: packId)
-    }
-
     func createTemplate(name: String, description: String?, category: String) async throws -> PackTemplate {
         let t: PackTemplate
         do {
