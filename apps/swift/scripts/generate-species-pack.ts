@@ -23,6 +23,7 @@ import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { safeJsonStringify } from '@packrat/utils';
 import { SPECIES_DATABASE } from '../../expo/features/wildlife/data/speciesDatabase';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
@@ -46,7 +47,7 @@ const pack = {
   species: [...SPECIES_DATABASE].sort((a, b) => a.id.localeCompare(b.id)),
 };
 
-writeFileSync(outputPath, `${JSON.stringify(pack, null, 2)}\n`);
+writeFileSync(outputPath, `${safeJsonStringify(pack, null, 2)}\n`);
 // The pack is a checked-in generated file, so it has to satisfy the same
 // Biome formatter the pre-commit hook runs over everything else.
 spawnSync('bunx', ['biome', 'format', '--write', outputPath], { stdio: 'inherit' });
