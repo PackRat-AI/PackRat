@@ -94,6 +94,9 @@ grid of zeros.
   for someone else. Excluded trips stay in the trip list, marked as such.
 - **Units.** Weights follow the user's existing unit preference.
 
+The goal and the trips a user leaves out belong to their account, so they
+are the same on every device they sign in on.
+
 ## What this feature does not do
 
 - No distance, elevation gain or route-based figures. Trips don't record a
