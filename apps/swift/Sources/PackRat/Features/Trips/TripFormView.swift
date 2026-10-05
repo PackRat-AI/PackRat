@@ -191,6 +191,9 @@ struct TripFormView: View {
                 let location = locationName.isEmpty ? nil : TripLocationBody(
                     latitude: locationLat, longitude: locationLon, name: locationName
                 )
+                #if os(iOS)
+                if hasDates { await TripReminderScheduler.requestAuthorizationIfNeeded() }
+                #endif
                 if let trip = existingTrip {
                     try await viewModel.updateTrip(
                         trip.id,

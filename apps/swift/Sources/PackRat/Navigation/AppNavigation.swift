@@ -131,6 +131,20 @@ struct AppNavigation: View {
     }
     #endif
 
+    #if os(iOS)
+    /// Changes whenever a trip's reminders would: added, removed, re-dated or
+    /// re-linked to another pack.
+    private var tripReminderSignature: [String] {
+        appState.tripsVM.trips.map { "\($0.id)|\($0.startDate ?? "")|\($0.packId ?? "")|\($0.name)" }
+    }
+
+    private func syncTripReminders() {
+        let trips = appState.tripsVM.trips
+        let packs = appState.packsVM.packs
+        Task { await TripReminderScheduler.sync(trips: trips, packs: packs) }
+    }
+    #endif
+
     var body: some View {
         navigationBody
             .onOpenURL { url in
@@ -143,12 +157,21 @@ struct AppNavigation: View {
             // populated on launch instead of only after a visit to Weather.
             .task { await appState.weatherVM.refreshAlertBadgeState() }
             .onChange(of: scenePhase) { _, phase in
+                // Rescheduling on background as well as foreground means the
+                // reminders carry the packing progress the user just made.
+                if phase == .active || phase == .background { syncTripReminders() }
                 guard phase == .active else { return }
                 Task { await appState.weatherVM.refreshAlertBadgeState() }
             }
+            .task { syncTripReminders() }
+            .onChange(of: tripReminderSignature) { _, _ in syncTripReminders() }
             .onReceive(NotificationCenter.default.publisher(for: .weatherAlertNotificationTapped)) { notification in
                 guard let weatherLocationId = notification.userInfo?["weatherLocationId"] as? Int else { return }
                 appState.apply(.weatherAlert(weatherLocationId: weatherLocationId))
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .tripReminderNotificationTapped)) { notification in
+                guard let tripId = notification.userInfo?[TripReminderScheduler.tripIdKey] as? String else { return }
+                appState.apply(.trip(id: tripId))
             }
             #endif
     }

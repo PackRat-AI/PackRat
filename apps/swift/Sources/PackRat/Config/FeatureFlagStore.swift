@@ -64,9 +64,20 @@ final class FeatureFlagStore {
         if ProcessInfo.processInfo.arguments.contains("-\(key)") {
             return UserDefaults.standard.bool(forKey: key)
         }
+        if Self.debugOverrides.contains(key) { return true }
         #endif
         return flags[key] ?? false
     }
+
+    #if DEBUG
+    /// Debug builds only: force flags on for local testing without touching the
+    /// database, e.g. `PACKRAT_FLAG_OVERRIDES=enableTripReminders,enableFeed`.
+    private static let debugOverrides: Set<String> = Set(
+        (ProcessInfo.processInfo.environment["PACKRAT_FLAG_OVERRIDES"] ?? "")
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+    )
+    #endif
 
     /// Applies a fetched flag map and caches it for the next cold start.
     func apply(fetched: [String: Any]) {
