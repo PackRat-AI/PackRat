@@ -50,7 +50,7 @@ def main() -> None:
     parser.add_argument('--pack', type=Path, required=True)
     parser.add_argument('--epochs', type=int, default=25)
     parser.add_argument('--batch', type=int, default=64)
-    parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--lr', type=float, default=4e-4)
     parser.add_argument('--temperature', type=float, default=2.0)
     parser.add_argument('--distill-weight', type=float, default=0.5)
     parser.add_argument('--embed-weight', type=float, default=1.0)
