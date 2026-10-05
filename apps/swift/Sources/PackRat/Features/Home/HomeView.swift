@@ -255,7 +255,31 @@ struct HomeView: View {
 
     // MARK: - Stats Row
 
+    /// Opens Trip Stats when that feature is on; otherwise the counts are just
+    /// a summary.
+    @ViewBuilder
     private var statsRow: some View {
+        if NavItem.tripStats.isFeatureEnabled {
+            Button {
+                appState.navItem = .tripStats
+            } label: {
+                HStack(spacing: 8) {
+                    statChips
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens Trip Stats")
+            .accessibilityIdentifier("home_stats_row")
+        } else {
+            statChips
+        }
+    }
+
+    private var statChips: some View {
         HStack(spacing: 12) {
             statChip(
                 value: "\(appState.packsVM.packs.count)",
