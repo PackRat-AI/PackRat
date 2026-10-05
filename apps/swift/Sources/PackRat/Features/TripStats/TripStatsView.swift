@@ -5,8 +5,7 @@ import SwiftUI
 /// What a user's finished trips add up to. Reads `TripStats` over the trips and
 /// packs already loaded into `AppState`; nothing here fetches on its own.
 ///
-/// Layout follows big picture → story → detail: a one-line summary, the
-/// lifetime grid, this year against the same stretch of last year, the monthly
+/// Layout follows big picture → story → detail: the lifetime grid, this year against the same stretch of last year, the monthly
 /// chart, highlights, the map, then gear. A section with nothing to show is
 /// left out rather than rendered as zeros.
 struct TripStatsView: View {
@@ -45,10 +44,6 @@ struct TripStatsView: View {
     private func content(_ stats: TripStats) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                Text(headline(stats))
-                    .font(.title3.weight(.semibold))
-                    .accessibilityIdentifier("trip_stats_headline")
-
                 TotalsGrid(totals: stats.totals)
 
                 if stats.thisYear.trips > 0 || stats.lastYearToDate != nil {
@@ -77,14 +72,6 @@ struct TripStatsView: View {
         }
         .background(.background.secondary)
         .accessibilityIdentifier("trip_stats_screen")
-    }
-
-    private func headline(_ stats: TripStats) -> String {
-        let trips = stats.totals.trips
-        let nights = stats.totals.nights
-        var parts = ["\(trips) trip\(trips == 1 ? "" : "s")"]
-        if nights > 0 { parts.append("\(nights) night\(nights == 1 ? "" : "s") out") }
-        return parts.joined(separator: " · ")
     }
 }
 
@@ -418,8 +405,7 @@ private struct PackWeightCard: View {
                     x: .value("Date", point.date),
                     y: .value("Base weight", point.grams / unit.gramsPerUnit)
                 )
-                .interpolationMethod(.monotone)
-                .foregroundStyle(Color.accentColor.opacity(0.6))
+                                .foregroundStyle(Color.accentColor.opacity(0.6))
                 PointMark(
                     x: .value("Date", point.date),
                     y: .value("Base weight", point.grams / unit.gramsPerUnit)
@@ -429,6 +415,11 @@ private struct PackWeightCard: View {
                 .accessibilityValue("\(point.packName), \(unit.display(grams: point.grams))")
             }
             .chartYScale(domain: .automatic(includesZero: false))
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: 4)) {
+                    AxisValueLabel(format: .dateTime.month(.abbreviated).year(.twoDigits))
+                }
+            }
             .chartYAxis { AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) }
             .frame(height: 160)
         }

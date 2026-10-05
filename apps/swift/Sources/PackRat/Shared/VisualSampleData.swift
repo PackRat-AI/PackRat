@@ -388,6 +388,11 @@ enum VisualSampleData {
                 updatedAt: now
             ),
         ]
+        // A trip history for Trip Stats, added only when that screen is being
+        // exercised so the store screenshots' trip list stays as it was.
+        if ProcessInfo.processInfo.arguments.contains("--enable-flag=enableTripStats") {
+            appState.tripsVM.trips += pastTrips(userId: userId, alpinePackId: alpinePack.id, desertPackId: desertPack.id, now: now)
+        }
         appState.tripsVM.isCacheLoaded = true
         appState.tripsVM.hasMore = false
 
@@ -761,6 +766,37 @@ enum VisualSampleData {
                 condition: WeatherCondition(text: condition, icon: nil, code: code),
                 chanceOfRain: rain,
                 isDay: isDaylight ? 1 : 0
+            )
+        }
+    }
+
+    private static func pastTrips(userId: String?, alpinePackId: String, desertPackId: String, now: String) -> [Trip] {
+        let samples: [(String, String, Double, Double, Int, Int, String?)] = [
+            ("Mount Rainier Wonderland", "Ashford, WA", 46.786, -121.735, -40, 4, alpinePackId),
+            ("Olympic Coast Overnight", "La Push, WA", 47.907, -124.636, -95, 2, alpinePackId),
+            ("Joshua Tree Bouldering", "Twentynine Palms, CA", 33.873, -115.901, -160, 1, desertPackId),
+            ("Zion Narrows", "Springdale, UT", 37.298, -113.026, -205, 2, desertPackId),
+            ("Yosemite High Sierra Camps", "Tuolumne Meadows, CA", 37.873, -119.358, -300, 5, alpinePackId),
+            ("Grand Canyon Rim to Rim", "Grand Canyon, AZ", 36.057, -112.140, -380, 3, desertPackId),
+            ("North Cascades Day Hike", "Marblemount, WA", 48.771, -121.298, -420, 0, nil),
+            ("Torres del Paine W Trek", "Puerto Natales, Chile", -50.942, -73.406, -500, 4, alpinePackId),
+        ]
+        return samples.enumerated().map { index, sample in
+            let start = Calendar.current.date(byAdding: .day, value: sample.4, to: Date())
+            let end = start.flatMap { Calendar.current.date(byAdding: .day, value: sample.5, to: $0) }
+            return Trip(
+                id: "visual-trip-past-\(index)",
+                name: sample.0,
+                description: nil,
+                notes: nil,
+                location: TripLocation(latitude: sample.2, longitude: sample.3, name: sample.1),
+                startDate: start?.iso8601String(),
+                endDate: end?.iso8601String(),
+                userId: userId,
+                packId: sample.6,
+                deleted: false,
+                createdAt: now,
+                updatedAt: now
             )
         }
     }
