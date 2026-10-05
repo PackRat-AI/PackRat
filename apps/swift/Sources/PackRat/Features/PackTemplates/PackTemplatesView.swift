@@ -482,11 +482,15 @@ struct PackTemplateDetailView: View {
                         Label("Official", systemImage: "checkmark.seal.fill")
                             .font(.callout)
                             .foregroundStyle(.tint)
+                            .lineLimit(1)
+                            .fixedSize()
                             .accessibilityIdentifier("template_detail_featured_badge")
                     }
                     if let cat = currentTemplate.category {
                         Label(cat.capitalized, systemImage: PackCategory(rawValue: cat)?.symbol ?? "backpack")
                             .font(.callout)
+                            .lineLimit(1)
+                            .fixedSize()
                     }
                     Spacer()
                     Text("\(currentTemplate.itemCount) items")
