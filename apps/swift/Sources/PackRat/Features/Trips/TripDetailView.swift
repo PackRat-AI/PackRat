@@ -3,10 +3,29 @@ import MapKit
 import CoreLocation
 
 struct TripDetailView: View {
-    let trip: Trip
+    /// The trip as it was when this screen opened. Read `trip` instead: a pushed
+    /// destination keeps its original value, so an edit made from this screen
+    /// (linking a pack, moving the dates) would otherwise never show here.
+    private let openedTrip: Trip
     let viewModel: TripsViewModel
 
+    init(trip: Trip, viewModel: TripsViewModel) {
+        openedTrip = trip
+        self.viewModel = viewModel
+    }
+
+    private var trip: Trip {
+        viewModel.trips.first { $0.id == openedTrip.id } ?? openedTrip
+    }
+
     @State private var showingEditSheet = false
+    /// The trip's pack pushed on top of the trip; `true` opens it in packing mode.
+    @State private var pushedPack: PackRoute?
+
+    struct PackRoute: Hashable {
+        let packId: String
+        let packing: Bool
+    }
     @State private var mapPosition: MapCameraPosition = .automatic
     @Environment(AppState.self) private var appState
     @Environment(\.weightUnit) private var weightUnit
@@ -33,7 +52,11 @@ struct TripDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 if remindersEnabled, TripReminderPlanner.isDepartureNear(trip, now: Date()) {
-                    TripReadinessCard(trip: trip) { showingEditSheet = true }
+                    TripReadinessCard(
+                        trip: trip,
+                        onLinkPack: { showingEditSheet = true },
+                        onStartPacking: { pushedPack = PackRoute(packId: $0, packing: true) }
+                    )
                         .padding(.top, 8)
                 }
 
@@ -102,6 +125,11 @@ struct TripDetailView: View {
         .sheet(isPresented: $showingEditSheet) {
             TripFormView(viewModel: viewModel, existingTrip: trip)
         }
+        .navigationDestination(item: $pushedPack) { route in
+            if let pack = appState.packsVM.packs.first(where: { $0.id == route.packId }) {
+                PackDetailView(pack: pack, viewModel: appState.packsVM, startInPackingMode: route.packing)
+            }
+        }
         .onAppear {
             if let coord = coordinate {
                 mapPosition = .region(MKCoordinateRegion(
@@ -117,40 +145,52 @@ struct TripDetailView: View {
         let linkedPack = appState.packsVM.packs.first(where: { $0.id == trip.packId })
         labeledSection("Pack") {
             if let pack = linkedPack {
-                Button {
-                    appState.navItem = .packs
-                    appState.selectedPackId = pack.id
-                } label: {
-                    HStack(spacing: 12) {
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(Color.blue.gradient)
-                            .frame(width: 30, height: 30)
-                            .overlay {
-                                Image(systemName: "backpack.fill")
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(.white)
-                            }
+                VStack(spacing: 10) {
+                    Button {
+                        pushedPack = PackRoute(packId: pack.id, packing: false)
+                    } label: {
+                        HStack(spacing: 12) {
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .fill(Color.blue.gradient)
+                                .frame(width: 30, height: 30)
+                                .overlay {
+                                    Image(systemName: "backpack.fill")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundStyle(.white)
+                                }
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(pack.name).font(.callout.bold())
-                            Text("\(pack.itemCount) items")
-                                .font(.caption)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(pack.name).font(.callout.bold())
+                                Text("\(pack.itemCount) items")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if let total = pack.totalWeight {
+                                Text(pack.formattedWeight(total, in: weightUnit))
+                                    .font(.callout.monospacedDigit().bold())
+                                    .foregroundStyle(.tint)
+                            }
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
                                 .foregroundStyle(.secondary)
                         }
-                        Spacer()
-                        if let total = pack.totalWeight {
-                            Text(pack.formattedWeight(total, in: weightUnit))
-                                .font(.callout.monospacedDigit().bold())
-                                .foregroundStyle(.tint)
-                        }
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.secondary)
                     }
+                    .buttonStyle(.plain)
+                    .padding(14)
+                    .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                    Button {
+                        pushedPack = PackRoute(packId: pack.id, packing: true)
+                    } label: {
+                        Label("Start Packing", systemImage: "checklist")
+                            .font(.callout.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                    .accessibilityIdentifier("trip_detail_start_packing")
                 }
-                .buttonStyle(.plain)
-                .padding(14)
-                .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             } else {
                 Button {
                     showingEditSheet = true

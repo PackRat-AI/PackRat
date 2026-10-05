@@ -6,13 +6,16 @@ import SwiftUI
 struct TripReadinessCard: View {
     let trip: Trip
     let onLinkPack: () -> Void
+    /// Opens the given pack in packing mode on top of the trip.
+    let onStartPacking: (String) -> Void
 
     @Environment(AppState.self) private var appState
     private var packing = PackingModeStore.shared
 
-    init(trip: Trip, onLinkPack: @escaping () -> Void) {
+    init(trip: Trip, onLinkPack: @escaping () -> Void, onStartPacking: @escaping (String) -> Void) {
         self.trip = trip
         self.onLinkPack = onLinkPack
+        self.onStartPacking = onStartPacking
     }
 
     private var pack: Pack? {
@@ -91,12 +94,13 @@ struct TripReadinessCard: View {
         }
     }
 
+    /// Opens the trip's pack in packing mode on top of the trip.
+    @ViewBuilder
     private func openPackButton(@ViewBuilder label: () -> some View) -> some View {
-        Button {
-            guard let pack else { return }
-            appState.navItem = .packs
-            appState.selectedPackId = pack.id
-        } label: {
+        if let pack {
+            Button {
+                onStartPacking(pack.id)
+            } label: {
             HStack {
                 label()
                 Image(systemName: "chevron.right")
@@ -104,8 +108,9 @@ struct TripReadinessCard: View {
                     .foregroundStyle(.secondary)
             }
             .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
     private func row(

@@ -6,6 +6,10 @@ struct TripsListView: View {
     @Binding var selectedId: String?
     @State private var showingCreateSheet = false
     @State private var needsRefresh = false
+    /// A trip opened from outside the list (deep link, reminder tap) on compact
+    /// iOS, where rows push through their own `NavigationLink` and the list
+    /// keeps no selection — so an outside selection has to push by itself.
+    @State private var linkedTripId: String?
     @Environment(\.modelContext) private var modelContext
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -54,11 +58,26 @@ struct TripsListView: View {
         .onChange(of: needsRefresh) { _, new in
             if new { Task { await viewModel.load(context: modelContext) }; needsRefresh = false }
         }
+        // Held in its own state rather than bound to `selectedId`: driving the
+        // destination from the shared selection re-rendered the list in a loop.
+        .navigationDestination(item: $linkedTripId) { id in
+            if let trip = viewModel.trips.first(where: { $0.id == id }) {
+                TripDetailView(trip: trip, viewModel: viewModel)
+            } else {
+                ContentUnavailableView("Trip Not Found", systemImage: "map")
+            }
+        }
+        .onChange(of: selectedId, initial: true) { _, id in
+            guard isCompact, let id else { return }
+            linkedTripId = id
+            // Consumed, so the same trip opened from a reminder again still pushes.
+            selectedId = nil
+        }
     }
 
     @ViewBuilder
     private var tripList: some View {
-        List(selection: listSelection) {
+        List(selection: $selectedId) {
             if !upcomingTrips.isEmpty {
                 Section("Upcoming") {
                     ForEach(upcomingTrips) { trip in
@@ -75,26 +94,6 @@ struct TripsListView: View {
             }
         }
         .accessibilityIdentifier("trips_list")
-        // A deep link or reminder tap sets the selection from outside. On
-        // compact iOS rows push through their own `NavigationLink`, so the
-        // selection has to drive a push of its own or the tap stops at the list.
-        .navigationDestination(item: compactPushedTripId) { id in
-            if let trip = viewModel.trips.first(where: { $0.id == id }) {
-                TripDetailView(trip: trip, viewModel: viewModel)
-            } else {
-                ContentUnavailableView("Trip Not Found", systemImage: "map")
-            }
-        }
-    }
-
-    /// See `PacksListView.listSelection`: compact iOS pushes from the row, so
-    /// the list must not also track a selection.
-    private var listSelection: Binding<String?>? {
-        isCompact ? nil : $selectedId
-    }
-
-    private var compactPushedTripId: Binding<String?> {
-        isCompact ? $selectedId : .constant(nil)
     }
 
     private var upcomingTrips: [Trip] {
