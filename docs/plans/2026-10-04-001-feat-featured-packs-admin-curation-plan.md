@@ -1,4 +1,4 @@
-# Featured Packs: curate in admin web, consume on iOS
+# Featured Packs: curate in admin web, consume in the apps
 
 **Status:** in progress · **Branch:** `feat/featured-packs-admin` (cut from `development`)
 **Origin:** issue #1829 (closed stale) — curated "Featured Packs" built from creator
@@ -43,7 +43,10 @@ Featured-pack curation is an admin job and belongs in the admin web app
       table with inline edit/remove, publish/unpublish, delete. Components live
       in `apps/admin/components/featured-packs/`.
 - [ ] Verify end-to-end against `bun devenv up`: import one of the #1829 links,
-      edit, publish, confirm it appears in the Android Featured Packs row.
+      edit, publish, confirm it appears in the iOS Official shelf. (Admin site
+      runs with `NEXT_PUBLIC_API_URL=http://localhost:<devenv port> bun dev`;
+      TikTok imports need Docker — run wrangler without
+      `--enable-containers=false`.)
 
 ### 2. Remove import from the Expo app — this branch
 - [x] Delete `OnlineContentImportModal` + `useGenerateTemplateFromOnlineContent`.
@@ -52,40 +55,44 @@ Featured-pack curation is an admin job and belongs in the admin web app
 - [x] Keep the API route for now so older Android builds don't 404; remove it in
       a follow-up once those builds age out.
 
-### 3. Swift (iOS) parity with Expo's Featured Packs — after 1 and 2
-- [ ] See "Swift gap" below (filled in from the code survey).
+### 3. iOS templates — done on this branch
+Design decisions (researched against Apple HIG + first-party apps):
+- **Official shelf.** App Store-style shelf at the top of Pack Templates:
+  "Official ›" header (opens a full-screen list of every official template),
+  then horizontally paged three-row columns with the next column peeking in.
+  "My Templates" fills the rest of the page, so your own templates are one
+  short scroll away. Searching drops the shelf for flat results. A segmented
+  Mine/Official switcher was tried and rejected by product.
+- **Verified badge** (`checkmark.seal.fill`, tint) on official rows and an
+  "Official" label in the template detail header. Android should adopt it in
+  place of its logo + "App template" pill.
+- **Apply to Pack sheet** (Photos "Add to Album" / Music "Add to Playlist"
+  pattern): "New Pack" is the first row, then "Your Packs". Tapping a pack
+  applies immediately. New Pack pushes a one-field form prefilled with the
+  template's name (Reminders "Use Template"), then Create.
+- **Progress.** The tapped row shows "Adding N items…" with a spinner, and the
+  sheet locks (Cancel and swipe-to-dismiss disabled). On success the sheet
+  closes, a success haptic fires, and the user lands in the filled pack. Errors
+  stay in the sheet. If a new pack was created but the copy failed, the form
+  pops back so that pack, now first in the list, can be retried.
+- **Performance.** New `POST /api/packs/:packId/apply-template` copies all items
+  in one insert, replacing one POST per item (each paid an embedding call:
+  ~80s for 32 items). Embeddings are generated after the response with
+  `waitUntil` in one `embedMany` call. Measured from a laptop against Neon:
+  32 items in ~3s, mostly DB round trips that are shorter in production.
 
-### 4. Follow-up issue (tracked separately)
+Not done: "add a single template item to a pack" (#1829 asks for it; Expo
+lacks it too).
+
+### 4. Android — next
+Follow iOS: the Official shelf, the verified badge in place of
+`AppTemplateBadge`, and the Apply to Pack sheet with "New Pack". Switch
+`useCreatePackFromTemplate` to the new apply-template endpoint.
+
+### 5. Follow-up issue (tracked separately)
 - [x] Issue: move the remaining admin-management functions out of the mobile apps
       into admin web (in-app "App template" toggle, admin edits of app templates,
       reported-content moderation, Swift AI Packs). #2816
-
-## Swift gap
-
-Paths are under `apps/swift/Sources/PackRat`.
-
-**What Swift already has:** `PackTemplate` decodes `isAppTemplate`/`isOfficial`
-(`Models/PackTemplate.swift`). `PackTemplateService` covers CRUD +
-`applyToPack`. `PackTemplatesView` lists templates in "Official" and "Mine"
-sections, with a seal icon for official ones. Templates are gated by
-`enablePackTemplates`, and Home has a "Pack Templates" tile.
-
-**What's missing vs Expo** (Expo reference:
-`apps/expo/features/pack-templates`):
-- [ ] **Featured Packs carousel.** A horizontal row of image cards showing name,
-      category, up to 3 tags, base weight and item count, plus a "View all" link.
-      Expo mounts it as the header of the template list: only on the "All"
-      segment, and only when the user isn't searching. In Swift it goes above
-      "Official" in `PackTemplatesListView.templateList`
-      (`Features/PackTemplates/PackTemplatesView.swift`).
-- [ ] **"App template" badge** on rows and on the detail view, with the image
-      shown in the detail view.
-- [ ] **All / App / Yours segmented filter** and category filter chips.
-- [ ] **Create a new pack from a template.** Swift can only apply a template to
-      an existing pack. Extend `PackFormView` / `PacksViewModel.createPack` to
-      accept a template, then reuse `PackTemplateService.applyToPack`.
-- [ ] **Add one template item to a pack.** Expo can't do this either; issue
-      #1829 asks for it.
 
 ## How to pick this up in a fresh session
 
@@ -98,3 +105,5 @@ sections, with a seal icon for official ones. Templates are gated by
 - 2026-10-04 — Plan written; branch cut from `development` @ `98e225bb7`.
 - 2026-10-04 — Steps 1 (code) and 2 done; #2816 opened. Next: end-to-end verify,
   then Swift (step 3). Not pushed, no PR yet.
+- 2026-10-05 — iOS templates done (shelf, apply sheet, one-request apply). PR
+  opened against `development`. Next: Android (step 4).
