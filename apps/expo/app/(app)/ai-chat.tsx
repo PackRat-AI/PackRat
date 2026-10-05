@@ -38,10 +38,10 @@ import { useCreatePackItem } from 'expo-app/features/packs/hooks/useCreatePackIt
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
 import { packsStore } from 'expo-app/features/packs/store/packs';
 import {
-  type AddItemToPackInput,
   describeAddedItem,
-  type ListUserPacksInput,
   listUserPacksFromStore,
+  parseAddItemToPackInput,
+  parseListUserPacksInput,
   prepareAddItemToPack,
 } from 'expo-app/features/packs/utils/chatPackTools';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
@@ -319,7 +319,16 @@ export default function AIChat() {
       // addToolOutput exactly once: an unanswered tool call never resolves,
       // sendAutomaticallyWhen never fires, and the turn hangs (issue #2710).
       if (toolCall.toolName === 'listUserPacks') {
-        const { nameQuery } = toolCall.input as ListUserPacksInput;
+        const parsed = parseListUserPacksInput(toolCall.input);
+        if (!parsed) {
+          addToolOutput({
+            tool: 'listUserPacks',
+            toolCallId: toolCall.toolCallId,
+            output: { success: false, error: 'Invalid arguments for listUserPacks' },
+          });
+          return;
+        }
+        const { nameQuery } = parsed;
         Sentry.addBreadcrumb({
           category: 'ai.tool',
           message: 'listUserPacks called',
@@ -347,7 +356,15 @@ export default function AIChat() {
       }
 
       if (toolCall.toolName === 'addItemToPack') {
-        const input = toolCall.input as AddItemToPackInput;
+        const input = parseAddItemToPackInput(toolCall.input);
+        if (!input) {
+          addToolOutput({
+            tool: 'addItemToPack',
+            toolCallId: toolCall.toolCallId,
+            output: { success: false, error: 'Invalid arguments for addItemToPack' },
+          });
+          return;
+        }
         Sentry.addBreadcrumb({
           category: 'ai.tool',
           message: 'addItemToPack called',

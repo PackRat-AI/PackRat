@@ -157,15 +157,12 @@ function TextField({
             accessibilityLabel={props.accessibilityLabel ?? props.testID}
           />
         </FilledWrapper>
-        {!materialHideActionIcons && (
-          <>
-            {errorMessage ? (
-              <MaterialErrorIcon />
-            ) : (
-              !!value && isFocused && <MaterialClearIcon clearText={clear} editable={editable} />
-            )}
-          </>
-        )}
+        {!materialHideActionIcons &&
+          (errorMessage ? (
+            <MaterialErrorIcon />
+          ) : (
+            !!value && isFocused && <MaterialClearIcon clearText={clear} editable={editable} />
+          ))}
         {rightView}
       </View>
     </Pressable>

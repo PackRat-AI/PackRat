@@ -96,7 +96,7 @@ const violations: string[] = [];
 for (const file of walk(EXPO_SRC)) {
   const content = readFileSync(file, 'utf8');
   if (content.includes("from '@packrat-ai/nativewindui'")) {
-    const rel = file.replace(ROOT + '/', '');
+    const rel = file.replace(`${ROOT}/`, '');
     const line =
       content.split('\n').findIndex((l) => l.includes("from '@packrat-ai/nativewindui'")) + 1;
     violations.push(`  ${rel}:${line}`);
