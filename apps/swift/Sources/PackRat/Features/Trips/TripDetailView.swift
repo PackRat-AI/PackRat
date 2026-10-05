@@ -161,9 +161,7 @@ struct TripDetailView: View {
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(pack.name).font(.callout.bold())
-                                Text("\(pack.itemCount) items")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                packStatus(pack)
                             }
                             Spacer()
                             if let total = pack.totalWeight {
@@ -200,6 +198,24 @@ struct TripDetailView: View {
                 }
                 .buttonStyle(.bordered)
             }
+        }
+    }
+
+    /// Item count, or how far packing has got once it has started — so "All
+    /// packed" shows on the trip whether or not the readiness card is up.
+    @ViewBuilder
+    private func packStatus(_ pack: Pack) -> some View {
+        let total = pack.itemCount
+        let packed = PackingModeStore.shared.packedCount(in: pack.id, among: pack.activeItems.map(\.id))
+        if total > 0, packed == total {
+            Label("All packed", systemImage: "checkmark.circle.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.green)
+                .accessibilityIdentifier("trip_detail_all_packed")
+        } else {
+            Text(packed > 0 ? "\(packed) of \(total) packed" : "\(total) items")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
