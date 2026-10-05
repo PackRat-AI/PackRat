@@ -137,7 +137,7 @@ describe('adminPackTemplatesService', () => {
       mocks.selectResults.push([]);
       await listCuratedPackTemplates();
       const { or } = await import('drizzle-orm');
-      expect(or).not.toHaveBeenCalled();
+      expect(or).toHaveBeenCalledTimes(0);
     });
   });
 

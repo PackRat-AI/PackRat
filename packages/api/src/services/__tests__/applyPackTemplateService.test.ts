@@ -97,7 +97,7 @@ describe('applyPackTemplate()', () => {
       ok: false,
       reason: 'pack_not_found',
     });
-    expect(mocks.findFirst).not.toHaveBeenCalled();
+    expect(mocks.findFirst).toHaveBeenCalledTimes(0);
   });
 
   it('rejects a template the user cannot see', async () => {
@@ -113,7 +113,7 @@ describe('applyPackTemplate()', () => {
     mocks.packRows.push([{ id: 'p1' }]);
     mocks.findFirst.mockResolvedValue({ id: 't1', items: [] });
     await expect(applyPackTemplate(args)).resolves.toEqual({ ok: true, items: [] });
-    expect(mocks.generateManyEmbeddings).not.toHaveBeenCalled();
+    expect(mocks.generateManyEmbeddings).toHaveBeenCalledTimes(0);
   });
 
   it('inserts every item at once and returns before any embedding work', async () => {
@@ -125,7 +125,7 @@ describe('applyPackTemplate()', () => {
 
     const result = await applyPackTemplate(args);
 
-    expect(mocks.generateManyEmbeddings).not.toHaveBeenCalled();
+    expect(mocks.generateManyEmbeddings).toHaveBeenCalledTimes(0);
     expect(mocks.insertValues).toHaveBeenCalledTimes(1);
     const [rows] = mocks.insertValues.mock.calls[0] as [Array<Record<string, unknown>>];
     expect(rows.map((r) => [r.name, r.templateItemId, r.embedding, r.packId])).toEqual([
@@ -172,7 +172,7 @@ describe('applyPackTemplate()', () => {
     await runDeferred();
 
     expect(result.ok).toBe(true);
-    expect(mocks.embeddingSet).not.toHaveBeenCalled();
+    expect(mocks.embeddingSet).toHaveBeenCalledTimes(0);
   });
 
   it('drops misaligned embeddings rather than attach them to the wrong item', async () => {
@@ -186,7 +186,7 @@ describe('applyPackTemplate()', () => {
     await applyPackTemplate(args);
     await runDeferred();
 
-    expect(mocks.embeddingSet).not.toHaveBeenCalled();
+    expect(mocks.embeddingSet).toHaveBeenCalledTimes(0);
   });
 
   it('reports, and swallows, a failed backfill write', async () => {
