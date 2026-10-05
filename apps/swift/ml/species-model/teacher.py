@@ -6,7 +6,9 @@ Run from this directory after fetch_images.py:
 BioCLIP 2 is far too large to ship (a ViT-L), but it knows the tree of life
 much better than anything that fits on a phone. Its zero-shot distribution
 over the pack's species is saved per image and used as the soft target the
-student learns from, alongside the hard label.
+student learns from, alongside the hard label. Its image embedding is saved
+too: that is a teacher signal for every image, `__other__` included, where the
+logits over pack species say nothing useful.
 
 Weights: imageomics/bioclip-2, MIT licence, trained on CC0 TreeOfLife-200M.
 """
@@ -57,6 +59,7 @@ def main() -> None:
 
     rows = load_rows(labels, 'train') + load_rows(labels, 'val')
     logits: dict[str, torch.Tensor] = {}
+    embeddings: dict[str, torch.Tensor] = {}
     correct = total = 0
     for start in range(0, len(rows), args.batch):
         batch = rows[start : start + args.batch]
@@ -64,7 +67,8 @@ def main() -> None:
         features = model.encode_image(images)
         features = features / features.norm(dim=-1, keepdim=True)
         batch_logits = (scale * features @ text_features.T).float().cpu()
-        for row, row_logits in zip(batch, batch_logits, strict=True):
+        for row, row_logits, embedding in zip(batch, batch_logits, features.half().cpu(), strict=True):
+            embeddings[row['path']] = embedding
             logits[row['path']] = row_logits
             if row['label'] != OTHER_CLASS:
                 total += 1
@@ -72,6 +76,7 @@ def main() -> None:
         print(f'{start + len(batch)}/{len(rows)}', end='\r', flush=True)
 
     torch.save(logits, DATA_DIR / 'teacher_logits.pt')
+    torch.save(embeddings, DATA_DIR / 'teacher_embeddings.pt')
     print(f'\nteacher zero-shot top-1 on pack species: {correct / max(total, 1):.3f} ({total} images)')
 
 

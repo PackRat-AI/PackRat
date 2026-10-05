@@ -38,7 +38,7 @@ def load_rows(labels: list[str], split: str) -> list[dict]:
     rows = [
         row
         for row in map(json.loads, (DATA_DIR / 'manifest.jsonl').read_text().splitlines())
-        if row['label'] in wanted and (DATA_DIR / row['path']).exists()
+        if row['label'] in wanted and row['path'] and (DATA_DIR / row['path']).exists()
     ]
     unique = {(row['label'], row['photo_id']): row for row in rows}.values()
     return [row for row in unique if is_validation(row) == (split == 'val')]
@@ -49,8 +49,11 @@ def open_image(row: dict) -> Image.Image:
 
 
 class ManifestDataset(Dataset):
-    def __init__(self, rows: list[dict], labels: list[str], transform, teacher: dict | None = None):
+    def __init__(
+        self, rows: list[dict], labels: list[str], transform, teacher: dict | None = None, embeddings: dict | None = None
+    ):
         self.rows = rows
+        self.embeddings = embeddings
         self.index = {label: i for i, label in enumerate(labels)}
         self.transform = transform
         self.teacher = teacher
@@ -64,4 +67,6 @@ class ManifestDataset(Dataset):
         target = self.index[row['label']]
         if self.teacher is None:
             return image, target
-        return image, target, self.teacher[row['path']]
+        if self.embeddings is None:
+            return image, target, self.teacher[row['path']]
+        return image, target, self.teacher[row['path']], self.embeddings[row['path']]

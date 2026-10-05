@@ -52,29 +52,40 @@ def api_get(path: str, params: dict) -> dict:
 
 
 def resolve_taxon_id(scientific_name: str) -> int:
-    results = api_get('/taxa', {'q': scientific_name, 'per_page': 10})['results']
-    for taxon in results:
-        if taxon['name'].lower() == scientific_name.lower():
-            return taxon['id']
+    # Autocomplete matches names exactly where /taxa?q= ranks by popularity,
+    # which can push a common binomial (Bubo bubo) off the first page.
+    for path in ('/taxa/autocomplete', '/taxa'):
+        results = api_get(path, {'q': scientific_name, 'per_page': 30})['results']
+        matches = [taxon for taxon in results if taxon['name'].lower() == scientific_name.lower()]
+        matches.sort(key=lambda taxon: not taxon.get('is_active', True))
+        if matches:
+            return matches[0]['id']
     raise SystemExit(f'No exact iNaturalist taxon for {scientific_name!r}')
 
 
-def clean_photo(observation: dict) -> dict | None:
-    """First photo on the observation that carries an allowed licence."""
-    for photo in observation.get('photos', []):
-        if (photo.get('license_code') or '').lower() in ALLOWED_LICENCES and photo.get('url'):
-            return {
-                'observation_id': observation['id'],
-                'photo_id': photo['id'],
-                'licence': photo['license_code'].lower(),
-                'attribution': photo.get('attribution', ''),
-                'url': photo['url'].replace('/square.', '/medium.'),
-                'taxon': observation.get('taxon', {}).get('name', ''),
-            }
-    return None
+def clean_photos(observation: dict, every: bool = False) -> list[dict]:
+    """Photos on the observation that carry an allowed licence.
+
+    Only the first by default. `every` takes them all, for species with few
+    clean observations; extra angles of one animal are still real signal, and
+    the observation-level split keeps them on one side of validation.
+    """
+    photos = [
+        {
+            'observation_id': observation['id'],
+            'photo_id': photo['id'],
+            'licence': photo['license_code'].lower(),
+            'attribution': photo.get('attribution', ''),
+            'url': photo['url'].replace('/square.', '/medium.'),
+            'taxon': observation.get('taxon', {}).get('name', ''),
+        }
+        for photo in observation.get('photos', [])
+        if (photo.get('license_code') or '').lower() in ALLOWED_LICENCES and photo.get('url')
+    ]
+    return photos if every else photos[:1]
 
 
-def collect(params: dict, limit: int) -> list[dict]:
+def collect(params: dict, limit: int, every: bool = False) -> list[dict]:
     photos: list[dict] = []
     seen: set[int] = set()
     id_above = params.pop('id_above', 0)
@@ -82,8 +93,8 @@ def collect(params: dict, limit: int) -> list[dict]:
         page = api_get(
             '/observations',
             {
-                **params,
                 'quality_grade': 'research',
+                **params,
                 'photo_license': 'cc0,cc-by',
                 'per_page': 200,
                 'order_by': 'id',
@@ -99,13 +110,11 @@ def collect(params: dict, limit: int) -> list[dict]:
             if observation['id'] in seen:
                 continue
             seen.add(observation['id'])
-            photo = clean_photo(observation)
-            if photo:
-                photos.append(photo)
+            photos += clean_photos(observation, every)
     return photos[:limit]
 
 
-def collect_spread(params: dict, limit: int) -> list[dict]:
+def collect_spread(params: dict, limit: int, slices: int = 4, every: bool = False) -> list[dict]:
     """Samples across the whole id range instead of only the oldest records.
 
     Ordering by id and taking the first N would train only on observations
@@ -117,8 +126,8 @@ def collect_spread(params: dict, limit: int) -> list[dict]:
         api_get(
             '/observations',
             {
-                **params,
                 'quality_grade': 'research',
+                **params,
                 'photo_license': 'cc0,cc-by',
                 'per_page': 1,
                 'order_by': 'id',
@@ -130,12 +139,11 @@ def collect_spread(params: dict, limit: int) -> list[dict]:
     if not bounds[0]:
         return []
     low, high = bounds[0][0]['id'], bounds[1][0]['id']
-    slices = 4
     starts = sorted(random.randint(low, high) for _ in range(slices - 1))
     per_slice = -(-limit // slices)
     photos: list[dict] = []
     for floor in [low - 1, *starts]:
-        photos += collect({**params, 'id_above': floor}, per_slice)
+        photos += collect({**params, 'id_above': floor}, per_slice, every)
     unique = {photo['photo_id']: photo for photo in photos}
     return list(unique.values())[:limit]
 
@@ -162,6 +170,10 @@ def main() -> None:
     parser.add_argument('--other', type=int, default=3000)
     parser.add_argument('--out', type=Path, default=Path('data'))
     parser.add_argument('--seed', type=int, default=7)
+    parser.add_argument('--lookalikes', type=Path, default=Path('lookalikes.json'))
+    parser.add_argument('--per-lookalike', type=int, default=150)
+    parser.add_argument('--other-wide', type=int, default=4000)
+    parser.add_argument('--domestic', type=Path, default=Path('domestic.json'))
     args = parser.parse_args()
     random.seed(args.seed)
 
@@ -171,7 +183,11 @@ def main() -> None:
         (row['label'], row['photo_id'])
         for row in map(json.loads, manifest_path.read_text().splitlines())
     } if manifest_path.exists() else set()
-    done_labels = {label for label, _ in existing}
+    done_labels = {label for label, _ in existing} | {
+        f"{row['label']}+{row['source']}"
+        for row in map(json.loads, manifest_path.read_text().splitlines())
+        if row.get('source')
+    } if manifest_path.exists() else set()
 
     taxon_ids: list[int] = []
     for species in pack['species']:
@@ -182,30 +198,80 @@ def main() -> None:
         photos = collect_spread({'taxon_id': taxon_id}, args.per_species)
         save(species['id'], photos, args.out)
 
+    for species, taxon_id in zip(pack['species'], taxon_ids, strict=True):
+        # Classes that came up short take every clean photo per observation.
+        have = sum(1 for label, _ in existing if label == species['id'])
+        if have < args.per_species and species['id'] in done_labels and f"{species['id']}+all" not in done_labels:
+            photos = collect_spread({'taxon_id': taxon_id}, args.per_species * 3, every=True)
+            save(species['id'], photos, args.out, existing, source='all')
+
+    params = {'iconic_taxa': ICONIC_TAXA, 'without_taxon_id': ','.join(map(str, taxon_ids))}
     if OTHER_CLASS not in done_labels:
-        params = {'iconic_taxa': ICONIC_TAXA, 'without_taxon_id': ','.join(map(str, taxon_ids))}
         save(OTHER_CLASS, collect_spread(params, args.other), args.out)
 
+    # Lookalikes are the out-of-pack subjects most likely to be named as a
+    # pack species, so they are the negatives that matter most: a hiker's
+    # Omphalotus must not come back as a chanterelle.
+    lookalikes = sorted({name for names in json.loads(args.lookalikes.read_text()).values() for name in names})
+    for name in lookalikes:
+        if f'{OTHER_CLASS}+lookalike:{name}' in done_labels:
+            continue
+        try:
+            taxon_id = resolve_taxon_id(name)
+        except SystemExit as error:
+            print(error, flush=True)
+            continue
+        photos = collect_spread({'taxon_id': taxon_id}, args.per_lookalike)
+        save(OTHER_CLASS, photos, args.out, existing, source=f'lookalike:{name}')
 
-def save(label: str, photos: list[dict], out: Path) -> None:
-    """Downloads one class and appends it to the manifest.
+    # Pets, livestock, houseplants and garden plants are what a phone is
+    # most often pointed at, and iNaturalist marks captive or cultivated
+    # organisms casual, so the research-grade sample above never sees them.
+    for name in json.loads(args.domestic.read_text()):
+        if f'{OTHER_CLASS}+domestic:{name}' in done_labels:
+            continue
+        try:
+            taxon_id = resolve_taxon_id(name)
+        except SystemExit as error:
+            print(error, flush=True)
+            continue
+        photos = collect_spread({'taxon_id': taxon_id, 'quality_grade': 'casual,research'}, args.per_lookalike)
+        save(OTHER_CLASS, photos, args.out, existing, source=f'domestic:{name}')
 
-    One class at a time, so an interrupted run resumes from the next class
-    instead of starting over.
+    # Many short slices across the id range: four long runs of consecutive
+    # observations over-sample whoever was uploading at the time.
+    if f'{OTHER_CLASS}+wide' not in done_labels:
+        save(OTHER_CLASS, collect_spread(params, args.other_wide, slices=80), args.out, existing, source='wide')
+
+
+def save(label: str, photos: list[dict], out: Path, existing: set | None = None, source: str = '') -> None:
+    """Downloads one batch and appends it to the manifest.
+
+    One class (or one source within a class) at a time, so an interrupted run
+    resumes from the next batch instead of starting over.
     """
     label_dir = out / 'images' / label
     label_dir.mkdir(parents=True, exist_ok=True)
+    existing = existing if existing is not None else set()
     rows = [
-        {**photo, 'label': label, 'path': f"images/{label}/{photo['photo_id']}.jpg"}
+        {**photo, 'label': label, 'path': f"images/{label}/{photo['photo_id']}.jpg", **({'source': source} if source else {})}
         for photo in photos
+        if (label, photo['photo_id']) not in existing
     ]
+    if not rows and source:
+        # Record that the batch ran, so a resume does not fetch it again.
+        rows_marker = {'label': label, 'source': source, 'photo_id': None, 'path': '', 'observation_id': 0}
+        with (out / 'manifest.jsonl').open('a') as manifest:
+            manifest.write(json.dumps(rows_marker) + '\n')
+        return
     with ThreadPoolExecutor(max_workers=12) as pool:
         ok = list(pool.map(download, [(out / row['path'], row) for row in rows]))
     with (out / 'manifest.jsonl').open('a') as manifest:
         for row, succeeded in zip(rows, ok, strict=True):
             if succeeded:
                 manifest.write(json.dumps(row) + '\n')
-    print(f'{label}: {sum(ok)}/{len(rows)} photos', flush=True)
+    existing.update((label, row['photo_id']) for row in rows)
+    print(f"{label}{' ' + source if source else ''}: {sum(ok)}/{len(rows)} photos", flush=True)
 
 
 if __name__ == '__main__':
