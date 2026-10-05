@@ -25,7 +25,8 @@
       "!**/src/codegen",
       "!**/.claude",
       "!**/.worktrees",
-      "!**/.expo"
+      "!**/.expo",
+      "!**/*.mlpackage"
     ]
   },
   "formatter": {

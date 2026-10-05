@@ -56,7 +56,16 @@ final class FeatureFlagStore {
 
     /// Reads one flag. Always returns a boolean; an unknown key is `false`.
     func isEnabled(_ key: String) -> Bool {
-        flags[key] ?? false
+        #if DEBUG
+        // Debug builds only: a launch argument such as
+        // `-enableOfflineWildlifeID YES` lands in UserDefaults' argument
+        // domain and wins over the server. Lets a device test exercise a
+        // closed feature without flipping the shared flag table.
+        if ProcessInfo.processInfo.arguments.contains("-\(key)") {
+            return UserDefaults.standard.bool(forKey: key)
+        }
+        #endif
+        return flags[key] ?? false
     }
 
     /// Applies a fetched flag map and caches it for the next cold start.

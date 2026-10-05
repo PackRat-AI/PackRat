@@ -73,6 +73,14 @@ targets:
         buildPhase: resources
       - path: Resources/PrivacyInfo.xcprivacy
         buildPhase: resources
+      # Bundled core species pack — the feature must identify something on
+      # first launch with no network and no prior download. Regional packs
+      # arrive later via Background Assets; this one ships in the binary.
+      - path: Resources/SpeciesPacks
+        buildPhase: resources
+      # On-device species classifier, built by ml/species-model. A source,
+      # not a plain resource, so Xcode compiles the .mlpackage to .mlmodelc.
+      - path: Resources/SpeciesModels
     entitlements:
       path: Resources/PackRat-iOS.entitlements
       properties:
@@ -228,6 +236,14 @@ targets:
       - Resources/Assets.xcassets
       - path: Resources/PrivacyInfo.xcprivacy
         buildPhase: resources
+      # Bundled core species pack — the feature must identify something on
+      # first launch with no network and no prior download. Regional packs
+      # arrive later via Background Assets; this one ships in the binary.
+      - path: Resources/SpeciesPacks
+        buildPhase: resources
+      # On-device species classifier, built by ml/species-model. A source,
+      # not a plain resource, so Xcode compiles the .mlpackage to .mlmodelc.
+      - path: Resources/SpeciesModels
     entitlements:
       path: Resources/PackRat-macOS.entitlements
       properties:

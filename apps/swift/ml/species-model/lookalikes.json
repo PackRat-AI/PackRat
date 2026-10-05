@@ -1,0 +1,132 @@
+{
+  "american-robin": [
+    "Turdus merula",
+    "Ixoreus naevius",
+    "Pheucticus melanocephalus",
+    "Sialia sialis"
+  ],
+  "bald-eagle": [
+    "Aquila chrysaetos",
+    "Haliaeetus albicilla",
+    "Pandion haliaetus",
+    "Cathartes aura"
+  ],
+  "black-bear": ["Ursus arctos", "Canis familiaris", "Gulo gulo", "Sus scrofa"],
+  "chanterelle": [
+    "Omphalotus illudens",
+    "Omphalotus olearius",
+    "Hygrophoropsis aurantiaca",
+    "Craterellus tubaeformis",
+    "Hydnum repandum"
+  ],
+  "coyote": ["Canis lupus", "Vulpes vulpes", "Urocyon cinereoargenteus", "Canis familiaris"],
+  "death-cap": [
+    "Amanita citrina",
+    "Amanita bisporigera",
+    "Amanita muscaria",
+    "Amanita rubescens",
+    "Agaricus campestris",
+    "Russula aeruginea",
+    "Tricholoma equestre"
+  ],
+  "eastern-garter-snake": [
+    "Thamnophis saurita",
+    "Thamnophis elegans",
+    "Nerodia sipedon",
+    "Lampropeltis triangulum",
+    "Pantherophis alleghaniensis"
+  ],
+  "eastern-gray-squirrel": [
+    "Sciurus niger",
+    "Tamiasciurus hudsonicus",
+    "Sciurus vulgaris",
+    "Tamias striatus"
+  ],
+  "eastern-white-pine": [
+    "Pinus resinosa",
+    "Pinus sylvestris",
+    "Tsuga canadensis",
+    "Pinus strobiformis",
+    "Pinus monticola"
+  ],
+  "fiddlehead-fern": [
+    "Osmundastrum cinnamomeum",
+    "Pteridium aquilinum",
+    "Onoclea sensibilis",
+    "Athyrium filix-femina"
+  ],
+  "firefly": [
+    "Photuris pensylvanica",
+    "Chauliognathus pensylvanicus",
+    "Photinus corruscus",
+    "Pyractomena borealis"
+  ],
+  "great-horned-owl": ["Strix varia", "Asio otus", "Bubo bubo", "Megascops asio"],
+  "monarch-butterfly": [
+    "Limenitis archippus",
+    "Danaus gilippus",
+    "Danaus chrysippus",
+    "Argynnis cybele",
+    "Vanessa cardui"
+  ],
+  "painted-turtle": [
+    "Trachemys scripta",
+    "Pseudemys concinna",
+    "Chelydra serpentina",
+    "Graptemys geographica"
+  ],
+  "poison-ivy": [
+    "Parthenocissus quinquefolia",
+    "Acer negundo",
+    "Rubus idaeus",
+    "Toxicodendron diversilobum",
+    "Toxicodendron vernix",
+    "Rhus aromatica",
+    "Fragaria virginiana"
+  ],
+  "raccoon": [
+    "Nyctereutes procyonoides",
+    "Bassariscus astutus",
+    "Nasua narica",
+    "Didelphis virginiana"
+  ],
+  "ruby-throated-hummingbird": [
+    "Archilochus alexandri",
+    "Calypte anna",
+    "Selasphorus rufus",
+    "Hemaris thysbe"
+  ],
+  "sugar-maple": [
+    "Acer rubrum",
+    "Acer platanoides",
+    "Acer saccharinum",
+    "Liriodendron tulipifera",
+    "Platanus occidentalis"
+  ],
+  "trillium": [
+    "Trillium erectum",
+    "Trillium ovatum",
+    "Sanguinaria canadensis",
+    "Anemonoides quinquefolia"
+  ],
+  "white-tailed-deer": [
+    "Odocoileus hemionus",
+    "Cervus canadensis",
+    "Capreolus capreolus",
+    "Dama dama"
+  ],
+  "wild-blackberry": [
+    "Rubus idaeus",
+    "Rubus occidentalis",
+    "Rubus phoenicolasius",
+    "Rubus armeniacus",
+    "Rosa multiflora"
+  ],
+  "wild-violet": [
+    "Viola odorata",
+    "Viola pubescens",
+    "Viola tricolor",
+    "Glechoma hederacea",
+    "Ajuga reptans"
+  ]
+}

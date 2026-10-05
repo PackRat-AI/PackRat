@@ -295,7 +295,7 @@ struct AppNavigation: View {
             // gating the UI here keeps the client from offering something the
             // API will refuse. Matches how Expo wraps a gated screen.
             EarlyAccessGate(featureKey: "wildlife-identification") {
-                WildlifeView()
+                WildlifeDestination()
             }
         case .aiPacks:
             AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
@@ -463,7 +463,7 @@ struct AppNavigation: View {
             // through separate switches, so gating only one leaves the other
             // open.
             EarlyAccessGate(featureKey: "wildlife-identification") {
-                WildlifeView()
+                WildlifeDestination()
             }
         case .aiPacks:         AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
         }

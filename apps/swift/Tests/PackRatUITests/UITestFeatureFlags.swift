@@ -7,6 +7,7 @@ enum UITestFeatureFlags {
     static let enableFeed = false
     static let enableLocalAI = true
     static let enableOAuth = true
+    static let enableOfflineWildlifeID = false
     static let enablePackInsights = false
     static let enablePackTemplates = true
     static let enableRevenueCat = true
@@ -24,6 +25,7 @@ enum UITestFeatureFlags {
         "enableFeed": false,
         "enableLocalAI": true,
         "enableOAuth": true,
+        "enableOfflineWildlifeID": false,
         "enablePackInsights": false,
         "enablePackTemplates": true,
         "enableRevenueCat": true,
