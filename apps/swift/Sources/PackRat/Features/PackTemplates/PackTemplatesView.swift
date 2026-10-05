@@ -11,9 +11,6 @@ struct PackTemplatesListView: View {
     var showsGuestLimitInList = true
     @Environment(AuthManager.self) private var authManager
     @State private var showingNewTemplate = false
-    /// Last segment the user picked, restored next visit. Empty until they pick
-    /// one, so the default can follow what they have (see `scope`).
-    @AppStorage("packTemplates.scope") private var storedScope = ""
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private var isCompact: Bool {
@@ -59,114 +56,129 @@ struct PackTemplatesListView: View {
         }
         .sheet(isPresented: $showingNewTemplate) {
             PackTemplateFormView(viewModel: viewModel) { saved in
-                // A new template is the user's own — switch to Mine so it's
-                // on screen rather than hidden behind the Featured segment.
-                storedScope = TemplateScope.mine.rawValue
                 selectedId = saved.id
             }
         }
     }
 
-    /// Mine vs Featured, as a segmented control — HIG's pattern for switching
-    /// between closely related views of one screen (Shortcuts keeps its Gallery
-    /// apart from My Shortcuts the same way). Replaces stacked sections, which
-    /// made people scroll past every featured template to reach their own.
-    /// Defaults to Mine once the user has any, otherwise Featured.
-    private var scope: Binding<TemplateScope> {
-        Binding(
-            get: {
-                TemplateScope(rawValue: storedScope)
-                    ?? (viewModel.myTemplates.isEmpty && viewModel.searchText.isEmpty ? .featured : .mine)
-            },
-            set: { storedScope = $0.rawValue }
-        )
-    }
-
-    private func templates(in scope: TemplateScope) -> [PackTemplate] {
-        scope == .mine ? viewModel.myTemplates : viewModel.officialTemplates
-    }
-
-    private var scopePicker: some View {
-        Picker("Templates", selection: scope) {
-            ForEach(TemplateScope.allCases) { scope in
-                Text(scope.title).tag(scope)
-            }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .background(.bar)
-        .accessibilityIdentifier("templates_scope_picker")
-    }
-
+    /// Featured templates sit in an App Store-style shelf — a header that opens
+    /// the full list, then a horizontally paged run of three-row columns — so
+    /// the user's own templates start one short scroll down instead of after
+    /// every featured one. Searching drops the shelf for flat results.
     private var templateList: some View {
-        let current = scope.wrappedValue
-        let shown = templates(in: current)
-        return List(selection: $selectedId) {
-            if shown.isEmpty {
-                Section {
-                    emptyState(for: current)
+        List(selection: $selectedId) {
+            if viewModel.searchText.isEmpty {
+                if !viewModel.officialTemplates.isEmpty {
+                    Section {
+                        FeaturedTemplatesShelf(
+                            templates: viewModel.officialTemplates,
+                            isCompact: isCompact,
+                            selectedId: $selectedId,
+                            destination: detail(for:)
+                        )
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                    } header: {
+                        shelfHeader
+                    }
                 }
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-            } else {
                 Section {
-                    ForEach(shown) { t in
-                        if current == .mine {
-                            templateRow(t)
-                                .contextMenu {
-                                    Button("Delete", systemImage: "trash", role: .destructive) {
-                                        Task { try? await viewModel.deleteTemplate(t.id) }
-                                    }
-                                }
-                        } else {
-                            templateRow(t)
-                        }
+                    if viewModel.myTemplates.isEmpty {
+                        mineEmptyState
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    } else {
+                        ForEach(viewModel.myTemplates) { t in myTemplateRow(t) }
+                    }
+                } header: {
+                    sectionHeader("My Templates")
+                }
+            } else if viewModel.filteredTemplates.isEmpty {
+                ContentUnavailableView.search(text: viewModel.searchText)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            } else {
+                if !viewModel.officialTemplates.isEmpty {
+                    Section {
+                        ForEach(viewModel.officialTemplates) { t in templateRow(t) }
+                    } header: {
+                        sectionHeader("Official")
+                    }
+                }
+                if !viewModel.myTemplates.isEmpty {
+                    Section {
+                        ForEach(viewModel.myTemplates) { t in myTemplateRow(t) }
+                    } header: {
+                        sectionHeader("My Templates")
                     }
                 }
             }
         }
-        .safeAreaInset(edge: .top, spacing: 0) { scopePicker }
+        .listStyle(.plain)
     }
 
-    @ViewBuilder
-    private func emptyState(for current: TemplateScope) -> some View {
-        let other: TemplateScope = current == .mine ? .featured : .mine
-        let otherCount = templates(in: other).count
-        if !viewModel.searchText.isEmpty {
-            // Search runs inside the selected segment; point at matches in the
-            // other one rather than claiming there are none.
-            if otherCount > 0 {
-                ContentUnavailableView {
-                    Label("No Results in \(current.title)", systemImage: "magnifyingglass")
-                } description: {
-                    Text("\(otherCount) \(otherCount == 1 ? "match" : "matches") in \(other.title).")
-                } actions: {
-                    Button("Show \(other.title)") { scope.wrappedValue = other }
-                }
-            } else {
-                ContentUnavailableView.search(text: viewModel.searchText)
-            }
-        } else if current == .mine {
-            ContentUnavailableView {
-                Label("No Templates Yet", systemImage: "doc.on.doc")
-            } description: {
-                Text("Save a gear list you reuse, or start from a featured one.")
-            } actions: {
-                Button("New Template") { showingNewTemplate = true }
-                    .buttonStyle(.borderedProminent)
-                if !viewModel.officialTemplates.isEmpty {
-                    Button("Browse Featured") { scope.wrappedValue = .featured }
-                }
-            }
-        } else {
-            ContentUnavailableView(
-                "No Featured Templates",
-                systemImage: "checkmark.seal",
-                description: Text("Curated gear lists will appear here.")
+    private var shelfHeader: some View {
+        NavigationLink {
+            FeaturedTemplatesView(
+                viewModel: viewModel,
+                isCompact: isCompact,
+                selectedId: $selectedId,
+                destination: detail(for:)
             )
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text("Official")
+                        .font(.title2.bold())
+                        .foregroundStyle(.primary)
+                    Image(systemName: "chevron.forward")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+                Text("Ready-made gear lists from experienced hikers")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .textCase(nil)
+        .padding(.top, 8)
+        .accessibilityIdentifier("templates_featured_see_all")
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.title2.bold())
+            .foregroundStyle(.primary)
+            .textCase(nil)
+            .padding(.top, 8)
+    }
+
+    private var mineEmptyState: some View {
+        ContentUnavailableView {
+            Label("No Templates Yet", systemImage: "doc.on.doc")
+        } description: {
+            Text("Save a gear list you reuse, or start from an official one above.")
+        } actions: {
+            Button("New Template") { showingNewTemplate = true }
+                .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private func detail(for template: PackTemplate) -> PackTemplateDetailView {
+        PackTemplateDetailView(template: template, viewModel: viewModel, packsVM: packsVM)
+    }
+
+    private func myTemplateRow(_ template: PackTemplate) -> some View {
+        templateRow(template)
+            .contextMenu {
+                Button("Delete", systemImage: "trash", role: .destructive) {
+                    Task { try? await viewModel.deleteTemplate(template.id) }
+                }
+            }
     }
 
     @ViewBuilder
@@ -174,7 +186,7 @@ struct PackTemplatesListView: View {
         Group {
             if isCompact {
                 NavigationLink {
-                    PackTemplateDetailView(template: template, viewModel: viewModel, packsVM: packsVM)
+                    detail(for: template)
                 } label: {
                     TemplateRowView(template: template)
                 }
@@ -184,6 +196,198 @@ struct PackTemplatesListView: View {
         }
         .tag(template.id)
         .accessibilityIdentifier("template_row_\(template.id)")
+    }
+}
+
+// MARK: - Featured shelf
+
+/// App Store "shelf": columns of three rows that page sideways, with the next
+/// column peeking in so it reads as scrollable.
+private struct FeaturedTemplatesShelf: View {
+    let templates: [PackTemplate]
+    let isCompact: Bool
+    @Binding var selectedId: String?
+    let destination: (PackTemplate) -> PackTemplateDetailView
+
+    private static let rowsPerColumn = 3
+    private var columns: [[PackTemplate]] {
+        stride(from: 0, to: templates.count, by: Self.rowsPerColumn).map {
+            Array(templates[$0..<min($0 + Self.rowsPerColumn, templates.count)])
+        }
+    }
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(alignment: .top, spacing: 12) {
+                ForEach(Array(columns.enumerated()), id: \.offset) { _, column in
+                    VStack(spacing: 0) {
+                        ForEach(Array(column.enumerated()), id: \.element.id) { index, template in
+                            shelfCell(template)
+                            if index < column.count - 1 {
+                                Divider().padding(.leading, ShelfRow.iconSize + 12)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    // One column fills the width less the margins, leaving the
+                    // next column's edge visible. A single column takes it all.
+                    .containerRelativeFrame(.horizontal) { width, _ in
+                        columns.count > 1 ? width - 56 : width - 32
+                    }
+                }
+            }
+            .scrollTargetLayout()
+            .padding(.horizontal, 16)
+        }
+        .scrollTargetBehavior(.viewAligned)
+        .scrollClipDisabled()
+        .padding(.vertical, 4)
+        .accessibilityIdentifier("templates_featured_shelf")
+    }
+
+    @ViewBuilder
+    private func shelfCell(_ template: PackTemplate) -> some View {
+        Group {
+            if isCompact {
+                NavigationLink {
+                    destination(template)
+                } label: {
+                    ShelfRow(template: template)
+                }
+            } else {
+                Button {
+                    selectedId = template.id
+                } label: {
+                    ShelfRow(template: template, isSelected: selectedId == template.id)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("template_row_\(template.id)")
+    }
+}
+
+private struct ShelfRow: View {
+    let template: PackTemplate
+    var isSelected = false
+    static let iconSize: CGFloat = 56
+
+    @Environment(\.weightUnit) private var weightUnit
+
+    private var subtitle: String {
+        var parts = ["\(template.itemCount) items"]
+        if template.totalWeightGrams > 0 {
+            parts.append(template.formattedTotalWeight(in: weightUnit))
+        }
+        if let cat = template.category { parts.append(cat.capitalized) }
+        return parts.joined(separator: " · ")
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            TemplateIcon(template: template, size: Self.iconSize)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text(template.name)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.caption)
+                        .foregroundStyle(.tint)
+                        .accessibilityLabel("Official")
+                }
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 8)
+        .contentShape(Rectangle())
+        .background(isSelected ? Color.accentColor.opacity(0.12) : .clear,
+                    in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+/// The template's cover image when it has one, else its category symbol on a
+/// tinted tile — the app-icon slot of an App Store shelf row.
+private struct TemplateIcon: View {
+    let template: PackTemplate
+    let size: CGFloat
+
+    private var symbol: String {
+        template.category.flatMap { PackCategory(rawValue: $0)?.symbol } ?? "backpack"
+    }
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: size * 0.225, style: .continuous)
+        Group {
+            if let image = template.image, let url = URL(string: image) {
+                AsyncImage(url: url) { phase in
+                    if let loaded = phase.image {
+                        loaded.resizable().scaledToFill()
+                    } else {
+                        placeholder
+                    }
+                }
+            } else {
+                placeholder
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(shape)
+        .overlay(shape.strokeBorder(.quaternary, lineWidth: 0.5))
+    }
+
+    private var placeholder: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color.accentColor.opacity(0.25), Color.accentColor.opacity(0.10)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            Image(systemName: symbol)
+                .font(.system(size: size * 0.42, weight: .medium))
+                .foregroundStyle(.tint)
+        }
+    }
+}
+
+/// "See all" destination for the shelf header: every featured template, full
+/// screen, with Back to the shelf.
+private struct FeaturedTemplatesView: View {
+    let viewModel: PackTemplatesViewModel
+    let isCompact: Bool
+    @Binding var selectedId: String?
+    let destination: (PackTemplate) -> PackTemplateDetailView
+
+    var body: some View {
+        List(viewModel.templates.filter(\.isOfficial)) { template in
+            Group {
+                if isCompact {
+                    NavigationLink {
+                        destination(template)
+                    } label: {
+                        ShelfRow(template: template)
+                    }
+                } else {
+                    Button {
+                        selectedId = template.id
+                    } label: {
+                        ShelfRow(template: template, isSelected: selectedId == template.id)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .accessibilityIdentifier("template_row_\(template.id)")
+        }
+        .listStyle(.plain)
+        .navigationTitle("Official")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 }
 
@@ -200,12 +404,6 @@ private extension View {
         self.searchable(text: text, prompt: "Search templates")
         #endif
     }
-}
-
-enum TemplateScope: String, CaseIterable, Identifiable {
-    case mine, featured
-    var id: String { rawValue }
-    var title: String { self == .mine ? "Mine" : "Featured" }
 }
 
 private struct TemplateRowView: View {
@@ -281,7 +479,7 @@ struct PackTemplateDetailView: View {
 
                 HStack(spacing: 10) {
                     if currentTemplate.isOfficial {
-                        Label("Featured", systemImage: "checkmark.seal.fill")
+                        Label("Official", systemImage: "checkmark.seal.fill")
                             .font(.callout)
                             .foregroundStyle(.tint)
                             .accessibilityIdentifier("template_detail_featured_badge")
