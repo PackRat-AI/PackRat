@@ -1,5 +1,6 @@
 'use client';
 
+import { makeEnumGuard } from '@packrat/guards';
 import { Badge } from '@packrat/web-ui/components/badge';
 import { Button } from '@packrat/web-ui/components/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@packrat/web-ui/components/card';
@@ -44,7 +45,7 @@ import { useMemo, useState } from 'react';
 import { formatGrams, sourceLabel, sourceUrl, TEMPLATE_CATEGORIES } from './format';
 
 const WEIGHT_UNITS = Object.freeze(['g', 'kg', 'oz', 'lb'] as const);
-type WeightUnit = (typeof WEIGHT_UNITS)[number];
+const isWeightUnit = makeEnumGuard(WEIGHT_UNITS);
 
 function useInvalidate(id: string) {
   const queryClient = useQueryClient();
@@ -171,9 +172,7 @@ function ItemRow({ item, templateId }: { item: AdminPackTemplateItem; templateId
     if (name.trim() && name.trim() !== item.name) next.name = name.trim();
     if (category !== (item.category ?? '')) next.category = category.trim() || null;
     if (Number.isFinite(w) && w >= 0 && w !== item.weight) next.weight = w;
-    if (unit !== item.weightUnit && (WEIGHT_UNITS as readonly string[]).includes(unit)) {
-      next.weightUnit = unit as WeightUnit;
-    }
+    if (unit !== item.weightUnit && isWeightUnit(unit)) next.weightUnit = unit;
     if (Number.isInteger(q) && q > 0 && q !== item.quantity) next.quantity = q;
     return next;
   }, [name, category, weight, unit, quantity, item]);
