@@ -25,9 +25,18 @@ struct TripDetailView: View {
         || trip.notes?.isEmpty == false
     }
 
+    private var remindersEnabled: Bool {
+        FeatureFlagStore.shared.isEnabled(TripReminderPlanner.flagKey)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                if remindersEnabled, TripReminderPlanner.isDepartureNear(trip, now: Date()) {
+                    TripReadinessCard(trip: trip) { showingEditSheet = true }
+                        .padding(.top, 8)
+                }
+
                 metaCards
                     .padding(.top, 8)
 
@@ -71,6 +80,12 @@ struct TripDetailView: View {
                 }
 
                 packSection
+
+                #if os(iOS)
+                if remindersEnabled {
+                    TripRemindersRow(trip: trip)
+                }
+                #endif
             }
             .padding(.bottom)
         }

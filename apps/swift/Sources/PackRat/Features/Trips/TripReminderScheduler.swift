@@ -11,25 +11,31 @@ import UserNotifications
 /// progress without tracking any of them individually.
 @MainActor
 enum TripReminderScheduler {
-    static let flagKey = "enableTripReminders"
+    static let flagKey = TripReminderPlanner.flagKey
     static let tripIdKey = "tripId"
 
     /// iOS keeps at most 64 pending local notifications per app; leave headroom
     /// for anything else the app schedules.
     private static let maxPending = 48
 
-    static func sync(trips: [Trip], packs: [Pack], packing: PackingModeStore = .shared, now: Date = Date()) async {
+    static func sync(
+        trips: [Trip],
+        packs: [Pack],
+        packing: PackingModeStore = .shared,
+        settings: TripReminderSettings = .shared,
+        now: Date = Date()
+    ) async {
         let center = UNUserNotificationCenter.current()
         let stale = await center.pendingNotificationRequests()
             .map(\.identifier)
             .filter { $0.hasPrefix(TripReminderPlanner.identifierPrefix) }
         center.removePendingNotificationRequests(withIdentifiers: stale)
 
-        guard FeatureFlagStore.shared.isEnabled(flagKey) else { return }
+        guard FeatureFlagStore.shared.isEnabled(flagKey), settings.isEnabled else { return }
         let status = await center.notificationSettings().authorizationStatus
         guard status == .authorized || status == .provisional else { return }
 
-        var reminders = trips.flatMap { trip in
+        var reminders = trips.filter { !settings.isMuted($0.id) }.flatMap { trip in
             let pack = trip.packId.flatMap { id in packs.first { $0.id == id } }
             let packed = pack.map { Set(packing.packedItems(in: $0.id).keys) } ?? []
             return TripReminderPlanner.reminders(for: trip, pack: pack, packedItemIds: packed, now: now)
@@ -56,7 +62,7 @@ enum TripReminderScheduler {
     /// Asks for notification permission at the moment it makes sense: the user
     /// just gave a trip a date. No-op once the user has answered either way.
     static func requestAuthorizationIfNeeded() async {
-        guard FeatureFlagStore.shared.isEnabled(flagKey) else { return }
+        guard FeatureFlagStore.shared.isEnabled(flagKey), TripReminderSettings.shared.isEnabled else { return }
         let center = UNUserNotificationCenter.current()
         guard await center.notificationSettings().authorizationStatus == .notDetermined else { return }
         _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])

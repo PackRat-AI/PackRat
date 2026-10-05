@@ -20,6 +20,7 @@ struct TripReminder: Equatable, Sendable {
 /// testable without a notification center. Product behaviour:
 /// docs/features/pre-trip-reminders.md.
 enum TripReminderPlanner {
+    static let flagKey = "enableTripReminders"
     static let identifierPrefix = "trip-reminder."
 
     /// Local hours each moment fires at. The 7- and 3-day reminders land
@@ -49,6 +50,24 @@ enum TripReminderPlanner {
             let (title, body) = copy(for: moment, tripName: trip.name, state: state)
             return TripReminder(tripId: trip.id, moment: moment, fireDate: fireDate, title: title, body: body)
         }
+    }
+
+    /// The readiness summary shows from the first reminder until the start day ends.
+    static func isDepartureNear(_ trip: Trip, now: Date, calendar: Calendar = .current) -> Bool {
+        guard !trip.deleted, let start = trip.startDate?.toDate() else { return false }
+        let startDay = calendar.startOfDay(for: start)
+        guard let opens = calendar.date(byAdding: .day, value: -7, to: startDay),
+              let closes = calendar.date(byAdding: .day, value: 1, to: startDay)
+        else { return false }
+        return now >= opens && now < closes
+    }
+
+    /// Whole days from today to the trip's start day; 0 on the day itself.
+    static func daysUntilStart(_ trip: Trip, now: Date, calendar: Calendar = .current) -> Int? {
+        guard let start = trip.startDate?.toDate() else { return nil }
+        return calendar.dateComponents(
+            [.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: start)
+        ).day
     }
 
     static func fireDate(for moment: TripReminder.Moment, startDay: Date, calendar: Calendar) -> Date? {

@@ -96,4 +96,22 @@ struct TripReminderPlannerTests {
         #expect(TripReminderPlanner.list(["A", "B"]) == "a and b")
         #expect(TripReminderPlanner.list(["A", "B", "C", "D", "E"]) == "a, b, c and 2 more")
     }
+
+    @Test("the readiness summary shows from a week out until the start day ends")
+    func departureWindow() {
+        let trip = makeTrip(start: start)
+        #expect(!TripReminderPlanner.isDepartureNear(trip, now: date(2026, 10, 12, 23), calendar: calendar))
+        #expect(TripReminderPlanner.isDepartureNear(trip, now: date(2026, 10, 13, 0), calendar: calendar))
+        #expect(TripReminderPlanner.isDepartureNear(trip, now: date(2026, 10, 20, 23), calendar: calendar))
+        #expect(!TripReminderPlanner.isDepartureNear(trip, now: date(2026, 10, 21, 0), calendar: calendar))
+        #expect(!TripReminderPlanner.isDepartureNear(makeTrip(start: nil), now: start, calendar: calendar))
+    }
+
+    @Test("days until start counts calendar days, not 24-hour spans")
+    func daysUntilStart() {
+        let trip = makeTrip(start: start)
+        #expect(TripReminderPlanner.daysUntilStart(trip, now: date(2026, 10, 19, 23), calendar: calendar) == 1)
+        #expect(TripReminderPlanner.daysUntilStart(trip, now: date(2026, 10, 20, 12), calendar: calendar) == 0)
+        #expect(TripReminderPlanner.daysUntilStart(trip, now: date(2026, 10, 17, 9), calendar: calendar) == 3)
+    }
 }

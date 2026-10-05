@@ -132,10 +132,13 @@ struct AppNavigation: View {
     #endif
 
     #if os(iOS)
-    /// Changes whenever a trip's reminders would: added, removed, re-dated or
-    /// re-linked to another pack.
+    /// Changes whenever a trip's reminders would: added, removed, re-dated,
+    /// re-linked to another pack, or switched off.
     private var tripReminderSignature: [String] {
-        appState.tripsVM.trips.map { "\($0.id)|\($0.startDate ?? "")|\($0.packId ?? "")|\($0.name)" }
+        let settings = TripReminderSettings.shared
+        return ["enabled|\(settings.isEnabled)"] + appState.tripsVM.trips.map {
+            "\($0.id)|\($0.startDate ?? "")|\($0.packId ?? "")|\($0.name)|\(settings.isMuted($0.id))"
+        }
     }
 
     private func syncTripReminders() {
