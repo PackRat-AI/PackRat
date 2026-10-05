@@ -40,7 +40,7 @@ final class OfflineWildlifeViewModel {
     private let locationProvider: WildlifeLocationProvider
 
     init(
-        classifier: SpeciesClassifier = UnavailableSpeciesClassifier(),
+        classifier: SpeciesClassifier = CoreMLSpeciesClassifier.shared,
         packStore: SpeciesPackStore = .shared,
         // Constructed in the body rather than as a default argument: a
         // default is evaluated in the caller's isolation, and

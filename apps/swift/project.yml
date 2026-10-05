@@ -78,6 +78,9 @@ targets:
       # arrive later via Background Assets; this one ships in the binary.
       - path: Resources/SpeciesPacks
         buildPhase: resources
+      # On-device species classifier, built by ml/species-model. A source,
+      # not a plain resource, so Xcode compiles the .mlpackage to .mlmodelc.
+      - path: Resources/SpeciesModels
     entitlements:
       path: Resources/PackRat-iOS.entitlements
       properties:
@@ -238,6 +241,9 @@ targets:
       # arrive later via Background Assets; this one ships in the binary.
       - path: Resources/SpeciesPacks
         buildPhase: resources
+      # On-device species classifier, built by ml/species-model. A source,
+      # not a plain resource, so Xcode compiles the .mlpackage to .mlmodelc.
+      - path: Resources/SpeciesModels
     entitlements:
       path: Resources/PackRat-macOS.entitlements
       properties:

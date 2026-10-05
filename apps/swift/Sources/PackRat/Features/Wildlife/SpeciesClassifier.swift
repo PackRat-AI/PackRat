@@ -11,9 +11,9 @@ struct SpeciesPrediction: Hashable, Sendable {
 /// The on-device recogniser.
 ///
 /// A protocol rather than a concrete type because the shipped artifact — a
-/// MobileNetV4-class model distilled from BioCLIP 2 and converted to Core ML —
-/// is produced by a separate pipeline on a separate schedule from the app
-/// work. Everything upstream and downstream of this one method (capture,
+/// MobileNetV4-class model distilled from BioCLIP 2 and converted to Core ML,
+/// see `CoreMLSpeciesClassifier` — is produced by a separate pipeline on a
+/// separate schedule from the app work. Everything upstream and downstream of this one method (capture,
 /// ranking, the location prior, the result UI, history) is independent of
 /// which model is behind it, so it is built and tested against this seam.
 ///
@@ -28,7 +28,8 @@ protocol SpeciesClassifier: Sendable {
     var isModelAvailable: Bool { get }
 }
 
-/// Stand-in used until the Core ML model exists.
+/// The classifier for a build with no model in it — tests, and any build
+/// where the model failed to load.
 ///
 /// It reports `isModelAvailable == false` and returns nothing. That is a
 /// deliberate choice over returning plausible-looking scores: the doc's rule

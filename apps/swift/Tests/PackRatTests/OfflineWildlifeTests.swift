@@ -1,4 +1,5 @@
 import CoreLocation
+import CoreML
 import Foundation
 import Testing
 @testable import PackRat
@@ -408,3 +409,32 @@ struct UnavailableClassifierTests {
         #expect(try await classifier.classify(imageData: Data(), candidates: []).isEmpty)
     }
 }
+
+@Suite("CoreMLSpeciesClassifier")
+struct CoreMLClassifierTests {
+    @Test("a bundle without the model reports unavailable and answers nothing")
+    func missingModel() async throws {
+        let classifier = CoreMLSpeciesClassifier(bundle: Bundle(for: BundleMarker.self))
+
+        #expect(!classifier.isModelAvailable)
+        #expect(try await classifier.classify(imageData: Data(), candidates: []).isEmpty)
+    }
+
+    @Test("the bundled model loads and knows every core-pack species")
+    @MainActor
+    func bundledModelCoversCorePack() throws {
+        #expect(CoreMLSpeciesClassifier.shared.isModelAvailable)
+
+        // A pack species the model has no label for could never be
+        // identified, and the app would not say why. Retraining is the fix.
+        let url = try #require(Bundle.main.url(forResource: "WildlifeSpeciesModel", withExtension: "mlmodelc"))
+        let labels = try MLModel(contentsOf: url).modelDescription.classLabels as? [String] ?? []
+        let packIDs = Set(SpeciesPackStore().species.map(\.id))
+
+        #expect(packIDs.isSubset(of: Set(labels)))
+        #expect(labels.contains(CoreMLSpeciesClassifier.otherLabel))
+    }
+}
+
+/// Anchors `Bundle(for:)` to the test bundle, which carries no model.
+private final class BundleMarker {}

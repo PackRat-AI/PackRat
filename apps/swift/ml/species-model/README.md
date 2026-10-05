@@ -1,0 +1,23 @@
+# Species model
+
+Builds `apps/swift/Resources/SpeciesModels/WildlifeSpeciesModel.mlpackage`, the
+on-device recogniser behind offline wildlife ID. Design and licensing rules:
+`docs/features/offline-wildlife-id.md`.
+
+Run from this directory on an Apple Silicon Mac (training uses MPS):
+
+```bash
+uv sync
+PACK=../../Resources/SpeciesPacks/core.json
+uv run python fetch_images.py --pack $PACK   # CC0/CC-BY iNaturalist photos → data/
+uv run python teacher.py --pack $PACK        # BioCLIP 2 soft labels
+uv run python train.py --pack $PACK          # MobileNetV4 student → artifacts/
+uv run python export.py --pack $PACK         # Core ML, 8-bit, re-scored
+```
+
+`data/` and `artifacts/` are gitignored. `fetch_images.py` resumes by class
+after an interruption.
+
+Retrain whenever the pack's species list changes. The model's class labels
+are the pack's species ids plus `__other__`, and a unit test fails if a pack
+species has no label in the bundled model.
