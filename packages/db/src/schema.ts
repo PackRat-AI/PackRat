@@ -5,6 +5,7 @@ import {
   bigint,
   boolean,
   check,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -608,6 +609,16 @@ export type TripLog = {
   elevationGainMeters?: number | null;
   route?: string | null;
   source?: 'manual' | 'track' | 'trail' | null;
+  summits?: TripSummit[] | null;
+};
+
+/** A named peak reached on a trip. `osmId` is the OpenStreetMap node it was picked from. */
+export type TripSummit = {
+  name: string;
+  elevationMeters?: number | null;
+  latitude: number;
+  longitude: number;
+  osmId?: number | null;
 };
 
 export const trips = pgTable('trips', {
@@ -650,7 +661,7 @@ export const tripGoals = pgTable(
       .notNull(),
     kind: text('kind').$type<'annual' | 'custom'>().notNull(),
     metric: text('metric')
-      .$type<'trips' | 'nights' | 'days' | 'distance' | 'elevation'>()
+      .$type<'trips' | 'nights' | 'days' | 'distance' | 'elevation' | 'summits' | 'parks'>()
       .notNull(),
     target: real('target').notNull(),
     year: integer('year'),
@@ -681,6 +692,37 @@ export const tripStatsSettings = pgTable('trip_stats_settings', {
   breakReasonTripId: text('break_reason_trip_id'),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+/**
+ * Park visits and summits a user adds by hand, for outings from before they
+ * used PackRat. Visits and summits that come from trips live on the trip's
+ * log or location instead. `park` rows carry `parkCode` (the NPS unit code);
+ * `summit` rows carry the peak's name, position and elevation.
+ */
+export const tripStatsEntries = pgTable(
+  'trip_stats_entries',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    kind: text('kind').$type<'park' | 'summit'>().notNull(),
+    parkCode: text('park_code'),
+    name: text('name'),
+    elevationMeters: real('elevation_meters'),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
+    osmId: bigint('osm_id', { mode: 'number' }),
+    /** The day of the visit or climb, as UTC midnight. Null when the user doesn't remember. */
+    date: timestamp('date'),
+    localCreatedAt: timestamp('local_created_at').notNull(),
+    localUpdatedAt: timestamp('local_updated_at').notNull(),
+    deleted: boolean('deleted').notNull().default(false),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [index('trip_stats_entries_user_id_idx').on(table.userId)],
+);
 
 // Relations
 

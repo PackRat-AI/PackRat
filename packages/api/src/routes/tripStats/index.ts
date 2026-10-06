@@ -1,11 +1,18 @@
 import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { tripGoals, tripStatsSettings } from '@packrat/db/schema';
+import { findNearbyPeaks } from '@packrat/api/services/peaksService';
+import { captureApiException } from '@packrat/api/utils/sentry';
+import { tripGoals, tripStatsEntries, tripStatsSettings } from '@packrat/db/schema';
 import {
   CreateTripGoalBodySchema,
+  CreateTripStatsEntryBodySchema,
+  NearbyPeakSchema,
+  NearbyPeaksQuerySchema,
   TripGoalSchema,
+  TripStatsEntrySchema,
   TripStatsSettingsSchema,
   UpdateTripGoalBodySchema,
+  UpdateTripStatsEntryBodySchema,
 } from '@packrat/schemas/tripStats';
 import { and, eq } from 'drizzle-orm';
 import { Elysia, NotFoundError, status } from 'elysia';
@@ -22,6 +29,9 @@ export const tripStatsRoutes = new Elysia({ prefix: '/trip-stats' })
     'tripStats.Goal': TripGoalSchema,
     'tripStats.Settings': TripStatsSettingsSchema,
     'tripStats.UpdateGoalBody': UpdateTripGoalBodySchema,
+    'tripStats.Entry': TripStatsEntrySchema,
+    'tripStats.CreateEntryBody': CreateTripStatsEntryBodySchema,
+    'tripStats.UpdateEntryBody': UpdateTripStatsEntryBodySchema,
   })
   .use(authPlugin)
 
@@ -213,4 +223,167 @@ export const tripStatsRoutes = new Elysia({ prefix: '/trip-stats' })
         security: [{ bearerAuth: [] }],
       },
     },
+  )
+
+  // Park visits and summits added by hand, for outings from before PackRat.
+  .get(
+    '/entries',
+    async ({ user }) => {
+      const db = createDb();
+      const entries = await db.tag('tripStats.listEntries').query.tripStatsEntries.findMany({
+        where: and(eq(tripStatsEntries.userId, user.userId), eq(tripStatsEntries.deleted, false)),
+        orderBy: (t) => t.createdAt,
+      });
+      return z.array(TripStatsEntrySchema).parse(entries);
+    },
+    {
+      response: { 200: z.array(TripStatsEntrySchema) },
+      isAuthenticated: true,
+      detail: {
+        tags: ['Trip Stats'],
+        summary: 'List park visits and summits added by hand',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+
+  // Client-generated id, as for goals.
+  .post(
+    '/entries',
+    async ({ body, user }) => {
+      const db = createDb();
+      const [entry] = await db
+        .tag('tripStats.createEntry')
+        .insert(tripStatsEntries)
+        .values({
+          id: body.id,
+          userId: user.userId,
+          ...entryValues(body),
+          localCreatedAt: new Date(body.localCreatedAt),
+          localUpdatedAt: new Date(body.localUpdatedAt),
+        })
+        .onConflictDoNothing({ target: tripStatsEntries.id })
+        .returning();
+      if (!entry) return status(409, { error: 'Entry already exists' });
+      return TripStatsEntrySchema.parse(entry);
+    },
+    {
+      body: 'tripStats.CreateEntryBody',
+      response: { 200: 'tripStats.Entry', 409: z.object({ error: z.string() }) },
+      isAuthenticated: true,
+      detail: {
+        tags: ['Trip Stats'],
+        summary: 'Add a park visit or summit by hand',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+
+  .put(
+    '/entries/:entryId',
+    async ({ params, body, user }) => {
+      const db = createDb();
+      const [entry] = await db
+        .tag('tripStats.updateEntry')
+        .update(tripStatsEntries)
+        .set({
+          ...entryValues(body),
+          localUpdatedAt: body.localUpdatedAt ? new Date(body.localUpdatedAt) : new Date(),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(tripStatsEntries.id, params.entryId),
+            eq(tripStatsEntries.userId, user.userId),
+            eq(tripStatsEntries.deleted, false),
+          ),
+        )
+        .returning();
+      if (!entry) throw new NotFoundError('Entry not found');
+      return TripStatsEntrySchema.parse(entry);
+    },
+    {
+      params: z.object({ entryId: z.string() }),
+      body: 'tripStats.UpdateEntryBody',
+      response: { 200: 'tripStats.Entry' },
+      isAuthenticated: true,
+      detail: {
+        tags: ['Trip Stats'],
+        summary: 'Replace a park visit or summit added by hand',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+
+  .delete(
+    '/entries/:entryId',
+    async ({ params, user }) => {
+      const db = createDb();
+      const [deleted] = await db
+        .tag('tripStats.deleteEntry')
+        .update(tripStatsEntries)
+        .set({ deleted: true, updatedAt: new Date() })
+        .where(
+          and(eq(tripStatsEntries.id, params.entryId), eq(tripStatsEntries.userId, user.userId)),
+        )
+        .returning();
+      if (!deleted) return status(404, { error: 'Entry not found' });
+      return { success: true };
+    },
+    {
+      params: z.object({ entryId: z.string() }),
+      isAuthenticated: true,
+      detail: {
+        tags: ['Trip Stats'],
+        summary: 'Delete a park visit or summit added by hand',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+
+  // Named peaks in a bounding box, for picking a trip's summits.
+  .get(
+    '/peaks/nearby',
+    async ({ query }) => {
+      try {
+        return await findNearbyPeaks(query);
+      } catch (error) {
+        captureApiException({ error, operation: 'tripStats.nearbyPeaks', extra: { ...query } });
+        return status(502, { error: 'Peak lookup is unavailable right now' });
+      }
+    },
+    {
+      query: NearbyPeaksQuerySchema,
+      response: { 200: z.array(NearbyPeakSchema), 502: z.object({ error: z.string() }) },
+      isAuthenticated: true,
+      detail: {
+        tags: ['Trip Stats'],
+        summary: 'Named peaks inside a bounding box, from OpenStreetMap',
+        security: [{ bearerAuth: [] }],
+      },
+    },
   );
+
+/** Only the fields that belong to an entry's kind are kept. */
+function entryValues(body: {
+  kind: 'park' | 'summit';
+  parkCode?: string | null;
+  name?: string | null;
+  elevationMeters?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  osmId?: number | null;
+  date?: string | null;
+}) {
+  const isSummit = body.kind === 'summit';
+  return {
+    kind: body.kind,
+    parkCode: isSummit ? null : (body.parkCode ?? null),
+    name: isSummit ? (body.name?.trim() ?? null) : null,
+    elevationMeters: isSummit ? (body.elevationMeters ?? null) : null,
+    latitude: isSummit ? (body.latitude ?? null) : null,
+    longitude: isSummit ? (body.longitude ?? null) : null,
+    osmId: isSummit ? (body.osmId ?? null) : null,
+    date: body.date ? new Date(body.date) : null,
+  };
+}

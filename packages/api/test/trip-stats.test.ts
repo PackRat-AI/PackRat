@@ -15,6 +15,19 @@ const annualGoal = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+const entry = (overrides: Record<string, unknown> = {}) => ({
+  id: crypto.randomUUID(),
+  kind: 'summit',
+  name: 'Mount Whitney',
+  elevationMeters: 4421,
+  latitude: 36.5785,
+  longitude: -118.292,
+  date: '2019-08-14T00:00:00.000Z',
+  localCreatedAt: now,
+  localUpdatedAt: now,
+  ...overrides,
+});
+
 describe('Trip Stats Routes', () => {
   beforeEach(async () => {
     await seedAndLoginTestUser();
@@ -158,6 +171,61 @@ describe('Trip Stats Routes', () => {
         httpMethods.put({ kind: 'annual', metric: 'trips', target: 5, year: 2026 }),
       );
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe('entries', () => {
+    it('requires auth', async () => {
+      expectUnauthorized(await api('/trip-stats/entries', httpMethods.get()));
+    });
+
+    it('creates, lists, replaces and soft-deletes a summit', async () => {
+      const summit = entry();
+      const created = await apiWithAuth('/trip-stats/entries', httpMethods.post(summit));
+      expect(created.status).toBe(200);
+      expect(await created.json()).toMatchObject({ kind: 'summit', name: 'Mount Whitney' });
+
+      const replaced = await apiWithAuth(
+        `/trip-stats/entries/${summit.id}`,
+        httpMethods.put({
+          ...entry({ name: 'Mt. Whitney', elevationMeters: 4418 }),
+          id: undefined,
+        }),
+      );
+      expect(await replaced.json()).toMatchObject({ name: 'Mt. Whitney', elevationMeters: 4418 });
+
+      await apiWithAuth(`/trip-stats/entries/${summit.id}`, httpMethods.delete());
+      expect(await (await apiWithAuth('/trip-stats/entries')).json()).toEqual([]);
+    });
+
+    it('keeps only park fields on a park visit', async () => {
+      const visit = entry({ kind: 'park', parkCode: 'YOSE' });
+      const res = await apiWithAuth('/trip-stats/entries', httpMethods.post(visit));
+      expect(await res.json()).toMatchObject({ kind: 'park', parkCode: 'YOSE', name: null });
+    });
+
+    it('refuses a park visit with no park', async () => {
+      const res = await apiWithAuth(
+        '/trip-stats/entries',
+        httpMethods.post(entry({ kind: 'park', parkCode: null })),
+      );
+      expect(res.status).toBe(422);
+    });
+
+    it('answers a replayed create with 409', async () => {
+      const summit = entry();
+      await apiWithAuth('/trip-stats/entries', httpMethods.post(summit));
+      const replay = await apiWithAuth('/trip-stats/entries', httpMethods.post(summit));
+      expect(replay.status).toBe(409);
+    });
+  });
+
+  describe('nearby peaks', () => {
+    it('refuses a bounding box too large to ask Overpass for', async () => {
+      const res = await apiWithAuth(
+        '/trip-stats/peaks/nearby?south=30&west=-120&north=40&east=-110',
+      );
+      expect(res.status).toBe(422);
     });
   });
 });
