@@ -12,6 +12,8 @@ struct TripStatsTeaser: View {
     /// Off inside a `NavigationLink` row, which draws its own.
     var showsChevron = true
 
+    @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
+
     var body: some View {
         HStack(alignment: .center, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
@@ -55,12 +57,16 @@ struct TripStatsTeaser: View {
     }
 
     /// This year when there is anything in it, otherwise the lifetime record,
-    /// so January doesn't open on "0 trips".
+    /// so January doesn't open on "0 trips". Distance joins once a logged
+    /// trip carries one, as Strava's Weekly Snapshot pairs count with distance;
+    /// climbing stays on the full screen to keep the card a glance.
     private var summary: String {
-        if stats.thisYear.trips > 0 {
-            return "\(Self.trips(stats.thisYear.trips)) · \(Self.nights(stats.thisYear.nights)) this year"
+        let (totals, period) = stats.thisYear.trips > 0 ? (stats.thisYear, "this year") : (stats.totals, "all time")
+        var parts = [Self.trips(totals.trips), Self.nights(totals.nights)]
+        if let distance = totals.distance, distance > 0 {
+            parts.append(TripDistanceUnit(speedUnit: speedUnit).formatDistance(distance))
         }
-        return "\(Self.trips(stats.totals.trips)) · \(Self.nights(stats.totals.nights)) all time"
+        return parts.joined(separator: " · ") + " " + period
     }
 
     private var gain: String? {
