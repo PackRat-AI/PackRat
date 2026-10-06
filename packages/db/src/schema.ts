@@ -597,6 +597,19 @@ export const trailConditionReports = pgTable(
   }),
 );
 
+/**
+ * What actually happened on a finished trip, read back by trip stats. Distances
+ * and elevations are metres whatever the user's display unit. `route` is a
+ * Google encoded polyline (precision 5), simplified on device before upload.
+ */
+export type TripLog = {
+  activities: string[];
+  distanceMeters?: number | null;
+  elevationGainMeters?: number | null;
+  route?: string | null;
+  source?: 'manual' | 'track' | 'trail' | null;
+};
+
 export const trips = pgTable('trips', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -613,6 +626,8 @@ export const trips = pgTable('trips', {
     .notNull(),
   packId: text('pack_id').references(() => packs.id, { onDelete: 'set null' }),
   trailOsmId: bigint('trail_osm_id', { mode: 'bigint' }),
+  log: jsonb('log').$type<TripLog>(),
+  excludedFromStats: boolean('excluded_from_stats').notNull().default(false),
   localCreatedAt: timestamp('local_created_at').notNull(),
   localUpdatedAt: timestamp('local_updated_at').notNull(),
   deleted: boolean('deleted').notNull().default(false),

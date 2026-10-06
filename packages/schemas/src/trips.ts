@@ -21,6 +21,27 @@ export const TripChecklistItemSchema = z.object({
 
 const TripChecklistSchema = z.array(TripChecklistItemSchema).max(50);
 
+export const TripActivitySchema = z.enum([
+  'hiking',
+  'backpacking',
+  'camping',
+  'climbing',
+  'mountaineering',
+  'paddling',
+  'skiing',
+  'biking',
+  'other',
+]);
+
+/** See `TripLog` in `@packrat/db/schema`: metres, and an encoded polyline route. */
+export const TripLogSchema = z.object({
+  activities: z.array(TripActivitySchema),
+  distanceMeters: z.number().nonnegative().nullable().optional(),
+  elevationGainMeters: z.number().nonnegative().nullable().optional(),
+  route: z.string().max(100_000).nullable().optional(),
+  source: z.enum(['manual', 'track', 'trail']).nullable().optional(),
+});
+
 export const TripSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -32,6 +53,8 @@ export const TripSchema = z.object({
   userId: z.string().optional(),
   packId: z.string().nullable().optional(),
   checklist: TripChecklistSchema.nullable().optional(),
+  log: TripLogSchema.nullable().optional(),
+  excludedFromStats: z.boolean().optional(),
   deleted: z.boolean(),
   localCreatedAt: datetimeString.optional(),
   localUpdatedAt: datetimeString.optional(),
@@ -51,6 +74,8 @@ export const CreateTripBodySchema = z.object({
   endDate: z.string().nullable().optional(),
   packId: z.string().nullable().optional(),
   checklist: TripChecklistSchema.nullable().optional(),
+  log: TripLogSchema.nullable().optional(),
+  excludedFromStats: z.boolean().optional(),
   localCreatedAt: z.string().datetime(),
   localUpdatedAt: z.string().datetime(),
 });
@@ -64,8 +89,11 @@ export const UpdateTripBodySchema = z.object({
   endDate: z.string().nullable().optional(),
   packId: z.string().nullable().optional(),
   checklist: TripChecklistSchema.nullable().optional(),
+  log: TripLogSchema.nullable().optional(),
+  excludedFromStats: z.boolean().optional(),
   localUpdatedAt: z.string().datetime().optional(),
 });
 
 export type TripLocation = z.infer<typeof TripLocationSchema>;
 export type TripChecklistItem = z.infer<typeof TripChecklistItemSchema>;
+export type TripActivity = z.infer<typeof TripActivitySchema>;
