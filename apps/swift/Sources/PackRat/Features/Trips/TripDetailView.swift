@@ -179,14 +179,6 @@ struct TripDetailView: View {
                     .padding(14)
                     .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-                    if case .partial(let packed, _) = packing.progress, packed > 0 {
-                        Text("Still to pack: \(TripReminderPlanner.list(packing.unpacked))")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .accessibilityIdentifier("trip_detail_still_to_pack")
-                    }
-
                     Button {
                         pushedPack = PackRoute(packId: pack.id, packing: true)
                     } label: {
