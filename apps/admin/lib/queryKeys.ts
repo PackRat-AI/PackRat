@@ -36,6 +36,11 @@ export const queryKeys = {
     featureAccess: {
       all: () => [...queryKeys.admin.all(), 'featureAccess'] as const,
     },
+
+    featuredPacks: {
+      all: () => [...queryKeys.admin.all(), 'featuredPacks'] as const,
+      detail: (id: string) => [...queryKeys.admin.featuredPacks.all(), id] as const,
+    },
   },
 
   platform: {

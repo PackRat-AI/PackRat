@@ -1,6 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
 import { ImageDetectionService, PackService } from '@packrat/api/services';
+import { applyPackTemplate } from '@packrat/api/services/applyPackTemplateService';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import {
   computePackBreakdown,
@@ -935,6 +936,43 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       body: 'packs.AddPackItemBody',
       isAuthenticated: true,
       detail: { tags: ['Pack Items'], summary: 'Add item to pack', security: [{ bearerAuth: [] }] },
+    },
+  )
+
+  // Apply template: copy every active template item into the pack in one call
+  .post(
+    '/:packId/apply-template',
+    async ({ params, body, user }) => {
+      const result = await applyPackTemplate({
+        packId: params.packId,
+        templateId: body.templateId,
+        userId: user.userId,
+        env: getEnv(),
+      });
+      if (!result.ok) {
+        return status(404, {
+          error: result.reason === 'pack_not_found' ? 'Pack not found' : 'Template not found',
+        });
+      }
+      return status(201, {
+        items: result.items.map((item) =>
+          PackItemSchema.parse({
+            ...item,
+            createdAt: item.createdAt.toISOString(),
+            updatedAt: item.updatedAt.toISOString(),
+          }),
+        ),
+      });
+    },
+    {
+      params: z.object({ packId: z.string() }),
+      body: z.object({ templateId: z.string().min(1) }),
+      isAuthenticated: true,
+      detail: {
+        tags: ['Pack Items'],
+        summary: "Copy a pack template's items into a pack",
+        security: [{ bearerAuth: [] }],
+      },
     },
   )
 

@@ -7,6 +7,7 @@ import {
   type LucideIcon,
   Map as MapIcon,
   Package,
+  Sparkles,
   ToggleLeft,
   Unlock,
   Users,
@@ -34,6 +35,11 @@ export const navItems: NavItem[] = [
     title: 'Packs',
     href: '/dashboard/packs',
     icon: Backpack,
+  },
+  {
+    title: 'Featured Packs',
+    href: '/dashboard/featured-packs',
+    icon: Sparkles,
   },
   {
     title: 'Catalog',

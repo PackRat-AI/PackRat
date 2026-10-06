@@ -96,26 +96,25 @@ final class PackTemplateService: Sendable {
         try await api.sendDiscarding(endpoint)
     }
 
-    /// Applies a template to an existing pack by copying all template items.
-    func applyToPack(templateId: String, packId: String) async throws {
-        let template = try await getTemplate(templateId)
-        // `activeItems`, not `items`: copying tombstoned template items would
-        // resurrect deleted gear into the target pack.
-        let items = template.activeItems
-        guard !items.isEmpty else { return }
-        let packService = PackService.shared
-        for item in items {
-            _ = try await packService.addItem(
-                to: packId,
-                name: item.name,
-                weight: item.weight,
-                weightUnit: item.weightUnit,
-                quantity: item.quantity,
-                category: item.category,
-                consumable: item.consumable,
-                worn: item.worn,
-                notes: item.notes
-            )
-        }
+    /// Copies every active item of a template into a pack and returns the new
+    /// pack items. One request: the server copies the items and embeds them in a
+    /// single batch. The old client loop sent one POST per item, each paying for
+    /// its own embedding call, so a 30-item template took 30 serial round trips.
+    func applyToPack(templateId: String, packId: String) async throws -> [PackItem] {
+        let endpoint = Endpoint(
+            .post,
+            "/api/packs/\(packId)/apply-template",
+            body: ApplyTemplateRequest(templateId: templateId)
+        )
+        let response: ApplyTemplateResponse = try await api.send(endpoint)
+        return response.items
     }
+}
+
+private struct ApplyTemplateRequest: Encodable {
+    let templateId: String
+}
+
+private struct ApplyTemplateResponse: Decodable {
+    let items: [PackItem]
 }

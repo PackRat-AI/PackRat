@@ -12,23 +12,27 @@
  * on-device toolset cannot drift apart.
  */
 
-import type { PackInStore, PackItem, PackItemInput, WeightUnit } from '../types';
+import { WeightUnitSchema } from '@packrat/schemas/constants';
+import { z } from 'zod';
+import type { PackInStore, PackItem, PackItemInput } from '../types';
 import { matchPacksByName, type PackMatchSummary } from './matchPacksByName';
 
-export type ListUserPacksInput = { nameQuery?: string | null };
+export const ListUserPacksInputSchema = z.object({ nameQuery: z.string().nullish() });
+export type ListUserPacksInput = z.infer<typeof ListUserPacksInputSchema>;
 
-export type AddItemToPackInput = {
-  packId: string;
-  name: string;
-  weight?: number;
-  weightUnit?: WeightUnit;
-  quantity?: number;
-  category?: string;
-  consumable?: boolean;
-  worn?: boolean;
-  notes?: string;
-  catalogItemId?: string;
-};
+export const AddItemToPackInputSchema = z.object({
+  packId: z.string(),
+  name: z.string(),
+  weight: z.number().optional(),
+  weightUnit: WeightUnitSchema.optional(),
+  quantity: z.number().optional(),
+  category: z.string().optional(),
+  consumable: z.boolean().optional(),
+  worn: z.boolean().optional(),
+  notes: z.string().optional(),
+  catalogItemId: z.string().optional(),
+});
+export type AddItemToPackInput = z.infer<typeof AddItemToPackInputSchema>;
 
 export type ToolResult<T> = { success: true; data: T } | { success: false; error: string };
 
