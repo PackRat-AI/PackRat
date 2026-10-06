@@ -605,6 +605,9 @@ export const trips = pgTable('trips', {
   endDate: timestamp('end_date'),
   location: jsonb('location').$type<{ latitude: number; longitude: number; name?: string }>(),
   notes: text('notes'),
+  // The trip's "Before you go" list: non-gear tasks (permits, passes,
+  // reservations) the user ticks off before leaving.
+  checklist: jsonb('checklist').$type<{ id: string; title: string; done: boolean }[]>(),
   userId: text('user_id')
     .references(() => users.id)
     .notNull(),

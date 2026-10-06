@@ -47,7 +47,7 @@ enum TripReminderPlanner {
             guard let fireDate = fireDate(for: moment, startDay: startDay, calendar: calendar),
                   fireDate > now
             else { return nil }
-            let (title, body) = copy(for: moment, tripName: trip.name, state: state)
+            let (title, body) = copy(for: moment, tripName: trip.name, state: state, todo: openChecklistTitles(trip))
             return TripReminder(tripId: trip.id, moment: moment, fireDate: fireDate, title: title, body: body)
         }
     }
@@ -83,7 +83,9 @@ enum TripReminderPlanner {
 
     // MARK: - Copy
 
-    private static func copy(for moment: TripReminder.Moment, tripName: String, state: PackState) -> (String, String) {
+    private static func copy(
+        for moment: TripReminder.Moment, tripName: String, state: PackState, todo: [String]
+    ) -> (String, String) {
         switch moment {
         case .weekBefore:
             let body: String = switch state.progress {
@@ -116,10 +118,15 @@ enum TripReminderPlanner {
             if !state.chargeable.isEmpty {
                 lines.append("Charge tonight: \(list(state.chargeable)).")
             }
+            if !todo.isEmpty {
+                lines.append("Before you go: \(list(todo)).")
+            }
             return ("\(tripName) is tomorrow", lines.joined(separator: " "))
 
         case .morningOf:
-            let body: String = if let first = state.unpacked.first {
+            let body: String = if let first = todo.first {
+                "Don't forget: \(first.lowercased())."
+            } else if let first = state.unpacked.first {
                 "Don't forget your \(first.lowercased())!"
             } else if let first = state.chargeable.first {
                 "Grab your \(first.lowercased()) off the charger."
@@ -137,6 +144,28 @@ enum TripReminderPlanner {
         if rest > 0 { return named.joined(separator: ", ") + " and \(rest) more" }
         guard named.count > 1 else { return named.first ?? "" }
         return named.dropLast().joined(separator: ", ") + " and " + named[named.count - 1]
+    }
+}
+
+// MARK: - Before you go
+
+extension TripReminderPlanner {
+    /// Titles of the trip's Before-you-go tasks not yet ticked off, in list order.
+    static func openChecklistTitles(_ trip: Trip) -> [String] {
+        (trip.checklist ?? []).filter { !$0.done }.map(\.title)
+    }
+
+    /// Common non-gear tasks offered for a trip, minus any already on its list.
+    /// A campsite booking only applies once the trip runs overnight.
+    static func checklistSuggestions(for trip: Trip, calendar: Calendar = .current) -> [String] {
+        var suggestions = ["Permit", "Park pass"]
+        if let start = trip.startDate?.toDate(), let end = trip.endDate?.toDate(),
+           calendar.startOfDay(for: end) > calendar.startOfDay(for: start) {
+            suggestions.append("Campsite reservation")
+        }
+        suggestions.append("Share your plans with someone")
+        let taken = Set((trip.checklist ?? []).map { $0.title.lowercased() })
+        return suggestions.filter { !taken.contains($0.lowercased()) }
     }
 }
 

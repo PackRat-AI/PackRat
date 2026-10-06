@@ -17,10 +17,13 @@ struct TripReminderPlannerTests {
         calendar.date(from: DateComponents(year: y, month: m, day: d, hour: h))!
     }
 
-    private func makeTrip(start: Date?, packId: String? = "p1", deleted: Bool = false) -> Trip {
+    private func makeTrip(
+        start: Date?, end: Date? = nil, packId: String? = "p1", deleted: Bool = false,
+        checklist: [TripChecklistItem]? = nil
+    ) -> Trip {
         Trip(id: "t1", name: "Enchantments", description: nil, notes: nil, location: nil,
-             startDate: start?.iso8601String(), endDate: nil, userId: nil, packId: packId,
-             deleted: deleted, createdAt: nil, updatedAt: nil)
+             startDate: start?.iso8601String(), endDate: end?.iso8601String(), userId: nil, packId: packId,
+             checklist: checklist, deleted: deleted, createdAt: nil, updatedAt: nil)
     }
 
     private func makeItem(_ id: String, _ name: String, category: String? = nil, weight: Double = 100) -> PackItem {
@@ -113,5 +116,41 @@ struct TripReminderPlannerTests {
         #expect(TripReminderPlanner.daysUntilStart(trip, now: date(2026, 10, 19, 23), calendar: calendar) == 1)
         #expect(TripReminderPlanner.daysUntilStart(trip, now: date(2026, 10, 20, 12), calendar: calendar) == 0)
         #expect(TripReminderPlanner.daysUntilStart(trip, now: date(2026, 10, 17, 9), calendar: calendar) == 3)
+    }
+
+    @Test("unticked Before-you-go tasks join the evening-before reminder and lead the morning-of one")
+    func beforeYouGoCopy() {
+        let trip = makeTrip(start: start, packId: nil, checklist: [
+            TripChecklistItem(id: "a", title: "Permit", done: true),
+            TripChecklistItem(id: "b", title: "Park pass", done: false),
+            TripChecklistItem(id: "c", title: "Campsite reservation", done: false),
+        ])
+        let reminders = plan(now: date(2026, 10, 19, 12), trip: trip)
+        let evening = reminders.first { $0.moment == .eveningBefore }
+        let morning = reminders.first { $0.moment == .morningOf }
+        #expect(evening?.body == "Link a pack to run a final check. Before you go: park pass and campsite reservation.")
+        #expect(morning?.body == "Don't forget: park pass.")
+    }
+
+    @Test("a ticked-off Before-you-go list adds nothing to the reminders")
+    func beforeYouGoAllDone() {
+        let trip = makeTrip(start: start, packId: nil, checklist: [
+            TripChecklistItem(id: "a", title: "Permit", done: true),
+        ])
+        let evening = plan(now: date(2026, 10, 19, 12), trip: trip).first { $0.moment == .eveningBefore }
+        #expect(evening?.body == "Link a pack to run a final check.")
+    }
+
+    @Test("suggestions offer a campsite booking only for overnight trips and skip what's already listed")
+    func checklistSuggestions() {
+        let dayHike = makeTrip(start: start, end: start)
+        #expect(TripReminderPlanner.checklistSuggestions(for: dayHike, calendar: calendar)
+            == ["Permit", "Park pass", "Share your plans with someone"])
+
+        let overnight = makeTrip(start: start, end: date(2026, 10, 22, 12), checklist: [
+            TripChecklistItem(id: "a", title: "permit", done: false),
+        ])
+        #expect(TripReminderPlanner.checklistSuggestions(for: overnight, calendar: calendar)
+            == ["Park pass", "Campsite reservation", "Share your plans with someone"])
     }
 }

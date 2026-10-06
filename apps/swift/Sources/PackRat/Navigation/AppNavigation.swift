@@ -133,11 +133,12 @@ struct AppNavigation: View {
 
     #if os(iOS)
     /// Changes whenever a trip's reminders would: added, removed, re-dated,
-    /// re-linked to another pack, or switched off.
+    /// re-linked to another pack, Before-you-go list changed, or switched off.
     private var tripReminderSignature: [String] {
         let settings = TripReminderSettings.shared
         return ["enabled|\(settings.isEnabled)"] + appState.tripsVM.trips.map {
-            "\($0.id)|\($0.startDate ?? "")|\($0.packId ?? "")|\($0.name)|\(settings.isMuted($0.id))"
+            let open = TripReminderPlanner.openChecklistTitles($0).joined(separator: ",")
+            return "\($0.id)|\($0.startDate ?? "")|\($0.packId ?? "")|\($0.name)|\(open)|\(settings.isMuted($0.id))"
         }
     }
 

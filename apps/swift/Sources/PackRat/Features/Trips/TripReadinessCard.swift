@@ -57,6 +57,13 @@ struct TripReadinessCard: View {
                     Text(TripReminderPlanner.list(state.chargeable).capitalizedFirst)
                 }
             }
+
+            let todo = TripReminderPlanner.openChecklistTitles(trip)
+            if !todo.isEmpty {
+                row(symbol: "checklist", tint: .purple, title: "Before you go") {
+                    Text(TripReminderPlanner.list(todo).capitalizedFirst)
+                }
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

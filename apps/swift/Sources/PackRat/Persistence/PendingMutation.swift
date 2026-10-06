@@ -257,6 +257,8 @@ struct TripMutationPayload: Codable, Sendable {
     var locationName: String?
     var notes: String?
     var packId: String?
+    /// Optional so a payload queued before the Before-you-go list existed still decodes.
+    var checklist: [TripChecklistItem]?
 
     var location: TripLocationBody? {
         guard let latitude, let longitude else { return nil }

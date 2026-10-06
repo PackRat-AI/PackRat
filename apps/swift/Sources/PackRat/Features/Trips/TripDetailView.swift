@@ -104,6 +104,10 @@ struct TripDetailView: View {
 
                 packSection
 
+                if remindersEnabled {
+                    TripChecklistSection(trip: trip, viewModel: viewModel)
+                }
+
                 #if os(iOS)
                 if remindersEnabled {
                     TripRemindersRow(trip: trip)

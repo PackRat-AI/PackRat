@@ -22,6 +22,7 @@ private func mockItem(id: String = "i1", packId: String = "p1") -> PackItem {
 private func mockTrip(id: String = "t1", name: String = "Test Trip", startDate: String? = nil) -> Trip {
     Trip(id: id, name: name, description: nil, notes: nil, location: nil,
          startDate: startDate, endDate: nil, userId: "u1", packId: nil,
+         checklist: nil,
          deleted: false, createdAt: nil, updatedAt: nil)
 }
 
@@ -138,6 +139,7 @@ struct TripsViewModelTests {
         let tripWithLoc = Trip(id: "1", name: "PCT", description: nil, notes: nil,
                                location: TripLocation(latitude: 37.0, longitude: -119.0, name: "Yosemite"),
                                startDate: nil, endDate: nil, userId: nil, packId: nil,
+                               checklist: nil,
                                deleted: false, createdAt: nil, updatedAt: nil)
         vm.trips = [tripWithLoc, mockTrip(id: "2")]
         vm.searchText = "yosemite"
