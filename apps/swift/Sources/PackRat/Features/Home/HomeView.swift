@@ -135,7 +135,7 @@ struct HomeView: View {
     /// Trip Stats teaser, shown once the feature is on and a trip has
     /// finished — before that the screen it opens has nothing to show.
     private var tripStats: TripStats? {
-        guard NavItem.tripStats.isFeatureEnabled else { return nil }
+        guard NavItem.tripStats.isFeatureEnabled, !appState.tripGoalsVM.isTurnedOff else { return nil }
         let stats = TripStats(trips: appState.tripsVM.trips, packs: appState.packsVM.packs)
         return stats.isEmpty ? nil : stats
     }

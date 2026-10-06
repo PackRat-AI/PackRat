@@ -16,6 +16,9 @@ struct TripStatsView: View {
 
     private var distanceUnit: TripDistanceUnit { TripDistanceUnit(speedUnit: speedUnit) }
 
+    @State private var editingGoal: TripGoal?
+    @State private var addingGoal = false
+
     private var stats: TripStats {
         TripStats(trips: appState.tripsVM.trips, packs: appState.packsVM.packs)
     }
@@ -23,7 +26,9 @@ struct TripStatsView: View {
     var body: some View {
         let stats = stats
         Group {
-            if stats.isEmpty {
+            if !appState.tripGoalsVM.isEnabled {
+                TripStatsOptInView()
+            } else if stats.isEmpty {
                 EmptyStateView(
                     "Your Record Starts Here",
                     subtitle: "Once a trip's end date passes, it counts here: nights out, days outdoors, the places you've been and the gear that came along.",
@@ -38,9 +43,34 @@ struct TripStatsView: View {
             }
         }
         .navigationTitle("Trip Stats")
+        .toolbar {
+            if appState.tripGoalsVM.isEnabled {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button { addingGoal = true } label: { Label("Add Goal", systemImage: "target") }
+                        Divider()
+                        Button(role: .destructive) {
+                            Task { await appState.tripGoalsVM.setEnabled(false, context: modelContext) }
+                        } label: {
+                            Label("Turn Off Trip Stats", systemImage: "eye.slash")
+                        }
+                    } label: {
+                        Label("More", systemImage: "ellipsis.circle")
+                    }
+                    .accessibilityIdentifier("trip_stats_menu")
+                }
+            }
+        }
+        .sheet(isPresented: $addingGoal) {
+            GoalEditorView(goal: nil, finished: stats.finished, unit: distanceUnit)
+        }
+        .sheet(item: $editingGoal) { goal in
+            GoalEditorView(goal: goal, finished: stats.finished, unit: distanceUnit)
+        }
         .task {
             if appState.tripsVM.trips.isEmpty { await appState.tripsVM.load(context: modelContext) }
             if appState.packsVM.packs.isEmpty { await appState.packsVM.load(context: modelContext) }
+            await appState.tripGoalsVM.load(context: modelContext)
         }
     }
 
@@ -48,6 +78,17 @@ struct TripStatsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 TotalsGrid(totals: stats.totals, unit: distanceUnit)
+
+                if let comeback = stats.comeback {
+                    ComebackCard(comeback: comeback, unit: distanceUnit)
+                }
+
+                GoalsCard(
+                    progress: appState.tripGoalsVM.goals.compactMap { TripGoalProgress(goal: $0, finished: stats.finished) },
+                    unit: distanceUnit,
+                    onAdd: { addingGoal = true },
+                    onEdit: { editingGoal = $0 }
+                )
 
                 if stats.thisYear.trips > 0 || stats.lastYearToDate != nil {
                     YearComparisonCard(thisYear: stats.thisYear, lastYear: stats.lastYearToDate)
@@ -84,7 +125,7 @@ struct TripStatsView: View {
 
 // MARK: - Card chrome
 
-private struct StatsCard<Content: View>: View {
+struct StatsCard<Content: View>: View {
     let title: String
     var subtitle: String?
     @ViewBuilder let content: Content

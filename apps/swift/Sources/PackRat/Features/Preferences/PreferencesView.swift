@@ -90,6 +90,7 @@ struct PreferencesView: View {
             SyncStatusSection()
             unitsSection
             notificationSection
+            TripStatsSettingsSection()
             advancedSection
             aboutSection
             developerSection

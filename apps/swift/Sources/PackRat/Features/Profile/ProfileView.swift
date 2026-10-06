@@ -91,7 +91,7 @@ struct ProfileView: View {
     /// to open.
     @ViewBuilder
     private var tripStatsSection: some View {
-        if NavItem.tripStats.isFeatureEnabled {
+        if NavItem.tripStats.isFeatureEnabled, !appState.tripGoalsVM.isTurnedOff {
             let stats = TripStats(trips: appState.tripsVM.trips, packs: appState.packsVM.packs)
             if !stats.isEmpty {
                 Section {

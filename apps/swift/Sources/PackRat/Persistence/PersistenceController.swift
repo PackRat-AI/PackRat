@@ -15,6 +15,7 @@ final class PersistenceController {
             PendingMutation.self,
             CachedWeatherAlertState.self,
             SavedIdentification.self,
+            CachedTripGoal.self,
         ])
         let config = ModelConfiguration("PackRat", schema: schema)
         do {

@@ -393,6 +393,7 @@ enum VisualSampleData {
         // exercised so the store screenshots' trip list stays as it was.
         if ProcessInfo.processInfo.arguments.contains("--enable-flag=enableTripStats") {
             appState.tripsVM.trips += pastTrips(userId: userId, alpinePackId: alpinePack.id, desertPackId: desertPack.id, now: now)
+            appState.tripGoalsVM.applySample(goals: sampleGoals())
         }
         appState.tripsVM.isCacheLoaded = true
         appState.tripsVM.hasMore = false
@@ -771,10 +772,34 @@ enum VisualSampleData {
         }
     }
 
+    /// Two goals for this year, one custom goal under way and one finished.
+    private static func sampleGoals() -> [TripGoal] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let year = calendar.component(.year, from: today)
+        func day(_ offset: Int) -> String {
+            TripGoal.dayString(from: calendar.date(byAdding: .day, value: offset, to: today) ?? today)
+        }
+        let created = "\(year)-01-02T09:00:00.000Z"
+        return [
+            TripGoal(id: "visual-goal-distance", kind: .annual, metric: .distance, target: 804_672, year: year, localCreatedAt: created),
+            TripGoal(id: "visual-goal-nights", kind: .annual, metric: .nights, target: 20, year: year, localCreatedAt: created),
+            TripGoal(
+                id: "visual-goal-custom", kind: .custom, metric: .nights, target: 10, name: "Ten nights before the baby arrives",
+                startDate: day(-60), endDate: day(75), localCreatedAt: created
+            ),
+            TripGoal(
+                id: "visual-goal-past", kind: .custom, metric: .trips, target: 3, name: "Spring shakedown",
+                startDate: day(-220), endDate: day(-120), localCreatedAt: created
+            ),
+        ]
+    }
+
     private static func pastTrips(userId: String?, alpinePackId: String, desertPackId: String, now: String) -> [Trip] {
         let samples: [(String, String, Double, Double, Int, Int, String?)] = [
-            ("Mount Rainier Wonderland", "Ashford, WA", 46.786, -121.735, -40, 4, alpinePackId),
-            ("Olympic Coast Overnight", "La Push, WA", 47.907, -124.636, -95, 2, alpinePackId),
+            ("Mount Rainier Wonderland", "Ashford, WA", 46.786, -121.735, -20, 4, alpinePackId),
+            // Three months and more before Rainier, so the stats screen shows a comeback.
+            ("Olympic Coast Overnight", "La Push, WA", 47.907, -124.636, -150, 2, alpinePackId),
             ("Joshua Tree Bouldering", "Twentynine Palms, CA", 33.873, -115.901, -160, 1, desertPackId),
             ("Zion Narrows", "Springdale, UT", 37.298, -113.026, -205, 2, desertPackId),
             ("Yosemite High Sierra Camps", "Tuolumne Meadows, CA", 37.873, -119.358, -300, 5, alpinePackId),

@@ -127,6 +127,9 @@ struct TripStats: Sendable {
     let busiestSeason: Season?
     let topGear: [GearCount]
     let packWeights: [WeightPoint]
+    /// A recent return after a break of three months or more, until the user
+    /// is back to their old pace or six months pass.
+    let comeback: Comeback?
 
     var isEmpty: Bool { finished.isEmpty }
 
@@ -146,6 +149,7 @@ struct TripStats: Sendable {
         self.finished = finished
 
         self.totals = Self.totals(finished, calendar: calendar)
+        self.comeback = Comeback.find(in: finished, today: today, calendar: calendar)
 
         let year = calendar.component(.year, from: today)
         let thisYearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? today
@@ -239,7 +243,7 @@ struct TripStats: Sendable {
         return "name:" + item.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 
-    private static func totals(_ trips: [FinishedTrip], calendar: Calendar) -> Totals {
+    static func totals(_ trips: [FinishedTrip], calendar: Calendar) -> Totals {
         var days = Set<Date>()
         for trip in trips {
             var day = trip.start
@@ -277,7 +281,7 @@ struct TripStats: Sendable {
 
     /// Trips starting inside the window, with their end clipped to it, so a
     /// comparison window never counts nights past its last day.
-    private static func clip(_ trips: [FinishedTrip], from start: Date, to end: Date, calendar: Calendar) -> [FinishedTrip] {
+    static func clip(_ trips: [FinishedTrip], from start: Date, to end: Date, calendar: Calendar) -> [FinishedTrip] {
         trips.compactMap { trip in
             guard trip.start >= start, trip.start <= end else { return nil }
             let clippedEnd = min(trip.end, end)
