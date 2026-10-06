@@ -153,4 +153,31 @@ struct TripReminderPlannerTests {
         #expect(TripReminderPlanner.checklistSuggestions(for: overnight, calendar: calendar)
             == ["Park pass", "Campsite reservation", "Share your plans with someone"])
     }
+
+    @Test("a multi-night trip with gear to charge and no power bank is told what size to bring")
+    func fieldChargingTip() {
+        let pack = makePack([makeItem("1", "Tent"), makeItem("2", "Headlamp")])
+        let threeNights = makeTrip(start: start, end: date(2026, 10, 23, 12))
+        let three = plan(now: date(2026, 10, 1, 12), pack: pack, packed: ["1", "2"], trip: threeNights)
+            .first { $0.moment == .threeDaysBefore }
+        #expect(three?.body == "You're all packed. No power bank in your pack — a 10,000 mAh one covers 3 nights.")
+
+        let week = makeTrip(start: start, end: date(2026, 10, 26, 12))
+        let state = TripReminderPlanner.PackState(pack: pack, packedItemIds: [])
+        #expect(TripReminderPlanner.fieldChargingTip(for: week, state: state, calendar: calendar)
+            == "No power bank in your pack — bring about 20,000 mAh for 6 nights.")
+    }
+
+    @Test("no charging tip for one night, with a power bank packed, or with nothing to charge")
+    func fieldChargingTipSkipped() {
+        let oneNight = makeTrip(start: start, end: date(2026, 10, 21, 12))
+        let long = makeTrip(start: start, end: date(2026, 10, 25, 12))
+        let headlamp = makePack([makeItem("1", "Headlamp")])
+        let withBank = makePack([makeItem("1", "Headlamp"), makeItem("2", "Anker Power Bank")])
+        let noGear = makePack([makeItem("1", "Tent")])
+        for (trip, pack) in [(oneNight, headlamp), (long, withBank), (long, noGear)] {
+            let state = TripReminderPlanner.PackState(pack: pack, packedItemIds: [])
+            #expect(TripReminderPlanner.fieldChargingTip(for: trip, state: state, calendar: calendar) == nil)
+        }
+    }
 }

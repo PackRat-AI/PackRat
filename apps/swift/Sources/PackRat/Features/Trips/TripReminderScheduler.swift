@@ -37,7 +37,7 @@ enum TripReminderScheduler {
 
         var reminders = trips.filter { !settings.isMuted($0.id) }.flatMap { trip in
             let pack = trip.packId.flatMap { id in packs.first { $0.id == id } }
-            let packed = pack.map { Set(packing.packedItems(in: $0.id).keys) } ?? []
+            let packed = pack.map { Set(packing.packedItems(in: $0.id).filter(\.value).keys) } ?? []
             return TripReminderPlanner.reminders(for: trip, pack: pack, packedItemIds: packed, now: now)
         }
         .sorted { $0.fireDate < $1.fireDate }

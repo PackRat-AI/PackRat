@@ -58,6 +58,12 @@ struct TripReadinessCard: View {
                 }
             }
 
+            if let tip = TripReminderPlanner.fieldChargingTip(for: trip, state: state) {
+                row(symbol: "battery.100percent.bolt", tint: .orange, title: "Charging on the trail") {
+                    Text(tip)
+                }
+            }
+
             let todo = TripReminderPlanner.openChecklistTitles(trip)
             if !todo.isEmpty {
                 row(symbol: "checklist", tint: .purple, title: "Before you go") {

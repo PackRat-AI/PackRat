@@ -47,7 +47,10 @@ enum TripReminderPlanner {
             guard let fireDate = fireDate(for: moment, startDay: startDay, calendar: calendar),
                   fireDate > now
             else { return nil }
-            let (title, body) = copy(for: moment, tripName: trip.name, state: state, todo: openChecklistTitles(trip))
+            let (title, body) = copy(
+                for: moment, tripName: trip.name, state: state, todo: openChecklistTitles(trip),
+                fieldCharging: fieldChargingTip(for: trip, state: state, calendar: calendar)
+            )
             return TripReminder(tripId: trip.id, moment: moment, fireDate: fireDate, title: title, body: body)
         }
     }
@@ -84,7 +87,8 @@ enum TripReminderPlanner {
     // MARK: - Copy
 
     private static func copy(
-        for moment: TripReminder.Moment, tripName: String, state: PackState, todo: [String]
+        for moment: TripReminder.Moment, tripName: String, state: PackState, todo: [String],
+        fieldCharging: String?
     ) -> (String, String) {
         switch moment {
         case .weekBefore:
@@ -105,7 +109,8 @@ enum TripReminderPlanner {
             case .partial(let packed, let total):
                 "You've packed \(packed * 100 / total)%. Still to pack: \(list(state.unpacked))."
             }
-            return ("\(tripName) starts in 3 days", body)
+            // Three days out still leaves time to buy or borrow a power bank.
+            return ("\(tripName) starts in 3 days", [body, fieldCharging].compactMap { $0 }.joined(separator: " "))
 
         case .eveningBefore:
             var lines: [String] = []
@@ -147,6 +152,33 @@ enum TripReminderPlanner {
     }
 }
 
+// MARK: - Field charging
+
+extension TripReminderPlanner {
+    /// Nights between the start and end days; nil without both dates.
+    static func nights(_ trip: Trip, calendar: Calendar = .current) -> Int? {
+        guard let start = trip.startDate?.toDate(), let end = trip.endDate?.toDate() else { return nil }
+        return calendar.dateComponents(
+            [.day], from: calendar.startOfDay(for: start), to: calendar.startOfDay(for: end)
+        ).day
+    }
+
+    /// A power-bank nudge for a trip of two or more nights that carries gear
+    /// needing a charge and nothing to charge it from. Sizes follow common
+    /// backpacking guidance: ~10,000 mAh covers a phone, headlamp and watch for
+    /// up to 3 nights, ~20,000 mAh for a week; past that, plan a recharge.
+    static func fieldChargingTip(for trip: Trip, state: PackState, calendar: Calendar = .current) -> String? {
+        guard !state.chargeable.isEmpty, !state.hasFieldPower,
+              let nights = nights(trip, calendar: calendar), nights >= 2
+        else { return nil }
+        return switch nights {
+        case ...3: "No power bank in your pack — a 10,000 mAh one covers \(nights) nights."
+        case ...7: "No power bank in your pack — bring about 20,000 mAh for \(nights) nights."
+        default: "No power bank in your pack — \(nights) nights needs 20,000 mAh or more, plus a solar panel or a town stop to recharge."
+        }
+    }
+}
+
 // MARK: - Before you go
 
 extension TripReminderPlanner {
@@ -183,10 +215,12 @@ extension TripReminderPlanner {
         let unpacked: [String]
         /// Battery-powered gear in the pack, packed or not — it still needs a charge.
         let chargeable: [String]
+        /// The pack carries something to recharge from: a power bank or solar panel.
+        let hasFieldPower: Bool
 
         init(pack: Pack?, packedItemIds: Set<String>) {
             guard let pack else {
-                progress = .noPack; unpacked = []; chargeable = []
+                progress = .noPack; unpacked = []; chargeable = []; hasFieldPower = false
                 return
             }
             let items = pack.activeItems
@@ -202,6 +236,7 @@ extension TripReminderPlanner {
                 .sorted { (priorityRank($0), -$0.weight) < (priorityRank($1), -$1.weight) }
                 .map(\.name)
             chargeable = items.filter(isChargeable).map(\.name)
+            hasFieldPower = items.contains(where: isFieldPower)
         }
     }
 
@@ -221,6 +256,15 @@ extension TripReminderPlanner {
         "battery", "camera", "inreach", "satellite", "communicator", "watch", "radio",
         "speaker", "e-reader", "kindle", "drone",
     ]
+
+    private static let fieldPowerKeywords = [
+        "power bank", "powerbank", "battery pack", "battery bank", "portable charger", "solar",
+    ]
+
+    static func isFieldPower(_ item: PackItem) -> Bool {
+        let name = item.name.lowercased()
+        return fieldPowerKeywords.contains { name.contains($0) }
+    }
 
     static func isChargeable(_ item: PackItem) -> Bool {
         let name = item.name.lowercased()
