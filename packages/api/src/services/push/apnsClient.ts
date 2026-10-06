@@ -103,8 +103,7 @@ export async function sendApnsPush({
     alert: { title: string; body: string };
     sound?: string;
     badge?: number;
-    weatherLocationId: number;
-  };
+  } & ({ weatherLocationId: number } | { tripId: string });
 }): Promise<ApnsSendResult> {
   const { APNS_BUNDLE_ID, APNS_ENVIRONMENT } = env;
   if (!APNS_BUNDLE_ID) throw new Error('APNs is not configured (APNS_BUNDLE_ID unset)');
@@ -126,7 +125,10 @@ export async function sendApnsPush({
         sound: payload.sound ?? 'default',
         badge: payload.badge,
       },
-      weatherLocationId: payload.weatherLocationId,
+      // The app routes a tap by whichever id is present.
+      ...('weatherLocationId' in payload
+        ? { weatherLocationId: payload.weatherLocationId }
+        : { tripId: payload.tripId }),
     }),
   });
 

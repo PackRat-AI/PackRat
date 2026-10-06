@@ -26,6 +26,7 @@ import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import { listEffectiveFeatureFlags } from '@packrat/api/services/featureFlagsService';
 import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
+import { pollTripDestinations } from '@packrat/api/services/weatherMonitoring/pollTripDestinations';
 import { pollWatchedLocations } from '@packrat/api/services/weatherMonitoring/pollWatchedLocations';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
@@ -564,18 +565,30 @@ const workerHandler = {
         }
         if (controller.cron === '*/5 * * * *') {
           const flags = await listEffectiveFeatureFlags();
-          if (!flags[FeatureFlag.EnableWeatherMonitoring]) return;
-
-          const result = await record({
-            operation: 'weatherMonitoring.poll',
-            tags: { trigger: 'cron' },
-            extra: { cron: controller.cron },
-            fn: async () => pollWatchedLocations({ env }),
-          });
-          console.log(
-            `[weatherMonitoring] poll: checked=${result.checked} skipped=${result.skipped} ` +
-              `failed=${result.failed} notified=${result.notified}`,
-          );
+          if (flags[FeatureFlag.EnableWeatherMonitoring]) {
+            const result = await record({
+              operation: 'weatherMonitoring.poll',
+              tags: { trigger: 'cron' },
+              extra: { cron: controller.cron },
+              fn: async () => pollWatchedLocations({ env }),
+            });
+            console.log(
+              `[weatherMonitoring] poll: checked=${result.checked} skipped=${result.skipped} ` +
+                `failed=${result.failed} notified=${result.notified}`,
+            );
+          }
+          if (flags[FeatureFlag.EnableTripReminders]) {
+            const result = await record({
+              operation: 'tripReminders.pollDestinations',
+              tags: { trigger: 'cron' },
+              extra: { cron: controller.cron },
+              fn: async () => pollTripDestinations({ env }),
+            });
+            console.log(
+              `[tripReminders] destination poll: checked=${result.checked} skipped=${result.skipped} ` +
+                `failed=${result.failed} notified=${result.notified}`,
+            );
+          }
           return;
         }
         throw new Error(`Unknown cron: ${controller.cron}`);

@@ -35,6 +35,7 @@ enum TripReminderScheduler {
         guard FeatureFlagStore.shared.isEnabled(flagKey), settings.isEnabled else { return }
         let status = await center.notificationSettings().authorizationStatus
         guard status == .authorized || status == .provisional else { return }
+        registerForPushOnce()
 
         var reminders = trips.filter { !settings.isMuted($0.id) }.flatMap { trip in
             let pack = trip.packId.flatMap { id in packs.first { $0.id == id } }
@@ -70,6 +71,19 @@ enum TripReminderScheduler {
         let center = UNUserNotificationCenter.current()
         guard await center.notificationSettings().authorizationStatus == .notDetermined else { return }
         _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+        registerForPushOnce()
+    }
+
+    private static var didRegisterForPush = false
+
+    /// Weather alerts at a trip's destination are pushed by the server, so the
+    /// device token has to reach it even if the user never watched a weather
+    /// location. Once per launch: Apple hands back a token each time, and it can
+    /// change between launches.
+    private static func registerForPushOnce() {
+        guard !didRegisterForPush else { return }
+        didRegisterForPush = true
+        Task { await PushRegistrationService.registerForPushIfNeeded() }
     }
 
     private static func request(for reminder: TripReminder) -> UNNotificationRequest {
