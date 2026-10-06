@@ -4,11 +4,7 @@
   "account_id": "a0e238a64b4bb8d9ca35c30149c26893",
   "main": "src/index.ts",
   "compatibility_date": "2025-06-01",
-  "compatibility_flags": [
-    "nodejs_compat",
-    "nodejs_als",
-    "global_fetch_strictly_public"
-  ],
+  "compatibility_flags": ["nodejs_compat", "nodejs_als", "global_fetch_strictly_public"],
   "keep_vars": true,
   "logpush": true,
   "upload_source_maps": true,
@@ -60,9 +56,7 @@
     }
   ],
   "triggers": {
-    "crons": [
-      "*/5 * * * *"
-    ]
+    "crons": ["*/5 * * * *"]
   },
   "vars": {
     "ENVIRONMENT": "development"
