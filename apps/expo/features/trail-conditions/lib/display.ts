@@ -59,7 +59,7 @@ const CONDITION_DISPLAY = Object.freeze({
   },
 } as const satisfies Record<OverallCondition, ConditionDisplay>);
 
-const UNKNOWN_CONDITION_DISPLAY: ConditionDisplay = Object.freeze({
+const UNKNOWN_CONDITION_DISPLAY = Object.freeze<ConditionDisplay>({
   icon: 'help-circle-outline',
   iconColor: (colors) => colors.grey,
   textClassName: 'text-muted-foreground',
