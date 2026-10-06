@@ -13,6 +13,7 @@ export * from './seasonSuggestions';
 export * from './shared';
 export * from './trailConditions';
 export * from './trails';
+export * from './tripStats';
 export * from './trips';
 export * from './upload';
 export * from './users';

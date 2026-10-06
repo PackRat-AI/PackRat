@@ -635,6 +635,53 @@ export const trips = pgTable('trips', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+/**
+ * A user's trip stats goal. `annual` goals cover `year` and reset on 1 January;
+ * `custom` goals run from `startDate` to `endDate` and carry a user-chosen name.
+ * `target` is in the metric's base unit: a count, or metres for distance and
+ * elevation. Progress is never stored — clients work it out from the trips.
+ */
+export const tripGoals = pgTable(
+  'trip_goals',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    kind: text('kind').$type<'annual' | 'custom'>().notNull(),
+    metric: text('metric')
+      .$type<'trips' | 'nights' | 'days' | 'distance' | 'elevation'>()
+      .notNull(),
+    target: real('target').notNull(),
+    year: integer('year'),
+    name: text('name'),
+    startDate: timestamp('start_date'),
+    endDate: timestamp('end_date'),
+    localCreatedAt: timestamp('local_created_at').notNull(),
+    localUpdatedAt: timestamp('local_updated_at').notNull(),
+    deleted: boolean('deleted').notNull().default(false),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [index('trip_goals_user_id_idx').on(table.userId)],
+);
+
+/**
+ * Per-user trip stats choices that follow the account across devices: whether
+ * stats are on, and the optional reason given for the break before a comeback.
+ * The reason applies only to the comeback that ended at `breakReasonTripId`.
+ */
+export const tripStatsSettings = pgTable('trip_stats_settings', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  /** Null until the user answers the opt-in; false hides stats and keeps the logs. */
+  enabled: boolean('enabled'),
+  breakReason: text('break_reason').$type<'injury' | 'illness' | 'life' | 'season'>(),
+  breakReasonTripId: text('break_reason_trip_id'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Relations
 
 export const packsRelations = relations(packs, ({ one, many }) => ({

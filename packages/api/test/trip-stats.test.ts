@@ -1,0 +1,163 @@
+import { beforeEach, describe, expect, it } from 'vitest';
+import { seedAndLoginTestUser } from './utils/db-helpers';
+import { api, apiWithAuth, expectUnauthorized, httpMethods } from './utils/test-helpers';
+
+const now = new Date().toISOString();
+
+const annualGoal = (overrides: Record<string, unknown> = {}) => ({
+  id: crypto.randomUUID(),
+  kind: 'annual',
+  metric: 'distance',
+  target: 804_672,
+  year: 2026,
+  localCreatedAt: now,
+  localUpdatedAt: now,
+  ...overrides,
+});
+
+describe('Trip Stats Routes', () => {
+  beforeEach(async () => {
+    await seedAndLoginTestUser();
+  });
+
+  describe('Authentication', () => {
+    it('GET /trip-stats/settings requires auth', async () => {
+      expectUnauthorized(await api('/trip-stats/settings', httpMethods.get()));
+    });
+
+    it('GET /trip-stats/goals requires auth', async () => {
+      expectUnauthorized(await api('/trip-stats/goals', httpMethods.get()));
+    });
+  });
+
+  describe('settings', () => {
+    it('reads as undecided with no reason before anything is saved', async () => {
+      const res = await apiWithAuth('/trip-stats/settings');
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        enabled: null,
+        breakReason: null,
+        breakReasonTripId: null,
+      });
+    });
+
+    it('stores and replaces the whole settings record', async () => {
+      const first = await apiWithAuth(
+        '/trip-stats/settings',
+        httpMethods.put({ enabled: true, breakReason: 'injury', breakReasonTripId: 'trip-1' }),
+      );
+      expect(first.status).toBe(200);
+
+      await apiWithAuth('/trip-stats/settings', httpMethods.put({ enabled: true }));
+
+      const res = await apiWithAuth('/trip-stats/settings');
+      expect(await res.json()).toEqual({
+        enabled: true,
+        breakReason: null,
+        breakReasonTripId: null,
+      });
+    });
+
+    it('rejects an unknown break reason', async () => {
+      const res = await apiWithAuth(
+        '/trip-stats/settings',
+        httpMethods.put({ enabled: true, breakReason: 'boredom' }),
+      );
+      expect(res.status).toBe(422);
+    });
+  });
+
+  describe('goals', () => {
+    it('creates, lists, replaces and deletes a goal', async () => {
+      const goal = annualGoal();
+      const created = await apiWithAuth('/trip-stats/goals', httpMethods.post(goal));
+      expect(created.status).toBe(200);
+      expect(await created.json()).toMatchObject({
+        id: goal.id,
+        kind: 'annual',
+        metric: 'distance',
+        target: 804_672,
+        year: 2026,
+        deleted: false,
+      });
+
+      const updated = await apiWithAuth(
+        `/trip-stats/goals/${goal.id}`,
+        httpMethods.put({ kind: 'annual', metric: 'nights', target: 20, year: 2026 }),
+      );
+      expect(updated.status).toBe(200);
+      expect(await updated.json()).toMatchObject({ metric: 'nights', target: 20 });
+
+      const listed = await apiWithAuth('/trip-stats/goals');
+      const goals = await listed.json();
+      expect(goals).toHaveLength(1);
+      expect(goals[0]).toMatchObject({ id: goal.id, metric: 'nights' });
+
+      const deleted = await apiWithAuth(`/trip-stats/goals/${goal.id}`, httpMethods.delete());
+      expect(deleted.status).toBe(200);
+      expect(await (await apiWithAuth('/trip-stats/goals')).json()).toEqual([]);
+    });
+
+    it('stores a custom goal window and drops the year', async () => {
+      const res = await apiWithAuth(
+        '/trip-stats/goals',
+        httpMethods.post(
+          annualGoal({
+            kind: 'custom',
+            metric: 'nights',
+            target: 10,
+            name: 'Ten nights before the baby',
+            startDate: '2026-03-01T00:00:00.000Z',
+            endDate: '2026-11-30T00:00:00.000Z',
+          }),
+        ),
+      );
+      expect(res.status).toBe(200);
+      expect(await res.json()).toMatchObject({
+        kind: 'custom',
+        year: null,
+        name: 'Ten nights before the baby',
+        startDate: '2026-03-01T00:00:00.000Z',
+        endDate: '2026-11-30T00:00:00.000Z',
+      });
+    });
+
+    it('refuses an annual goal without a year', async () => {
+      const res = await apiWithAuth(
+        '/trip-stats/goals',
+        httpMethods.post(annualGoal({ year: null })),
+      );
+      expect(res.status).toBe(422);
+    });
+
+    it('refuses a custom goal that ends before it starts', async () => {
+      const res = await apiWithAuth(
+        '/trip-stats/goals',
+        httpMethods.post(
+          annualGoal({
+            kind: 'custom',
+            startDate: '2026-11-30T00:00:00.000Z',
+            endDate: '2026-03-01T00:00:00.000Z',
+          }),
+        ),
+      );
+      expect(res.status).toBe(422);
+    });
+
+    it('answers a replayed create with 409 rather than a duplicate', async () => {
+      const goal = annualGoal();
+      await apiWithAuth('/trip-stats/goals', httpMethods.post(goal));
+      const replay = await apiWithAuth('/trip-stats/goals', httpMethods.post(goal));
+      expect(replay.status).toBe(409);
+      expect(await (await apiWithAuth('/trip-stats/goals')).json()).toHaveLength(1);
+    });
+
+    it('404s when replacing a goal that does not exist', async () => {
+      const res = await apiWithAuth(
+        '/trip-stats/goals/missing',
+        httpMethods.put({ kind: 'annual', metric: 'trips', target: 5, year: 2026 }),
+      );
+      expect(res.status).toBe(404);
+    });
+  });
+});
