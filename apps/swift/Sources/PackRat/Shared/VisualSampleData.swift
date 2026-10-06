@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 
 enum VisualSampleData {
@@ -781,6 +782,18 @@ enum VisualSampleData {
             ("North Cascades Day Hike", "Marblemount, WA", 48.771, -121.298, -420, 0, nil),
             ("Torres del Paine W Trek", "Puerto Natales, Chile", -50.942, -73.406, -500, 4, alpinePackId),
         ]
+        // Logs for most trips, leaving two unlogged so the screen shows
+        // figures that count only the trips holding them.
+        let logs: [TripLog?] = [
+            sampleLog([.backpacking], km: 150, gain: 6_900, lat: 46.786, lon: -121.735),
+            sampleLog([.backpacking, .camping], km: 27, gain: 600, lat: 47.907, lon: -124.636),
+            sampleLog([.climbing], km: 4, gain: 120, lat: 33.873, lon: -115.901),
+            sampleLog([.hiking], km: 26, gain: 450, lat: 37.298, lon: -113.026),
+            nil,
+            sampleLog([.backpacking], km: 39, gain: 1_800, lat: 36.057, lon: -112.140),
+            sampleLog([.hiking], km: 14, gain: 1_100, lat: 48.771, lon: -121.298),
+            nil,
+        ]
         return samples.enumerated().map { index, sample in
             let start = Calendar.current.date(byAdding: .day, value: sample.4, to: Date())
             let end = start.flatMap { Calendar.current.date(byAdding: .day, value: sample.5, to: $0) }
@@ -796,8 +809,29 @@ enum VisualSampleData {
                 packId: sample.6,
                 deleted: false,
                 createdAt: now,
-                updatedAt: now
+                updatedAt: now,
+                log: logs[index]
             )
         }
+    }
+
+    /// A wandering loop near the trip's location, long enough to draw.
+    private static func sampleLog(_ activities: [TripActivity], km: Double, gain: Double, lat: Double, lon: Double) -> TripLog {
+        let radius = min(km / 40, 0.12)
+        let points = (0...48).map { step -> CLLocationCoordinate2D in
+            let angle = Double(step) / 48 * 2 * .pi
+            let wobble = 1 + 0.25 * sin(angle * 5)
+            return CLLocationCoordinate2D(
+                latitude: lat + radius * wobble * sin(angle),
+                longitude: lon + radius * wobble * cos(angle) * 1.4
+            )
+        }
+        return TripLog(
+            activities: activities,
+            distanceMeters: km * 1_000,
+            elevationGainMeters: gain,
+            route: Polyline.encode(points),
+            source: .track
+        )
     }
 }

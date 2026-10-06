@@ -88,6 +88,9 @@ struct Trip: Codable, Identifiable, Sendable {
     let deleted: Bool
     let createdAt: String?
     let updatedAt: String?
+    /// What happened on the trip, once it's over. See `TripLog`.
+    var log: TripLog? = nil
+    var excludedFromStats: Bool? = nil
 }
 
 struct TripChecklistItem: Codable, Identifiable, Hashable, Sendable {

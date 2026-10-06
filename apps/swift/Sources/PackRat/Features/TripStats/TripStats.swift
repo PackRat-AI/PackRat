@@ -5,9 +5,11 @@ import Foundation
 /// and the packs linked to them — no network, no persistence — so the stats
 /// screen and its tests read the same numbers.
 ///
-/// Only what trips already carry is counted: dates, a location and a pack.
-/// Distance, elevation and activity wait on the Trip log (see
-/// `docs/features/trip-stats.md`); nothing here estimates them.
+/// Dates, a location and a pack count for every trip. Distance, elevation,
+/// activity and route come from the trip's log (see
+/// `docs/features/trip-stats.md`) and count only for the trips that hold
+/// them; nothing here estimates a missing figure. Trips the user left out of
+/// stats count toward nothing.
 struct TripStats: Sendable {
 
     /// A trip whose end date has passed, with its dates resolved to days.
@@ -19,6 +21,8 @@ struct TripStats: Sendable {
         let nights: Int
 
         var id: String { trip.id }
+        var distance: Double? { trip.log?.distanceMeters }
+        var elevationGain: Double? { trip.log?.elevationGainMeters }
     }
 
     struct Totals: Equatable, Sendable {
@@ -26,6 +30,24 @@ struct TripStats: Sendable {
         var nights = 0
         var days = 0
         var places = 0
+        /// Metres, summed over the trips that logged one; nil when none did.
+        var distance: Double?
+        var elevationGain: Double?
+    }
+
+    struct ActivityBucket: Identifiable, Equatable, Sendable {
+        let activity: TripActivity
+        var trips = 0
+        var nights = 0
+        var distance = 0.0
+
+        var id: TripActivity { activity }
+    }
+
+    struct Route: Identifiable, Sendable {
+        let id: String
+        let name: String
+        let coordinates: [CLLocationCoordinate2D]
     }
 
     struct MonthBucket: Identifiable, Equatable, Sendable {
@@ -91,7 +113,13 @@ struct TripStats: Sendable {
     /// had no trips before this year — a first-year user sees this year alone.
     let lastYearToDate: Totals?
     let longestByNights: FinishedTrip?
+    let longestByDistance: FinishedTrip?
     let averageNights: Double?
+    /// Over the trips that logged a distance only.
+    let averageDistance: Double?
+    /// Trips per activity, busiest first. A trip with two activities counts in both.
+    let activities: [ActivityBucket]
+    let routes: [Route]
     /// The last twelve months, oldest first, including empty ones.
     let months: [MonthBucket]
     /// Busiest calendar month across the whole history, by nights then trips.
@@ -106,7 +134,7 @@ struct TripStats: Sendable {
         let today = calendar.startOfDay(for: now)
 
         let finished: [FinishedTrip] = trips.activeTrips.compactMap { trip in
-            guard let start = trip.startDate?.toDate() else { return nil }
+            guard !trip.isExcludedFromStats, let start = trip.startDate?.toDate() else { return nil }
             let end = trip.endDate?.toDate() ?? start
             let startDay = calendar.startOfDay(for: start)
             let endDay = max(calendar.startOfDay(for: end), startDay)
@@ -135,6 +163,31 @@ struct TripStats: Sendable {
         self.averageNights = finished.isEmpty
             ? nil
             : Double(finished.reduce(0) { $0 + $1.nights }) / Double(finished.count)
+
+        let withDistance = finished.filter { ($0.distance ?? 0) > 0 }
+        self.longestByDistance = withDistance.max { ($0.distance ?? 0, $1.start) < ($1.distance ?? 0, $0.start) }
+        self.averageDistance = withDistance.isEmpty
+            ? nil
+            : withDistance.reduce(0) { $0 + ($1.distance ?? 0) } / Double(withDistance.count)
+
+        var byActivity: [TripActivity: ActivityBucket] = [:]
+        for trip in finished {
+            for activity in Set(trip.trip.log?.activities ?? []) {
+                byActivity[activity, default: ActivityBucket(activity: activity)].trips += 1
+                byActivity[activity, default: ActivityBucket(activity: activity)].nights += trip.nights
+                byActivity[activity, default: ActivityBucket(activity: activity)].distance += trip.distance ?? 0
+            }
+        }
+        self.activities = byActivity.values.sorted {
+            ($0.trips, $1.activity.rawValue) > ($1.trips, $0.activity.rawValue)
+        }
+
+        self.routes = finished.compactMap { trip in
+            guard let encoded = trip.trip.log?.route, !encoded.isEmpty else { return nil }
+            let coordinates = Polyline.decode(encoded)
+            guard coordinates.count >= 2 else { return nil }
+            return Route(id: trip.id, name: trip.trip.name, coordinates: coordinates)
+        }
 
         self.months = Self.lastTwelveMonths(finished, today: today, calendar: calendar)
 
@@ -196,11 +249,15 @@ struct TripStats: Sendable {
                 day = next
             }
         }
+        let distances = trips.compactMap(\.distance)
+        let gains = trips.compactMap(\.elevationGain)
         return Totals(
             trips: trips.count,
             nights: trips.reduce(0) { $0 + $1.nights },
             days: days.count,
-            places: distinctPlaces(trips.compactMap(\.trip.location))
+            places: distinctPlaces(trips.compactMap(\.trip.location)),
+            distance: distances.isEmpty ? nil : distances.reduce(0, +),
+            elevationGain: gains.isEmpty ? nil : gains.reduce(0, +)
         )
     }
 

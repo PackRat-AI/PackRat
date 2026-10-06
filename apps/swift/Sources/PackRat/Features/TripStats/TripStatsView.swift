@@ -12,6 +12,9 @@ struct TripStatsView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
     @Environment(\.weightUnit) private var weightUnit
+    @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
+
+    private var distanceUnit: TripDistanceUnit { TripDistanceUnit(speedUnit: speedUnit) }
 
     private var stats: TripStats {
         TripStats(trips: appState.tripsVM.trips, packs: appState.packsVM.packs)
@@ -44,7 +47,7 @@ struct TripStatsView: View {
     private func content(_ stats: TripStats) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                TotalsGrid(totals: stats.totals)
+                TotalsGrid(totals: stats.totals, unit: distanceUnit)
 
                 if stats.thisYear.trips > 0 || stats.lastYearToDate != nil {
                     YearComparisonCard(thisYear: stats.thisYear, lastYear: stats.lastYearToDate)
@@ -52,10 +55,14 @@ struct TripStatsView: View {
 
                 MonthlyChartCard(months: stats.months)
 
-                HighlightsCard(stats: stats)
+                if !stats.activities.isEmpty {
+                    ActivitiesCard(activities: stats.activities, unit: distanceUnit)
+                }
 
-                if stats.finished.contains(where: { $0.trip.location != nil }) {
-                    TripsMapCard(trips: stats.finished)
+                HighlightsCard(stats: stats, unit: distanceUnit)
+
+                if stats.finished.contains(where: { $0.trip.location != nil }) || !stats.routes.isEmpty {
+                    TripsMapCard(trips: stats.finished, routes: stats.routes)
                 }
 
                 if !stats.topGear.isEmpty {
@@ -102,22 +109,33 @@ private struct StatsCard<Content: View>: View {
 
 private struct TotalsGrid: View {
     let totals: TripStats.Totals
+    let unit: TripDistanceUnit
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-            tile(totals.trips, "Trips", "map.fill")
-            tile(totals.nights, "Nights Out", "moon.stars.fill")
-            tile(totals.days, "Days Outdoors", "sun.max.fill")
-            tile(totals.places, "Places", "mappin.and.ellipse")
+            tile(totals.trips.formatted(), "Trips", "map.fill")
+            // Distance and climbing appear once a logged trip carries them,
+            // never as a zero standing in for "not logged".
+            if let distance = totals.distance {
+                tile(unit.formatDistance(distance), "Distance", "point.topleft.down.to.point.bottomright.curvepath")
+            }
+            if let gain = totals.elevationGain {
+                tile(unit.formatElevation(gain), "Elevation Gained", "mountain.2.fill")
+            }
+            tile(totals.nights.formatted(), "Nights Out", "moon.stars.fill")
+            tile(totals.days.formatted(), "Days Outdoors", "sun.max.fill")
+            tile(totals.places.formatted(), "Places", "mappin.and.ellipse")
         }
     }
 
-    private func tile(_ value: Int, _ label: String, _ symbol: String) -> some View {
+    private func tile(_ value: String, _ label: String, _ symbol: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Image(systemName: symbol)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.accentColor)
-            Text(value, format: .number)
+            Text(value)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
                 .font(.title.weight(.bold))
                 .monospacedDigit()
                 .contentTransition(.numericText())
@@ -255,11 +273,52 @@ private struct MonthlyChartCard: View {
     }
 }
 
+// MARK: - Activities
+
+private struct ActivitiesCard: View {
+    let activities: [TripStats.ActivityBucket]
+    let unit: TripDistanceUnit
+
+    var body: some View {
+        StatsCard(title: "Activities", subtitle: "From your trip logs") {
+            Chart(activities) { bucket in
+                BarMark(
+                    x: .value("Trips", bucket.trips),
+                    y: .value("Activity", bucket.activity.label)
+                )
+                .foregroundStyle(Color.accentColor)
+                .cornerRadius(3)
+                .annotation(position: .trailing, alignment: .leading, spacing: 6) {
+                    Text(detail(bucket))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .accessibilityLabel(bucket.activity.label)
+                .accessibilityValue(detail(bucket))
+            }
+            .chartXAxis(.hidden)
+            .chartXScale(domain: 0...Double((activities.map(\.trips).max() ?? 1)) * 1.6)
+            .chartYAxis {
+                AxisMarks(position: .leading) { AxisValueLabel() }
+            }
+            .frame(height: CGFloat(activities.count) * 34 + 8)
+        }
+    }
+
+    private func detail(_ bucket: TripStats.ActivityBucket) -> String {
+        var parts = ["\(bucket.trips) trip\(bucket.trips == 1 ? "" : "s")"]
+        if bucket.nights > 0 { parts.append("\(bucket.nights) night\(bucket.nights == 1 ? "" : "s")") }
+        if bucket.distance > 0 { parts.append(unit.formatDistance(bucket.distance)) }
+        return parts.joined(separator: " · ")
+    }
+}
+
 // MARK: - Highlights
 
 private struct HighlightsCard: View {
     @Environment(AppState.self) private var appState
     let stats: TripStats
+    let unit: TripDistanceUnit
 
     var body: some View {
         StatsCard(title: "Highlights") {
@@ -275,8 +334,23 @@ private struct HighlightsCard: View {
                     .accessibilityIdentifier("trip_stats_longest_trip")
                     Divider()
                 }
+                if let farthest = stats.longestByDistance, let distance = farthest.distance {
+                    Button {
+                        appState.selectedTripId = farthest.id
+                        appState.navItem = .trips
+                    } label: {
+                        row("Farthest trip", "\(farthest.trip.name) · \(unit.formatDistance(distance))", "flag.checkered", chevron: true)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("trip_stats_farthest_trip")
+                    Divider()
+                }
                 if let average = stats.averageNights {
                     row("Average trip", average.formatted(.number.precision(.fractionLength(0...1))) + " nights", "moon")
+                }
+                if let average = stats.averageDistance {
+                    Divider()
+                    row("Average distance", unit.formatDistance(average), "ruler")
                 }
                 if let month = stats.busiestMonth {
                     Divider()
@@ -316,6 +390,7 @@ private struct HighlightsCard: View {
 private struct TripsMapCard: View {
     @Environment(AppState.self) private var appState
     let trips: [TripStats.FinishedTrip]
+    let routes: [TripStats.Route]
 
     @State private var position: MapCameraPosition = .automatic
     @State private var selection: String?
@@ -333,6 +408,11 @@ private struct TripsMapCard: View {
     var body: some View {
         StatsCard(title: "Where You've Been") {
             Map(position: $position, selection: $selection) {
+                // Translucent strokes: a trail walked more than once draws darker.
+                ForEach(routes) { route in
+                    MapPolyline(coordinates: route.coordinates)
+                        .stroke(Color.orange.opacity(0.55), style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+                }
                 ForEach(located, id: \.trip.id) { item in
                     Marker(item.trip.trip.name, systemImage: "tent.fill", coordinate: item.coordinate)
                         .tint(Color.accentColor)
