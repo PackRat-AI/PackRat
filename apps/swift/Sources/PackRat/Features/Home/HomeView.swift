@@ -76,6 +76,16 @@ struct HomeView: View {
             }
             .listRowBackground(Color.clear)
 
+            if let tripStats {
+                Section {
+                    Button { appState.navItem = .tripStats } label: {
+                        TripStatsTeaser(stats: tripStats)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("home_trip_stats_card")
+                }
+            }
+
             ForEach(filteredActionGroups) { group in
                 Section(group.title) {
                     ForEach(group.actions) { action in
@@ -101,6 +111,15 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 20) {
                 headerSection
                 summarySection
+                if let tripStats {
+                    Button { appState.navItem = .tripStats } label: {
+                        TripStatsTeaser(stats: tripStats)
+                            .padding(14)
+                            .background(.background.secondary, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("home_trip_stats_card")
+                }
                 actionsSection
             }
             .padding(.horizontal, 16)
@@ -111,6 +130,14 @@ struct HomeView: View {
         .navigationTitle("Home")
         .searchable(text: $homeSearchText, prompt: "Search PackRat")
         .homeSheets(showingSeasonSuggestions: $showingSeasonSuggestions, showingShoppingList: $showingShoppingList)
+    }
+
+    /// Trip Stats teaser, shown once the feature is on and a trip has
+    /// finished — before that the screen it opens has nothing to show.
+    private var tripStats: TripStats? {
+        guard NavItem.tripStats.isFeatureEnabled else { return nil }
+        let stats = TripStats(trips: appState.tripsVM.trips, packs: appState.packsVM.packs)
+        return stats.isEmpty ? nil : stats
     }
 
     // MARK: - Header
@@ -255,31 +282,7 @@ struct HomeView: View {
 
     // MARK: - Stats Row
 
-    /// Opens Trip Stats when that feature is on; otherwise the counts are just
-    /// a summary.
-    @ViewBuilder
     private var statsRow: some View {
-        if NavItem.tripStats.isFeatureEnabled {
-            Button {
-                appState.navItem = .tripStats
-            } label: {
-                HStack(spacing: 8) {
-                    statChips
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint("Opens Trip Stats")
-            .accessibilityIdentifier("home_stats_row")
-        } else {
-            statChips
-        }
-    }
-
-    private var statChips: some View {
         HStack(spacing: 12) {
             statChip(
                 value: "\(appState.packsVM.packs.count)",
