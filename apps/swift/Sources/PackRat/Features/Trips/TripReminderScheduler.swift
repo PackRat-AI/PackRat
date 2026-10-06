@@ -23,6 +23,7 @@ enum TripReminderScheduler {
         packs: [Pack],
         packing: PackingModeStore = .shared,
         settings: TripReminderSettings = .shared,
+        conditions: TripConditionsStore = .shared,
         now: Date = Date()
     ) async {
         let center = UNUserNotificationCenter.current()
@@ -38,7 +39,10 @@ enum TripReminderScheduler {
         var reminders = trips.filter { !settings.isMuted($0.id) }.flatMap { trip in
             let pack = trip.packId.flatMap { id in packs.first { $0.id == id } }
             let packed = pack.map { Set(packing.packedItems(in: $0.id).filter(\.value).keys) } ?? []
-            return TripReminderPlanner.reminders(for: trip, pack: pack, packedItemIds: packed, now: now)
+            let line = conditions.conditions(for: trip.id)?.reminderLine(celsius: TemperaturePreference.isCelsius)
+            return TripReminderPlanner.reminders(
+                for: trip, pack: pack, packedItemIds: packed, now: now, conditionsLine: line
+            )
         }
         .sorted { $0.fireDate < $1.fireDate }
         .prefix(maxPending)

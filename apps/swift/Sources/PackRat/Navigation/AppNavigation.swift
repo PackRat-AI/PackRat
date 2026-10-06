@@ -145,7 +145,12 @@ struct AppNavigation: View {
     private func syncTripReminders() {
         let trips = appState.tripsVM.trips
         let packs = appState.packsVM.packs
-        Task { await TripReminderScheduler.sync(trips: trips, packs: packs) }
+        Task {
+            // Throttled per trip, so a sync on every foreground costs nothing
+            // until a forecast is an hour old.
+            await TripConditionsStore.shared.refresh(trips: trips)
+            await TripReminderScheduler.sync(trips: trips, packs: packs)
+        }
     }
     #endif
 
@@ -164,6 +169,7 @@ struct AppNavigation: View {
                 // Rescheduling on background as well as foreground means the
                 // reminders carry the packing progress the user just made.
                 if phase == .active || phase == .background { syncTripReminders() }
+                if phase == .background { TripConditionsBackgroundRefresh.schedule() }
                 guard phase == .active else { return }
                 Task { await appState.weatherVM.refreshAlertBadgeState() }
             }

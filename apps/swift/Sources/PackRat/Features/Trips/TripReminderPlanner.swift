@@ -37,7 +37,8 @@ enum TripReminderPlanner {
         pack: Pack?,
         packedItemIds: Set<String>,
         now: Date,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        conditionsLine: String? = nil
     ) -> [TripReminder] {
         guard !trip.deleted, let start = trip.startDate?.toDate() else { return [] }
         let startDay = calendar.startOfDay(for: start)
@@ -49,7 +50,8 @@ enum TripReminderPlanner {
             else { return nil }
             let (title, body) = copy(
                 for: moment, tripName: trip.name, state: state, todo: openChecklistTitles(trip),
-                fieldCharging: fieldChargingTip(for: trip, state: state, calendar: calendar)
+                fieldCharging: fieldChargingTip(for: trip, state: state, calendar: calendar),
+                conditions: conditionsLine
             )
             return TripReminder(tripId: trip.id, moment: moment, fireDate: fireDate, title: title, body: body)
         }
@@ -87,6 +89,20 @@ enum TripReminderPlanner {
     // MARK: - Copy
 
     private static func copy(
+        for moment: TripReminder.Moment, tripName: String, state: PackState, todo: [String],
+        fieldCharging: String?,
+        conditions: String?
+    ) -> (String, String) {
+        let (title, body) = baseCopy(
+            for: moment, tripName: tripName, state: state, todo: todo, fieldCharging: fieldCharging
+        )
+        // The forecast rides on every reminder but the last: by the morning of,
+        // the user is already dressed for it.
+        guard moment != .morningOf, let conditions else { return (title, body) }
+        return (title, "\(body) \(conditions)")
+    }
+
+    private static func baseCopy(
         for moment: TripReminder.Moment, tripName: String, state: PackState, todo: [String],
         fieldCharging: String?
     ) -> (String, String) {

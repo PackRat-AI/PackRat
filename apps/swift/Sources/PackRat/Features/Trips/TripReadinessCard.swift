@@ -10,7 +10,9 @@ struct TripReadinessCard: View {
     let onStartPacking: (String) -> Void
 
     @Environment(AppState.self) private var appState
+    @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
     private var packing = PackingModeStore.shared
+    private var conditionsStore = TripConditionsStore.shared
 
     init(trip: Trip, onLinkPack: @escaping () -> Void, onStartPacking: @escaping (String) -> Void) {
         self.trip = trip
@@ -56,6 +58,10 @@ struct TripReadinessCard: View {
                 row(symbol: "bolt.fill", tint: .orange, title: "Charge before you go") {
                     Text(TripReminderPlanner.list(state.chargeable).capitalizedFirst)
                 }
+            }
+
+            if let conditions = conditionsStore.conditions(for: trip.id) {
+                weatherRows(conditions)
             }
 
             if let tip = TripReminderPlanner.fieldChargingTip(for: trip, state: state) {
@@ -105,6 +111,30 @@ struct TripReadinessCard: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func weatherRows(_ conditions: TripConditions) -> some View {
+        let celsius = temperatureUnit == .celsius
+        ForEach(conditions.alerts, id: \.self) { alert in
+            row(symbol: "exclamationmark.triangle.fill", tint: .red, title: alert.event) {
+                Text("Issued for the destination. Check the forecast before you go.")
+            }
+        }
+        row(symbol: "cloud.sun.fill", tint: .cyan, title: "Forecast") {
+            VStack(alignment: .leading, spacing: 4) {
+                Text([
+                    conditions.temperatureSummary(celsius: celsius),
+                    conditions.maxChanceOfRain >= 20 ? "\(conditions.maxChanceOfRain)% chance of rain" : nil,
+                ].compactMap { $0 }.joined(separator: " · "))
+                ForEach(conditions.packAdvice(celsius: celsius), id: \.self) { Text($0) }
+                if conditions.coveredDays < conditions.tripDays {
+                    Text("Forecast covers \(conditions.coveredDays) of \(conditions.tripDays) days so far.")
+                        .font(.caption)
+                }
+            }
+        }
+        .accessibilityIdentifier("trip_readiness_forecast")
     }
 
     /// Opens the trip's pack in packing mode on top of the trip.
