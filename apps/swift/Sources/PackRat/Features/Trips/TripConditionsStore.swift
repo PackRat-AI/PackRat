@@ -57,13 +57,19 @@ final class TripConditionsStore {
         conditions = conditions.filter { dueIds.contains($0.key) }
 
         for trip in due {
-            if !force, let existing = conditions[trip.id], now.timeIntervalSince(existing.fetchedAt) < Self.maxAge {
+            if !force, let existing = conditions[trip.id],
+               existing.sourceKey == TripConditions.sourceKey(for: trip),
+               now.timeIntervalSince(existing.fetchedAt) < Self.maxAge {
                 continue
             }
             guard let location = trip.location else { continue }
             do {
                 let forecast = try await service.getForecast(query: "\(location.latitude),\(location.longitude)")
-                guard let summary = TripConditions.make(trip: trip, forecast: forecast, now: now) else { continue }
+                guard let summary = TripConditions.make(trip: trip, forecast: forecast, now: now) else {
+                    // Moved out of the forecast's reach: drop the old destination's weather.
+                    conditions[trip.id] = nil
+                    continue
+                }
                 conditions[trip.id] = summary
                 #if os(iOS)
                 await announceNewAlerts(summary, trip: trip)

@@ -12,6 +12,8 @@ struct TripConditions: Codable, Equatable, Sendable {
     }
 
     let tripId: String
+    /// The destination and dates this was built for; a change to either makes it stale.
+    let sourceKey: String
     let fetchedAt: Date
     /// Trip days the forecast covers, out of `tripDays`.
     let coveredDays: Int
@@ -68,6 +70,7 @@ struct TripConditions: Codable, Equatable, Sendable {
 
         return TripConditions(
             tripId: trip.id,
+            sourceKey: sourceKey(for: trip),
             fetchedAt: now,
             coveredDays: daily.count,
             tripDays: tripDays,
@@ -80,6 +83,11 @@ struct TripConditions: Codable, Equatable, Sendable {
             conditionText: daily.first?.condition?.text,
             alerts: distinctAlerts
         )
+    }
+
+    static func sourceKey(for trip: Trip) -> String {
+        let location = trip.location.map { "\($0.latitude),\($0.longitude)" } ?? ""
+        return "\(location)|\(trip.startDate ?? "")|\(trip.endDate ?? "")"
     }
 
     private static func dayString(_ date: Date, calendar: Calendar) -> String {

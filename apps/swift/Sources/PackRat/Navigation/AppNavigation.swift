@@ -138,7 +138,8 @@ struct AppNavigation: View {
         let settings = TripReminderSettings.shared
         return ["enabled|\(settings.isEnabled)"] + appState.tripsVM.trips.map {
             let open = TripReminderPlanner.openChecklistTitles($0).joined(separator: ",")
-            return "\($0.id)|\($0.startDate ?? "")|\($0.packId ?? "")|\($0.name)|\(open)|\(settings.isMuted($0.id))"
+            let place = TripConditions.sourceKey(for: $0)
+            return "\($0.id)|\(place)|\($0.packId ?? "")|\($0.name)|\(open)|\(settings.isMuted($0.id))"
         }
     }
 
