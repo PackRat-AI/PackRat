@@ -145,6 +145,7 @@ struct TripDetailView: View {
         let linkedPack = appState.packsVM.packs.first(where: { $0.id == trip.packId })
         labeledSection("Pack") {
             if let pack = linkedPack {
+                let packing = packingState(pack)
                 VStack(spacing: 10) {
                     Button {
                         pushedPack = PackRoute(packId: pack.id, packing: false)
@@ -161,7 +162,7 @@ struct TripDetailView: View {
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(pack.name).font(.callout.bold())
-                                packStatus(pack)
+                                packStatus(packing)
                             }
                             Spacer()
                             if let total = pack.totalWeight {
@@ -178,10 +179,18 @@ struct TripDetailView: View {
                     .padding(14)
                     .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
+                    if case .partial(let packed, _) = packing.progress, packed > 0 {
+                        Text("Still to pack: \(TripReminderPlanner.list(packing.unpacked))")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("trip_detail_still_to_pack")
+                    }
+
                     Button {
                         pushedPack = PackRoute(packId: pack.id, packing: true)
                     } label: {
-                        Label("Start Packing", systemImage: "checklist")
+                        Label(packingButtonTitle(packing), systemImage: packing.progress == .done ? "checkmark.circle" : "checklist")
                             .font(.callout.weight(.semibold))
                             .frame(maxWidth: .infinity)
                     }
@@ -201,21 +210,41 @@ struct TripDetailView: View {
         }
     }
 
+    private func packingState(_ pack: Pack) -> TripReminderPlanner.PackState {
+        let packed = Set(PackingModeStore.shared.packedItems(in: pack.id).filter(\.value).keys)
+        return TripReminderPlanner.PackState(pack: pack, packedItemIds: packed)
+    }
+
     /// Item count, or how far packing has got once it has started — so "All
     /// packed" shows on the trip whether or not the readiness card is up.
     @ViewBuilder
-    private func packStatus(_ pack: Pack) -> some View {
-        let total = pack.itemCount
-        let packed = PackingModeStore.shared.packedCount(in: pack.id, among: pack.activeItems.map(\.id))
-        if total > 0, packed == total {
+    private func packStatus(_ state: TripReminderPlanner.PackState) -> some View {
+        switch state.progress {
+        case .done:
             Label("All packed", systemImage: "checkmark.circle.fill")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.green)
                 .accessibilityIdentifier("trip_detail_all_packed")
-        } else {
-            Text(packed > 0 ? "\(packed) of \(total) packed" : "\(total) items")
+        case .partial(let packed, let total) where packed > 0:
+            Text("\(packed) of \(total) packed")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        case .partial(_, let total):
+            Text("\(total) items")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        case .empty, .noPack:
+            Text("0 items")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func packingButtonTitle(_ state: TripReminderPlanner.PackState) -> String {
+        switch state.progress {
+        case .done: "Review Packing"
+        case .partial(let packed, _) where packed > 0: "Continue Packing"
+        default: "Start Packing"
         }
     }
 
