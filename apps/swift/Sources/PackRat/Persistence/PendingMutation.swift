@@ -20,6 +20,8 @@ enum OutboxEntityType: String, Codable, Sendable {
     /// by `TripGoalsViewModel.settingsEntityId`. Consecutive saves collapse to
     /// the latest, which is all a full-replace route needs.
     case tripStatsSettings
+    /// Park visits and summits added by hand, through `TripGoalsViewModel`.
+    case tripStatsEntry
 }
 
 /// The write being replayed. `create` and `update` carry a payload; `delete` does not.

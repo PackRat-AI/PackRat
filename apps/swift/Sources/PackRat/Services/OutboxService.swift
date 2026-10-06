@@ -489,6 +489,15 @@ final class OutboxService {
                 _ = try await tripStatsService.saveSettings(payload)
             case (.tripStatsSettings, .delete):
                 return .terminal("Trip stats settings cannot be deleted")
+
+            case (.tripStatsEntry, .create):
+                let payload: TripStatsEntryRequest = try decode(mutation.payload)
+                _ = try await tripStatsService.createEntry(payload)
+            case (.tripStatsEntry, .update):
+                let payload: TripStatsEntryRequest = try decode(mutation.payload)
+                _ = try await tripStatsService.updateEntry(mutation.entityId, payload)
+            case (.tripStatsEntry, .delete):
+                try await tripStatsService.deleteEntry(mutation.entityId)
             }
             return .success
         } catch {

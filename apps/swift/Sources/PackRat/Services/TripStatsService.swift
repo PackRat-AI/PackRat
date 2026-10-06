@@ -29,6 +29,31 @@ final class TripStatsService: Sendable {
         try await api.sendDiscarding(Endpoint(.delete, "/api/trip-stats/goals/\(goalId)"))
     }
 
+    func listEntries() async throws -> [TripStatsEntry] {
+        let rows: [Lenient<TripStatsEntry>] = try await api.send(Endpoint(.get, "/api/trip-stats/entries"))
+        return rows.compactMap(\.value)
+    }
+
+    func createEntry(_ request: TripStatsEntryRequest) async throws -> TripStatsEntry {
+        try await api.send(Endpoint(.post, "/api/trip-stats/entries", body: request))
+    }
+
+    func updateEntry(_ entryId: String, _ request: TripStatsEntryRequest) async throws -> TripStatsEntry {
+        try await api.send(Endpoint(.put, "/api/trip-stats/entries/\(entryId)", body: request))
+    }
+
+    func deleteEntry(_ entryId: String) async throws {
+        try await api.sendDiscarding(Endpoint(.delete, "/api/trip-stats/entries/\(entryId)"))
+    }
+
+    /// Named peaks in a box at most ~1° tall and 1.5° wide (the server refuses larger).
+    func nearbyPeaks(south: Double, west: Double, north: Double, east: Double) async throws -> [NearbyPeak] {
+        let query: [String: String?] = [
+            "south": String(south), "west": String(west), "north": String(north), "east": String(east),
+        ]
+        return try await api.send(Endpoint(.get, "/api/trip-stats/peaks/nearby", query: query))
+    }
+
     func settings() async throws -> TripStatsSettings {
         try await api.send(Endpoint(.get, "/api/trip-stats/settings"))
     }

@@ -28,7 +28,7 @@ struct TripGoal: Codable, Identifiable, Equatable, Sendable {
     }
 
     enum Metric: String, Codable, CaseIterable, Identifiable, Sendable {
-        case trips, nights, days, distance, elevation
+        case trips, nights, days, distance, elevation, summits, parks
 
         var id: String { rawValue }
 
@@ -39,6 +39,8 @@ struct TripGoal: Codable, Identifiable, Equatable, Sendable {
             case .days: return "Days Outdoors"
             case .distance: return "Distance"
             case .elevation: return "Elevation Gain"
+            case .summits: return "Summits"
+            case .parks: return "National Parks"
             }
         }
 
@@ -49,6 +51,8 @@ struct TripGoal: Codable, Identifiable, Equatable, Sendable {
             case .days: return "sun.max.fill"
             case .distance: return "point.topleft.down.to.point.bottomright.curvepath"
             case .elevation: return "mountain.2.fill"
+            case .summits: return "flag.fill"
+            case .parks: return "tree.fill"
             }
         }
 

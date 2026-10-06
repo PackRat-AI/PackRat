@@ -2,7 +2,8 @@ import Foundation
 import Observation
 import SwiftData
 
-/// The user's trip stats goals and settings, local-first like trips: every
+/// The user's trip stats goals, settings, and the park visits and summits
+/// they added by hand, local-first like trips: every
 /// change lands on device at once, then reaches the server directly or
 /// through the outbox when offline. Both follow the account across devices.
 @Observable
@@ -13,6 +14,7 @@ final class TripGoalsViewModel {
     static let settingsEntityId = "trip-stats-settings"
 
     private(set) var goals: [TripGoal] = []
+    private(set) var entries: [TripStatsEntry] = []
     private(set) var settings: TripStatsSettings
 
     private let service: TripStatsService
@@ -45,6 +47,9 @@ final class TripGoalsViewModel {
             let cached = (try? context.fetch(FetchDescriptor<CachedTripGoal>())) ?? []
             let local = cached.compactMap { $0.toGoal() }.activeGoals
             if !local.isEmpty || goals.isEmpty { goals = local.sorted(by: Self.order) }
+            let cachedEntries = (try? context.fetch(FetchDescriptor<CachedTripStatsEntry>())) ?? []
+            let localEntries = cachedEntries.compactMap { $0.toEntry() }.activeEntries
+            if !localEntries.isEmpty || entries.isEmpty { entries = localEntries }
             isCacheLoaded = true
         }
         guard !VisualSampleData.isEnabled, canUseRemote else { return }
@@ -61,6 +66,66 @@ final class TripGoalsViewModel {
             let remoteKept = remote.activeGoals.filter { !queued.contains($0.id) }
             goals = (remoteKept + localQueued).sorted(by: Self.order)
             writeCache(context: context)
+        }
+        if let remote = try? await service.listEntries() {
+            let localQueued = entries.filter { queued.contains($0.id) }
+            let remoteKept = remote.activeEntries.filter { !queued.contains($0.id) }
+            entries = remoteKept + localQueued
+            writeEntriesCache(context: context)
+        }
+    }
+
+    // MARK: - Hand-added park visits and summits
+
+    func save(_ entry: TripStatsEntry, context: ModelContext?) async {
+        var entry = entry
+        let now = Date.iso8601Now()
+        let isNew = !entries.contains { $0.id == entry.id }
+        if entry.localCreatedAt == nil { entry.localCreatedAt = now }
+        entry.localUpdatedAt = now
+        if let index = entries.firstIndex(where: { $0.id == entry.id }) {
+            entries[index] = entry
+        } else {
+            entries.append(entry)
+        }
+        writeEntriesCache(context: context)
+
+        let request = TripStatsEntryRequest(entry: entry, now: now)
+        let operation: OutboxOperation = isNew ? .create : .update
+        if canUseRemote, !queuedEntityIds(context: context).contains(entry.id) {
+            do {
+                _ = isNew
+                    ? try await service.createEntry(request)
+                    : try await service.updateEntry(entry.id, request)
+                return
+            } catch {
+                guard case .retry = outbox.classify(error, operation: operation) else { return }
+            }
+        }
+        outbox.enqueue(
+            entityType: .tripStatsEntry,
+            entityId: entry.id,
+            operation: operation,
+            payload: OutboxService.encode(request),
+            context: context
+        )
+    }
+
+    func deleteEntries(ids: [String], context: ModelContext?) async {
+        guard !ids.isEmpty else { return }
+        entries.removeAll { ids.contains($0.id) }
+        writeEntriesCache(context: context)
+        let queued = queuedEntityIds(context: context)
+        for id in ids {
+            if canUseRemote, !queued.contains(id) {
+                do {
+                    try await service.deleteEntry(id)
+                    continue
+                } catch {
+                    guard case .retry = outbox.classify(error, operation: .delete) else { continue }
+                }
+            }
+            outbox.enqueue(entityType: .tripStatsEntry, entityId: id, operation: .delete, context: context)
         }
     }
 
@@ -162,8 +227,9 @@ final class TripGoalsViewModel {
     // MARK: - Sample data
 
     /// Screenshot and demo runs only: shows goals without touching the server.
-    func applySample(goals sample: [TripGoal]) {
+    func applySample(goals sample: [TripGoal], entries sampleEntries: [TripStatsEntry] = []) {
         goals = sample.sorted(by: Self.order)
+        entries = sampleEntries
         isCacheLoaded = true
     }
 
@@ -181,8 +247,12 @@ final class TripGoalsViewModel {
         guard let context else { return [] }
         let goalType = OutboxEntityType.tripGoal.rawValue
         let settingsType = OutboxEntityType.tripStatsSettings.rawValue
+        let entryType = OutboxEntityType.tripStatsEntry.rawValue
         let rows = (try? context.fetch(FetchDescriptor<PendingMutation>(
-            predicate: #Predicate { !$0.failed && ($0.entityTypeRaw == goalType || $0.entityTypeRaw == settingsType) }
+            predicate: #Predicate {
+                !$0.failed
+                    && ($0.entityTypeRaw == goalType || $0.entityTypeRaw == settingsType || $0.entityTypeRaw == entryType)
+            }
         ))) ?? []
         return Set(rows.map(\.entityId))
     }
@@ -191,6 +261,13 @@ final class TripGoalsViewModel {
         guard let context, !VisualSampleData.isEnabled else { return }
         try? context.delete(model: CachedTripGoal.self)
         for goal in goals { context.insert(CachedTripGoal(from: goal)) }
+        try? context.save()
+    }
+
+    private func writeEntriesCache(context: ModelContext?) {
+        guard let context, !VisualSampleData.isEnabled else { return }
+        try? context.delete(model: CachedTripStatsEntry.self)
+        for entry in entries { context.insert(CachedTripStatsEntry(from: entry)) }
         try? context.save()
     }
 }

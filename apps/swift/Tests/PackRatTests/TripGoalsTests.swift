@@ -297,7 +297,7 @@ struct TripGoalsTests {
     func lenientList() throws {
         let json = #"""
         [{"id":"a","kind":"annual","metric":"nights","target":10,"year":2026,"deleted":false},
-         {"id":"b","kind":"annual","metric":"summits","target":3,"year":2026,"deleted":false}]
+         {"id":"b","kind":"annual","metric":"longTrails","target":3,"year":2026,"deleted":false}]
         """#
         let rows = try JSONDecoder().decode([Lenient<TripGoal>].self, from: Data(json.utf8))
         #expect(rows.compactMap(\.value).map(\.id) == ["a"])

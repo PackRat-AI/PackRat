@@ -40,7 +40,14 @@ struct TripGoalProgress: Sendable {
 
     /// Nil when the goal has no usable window (an annual goal missing its
     /// year, a custom goal missing a date), which the server refuses anyway.
-    init?(goal: TripGoal, finished: [TripStats.FinishedTrip], now: Date = .now, calendar: Calendar = .current) {
+    /// `parksAndPeaks` backs the summits and parks metrics; without it they read zero.
+    init?(
+        goal: TripGoal,
+        finished: [TripStats.FinishedTrip],
+        parksAndPeaks: TripParksAndPeaks? = nil,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) {
         guard let window = Self.window(of: goal, calendar: calendar) else { return nil }
         self.goal = goal
         self.start = window.start
@@ -56,6 +63,8 @@ struct TripGoalProgress: Sendable {
         case .days: value = Double(totals.days)
         case .distance: value = totals.distance ?? 0
         case .elevation: value = totals.elevationGain ?? 0
+        case .summits: value = Double(parksAndPeaks?.peaksSummited(from: window.start, to: window.end) ?? 0)
+        case .parks: value = Double(parksAndPeaks?.parksVisited(from: window.start, to: window.end) ?? 0)
         }
         self.value = value
 
@@ -121,6 +130,8 @@ extension TripGoal.Metric {
         case .trips: return Self.count(value, "trip", "trips")
         case .nights: return Self.count(value, "night", "nights")
         case .days: return Self.count(value, "day", "days")
+        case .summits: return Self.count(value, "peak", "peaks")
+        case .parks: return Self.count(value, "park", "parks")
         }
     }
 

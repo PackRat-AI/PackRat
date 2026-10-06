@@ -29,6 +29,8 @@ struct TripLog: Codable, Equatable, Sendable {
     var elevationGainMeters: Double?
     var route: String?
     var source: Source?
+    /// Named peaks reached on the trip.
+    var summits: [TripSummit]
 
     enum Source: String, Codable, Sendable {
         case manual, track, trail
@@ -39,13 +41,15 @@ struct TripLog: Codable, Equatable, Sendable {
         distanceMeters: Double? = nil,
         elevationGainMeters: Double? = nil,
         route: String? = nil,
-        source: Source? = nil
+        source: Source? = nil,
+        summits: [TripSummit] = []
     ) {
         self.activities = activities
         self.distanceMeters = distanceMeters
         self.elevationGainMeters = elevationGainMeters
         self.route = route
         self.source = source
+        self.summits = summits
     }
 
     /// Unknown activity strings from a newer server are dropped rather than
@@ -58,11 +62,30 @@ struct TripLog: Codable, Equatable, Sendable {
         elevationGainMeters = try container.decodeIfPresent(Double.self, forKey: .elevationGainMeters)
         route = try container.decodeIfPresent(String.self, forKey: .route)
         source = try? container.decodeIfPresent(Source.self, forKey: .source)
+        summits = (try? container.decodeIfPresent([Lenient<TripSummit>].self, forKey: .summits))?
+            .compactMap(\.value) ?? []
     }
 
     /// True when the log carries nothing worth saving.
     var isEmpty: Bool {
-        activities.isEmpty && distanceMeters == nil && elevationGainMeters == nil && (route?.isEmpty ?? true)
+        activities.isEmpty && distanceMeters == nil && elevationGainMeters == nil
+            && (route?.isEmpty ?? true) && summits.isEmpty
+    }
+}
+
+/// A named peak reached on a trip. Mirrors `TripSummitSchema`; `osmId` is the
+/// OpenStreetMap node it was picked from, nil when typed by hand.
+struct TripSummit: Codable, Equatable, Hashable, Sendable {
+    var name: String
+    var elevationMeters: Double?
+    var latitude: Double
+    var longitude: Double
+    var osmId: Int?
+
+    /// The same peak however it was reached: by OSM node, else by name.
+    var peakKey: String {
+        if let osmId { return "osm:\(osmId)" }
+        return "name:" + name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 }
 

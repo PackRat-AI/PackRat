@@ -393,7 +393,7 @@ enum VisualSampleData {
         // exercised so the store screenshots' trip list stays as it was.
         if ProcessInfo.processInfo.arguments.contains("--enable-flag=enableTripStats") {
             appState.tripsVM.trips += pastTrips(userId: userId, alpinePackId: alpinePack.id, desertPackId: desertPack.id, now: now)
-            appState.tripGoalsVM.applySample(goals: sampleGoals())
+            appState.tripGoalsVM.applySample(goals: sampleGoals(), entries: sampleEntries())
         }
         appState.tripsVM.isCacheLoaded = true
         appState.tripsVM.hasMore = false
@@ -784,6 +784,7 @@ enum VisualSampleData {
         return [
             TripGoal(id: "visual-goal-distance", kind: .annual, metric: .distance, target: 804_672, year: year, localCreatedAt: created),
             TripGoal(id: "visual-goal-nights", kind: .annual, metric: .nights, target: 20, year: year, localCreatedAt: created),
+            TripGoal(id: "visual-goal-parks", kind: .annual, metric: .parks, target: 8, year: year, localCreatedAt: created),
             TripGoal(
                 id: "visual-goal-custom", kind: .custom, metric: .nights, target: 10, name: "Ten nights before the baby arrives",
                 startDate: day(-60), endDate: day(75), localCreatedAt: created
@@ -792,6 +793,22 @@ enum VisualSampleData {
                 id: "visual-goal-past", kind: .custom, metric: .trips, target: 3, name: "Spring shakedown",
                 startDate: day(-220), endDate: day(-120), localCreatedAt: created
             ),
+        ]
+    }
+
+    /// Climbs and park visits from before PackRat, one of them undated.
+    private static func sampleEntries() -> [TripStatsEntry] {
+        [
+            TripStatsEntry(
+                id: "visual-entry-whitney", kind: .summit, name: "Mount Whitney", elevationMeters: 4_421,
+                latitude: 36.5785, longitude: -118.2923, date: "2019-08-14T00:00:00.000Z"
+            ),
+            TripStatsEntry(
+                id: "visual-entry-half-dome", kind: .summit, name: "Half Dome", elevationMeters: 2_694,
+                latitude: 37.7459, longitude: -119.5332, date: "2021-06-02T00:00:00.000Z"
+            ),
+            TripStatsEntry(id: "visual-entry-acadia", kind: .park, parkCode: "ACAD", date: "2018-10-06T00:00:00.000Z"),
+            TripStatsEntry(id: "visual-entry-arches", kind: .park, parkCode: "ARCH"),
         ]
     }
 
@@ -810,13 +827,18 @@ enum VisualSampleData {
         // Logs for most trips, leaving two unlogged so the screen shows
         // figures that count only the trips holding them.
         let logs: [TripLog?] = [
-            sampleLog([.backpacking], km: 150, gain: 6_900, lat: 46.786, lon: -121.735),
+            sampleLog([.backpacking], km: 150, gain: 6_900, lat: 46.786, lon: -121.735, summits: [
+                TripSummit(name: "Pinnacle Peak", elevationMeters: 1_944, latitude: 46.7618, longitude: -121.7268, osmId: nil),
+                TripSummit(name: "Mount Fremont", elevationMeters: 2_195, latitude: 46.9161, longitude: -121.6436, osmId: nil),
+            ]),
             sampleLog([.backpacking, .camping], km: 27, gain: 600, lat: 47.907, lon: -124.636),
             sampleLog([.climbing], km: 4, gain: 120, lat: 33.873, lon: -115.901),
             sampleLog([.hiking], km: 26, gain: 450, lat: 37.298, lon: -113.026),
             nil,
             sampleLog([.backpacking], km: 39, gain: 1_800, lat: 36.057, lon: -112.140),
-            sampleLog([.hiking], km: 14, gain: 1_100, lat: 48.771, lon: -121.298),
+            sampleLog([.hiking], km: 14, gain: 1_100, lat: 48.771, lon: -121.298, summits: [
+                TripSummit(name: "Sahale Mountain", elevationMeters: 2_630, latitude: 48.4784, longitude: -121.0482, osmId: nil),
+            ]),
             nil,
         ]
         return samples.enumerated().map { index, sample in
@@ -841,7 +863,9 @@ enum VisualSampleData {
     }
 
     /// A wandering loop near the trip's location, long enough to draw.
-    private static func sampleLog(_ activities: [TripActivity], km: Double, gain: Double, lat: Double, lon: Double) -> TripLog {
+    private static func sampleLog(
+        _ activities: [TripActivity], km: Double, gain: Double, lat: Double, lon: Double, summits: [TripSummit] = []
+    ) -> TripLog {
         let radius = min(km / 40, 0.12)
         let points = (0...48).map { step -> CLLocationCoordinate2D in
             let angle = Double(step) / 48 * 2 * .pi
@@ -856,7 +880,8 @@ enum VisualSampleData {
             distanceMeters: km * 1_000,
             elevationGainMeters: gain,
             route: Polyline.encode(points),
-            source: .track
+            source: .track,
+            summits: summits
         )
     }
 }

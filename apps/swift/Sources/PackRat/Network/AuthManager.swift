@@ -390,6 +390,7 @@ final class AuthManager {
         try context.delete(model: CachedPack.self)
         try context.delete(model: CachedTrip.self)
         try context.delete(model: CachedTripGoal.self)
+        try context.delete(model: CachedTripStatsEntry.self)
         // Stats settings follow the account; the next user starts undecided.
         UserDefaults.standard.removeObject(forKey: TripGoalsViewModel.settingsDefaultsKey)
         if discardsPendingWrites {

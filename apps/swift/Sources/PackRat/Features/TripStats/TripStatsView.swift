@@ -6,7 +6,7 @@ import SwiftUI
 /// packs already loaded into `AppState`; nothing here fetches on its own.
 ///
 /// Layout follows big picture → story → detail: the lifetime grid, this year against the same stretch of last year, the monthly
-/// chart, highlights, the map, then gear. A section with nothing to show is
+/// chart, highlights, the map, parks and peaks, then gear. A section with nothing to show is
 /// left out rather than rendered as zeros.
 struct TripStatsView: View {
     @Environment(AppState.self) private var appState
@@ -62,10 +62,10 @@ struct TripStatsView: View {
             }
         }
         .sheet(isPresented: $addingGoal) {
-            GoalEditorView(goal: nil, finished: stats.finished, unit: distanceUnit)
+            GoalEditorView(goal: nil, finished: stats.finished, parksAndPeaks: parksAndPeaks(stats), unit: distanceUnit)
         }
         .sheet(item: $editingGoal) { goal in
-            GoalEditorView(goal: goal, finished: stats.finished, unit: distanceUnit)
+            GoalEditorView(goal: goal, finished: stats.finished, parksAndPeaks: parksAndPeaks(stats), unit: distanceUnit)
         }
         .task {
             if appState.tripsVM.trips.isEmpty { await appState.tripsVM.load(context: modelContext) }
@@ -74,8 +74,13 @@ struct TripStatsView: View {
         }
     }
 
+    private func parksAndPeaks(_ stats: TripStats) -> TripParksAndPeaks {
+        TripParksAndPeaks(finished: stats.finished, entries: appState.tripGoalsVM.entries)
+    }
+
     private func content(_ stats: TripStats) -> some View {
-        ScrollView {
+        let record = parksAndPeaks(stats)
+        return ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 TotalsGrid(totals: stats.totals, unit: distanceUnit)
 
@@ -84,7 +89,7 @@ struct TripStatsView: View {
                 }
 
                 GoalsCard(
-                    progress: appState.tripGoalsVM.goals.compactMap { TripGoalProgress(goal: $0, finished: stats.finished) },
+                    progress: appState.tripGoalsVM.goals.compactMap { TripGoalProgress(goal: $0, finished: stats.finished, parksAndPeaks: record) },
                     unit: distanceUnit,
                     onAdd: { addingGoal = true },
                     onEdit: { editingGoal = $0 }
@@ -105,6 +110,9 @@ struct TripStatsView: View {
                 if stats.finished.contains(where: { $0.trip.location != nil }) || !stats.routes.isEmpty {
                     TripsMapCard(trips: stats.finished, routes: stats.routes)
                 }
+
+                ParksCard(record: record, unit: distanceUnit)
+                PeaksCard(record: record, unit: distanceUnit)
 
                 if !stats.topGear.isEmpty {
                     TopGearCard(gear: stats.topGear)

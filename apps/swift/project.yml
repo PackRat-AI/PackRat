@@ -81,6 +81,8 @@ targets:
       # On-device species classifier, built by ml/species-model. A source,
       # not a plain resource, so Xcode compiles the .mlpackage to .mlmodelc.
       - path: Resources/SpeciesModels
+      - path: Resources/NationalParks.json
+        buildPhase: resources
     entitlements:
       path: Resources/PackRat-iOS.entitlements
       properties:
@@ -249,6 +251,8 @@ targets:
       # On-device species classifier, built by ml/species-model. A source,
       # not a plain resource, so Xcode compiles the .mlpackage to .mlmodelc.
       - path: Resources/SpeciesModels
+      - path: Resources/NationalParks.json
+        buildPhase: resources
     entitlements:
       path: Resources/PackRat-macOS.entitlements
       properties:

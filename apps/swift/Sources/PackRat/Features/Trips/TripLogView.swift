@@ -100,7 +100,17 @@ struct TripLogSection: View {
                 if !log.activities.isEmpty {
                     ActivityChips(activities: log.activities)
                 }
-                if log.distanceMeters == nil, log.elevationGainMeters == nil, log.activities.isEmpty {
+                if !log.summits.isEmpty {
+                    Label(
+                        log.summits.map(\.name).formatted(.list(type: .and)),
+                        systemImage: "flag.fill"
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .accessibilityIdentifier("trip_log_summits")
+                }
+                if log.distanceMeters == nil, log.elevationGainMeters == nil, log.activities.isEmpty, log.summits.isEmpty {
                     Text("Route saved").font(.callout).foregroundStyle(.secondary)
                 }
             }
@@ -160,6 +170,8 @@ struct TripLogEditor: View {
     @State private var elevationText = ""
     @State private var route: String?
     @State private var source: TripLog.Source?
+    @State private var summits: [TripSummit] = []
+    @State private var showingPeakPicker = false
     @State private var showingImporter = false
     @State private var importError: String?
     @State private var isSaving = false
@@ -217,6 +229,23 @@ struct TripLogEditor: View {
                 }
 
                 Section {
+                    ForEach(summits, id: \.self) { summit in
+                        SummitRow(summit: summit, unit: unit)
+                    }
+                    .onDelete { summits.remove(atOffsets: $0) }
+                    Button {
+                        showingPeakPicker = true
+                    } label: {
+                        Label("Add Summit", systemImage: "plus")
+                    }
+                    .accessibilityIdentifier("trip_log_add_summit")
+                } header: {
+                    Text("Summits")
+                } footer: {
+                    Text("Pick from the named peaks around this trip. Summits count toward your Peaks list.")
+                }
+
+                Section {
                     numberField("Distance", text: $distanceText, symbol: unit.distanceSymbol, field: .distance)
                         .accessibilityIdentifier("trip_log_distance")
                     numberField("Elevation gain", text: $elevationText, symbol: unit.elevationSymbol, field: .elevation)
@@ -266,7 +295,15 @@ struct TripLogEditor: View {
                     }
                 }
             } message: {
-                Text("The trip stays, but its activity, distance, climbing and route stop counting in your stats.")
+                Text("The trip stays, but its activity, distance, climbing, route and summits stop counting in your stats.")
+            }
+            .sheet(isPresented: $showingPeakPicker) {
+                PeakPickerView(
+                    region: PeakPickerView.region(route: routeCoordinates, location: trip.location),
+                    excluded: Set(summits.map(\.peakKey))
+                ) { picked in
+                    if !summits.contains(where: { $0.peakKey == picked.peakKey }) { summits.append(picked) }
+                }
             }
             .onAppear(perform: prefill)
         }
@@ -321,6 +358,7 @@ struct TripLogEditor: View {
         elevationText = log.elevationGainMeters.map { format(unit.elevationValue($0), digits: 0) } ?? ""
         route = log.route
         source = log.source
+        summits = log.summits
     }
 
     private func format(_ value: Double, digits: Int) -> String {
@@ -360,7 +398,8 @@ struct TripLogEditor: View {
             distanceMeters: parse(distanceText).map(unit.metres(fromDistance:)),
             elevationGainMeters: parse(elevationText).map(unit.metres(fromElevation:)),
             route: route,
-            source: source ?? .manual
+            source: source ?? .manual,
+            summits: summits
         )
         Task {
             await viewModel.saveLog(log, for: trip.id, context: modelContext)

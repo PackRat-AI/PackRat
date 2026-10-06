@@ -288,6 +288,7 @@ struct GoalEditorView: View {
     /// Nil to create.
     let goal: TripGoal?
     let finished: [TripStats.FinishedTrip]
+    var parksAndPeaks: TripParksAndPeaks? = nil
     let unit: TripDistanceUnit
 
     @State private var kind: TripGoal.Kind = .annual
@@ -397,6 +398,8 @@ struct GoalEditorView: View {
         case .trips: return "trips"
         case .nights: return "nights"
         case .days: return "days"
+        case .summits: return "peaks"
+        case .parks: return "parks"
         }
     }
 
@@ -416,7 +419,6 @@ struct GoalEditorView: View {
             window = (start, end)
         }
         let totals = TripStats.totals(TripStats.clip(finished, from: window.0, to: window.1, calendar: calendar), calendar: calendar)
-        guard totals.trips > 0 else { return nil }
         let value: Double?
         switch metric {
         case .trips: value = Double(totals.trips)
@@ -424,8 +426,12 @@ struct GoalEditorView: View {
         case .days: value = Double(totals.days)
         case .distance: value = totals.distance
         case .elevation: value = totals.elevationGain
+        case .summits: value = parksAndPeaks.map { Double($0.peaksSummited(from: window.0, to: window.1)) }
+        case .parks: value = parksAndPeaks.map { Double($0.parksVisited(from: window.0, to: window.1)) }
         }
-        guard let value else { return nil }
+        // Hand-added summits and parks count without a trip; everything else needs one.
+        guard let value, totals.trips > 0 || ((metric == .summits || metric == .parks) && value > 0)
+        else { return nil }
         let label = kind == .annual ? "In \(year - 1)" : "Same dates last year"
         return "\(label): \(metric.format(value, unit: unit))."
     }
@@ -438,7 +444,7 @@ struct GoalEditorView: View {
         switch metric {
         case .distance: return unit.metres(fromDistance: value)
         case .elevation: return unit.metres(fromElevation: value)
-        case .trips, .nights, .days: return value.rounded() >= 1 ? value.rounded() : nil
+        case .trips, .nights, .days, .summits, .parks: return value.rounded() >= 1 ? value.rounded() : nil
         }
     }
 
@@ -453,7 +459,7 @@ struct GoalEditorView: View {
         switch goal.metric {
         case .distance: shown = unit.distanceValue(goal.target)
         case .elevation: shown = unit.elevationValue(goal.target)
-        case .trips, .nights, .days: shown = goal.target
+        case .trips, .nights, .days, .summits, .parks: shown = goal.target
         }
         targetText = shown.formatted(.number.precision(.fractionLength(0...1)).grouping(.never))
     }
