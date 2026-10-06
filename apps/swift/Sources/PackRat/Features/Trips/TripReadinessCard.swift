@@ -62,6 +62,10 @@ struct TripReadinessCard: View {
 
             if let conditions = conditionsStore.conditions(for: trip.id) {
                 weatherRows(conditions)
+            } else if trip.location != nil {
+                row(symbol: "cloud.sun", tint: .cyan, title: "Forecast") {
+                    Text("Not out yet for your dates. It shows here once it is.")
+                }
             }
 
             if let tip = TripReminderPlanner.fieldChargingTip(for: trip, state: state) {
