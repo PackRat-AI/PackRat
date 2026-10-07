@@ -238,6 +238,7 @@ enum ExpoLocalDataMigration {
                 endDate: record["endDate"] as? String,
                 userId: nil,
                 packId: record["packId"] as? String,
+                checklist: nil,
                 deleted: false,
                 createdAt: record["localCreatedAt"] as? String ?? record["createdAt"] as? String,
                 updatedAt: record["localUpdatedAt"] as? String ?? record["updatedAt"] as? String

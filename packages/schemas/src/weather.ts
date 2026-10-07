@@ -219,6 +219,11 @@ export const WeatherAlertSchema = z
   })
   .optional();
 
+/** Only the alert block of a WeatherAPI forecast — all a coordinate alert check reads. */
+export const WeatherAPIAlertsOnlyResponseSchema = z.object({
+  alerts: WeatherAlertSchema,
+});
+
 export const WeatherForecastSchema = z.object({
   location: WeatherAPILocationSchema,
   current: WeatherCurrentSchema,

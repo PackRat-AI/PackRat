@@ -54,6 +54,7 @@ struct CreateTripRequestTests {
         let req = CreateTripRequest(id: "t1", name: "Summer Trip", description: nil,
                                     location: location, startDate: "2025-06-01T00:00:00Z",
                                     endDate: nil, notes: nil, packId: nil,
+                                    checklist: nil,
                                     localCreatedAt: "2025-01-01T00:00:00Z",
                                     localUpdatedAt: "2025-01-01T00:00:00Z")
         let data = try JSONEncoder().encode(req)

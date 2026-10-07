@@ -146,7 +146,7 @@ struct TripModelTests {
         let trip = Trip(id: "1", name: "PCT", description: nil,
                         notes: nil, location: nil,
                         startDate: "2025-06-01T00:00:00Z", endDate: "2025-06-07T00:00:00Z",
-                        userId: "u1", packId: nil, deleted: false, createdAt: nil, updatedAt: nil)
+                        userId: "u1", packId: nil, checklist: nil, deleted: false, createdAt: nil, updatedAt: nil)
         #expect(!trip.dateRange.isEmpty)
         #expect(trip.dateRange.contains("–"))
     }
@@ -156,7 +156,7 @@ struct TripModelTests {
         let trip = Trip(id: "1", name: "PCT", description: nil,
                         notes: nil, location: nil,
                         startDate: nil, endDate: nil,
-                        userId: nil, packId: nil, deleted: false, createdAt: nil, updatedAt: nil)
+                        userId: nil, packId: nil, checklist: nil, deleted: false, createdAt: nil, updatedAt: nil)
         #expect(trip.dateRange.isEmpty)
     }
 }

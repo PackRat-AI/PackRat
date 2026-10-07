@@ -386,6 +386,20 @@
       "when": 1790503831462,
       "tag": "0053_dapper_photon",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1791279770212,
+      "tag": "0054_flowery_redwing",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1791305635494,
+      "tag": "0055_good_shinko_yamashiro",
+      "breakpoints": true
     }
   ]
 }

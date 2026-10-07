@@ -17,6 +17,7 @@ const FeatureFlag = Object.freeze({
   EnableTrails: 'enableTrails',
   EnableRevenueCat: 'enableRevenueCat',
   EnableWeatherMonitoring: 'enableWeatherMonitoring',
+  EnableTripReminders: 'enableTripReminders',
 });
 
 const DashboardTileId = Object.freeze({
@@ -79,6 +80,7 @@ const APP_CONFIG_SOURCE = {
     [FeatureFlag.EnableTrails]: false,
     [FeatureFlag.EnableRevenueCat]: true,
     [FeatureFlag.EnableWeatherMonitoring]: false,
+    [FeatureFlag.EnableTripReminders]: false,
   },
   dashboard: {
     gapPrefix: GAP_PREFIX,

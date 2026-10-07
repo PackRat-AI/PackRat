@@ -7,9 +7,12 @@ struct PackDetailView: View {
     let pack: Pack
     @Bindable var viewModel: PacksViewModel
 
-    init(pack: Pack, viewModel: PacksViewModel) {
+    /// `startInPackingMode` opens straight onto the checklist — used when a trip
+    /// sends the user to pack for it.
+    init(pack: Pack, viewModel: PacksViewModel, startInPackingMode: Bool = false) {
         self.pack = pack
         self.viewModel = viewModel
+        _isPackingMode = State(initialValue: startInPackingMode)
     }
 
     @State private var showingEditSheet = false

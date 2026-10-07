@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@packrat/api/utils/env-validation', () => ({ getEnv: mocks.getEnv }));
 
-import { fetchLocationAlerts } from '../fetchLocationAlerts';
+import { fetchCoordinateAlerts, fetchLocationAlerts } from '../fetchLocationAlerts';
 
 const alert = {
   headline: 'Flood Warning until 6 PM',
@@ -129,5 +129,30 @@ describe('fetchLocationAlerts', () => {
     fetchMock.mockResolvedValue(new Response('Forbidden', { status: 403 }));
 
     await expect(fetchLocationAlerts(42)).rejects.toThrow('WeatherAPI HTTP 403 for location 42');
+  });
+});
+
+describe('fetchCoordinateAlerts', () => {
+  it('queries WeatherAPI by coordinate and returns the active alerts', async () => {
+    const result = await fetchCoordinateAlerts({ latitude: 29.028, longitude: -81.303 });
+
+    const url = fetchMock.mock.calls[0]?.[0] as string;
+    expect(url).toContain(`q=${encodeURIComponent('29.0280,-81.3030')}`);
+    expect(url).toContain('alerts=yes');
+    expect(result.map((a) => a.event)).toEqual(['Flood Warning']);
+  });
+
+  it('returns no alerts when the response has none', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(forecastResponse(undefined)));
+
+    expect(await fetchCoordinateAlerts({ latitude: 1, longitude: 2 })).toEqual([]);
+  });
+
+  it('throws on a WeatherAPI error so the poll can record the failure', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({}, 503));
+
+    await expect(fetchCoordinateAlerts({ latitude: 1, longitude: 2 })).rejects.toThrow(
+      'WeatherAPI HTTP 503',
+    );
   });
 });

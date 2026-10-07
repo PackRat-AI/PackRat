@@ -59,6 +59,11 @@ struct PackRatApp: App {
                 #endif
         }
         .modelContainer(PersistenceController.shared.container)
+        #if os(iOS)
+        .backgroundTask(.appRefresh(TripConditionsBackgroundRefresh.identifier)) {
+            await TripConditionsBackgroundRefresh.run()
+        }
+        #endif
         #if os(macOS)
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: true))

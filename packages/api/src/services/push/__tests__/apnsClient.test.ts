@@ -115,6 +115,24 @@ describe('sendApnsPush', () => {
     });
   });
 
+  it('carries a trip id instead of a location id for a trip alert', async () => {
+    const { sendApnsPush } = await loadClient();
+
+    await sendApnsPush({
+      env,
+      deviceToken: 'device-1',
+      payload: {
+        alert: { title: 'Weather alert for PCT', body: 'Flood Warning' },
+        tripId: 'trip-1',
+      },
+    });
+
+    const init = fetchMock.mock.calls[0]?.[1] as { body: string };
+    const body = JSON.parse(init.body);
+    expect(body.tripId).toBe('trip-1');
+    expect(body).not.toHaveProperty('weatherLocationId');
+  });
+
   it('passes an explicit sound and badge through instead of the default', async () => {
     const { sendApnsPush } = await loadClient();
 

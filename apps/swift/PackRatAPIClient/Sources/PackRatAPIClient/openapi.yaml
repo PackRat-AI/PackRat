@@ -2349,6 +2349,33 @@
             "type": "string",
             "nullable": true
           },
+          "checklist": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "done": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "done"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 50,
+            "nullable": true
+          },
           "localCreatedAt": {
             "type": "string",
             "format": "date-time"
@@ -2416,6 +2443,33 @@
           },
           "packId": {
             "type": "string",
+            "nullable": true
+          },
+          "checklist": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "done": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "done"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 50,
             "nullable": true
           },
           "deleted": {
@@ -2491,6 +2545,33 @@
           },
           "packId": {
             "type": "string",
+            "nullable": true
+          },
+          "checklist": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "done": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "done"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 50,
             "nullable": true
           },
           "localUpdatedAt": {

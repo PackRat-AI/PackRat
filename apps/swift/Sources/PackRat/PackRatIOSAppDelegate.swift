@@ -41,13 +41,23 @@ final class PackRatIOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
         [.banner, .sound, .badge]
     }
 
-    /// Notification tap — deep-links into the alerting location's detail via
+    /// Notification tap — deep-links a trip reminder to its trip, or a weather
+    /// alert to the alerting location's detail, via
     /// the same `DeepLink`/`AppState.apply` path a `packrat://` URL uses.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
-        guard let weatherLocationId = response.notification.request.content.userInfo["weatherLocationId"] as? Int
+        let userInfo = response.notification.request.content.userInfo
+        if let tripId = userInfo[TripReminderScheduler.tripIdKey] as? String {
+            NotificationCenter.default.post(
+                name: .tripReminderNotificationTapped,
+                object: nil,
+                userInfo: [TripReminderScheduler.tripIdKey: tripId]
+            )
+            return
+        }
+        guard let weatherLocationId = userInfo["weatherLocationId"] as? Int
         else { return }
         NotificationCenter.default.post(
             name: .weatherAlertNotificationTapped,
@@ -59,5 +69,6 @@ final class PackRatIOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
 
 extension Notification.Name {
     static let weatherAlertNotificationTapped = Notification.Name("weatherAlertNotificationTapped")
+    static let tripReminderNotificationTapped = Notification.Name("tripReminderNotificationTapped")
 }
 #endif
