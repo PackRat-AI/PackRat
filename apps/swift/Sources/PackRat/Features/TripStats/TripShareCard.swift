@@ -49,12 +49,22 @@ enum TripShareContent: Sendable {
 
     var title: String {
         switch self {
-        case .totals: return "Trip Stats"
+        case .totals: return "All Time"
         case .year(let year, _, _): return "\(String(year)) So Far"
         case .map: return "Where I've Been"
         case .goal(let progress): return progress.goal.title
         case .parks: return "National Parks"
-        case .review(let review, _): return "\(String(review.year)) in Review"
+        case .review(_, let page):
+            switch page {
+            case .intro: return "Your Year Outdoors"
+            case .totals: return "By the Numbers"
+            case .busiestMonth: return "Busiest Month"
+            case .longestTrip: return "Biggest Trips"
+            case .newPlaces: return "New Ground"
+            case .summits: return "Summits"
+            case .goals: return "Goals"
+            case .summary: return "That's a Wrap"
+            }
         }
     }
 
@@ -74,20 +84,25 @@ enum TripShareContent: Sendable {
 
 struct TripShareOptions: Equatable, Sendable {
     var showNames = false
-    var showBasemap = false
+    /// Off: the map is held at least `ProjectedMap.privateSpan` across, so it
+    /// shows the region and not the trailhead.
+    var zoomClose = false
 }
 
 // MARK: - Map geometry
 
-/// Routes and trip pins in a 0…1 square, either drawn over a map snapshot or
-/// on their own as a line drawing. The line drawing carries no basemap, so it
-/// shows the shape of where someone went without giving away where it is.
+/// Routes and trip pins in a 0…1 square, drawn over a map snapshot, or on
+/// their own as a line drawing when the snapshot can't be made.
 struct ProjectedMap: Sendable {
     var routes: [[CGPoint]]
     var pins: [CGPoint]
     var image: CGImage?
 
     static let empty = ProjectedMap(routes: [], pins: [], image: nil)
+
+    /// The narrowest a shared map gets unless the user zooms in close: wide
+    /// enough to show a region, too wide to pick out a trailhead or a home.
+    static let privateSpan: CLLocationDistance = 150_000
 
     /// Equirectangular, corrected for latitude, fitted inside the frame with
     /// a margin and centred.
@@ -124,12 +139,14 @@ struct ProjectedMap: Sendable {
         return ProjectedMap(routes: routes.map { $0.map(project) }, pins: pins.map(project), image: nil)
     }
 
-    /// A muted dark map behind the same routes and pins.
+    /// A muted dark map behind the same routes and pins, at least `minSpan`
+    /// metres across.
     @MainActor
     static func snapshot(
         routes: [[CLLocationCoordinate2D]],
         pins: [CLLocationCoordinate2D],
-        aspect: CGFloat
+        aspect: CGFloat,
+        minSpan: CLLocationDistance
     ) async -> ProjectedMap? {
         let all = routes.flatMap { $0 } + pins
         guard !all.isEmpty else { return nil }
@@ -139,6 +156,15 @@ struct ProjectedMap: Sendable {
         }
         let padding = max(rect.width, rect.height) * 0.15 + 2_000
         rect = rect.insetBy(dx: -padding, dy: -padding)
+        let minPoints = minSpan * MKMapPointsPerMeterAtLatitude(MKMapPoint(x: rect.midX, y: rect.midY).coordinate.latitude)
+        rect = rect.insetBy(dx: -max(minPoints - rect.width, 0) / 2, dy: -max(minPoints - rect.height, 0) / 2)
+        // Widen to the frame's shape first; the snapshotter crops otherwise.
+        let ratio = Double(aspect)
+        if rect.width / rect.height < ratio {
+            rect = rect.insetBy(dx: -(rect.height * ratio - rect.width) / 2, dy: 0)
+        } else {
+            rect = rect.insetBy(dx: 0, dy: -(rect.width / ratio - rect.height) / 2)
+        }
 
         let options = MKMapSnapshotter.Options()
         options.mapRect = rect
@@ -186,7 +212,8 @@ struct TripShareCardView: View {
             if !isSticker { header }
             if isStory { Spacer(minLength: 0) }
             TripShareCardBody(content: content, format: format, options: options, unit: unit, map: map)
-            if isStory { Spacer(minLength: 0) }
+            // A story centres the numbers; a square keeps them under the title.
+            if !isSticker { Spacer(minLength: 0) }
             footer
         }
         .padding(isSticker ? 18 : isStory ? 30 : 24)
@@ -213,7 +240,7 @@ struct TripShareCardView: View {
 
     private var eyebrow: String {
         switch content {
-        case .review: return "MY YEAR OUTDOORS"
+        case .review(let review, _): return "MY \(String(review.year)) IN REVIEW"
         case .goal: return "GOAL"
         case .year: return "THIS YEAR"
         default: return "MY TRIP STATS"
@@ -584,7 +611,7 @@ private struct TripShareCardBody: View {
 private struct ShareMapView: View {
     let map: ProjectedMap
     let aspect: CGFloat
-    /// A sticker draws the routes alone, with no frame.
+    /// A sticker draws a line drawing with no frame.
     let plain: Bool
 
     var body: some View {
@@ -608,7 +635,7 @@ private struct ShareMapView: View {
         }
         .aspectRatio(aspect, contentMode: .fit)
         .background(plain || map.image != nil ? Color.clear : Color.white.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: plain ? 0 : 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: plain && map.image == nil ? 0 : 14, style: .continuous))
     }
 }
 

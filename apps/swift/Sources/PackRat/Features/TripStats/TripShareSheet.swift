@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// A card on its way out: pick a shape, see exactly what will be shared, send
-/// it. Private by default — names and the map background are opt-in, per
+/// it. Private by default — trip names and a close-up map are opt-in, per
 /// card, every time (Strava's privacy zones work the same way: hidden unless
 /// you choose otherwise).
 struct TripShareSheet: View {
@@ -39,10 +39,10 @@ struct TripShareSheet: View {
                                 .accessibilityIdentifier("trip_share_names")
                         }
                         if content.isMap {
-                            Toggle("Show Map Background", isOn: $options.showBasemap)
-                                .accessibilityIdentifier("trip_share_basemap")
+                            Toggle("Zoom In Close", isOn: $options.zoomClose)
+                                .accessibilityIdentifier("trip_share_zoom")
                             if mapFailed {
-                                Text("The map couldn't load. Sharing the route shapes only.")
+                                Text("The map couldn't load. Sharing the route shapes without it.")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
@@ -73,8 +73,10 @@ struct TripShareSheet: View {
     }
 
     private var privacyNote: String {
-        if content.isMap, !options.showBasemap {
-            return "Only the shape of your routes is shared, without a map that shows where they are."
+        if content.isMap {
+            return options.zoomClose
+                ? "The map is zoomed to your trips and may show exactly where they started."
+                : "The map stays zoomed out, showing the region rather than exact spots."
         }
         if content.canShowNames, !options.showNames {
             return "Trip names stay off the card unless you turn them on."
@@ -137,14 +139,13 @@ struct TripShareSheet: View {
         var map = ProjectedMap.empty
         if case .map(let routes, let pins, _, _) = content {
             mapFailed = false
-            if options.showBasemap {
-                if let snapshot = await ProjectedMap.snapshot(routes: routes, pins: pins, aspect: format.mapAspect) {
-                    map = snapshot
-                } else {
-                    mapFailed = true
-                }
-            }
-            if map.image == nil {
+            if let snapshot = await ProjectedMap.snapshot(
+                routes: routes, pins: pins, aspect: format.mapAspect,
+                minSpan: options.zoomClose ? 0 : ProjectedMap.privateSpan
+            ) {
+                map = snapshot
+            } else {
+                mapFailed = true
                 map = ProjectedMap.lineDrawing(routes: routes, pins: pins, aspect: format.mapAspect)
             }
         }
