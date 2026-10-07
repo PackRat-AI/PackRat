@@ -35,7 +35,7 @@ struct EmergencyContactsView: View {
                             }
                     }
                 } footer: {
-                    Text("Contacts get a text or email from PackRat, never from your own number. The first one explains who added them and why.")
+                    Text("Contacts get an email from PackRat, never from your own address. The first one explains who added them and why.")
                 }
             }
         }
@@ -77,7 +77,7 @@ struct EmergencyContactsView: View {
                 }
                 Text(contact.reachableAt)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(contact.canBeNotified ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange))
             }
             Spacer()
             Image(systemName: "chevron.right")
@@ -131,22 +131,25 @@ struct EmergencyContactForm: View {
         _draft = State(initialValue: draft)
     }
 
-    private var normalizedPhone: String? { PhoneNumberFormat.normalize(draft.phone) }
     private var trimmedEmail: String { draft.email.trimmingCharacters(in: .whitespaces) }
 
     private var validationMessage: String? {
-        if draft.phone.isEmpty, trimmedEmail.isEmpty { return nil }
-        if !draft.phone.isEmpty, normalizedPhone == nil {
-            return "Include the country code for numbers outside the US and Canada, e.g. +44 7700 900123."
-        }
-        if !trimmedEmail.isEmpty, !trimmedEmail.contains("@") { return "That email address doesn't look right." }
+        if !trimmedEmail.isEmpty, !Self.looksLikeEmail(trimmedEmail) { return "That email address doesn't look right." }
         return nil
     }
 
     private var canSave: Bool {
         !draft.name.trimmingCharacters(in: .whitespaces).isEmpty
-            && (!draft.phone.isEmpty || !trimmedEmail.isEmpty)
+            && !trimmedEmail.isEmpty
             && validationMessage == nil
+    }
+
+    /// Something@something.tld — the server does the real validation.
+    static func looksLikeEmail(_ value: String) -> Bool {
+        let parts = value.split(separator: "@", omittingEmptySubsequences: false)
+        guard parts.count == 2, !parts[0].isEmpty, !value.contains(" ") else { return false }
+        let domain = parts[1]
+        return domain.contains(".") && !domain.hasPrefix(".") && !domain.hasSuffix(".")
     }
 
     var body: some View {
@@ -163,10 +166,6 @@ struct EmergencyContactForm: View {
                     TextField("Name", text: $draft.name)
                         .textContentType(.name)
                         .accessibilityIdentifier("emergency_contact_name")
-                    TextField("Mobile number", text: $draft.phone)
-                        .keyboardType(.phonePad)
-                        .textContentType(.telephoneNumber)
-                        .accessibilityIdentifier("emergency_contact_phone")
                     TextField("Email", text: $draft.email)
                         .keyboardType(.emailAddress)
                         .textContentType(.emailAddress)
@@ -177,7 +176,7 @@ struct EmergencyContactForm: View {
                     if let validationMessage {
                         Text(validationMessage).foregroundStyle(.red)
                     } else {
-                        Text("Add a mobile number, an email, or both. Both is surest: a text for speed, an email as backup.")
+                        Text("They'll get an email when you start a trip, when you check in, and if you're overdue.")
                     }
                 }
                 Section {
@@ -206,10 +205,6 @@ struct EmergencyContactForm: View {
             .background(
                 ContactPicker(isPresented: $showingPicker) { contact in
                     draft.name = CNContactFormatter.string(from: contact, style: .fullName) ?? draft.name
-                    if let mobile = contact.phoneNumbers.first(where: { $0.label == CNLabelPhoneNumberMobile })
-                        ?? contact.phoneNumbers.first {
-                        draft.phone = mobile.value.stringValue
-                    }
                     if let email = contact.emailAddresses.first {
                         draft.email = email.value as String
                     }
@@ -222,7 +217,8 @@ struct EmergencyContactForm: View {
         isSaving = true
         errorMessage = nil
         let name = draft.name.trimmingCharacters(in: .whitespaces)
-        let phone = draft.phone.isEmpty ? nil : normalizedPhone
+        // Phone isn't edited here; an existing number is kept as is.
+        let phone = draft.phone.isEmpty ? nil : draft.phone
         let email = trimmedEmail.isEmpty ? nil : trimmedEmail
         Task {
             defer { isSaving = false }
@@ -252,7 +248,7 @@ private struct ContactPicker: UIViewControllerRepresentable {
         guard isPresented, host.presentedViewController == nil else { return }
         let picker = CNContactPickerViewController()
         picker.delegate = context.coordinator
-        picker.displayedPropertyKeys = [CNContactPhoneNumbersKey, CNContactEmailAddressesKey]
+        picker.displayedPropertyKeys = [CNContactEmailAddressesKey]
         DispatchQueue.main.async { host.present(picker, animated: true) }
     }
 
@@ -273,25 +269,3 @@ private struct ContactPicker: UIViewControllerRepresentable {
     }
 }
 #endif
-
-/// Mobile numbers go to the server in E.164 (+14155550123), which is what SMS
-/// delivery needs.
-enum PhoneNumberFormat {
-    /// Numbers written with a leading + keep their country code. Ten-digit
-    /// numbers (or eleven starting with 1) are read as US/Canada. Anything
-    /// else needs a country code, since guessing one would text a stranger.
-    static func normalize(_ input: String) -> String? {
-        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        let digits = trimmed.filter(\.isNumber)
-        if trimmed.hasPrefix("+") {
-            return (7...15).contains(digits.count) && digits.first != "0" ? "+\(digits)" : nil
-        }
-        if trimmed.hasPrefix("00") {
-            let rest = digits.dropFirst(2)
-            return (7...15).contains(rest.count) ? "+\(rest)" : nil
-        }
-        if digits.count == 10 { return "+1\(digits)" }
-        if digits.count == 11, digits.first == "1" { return "+\(digits)" }
-        return nil
-    }
-}

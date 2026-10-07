@@ -7,9 +7,9 @@ don't come back on time.
 ## The model in one paragraph
 
 A user keeps a short list of emergency contacts: people who don't need
-PackRat, just a phone number or an email address. When the user starts a
+PackRat, just an email address. When the user starts a
 trip, PackRat asks whether to notify their emergency contacts. If they say
-yes, the contacts get a text or email saying where the user has gone, when
+yes, the contacts get an email saying where the user has gone, when
 they're due back and what gear would help someone recognise them, plus a link
 to a page where they can follow the trip. While the trip is underway the user
 can check in from the trail, and with their permission PackRat follows their
@@ -23,13 +23,13 @@ phone, so it goes out even if the phone is dead, lost or far from signal.
 
 ## Emergency contacts
 
-Emergency contacts are kept in Settings. Each has a name and a mobile number,
-an email address, or both. A contact can be added, edited or removed at any
+Emergency contacts are kept in Settings. Each has a name and an email
+address, and can be picked from the phone's contacts. A contact can be added, edited or removed at any
 time, and one can be set as the default ("Always notify Mom"), so every trip
 includes them unless the user says otherwise.
 
-Contacts receive messages from PackRat, never from the user's own number or
-address, so the user's personal details are never exposed. The first message
+Contacts receive emails from PackRat, never from the user's own address, so
+the user's personal details are never exposed. The first message
 a new contact receives says who added them and what being an emergency
 contact means, so an overdue alert is never the first they've heard of it.
 
@@ -166,5 +166,6 @@ tracking alike, is deleted.
   they decide when to call the authorities.
 - No satellite messaging. Anything sent with no signal waits until there is
   signal.
+- No text messages. Contacts are reached by email.
 - Contacts can't reply inside the app. They reach the user however they
   normally would.

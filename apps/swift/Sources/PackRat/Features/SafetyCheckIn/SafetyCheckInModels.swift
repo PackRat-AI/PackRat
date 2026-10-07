@@ -11,10 +11,11 @@ struct EmergencyContact: Codable, Identifiable, Hashable, Sendable {
     let email: String?
     let isDefault: Bool
 
-    /// "+1 415 555 0123 · mom@example.com" — whatever the contact has.
-    var reachableAt: String {
-        [phone, email].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " · ")
-    }
+    /// Contacts are reached by email. Phone numbers are stored for texts
+    /// later but not used, so a contact without an email can't be notified.
+    var canBeNotified: Bool { email?.isEmpty == false }
+
+    var reachableAt: String { canBeNotified ? (email ?? "") : "No email address" }
 }
 
 struct CreateEmergencyContactRequest: Encodable, Sendable {

@@ -2,25 +2,31 @@ import Foundation
 import Testing
 @testable import PackRat
 
-@Suite("PhoneNumberFormat")
-struct PhoneNumberFormatTests {
-    @Test("US and Canada numbers without a country code become +1")
-    func northAmerica() {
-        #expect(PhoneNumberFormat.normalize("(415) 555-0123") == "+14155550123")
-        #expect(PhoneNumberFormat.normalize("1 415 555 0123") == "+14155550123")
+@Suite("Emergency contact email")
+struct EmergencyContactEmailTests {
+    @Test("plausible addresses pass")
+    func valid() {
+        #expect(EmergencyContactForm.looksLikeEmail("mom@example.com"))
+        #expect(EmergencyContactForm.looksLikeEmail("sam.rivera+trips@mail.co.uk"))
     }
 
-    @Test("numbers written with + or 00 keep their country code")
-    func international() {
-        #expect(PhoneNumberFormat.normalize("+44 7700 900123") == "+447700900123")
-        #expect(PhoneNumberFormat.normalize("0044 7700 900123") == "+447700900123")
+    @Test("obvious typos are caught before saving")
+    func invalid() {
+        #expect(!EmergencyContactForm.looksLikeEmail("mom@example"))
+        #expect(!EmergencyContactForm.looksLikeEmail("mom example.com"))
+        #expect(!EmergencyContactForm.looksLikeEmail("@example.com"))
+        #expect(!EmergencyContactForm.looksLikeEmail("mom@@example.com"))
+        #expect(!EmergencyContactForm.looksLikeEmail("mom@example."))
     }
 
-    @Test("anything ambiguous is refused rather than guessed")
-    func ambiguous() {
-        #expect(PhoneNumberFormat.normalize("07700 900123") == nil)
-        #expect(PhoneNumberFormat.normalize("555-0123") == nil)
-        #expect(PhoneNumberFormat.normalize("+0 123 4567") == nil)
+    @Test("only contacts with an email can be notified")
+    func notifiable() {
+        let phoneOnly = EmergencyContact(id: "1", name: "Mom", phone: "+14155550123", email: nil, isDefault: true)
+        let withEmail = EmergencyContact(id: "2", name: "Sam", phone: nil, email: "sam@example.com", isDefault: false)
+        #expect(!phoneOnly.canBeNotified)
+        #expect(phoneOnly.reachableAt == "No email address")
+        #expect(withEmail.canBeNotified)
+        #expect(withEmail.reachableAt == "sam@example.com")
     }
 }
 

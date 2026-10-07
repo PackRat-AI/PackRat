@@ -26,7 +26,9 @@ struct StartSafetyCheckInSheet: View {
         _gear = State(initialValue: SafetyCheckInDefaults.identifyingGear(from: pack?.items ?? []))
     }
 
-    private var chosen: [EmergencyContact] { store.contacts.filter { selectedIds.contains($0.id) } }
+    private var chosen: [EmergencyContact] {
+        store.contacts.filter { selectedIds.contains($0.id) && $0.canBeNotified }
+    }
 
     private var userName: String {
         let user = authManager.currentUser
@@ -61,7 +63,9 @@ struct StartSafetyCheckInSheet: View {
             }
             .task {
                 if !store.contactsLoaded { await store.loadContacts() }
-                if selectedIds.isEmpty, let fallback = store.defaultContact ?? store.contacts.first {
+                let reachable = store.contacts.filter(\.canBeNotified)
+                if selectedIds.isEmpty,
+                   let fallback = store.defaultContact.flatMap({ $0.canBeNotified ? $0 : nil }) ?? reachable.first {
                     selectedIds = [fallback.id]
                 }
             }
@@ -76,6 +80,7 @@ struct StartSafetyCheckInSheet: View {
         Section {
             ForEach(store.contacts) { contact in
                 Button {
+                    guard contact.canBeNotified else { return }
                     if selectedIds.contains(contact.id) {
                         selectedIds.remove(contact.id)
                     } else {
@@ -95,6 +100,8 @@ struct StartSafetyCheckInSheet: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .disabled(!contact.canBeNotified)
+                .opacity(contact.canBeNotified ? 1 : 0.5)
                 .accessibilityIdentifier("safety_start_contact_\(contact.name)")
             }
             Button {
@@ -108,6 +115,8 @@ struct StartSafetyCheckInSheet: View {
         } footer: {
             if store.contacts.isEmpty {
                 Text("Someone who should know where you've gone and when you'll be back. They don't need PackRat.")
+            } else if store.contacts.contains(where: { !$0.canBeNotified }) {
+                Text("Contacts without an email address can't be notified. Add one in Settings › Emergency Contacts.")
             }
         }
     }
