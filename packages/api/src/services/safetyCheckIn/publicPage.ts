@@ -1,17 +1,11 @@
+import { safeJsonStringify } from '@packrat/utils';
 import type { PublicCheckInView } from './checkInService';
 import { overdueAt } from './checkInService';
+import { escapeHtml } from './emailTemplate';
 import { describeGear, formatClockTime, formatDuration, formatMessageTime } from './messages';
 
-const escapeHtml = (value: string) =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-
 /** JSON safe to inline in a <script> block. */
-const inlineJson = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003c');
+const inlineJson = (value: unknown) => safeJsonStringify(value).replaceAll('<', '\\u003c');
 
 const STYLES = `
   :root { color-scheme: light dark; --fg:#1a1a1a; --muted:#6b6b6b; --bg:#f6f5f2; --card:#fff; --line:#e4e2dc; --accent:#2f6b4f; --alert:#b3261e; }
