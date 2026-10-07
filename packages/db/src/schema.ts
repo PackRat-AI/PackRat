@@ -1209,7 +1209,7 @@ export const safetyCheckIns = pgTable(
     identifyingGear: jsonb('identifying_gear')
       .$type<{ name: string; note?: string | null }[]>()
       .notNull()
-      .default(sql`'[]'::jsonb`),
+      .default([]),
     trackingEnabled: boolean('tracking_enabled').notNull().default(false),
     // When the user started the trip on the phone, which may be earlier than
     // createdAt if the start was queued offline.
