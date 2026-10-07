@@ -1,9 +1,12 @@
+import { fromZod } from '@packrat/guards';
 import { type OverpassElement, queryOverpass } from '@packrat/overpass';
-import type { NearbyPeak } from '@packrat/schemas/tripStats';
+import { type NearbyPeak, NearbyPeakSchema } from '@packrat/schemas/tripStats';
 import { safeJsonStringify } from '@packrat/utils';
 
 /** Enough to pick from without flooding a sheet; the highest come first. */
 export const NEARBY_PEAKS_LIMIT = 200;
+
+const parseCachedPeaks = fromZod(NearbyPeakSchema.array());
 
 const FEET_PER_METRE = 3.28084;
 const ELEVATION = /^(-?\d+(?:\.\d+)?)\s*(m|ft|feet|'|)$/;
@@ -93,7 +96,9 @@ export async function findNearbyPeaks(bounds: PeakBounds): Promise<NearbyPeak[]>
   const cache = edgeCache();
   const key = peaksCacheKey(bounds);
   const hit = await cache?.match(key);
-  if (hit) return (await hit.json()) as NearbyPeak[];
+  // A cached body that no longer parses is refetched rather than trusted.
+  const cached = hit ? parseCachedPeaks(await hit.json()) : undefined;
+  if (cached) return cached;
 
   const peaks = await fetchNearbyPeaks(snapBounds(bounds));
   await cache?.put(
