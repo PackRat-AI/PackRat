@@ -476,6 +476,25 @@ export async function getPost({
   return post ? ok(post) : fail(404, 'Post not found');
 }
 
+/** Resolves a shared link's public id to the post, for a signed-in viewer. */
+export async function getPostByPublicId({
+  viewerId,
+  publicId,
+}: {
+  viewerId: string;
+  publicId: string;
+}): Promise<ServiceResult<FeedPost>> {
+  const db = createDb();
+  const [row] = await db
+    .tag('feed.getPostIdByPublicId')
+    .select({ id: posts.id })
+    .from(posts)
+    .where(eq(posts.publicId, publicId))
+    .limit(1);
+  if (!row) return fail(404, 'Post not found');
+  return getPost({ viewerId, postId: row.id });
+}
+
 /** Image keys must be objects this user uploaded (`{userId}-…`, no path). */
 function ownsImageKeys(userId: string, images: string[]): boolean {
   return images.every((key) => key.startsWith(`${userId}-`) && !key.includes('/'));

@@ -113,6 +113,18 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
     },
   )
 
+  // Open a shared link in the app
+  .get(
+    '/shared/:publicId',
+    async ({ params, user }) =>
+      unwrap(await feed.getPostByPublicId({ viewerId: user.userId, publicId: params.publicId })),
+    {
+      params: z.object({ publicId: z.string().uuid() }),
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Get a post by its share-link id', security },
+    },
+  )
+
   // Mention suggestions for @ autocomplete
   .get(
     '/mentions',
