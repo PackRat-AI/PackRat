@@ -31,6 +31,16 @@ final class CommentsViewModel {
         }
     }
 
+    /// Re-reads comments in place for a live update: no spinner, and a failed
+    /// read keeps what is on screen rather than showing an error.
+    func refreshQuietly() async -> Bool {
+        guard let fresh = try? await service.getComments(postId: postId) else { return false }
+        comments = fresh
+        hasLoaded = true
+        loadError = nil
+        return true
+    }
+
     func send(_ text: String, replyingTo parent: Comment?, taggedUserIds: [String]) async throws {
         let comment = try await service.addComment(
             to: postId,
@@ -166,6 +176,14 @@ struct PostCommentsView: View {
             await comments.load()
             if comments.hasLoaded {
                 viewModel.setCommentCount(of: post.id, to: comments.comments.count)
+            }
+        }
+        .task {
+            // Signals that land mid-refresh are buffered into one more refresh.
+            for await _ in CommentsLiveUpdates.changes(postId: post.id) where comments.hasLoaded {
+                if await comments.refreshQuietly() {
+                    viewModel.setCommentCount(of: post.id, to: comments.comments.count)
+                }
             }
         }
         .task(id: draft) { await mentions.refresh(for: draft) }

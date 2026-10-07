@@ -198,3 +198,22 @@ struct PostPhotoAspectTests {
         #expect(PostPhotoAspect.clamped(width: 0, height: 0) == PostPhotoAspect.placeholder)
     }
 }
+
+@Suite("Live comment updates")
+struct CommentsLiveUpdatesTests {
+    @Test("the server's change signal triggers a refetch")
+    func changeSignal() {
+        #expect(CommentsLiveUpdates.isChangeSignal(#"{"type":"comments.changed"}"#))
+    }
+
+    @Test("keepalive replies and unknown messages are ignored", arguments: ["pong", "", #"{"type":"other"}"#, "[1]"])
+    func ignoredMessages(_ text: String) {
+        #expect(!CommentsLiveUpdates.isChangeSignal(text))
+    }
+
+    @Test("reconnects back off 1, 2, 4 … seconds and cap at 30")
+    func reconnectBackoff() {
+        let delays = (1...8).map { CommentsLiveUpdates.reconnectDelay(afterFailures: $0) }
+        #expect(delays == [1, 2, 4, 8, 16, 30, 30, 30].map { Duration.seconds($0) })
+    }
+}
