@@ -65,6 +65,8 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
             notes: data.notes ?? null,
             packId: data.packId ?? null,
             checklist: data.checklist ?? null,
+            log: data.log ?? null,
+            excludedFromStats: data.excludedFromStats ?? false,
             deleted: false,
             localCreatedAt: new Date(data.localCreatedAt),
             localUpdatedAt: new Date(data.localUpdatedAt),
@@ -136,6 +138,8 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
         if ('notes' in data) updateData.notes = data.notes ?? null;
         if ('packId' in data) updateData.packId = data.packId ?? null;
         if ('checklist' in data) updateData.checklist = data.checklist ?? null;
+        if ('log' in data) updateData.log = data.log ?? null;
+        if ('excludedFromStats' in data) updateData.excludedFromStats = data.excludedFromStats;
         if ('localUpdatedAt' in data)
           updateData.localUpdatedAt = data.localUpdatedAt ? new Date(data.localUpdatedAt) : null;
         if ('deleted' in data) updateData.deleted = data.deleted;

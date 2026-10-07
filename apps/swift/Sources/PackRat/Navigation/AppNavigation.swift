@@ -5,7 +5,7 @@ enum NavItem: String, CaseIterable, Identifiable {
     // Order matters: first entries are the primary iPhone tab bar destinations.
     case home, packs, trips, weather, chat
     case catalog, templates, trailConditions, feed
-    case guides, gearInventory, wildlife, aiPacks
+    case guides, gearInventory, wildlife, aiPacks, tripStats
 
     var id: String { rawValue }
     var label: String {
@@ -23,6 +23,7 @@ enum NavItem: String, CaseIterable, Identifiable {
         case .gearInventory: return "Gear Inventory"
         case .wildlife:      return "Wildlife"
         case .aiPacks:       return "AI Packs"
+        case .tripStats:     return "Trip Stats"
         }
     }
     var symbol: String {
@@ -40,6 +41,7 @@ enum NavItem: String, CaseIterable, Identifiable {
         case .gearInventory: return "shippingbox"
         case .wildlife:      return "pawprint"
         case .aiPacks:       return "sparkles"
+        case .tripStats:     return "chart.bar.xaxis"
         }
     }
 
@@ -65,6 +67,7 @@ enum NavItem: String, CaseIterable, Identifiable {
         case .trailConditions: return FeatureFlagStore.shared.isEnabled("enableTrailConditions")
         case .feed: return FeatureFlagStore.shared.isEnabled("enableFeed")
         case .wildlife: return FeatureFlagStore.shared.isEnabled("enableWildlifeIdentification")
+        case .tripStats: return FeatureFlagStore.shared.isEnabled("enableTripStats")
         default: return true
         }
     }
@@ -338,6 +341,8 @@ struct AppNavigation: View {
             }
         case .aiPacks:
             AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
+        case .tripStats:
+            TripStatsView().environment(appState)
         case .packs, .trips, .templates, .trailConditions:
             EmptyView()
         }
@@ -505,6 +510,7 @@ struct AppNavigation: View {
                 WildlifeDestination()
             }
         case .aiPacks:         AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
+        case .tripStats:       TripStatsView().environment(appState)
         }
     }
     #endif

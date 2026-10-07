@@ -65,6 +65,9 @@ final class FeatureFlagStore {
             return UserDefaults.standard.bool(forKey: key)
         }
         if Self.debugOverrides.contains(key) { return true }
+        // `--enable-flag=<key>` forces a flag on in a debug build, so a feature
+        // still off in every environment can be exercised on a simulator.
+        if ProcessInfo.processInfo.arguments.contains("--enable-flag=\(key)") { return true }
         #endif
         return flags[key] ?? false
     }

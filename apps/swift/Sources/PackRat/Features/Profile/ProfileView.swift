@@ -5,6 +5,7 @@ import Sentry
 
 struct ProfileView: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(AppState.self) private var appState
     @State private var firstName = ""
     @State private var lastName = ""
     @State private var isSaving = false
@@ -70,6 +71,8 @@ struct ProfileView: View {
                 .padding(.vertical, 4)
             }
 
+            tripStatsSection
+
             Section {
                 Button {
                     authManager.signOut()
@@ -83,6 +86,26 @@ struct ProfileView: View {
         .packRatFormStyle()
     }
 
+    /// Personal stats live under the "me" tab, as in Strava, Komoot and
+    /// AllTrails. Shown once a trip has finished; until then there is nothing
+    /// to open.
+    @ViewBuilder
+    private var tripStatsSection: some View {
+        if NavItem.tripStats.isFeatureEnabled, !appState.tripGoalsVM.isTurnedOff {
+            let stats = TripStats(trips: appState.tripsVM.trips, packs: appState.packsVM.packs)
+            if !stats.isEmpty {
+                Section {
+                    NavigationLink {
+                        TripStatsView()
+                    } label: {
+                        TripStatsTeaser(stats: stats, showsChevron: false)
+                    }
+                    .accessibilityIdentifier("profile_trip_stats_row")
+                }
+            }
+        }
+    }
+
     private var profileForm: some View {
         Form {
             Section {
@@ -94,6 +117,8 @@ struct ProfileView: View {
                 .padding(.vertical, 8)
             }
             .listRowBackground(Color.clear)
+
+            tripStatsSection
 
             Section("Account Info") {
                 LabeledContent("Email") {

@@ -18,6 +18,16 @@ struct TripDetailView: View {
         viewModel.trips.first { $0.id == openedTrip.id } ?? openedTrip
     }
 
+    /// Over once its last day has passed, the point a trip can be logged.
+    private var isFinished: Bool {
+        guard let end = (trip.endDate ?? trip.startDate)?.toDate() else { return false }
+        return Calendar.current.startOfDay(for: end) < Calendar.current.startOfDay(for: .now)
+    }
+
+    private var route: [CLLocationCoordinate2D] {
+        trip.log?.route.map(Polyline.decode) ?? []
+    }
+
     @State private var showingEditSheet = false
     /// The trip's pack pushed on top of the trip; `true` opens it in packing mode.
     @State private var pushedPack: PackRoute?
@@ -62,6 +72,10 @@ struct TripDetailView: View {
 
                 metaCards
                     .padding(.top, 8)
+
+                if isFinished, NavItem.tripStats.isFeatureEnabled {
+                    TripLogSection(trip: trip, viewModel: viewModel)
+                }
 
                 // Map — shown when the trip has coordinates
                 if let coord = coordinate {
@@ -135,7 +149,9 @@ struct TripDetailView: View {
             }
         }
         .onAppear {
-            if let coord = coordinate {
+            if route.count >= 2 {
+                mapPosition = .automatic
+            } else if let coord = coordinate {
                 mapPosition = .region(MKCoordinateRegion(
                     center: coord,
                     span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
@@ -271,6 +287,10 @@ struct TripDetailView: View {
 
     private func tripMap(coord: CLLocationCoordinate2D) -> some View {
         Map(position: $mapPosition) {
+            if route.count >= 2 {
+                MapPolyline(coordinates: route)
+                    .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+            }
             Annotation(trip.location?.name ?? trip.name, coordinate: coord) {
                 ZStack {
                     Circle().fill(.red).frame(width: 36, height: 36)

@@ -16,6 +16,7 @@ import { revenuecatWebhookRoutes } from './revenuecatWebhook';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
 import { trailConditionsRoutes } from './trailConditions';
 import { trailsRoutes } from './trails';
+import { tripStatsRoutes } from './tripStats';
 import { tripsRoutes } from './trips';
 import { uploadRoutes } from './upload';
 import { userRoutes } from './user';
@@ -35,6 +36,7 @@ export const routes = new Elysia({ prefix: '/api' })
   .use(feedRoutes)
   .use(packsRoutes)
   .use(tripsRoutes)
+  .use(tripStatsRoutes)
   .use(aiRoutes)
   .use(chatRoutes)
   .use(weatherRoutes)
