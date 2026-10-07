@@ -88,7 +88,7 @@ export function introMessage({ userName }: { userName: string }): SafetyMessage 
     text:
       `PackRat: ${userName} added you as an emergency contact. When they head out on a ` +
       `trip you'll get their plan and when they're due back, and if they don't return on ` +
-      `time we'll alert you. Reply STOP to opt out.`,
+      `time we'll alert you. If you weren't expecting this, you can ignore it.`,
   };
 }
 

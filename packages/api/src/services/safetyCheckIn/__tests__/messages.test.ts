@@ -71,7 +71,7 @@ describe('message builders', () => {
   it('introMessage explains the role', () => {
     const m = introMessage({ userName: 'Alex' });
     expect(m.subject).toBe('Alex added you as an emergency contact');
-    expect(m.text).toContain('Reply STOP to opt out.');
+    expect(m.text).toContain("If you weren't expecting this, you can ignore it.");
   });
 
   it('tripStartedMessage includes return time, gear and link', () => {
