@@ -33,11 +33,11 @@ struct DeepLinkTests {
         #expect(DeepLink.parse(bad) == .unknown(bad))
     }
 
-    @Test("routes packrat.world/p/<publicId> share links to .sharedPost")
+    @Test("routes packratai.com/p/<publicId> share links to .sharedPost")
     func sharedPostLink() {
         let id = "036ebe2f-fac2-4615-b7fa-6cb26897df23"
-        #expect(DeepLink.parse(URL(string: "https://packrat.world/p/\(id)")!) == .sharedPost(publicId: id))
-        #expect(DeepLink.parse(URL(string: "https://www.packrat.world/p/\(id)")!) == .sharedPost(publicId: id))
+        #expect(DeepLink.parse(URL(string: "https://packratai.com/p/\(id)")!) == .sharedPost(publicId: id))
+        #expect(DeepLink.parse(URL(string: "https://www.packratai.com/p/\(id)")!) == .sharedPost(publicId: id))
         #expect(DeepLink.parse(URL(string: "packrat://p/\(id)")!) == .sharedPost(publicId: id))
     }
 
@@ -45,7 +45,7 @@ struct DeepLinkTests {
     func otherWebLinks() {
         let elsewhere = URL(string: "https://example.com/p/abc")!
         #expect(DeepLink.parse(elsewhere) == .unknown(elsewhere))
-        let otherPath = URL(string: "https://packrat.world/guides/abc")!
+        let otherPath = URL(string: "https://packratai.com/guides/abc")!
         #expect(DeepLink.parse(otherPath) == .unknown(otherPath))
     }
 

@@ -15,7 +15,7 @@ extension Post {
         publicId.flatMap { URL(string: "https://\(Post.shareHost)/p/\($0)") }
     }
 
-    static let shareHost = "packrat.world"
+    static let shareHost = "packratai.com"
 }
 
 extension PostAuthor {

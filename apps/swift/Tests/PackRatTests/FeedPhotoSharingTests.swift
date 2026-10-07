@@ -146,7 +146,7 @@ struct FeedPhotoProcessingTests {
 
 @Suite("Post share link")
 struct PostShareLinkTests {
-    @Test("the share link is packrat.world/p/{publicId}")
+    @Test("the share link is packratai.com/p/{publicId}")
     func shareURL() {
         var post = Post(
             id: 6, userId: "u", caption: nil, images: [], createdAt: "", updatedAt: "",
@@ -154,7 +154,7 @@ struct PostShareLinkTests {
         )
         #expect(post.shareURL == nil)
         post.publicId = "036ebe2f-fac2-4615-b7fa-6cb26897df23"
-        #expect(post.shareURL?.absoluteString == "https://packrat.world/p/036ebe2f-fac2-4615-b7fa-6cb26897df23")
+        #expect(post.shareURL?.absoluteString == "https://packratai.com/p/036ebe2f-fac2-4615-b7fa-6cb26897df23")
     }
 
     @Test("a real API post decodes with the photo sharing fields")

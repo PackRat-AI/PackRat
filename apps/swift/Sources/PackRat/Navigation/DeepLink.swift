@@ -27,13 +27,13 @@ public enum DeepLink: Equatable {
     /// A feed post by id — `packrat://post/<id>`, and the tap handler for
     /// tag, comment and reply notifications.
     case post(id: Int)
-    /// A shared post link — `https://packrat.world/p/<publicId>` (universal
+    /// A shared post link — `https://packratai.com/p/<publicId>` (universal
     /// link) or `packrat://p/<publicId>`.
     case sharedPost(publicId: String)
     case unknown(URL)
 
     public static let scheme = "packrat"
-    public static let webHosts: Set<String> = ["packrat.world", "www.packrat.world"]
+    public static let webHosts: Set<String> = ["packratai.com", "www.packratai.com"]
 
     public static func parse(_ url: URL) -> DeepLink {
         let pathSegments = url.pathComponents.filter { $0 != "/" }

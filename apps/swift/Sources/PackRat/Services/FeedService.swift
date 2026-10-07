@@ -37,7 +37,7 @@ final class FeedService: Sendable {
         try await api.send(Endpoint(.get, "/api/feed/\(postId)"))
     }
 
-    /// Resolves a share link (`packrat.world/p/{publicId}`) to the full post.
+    /// Resolves a share link (`packratai.com/p/{publicId}`) to the full post.
     func getSharedPost(publicId: String) async throws -> Post {
         try await api.send(Endpoint(.get, "/api/feed/shared/\(publicId)"))
     }
