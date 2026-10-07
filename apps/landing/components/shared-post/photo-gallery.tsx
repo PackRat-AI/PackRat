@@ -3,6 +3,7 @@
 import { cn } from '@packrat/web-ui/lib/utils';
 import Image from 'next/image';
 import { useRef, useState } from 'react';
+import { PLACEHOLDER_PHOTO_ASPECT, postPhotoAspect } from '../../lib/shared-post';
 
 /**
  * Swipeable photo strip for a shared post. Native scroll-snap does the
@@ -12,6 +13,8 @@ import { useRef, useState } from 'react';
 export function PhotoGallery({ images, alt }: { images: string[]; alt: string }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+  // The post takes the shape of its first photo, as in the app.
+  const [aspect, setAspect] = useState(PLACEHOLDER_PHOTO_ASPECT);
   const multiple = images.length > 1;
 
   function handleScroll() {
@@ -30,7 +33,8 @@ export function PhotoGallery({ images, alt }: { images: string[]; alt: string })
       <div
         ref={trackRef}
         onScroll={multiple ? handleScroll : undefined}
-        className="flex aspect-[4/5] w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain bg-muted [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{ aspectRatio: aspect }}
+        className="flex w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain bg-muted [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {images.map((src, index) => (
           <div key={src} className="relative h-full w-full shrink-0 snap-center">
@@ -41,6 +45,17 @@ export function PhotoGallery({ images, alt }: { images: string[]; alt: string })
               priority={index === 0}
               sizes="(max-width: 640px) 100vw, 560px"
               className="object-cover"
+              onLoad={
+                index === 0
+                  ? (event) =>
+                      setAspect(
+                        postPhotoAspect(
+                          event.currentTarget.naturalWidth,
+                          event.currentTarget.naturalHeight,
+                        ),
+                      )
+                  : undefined
+              }
             />
           </div>
         ))}

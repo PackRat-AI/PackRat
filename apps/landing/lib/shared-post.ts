@@ -145,3 +145,15 @@ export function renderPayloadScript(payload: SharedPostPayload): string {
   const json = safeJsonStringify(payload).replaceAll('<', '\\u003c');
   return `<script id="${SHARED_POST_DATA_ID}" type="application/json">${json}</script>`;
 }
+
+/** Shown until the first photo loads; most trail photos are landscape. */
+export const PLACEHOLDER_PHOTO_ASPECT = 4 / 3;
+
+/**
+ * A post's photo frame follows its first photo, kept between portrait 4:5 and
+ * landscape 1.91:1 — the same rule the app uses.
+ */
+export function postPhotoAspect(width: number, height: number): number {
+  if (width <= 0 || height <= 0) return PLACEHOLDER_PHOTO_ASPECT;
+  return Math.min(Math.max(width / height, 4 / 5), 1.91);
+}
