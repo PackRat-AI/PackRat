@@ -74,6 +74,12 @@ edited, or delete it. The author of a post can delete any comment on it.
 The author of a post is notified when someone comments on it, and a commenter
 is notified when someone replies to them.
 
+An open thread updates live. When anyone adds, edits, deletes or likes a
+comment, or a moderator removes one, everyone looking at that thread sees the
+change within a moment, without refreshing. Blocks and moderation still apply:
+a live update never shows someone a comment they could not see by reopening
+the thread.
+
 ## Sharing outside PackRat
 
 The share button on a post opens the system share sheet, so a post goes
@@ -122,8 +128,8 @@ or mention the other.
   are posted as they are in the library.
 - **No algorithmic feed.** Newest first is the only ordering. No following,
   ranking or "for you" view.
-- **No live-updating threads.** Comments appear when a thread is opened or
-  refreshed, not as others type them.
+- **No typing indicators.** A thread updates when a comment is posted, not
+  while someone is writing it.
 - **No reactions beyond like.** One kind of like, on posts and comments.
 - **No platform-specific share buttons.** The system share sheet reaches every
   app the user has, so there is no row of Instagram, Facebook, X, WhatsApp and
