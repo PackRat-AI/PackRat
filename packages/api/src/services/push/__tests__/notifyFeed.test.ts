@@ -100,7 +100,7 @@ describe('notifyFeedRecipients', () => {
     expect(mocks.sendApnsPush).toHaveBeenCalledWith({
       env: mocks.env,
       deviceToken: 'device-1',
-      payload: { alert: { title: 'Ana commented', body: 'Nice' }, data: { postId: 7 } },
+      payload: { alert: { title: 'Ana commented', body: 'Nice' }, postId: 7 },
     });
   });
 

@@ -129,6 +129,11 @@ targets:
         GOOGLE_IOS_CLIENT_ID: 993694750638-f2pbg3e5tkt2btn9eih6c8ah8igal55m.apps.googleusercontent.com
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+        # Pre-trip reminders refresh the destination forecast in the background.
+        UIBackgroundModes:
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - world.packrat.trip-conditions
         CFBundleURLTypes:
           # Primary deep-link scheme — matches Expo's `scheme: 'packrat'` in app.config.ts
           # so deep links survive an iOS-to-Swift swap without re-issuing existing universal

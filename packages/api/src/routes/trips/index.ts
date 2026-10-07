@@ -64,6 +64,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
             endDate: data.endDate ? new Date(data.endDate) : null,
             notes: data.notes ?? null,
             packId: data.packId ?? null,
+            checklist: data.checklist ?? null,
             deleted: false,
             localCreatedAt: new Date(data.localCreatedAt),
             localUpdatedAt: new Date(data.localUpdatedAt),
@@ -134,6 +135,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
         if ('endDate' in data) updateData.endDate = data.endDate ? new Date(data.endDate) : null;
         if ('notes' in data) updateData.notes = data.notes ?? null;
         if ('packId' in data) updateData.packId = data.packId ?? null;
+        if ('checklist' in data) updateData.checklist = data.checklist ?? null;
         if ('localUpdatedAt' in data)
           updateData.localUpdatedAt = data.localUpdatedAt ? new Date(data.localUpdatedAt) : null;
         if ('deleted' in data) updateData.deleted = data.deleted;

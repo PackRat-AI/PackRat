@@ -59,6 +59,7 @@ struct PreferencesView: View {
     @Environment(\.openURL) private var openURL
     @State private var notificationsEnabled = false
     @State private var notificationAuthStatus: UNAuthorizationStatus = .notDetermined
+    @Bindable private var tripReminders = TripReminderSettings.shared
 
     var body: some View {
         #if os(macOS)
@@ -214,8 +215,16 @@ struct PreferencesView: View {
                         Task { await toggleNotifications(enabled) }
                     }
             }
+            if FeatureFlagStore.shared.isEnabled(TripReminderPlanner.flagKey) {
+                Toggle("Trip Reminders", isOn: $tripReminders.isEnabled)
+                    .accessibilityIdentifier("settings_trip_reminders_toggle")
+            }
         } header: {
             Text("Notifications")
+        } footer: {
+            if FeatureFlagStore.shared.isEnabled(TripReminderPlanner.flagKey) {
+                Text("Trip Reminders help you pack and charge in the week before a trip. Turn them off for a single trip from that trip.")
+            }
         }
     }
 
@@ -360,6 +369,7 @@ struct PreferencesView: View {
         temperatureUnit = .fahrenheit
         speedUnit = .mph
         apiBaseURL = ""
+        tripReminders.isEnabled = true
     }
 }
 

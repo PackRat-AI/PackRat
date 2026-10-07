@@ -15,6 +15,7 @@ enum AppFeatureFlags {
     static let enableShoppingList = false
     static let enableTrailConditions = true
     static let enableTrails = false
+    static let enableTripReminders = false
     static let enableTrips = true
     static let enableWeatherMonitoring = false
     static let enableWildlifeIdentification = false
@@ -33,6 +34,7 @@ enum AppFeatureFlags {
         "enableShoppingList": false,
         "enableTrailConditions": true,
         "enableTrails": false,
+        "enableTripReminders": false,
         "enableTrips": true,
         "enableWeatherMonitoring": false,
         "enableWildlifeIdentification": false,

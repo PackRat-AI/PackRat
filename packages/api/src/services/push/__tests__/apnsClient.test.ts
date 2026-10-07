@@ -35,7 +35,7 @@ function envWithout(key: keyof typeof env) {
 
 const payload = {
   alert: { title: 'Flood Warning', body: 'Rising water expected' },
-  data: { weatherLocationId: 42 },
+  weatherLocationId: 42,
 };
 
 function okResponse() {
@@ -113,6 +113,39 @@ describe('sendApnsPush', () => {
       },
       weatherLocationId: 42,
     });
+  });
+
+  it('carries a trip id instead of a location id for a trip alert', async () => {
+    const { sendApnsPush } = await loadClient();
+
+    await sendApnsPush({
+      env,
+      deviceToken: 'device-1',
+      payload: {
+        alert: { title: 'Weather alert for PCT', body: 'Flood Warning' },
+        tripId: 'trip-1',
+      },
+    });
+
+    const init = fetchMock.mock.calls[0]?.[1] as { body: string };
+    const body = JSON.parse(init.body);
+    expect(body.tripId).toBe('trip-1');
+    expect(body).not.toHaveProperty('weatherLocationId');
+  });
+
+  it('routes a feed notification by postId', async () => {
+    const { sendApnsPush } = await loadClient();
+
+    await sendApnsPush({
+      env,
+      deviceToken: 'device-1',
+      payload: { alert: { title: 'Maya tagged you', body: 'Tap to see the post.' }, postId: 7 },
+    });
+
+    const init = fetchMock.mock.calls[0]?.[1] as { body: string };
+    const body = JSON.parse(init.body);
+    expect(body.postId).toBe(7);
+    expect(body).not.toHaveProperty('tripId');
   });
 
   it('passes an explicit sound and badge through instead of the default', async () => {

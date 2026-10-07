@@ -25,6 +25,7 @@ struct CreateTripRequest: Encodable {
     let endDate: String?
     let notes: String?
     let packId: String?
+    let checklist: [TripChecklistItem]?
     let localCreatedAt: String
     let localUpdatedAt: String
 }
@@ -37,10 +38,11 @@ struct UpdateTripRequest: Encodable {
     let endDate: String?
     let notes: String?
     let packId: String?
+    let checklist: [TripChecklistItem]?
     let localUpdatedAt: String
 
     enum CodingKeys: String, CodingKey {
-        case name, description, location, startDate, endDate, notes, packId, localUpdatedAt
+        case name, description, location, startDate, endDate, notes, packId, checklist, localUpdatedAt
     }
 
     /// `packId` is encoded unconditionally — as an explicit `null` when the user
@@ -58,6 +60,7 @@ struct UpdateTripRequest: Encodable {
         try container.encodeIfPresent(endDate, forKey: .endDate)
         try container.encodeIfPresent(notes, forKey: .notes)
         try container.encode(packId, forKey: .packId)
+        try container.encodeIfPresent(checklist, forKey: .checklist)
         try container.encode(localUpdatedAt, forKey: .localUpdatedAt)
     }
 }

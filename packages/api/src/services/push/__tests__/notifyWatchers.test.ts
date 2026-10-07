@@ -105,7 +105,7 @@ describe('notifyWatchers', () => {
       deviceToken: 'device-1',
       payload: {
         alert: { title: 'Flood Warning', body: 'Flood Warning until 6 PM' },
-        data: { weatherLocationId: 42 },
+        weatherLocationId: 42,
       },
     });
   });

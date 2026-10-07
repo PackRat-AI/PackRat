@@ -1,6 +1,6 @@
 {
-  "id": "e2c41dfb-887a-406f-a980-259cee9712de",
-  "prevId": "ea87ff5f-c9c9-4c89-a503-6d596ee503b5",
+  "id": "1de2ca25-6978-4cf2-a6fb-7fc649f1fdbc",
+  "prevId": "e2c41dfb-887a-406f-a980-259cee9712de",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3347,6 +3347,55 @@
           "columnsFrom": ["trip_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.trip_destination_alert_state": {
+      "name": "trip_destination_alert_state",
+      "schema": "",
+      "columns": {
+        "trip_id": {
+          "name": "trip_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "last_alert_ids": {
+          "name": "last_alert_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "last_polled_at": {
+          "name": "last_polled_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "trip_destination_alert_state_trip_id_trips_id_fk": {
+          "name": "trip_destination_alert_state_trip_id_trips_id_fk",
+          "tableFrom": "trip_destination_alert_state",
+          "tableTo": "trips",
+          "columnsFrom": ["trip_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },

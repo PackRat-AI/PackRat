@@ -61,7 +61,7 @@ export async function notifyWatchers({
       const result = await sendApnsPush({
         env,
         deviceToken: token.deviceToken,
-        payload: { alert: { title, body }, data: { weatherLocationId } },
+        payload: { alert: { title, body }, weatherLocationId },
       });
 
       if (result.outcome === 'invalid-token') {

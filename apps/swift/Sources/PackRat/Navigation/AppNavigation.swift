@@ -131,6 +131,30 @@ struct AppNavigation: View {
     }
     #endif
 
+    #if os(iOS)
+    /// Changes whenever a trip's reminders would: added, removed, re-dated,
+    /// re-linked to another pack, Before-you-go list changed, or switched off.
+    private var tripReminderSignature: [String] {
+        let settings = TripReminderSettings.shared
+        return ["enabled|\(settings.isEnabled)"] + appState.tripsVM.trips.map {
+            let open = TripReminderPlanner.openChecklistTitles($0).joined(separator: ",")
+            let place = TripConditions.sourceKey(for: $0)
+            return "\($0.id)|\(place)|\($0.packId ?? "")|\($0.name)|\(open)|\(settings.isMuted($0.id))"
+        }
+    }
+
+    private func syncTripReminders() {
+        let trips = appState.tripsVM.trips
+        let packs = appState.packsVM.packs
+        Task {
+            // Throttled per trip, so a sync on every foreground costs nothing
+            // until a forecast is an hour old.
+            await TripConditionsStore.shared.refresh(trips: trips)
+            await TripReminderScheduler.sync(trips: trips, packs: packs)
+        }
+    }
+    #endif
+
     var body: some View {
         navigationBody
             .onOpenURL { url in
@@ -144,9 +168,15 @@ struct AppNavigation: View {
             // populated on launch instead of only after a visit to Weather.
             .task { await appState.weatherVM.refreshAlertBadgeState() }
             .onChange(of: scenePhase) { _, phase in
+                // Rescheduling on background as well as foreground means the
+                // reminders carry the packing progress the user just made.
+                if phase == .active || phase == .background { syncTripReminders() }
+                if phase == .background { TripConditionsBackgroundRefresh.schedule() }
                 guard phase == .active else { return }
                 Task { await appState.weatherVM.refreshAlertBadgeState() }
             }
+            .task { syncTripReminders() }
+            .onChange(of: tripReminderSignature) { _, _ in syncTripReminders() }
             .onReceive(NotificationCenter.default.publisher(for: .weatherAlertNotificationTapped)) { notification in
                 guard let weatherLocationId = notification.userInfo?["weatherLocationId"] as? Int else { return }
                 appState.apply(.weatherAlert(weatherLocationId: weatherLocationId))
@@ -154,6 +184,10 @@ struct AppNavigation: View {
             .onReceive(NotificationCenter.default.publisher(for: .feedPostNotificationTapped)) { notification in
                 guard let postId = notification.userInfo?["postId"] as? Int else { return }
                 appState.apply(.post(id: postId))
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .tripReminderNotificationTapped)) { notification in
+                guard let tripId = notification.userInfo?[TripReminderScheduler.tripIdKey] as? String else { return }
+                appState.apply(.trip(id: tripId))
             }
             #endif
     }

@@ -77,7 +77,7 @@ export async function notifyFeedRecipients({
         const result = await sendApnsPush({
           env,
           deviceToken: token.deviceToken,
-          payload: { alert: { title, body }, data: { postId } },
+          payload: { alert: { title, body }, postId },
         });
         if (result.outcome === 'invalid-token') {
           await db

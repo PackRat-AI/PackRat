@@ -229,8 +229,11 @@ final class TripsViewModel {
             location: location.map { TripLocation(latitude: $0.latitude, longitude: $0.longitude, name: $0.name) },
             notes: notes,
             packId: packId,
+            checklist: existing.checklist,
             updatedAt: Date.iso8601Now()
         )
+        // A queued update replaces the trip wholesale on replay, so it carries the
+        // Before-you-go list too or the replay would wipe it.
         let payload = TripMutationPayload(
             name: name,
             description: description,
@@ -240,7 +243,8 @@ final class TripsViewModel {
             longitude: location?.longitude,
             locationName: location?.name,
             notes: notes,
-            packId: packId
+            packId: packId,
+            checklist: existing.checklist
         )
         func queueUpdate() {
             outbox.enqueue(
@@ -271,6 +275,57 @@ final class TripsViewModel {
             trips[idx] = updated
         }
         upsertCachedTrip(updated, context: context)
+    }
+
+    /// Saves a trip's Before-you-go list. Local-first: the change shows and is
+    /// cached synchronously — so a second quick tick builds on the first — then
+    /// goes out through the outbox, whose updates collapse to the latest and
+    /// replay in order, so ticks can't land out of order and an offline edit
+    /// syncs when the connection returns.
+    func updateChecklist(_ tripId: String, _ checklist: [TripChecklistItem], context: ModelContext? = nil) {
+        guard let idx = trips.firstIndex(where: { $0.id == tripId }) else { return }
+        let trip = trips[idx]
+        let updated = rebuildTrip(
+            trip,
+            name: trip.name,
+            description: trip.description,
+            startDate: trip.startDate,
+            endDate: trip.endDate,
+            location: trip.location,
+            notes: trip.notes,
+            packId: trip.packId,
+            checklist: checklist,
+            updatedAt: Date.iso8601Now()
+        )
+        trips[idx] = updated
+        upsertCachedTrip(updated, context: context)
+
+        let payload = TripMutationPayload(
+            name: trip.name,
+            description: trip.description,
+            startDate: trip.startDate,
+            endDate: trip.endDate,
+            latitude: trip.location?.latitude,
+            longitude: trip.location?.longitude,
+            locationName: trip.location?.name,
+            notes: trip.notes,
+            packId: trip.packId,
+            checklist: checklist
+        )
+        outbox.enqueue(
+            entityType: .trip,
+            entityId: tripId,
+            operation: .update,
+            payload: OutboxService.encode(payload),
+            context: context
+        )
+        let outbox = outbox
+        Task {
+            // A flush already draining the queue may have started before this row
+            // was written; wait it out so the edit isn't left for the next foreground.
+            while outbox.isFlushing { try? await Task.sleep(for: .milliseconds(200)) }
+            await outbox.flush(context: context)
+        }
     }
 
     /// Optimistic delete. An unreachable server queues the delete for replay rather
@@ -322,6 +377,7 @@ final class TripsViewModel {
             endDate: endDate?.iso8601String(),
             userId: nil,
             packId: packId,
+            checklist: nil,
             deleted: false,
             createdAt: now,
             updatedAt: now
@@ -337,6 +393,7 @@ final class TripsViewModel {
         location: TripLocation?,
         notes: String?,
         packId: String?,
+        checklist: [TripChecklistItem]?,
         updatedAt: String
     ) -> Trip {
         Trip(
@@ -349,6 +406,7 @@ final class TripsViewModel {
             endDate: endDate,
             userId: trip.userId,
             packId: packId,
+            checklist: checklist,
             deleted: trip.deleted,
             createdAt: trip.createdAt,
             updatedAt: updatedAt

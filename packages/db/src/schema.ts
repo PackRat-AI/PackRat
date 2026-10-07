@@ -605,6 +605,9 @@ export const trips = pgTable('trips', {
   endDate: timestamp('end_date'),
   location: jsonb('location').$type<{ latitude: number; longitude: number; name?: string }>(),
   notes: text('notes'),
+  // The trip's "Before you go" list: non-gear tasks (permits, passes,
+  // reservations) the user ticks off before leaving.
+  checklist: jsonb('checklist').$type<{ id: string; title: string; done: boolean }[]>(),
   userId: text('user_id')
     .references(() => users.id)
     .notNull(),
@@ -1205,6 +1208,18 @@ export const weatherLocationAlertState = pgTable('weather_location_alert_state',
 });
 
 export type WeatherLocationAlertState = InferSelectModel<typeof weatherLocationAlertState>;
+
+// Last-seen weather alerts at an upcoming trip's destination, so the trip
+// destination poll pushes each alert to the trip's owner once. Keyed by trip:
+// a trip's destination is a coordinate, not a watched WeatherAPI location.
+export const tripDestinationAlertState = pgTable('trip_destination_alert_state', {
+  tripId: text('trip_id')
+    .primaryKey()
+    .references(() => trips.id, { onDelete: 'cascade' }),
+  lastAlertIds: jsonb('last_alert_ids').$type<string[]>().notNull().default([]),
+  lastPolledAt: timestamp('last_polled_at'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
 export type NewWeatherLocationAlertState = InferInsertModel<typeof weatherLocationAlertState>;
 
 // A device registered to receive push notifications. Genuinely new — no push
