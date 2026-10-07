@@ -1,7 +1,7 @@
 /**
- * Worker in front of the landing site's static assets. It runs only for
- * `/p/*` (`assets.run_worker_first` in `wrangler.jsonc`); every other path is
- * served straight from `out/`.
+ * Request handler for shared-post links, mounted as a Pages Function in
+ * `functions/p/[[path]].ts` (packratai.com is a Cloudflare Pages project).
+ * It runs only for `/p/*`; every other path is served straight from `out/`.
  *
  * Shared-post links (`/p/{publicId}`) need per-post Open Graph tags in the
  * server response — link previews never run JavaScript — and a static export
