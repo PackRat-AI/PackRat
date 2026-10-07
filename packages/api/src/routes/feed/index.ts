@@ -5,6 +5,9 @@ import {
   CreateCommentRequestSchema,
   CreateFeedReportRequestSchema,
   CreatePostRequestSchema,
+  FeedCommentParamsSchema,
+  FeedPageQuerySchema,
+  FeedPostParamsSchema,
   FeedResponseSchema,
   MentionSuggestionsResponseSchema,
   PublicPostSchema,
@@ -15,17 +18,6 @@ import {
 } from '@packrat/schemas/feed';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
-
-const PageQuerySchema = z.object({
-  // Defaults applied in handler so Treaty types these as truly optional.
-  page: z.coerce.number().int().min(1).optional(),
-  limit: z.coerce.number().int().min(1).max(50).optional(),
-});
-const PostParamsSchema = z.object({ postId: z.coerce.number().int() });
-const CommentParamsSchema = z.object({
-  postId: z.coerce.number().int(),
-  commentId: z.coerce.number().int(),
-});
 
 function unwrap<T>(result: feed.ServiceResult<T>) {
   return result.ok ? result.value : status(result.status, { error: result.error });
@@ -68,7 +60,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         }),
       ),
     {
-      query: PageQuerySchema,
+      query: FeedPageQuerySchema,
       response: { 200: 'feed.FeedResponse' },
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'List social feed posts', security },
@@ -87,7 +79,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         }),
       ),
     {
-      query: PageQuerySchema,
+      query: FeedPageQuerySchema,
       response: { 200: 'feed.FeedResponse' },
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'List posts I saved', security },
@@ -106,7 +98,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         }),
       ),
     {
-      query: PageQuerySchema,
+      query: FeedPageQuerySchema,
       response: { 200: 'feed.FeedResponse' },
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'List posts I am tagged in', security },
@@ -231,7 +223,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
     async ({ params, user }) =>
       unwrap(await feed.getPost({ viewerId: user.userId, postId: params.postId })),
     {
-      params: PostParamsSchema,
+      params: FeedPostParamsSchema,
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Get a post by ID', security },
     },
@@ -250,7 +242,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         }),
       ),
     {
-      params: PostParamsSchema,
+      params: FeedPostParamsSchema,
       body: UpdatePostRequestSchema,
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Edit a post caption', security },
@@ -263,7 +255,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
     async ({ params, user }) =>
       unwrap(await feed.deletePost({ userId: user.userId, postId: params.postId })),
     {
-      params: PostParamsSchema,
+      params: FeedPostParamsSchema,
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Delete a post', security },
     },
@@ -275,7 +267,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
     async ({ params, user }) =>
       unwrap(await feed.togglePostLike({ userId: user.userId, postId: params.postId })),
     {
-      params: PostParamsSchema,
+      params: FeedPostParamsSchema,
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Toggle like on a post', security },
     },
@@ -287,7 +279,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
     async ({ params, user }) =>
       unwrap(await feed.setPostSaved({ userId: user.userId, postId: params.postId, saved: true })),
     {
-      params: PostParamsSchema,
+      params: FeedPostParamsSchema,
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Save a post', security },
     },
@@ -297,7 +289,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
     async ({ params, user }) =>
       unwrap(await feed.setPostSaved({ userId: user.userId, postId: params.postId, saved: false })),
     {
-      params: PostParamsSchema,
+      params: FeedPostParamsSchema,
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Unsave a post', security },
     },
@@ -309,7 +301,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
     async ({ params, user }) =>
       unwrap(await feed.removeOwnTag({ userId: user.userId, postId: params.postId })),
     {
-      params: PostParamsSchema,
+      params: FeedPostParamsSchema,
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Remove my tag from a post', security },
     },
@@ -328,8 +320,8 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         }),
       ),
     {
-      params: PostParamsSchema,
-      query: PageQuerySchema,
+      params: FeedPostParamsSchema,
+      query: FeedPageQuerySchema,
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'List comments on a post', security },
     },
@@ -349,7 +341,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       return result.ok ? status(201, result.value) : status(result.status, { error: result.error });
     },
     {
-      params: PostParamsSchema,
+      params: FeedPostParamsSchema,
       body: 'feed.CreateCommentRequest',
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Add a comment to a post', security },
@@ -370,7 +362,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         }),
       ),
     {
-      params: CommentParamsSchema,
+      params: FeedCommentParamsSchema,
       body: UpdateCommentRequestSchema,
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Edit a comment', security },
@@ -389,7 +381,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         }),
       ),
     {
-      params: CommentParamsSchema,
+      params: FeedCommentParamsSchema,
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Delete a comment', security },
     },
@@ -407,7 +399,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         }),
       ),
     {
-      params: CommentParamsSchema,
+      params: FeedCommentParamsSchema,
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Toggle like on a comment', security },
     },

@@ -24,6 +24,17 @@ export const PostSchema = z.object({
   tags: z.array(PostAuthorSchema).optional(),
 });
 
+export const FeedPageQuerySchema = z.object({
+  // Defaults applied in handler so Treaty types these as truly optional.
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+});
+export const FeedPostParamsSchema = z.object({ postId: z.coerce.number().int() });
+export const FeedCommentParamsSchema = z.object({
+  postId: z.coerce.number().int(),
+  commentId: z.coerce.number().int(),
+});
+
 export const MAX_POST_IMAGES = 10;
 export const MAX_CAPTION_LENGTH = 500;
 
