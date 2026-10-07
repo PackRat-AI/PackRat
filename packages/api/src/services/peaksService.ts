@@ -1,5 +1,6 @@
 import { type OverpassElement, queryOverpass } from '@packrat/overpass';
 import type { NearbyPeak } from '@packrat/schemas/tripStats';
+import { safeJsonStringify } from '@packrat/utils';
 
 /** Enough to pick from without flooding a sheet; the highest come first. */
 export const NEARBY_PEAKS_LIMIT = 200;
@@ -22,7 +23,7 @@ export interface PeakBounds {
 export function parseElevation(raw: string | undefined): number | null {
   if (!raw) return null;
   const first = raw.split(';')[0]?.trim().toLowerCase() ?? '';
-  const match = first.replace(/,/g, '').match(ELEVATION);
+  const match = first.replaceAll(',', '').match(ELEVATION);
   if (!match?.[1]) return null;
   const value = Number(match[1]);
   if (!Number.isFinite(value)) return null;
@@ -97,7 +98,7 @@ export async function findNearbyPeaks(bounds: PeakBounds): Promise<NearbyPeak[]>
   const peaks = await fetchNearbyPeaks(snapBounds(bounds));
   await cache?.put(
     key,
-    new Response(JSON.stringify(peaks), {
+    new Response(safeJsonStringify(peaks), {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': `public, max-age=${PEAKS_CACHE_SECONDS}`,

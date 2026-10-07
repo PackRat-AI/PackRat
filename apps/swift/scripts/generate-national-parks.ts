@@ -16,6 +16,7 @@
 import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { safeJsonStringify } from '@packrat/utils';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const outputPath = resolve(__dir, '../Resources/NationalParks.json');
@@ -52,7 +53,7 @@ async function fetchFeatures(): Promise<Feature[]> {
   const response = await fetch(`${SERVICE}?${params}`);
   if (!response.ok) throw new Error(`NPS service returned ${response.status}`);
   const body: { features?: Feature[]; error?: unknown } = await response.json();
-  if (!body.features) throw new Error(`NPS service error: ${JSON.stringify(body.error)}`);
+  if (!body.features) throw new Error(`NPS service error: ${safeJsonStringify(body.error)}`);
   return body.features;
 }
 
@@ -90,5 +91,5 @@ if (codes.size !== EXPECTED_PARK_COUNT) {
 const empty = parks.filter((p) => p.rings.length === 0).map((p) => p.code);
 if (empty.length > 0) throw new Error(`Parks without a boundary: ${empty.join(', ')}`);
 
-writeFileSync(outputPath, `${JSON.stringify(parks)}\n`);
+writeFileSync(outputPath, `${safeJsonStringify(parks)}\n`);
 console.log(`Wrote ${parks.length} parks to ${outputPath}`);
