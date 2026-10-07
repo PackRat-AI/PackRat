@@ -32,6 +32,7 @@ vi.mock('@packrat/db', () => ({ users: { email: 'email', id: 'id' } }));
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn(),
   relations: vi.fn(() => ({})),
+  sql: vi.fn(),
 }));
 
 import { UserService } from '../userService';

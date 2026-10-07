@@ -25,6 +25,7 @@ import { z } from 'zod';
 import { analyticsRoutes } from './analytics';
 import { adminFeatureAccessRoutes } from './featureAccess';
 import { adminFeatureFlagsRoutes } from './featureFlags';
+import { adminFeedModerationRoutes } from './feedModeration';
 import { adminPackTemplatesRoutes } from './packTemplates';
 import { adminTrailsRoutes } from './trails';
 
@@ -805,4 +806,5 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   .use(adminTrailsRoutes)
   .use(adminFeatureFlagsRoutes)
   .use(adminFeatureAccessRoutes)
-  .use(adminPackTemplatesRoutes);
+  .use(adminPackTemplatesRoutes)
+  .use(adminFeedModerationRoutes);

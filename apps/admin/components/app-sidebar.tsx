@@ -8,13 +8,15 @@ import {
   SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
   useSidebar,
 } from '@packrat/web-ui/components/sidebar';
 import { cn } from '@packrat/web-ui/lib/utils';
-import { navItems } from 'admin-app/config/nav';
+import { type NavItem, navItems } from 'admin-app/config/nav';
+import { useFeedReports } from 'admin-app/hooks/use-feed-moderation';
 import { clearToken } from 'admin-app/lib/auth';
 import { LogOut, Package } from 'lucide-react';
 import Link from 'next/link';
@@ -25,6 +27,10 @@ export function AppSidebar() {
   const router = useRouter();
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
+  const { data: feedReports } = useFeedReports();
+  const counts: Record<NonNullable<NavItem['count']>, number> = {
+    pendingFeedReports: feedReports?.length ?? 0,
+  };
 
   function handleLogout() {
     clearToken();
@@ -53,6 +59,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
+                const count = item.count ? counts[item.count] : 0;
                 const isActive =
                   item.href === '/dashboard'
                     ? pathname === '/dashboard'
@@ -74,6 +81,11 @@ export function AppSidebar() {
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
+                    {count > 0 && (
+                      <SidebarMenuBadge className="bg-destructive/15 text-destructive">
+                        {count}
+                      </SidebarMenuBadge>
+                    )}
                   </SidebarMenuItem>
                 );
               })}

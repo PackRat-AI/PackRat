@@ -1,4 +1,5 @@
 import type { Container } from '@cloudflare/containers';
+import type { PostLiveRoom } from '@packrat/api/durable-objects/PostLiveRoom';
 import { isObject } from '@packrat/guards';
 import { z } from 'zod';
 
@@ -145,6 +146,8 @@ export const apiEnvObjectSchema = z.object({
   ETL_WORKFLOW: z.unknown(),
   // App container Durable Object binding (APP_CONTAINER)
   APP_CONTAINER: z.unknown(),
+  // Live comment rooms, one Durable Object per feed post (optional — absent in unit tests)
+  POST_LIVE_ROOM: z.unknown().optional(),
   // Rate limiting binding (optional — not present in local dev/test)
   TOKEN_RATE_LIMITER: z.unknown().optional(),
   // Hyperdrive binding for the dedicated OSM/trail Postgres instance.
@@ -289,6 +292,7 @@ export type ValidatedEnv = Omit<
   | 'EMBEDDINGS_QUEUE'
   | 'ETL_WORKFLOW'
   | 'APP_CONTAINER'
+  | 'POST_LIVE_ROOM'
   | 'TOKEN_RATE_LIMITER'
   | 'AUTH_KV'
   | 'METRICS_DB'
@@ -303,6 +307,7 @@ export type ValidatedEnv = Omit<
   EMBEDDINGS_QUEUE: Queue;
   ETL_WORKFLOW: Workflow;
   APP_CONTAINER: DurableObjectNamespace<Container<unknown>>;
+  POST_LIVE_ROOM?: DurableObjectNamespace<PostLiveRoom>;
   TOKEN_RATE_LIMITER?: { limit(opts: { key: string }): Promise<{ success: boolean }> };
   OSM_HYPERDRIVE?: Hyperdrive;
   AUTH_KV: KVNamespace;
@@ -353,6 +358,7 @@ function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
     APP_CONTAINER: (rawEnv.APP_CONTAINER ?? validated.data.APP_CONTAINER) as DurableObjectNamespace<
       Container<unknown>
     >,
+    POST_LIVE_ROOM: rawEnv.POST_LIVE_ROOM as DurableObjectNamespace<PostLiveRoom> | undefined, // safe-cast: Cloudflare Worker binding injected by runtime
     TOKEN_RATE_LIMITER: rawEnv.TOKEN_RATE_LIMITER as ValidatedEnv['TOKEN_RATE_LIMITER'] | undefined, // safe-cast: Cloudflare Worker binding injected by runtime
     OSM_HYPERDRIVE: rawEnv.OSM_HYPERDRIVE as Hyperdrive | undefined, // safe-cast: Cloudflare Worker binding injected by runtime
     AUTH_KV: rawEnv.AUTH_KV as KVNamespace, // safe-cast: Cloudflare Worker binding injected by runtime

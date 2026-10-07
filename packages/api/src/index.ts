@@ -22,9 +22,11 @@ import {
 } from '@packrat/api/auth/local-e2e';
 import { AppContainer } from '@packrat/api/containers';
 import { createDb } from '@packrat/api/db';
+import { PostLiveRoom } from '@packrat/api/durable-objects/PostLiveRoom';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import { listEffectiveFeatureFlags } from '@packrat/api/services/featureFlagsService';
+import { takePendingUpgrade } from '@packrat/api/services/feedLive';
 import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
 import { sweepSafetyCheckIns } from '@packrat/api/services/safetyCheckIn/sweep';
 import { pollTripDestinations } from '@packrat/api/services/weatherMonitoring/pollTripDestinations';
@@ -77,7 +79,7 @@ function sentryOptions(env: Env) {
 // Runtime instance: same routes as `App` plus the branded OAuth consent page.
 export const app = appBase.use(signInRoute).use(consentRoute).compile();
 
-export { AppContainer };
+export { AppContainer, PostLiveRoom };
 
 export const CatalogEtlWorkflow = instrumentWorkflowWithSentry(
   sentryOptions,
@@ -494,7 +496,8 @@ const workerHandler = {
         return response;
       }
 
-      const response = await (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
+      const elysiaResponse = await (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
+      const response = takePendingUpgrade(request) ?? elysiaResponse;
       flushFetchMetrics({ ctx, response });
       return response;
     });

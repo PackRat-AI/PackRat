@@ -160,6 +160,7 @@ struct AppNavigation: View {
             .onOpenURL { url in
                 appState.apply(DeepLink.parse(url))
             }
+            .modifier(PostLinkPresenter(appState: appState))
             #if os(iOS)
             // The alert badge has to be right before the user has been
             // anywhere — its whole job is to catch a hazard whose push was
@@ -179,6 +180,10 @@ struct AppNavigation: View {
             .onReceive(NotificationCenter.default.publisher(for: .weatherAlertNotificationTapped)) { notification in
                 guard let weatherLocationId = notification.userInfo?["weatherLocationId"] as? Int else { return }
                 appState.apply(.weatherAlert(weatherLocationId: weatherLocationId))
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .feedPostNotificationTapped)) { notification in
+                guard let postId = notification.userInfo?["postId"] as? Int else { return }
+                appState.apply(.post(id: postId))
             }
             .onReceive(NotificationCenter.default.publisher(for: .tripReminderNotificationTapped)) { notification in
                 guard let tripId = notification.userInfo?[TripReminderScheduler.tripIdKey] as? String else { return }

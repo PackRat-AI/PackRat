@@ -46,6 +46,7 @@ vi.mock('@packrat/db', () => ({ featureAccess: { key: 'key' } }));
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn((col, val) => ({ col, val })),
   relations: vi.fn(() => ({})),
+  sql: vi.fn(),
 }));
 
 import {

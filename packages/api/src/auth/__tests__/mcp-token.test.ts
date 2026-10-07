@@ -26,6 +26,7 @@ vi.mock('@packrat/db', () => ({
 vi.mock('drizzle-orm', () => ({
   eq: mocks.eq,
   relations: vi.fn(() => ({})),
+  sql: vi.fn(),
 }));
 
 vi.mock('jose', () => ({

@@ -71,6 +71,7 @@ vi.mock('drizzle-orm', () => ({
   and: vi.fn((...conds) => ({ conds })),
   eq: vi.fn((col, val) => ({ col, val })),
   relations: vi.fn(() => ({})),
+  sql: vi.fn(),
 }));
 
 import { APP_CONFIG, FeatureFlag } from '@packrat/config';

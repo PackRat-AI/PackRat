@@ -68,6 +68,10 @@ vi.mock('@packrat/api/containers', () => ({
   AppContainer: class AppContainer {},
 }));
 
+vi.mock('@packrat/api/durable-objects/PostLiveRoom', () => ({
+  PostLiveRoom: class PostLiveRoom {},
+}));
+
 vi.mock('@packrat/api/services', () => ({
   CatalogService: class CatalogService {},
 }));

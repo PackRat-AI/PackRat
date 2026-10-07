@@ -63,6 +63,7 @@ vi.mock('drizzle-orm', () => ({
   eq: vi.fn(),
   gt: vi.fn(),
   relations: vi.fn(() => ({})),
+  sql: vi.fn(),
 }));
 
 import { requestPasswordReset, verifyOtpAndResetPassword } from '../passwordResetService';

@@ -116,11 +116,13 @@ struct User: Codable, Identifiable, Sendable {
     let updatedAt: String?
 }
 
-struct PostAuthor: Codable, Identifiable, Sendable {
+struct PostAuthor: Codable, Identifiable, Hashable, Sendable {
     // Authors are users — string UUID id post-better-auth migration.
     let id: String
     let firstName: String?
     let lastName: String?
+    // R2 key or absolute URL; resolve with APIClient.resolvedImageURL.
+    var avatarUrl: String? = nil
 }
 
 struct Post: Codable, Identifiable, Sendable {
@@ -128,14 +130,21 @@ struct Post: Codable, Identifiable, Sendable {
     let id: Int
     // posts.userId is a text FK → users.id after the better-auth migration.
     let userId: String
-    let caption: String?
+    var caption: String?
+    // R2 object keys, not URLs.
     let images: [String]
     let createdAt: String
-    let updatedAt: String
+    var updatedAt: String
     let author: PostAuthor?
-    let likeCount: Int
-    let commentCount: Int
-    let likedByMe: Bool
+    var likeCount: Int
+    var commentCount: Int
+    var likedByMe: Bool
+    // Photo sharing (#1821). Always sent by the API; optional so older
+    // payloads and sample data still decode.
+    var publicId: String? = nil
+    var captionEditedAt: String? = nil
+    var savedByMe: Bool? = nil
+    var tags: [PostAuthor]? = nil
 }
 
 struct FeedResponse: Codable, Sendable {
@@ -152,13 +161,14 @@ struct Comment: Codable, Identifiable, Sendable {
     let postId: Int
     // post_comments.userId is text post-better-auth migration.
     let userId: String
-    let content: String
+    var content: String
     let parentCommentId: Int?
     let createdAt: String
-    let updatedAt: String
+    var updatedAt: String
     let author: PostAuthor?
-    let likeCount: Int
-    let likedByMe: Bool
+    var likeCount: Int
+    var likedByMe: Bool
+    var editedAt: String? = nil
 }
 
 struct CommentsResponse: Codable, Sendable {

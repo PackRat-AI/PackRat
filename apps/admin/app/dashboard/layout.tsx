@@ -1,6 +1,7 @@
 'use client';
 
 import { SidebarInset, SidebarProvider } from '@packrat/web-ui/components/sidebar';
+import { Toaster } from '@packrat/web-ui/components/sonner';
 import { AppSidebar } from 'admin-app/components/app-sidebar';
 import { AuthGuard } from 'admin-app/components/auth-guard';
 import { DashboardHeader } from 'admin-app/components/dashboard-header';
@@ -25,6 +26,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </main>
         </SidebarInset>
       </SidebarProvider>
+      <Toaster richColors position="bottom-right" />
     </AuthGuard>
   );
 }
