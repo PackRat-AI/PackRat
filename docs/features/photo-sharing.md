@@ -94,6 +94,13 @@ content. A reported item disappears for the person who reported it straight
 away and goes to the PackRat team for review; items the team removes disappear
 for everyone.
 
+The team works reports from a queue in the PackRat admin console. Each report
+shows the reported post or comment as posted, who reported it and why, and how
+many times it has been reported. A reviewer either dismisses the report, which
+leaves the item up, or removes the item. A reviewer can also suspend an account
+from posting and commenting, which hides everything it has posted until the
+suspension is lifted.
+
 Any user can be blocked from their post, their comment, or a notification. Once
 blocked, neither person sees the other's posts or comments, and neither can tag
 or mention the other.
