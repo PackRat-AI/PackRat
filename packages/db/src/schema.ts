@@ -833,6 +833,12 @@ export const posts = pgTable('posts', {
     .notNull(),
   caption: text('caption'),
   images: jsonb('images').$type<string[]>().notNull(),
+  // Unguessable id for the public share page, so post pages can't be enumerated.
+  publicId: text('public_id').unique().notNull().default(sql`gen_random_uuid()::text`),
+  captionEditedAt: timestamp('caption_edited_at'),
+  // Set by the author (soft delete) or by a moderator (removal). Either hides the post.
+  deletedAt: timestamp('deleted_at'),
+  removedAt: timestamp('removed_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -866,6 +872,9 @@ export const postComments = pgTable('post_comments', {
   parentCommentId: integer('parent_comment_id').references((): AnyPgColumn => postComments.id, {
     onDelete: 'cascade',
   }),
+  editedAt: timestamp('edited_at'),
+  deletedAt: timestamp('deleted_at'),
+  removedAt: timestamp('removed_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -890,10 +899,120 @@ export const commentLikes = pgTable(
   }),
 );
 
+export const postTags = pgTable(
+  'post_tags',
+  {
+    id: serial('id').primaryKey(),
+    postId: integer('post_id')
+      .references(() => posts.id, { onDelete: 'cascade' })
+      .notNull(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    taggedBy: text('tagged_by')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('post_tags_post_id_user_id_unique').on(table.postId, table.userId),
+    index('post_tags_user_id_idx').on(table.userId),
+  ],
+);
+
+export const postSaves = pgTable(
+  'post_saves',
+  {
+    id: serial('id').primaryKey(),
+    postId: integer('post_id')
+      .references(() => posts.id, { onDelete: 'cascade' })
+      .notNull(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [unique('post_saves_post_id_user_id_unique').on(table.postId, table.userId)],
+);
+
+export const userBlocks = pgTable(
+  'user_blocks',
+  {
+    id: serial('id').primaryKey(),
+    blockerId: text('blocker_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    blockedId: text('blocked_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('user_blocks_blocker_id_blocked_id_unique').on(table.blockerId, table.blockedId),
+    index('user_blocks_blocked_id_idx').on(table.blockedId),
+  ],
+);
+
+export const feedReportReasonEnum = pgEnum('feed_report_reason', [
+  'spam',
+  'harassment',
+  'inappropriate',
+]);
+export const feedReportStatusEnum = pgEnum('feed_report_status', [
+  'pending',
+  'dismissed',
+  'removed',
+]);
+
+// A report targets exactly one post or one comment.
+export const feedReports = pgTable(
+  'feed_reports',
+  {
+    id: serial('id').primaryKey(),
+    reporterId: text('reporter_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    postId: integer('post_id').references(() => posts.id, { onDelete: 'cascade' }),
+    commentId: integer('comment_id').references(() => postComments.id, { onDelete: 'cascade' }),
+    reason: feedReportReasonEnum('reason').notNull(),
+    status: feedReportStatusEnum('status').default('pending').notNull(),
+    reviewedAt: timestamp('reviewed_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [
+    check(
+      'feed_reports_one_target',
+      sql`(${table.postId} IS NULL) <> (${table.commentId} IS NULL)`,
+    ),
+    index('feed_reports_status_idx').on(table.status),
+    index('feed_reports_reporter_id_idx').on(table.reporterId),
+  ],
+);
+
+// Per-user social preferences and moderation state. A missing row means defaults.
+export const socialSettings = pgTable('social_settings', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  allowTagging: boolean('allow_tagging').default(true).notNull(),
+  notifyTags: boolean('notify_tags').default(true).notNull(),
+  notifyComments: boolean('notify_comments').default(true).notNull(),
+  notifyReplies: boolean('notify_replies').default(true).notNull(),
+  // Set by a moderator. Hides everything the user has posted until cleared.
+  suspendedAt: timestamp('suspended_at'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 export const postsRelations = relations(posts, ({ one, many }) => ({
   user: one(users, { fields: [posts.userId], references: [users.id] }),
   likes: many(postLikes),
   comments: many(postComments),
+  tags: many(postTags),
+}));
+
+export const postTagsRelations = relations(postTags, ({ one }) => ({
+  post: one(posts, { fields: [postTags.postId], references: [posts.id] }),
+  user: one(users, { fields: [postTags.userId], references: [users.id] }),
 }));
 
 export const postLikesRelations = relations(postLikes, ({ one }) => ({
@@ -920,6 +1039,11 @@ export type PostComment = InferSelectModel<typeof postComments>;
 export type NewPostComment = InferInsertModel<typeof postComments>;
 export type CommentLike = InferSelectModel<typeof commentLikes>;
 export type NewCommentLike = InferInsertModel<typeof commentLikes>;
+export type PostTag = InferSelectModel<typeof postTags>;
+export type PostSave = InferSelectModel<typeof postSaves>;
+export type UserBlock = InferSelectModel<typeof userBlocks>;
+export type FeedReport = InferSelectModel<typeof feedReports>;
+export type SocialSettings = InferSelectModel<typeof socialSettings>;
 
 export const featureAccess = pgTable('feature_access', {
   key: text('key').primaryKey(),

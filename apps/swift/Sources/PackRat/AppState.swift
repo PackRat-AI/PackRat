@@ -20,6 +20,9 @@ final class AppState {
     var selectedTripId: String?
     var selectedTemplateId: String?
     var selectedReportId: String?
+    /// A feed post to open over whatever is on screen, from a notification
+    /// tap or a shared link. `PostLinkPresenter` resolves and clears it.
+    var pendingPostLink: PostLink?
 
     // Active nav item
     var navItem: NavItem = .home
@@ -41,4 +44,9 @@ final class AppState {
             VisualSampleData.apply(to: self)
         }
     }
+}
+
+enum PostLink: Equatable {
+    case id(Int)
+    case publicId(String)
 }

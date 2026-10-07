@@ -149,6 +149,18 @@ actor APIClient {
         }
     }
 
+    /// Opens an authenticated WebSocket to an API path (e.g. a post's live
+    /// comment channel). Same base URL, headers and session token as `send`.
+    func webSocket(_ path: String) throws -> URLSessionWebSocketTask {
+        var request = try buildRequest(Endpoint(.get, path), sessionToken: KeychainService.shared.sessionToken)
+        guard let url = request.url,
+              var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        else { throw PackRatError.unknown }
+        components.scheme = components.scheme == "https" ? "wss" : "ws"
+        request.url = components.url
+        return session.webSocketTask(with: request)
+    }
+
     // MARK: - Private
 
     private func execute<T: Decodable>(

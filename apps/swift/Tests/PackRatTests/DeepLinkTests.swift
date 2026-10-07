@@ -26,6 +26,29 @@ struct DeepLinkTests {
         #expect(DeepLink.parse(URL(string: "packrat://weather")!) == .weather)
     }
 
+    @Test("routes packrat://post/<id> to .post(id)")
+    func postLink() {
+        #expect(DeepLink.parse(URL(string: "packrat://post/42")!) == .post(id: 42))
+        let bad = URL(string: "packrat://post/abc")!
+        #expect(DeepLink.parse(bad) == .unknown(bad))
+    }
+
+    @Test("routes packratai.com/p/<publicId> share links to .sharedPost")
+    func sharedPostLink() {
+        let id = "036ebe2f-fac2-4615-b7fa-6cb26897df23"
+        #expect(DeepLink.parse(URL(string: "https://packratai.com/p/\(id)")!) == .sharedPost(publicId: id))
+        #expect(DeepLink.parse(URL(string: "https://www.packratai.com/p/\(id)")!) == .sharedPost(publicId: id))
+        #expect(DeepLink.parse(URL(string: "packrat://p/\(id)")!) == .sharedPost(publicId: id))
+    }
+
+    @Test("ignores other web links")
+    func otherWebLinks() {
+        let elsewhere = URL(string: "https://example.com/p/abc")!
+        #expect(DeepLink.parse(elsewhere) == .unknown(elsewhere))
+        let otherPath = URL(string: "https://packratai.com/guides/abc")!
+        #expect(DeepLink.parse(otherPath) == .unknown(otherPath))
+    }
+
     @Test("treats packrat://pack with no id as unknown")
     func packMissingIdIsUnknown() {
         let url = URL(string: "packrat://pack")!

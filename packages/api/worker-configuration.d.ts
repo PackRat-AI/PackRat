@@ -12,6 +12,7 @@ interface __BaseEnv_Env {
 	AI: Ai;
 	CF_VERSION_METADATA: WorkerVersionMetadata;
 	APP_CONTAINER: DurableObjectNamespace<import("./src/index").AppContainer>;
+	POST_LIVE_ROOM: DurableObjectNamespace<import("./src/index").PostLiveRoom>;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {
@@ -29,6 +30,7 @@ declare namespace Cloudflare {
 		AI: Ai;
 		CF_VERSION_METADATA: WorkerVersionMetadata;
 		APP_CONTAINER: DurableObjectNamespace<import("./src/index").AppContainer>;
+		POST_LIVE_ROOM: DurableObjectNamespace<import("./src/index").PostLiveRoom>;
 	}
 	interface Env extends __BaseEnv_Env {}
 }

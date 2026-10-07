@@ -1,19 +1,30 @@
-import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { commentLikes, postComments, postLikes, posts, users } from '@packrat/db/schema';
+import { connectToPostLive } from '@packrat/api/services/feedLive';
+import * as feed from '@packrat/api/services/feedService';
 import {
+  BlockedUsersResponseSchema,
   CreateCommentRequestSchema,
+  CreateFeedReportRequestSchema,
   CreatePostRequestSchema,
+  FeedCommentParamsSchema,
+  FeedPageQuerySchema,
+  FeedPostParamsSchema,
   FeedResponseSchema,
+  MentionSuggestionsResponseSchema,
+  PublicPostSchema,
+  SocialSettingsSchema,
+  UpdateCommentRequestSchema,
+  UpdatePostRequestSchema,
+  UpdateSocialSettingsRequestSchema,
 } from '@packrat/schemas/feed';
-import { and, count, desc, eq, inArray } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
-function parseImages(raw: unknown): string[] {
-  if (Array.isArray(raw)) return raw as string[];
-  return [];
+function unwrap<T>(result: feed.ServiceResult<T>) {
+  return result.ok ? result.value : status(result.status, { error: result.error });
 }
+
+const security = [{ bearerAuth: [] }];
 
 export const feedRoutes = new Elysia({ prefix: '/feed' })
   .model({
@@ -23,93 +34,168 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
   })
   .use(authPlugin)
 
+  // public-route: the shared-post web page; returns only live posts by non-suspended authors
+  .get(
+    '/public/:publicId',
+    async ({ params }) => {
+      const result = await feed.getPublicPost({ publicId: params.publicId });
+      return result.ok ? result.value : status(404, { error: result.error });
+    },
+    {
+      params: z.object({ publicId: z.string().uuid() }),
+      response: { 200: PublicPostSchema, 404: z.object({ error: z.string() }) },
+      detail: { tags: ['Feed'], summary: 'Get a shared post for its public page' },
+    },
+  )
+
   // List posts
   .get(
     '/',
-    async ({ query, user }) => {
-      const { page = 1, limit = 20 } = query;
-      const db = createDb();
-      const offset = (page - 1) * limit;
-
-      const [totalResult, items] = await Promise.all([
-        db.tag('feed.countPosts').select({ count: count() }).from(posts),
-        db
-          .tag('feed.listPosts')
-          .select({
-            id: posts.id,
-            userId: posts.userId,
-            caption: posts.caption,
-            images: posts.images,
-            createdAt: posts.createdAt,
-            updatedAt: posts.updatedAt,
-            firstName: users.firstName,
-            lastName: users.lastName,
-          })
-          .from(posts)
-          .leftJoin(users, eq(posts.userId, users.id))
-          .orderBy(desc(posts.createdAt))
-          .limit(limit)
-          .offset(offset),
-      ]);
-
-      const total = totalResult[0]?.count ?? 0;
-
-      const totalPages = Math.ceil(total / limit);
-
-      if (items.length === 0) {
-        return FeedResponseSchema.parse({ items: [], page, limit, total, totalPages });
-      }
-
-      const postIds = items.map((p) => p.id);
-
-      const [likeCounts, myLikes, commentCounts] = await Promise.all([
-        db
-          .tag('feed.getLikes')
-          .select({ postId: postLikes.postId, cnt: count() })
-          .from(postLikes)
-          .where(inArray(postLikes.postId, postIds))
-          .groupBy(postLikes.postId),
-        db
-          .tag('feed.getLikes')
-          .select({ postId: postLikes.postId })
-          .from(postLikes)
-          .where(and(inArray(postLikes.postId, postIds), eq(postLikes.userId, user.userId))),
-        db
-          .tag('feed.getComments')
-          .select({ postId: postComments.postId, cnt: count() })
-          .from(postComments)
-          .where(inArray(postComments.postId, postIds))
-          .groupBy(postComments.postId),
-      ]);
-
-      const likeCountMap = Object.fromEntries(likeCounts.map((l) => [l.postId, l.cnt]));
-      const myLikeSet = new Set(myLikes.map((l) => l.postId));
-      const commentCountMap = Object.fromEntries(commentCounts.map((cc) => [cc.postId, cc.cnt]));
-
-      const result = items.map((p) => ({
-        id: p.id,
-        userId: p.userId,
-        caption: p.caption,
-        images: parseImages(p.images),
-        createdAt: p.createdAt.toISOString(),
-        updatedAt: p.updatedAt.toISOString(),
-        author: { id: p.userId, firstName: p.firstName, lastName: p.lastName },
-        likeCount: likeCountMap[p.id] ?? 0,
-        commentCount: commentCountMap[p.id] ?? 0,
-        likedByMe: myLikeSet.has(p.id),
-      }));
-
-      return FeedResponseSchema.parse({ items: result, page, limit, total, totalPages });
-    },
+    async ({ query, user }) =>
+      FeedResponseSchema.parse(
+        await feed.listPosts({
+          viewerId: user.userId,
+          page: query.page ?? 1,
+          limit: query.limit ?? 20,
+          scope: 'all',
+        }),
+      ),
     {
-      query: z.object({
-        // Defaults applied in handler so Treaty types these as truly optional.
-        page: z.coerce.number().int().min(1).optional(),
-        limit: z.coerce.number().int().min(1).max(50).optional(),
-      }),
+      query: FeedPageQuerySchema,
       response: { 200: 'feed.FeedResponse' },
       isAuthenticated: true,
-      detail: { tags: ['Feed'], summary: 'List social feed posts', security: [{ bearerAuth: [] }] },
+      detail: { tags: ['Feed'], summary: 'List social feed posts', security },
+    },
+  )
+
+  .get(
+    '/saved',
+    async ({ query, user }) =>
+      FeedResponseSchema.parse(
+        await feed.listPosts({
+          viewerId: user.userId,
+          page: query.page ?? 1,
+          limit: query.limit ?? 20,
+          scope: 'saved',
+        }),
+      ),
+    {
+      query: FeedPageQuerySchema,
+      response: { 200: 'feed.FeedResponse' },
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'List posts I saved', security },
+    },
+  )
+
+  .get(
+    '/tagged',
+    async ({ query, user }) =>
+      FeedResponseSchema.parse(
+        await feed.listPosts({
+          viewerId: user.userId,
+          page: query.page ?? 1,
+          limit: query.limit ?? 20,
+          scope: 'tagged',
+        }),
+      ),
+    {
+      query: FeedPageQuerySchema,
+      response: { 200: 'feed.FeedResponse' },
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'List posts I am tagged in', security },
+    },
+  )
+
+  // Open a shared link in the app
+  .get(
+    '/shared/:publicId',
+    async ({ params, user }) =>
+      unwrap(await feed.getPostByPublicId({ viewerId: user.userId, publicId: params.publicId })),
+    {
+      params: z.object({ publicId: z.string().uuid() }),
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Get a post by its share-link id', security },
+    },
+  )
+
+  // Mention suggestions for @ autocomplete
+  .get(
+    '/mentions',
+    async ({ query, user }) =>
+      MentionSuggestionsResponseSchema.parse({
+        items: await feed.mentionSuggestions({ userId: user.userId, query: query.q }),
+      }),
+    {
+      query: z.object({ q: z.string().max(100) }),
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Suggest people to mention', security },
+    },
+  )
+
+  // Blocks
+  .get(
+    '/blocks',
+    async ({ user }) =>
+      BlockedUsersResponseSchema.parse({ items: await feed.listBlocked({ userId: user.userId }) }),
+    {
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'List people I blocked', security },
+    },
+  )
+  .post(
+    '/blocks',
+    async ({ body, user }) =>
+      unwrap(await feed.blockUser({ userId: user.userId, blockedId: body.userId })),
+    {
+      body: z.object({ userId: z.string().min(1) }),
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Block a person', security },
+    },
+  )
+  .delete(
+    '/blocks/:userId',
+    async ({ params, user }) =>
+      unwrap(await feed.unblockUser({ userId: user.userId, blockedId: params.userId })),
+    {
+      params: z.object({ userId: z.string().min(1) }),
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Unblock a person', security },
+    },
+  )
+
+  // Settings
+  .get('/settings', async ({ user }) => feed.getSettings({ userId: user.userId }), {
+    response: { 200: SocialSettingsSchema },
+    isAuthenticated: true,
+    detail: { tags: ['Feed'], summary: 'Get my social settings', security },
+  })
+  .patch(
+    '/settings',
+    async ({ body, user }) => feed.updateSettings({ userId: user.userId, changes: body }),
+    {
+      body: UpdateSocialSettingsRequestSchema,
+      response: { 200: SocialSettingsSchema },
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Update my social settings', security },
+    },
+  )
+
+  // Reports
+  .post(
+    '/reports',
+    async ({ body, user }) =>
+      unwrap(
+        await feed.reportContent({
+          userId: user.userId,
+          postId: body.postId,
+          commentId: body.commentId,
+          reason: body.reason,
+        }),
+      ),
+    {
+      body: CreateFeedReportRequestSchema,
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Report a post or comment', security },
     },
   )
 
@@ -117,247 +203,148 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
   .post(
     '/',
     async ({ body, user }) => {
-      const db = createDb();
-
-      const [newPost] = await db
-        .tag('feed.createPost')
-        .insert(posts)
-        .values({
-          userId: user.userId,
-          caption: body.caption ?? null,
-          images: body.images,
-        })
-        .returning();
-
-      if (!newPost) return status(400, { error: 'Failed to create post' });
-
-      const author = await db.tag('feed.getAuthor').query.users.findFirst({
-        where: eq(users.id, user.userId),
-        columns: { id: true, firstName: true, lastName: true },
+      const result = await feed.createPost({
+        userId: user.userId,
+        caption: body.caption,
+        images: body.images,
+        taggedUserIds: body.taggedUserIds,
       });
-
-      return status(201, {
-        id: newPost.id,
-        userId: newPost.userId,
-        caption: newPost.caption,
-        images: parseImages(newPost.images),
-        createdAt: newPost.createdAt.toISOString(),
-        updatedAt: newPost.updatedAt.toISOString(),
-        author: author
-          ? { id: author.id, firstName: author.firstName, lastName: author.lastName }
-          : undefined,
-        likeCount: 0,
-        commentCount: 0,
-        likedByMe: false,
-      });
+      return result.ok ? status(201, result.value) : status(result.status, { error: result.error });
     },
     {
       body: 'feed.CreatePostRequest',
       isAuthenticated: true,
-      detail: { tags: ['Feed'], summary: 'Create a post', security: [{ bearerAuth: [] }] },
+      detail: { tags: ['Feed'], summary: 'Create a post', security },
     },
   )
 
   // Get single post
   .get(
     '/:postId',
-    async ({ params, user }) => {
-      const postId = Number(params.postId);
-      const db = createDb();
-
-      const post = await db.tag('feed.getPost').query.posts.findFirst({
-        where: eq(posts.id, postId),
-        with: {
-          user: { columns: { id: true, firstName: true, lastName: true } },
-          likes: true,
-          comments: true,
-        },
-      });
-
-      if (!post) return status(404, { error: 'Post not found' });
-
-      return {
-        id: post.id,
-        userId: post.userId,
-        caption: post.caption,
-        images: parseImages(post.images),
-        createdAt: post.createdAt.toISOString(),
-        updatedAt: post.updatedAt.toISOString(),
-        author: post.user
-          ? { id: post.user.id, firstName: post.user.firstName, lastName: post.user.lastName }
-          : undefined,
-        likeCount: post.likes.length,
-        commentCount: post.comments.length,
-        likedByMe: post.likes.some((l) => l.userId === user.userId),
-      };
-    },
+    async ({ params, user }) =>
+      unwrap(await feed.getPost({ viewerId: user.userId, postId: params.postId })),
     {
-      params: z.object({ postId: z.coerce.number().int() }),
+      params: FeedPostParamsSchema,
       isAuthenticated: true,
-      detail: { tags: ['Feed'], summary: 'Get a post by ID', security: [{ bearerAuth: [] }] },
+      detail: { tags: ['Feed'], summary: 'Get a post by ID', security },
+    },
+  )
+
+  // Edit caption (and add tags)
+  .patch(
+    '/:postId',
+    async ({ params, body, user }) =>
+      unwrap(
+        await feed.updatePost({
+          userId: user.userId,
+          postId: params.postId,
+          caption: body.caption,
+          taggedUserIds: body.taggedUserIds,
+        }),
+      ),
+    {
+      params: FeedPostParamsSchema,
+      body: UpdatePostRequestSchema,
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Edit a post caption', security },
     },
   )
 
   // Delete post
   .delete(
     '/:postId',
-    async ({ params, user }) => {
-      const postId = Number(params.postId);
-      const db = createDb();
-
-      const post = await db
-        .tag('feed.getPost')
-        .query.posts.findFirst({ where: eq(posts.id, postId) });
-      if (!post) return status(404, { error: 'Post not found' });
-      if (post.userId !== user.userId) return status(403, { error: 'Forbidden' });
-
-      await db.tag('feed.deletePost').delete(posts).where(eq(posts.id, postId));
-      return { success: true };
-    },
+    async ({ params, user }) =>
+      unwrap(await feed.deletePost({ userId: user.userId, postId: params.postId })),
     {
-      params: z.object({ postId: z.coerce.number().int() }),
+      params: FeedPostParamsSchema,
       isAuthenticated: true,
-      detail: { tags: ['Feed'], summary: 'Delete a post', security: [{ bearerAuth: [] }] },
+      detail: { tags: ['Feed'], summary: 'Delete a post', security },
     },
   )
 
   // Toggle post like
   .post(
     '/:postId/like',
-    async ({ params, user }) => {
-      const postId = Number(params.postId);
-      const db = createDb();
+    async ({ params, user }) =>
+      unwrap(await feed.togglePostLike({ userId: user.userId, postId: params.postId })),
+    {
+      params: FeedPostParamsSchema,
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Toggle like on a post', security },
+    },
+  )
 
-      const post = await db
-        .tag('feed.getPost')
-        .query.posts.findFirst({ where: eq(posts.id, postId) });
-      if (!post) return status(404, { error: 'Post not found' });
+  // Save / unsave
+  .post(
+    '/:postId/save',
+    async ({ params, user }) =>
+      unwrap(await feed.setPostSaved({ userId: user.userId, postId: params.postId, saved: true })),
+    {
+      params: FeedPostParamsSchema,
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Save a post', security },
+    },
+  )
+  .delete(
+    '/:postId/save',
+    async ({ params, user }) =>
+      unwrap(await feed.setPostSaved({ userId: user.userId, postId: params.postId, saved: false })),
+    {
+      params: FeedPostParamsSchema,
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Unsave a post', security },
+    },
+  )
 
-      const existing = await db.tag('feed.checkLike').query.postLikes.findFirst({
-        where: and(eq(postLikes.postId, postId), eq(postLikes.userId, user.userId)),
-      });
+  // Remove my own tag from a post
+  .delete(
+    '/:postId/tags/me',
+    async ({ params, user }) =>
+      unwrap(await feed.removeOwnTag({ userId: user.userId, postId: params.postId })),
+    {
+      params: FeedPostParamsSchema,
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Remove my tag from a post', security },
+    },
+  )
 
-      if (existing) {
-        await db
-          .tag('feed.unlikePost')
-          .delete(postLikes)
-          .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, user.userId)));
-      } else {
-        await db.tag('feed.likePost').insert(postLikes).values({ postId, userId: user.userId });
+  // Live comment updates: a WebSocket that says "refetch" whenever this post's comments change
+  .get(
+    '/:postId/live',
+    async ({ params, request, user }) => {
+      if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') {
+        return status(426, { error: 'Expected a WebSocket upgrade' });
       }
-
-      const [likeCountResult] = await db
-        .tag('feed.countLikes')
-        .select({ cnt: count() })
-        .from(postLikes)
-        .where(eq(postLikes.postId, postId));
-
-      return { liked: !existing, likeCount: likeCountResult?.cnt ?? 0 };
+      const post = await feed.getPost({ viewerId: user.userId, postId: params.postId });
+      if (!post.ok) return status(post.status, { error: post.error });
+      const live = await connectToPostLive({ postId: params.postId, request });
+      // The Worker entry swaps this reply for the parked 101 upgrade.
+      return live.ok ? { connected: true } : status(live.status, { error: live.error });
     },
     {
-      params: z.object({ postId: z.coerce.number().int() }),
+      params: FeedPostParamsSchema,
       isAuthenticated: true,
-      detail: { tags: ['Feed'], summary: 'Toggle like on a post', security: [{ bearerAuth: [] }] },
+      detail: { tags: ['Feed'], summary: 'Live comment updates for a post (WebSocket)', security },
     },
   )
 
   // List comments
   .get(
     '/:postId/comments',
-    async ({ params, query, user }) => {
-      const postId = Number(params.postId);
-      const { page = 1, limit = 20 } = query;
-      const db = createDb();
-
-      const post = await db
-        .tag('feed.getPost')
-        .query.posts.findFirst({ where: eq(posts.id, postId) });
-      if (!post) return status(404, { error: 'Post not found' });
-
-      const offset = (page - 1) * limit;
-
-      const [totalResult, items] = await Promise.all([
-        db
-          .tag('feed.getComments')
-          .select({ count: count() })
-          .from(postComments)
-          .where(eq(postComments.postId, postId)),
-        db
-          .tag('feed.getComments')
-          .select({
-            id: postComments.id,
-            postId: postComments.postId,
-            userId: postComments.userId,
-            content: postComments.content,
-            parentCommentId: postComments.parentCommentId,
-            createdAt: postComments.createdAt,
-            updatedAt: postComments.updatedAt,
-            firstName: users.firstName,
-            lastName: users.lastName,
-          })
-          .from(postComments)
-          .leftJoin(users, eq(postComments.userId, users.id))
-          .where(eq(postComments.postId, postId))
-          .orderBy(desc(postComments.createdAt))
-          .limit(limit)
-          .offset(offset),
-      ]);
-
-      const total = totalResult[0]?.count ?? 0;
-
-      if (items.length === 0) {
-        return { items: [], page, limit, total, totalPages: Math.ceil(total / limit) };
-      }
-
-      const commentIds = items.map((c) => c.id);
-
-      const [likeCounts, myLikes] = await Promise.all([
-        db
-          .tag('feed.getCommentLikes')
-          .select({ commentId: commentLikes.commentId, cnt: count() })
-          .from(commentLikes)
-          .where(inArray(commentLikes.commentId, commentIds))
-          .groupBy(commentLikes.commentId),
-        db
-          .tag('feed.getCommentLikes')
-          .select({ commentId: commentLikes.commentId })
-          .from(commentLikes)
-          .where(
-            and(inArray(commentLikes.commentId, commentIds), eq(commentLikes.userId, user.userId)),
-          ),
-      ]);
-
-      const likeCountMap = Object.fromEntries(likeCounts.map((l) => [l.commentId, l.cnt]));
-      const myLikeSet = new Set(myLikes.map((l) => l.commentId));
-
-      const result = items.map((item) => ({
-        id: item.id,
-        postId: item.postId,
-        userId: item.userId,
-        content: item.content,
-        parentCommentId: item.parentCommentId,
-        createdAt: item.createdAt.toISOString(),
-        updatedAt: item.updatedAt.toISOString(),
-        author: { id: item.userId, firstName: item.firstName, lastName: item.lastName },
-        likeCount: likeCountMap[item.id] ?? 0,
-        likedByMe: myLikeSet.has(item.id),
-      }));
-
-      return { items: result, page, limit, total, totalPages: Math.ceil(total / limit) };
-    },
+    async ({ params, query, user }) =>
+      unwrap(
+        await feed.listComments({
+          viewerId: user.userId,
+          postId: params.postId,
+          page: query.page ?? 1,
+          limit: query.limit ?? 50,
+        }),
+      ),
     {
-      params: z.object({ postId: z.coerce.number().int() }),
-      query: z.object({
-        // Defaults applied in handler so Treaty types these as truly optional.
-        page: z.coerce.number().int().min(1).optional(),
-        limit: z.coerce.number().int().min(1).max(50).optional(),
-      }),
+      params: FeedPostParamsSchema,
+      query: FeedPageQuerySchema,
       isAuthenticated: true,
-      detail: {
-        tags: ['Feed'],
-        summary: 'List comments on a post',
-        security: [{ bearerAuth: [] }],
-      },
+      detail: { tags: ['Feed'], summary: 'List comments on a post', security },
     },
   )
 
@@ -365,135 +352,76 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
   .post(
     '/:postId/comments',
     async ({ params, body, user }) => {
-      const postId = Number(params.postId);
-      const db = createDb();
-
-      const post = await db
-        .tag('feed.getPost')
-        .query.posts.findFirst({ where: eq(posts.id, postId) });
-      if (!post) return status(404, { error: 'Post not found' });
-
-      const [newComment] = await db
-        .tag('feed.createComment')
-        .insert(postComments)
-        .values({
-          postId,
-          userId: user.userId,
-          content: body.content,
-          parentCommentId: body.parentCommentId ?? null,
-        })
-        .returning();
-
-      if (!newComment) return status(400, { error: 'Failed to create comment' });
-
-      const author = await db.tag('feed.getAuthor').query.users.findFirst({
-        where: eq(users.id, user.userId),
-        columns: { id: true, firstName: true, lastName: true },
+      const result = await feed.createComment({
+        userId: user.userId,
+        postId: params.postId,
+        content: body.content,
+        parentCommentId: body.parentCommentId,
+        taggedUserIds: body.taggedUserIds,
       });
-
-      return status(201, {
-        id: newComment.id,
-        postId: newComment.postId,
-        userId: newComment.userId,
-        content: newComment.content,
-        parentCommentId: newComment.parentCommentId,
-        createdAt: newComment.createdAt.toISOString(),
-        updatedAt: newComment.updatedAt.toISOString(),
-        author: author
-          ? { id: author.id, firstName: author.firstName, lastName: author.lastName }
-          : undefined,
-        likeCount: 0,
-        likedByMe: false,
-      });
+      return result.ok ? status(201, result.value) : status(result.status, { error: result.error });
     },
     {
-      params: z.object({ postId: z.coerce.number().int() }),
+      params: FeedPostParamsSchema,
       body: 'feed.CreateCommentRequest',
       isAuthenticated: true,
-      detail: {
-        tags: ['Feed'],
-        summary: 'Add a comment to a post',
-        security: [{ bearerAuth: [] }],
-      },
+      detail: { tags: ['Feed'], summary: 'Add a comment to a post', security },
     },
   )
 
-  // Delete comment
+  // Edit comment
+  .patch(
+    '/:postId/comments/:commentId',
+    async ({ params, body, user }) =>
+      unwrap(
+        await feed.updateComment({
+          userId: user.userId,
+          postId: params.postId,
+          commentId: params.commentId,
+          content: body.content,
+          taggedUserIds: body.taggedUserIds,
+        }),
+      ),
+    {
+      params: FeedCommentParamsSchema,
+      body: UpdateCommentRequestSchema,
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Edit a comment', security },
+    },
+  )
+
+  // Delete comment (commenter or post author)
   .delete(
     '/:postId/comments/:commentId',
-    async ({ params, user }) => {
-      const postId = Number(params.postId);
-      const commentId = Number(params.commentId);
-      const db = createDb();
-
-      const comment = await db.tag('feed.getComment').query.postComments.findFirst({
-        where: and(eq(postComments.id, commentId), eq(postComments.postId, postId)),
-      });
-
-      if (!comment) return status(404, { error: 'Comment not found' });
-      if (comment.userId !== user.userId) return status(403, { error: 'Forbidden' });
-
-      await db.tag('feed.deleteComment').delete(postComments).where(eq(postComments.id, commentId));
-      return { success: true };
-    },
+    async ({ params, user }) =>
+      unwrap(
+        await feed.deleteComment({
+          userId: user.userId,
+          postId: params.postId,
+          commentId: params.commentId,
+        }),
+      ),
     {
-      params: z.object({
-        postId: z.coerce.number().int(),
-        commentId: z.coerce.number().int(),
-      }),
+      params: FeedCommentParamsSchema,
       isAuthenticated: true,
-      detail: { tags: ['Feed'], summary: 'Delete a comment', security: [{ bearerAuth: [] }] },
+      detail: { tags: ['Feed'], summary: 'Delete a comment', security },
     },
   )
 
   // Toggle comment like
   .post(
     '/:postId/comments/:commentId/like',
-    async ({ params, user }) => {
-      const postId = Number(params.postId);
-      const commentId = Number(params.commentId);
-      const db = createDb();
-
-      const comment = await db.tag('feed.getComment').query.postComments.findFirst({
-        where: and(eq(postComments.id, commentId), eq(postComments.postId, postId)),
-      });
-
-      if (!comment) return status(404, { error: 'Comment not found' });
-
-      const existing = await db.tag('feed.checkCommentLike').query.commentLikes.findFirst({
-        where: and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, user.userId)),
-      });
-
-      if (existing) {
-        await db
-          .tag('feed.unlikeComment')
-          .delete(commentLikes)
-          .where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, user.userId)));
-      } else {
-        await db
-          .tag('feed.likeComment')
-          .insert(commentLikes)
-          .values({ commentId, userId: user.userId });
-      }
-
-      const [likeCountResult] = await db
-        .tag('feed.countLikes')
-        .select({ cnt: count() })
-        .from(commentLikes)
-        .where(eq(commentLikes.commentId, commentId));
-
-      return { liked: !existing, likeCount: likeCountResult?.cnt ?? 0 };
-    },
+    async ({ params, user }) =>
+      unwrap(
+        await feed.toggleCommentLike({
+          userId: user.userId,
+          postId: params.postId,
+          commentId: params.commentId,
+        }),
+      ),
     {
-      params: z.object({
-        postId: z.coerce.number().int(),
-        commentId: z.coerce.number().int(),
-      }),
+      params: FeedCommentParamsSchema,
       isAuthenticated: true,
-      detail: {
-        tags: ['Feed'],
-        summary: 'Toggle like on a comment',
-        security: [{ bearerAuth: [] }],
-      },
+      detail: { tags: ['Feed'], summary: 'Toggle like on a comment', security },
     },
   );
