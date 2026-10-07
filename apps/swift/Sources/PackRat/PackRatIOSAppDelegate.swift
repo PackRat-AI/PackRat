@@ -47,7 +47,17 @@ final class PackRatIOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
-        guard let weatherLocationId = response.notification.request.content.userInfo["weatherLocationId"] as? Int
+        let userInfo = response.notification.request.content.userInfo
+        // Feed tag, comment and reply notifications carry the post's id.
+        if let postId = (userInfo["postId"] as? Int) ?? (userInfo["postId"] as? String).flatMap(Int.init) {
+            NotificationCenter.default.post(
+                name: .feedPostNotificationTapped,
+                object: nil,
+                userInfo: ["postId": postId]
+            )
+            return
+        }
+        guard let weatherLocationId = userInfo["weatherLocationId"] as? Int
         else { return }
         NotificationCenter.default.post(
             name: .weatherAlertNotificationTapped,
@@ -59,5 +69,6 @@ final class PackRatIOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
 
 extension Notification.Name {
     static let weatherAlertNotificationTapped = Notification.Name("weatherAlertNotificationTapped")
+    static let feedPostNotificationTapped = Notification.Name("feedPostNotificationTapped")
 }
 #endif

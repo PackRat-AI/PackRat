@@ -92,6 +92,10 @@ targets:
         # `development` pairs with a Development profile and the APNs
         # sandbox; store builds get `production` from the export profile.
         aps-environment: development
+        # Shared post links (https://packrat.world/p/{publicId}) open the post
+        # in the app. The site serves the matching apple-app-site-association.
+        com.apple.developer.associated-domains:
+          - applinks:packrat.world
     info:
       path: Resources/Info-iOS.plist
       properties:

@@ -89,6 +89,7 @@ struct PreferencesView: View {
             SyncStatusSection()
             unitsSection
             notificationSection
+            communitySection
             advancedSection
             aboutSection
             developerSection
@@ -215,6 +216,28 @@ struct PreferencesView: View {
             }
         } header: {
             Text("Notifications")
+        }
+    }
+
+    // MARK: - Community
+
+    /// Feed tagging, notification and blocking controls. Only when the feed is
+    /// on and there is an account for them to belong to.
+    @ViewBuilder
+    private var communitySection: some View {
+        if FeatureFlagStore.shared.isEnabled("enableFeed") && authManager.isAuthenticated {
+            Section {
+                NavigationLink {
+                    FeedSettingsView()
+                } label: {
+                    Label("Feed & Sharing", systemImage: "person.2")
+                }
+                .accessibilityIdentifier("preferences_feed_settings")
+            } header: {
+                Text("Community")
+            } footer: {
+                Text("Who can tag you, feed notifications, and blocked people.")
+            }
         }
     }
 
