@@ -56,12 +56,58 @@ export function sortPeaks(peaks: NearbyPeak[]): NearbyPeak[] {
   });
 }
 
+/** Peaks hardly move; a week keeps Overpass load low and lookups instant. */
+export const PEAKS_CACHE_SECONDS = 7 * 24 * 60 * 60;
+
+/** 0.01° ≈ 1 km: boxes a pan apart share a cache entry. */
+const GRID = 100;
+
 /**
- * Named peaks inside `bounds`, from OpenStreetMap through Overpass. The public
- * instance answers 504 when busy and usually succeeds straight after, so one
- * failure gets one retry.
+ * Widens `bounds` out to the 0.01° grid so nearby lookups ask the same
+ * question, and so share one cached answer.
+ */
+export function snapBounds({ south, west, north, east }: PeakBounds): PeakBounds {
+  const down = (v: number) => Math.floor(v * GRID) / GRID;
+  const up = (v: number) => Math.ceil(v * GRID) / GRID;
+  return { south: down(south), west: down(west), north: up(north), east: up(east) };
+}
+
+export function peaksCacheKey(bounds: PeakBounds): string {
+  const { south, west, north, east } = snapBounds(bounds);
+  return `https://cache.packrat.internal/trip-stats/peaks/${south},${west},${north},${east}`;
+}
+
+/** The Workers edge cache, absent under Node (unit tests) and so skipped there. */
+function edgeCache(): Cache | undefined {
+  const storage = (globalThis as { caches?: CacheStorage & { default?: Cache } }).caches;
+  return storage?.default;
+}
+
+/**
+ * Named peaks inside `bounds`, from OpenStreetMap through Overpass, cached at
+ * the edge for a week per snapped box. The public instance answers 504 when
+ * busy and usually succeeds straight after, so one failure gets one retry.
  */
 export async function findNearbyPeaks(bounds: PeakBounds): Promise<NearbyPeak[]> {
+  const cache = edgeCache();
+  const key = peaksCacheKey(bounds);
+  const hit = await cache?.match(key);
+  if (hit) return (await hit.json()) as NearbyPeak[];
+
+  const peaks = await fetchNearbyPeaks(snapBounds(bounds));
+  await cache?.put(
+    key,
+    new Response(JSON.stringify(peaks), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': `public, max-age=${PEAKS_CACHE_SECONDS}`,
+      },
+    }),
+  );
+  return peaks;
+}
+
+async function fetchNearbyPeaks(bounds: PeakBounds): Promise<NearbyPeak[]> {
   const ql = buildPeaksQuery(bounds);
   const response = await queryOverpass({ ql }).catch(() => queryOverpass({ ql }));
   const peaks = response.elements.flatMap((element) => {

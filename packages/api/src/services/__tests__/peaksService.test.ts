@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ queryOverpass: vi.fn() }));
 
@@ -8,7 +8,10 @@ import {
   buildPeaksQuery,
   findNearbyPeaks,
   NEARBY_PEAKS_LIMIT,
+  PEAKS_CACHE_SECONDS,
   parseElevation,
+  peaksCacheKey,
+  snapBounds,
   sortPeaks,
   toNearbyPeak,
 } from '../peaksService';
@@ -133,5 +136,70 @@ describe('findNearbyPeaks', () => {
   it('lets a second Overpass failure through to the caller', async () => {
     mocks.queryOverpass.mockRejectedValue(new Error('Overpass request failed: 429'));
     await expect(findNearbyPeaks({ south: 0, west: 0, north: 1, east: 1 })).rejects.toThrow('429');
+  });
+});
+
+describe('caching', () => {
+  const store = new Map<string, Response>();
+  const cache = {
+    match: vi.fn(async (key: string) => store.get(key)?.clone()),
+    put: vi.fn(async (key: string, response: Response) => {
+      store.set(key, response);
+    }),
+  };
+
+  beforeEach(() => {
+    store.clear();
+    cache.match.mockClear();
+    cache.put.mockClear();
+    mocks.queryOverpass.mockReset();
+    vi.stubGlobal('caches', { default: cache });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('snaps a box outward to the 0.01° grid', () => {
+    expect(
+      snapBounds({ south: 46.7512, west: -121.9049, north: 46.9488, east: -121.6011 }),
+    ).toEqual({
+      south: 46.75,
+      west: -121.91,
+      north: 46.95,
+      east: -121.6,
+    });
+  });
+
+  it('gives boxes a pan apart inside one grid cell the same key', () => {
+    expect(peaksCacheKey({ south: 46.751, west: -121.901, north: 46.948, east: -121.602 })).toBe(
+      peaksCacheKey({ south: 46.752, west: -121.903, north: 46.946, east: -121.601 }),
+    );
+  });
+
+  it('asks Overpass once, then answers repeats from the cache for a week', async () => {
+    mocks.queryOverpass.mockResolvedValue(
+      overpassResponse([
+        { type: 'node', id: 5, lat: 46.85, lon: -121.76, tags: { name: 'Rainier', ele: '4392' } },
+      ]),
+    );
+    const bounds = { south: 46.751, west: -121.901, north: 46.948, east: -121.602 };
+
+    const first = await findNearbyPeaks(bounds);
+    const second = await findNearbyPeaks({ ...bounds, south: 46.752 });
+
+    expect(mocks.queryOverpass).toHaveBeenCalledTimes(1);
+    expect(mocks.queryOverpass).toHaveBeenCalledWith({
+      ql: buildPeaksQuery({ south: 46.75, west: -121.91, north: 46.95, east: -121.6 }),
+    });
+    expect(second).toEqual(first);
+    const stored = cache.put.mock.calls[0]?.[1];
+    expect(stored?.headers.get('Cache-Control')).toBe(`public, max-age=${PEAKS_CACHE_SECONDS}`);
+  });
+
+  it('caches nothing when Overpass fails', async () => {
+    mocks.queryOverpass.mockRejectedValue(new Error('Overpass request failed: 504'));
+    await expect(findNearbyPeaks({ south: 0, west: 0, north: 1, east: 1 })).rejects.toThrow('504');
+    expect(cache.put).not.toHaveBeenCalled();
   });
 });
