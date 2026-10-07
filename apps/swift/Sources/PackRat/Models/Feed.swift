@@ -12,10 +12,22 @@ extension Post {
     /// The public link for this post. Opens the post in PackRat when the app is
     /// installed, and the web share page otherwise.
     var shareURL: URL? {
-        publicId.flatMap { URL(string: "https://\(Post.shareHost)/p/\($0)") }
+        publicId.flatMap { URL(string: "\(Post.shareBaseURL)/p/\($0)") }
     }
 
     static let shareHost = "packratai.com"
+
+    /// `https://packratai.com`, or — in non-production builds — the
+    /// `PACKRAT_SHARE_BASE_URL` launch environment, so a local run can share
+    /// links that open the locally served share page.
+    static var shareBaseURL: String {
+        if APIClient.isNonProduction,
+           let override = ProcessInfo.processInfo.environment["PACKRAT_SHARE_BASE_URL"],
+           !override.isEmpty {
+            return override.hasSuffix("/") ? String(override.dropLast()) : override
+        }
+        return "https://\(shareHost)"
+    }
 }
 
 extension PostAuthor {
