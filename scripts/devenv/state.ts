@@ -62,7 +62,7 @@ export function listRecords(): DevEnvRecord[] {
         return [];
       }
     })
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    .sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''));
 }
 
 /** True when the process is alive. Signal 0 probes without delivering. */

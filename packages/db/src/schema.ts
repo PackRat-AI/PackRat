@@ -613,6 +613,16 @@ export const trips = pgTable('trips', {
     .notNull(),
   packId: text('pack_id').references(() => packs.id, { onDelete: 'set null' }),
   trailOsmId: bigint('trail_osm_id', { mode: 'bigint' }),
+  // Lifecycle: a trip is planned until the user starts it, and complete once
+  // they mark themselves safe (or finish it without a safety check-in).
+  status: text('status', { enum: ['planned', 'in_progress', 'complete'] })
+    .notNull()
+    .default('planned'),
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
+  // The route the user intends to follow (e.g. an imported GPX track), used
+  // to notice when a safety check-in drifts well off it.
+  plannedRoute: jsonb('planned_route').$type<{ latitude: number; longitude: number }[]>(),
   localCreatedAt: timestamp('local_created_at').notNull(),
   localUpdatedAt: timestamp('local_updated_at').notNull(),
   deleted: boolean('deleted').notNull().default(false),
@@ -1141,3 +1151,125 @@ export interface CapturedQuery {
   durationMs: number;
   resultBytes: number;
 }
+
+// Safety check-in (#1916). Emergency contacts are people outside PackRat who
+// are told when a trip starts, receive check-ins, and get an overdue alert if
+// the user doesn't mark themselves safe by the expected return + grace.
+export const emergencyContacts = pgTable(
+  'emergency_contacts',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    name: text('name').notNull(),
+    phone: text('phone'),
+    email: text('email'),
+    isDefault: boolean('is_default').notNull().default(false),
+    // Set when the contact receives their first message, which explains who
+    // added them and what being an emergency contact means.
+    introducedAt: timestamp('introduced_at'),
+    deleted: boolean('deleted').notNull().default(false),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('emergency_contacts_user_id_idx').on(table.userId),
+    check(
+      'emergency_contacts_phone_or_email',
+      sql`${table.phone} IS NOT NULL OR ${table.email} IS NOT NULL`,
+    ),
+  ],
+);
+
+export type EmergencyContact = InferSelectModel<typeof emergencyContacts>;
+export type NewEmergencyContact = InferInsertModel<typeof emergencyContacts>;
+
+export const safetyCheckIns = pgTable(
+  'safety_check_ins',
+  {
+    id: text('id').primaryKey(),
+    tripId: text('trip_id')
+      .references(() => trips.id, { onDelete: 'cascade' })
+      .notNull(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    status: text('status', { enum: ['active', 'safe', 'cancelled'] })
+      .notNull()
+      .default('active'),
+    // Unguessable token for the public contacts page; the page stops working
+    // once the check-in is no longer active.
+    shareToken: text('share_token').notNull().unique(),
+    expectedReturnAt: timestamp('expected_return_at').notNull(),
+    graceMinutes: integer('grace_minutes').notNull().default(120),
+    identifyingGear: jsonb('identifying_gear')
+      .$type<{ name: string; note?: string | null }[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    trackingEnabled: boolean('tracking_enabled').notNull().default(false),
+    // When the user started the trip on the phone, which may be earlier than
+    // createdAt if the start was queued offline.
+    startedAt: timestamp('started_at').notNull(),
+    reminderSentAt: timestamp('reminder_sent_at'),
+    overdueAlertSentAt: timestamp('overdue_alert_sent_at'),
+    offRouteNotifiedAt: timestamp('off_route_notified_at'),
+    endedAt: timestamp('ended_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('safety_check_ins_user_id_idx').on(table.userId),
+    index('safety_check_ins_trip_id_idx').on(table.tripId),
+    index('safety_check_ins_status_expected_return_idx').on(table.status, table.expectedReturnAt),
+  ],
+);
+
+export type SafetyCheckIn = InferSelectModel<typeof safetyCheckIns>;
+export type NewSafetyCheckIn = InferInsertModel<typeof safetyCheckIns>;
+
+// The contacts told about a check-in, snapshotted at start so editing or
+// removing a contact mid-trip doesn't change who gets the overdue alert.
+export const safetyCheckInContacts = pgTable(
+  'safety_check_in_contacts',
+  {
+    id: text('id').primaryKey(),
+    checkInId: text('check_in_id')
+      .references(() => safetyCheckIns.id, { onDelete: 'cascade' })
+      .notNull(),
+    contactId: text('contact_id').references(() => emergencyContacts.id, {
+      onDelete: 'set null',
+    }),
+    name: text('name').notNull(),
+    phone: text('phone'),
+    email: text('email'),
+  },
+  (table) => [index('safety_check_in_contacts_check_in_id_idx').on(table.checkInId)],
+);
+
+export type SafetyCheckInContact = InferSelectModel<typeof safetyCheckInContacts>;
+
+// Every location recorded during a check-in. Deleted when the trip ends.
+export const safetyCheckInLocations = pgTable(
+  'safety_check_in_locations',
+  {
+    id: text('id').primaryKey(),
+    checkInId: text('check_in_id')
+      .references(() => safetyCheckIns.id, { onDelete: 'cascade' })
+      .notNull(),
+    kind: text('kind', { enum: ['check_in', 'track'] }).notNull(),
+    latitude: real('latitude').notNull(),
+    longitude: real('longitude').notNull(),
+    accuracyMeters: real('accuracy_meters'),
+    placeName: text('place_name'),
+    note: text('note'),
+    // When the phone recorded it — may be hours before it was uploaded.
+    recordedAt: timestamp('recorded_at').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('safety_check_in_locations_check_in_recorded_idx').on(table.checkInId, table.recordedAt),
+  ],
+);
+
+export type SafetyCheckInLocation = InferSelectModel<typeof safetyCheckInLocations>;

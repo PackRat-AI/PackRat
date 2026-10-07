@@ -400,6 +400,13 @@
       "when": 1791305635494,
       "tag": "0055_good_shinko_yamashiro",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1791366773551,
+      "tag": "0056_steep_random",
+      "breakpoints": true
     }
   ]
 }

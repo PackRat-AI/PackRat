@@ -136,6 +136,12 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
         if ('notes' in data) updateData.notes = data.notes ?? null;
         if ('packId' in data) updateData.packId = data.packId ?? null;
         if ('checklist' in data) updateData.checklist = data.checklist ?? null;
+        if (data.status) updateData.status = data.status;
+        if ('startedAt' in data)
+          updateData.startedAt = data.startedAt ? new Date(data.startedAt) : null;
+        if ('completedAt' in data)
+          updateData.completedAt = data.completedAt ? new Date(data.completedAt) : null;
+        if ('plannedRoute' in data) updateData.plannedRoute = data.plannedRoute ?? null;
         if ('localUpdatedAt' in data)
           updateData.localUpdatedAt = data.localUpdatedAt ? new Date(data.localUpdatedAt) : null;
         if ('deleted' in data) updateData.deleted = data.deleted;
