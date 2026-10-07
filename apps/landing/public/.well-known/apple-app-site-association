@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["666HGMV2LU.com.andrewbierman.packrat"],
+        "components": [{ "/": "/p/*" }]
+      }
+    ]
+  }
+}
