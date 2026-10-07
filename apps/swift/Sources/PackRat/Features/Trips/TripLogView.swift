@@ -297,7 +297,7 @@ struct TripLogEditor: View {
             } message: {
                 Text("The trip stays, but its activity, distance, climbing, route and summits stop counting in your stats.")
             }
-            .sheet(isPresented: $showingPeakPicker) {
+            .peakPicker(isPresented: $showingPeakPicker) {
                 PeakPickerView(
                     region: PeakPickerView.region(route: routeCoordinates, location: trip.location),
                     route: routeCoordinates,

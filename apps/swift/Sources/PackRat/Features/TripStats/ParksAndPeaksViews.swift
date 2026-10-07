@@ -541,7 +541,7 @@ private struct PastSummitEditor: View {
                         .accessibilityIdentifier("past_summit_save")
                 }
             }
-            .sheet(isPresented: $choosing) {
+            .peakPicker(isPresented: $choosing) {
                 PeakPickerView(region: region, excluded: []) { summit = $0 }
             }
         }
@@ -577,6 +577,12 @@ private struct PastSummitEditor: View {
 /// peak that isn't mapped can be typed in by hand.
 struct PeakPickerView: View {
     @Environment(\.dismiss) private var dismiss
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    #endif
+
+    /// Enough for the panel's title, the search field and the first row or two.
+    static let peekHeight: CGFloat = 230
     @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
 
     let region: MKCoordinateRegion
@@ -595,6 +601,10 @@ struct PeakPickerView: View {
     @State private var state: LoadState = .loading
     @State private var query = ""
     @State private var selection: Int?
+    @State private var cameraSettled = false
+    /// Where the map came to rest on open, standing in for the first search's area.
+    @State private var settledRegion: MKCoordinateRegion?
+    @State private var detent: PresentationDetent = .height(PeakPickerView.peekHeight)
     @State private var typing = false
     @State private var typedName = ""
     @State private var typedElevation = ""
@@ -609,7 +619,18 @@ struct PeakPickerView: View {
         self.route = route
         self.excluded = excluded
         self.onPick = onPick
-        _position = State(initialValue: .region(region))
+        _position = State(initialValue: Self.initialPosition(region: region, route: route))
+    }
+
+    /// Frames the whole route when there is one. A rect fit respects the
+    /// map's safe area, so the route lands above the list panel.
+    private static func initialPosition(region: MKCoordinateRegion, route: [CLLocationCoordinate2D]) -> MapCameraPosition {
+        guard route.count >= 2 else { return .region(region) }
+        let points = route.map(MKMapPoint.init)
+        let minX = points.map(\.x).min() ?? 0, maxX = points.map(\.x).max() ?? 0
+        let minY = points.map(\.y).min() ?? 0, maxY = points.map(\.y).max() ?? 0
+        let rect = MKMapRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+        return .rect(rect.insetBy(dx: -rect.width * 0.25 - 500, dy: -rect.height * 0.25 - 500))
     }
 
     private var unit: TripDistanceUnit { TripDistanceUnit(speedUnit: speedUnit) }
@@ -622,34 +643,78 @@ struct PeakPickerView: View {
         )
     }
 
+    /// Layout follows Apple Maps: the map fills the screen and the list sits
+    /// in a resizable panel over it (HIG, Sheets: detents and a grabber, with
+    /// the map still usable behind the panel's lower heights). On iPhone that
+    /// panel is a sheet; on iPad and Mac, where a sheet can't rest at a height,
+    /// it's a fixed sidebar beside the map, as Maps does there.
     var body: some View {
         let ranked = ranked
-        NavigationStack {
-            VStack(spacing: 0) {
-                ZStack(alignment: .top) {
-                    map(ranked)
-                    if let visibleRegion, visibleRegion.differs(from: searchedRegion) {
-                        Button {
-                            Task { await load(visibleRegion) }
-                        } label: {
-                            Label("Search This Area", systemImage: "magnifyingglass")
-                                .font(.subheadline.weight(.semibold))
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .buttonBorderShape(.capsule)
-                        .padding(.top, 10)
-                        .accessibilityIdentifier("peak_picker_search_area")
-                    }
-                }
-                .frame(height: 240)
+        Group {
+            #if os(iOS)
+            if horizontalSizeClass == .compact {
+                compactLayout(ranked)
+            } else {
+                sidebarLayout(ranked)
+            }
+            #else
+            sidebarLayout(ranked)
+            #endif
+        }
+        .task { await load(region) }
+    }
 
-                ScrollViewReader { proxy in
-                    list(ranked)
-                        .onChange(of: selection) { _, id in
-                            guard let id else { return }
-                            withAnimation { proxy.scrollTo(id, anchor: .center) }
+    #if os(iOS)
+    /// Full-screen map, list in a sheet that rests at a peek, half or full height.
+    private func compactLayout(_ ranked: PeakSuggestions) -> some View {
+        // Inset the map's safe area by the panel's peek height so the camera
+        // frames the route in the part of the map left visible.
+        map(ranked, bottomInset: Self.peekHeight)
+            .ignoresSafeArea()
+            .overlay(alignment: .top) { searchAreaButton.padding(.top, 8) }
+            .sheet(isPresented: .constant(true)) {
+                NavigationStack {
+                    listPanel(ranked)
+                        .navigationTitle("Choose a Peak")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cancel") { dismiss() }
+                                    .accessibilityIdentifier("peak_picker_cancel")
+                            }
                         }
                 }
+                .presentationDetents([.height(Self.peekHeight), .medium, .large], selection: $detent)
+                .presentationDragIndicator(.visible)
+                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+                .presentationContentInteraction(.scrolls)
+                .interactiveDismissDisabled()
+                .alert("Enter a Peak", isPresented: $typing) {
+                    TextField("Name", text: $typedName)
+                    TextField("Elevation (\(unit.elevationSymbol))", text: $typedElevation)
+                        .keyboardType(.numberPad)
+                    Button("Cancel", role: .cancel) {}
+                    Button("Add") { addTyped() }
+                } message: {
+                    Text("For a peak that isn't on the map.")
+                }
+            }
+            .onChange(of: selection) { _, id in
+                // A pin tapped while the panel is low lifts it so the row shows.
+                if id != nil, detent == .height(Self.peekHeight) { detent = .medium }
+            }
+    }
+    #endif
+
+    /// Map and list side by side, list leading, for regular widths.
+    private func sidebarLayout(_ ranked: PeakSuggestions) -> some View {
+        NavigationStack {
+            HStack(spacing: 0) {
+                listPanel(ranked)
+                    .frame(width: 340)
+                Divider()
+                map(ranked)
+                    .overlay(alignment: .top) { searchAreaButton.padding(.top, 10) }
             }
             .navigationTitle("Choose a Peak")
             #if os(iOS)
@@ -658,23 +723,54 @@ struct PeakPickerView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
-            .alert("Enter a Peak", isPresented: $typing) {
-                TextField("Name", text: $typedName)
-                TextField("Elevation (\(unit.elevationSymbol))", text: $typedElevation)
-                    #if os(iOS)
-                    .keyboardType(.numberPad)
-                    #endif
-                Button("Cancel", role: .cancel) {}
-                Button("Add") { addTyped() }
-            } message: {
-                Text("For a peak that isn't on the map.")
-            }
-            .task { await load(region) }
         }
-        .formSheetSize(minWidth: 520, minHeight: 680)
+        .alert("Enter a Peak", isPresented: $typing) {
+            TextField("Name", text: $typedName)
+            TextField("Elevation (\(unit.elevationSymbol))", text: $typedElevation)
+                #if os(iOS)
+                .keyboardType(.numberPad)
+                #endif
+            Button("Cancel", role: .cancel) {}
+            Button("Add") { addTyped() }
+        } message: {
+            Text("For a peak that isn't on the map.")
+        }
+        .formSheetSize(minWidth: 820, minHeight: 600)
     }
 
-    private func map(_ ranked: PeakSuggestions) -> some View {
+    /// The view the current results belong to: the opening view until the
+    /// user searches somewhere else.
+    private var lastSearchedView: MKCoordinateRegion? {
+        searchedRegion.map { $0.differs(from: region) ? $0 : (settledRegion ?? $0) } ?? settledRegion
+    }
+
+    @ViewBuilder
+    private var searchAreaButton: some View {
+        if let visibleRegion, visibleRegion.differs(from: lastSearchedView) {
+            Button {
+                Task { await load(visibleRegion) }
+            } label: {
+                Label("Search This Area", systemImage: "magnifyingglass")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .shadow(radius: 4, y: 2)
+            .accessibilityIdentifier("peak_picker_search_area")
+        }
+    }
+
+    private func listPanel(_ ranked: PeakSuggestions) -> some View {
+        ScrollViewReader { proxy in
+            list(ranked)
+                .onChange(of: selection) { _, id in
+                    guard let id else { return }
+                    withAnimation { proxy.scrollTo(id, anchor: .center) }
+                }
+        }
+    }
+
+    private func map(_ ranked: PeakSuggestions, bottomInset: CGFloat = 0) -> some View {
         Map(position: $position, selection: $selection) {
             if route.count >= 2 {
                 MapPolyline(coordinates: route)
@@ -701,7 +797,15 @@ struct PeakPickerView: View {
             }
         }
         .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
-        .onMapCameraChange(frequency: .onEnd) { visibleRegion = $0.region }
+        .safeAreaPadding(.bottom, bottomInset)
+        .onMapCameraChange(frequency: .onEnd) { context in
+            // The first settle is the map framing itself, not the user moving it.
+            if !cameraSettled {
+                cameraSettled = true
+                settledRegion = context.region
+            }
+            visibleRegion = context.region
+        }
         .accessibilityIdentifier("peak_picker_map")
     }
 
@@ -853,6 +957,19 @@ struct PeakPickerView: View {
             center: CLLocationCoordinate2D(latitude: 39.5, longitude: -105.8),
             span: MKCoordinateSpan(latitudeDelta: 0.6, longitudeDelta: 0.8)
         )
+    }
+}
+
+extension View {
+    /// Full screen on iPhone, so the picker's map can fill it under its list
+    /// panel; a sheet elsewhere.
+    @ViewBuilder
+    func peakPicker<Picker: View>(isPresented: Binding<Bool>, @ViewBuilder content: @escaping () -> Picker) -> some View {
+        #if os(iOS)
+        fullScreenCover(isPresented: isPresented, content: content)
+        #else
+        sheet(isPresented: isPresented, content: content)
+        #endif
     }
 }
 
