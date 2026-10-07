@@ -1,0 +1,1 @@
+ALTER TABLE "safety_check_ins" ADD COLUMN "time_zone" text DEFAULT 'UTC' NOT NULL;

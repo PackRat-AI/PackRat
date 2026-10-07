@@ -26,6 +26,7 @@ import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import { listEffectiveFeatureFlags } from '@packrat/api/services/featureFlagsService';
 import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
+import { sweepSafetyCheckIns } from '@packrat/api/services/safetyCheckIn/sweep';
 import { pollTripDestinations } from '@packrat/api/services/weatherMonitoring/pollTripDestinations';
 import { pollWatchedLocations } from '@packrat/api/services/weatherMonitoring/pollWatchedLocations';
 import type { Env } from '@packrat/api/utils/env-validation';
@@ -587,6 +588,17 @@ const workerHandler = {
             console.log(
               `[tripReminders] destination poll: checked=${result.checked} skipped=${result.skipped} ` +
                 `failed=${result.failed} notified=${result.notified}`,
+            );
+          }
+          if (flags[FeatureFlag.EnableSafetyCheckIn]) {
+            const result = await record({
+              operation: 'safetyCheckIn.sweep',
+              tags: { trigger: 'cron' },
+              extra: { cron: controller.cron },
+              fn: async () => sweepSafetyCheckIns({ env }),
+            });
+            console.log(
+              `[safetyCheckIn] sweep: reminded=${result.reminded} alerted=${result.alerted}`,
             );
           }
           return;

@@ -1202,6 +1202,9 @@ export const safetyCheckIns = pgTable(
     // once the check-in is no longer active.
     shareToken: text('share_token').notNull().unique(),
     expectedReturnAt: timestamp('expected_return_at').notNull(),
+    // The phone's IANA time zone at start, so messages show times the way the
+    // user and their contacts read them.
+    timeZone: text('time_zone').notNull().default('UTC'),
     graceMinutes: integer('grace_minutes').notNull().default(120),
     identifyingGear: jsonb('identifying_gear')
       .$type<{ name: string; note?: string | null }[]>()

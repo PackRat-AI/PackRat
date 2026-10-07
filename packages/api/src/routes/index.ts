@@ -13,6 +13,11 @@ import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
 import { passwordResetRoutes } from './passwordReset';
 import { revenuecatWebhookRoutes } from './revenuecatWebhook';
+import {
+  emergencyContactsRoutes,
+  safetyCheckInPublicRoutes,
+  safetyCheckInRoutes,
+} from './safetyCheckIn';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
 import { trailConditionsRoutes } from './trailConditions';
 import { trailsRoutes } from './trails';
@@ -39,6 +44,9 @@ export const routes = new Elysia({ prefix: '/api' })
   .use(chatRoutes)
   .use(weatherRoutes)
   .use(weatherMonitoringRoutes)
+  .use(emergencyContactsRoutes)
+  .use(safetyCheckInRoutes)
+  .use(safetyCheckInPublicRoutes)
   .use(packTemplatesRoutes)
   .use(seasonSuggestionsRoutes)
   .use(passwordResetRoutes)
