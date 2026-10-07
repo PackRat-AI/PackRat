@@ -19,6 +19,7 @@ const FeatureFlag = Object.freeze({
   EnableWeatherMonitoring: 'enableWeatherMonitoring',
   EnableTripReminders: 'enableTripReminders',
   EnableSafetyCheckIn: 'enableSafetyCheckIn',
+  EnableTripStats: 'enableTripStats',
 });
 
 const DashboardTileId = Object.freeze({
@@ -83,6 +84,7 @@ const APP_CONFIG_SOURCE = {
     [FeatureFlag.EnableWeatherMonitoring]: false,
     [FeatureFlag.EnableTripReminders]: false,
     [FeatureFlag.EnableSafetyCheckIn]: false,
+    [FeatureFlag.EnableTripStats]: false,
   },
   dashboard: {
     gapPrefix: GAP_PREFIX,

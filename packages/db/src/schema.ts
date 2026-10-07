@@ -5,6 +5,7 @@ import {
   bigint,
   boolean,
   check,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -597,6 +598,29 @@ export const trailConditionReports = pgTable(
   }),
 );
 
+/**
+ * What actually happened on a finished trip, read back by trip stats. Distances
+ * and elevations are metres whatever the user's display unit. `route` is a
+ * Google encoded polyline (precision 5), simplified on device before upload.
+ */
+export type TripLog = {
+  activities: string[];
+  distanceMeters?: number | null;
+  elevationGainMeters?: number | null;
+  route?: string | null;
+  source?: 'manual' | 'track' | 'trail' | null;
+  summits?: TripSummit[] | null;
+};
+
+/** A named peak reached on a trip. `osmId` is the OpenStreetMap node it was picked from. */
+export type TripSummit = {
+  name: string;
+  elevationMeters?: number | null;
+  latitude: number;
+  longitude: number;
+  osmId?: number | null;
+};
+
 export const trips = pgTable('trips', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -623,12 +647,105 @@ export const trips = pgTable('trips', {
   // The route the user intends to follow (e.g. an imported GPX track), used
   // to notice when a safety check-in drifts well off it.
   plannedRoute: jsonb('planned_route').$type<{ latitude: number; longitude: number }[]>(),
+  log: jsonb('log').$type<TripLog>(),
+  excludedFromStats: boolean('excluded_from_stats').notNull().default(false),
   localCreatedAt: timestamp('local_created_at').notNull(),
   localUpdatedAt: timestamp('local_updated_at').notNull(),
   deleted: boolean('deleted').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+/**
+ * A user's trip stats goal. `annual` goals cover `year` and reset on 1 January;
+ * `custom` goals run from `startDate` to `endDate` and carry a user-chosen name.
+ * The list goals count every trip ever, with an optional `endDate` to pace
+ * against: `longTrail` follows the trail named by `trailCode` (metric
+ * `distance`, target its length in metres), `peakList` ticks off `peaks`
+ * (metric `summits`), and `parkList` ticks off `parkCodes`, or all National
+ * Parks when that is null (metric `parks`).
+ * `target` is in the metric's base unit: a count, or metres for distance and
+ * elevation. Progress is never stored — clients work it out from the trips.
+ */
+export const tripGoals = pgTable(
+  'trip_goals',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    kind: text('kind')
+      .$type<'annual' | 'custom' | 'longTrail' | 'peakList' | 'parkList'>()
+      .notNull(),
+    metric: text('metric')
+      .$type<'trips' | 'nights' | 'days' | 'distance' | 'elevation' | 'summits' | 'parks'>()
+      .notNull(),
+    target: real('target').notNull(),
+    year: integer('year'),
+    name: text('name'),
+    startDate: timestamp('start_date'),
+    endDate: timestamp('end_date'),
+    /** `longTrail` goals only, e.g. "PCT". */
+    trailCode: text('trail_code'),
+    /** `peakList` goals only. */
+    peaks: jsonb('peaks').$type<TripSummit[]>(),
+    /** `parkList` goals only; null means every park. */
+    parkCodes: jsonb('park_codes').$type<string[]>(),
+    localCreatedAt: timestamp('local_created_at').notNull(),
+    localUpdatedAt: timestamp('local_updated_at').notNull(),
+    deleted: boolean('deleted').notNull().default(false),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [index('trip_goals_user_id_idx').on(table.userId)],
+);
+
+/**
+ * Per-user trip stats choices that follow the account across devices: whether
+ * stats are on, and the optional reason given for the break before a comeback.
+ * The reason applies only to the comeback that ended at `breakReasonTripId`.
+ */
+export const tripStatsSettings = pgTable('trip_stats_settings', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  /** Null until the user answers the opt-in; false hides stats and keeps the logs. */
+  enabled: boolean('enabled'),
+  breakReason: text('break_reason').$type<'injury' | 'illness' | 'life' | 'season'>(),
+  breakReasonTripId: text('break_reason_trip_id'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+/**
+ * Park visits and summits a user adds by hand, for outings from before they
+ * used PackRat. Visits and summits that come from trips live on the trip's
+ * log or location instead. `park` rows carry `parkCode` (the NPS unit code);
+ * `summit` rows carry the peak's name, position and elevation.
+ */
+export const tripStatsEntries = pgTable(
+  'trip_stats_entries',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    kind: text('kind').$type<'park' | 'summit'>().notNull(),
+    parkCode: text('park_code'),
+    name: text('name'),
+    elevationMeters: real('elevation_meters'),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
+    osmId: bigint('osm_id', { mode: 'number' }),
+    /** The day of the visit or climb, as UTC midnight. Null when the user doesn't remember. */
+    date: timestamp('date'),
+    localCreatedAt: timestamp('local_created_at').notNull(),
+    localUpdatedAt: timestamp('local_updated_at').notNull(),
+    deleted: boolean('deleted').notNull().default(false),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [index('trip_stats_entries_user_id_idx').on(table.userId)],
+);
 
 // Relations
 

@@ -14,6 +14,14 @@ enum OutboxEntityType: String, Codable, Sendable {
     case packTemplateItem
     /// Trail condition reports authored on device. Same rationale as `packTemplate`.
     case trailConditionReport
+    /// Trip stats goals. Created, replaced and deleted by `TripGoalsViewModel`.
+    case tripGoal
+    /// The one per-user trip stats settings record, queued as an update keyed
+    /// by `TripGoalsViewModel.settingsEntityId`. Consecutive saves collapse to
+    /// the latest, which is all a full-replace route needs.
+    case tripStatsSettings
+    /// Park visits and summits added by hand, through `TripGoalsViewModel`.
+    case tripStatsEntry
 }
 
 /// The write being replayed. `create` and `update` carry a payload; `delete` does not.
@@ -275,6 +283,8 @@ struct TripMutationPayload: Codable, Sendable {
         completedAt = trip.completedAt
         plannedRoute = trip.plannedRoute
     }
+    var log: TripLog? = nil
+    var excludedFromStats: Bool? = nil
 
     var location: TripLocationBody? {
         guard let latitude, let longitude else { return nil }

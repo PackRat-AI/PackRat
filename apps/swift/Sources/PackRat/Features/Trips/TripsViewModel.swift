@@ -232,21 +232,49 @@ final class TripsViewModel {
             checklist: existing.checklist,
             updatedAt: Date.iso8601Now()
         )
-        // A queued update replaces the trip wholesale on replay, so it carries the
-        // Before-you-go list too or the replay would wipe it.
+        await pushUpdate(localUpdated, context: context)
+    }
+
+    /// Saves what happened on a finished trip. `nil` clears the log.
+    func saveLog(_ log: TripLog?, for tripId: String, context: ModelContext? = nil) async {
+        guard var trip = trips.first(where: { $0.id == tripId }) else { return }
+        trip.log = log.flatMap { $0.isEmpty ? nil : $0 }
+        await pushUpdate(trip, context: context)
+    }
+
+    func setExcludedFromStats(_ excluded: Bool, for tripId: String, context: ModelContext? = nil) async {
+        guard var trip = trips.first(where: { $0.id == tripId }) else { return }
+        trip.excludedFromStats = excluded
+        await pushUpdate(trip, context: context)
+    }
+
+    /// Optimistic update of the whole trip. Every write sends the full record,
+    /// log included, so a queued edit folds into a queued create without
+    /// losing fields, and the server copy always matches the local one.
+    private func pushUpdate(_ localUpdated: Trip, context: ModelContext?) async {
+        let tripId = localUpdated.id
+        let startDate = localUpdated.startDate?.toDate()
+        let endDate = localUpdated.endDate?.toDate()
+        let location = localUpdated.location.map {
+            TripLocationBody(latitude: $0.latitude, longitude: $0.longitude, name: $0.name)
+        }
         var payload = TripMutationPayload(
-            name: name,
-            description: description,
-            startDate: startDate?.iso8601String(),
-            endDate: endDate?.iso8601String(),
+            name: localUpdated.name,
+            description: localUpdated.description,
+            startDate: localUpdated.startDate,
+            endDate: localUpdated.endDate,
             latitude: location?.latitude,
             longitude: location?.longitude,
             locationName: location?.name,
-            notes: notes,
-            packId: packId,
-            checklist: existing.checklist
+            notes: localUpdated.notes,
+            packId: localUpdated.packId,
+            checklist: localUpdated.checklist,
+            log: localUpdated.log,
+            excludedFromStats: localUpdated.excludedFromStats
         )
-        payload.carryLifecycle(of: existing)
+        // Updates collapse to the latest payload, so each carries the lifecycle
+        // and route or a later edit would undo Start Trip on replay.
+        payload.carryLifecycle(of: localUpdated)
         func queueUpdate() {
             outbox.enqueue(
                 entityType: .trip,
@@ -261,8 +289,10 @@ final class TripsViewModel {
         if canUseRemotePersonalStore {
             do {
                 updated = try await service.updateTrip(
-                    tripId, name: name, description: description, startDate: startDate, endDate: endDate,
-                    location: location, notes: notes, packId: packId
+                    tripId, name: localUpdated.name, description: localUpdated.description,
+                    startDate: startDate, endDate: endDate, location: location,
+                    notes: localUpdated.notes, packId: localUpdated.packId,
+                    checklist: localUpdated.checklist, log: localUpdated.log, excludedFromStats: localUpdated.isExcludedFromStats
                 )
             } catch {
                 updated = localUpdated
@@ -311,7 +341,9 @@ final class TripsViewModel {
             locationName: trip.location?.name,
             notes: trip.notes,
             packId: trip.packId,
-            checklist: checklist
+            checklist: checklist,
+            log: trip.log,
+            excludedFromStats: trip.excludedFromStats
         )
         payload.carryLifecycle(of: trip)
         outbox.enqueue(
@@ -382,7 +414,9 @@ final class TripsViewModel {
             locationName: updated.location?.name,
             notes: updated.notes,
             packId: updated.packId,
-            checklist: updated.checklist
+            checklist: updated.checklist,
+            log: updated.log,
+            excludedFromStats: updated.excludedFromStats
         )
         payload.carryLifecycle(of: updated)
         // An explicit empty route clears it on the server.
@@ -486,7 +520,9 @@ final class TripsViewModel {
             status: trip.status,
             startedAt: trip.startedAt,
             completedAt: trip.completedAt,
-            plannedRoute: trip.plannedRoute
+            plannedRoute: trip.plannedRoute,
+            log: trip.log,
+            excludedFromStats: trip.excludedFromStats
         )
     }
 

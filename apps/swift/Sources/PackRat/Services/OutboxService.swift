@@ -65,12 +65,14 @@ final class OutboxService {
     private let tripService: TripService
     private let templateService: PackTemplateService
     private let trailConditionsService: TrailConditionsService
+    private let tripStatsService: TripStatsService
 
     init(
         packService: PackService = .shared,
         tripService: TripService = .shared,
         templateService: PackTemplateService = .shared,
         trailConditionsService: TrailConditionsService = .shared,
+        tripStatsService: TripStatsService = .shared,
         defaults: UserDefaults = .standard
     ) {
         self.defaults = defaults
@@ -82,6 +84,7 @@ final class OutboxService {
         self.tripService = tripService
         self.templateService = templateService
         self.trailConditionsService = trailConditionsService
+        self.tripStatsService = tripStatsService
     }
 
     // MARK: - Enqueue
@@ -379,7 +382,9 @@ final class OutboxService {
                     location: payload.location,
                     notes: payload.notes,
                     packId: payload.packId,
-                    checklist: payload.checklist
+                    checklist: payload.checklist,
+                    log: payload.log,
+                    excludedFromStats: payload.excludedFromStats ?? false
                 )
             case (.trip, .update):
                 let payload: TripMutationPayload = try decode(mutation.payload)
@@ -396,7 +401,9 @@ final class OutboxService {
                     status: payload.status,
                     startedAt: payload.startedAt,
                     completedAt: payload.completedAt,
-                    plannedRoute: payload.plannedRoute
+                    plannedRoute: payload.plannedRoute,
+                    log: payload.log,
+                    excludedFromStats: payload.excludedFromStats ?? false
                 )
             case (.trip, .delete):
                 try await tripService.deleteTrip(mutation.entityId)
@@ -471,6 +478,30 @@ final class OutboxService {
                 // one — reports are create-or-delete here. Dropping rather than
                 // retrying forever: a retry could never succeed.
                 return .terminal("Trail condition reports cannot be updated")
+
+            case (.tripGoal, .create):
+                let payload: TripGoalRequest = try decode(mutation.payload)
+                _ = try await tripStatsService.createGoal(payload)
+            case (.tripGoal, .update):
+                let payload: TripGoalRequest = try decode(mutation.payload)
+                _ = try await tripStatsService.updateGoal(mutation.entityId, payload)
+            case (.tripGoal, .delete):
+                try await tripStatsService.deleteGoal(mutation.entityId)
+
+            case (.tripStatsSettings, .update), (.tripStatsSettings, .create):
+                let payload: TripStatsSettings = try decode(mutation.payload)
+                _ = try await tripStatsService.saveSettings(payload)
+            case (.tripStatsSettings, .delete):
+                return .terminal("Trip stats settings cannot be deleted")
+
+            case (.tripStatsEntry, .create):
+                let payload: TripStatsEntryRequest = try decode(mutation.payload)
+                _ = try await tripStatsService.createEntry(payload)
+            case (.tripStatsEntry, .update):
+                let payload: TripStatsEntryRequest = try decode(mutation.payload)
+                _ = try await tripStatsService.updateEntry(mutation.entityId, payload)
+            case (.tripStatsEntry, .delete):
+                try await tripStatsService.deleteEntry(mutation.entityId)
             }
             return .success
         } catch {

@@ -22,7 +22,9 @@ final class TripService: Sendable {
         location: TripLocationBody? = nil,
         notes: String? = nil,
         packId: String? = nil,
-        checklist: [TripChecklistItem]? = nil
+        checklist: [TripChecklistItem]? = nil,
+        log: TripLog? = nil,
+        excludedFromStats: Bool = false
     ) async throws -> Trip {
         let now = Date.iso8601Now()
         let body = CreateTripRequest(
@@ -35,6 +37,8 @@ final class TripService: Sendable {
             notes: notes,
             packId: packId,
             checklist: checklist,
+            log: log,
+            excludedFromStats: excludedFromStats,
             localCreatedAt: now,
             localUpdatedAt: now
         )
@@ -55,7 +59,9 @@ final class TripService: Sendable {
         status: TripStatus? = nil,
         startedAt: String? = nil,
         completedAt: String? = nil,
-        plannedRoute: [TripRoutePoint]? = nil
+        plannedRoute: [TripRoutePoint]? = nil,
+        log: TripLog? = nil,
+        excludedFromStats: Bool = false
     ) async throws -> Trip {
         let body = UpdateTripRequest(
             name: name,
@@ -70,6 +76,8 @@ final class TripService: Sendable {
             startedAt: startedAt,
             completedAt: completedAt,
             plannedRoute: plannedRoute,
+            log: log,
+            excludedFromStats: excludedFromStats,
             localUpdatedAt: Date.iso8601Now()
         )
         let endpoint = Endpoint(.put, "/api/trips/\(tripId)", body: body)

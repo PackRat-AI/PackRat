@@ -84,7 +84,7 @@ struct Trip: Codable, Identifiable, Sendable {
     let endDate: String?
     let userId: String?
     let packId: String?
-    let checklist: [TripChecklistItem]?
+    var checklist: [TripChecklistItem]? = nil
     let deleted: Bool
     let createdAt: String?
     let updatedAt: String?
@@ -92,6 +92,9 @@ struct Trip: Codable, Identifiable, Sendable {
     var startedAt: String? = nil
     var completedAt: String? = nil
     var plannedRoute: [TripRoutePoint]? = nil
+    /// What happened on the trip, once it's over. See `TripLog`.
+    var log: TripLog? = nil
+    var excludedFromStats: Bool? = nil
 }
 
 struct TripChecklistItem: Codable, Identifiable, Hashable, Sendable {

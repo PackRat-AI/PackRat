@@ -18,6 +18,7 @@ enum UITestFeatureFlags {
     static let enableTrails = false
     static let enableTripReminders = false
     static let enableTrips = true
+    static let enableTripStats = false
     static let enableWeatherMonitoring = false
     static let enableWildlifeIdentification = false
 
@@ -38,6 +39,7 @@ enum UITestFeatureFlags {
         "enableTrails": false,
         "enableTripReminders": false,
         "enableTrips": true,
+        "enableTripStats": false,
         "enableWeatherMonitoring": false,
         "enableWildlifeIdentification": false,
     ]

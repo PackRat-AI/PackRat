@@ -14,6 +14,7 @@ final class AppState {
     let templatesVM = PackTemplatesViewModel()
     let trailConditionsVM = TrailConditionsViewModel()
     let aiPacksVM = AIPacksViewModel()
+    let tripGoalsVM = TripGoalsViewModel()
 
     // Per-feature detail selections
     var selectedPackId: String?
