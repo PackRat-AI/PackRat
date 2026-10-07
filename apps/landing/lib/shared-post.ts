@@ -4,6 +4,7 @@
  * link-preview tags into the static `/p` shell, and the client view that
  * renders it. Kept free of React and Next imports so the Worker can bundle it.
  */
+import { isArray, isString, toRecord } from '@packrat/guards';
 import { safeJsonStringify } from '@packrat/utils';
 import { siteConfig } from '../config/site';
 
@@ -17,6 +18,35 @@ export type SharedPost = {
   authorName: string;
   authorAvatarUrl: string | null;
 };
+
+const nullableString = (value: unknown): string | null | undefined =>
+  value === null ? null : isString(value) ? value : undefined;
+
+/** Narrows the public-post API response, or `undefined` if it isn't one. */
+export function toSharedPost(value: unknown): SharedPost | undefined {
+  const r = toRecord(value);
+  const caption = nullableString(r.caption);
+  const authorAvatarUrl = nullableString(r.authorAvatarUrl);
+  if (
+    !isString(r.publicId) ||
+    !isString(r.createdAt) ||
+    !isString(r.authorName) ||
+    caption === undefined ||
+    authorAvatarUrl === undefined ||
+    !isArray(r.images) ||
+    !r.images.every(isString)
+  ) {
+    return undefined;
+  }
+  return {
+    publicId: r.publicId,
+    caption,
+    images: r.images,
+    createdAt: r.createdAt,
+    authorName: r.authorName,
+    authorAvatarUrl,
+  };
+}
 
 /**
  * What the Worker hands the page, embedded as JSON in the HTML. The browser

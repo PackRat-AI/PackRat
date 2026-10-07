@@ -54,3 +54,21 @@ describe('Pages Function for /p/*', () => {
     expect(response.status).toBe(404);
   });
 });
+
+describe('toSharedPost', () => {
+  it('accepts a public post and rejects anything else', async () => {
+    const { toSharedPost } = await import('../lib/shared-post');
+    const good = {
+      publicId: 'p1',
+      caption: null,
+      images: ['https://img/1.jpg'],
+      createdAt: '2026-10-07T00:00:00.000Z',
+      authorName: 'Maya Chen',
+      authorAvatarUrl: null,
+    };
+    expect(toSharedPost(good)).toEqual(good);
+    expect(toSharedPost({ ...good, images: [1] })).toBeUndefined();
+    expect(toSharedPost({ ...good, authorName: undefined })).toBeUndefined();
+    expect(toSharedPost('nope')).toBeUndefined();
+  });
+});

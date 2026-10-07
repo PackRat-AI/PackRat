@@ -14,11 +14,11 @@ import {
   parsePublicId,
   renderMetaTags,
   renderPayloadScript,
-  type SharedPost,
   type SharedPostPayload,
   sharedPostMetaTags,
   sharedPostTitle,
   sharedPostUrl,
+  toSharedPost,
 } from '../lib/shared-post';
 
 // Minimal shapes of the Workers runtime APIs used here. The landing app's
@@ -66,7 +66,12 @@ async function fetchPost({
       console.error(`shared post ${publicId}: API responded ${response.status}`);
       return { status: 'error' };
     }
-    return { status: 'ok', post: (await response.json()) as SharedPost };
+    const post = toSharedPost(await response.json());
+    if (!post) {
+      console.error(`shared post ${publicId}: unexpected API response shape`);
+      return { status: 'error' };
+    }
+    return { status: 'ok', post };
   } catch (error) {
     console.error(`shared post ${publicId}: API request failed`, error);
     return { status: 'error' };
