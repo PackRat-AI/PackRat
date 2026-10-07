@@ -130,6 +130,7 @@ struct ParksChecklistView: View {
 
     @State private var filter: Filter = .all
     @State private var query = ""
+    @State private var sharing: TripShareRequest?
 
     var body: some View {
         let record = appState.parksAndPeaks
@@ -178,6 +179,16 @@ struct ParksChecklistView: View {
             }
         }
         .navigationTitle("National Parks")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                TripShareButton(accessibilityId: "parks_share") {
+                    sharing = TripShareRequest(content: .parks(visited: Set(record.visitedParks.map(\.park.code))))
+                }
+            }
+        }
+        .sheet(item: $sharing) { request in
+            TripShareSheet(content: request.content, unit: unit)
+        }
         .accessibilityIdentifier("parks_checklist")
     }
 }
