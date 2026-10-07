@@ -1,3 +1,4 @@
+import Nuke
 import SwiftUI
 
 /// The photos on a post: swipe between them, tap to open full screen,
@@ -5,11 +6,19 @@ import SwiftUI
 struct PhotoCarousel: View {
     let images: [String]
     @Binding var selection: Int
-    var aspectRatio: CGFloat = 4.0 / 5.0
     let onTap: (Int) -> Void
     var onDoubleTap: (() -> Void)?
 
     @State private var scrolledID: Int?
+    @State private var aspectRatio: CGFloat
+
+    init(images: [String], selection: Binding<Int>, onTap: @escaping (Int) -> Void, onDoubleTap: (() -> Void)? = nil) {
+        self.images = images
+        self._selection = selection
+        self.onTap = onTap
+        self.onDoubleTap = onDoubleTap
+        self._aspectRatio = State(initialValue: images.first.flatMap { PostPhotoAspect.cached[$0] } ?? PostPhotoAspect.placeholder)
+    }
 
     var body: some View {
         ScrollView(.horizontal) {
@@ -58,6 +67,7 @@ struct PhotoCarousel: View {
             if let id { selection = id }
         }
         .onAppear { scrolledID = selection }
+        .task(id: images.first) { await sizeToFirstPhoto() }
     }
 }
 
@@ -228,5 +238,31 @@ private struct ZoomablePhoto: View {
         lastScale = 1
         offset = .zero
         lastOffset = .zero
+    }
+}
+
+private extension PhotoCarousel {
+    /// The post takes the shape of its first photo, kept between portrait 4:5
+    /// and landscape 1.91:1 so no post towers over the feed or turns into a strip.
+    func sizeToFirstPhoto() async {
+        guard let first = images.first, PostPhotoAspect.cached[first] == nil,
+              let url = APIClient.resolvedImageURL(first),
+              let image = try? await ImagePipeline.shared.image(for: url) else { return }
+        let ratio = PostPhotoAspect.clamped(width: image.size.width, height: image.size.height)
+        PostPhotoAspect.cached[first] = ratio
+        withAnimation(.easeOut(duration: 0.2)) { aspectRatio = ratio }
+    }
+}
+
+enum PostPhotoAspect {
+    static let portraitLimit: CGFloat = 4.0 / 5.0
+    static let landscapeLimit: CGFloat = 1.91
+    /// Shown until the first photo loads; most trail photos are landscape.
+    static let placeholder: CGFloat = 4.0 / 3.0
+    @MainActor static var cached: [String: CGFloat] = [:]
+
+    static func clamped(width: CGFloat, height: CGFloat) -> CGFloat {
+        guard width > 0, height > 0 else { return placeholder }
+        return min(max(width / height, portraitLimit), landscapeLimit)
     }
 }

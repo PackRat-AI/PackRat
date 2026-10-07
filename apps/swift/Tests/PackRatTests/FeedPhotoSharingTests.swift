@@ -175,3 +175,26 @@ struct PostShareLinkTests {
         #expect(post.author?.avatarUrl == "a-avatar.jpg")
     }
 }
+
+@Suite("Post photo shape")
+struct PostPhotoAspectTests {
+    @Test("a landscape photo keeps its own shape")
+    func landscape() {
+        #expect(PostPhotoAspect.clamped(width: 1600, height: 1067) == 1600.0 / 1067.0)
+    }
+
+    @Test("a tall portrait photo is held at 4:5")
+    func tallPortrait() {
+        #expect(PostPhotoAspect.clamped(width: 1080, height: 1920) == 4.0 / 5.0)
+    }
+
+    @Test("a panorama is held at 1.91:1")
+    func panorama() {
+        #expect(PostPhotoAspect.clamped(width: 4000, height: 1000) == 1.91)
+    }
+
+    @Test("a photo with no size falls back to the placeholder shape")
+    func unknownSize() {
+        #expect(PostPhotoAspect.clamped(width: 0, height: 0) == PostPhotoAspect.placeholder)
+    }
+}
