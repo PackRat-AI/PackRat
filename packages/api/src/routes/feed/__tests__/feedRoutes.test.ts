@@ -17,6 +17,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@packrat/api/services/feedService', () => mocks);
 
+const live = vi.hoisted(() => ({ connectToPostLive: vi.fn() }));
+vi.mock('@packrat/api/services/feedLive', () => live);
+
 // Authenticate every request as `viewer-1` without standing up Better Auth.
 vi.mock('@packrat/api/middleware/auth', async () => {
   const { Elysia } = await import('elysia');
@@ -32,10 +35,17 @@ const { adminFeedModerationRoutes } = await import('@packrat/api/routes/admin/fe
 
 const PUBLIC_ID = '00000000-0000-4000-8000-000000000001';
 
-function request(path: string, init: { method?: string; body?: unknown } = {}) {
+function request(
+  path: string,
+  init: { method?: string; body?: unknown; headers?: Record<string, string> } = {},
+) {
   return new Request(`http://localhost${path}`, {
     method: init.method ?? 'GET',
-    headers: { 'content-type': 'application/json', authorization: 'Bearer test' },
+    headers: {
+      'content-type': 'application/json',
+      authorization: 'Bearer test',
+      ...init.headers,
+    },
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
   });
 }
@@ -123,6 +133,56 @@ describe('feed routes', () => {
     expect(found.status).toBe(200);
     expect(await found.json()).toEqual(post);
     expect(missing.status).toBe(404);
+  });
+});
+
+describe('live comments route', () => {
+  const upgrade = { headers: { upgrade: 'websocket' } };
+
+  it('rejects a plain GET with 426 before touching the post', async () => {
+    const res = await feedRoutes.handle(request('/feed/5/live'));
+
+    expect(res.status).toBe(426);
+    expect(mocks.getPost).not.toHaveBeenCalled();
+    expect(live.connectToPostLive).not.toHaveBeenCalled();
+  });
+
+  it('refuses a post the viewer cannot see, so blocks and moderation hold', async () => {
+    mocks.getPost.mockResolvedValue({ ok: false, status: 404, error: 'Post not found' });
+
+    const res = await feedRoutes.handle(request('/feed/5/live', upgrade));
+
+    expect(res.status).toBe(404);
+    expect(mocks.getPost).toHaveBeenCalledWith({ viewerId: 'viewer-1', postId: 5 });
+    expect(live.connectToPostLive).not.toHaveBeenCalled();
+  });
+
+  it('opens the live room for a visible post', async () => {
+    mocks.getPost.mockResolvedValue({ ok: true, value: { id: 5 } });
+    live.connectToPostLive.mockResolvedValue({ ok: true });
+
+    const res = await feedRoutes.handle(request('/feed/5/live', upgrade));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ connected: true });
+    expect(live.connectToPostLive).toHaveBeenCalledWith({
+      postId: 5,
+      request: expect.any(Request),
+    });
+  });
+
+  it('passes a failed room connection through as its status', async () => {
+    mocks.getPost.mockResolvedValue({ ok: true, value: { id: 5 } });
+    live.connectToPostLive.mockResolvedValue({
+      ok: false,
+      status: 503,
+      error: 'Live updates unavailable',
+    });
+
+    const res = await feedRoutes.handle(request('/feed/5/live', upgrade));
+
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: 'Live updates unavailable' });
   });
 });
 

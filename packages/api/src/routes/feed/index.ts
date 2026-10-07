@@ -1,4 +1,5 @@
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { connectToPostLive } from '@packrat/api/services/feedLive';
 import * as feed from '@packrat/api/services/feedService';
 import {
   BlockedUsersResponseSchema,
@@ -304,6 +305,26 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       params: FeedPostParamsSchema,
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Remove my tag from a post', security },
+    },
+  )
+
+  // Live comment updates: a WebSocket that says "refetch" whenever this post's comments change
+  .get(
+    '/:postId/live',
+    async ({ params, request, user }) => {
+      if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') {
+        return status(426, { error: 'Expected a WebSocket upgrade' });
+      }
+      const post = await feed.getPost({ viewerId: user.userId, postId: params.postId });
+      if (!post.ok) return status(post.status, { error: post.error });
+      const live = await connectToPostLive({ postId: params.postId, request });
+      // The Worker entry swaps this reply for the parked 101 upgrade.
+      return live.ok ? { connected: true } : status(live.status, { error: live.error });
+    },
+    {
+      params: FeedPostParamsSchema,
+      isAuthenticated: true,
+      detail: { tags: ['Feed'], summary: 'Live comment updates for a post (WebSocket)', security },
     },
   )
 

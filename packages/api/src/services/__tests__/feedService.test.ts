@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   queries: [] as Array<{ label: string; calls: Array<{ method: string; args: unknown[] }> }>,
   results: new Map<string, unknown[]>(),
   notifyFeedRecipients: vi.fn(async () => {}),
+  publishCommentsChanged: vi.fn(async () => {}),
 }));
 
 function chain(query: Query | null): object {
@@ -61,6 +62,10 @@ vi.mock('@packrat/api/db', () => {
 vi.mock('@packrat/api/services/push/notifyFeed', () => ({
   notifyFeedRecipients: mocks.notifyFeedRecipients,
   runAfterResponse: async (task: () => Promise<void>) => task(),
+}));
+
+vi.mock('@packrat/api/services/feedLive', () => ({
+  publishCommentsChanged: mocks.publishCommentsChanged,
 }));
 
 vi.mock('@packrat/api/utils/env-validation', () => ({
@@ -592,6 +597,15 @@ describe('createComment', () => {
 
     expect(result).toMatchObject({ status: 404, error: 'Comment not found' });
     expect(queriesFor('feed.createComment')).toHaveLength(0);
+    expect(mocks.publishCommentsChanged).not.toHaveBeenCalled();
+  });
+
+  it('tells live viewers of the post that its comments changed', async () => {
+    visiblePost();
+
+    await feed.createComment(base);
+
+    expect(mocks.publishCommentsChanged).toHaveBeenCalledWith({ postId: 1 });
   });
 
   it('returns 400 when the insert returns no row', async () => {
@@ -739,6 +753,7 @@ describe('updateComment', () => {
 
     expect(await feed.updateComment(args)).toMatchObject({ status: 403 });
     expect(queriesFor('feed.updateComment')).toHaveLength(0);
+    expect(mocks.publishCommentsChanged).not.toHaveBeenCalled();
   });
 
   it('stores trimmed content and stamps editedAt', async () => {
@@ -752,6 +767,7 @@ describe('updateComment', () => {
       ok: true,
       value: { id: 10, content: 'edited', editedAt: (set.editedAt as Date).toISOString() },
     });
+    expect(mocks.publishCommentsChanged).toHaveBeenCalledWith({ postId: 1 });
   });
 });
 
@@ -768,6 +784,7 @@ describe('deleteComment', () => {
     expect(await feed.deleteComment(args)).toEqual({ ok: true, value: { success: true } });
     expect(queriesFor('feed.getPostOwner')).toHaveLength(0);
     expect(argOf('feed.softDeleteComment', 'set')).toEqual({ deletedAt: expect.any(Date) });
+    expect(mocks.publishCommentsChanged).toHaveBeenCalledWith({ postId: 1 });
   });
 
   it("lets the post author delete anyone's comment on their post", async () => {
@@ -787,6 +804,7 @@ describe('deleteComment', () => {
 
     expect(await feed.deleteComment(args)).toEqual({ ok: false, status: 403, error: 'Forbidden' });
     expect(queriesFor('feed.softDeleteComment')).toHaveLength(0);
+    expect(mocks.publishCommentsChanged).not.toHaveBeenCalled();
   });
 });
 
@@ -813,6 +831,7 @@ describe('toggleCommentLike', () => {
       value: { liked: true, likeCount: 1 },
     });
     expect(argOf('feed.likeComment', 'values')).toEqual({ commentId: 10, userId: VIEWER });
+    expect(mocks.publishCommentsChanged).toHaveBeenCalledWith({ postId: 1 });
   });
 
   it('unlikes a comment the viewer had liked', async () => {
@@ -1179,6 +1198,23 @@ describe('resolveReports', () => {
     expect(result).toEqual({ ok: true, value: { success: true } });
     expect(argOf(label, 'set')).toEqual({ removedAt: expect.any(Date) });
     expect(argOf('feed.admin.resolveReports', 'set')).toMatchObject({ status: 'removed' });
+  });
+
+  it('tells live viewers when a removed comment leaves their post', async () => {
+    respond('feed.admin.removeComment', [{ id: 9, postId: 4 }]);
+
+    await feed.resolveReports({ targetType: 'comment', targetId: 9, action: 'remove' });
+
+    expect(mocks.publishCommentsChanged).toHaveBeenCalledWith({ postId: 4 });
+  });
+
+  it('sends no live signal for a removed post or a dismissal', async () => {
+    respond('feed.admin.removePost', [{ id: 1 }]);
+
+    await feed.resolveReports({ targetType: 'post', targetId: 1, action: 'remove' });
+    await feed.resolveReports({ targetType: 'comment', targetId: 9, action: 'dismiss' });
+
+    expect(mocks.publishCommentsChanged).not.toHaveBeenCalled();
   });
 
   it('returns 404 when removing an item that does not exist', async () => {

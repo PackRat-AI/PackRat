@@ -1,4 +1,5 @@
 import { createDb } from '@packrat/api/db';
+import { publishCommentsChanged } from '@packrat/api/services/feedLive';
 import { notifyFeedRecipients, runAfterResponse } from '@packrat/api/services/push/notifyFeed';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import {
@@ -808,6 +809,7 @@ export async function createComment({
     .values({ postId, userId, content: content.trim(), parentCommentId: threadParentId })
     .returning();
   if (!created) return fail(400, 'Failed to create comment');
+  await signalCommentsChanged(postId);
 
   const taggedIds = await applyTags({ db, postId, taggerId: userId, candidateIds: taggedUserIds });
   await notifyTagged({ db, postId, taggerId: userId, taggedIds });
@@ -875,6 +877,11 @@ export async function createComment({
   });
 }
 
+/** Tells anyone watching the post's comments to refetch them. */
+async function signalCommentsChanged(postId: number): Promise<void> {
+  await runAfterResponse(() => publishCommentsChanged({ postId }));
+}
+
 async function findLiveComment({
   db,
   postId,
@@ -917,6 +924,7 @@ export async function updateComment({
     .update(postComments)
     .set({ content: content.trim(), editedAt: now, updatedAt: now })
     .where(eq(postComments.id, commentId));
+  await signalCommentsChanged(postId);
 
   const taggedIds = await applyTags({ db, postId, taggerId: userId, candidateIds: taggedUserIds });
   await notifyTagged({ db, postId, taggerId: userId, taggedIds });
@@ -953,6 +961,7 @@ export async function deleteComment({
     .update(postComments)
     .set({ deletedAt: new Date() })
     .where(eq(postComments.id, commentId));
+  await signalCommentsChanged(postId);
   return ok({ success: true });
 }
 
@@ -989,6 +998,7 @@ export async function toggleCommentLike({
     .select({ cnt: count() })
     .from(commentLikes)
     .where(eq(commentLikes.commentId, commentId));
+  await signalCommentsChanged(postId);
   return ok({ liked: removed.length === 0, likeCount: likeCount?.cnt ?? 0 });
 }
 
@@ -1405,7 +1415,11 @@ export async function resolveReports({
             .set({ removedAt: now })
             .where(eq(postComments.id, targetId))
             .returning();
-    if (updated.length === 0) return fail(404, 'Not found');
+    const [removed] = updated;
+    if (!removed) return fail(404, 'Not found');
+    if (targetType === 'comment' && 'postId' in removed) {
+      await signalCommentsChanged(removed.postId);
+    }
   }
 
   await db
