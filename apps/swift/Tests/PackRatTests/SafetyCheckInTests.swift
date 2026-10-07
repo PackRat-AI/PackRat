@@ -180,6 +180,9 @@ struct SafetyCheckInStateTests {
         #expect(plan.map(\.fireAt) == [now.addingTimeInterval(2 * 3600), now.addingTimeInterval(5 * 3600)])
         #expect(plan[1].body.hasPrefix("Mom has been told you're overdue on Enchantments."))
 
+        // A tap opens the trip through the same route trip reminders use.
+        #expect(SafetyCheckInNotifications.tripIdKey == TripReminderScheduler.tripIdKey)
+
         let late = checkIn(expected: now.addingTimeInterval(30 * 60))
         #expect(SafetyCheckInNotifications.plan(for: late, now: now).map(\.id) == ["safety-overdue-c1"])
     }

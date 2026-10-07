@@ -6,6 +6,8 @@ import UserNotifications
 /// expected return, and when the overdue alert goes to the contacts.
 enum SafetyCheckInNotifications {
     static let reminderLeadTime: TimeInterval = 60 * 60
+    /// The key `TripReminderScheduler` uses (iOS-only), so a tap opens the trip.
+    static let tripIdKey = "tripId"
 
     static func reminderId(_ checkInId: String) -> String { "safety-reminder-\(checkInId)" }
     static func overdueId(_ checkInId: String) -> String { "safety-overdue-\(checkInId)" }
@@ -54,8 +56,7 @@ enum SafetyCheckInNotifications {
             content.title = planned.title
             content.body = planned.body
             content.sound = .default
-            // Same key the trip reminders use, so a tap opens the trip.
-            content.userInfo = [TripReminderScheduler.tripIdKey: checkIn.tripId]
+            content.userInfo = [tripIdKey: checkIn.tripId]
             let components = Calendar.current.dateComponents(
                 [.year, .month, .day, .hour, .minute, .second], from: planned.fireAt
             )
