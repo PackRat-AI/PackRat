@@ -41,7 +41,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
   })
   .use(authPlugin)
 
-  // Public share page — no auth. Only live posts by non-suspended authors.
+  // public-route: the shared-post web page; returns only live posts by non-suspended authors
   .get(
     '/public/:publicId',
     async ({ params }) => {
