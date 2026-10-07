@@ -1258,39 +1258,36 @@ export async function listPendingReports(): Promise<AdminFeedReport[]> {
   const postIds = [...new Set(reports.flatMap((r) => (r.postId ? [r.postId] : [])))];
   const commentIds = [...new Set(reports.flatMap((r) => (r.commentId ? [r.commentId] : [])))];
 
+  // inArray on an empty list compiles to `false`, so empty sides return no rows.
   const [postRows, commentRows] = await Promise.all([
-    postIds.length
-      ? db
-          .tag('feed.admin.getReportedPosts')
-          .select({
-            id: posts.id,
-            userId: posts.userId,
-            caption: posts.caption,
-            images: posts.images,
-            firstName: userFirstName,
-            lastName: users.lastName,
-            avatarUrl: users.avatarUrl,
-          })
-          .from(posts)
-          .innerJoin(users, eq(posts.userId, users.id))
-          .where(inArray(posts.id, postIds))
-      : [],
-    commentIds.length
-      ? db
-          .tag('feed.admin.getReportedComments')
-          .select({
-            id: postComments.id,
-            postId: postComments.postId,
-            userId: postComments.userId,
-            content: postComments.content,
-            firstName: userFirstName,
-            lastName: users.lastName,
-            avatarUrl: users.avatarUrl,
-          })
-          .from(postComments)
-          .innerJoin(users, eq(postComments.userId, users.id))
-          .where(inArray(postComments.id, commentIds))
-      : [],
+    db
+      .tag('feed.admin.getReportedPosts')
+      .select({
+        id: posts.id,
+        userId: posts.userId,
+        caption: posts.caption,
+        images: posts.images,
+        firstName: userFirstName,
+        lastName: users.lastName,
+        avatarUrl: users.avatarUrl,
+      })
+      .from(posts)
+      .innerJoin(users, eq(posts.userId, users.id))
+      .where(inArray(posts.id, postIds)),
+    db
+      .tag('feed.admin.getReportedComments')
+      .select({
+        id: postComments.id,
+        postId: postComments.postId,
+        userId: postComments.userId,
+        content: postComments.content,
+        firstName: userFirstName,
+        lastName: users.lastName,
+        avatarUrl: users.avatarUrl,
+      })
+      .from(postComments)
+      .innerJoin(users, eq(postComments.userId, users.id))
+      .where(inArray(postComments.id, commentIds)),
   ]);
 
   const authorIds = [...postRows.map((p) => p.userId), ...commentRows.map((c) => c.userId)];

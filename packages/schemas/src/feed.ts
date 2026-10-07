@@ -94,7 +94,7 @@ export const SaveToggleResponseSchema = z.object({ saved: z.boolean() });
 
 export const FeedReportReasonSchema = z.enum(['spam', 'harassment', 'inappropriate']);
 
-export const CreateReportRequestSchema = z
+export const CreateFeedReportRequestSchema = z
   .object({
     postId: z.number().int().optional(),
     commentId: z.number().int().optional(),

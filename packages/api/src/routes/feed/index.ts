@@ -3,8 +3,8 @@ import * as feed from '@packrat/api/services/feedService';
 import {
   BlockedUsersResponseSchema,
   CreateCommentRequestSchema,
+  CreateFeedReportRequestSchema,
   CreatePostRequestSchema,
-  CreateReportRequestSchema,
   FeedResponseSchema,
   MentionSuggestionsResponseSchema,
   PublicPostSchema,
@@ -200,7 +200,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         }),
       ),
     {
-      body: CreateReportRequestSchema,
+      body: CreateFeedReportRequestSchema,
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Report a post or comment', security },
     },
