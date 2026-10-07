@@ -2,6 +2,7 @@ import Foundation
 import Testing
 @testable import PackRat
 
+#if os(iOS)
 @Suite("Emergency contact email")
 struct EmergencyContactEmailTests {
     @Test("plausible addresses pass")
@@ -29,6 +30,7 @@ struct EmergencyContactEmailTests {
         #expect(withEmail.reachableAt == "sam@example.com")
     }
 }
+#endif
 
 @Suite("GPXRouteParser")
 struct GPXRouteParserTests {
@@ -186,13 +188,16 @@ struct SafetyCheckInStateTests {
         #expect(plan.map(\.fireAt) == [now.addingTimeInterval(2 * 3600), now.addingTimeInterval(5 * 3600)])
         #expect(plan[1].body.hasPrefix("Mom has been told you're overdue on Enchantments."))
 
+        #if os(iOS)
         // A tap opens the trip through the same route trip reminders use.
         #expect(SafetyCheckInNotifications.tripIdKey == TripReminderScheduler.tripIdKey)
+        #endif
 
         let late = checkIn(expected: now.addingTimeInterval(30 * 60))
         #expect(SafetyCheckInNotifications.plan(for: late, now: now).map(\.id) == ["safety-overdue-c1"])
     }
 
+    #if os(iOS)
     @Test("countdown reads in days, hours or minutes")
     func countdown() {
         let now = Date(timeIntervalSince1970: 0)
@@ -201,6 +206,7 @@ struct SafetyCheckInStateTests {
         #expect(SafetyCheckInCard.countdown(to: now.addingTimeInterval(5 * 3600 + 12 * 60), from: now) == "5h 12m")
         #expect(SafetyCheckInCard.countdown(to: now.addingTimeInterval(26 * 3600), from: now) == "1d 2h")
     }
+    #endif
 
     @Test("only signal problems are retried; refusals are dropped so the queue moves")
     func retryable() {
