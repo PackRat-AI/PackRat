@@ -91,7 +91,7 @@ describe('renderPayloadScript', () => {
       post: { ...post, caption: '</script><b>' },
     });
     expect(html).not.toContain('</script><b>');
-    const json = html.replace(/^<script[^>]*>/, '').replace(/<\/script>$/, '');
+    const json = html.replace(/^<script[^>]*>/i, '').replace(/<\/script>$/, '');
     expect(JSON.parse(json).post.caption).toBe('</script><b>');
   });
 });
