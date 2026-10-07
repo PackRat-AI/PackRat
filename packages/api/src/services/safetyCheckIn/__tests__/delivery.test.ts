@@ -11,9 +11,22 @@ vi.mock('@packrat/api/utils/email', () => ({ sendEmail: mocks.sendEmail }));
 vi.mock('@packrat/api/utils/env-validation', () => ({ getEnv: mocks.getEnv }));
 vi.mock('@packrat/api/utils/sentry', () => ({ captureApiException: mocks.captureApiException }));
 
-import { deliverToContact, deliverToContacts, renderEmailHtml } from '../delivery';
+import { deliverToContact, deliverToContacts, renderEmailText } from '../delivery';
+import { renderSafetyEmail } from '../emailTemplate';
+import type { SafetyMessage } from '../messages';
 
-const message = { subject: 'Subject', text: 'Hi <you> & co. See https://x.test/a/b.' };
+const message: SafetyMessage = {
+  subject: 'Subject',
+  text: 'Hi <you> & co. See https://x.test/a/b.',
+  email: {
+    tone: 'danger',
+    eyebrow: 'Overdue',
+    heading: 'Alex is <overdue>',
+    paragraphs: [`Try "them" & 'call'.`],
+    details: [{ label: 'Trip', value: 'Enchantments' }],
+    cta: { label: 'Open trip page', url: 'https://x.test/a?b=1&c=2' },
+  },
+};
 const twilio = {
   TWILIO_ACCOUNT_SID: 'AC123',
   TWILIO_AUTH_TOKEN: 'secret',
@@ -33,16 +46,40 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('renderEmailHtml', () => {
-  it('escapes the text and links URLs without trailing punctuation', () => {
-    const html = renderEmailHtml(message);
-    expect(html).toContain('Hi &lt;you&gt; &amp; co.');
-    expect(html).toContain('<a href="https://x.test/a/b">https://x.test/a/b</a>.');
+describe('renderSafetyEmail', () => {
+  it('escapes every piece of user content', () => {
+    const html = renderSafetyEmail(message);
+    expect(html).toContain('Alex is &lt;overdue&gt;');
+    expect(html).toContain('Try &quot;them&quot; &amp; &#39;call&#39;.');
+    expect(html).toContain('href="https://x.test/a?b=1&amp;c=2"');
+    expect(html).not.toContain('<overdue>');
   });
 
-  it('escapes quotes', () => {
-    expect(renderEmailHtml({ subject: 's', text: `"a" 'b'` })).toContain(
-      '&quot;a&quot; &#39;b&#39;',
+  it('uses the tone colour for the accent and button, and lists details', () => {
+    const html = renderSafetyEmail(message);
+    expect(html).toContain('border-top:4px solid #c62828');
+    expect(html).toContain('background:#c62828');
+    expect(html).toContain('>Trip</td>');
+    expect(html).toContain('>Enchantments</td>');
+    expect(html).toContain('>Open trip page</a>');
+  });
+
+  it('leaves out the details table and button when there are none', () => {
+    const html = renderSafetyEmail({
+      ...message,
+      email: { ...message.email, details: [], cta: undefined },
+    });
+    expect(html).not.toContain(
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid',
+    );
+    expect(html).not.toContain('Or open this link');
+  });
+});
+
+describe('renderEmailText', () => {
+  it('is the message plus why they are receiving it', () => {
+    expect(renderEmailText(message)).toBe(
+      `${message.text}\n\nYou're receiving this because someone added you as their emergency contact in PackRat.`,
     );
   });
 });
@@ -70,7 +107,8 @@ describe('deliverToContact', () => {
     expect(mocks.sendEmail).toHaveBeenCalledWith({
       to: 'mom@example.com',
       subject: 'Subject',
-      html: renderEmailHtml(message),
+      html: renderSafetyEmail(message),
+      text: renderEmailText(message),
     });
   });
 

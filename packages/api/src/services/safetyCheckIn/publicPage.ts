@@ -127,7 +127,7 @@ export function renderCheckInPage(view: PublicCheckInView, now = new Date()): st
     ? `<script>window.addEventListener('load', function () {
   var d = ${inlineJson(mapData)};
   var map = L.map('map', { scrollWheelZoom: false });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
   var bounds = [];
   if (d.route.length) { L.polyline(d.route, { color: '#888', dashArray: '6 6', weight: 3 }).addTo(map); bounds = bounds.concat(d.route); }
   if (d.path.length) { L.polyline(d.path, { color: '#2f6b4f', weight: 4 }).addTo(map); bounds = bounds.concat(d.path); }

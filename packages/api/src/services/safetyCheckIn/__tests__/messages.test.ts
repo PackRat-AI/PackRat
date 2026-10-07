@@ -175,13 +175,15 @@ describe('message builders', () => {
   });
 
   it('safeMessage differs after an overdue alert', () => {
-    expect(safeMessage({ userName: 'A', tripName: 'T', afterOverdueAlert: false })).toEqual({
+    expect(safeMessage({ userName: 'A', tripName: 'T', afterOverdueAlert: false })).toMatchObject({
       subject: 'A is back safe',
       text: 'A is back safe from T. Thanks for keeping an eye out.',
+      email: { tone: 'success', heading: 'A is back safe' },
     });
-    expect(safeMessage({ userName: 'A', tripName: 'T', afterOverdueAlert: true })).toEqual({
+    expect(safeMessage({ userName: 'A', tripName: 'T', afterOverdueAlert: true })).toMatchObject({
       subject: 'Update: A is safe',
       text: 'Update: A has marked themselves safe after T. No further action is needed.',
+      email: { tone: 'success', heading: 'A is safe' },
     });
   });
 

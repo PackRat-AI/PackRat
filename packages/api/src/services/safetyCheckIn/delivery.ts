@@ -1,6 +1,7 @@
 import { sendEmail } from '@packrat/api/utils/email';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
+import { renderSafetyEmail } from './emailTemplate';
 import type { SafetyMessage } from './messages';
 
 export interface ContactAddress {
@@ -14,26 +15,11 @@ export interface DeliveryResult {
   email: 'sent' | 'skipped' | 'failed';
 }
 
-const escapeHtml = (value: string) =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-
-/** Email body: the SMS text with its link made clickable. */
-export function renderEmailHtml(message: SafetyMessage): string {
-  const linked = escapeHtml(message.text).replace(
-    /(https?:\/\/[^\s<]+[^\s<.,)])/g,
-    '<a href="$1">$1</a>',
-  );
+/** The plain-text part: the message, then why they're receiving it. */
+export function renderEmailText(message: SafetyMessage): string {
   return (
-    '<div style="font-family: -apple-system, Arial, sans-serif; max-width: 560px; margin: 0 auto; ' +
-    'font-size: 16px; line-height: 1.5; color: #1a1a1a;">' +
-    `<p>${linked}</p>` +
-    '<p style="color: #6b6b6b; font-size: 13px;">You are receiving this because someone ' +
-    'added you as their emergency contact in PackRat.</p></div>'
+    `${message.text}\n\n` +
+    "You're receiving this because someone added you as their emergency contact in PackRat."
   );
 }
 
@@ -102,7 +88,8 @@ export async function deliverToContact({
       await sendEmail({
         to: contact.email,
         subject: message.subject,
-        html: renderEmailHtml(message),
+        html: renderSafetyEmail(message),
+        text: renderEmailText(message),
       });
       result.email = 'sent';
     } catch (error) {

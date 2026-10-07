@@ -289,7 +289,7 @@ describe('public contacts page', () => {
     expect(await res.text()).toBe('<html>trip</html>');
     expect(res.headers.get('content-type')).toBe('text/html; charset=utf-8');
     expect(res.headers.get('cache-control')).toBe('no-store');
-    expect(res.headers.get('referrer-policy')).toBe('no-referrer');
+    expect(res.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
     expect(mocks.getAuth).toHaveBeenCalledTimes(0);
   });
 

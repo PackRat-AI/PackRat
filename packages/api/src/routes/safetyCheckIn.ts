@@ -246,7 +246,9 @@ export const safetyCheckInPublicRoutes = new Elysia({ prefix: '/safety' }).get(
   async ({ params, set }) => {
     set.headers['content-type'] = 'text/html; charset=utf-8';
     set.headers['cache-control'] = 'no-store';
-    set.headers['referrer-policy'] = 'no-referrer';
+    // Origin only: map tile servers require a referrer, and sending just the
+    // origin keeps the share token out of third-party logs.
+    set.headers['referrer-policy'] = 'strict-origin-when-cross-origin';
     const view = await getPublicView(params.token);
     if (!view) {
       set.status = 404;
