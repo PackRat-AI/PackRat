@@ -6,6 +6,10 @@ import Foundation
 /// `packages/schemas/src/tripStats.ts`. `target` is a count, or metres for
 /// distance and elevation, whatever the user's display unit. Progress is never
 /// stored: `TripGoalProgress` works it out from the trips.
+///
+/// Annual and custom goals count what falls inside their window. The list
+/// goals (a long trail, a list of peaks, the National Parks) count every trip
+/// ever, and may carry a finish date to pace against.
 struct TripGoal: Codable, Identifiable, Equatable, Sendable {
     let id: String
     var kind: Kind
@@ -13,18 +17,58 @@ struct TripGoal: Codable, Identifiable, Equatable, Sendable {
     var target: Double
     /// Annual goals only.
     var year: Int?
-    /// Custom goals only.
+    /// Custom goals, and an optional name for peak and park lists.
     var name: String?
-    /// Custom goals only. A calendar day sent as UTC midnight — see `TripGoal.dayString`.
+    /// A calendar day sent as UTC midnight — see `TripGoal.dayString`. Custom
+    /// goals need both; list goals start when made and may set a finish date.
     var startDate: String?
     var endDate: String?
+    /// Long-trail goals only: a `LongTrail.code`.
+    var trailCode: String?
+    /// Peak-list goals only.
+    var peaks: [TripSummit]?
+    /// Park-list goals only; nil means every park.
+    var parkCodes: [String]?
     var deleted: Bool = false
     var localCreatedAt: String?
     var localUpdatedAt: String?
 
     enum Kind: String, Codable, CaseIterable, Identifiable, Sendable {
-        case annual, custom
+        case annual, custom, longTrail, peakList, parkList
         var id: String { rawValue }
+
+        /// Counts every trip ever rather than a window's worth.
+        var isList: Bool { self == .longTrail || self == .peakList || self == .parkList }
+
+        var label: String {
+            switch self {
+            case .annual: return "This Year"
+            case .custom: return "Custom Dates"
+            case .longTrail: return "Long Trail"
+            case .peakList: return "Peak List"
+            case .parkList: return "National Parks"
+            }
+        }
+
+        var symbol: String {
+            switch self {
+            case .annual: return "calendar"
+            case .custom: return "calendar.badge.clock"
+            case .longTrail: return "signpost.right.and.left.fill"
+            case .peakList: return "flag.2.crossed.fill"
+            case .parkList: return "tree.fill"
+            }
+        }
+
+        /// What a list goal measures; annual and custom goals choose.
+        var fixedMetric: Metric? {
+            switch self {
+            case .annual, .custom: return nil
+            case .longTrail: return .distance
+            case .peakList: return .summits
+            case .parkList: return .parks
+            }
+        }
     }
 
     enum Metric: String, Codable, CaseIterable, Identifiable, Sendable {
@@ -60,10 +104,16 @@ struct TripGoal: Codable, Identifiable, Equatable, Sendable {
         var isMeasured: Bool { self == .distance || self == .elevation }
     }
 
-    /// A custom goal's own name, else what it measures.
+    /// A goal's own name, else what it measures.
     var title: String {
-        if kind == .custom, let name, !name.trimmingCharacters(in: .whitespaces).isEmpty { return name }
-        return metric.label
+        let named = name.flatMap { $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 }
+        switch kind {
+        case .annual: return metric.label
+        case .custom: return named ?? metric.label
+        case .longTrail: return LongTrails.trail(code: trailCode)?.name ?? "Long Trail"
+        case .peakList: return named ?? "Peak List"
+        case .parkList: return named ?? (parkCodes == nil ? "Every National Park" : "National Parks")
+        }
     }
 
     // MARK: Calendar days
@@ -103,6 +153,9 @@ struct TripGoalRequest: Codable, Sendable {
     let name: String?
     let startDate: String?
     let endDate: String?
+    let trailCode: String?
+    let peaks: [TripSummit]?
+    let parkCodes: [String]?
     let localCreatedAt: String
     let localUpdatedAt: String
 
@@ -112,9 +165,12 @@ struct TripGoalRequest: Codable, Sendable {
         self.metric = goal.metric
         self.target = goal.target
         self.year = goal.kind == .annual ? goal.year : nil
-        self.name = goal.kind == .custom ? goal.name : nil
-        self.startDate = goal.kind == .custom ? goal.startDate : nil
-        self.endDate = goal.kind == .custom ? goal.endDate : nil
+        self.name = goal.kind == .custom || goal.kind == .peakList || goal.kind == .parkList ? goal.name : nil
+        self.startDate = goal.kind == .annual ? nil : goal.startDate
+        self.endDate = goal.kind == .annual ? nil : goal.endDate
+        self.trailCode = goal.kind == .longTrail ? goal.trailCode : nil
+        self.peaks = goal.kind == .peakList ? goal.peaks : nil
+        self.parkCodes = goal.kind == .parkList ? goal.parkCodes : nil
         self.localCreatedAt = goal.localCreatedAt ?? now
         self.localUpdatedAt = now
     }

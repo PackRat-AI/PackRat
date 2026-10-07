@@ -18,6 +18,7 @@ struct TripStatsView: View {
 
     @State private var editingGoal: TripGoal?
     @State private var addingGoal = false
+    @State private var followingTrail = false
 
     private var stats: TripStats {
         TripStats(trips: appState.tripsVM.trips, packs: appState.packsVM.packs)
@@ -67,6 +68,16 @@ struct TripStatsView: View {
         .sheet(item: $editingGoal) { goal in
             GoalEditorView(goal: goal, finished: stats.finished, parksAndPeaks: parksAndPeaks(stats), unit: distanceUnit)
         }
+        .sheet(isPresented: $followingTrail) {
+            GoalEditorView(
+                goal: nil,
+                finished: stats.finished,
+                parksAndPeaks: parksAndPeaks(stats),
+                unit: distanceUnit,
+                initialKind: .longTrail,
+                initialTrailCode: LongTrails.all.first { appState.followGoal(forTrail: $0.code) == nil }?.code
+            )
+        }
         .task {
             if appState.tripsVM.trips.isEmpty { await appState.tripsVM.load(context: modelContext) }
             if appState.packsVM.packs.isEmpty { await appState.packsVM.load(context: modelContext) }
@@ -80,6 +91,7 @@ struct TripStatsView: View {
 
     private func content(_ stats: TripStats) -> some View {
         let record = parksAndPeaks(stats)
+        let trails = LongTrails.all.map { LongTrailProgress(trail: $0, finished: stats.finished) }
         return ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 TotalsGrid(totals: stats.totals, unit: distanceUnit)
@@ -89,7 +101,7 @@ struct TripStatsView: View {
                 }
 
                 GoalsCard(
-                    progress: appState.tripGoalsVM.goals.compactMap { TripGoalProgress(goal: $0, finished: stats.finished, parksAndPeaks: record) },
+                    progress: appState.tripGoalsVM.goals.compactMap { TripGoalProgress(goal: $0, finished: stats.finished, parksAndPeaks: record, longTrails: trails) },
                     unit: distanceUnit,
                     onAdd: { addingGoal = true },
                     onEdit: { editingGoal = $0 }
@@ -113,6 +125,7 @@ struct TripStatsView: View {
 
                 ParksCard(record: record, unit: distanceUnit)
                 PeaksCard(record: record, unit: distanceUnit)
+                LongTrailsCard(progress: trails, unit: distanceUnit) { _ in followingTrail = true }
 
                 if !stats.topGear.isEmpty {
                     TopGearCard(gear: stats.topGear)

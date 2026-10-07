@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TripSummitSchema } from './trips';
 import { datetimeString } from './utils';
 
 const nullableDateString = z.preprocess(
@@ -6,7 +7,7 @@ const nullableDateString = z.preprocess(
   z.string().nullable(),
 );
 
-export const TripGoalKindSchema = z.enum(['annual', 'custom']);
+export const TripGoalKindSchema = z.enum(['annual', 'custom', 'longTrail', 'peakList', 'parkList']);
 export const TripGoalMetricSchema = z.enum([
   'trips',
   'nights',
@@ -28,6 +29,9 @@ export const TripGoalSchema = z.object({
   name: z.string().nullable().optional(),
   startDate: nullableDateString.optional(),
   endDate: nullableDateString.optional(),
+  trailCode: z.string().nullable().optional(),
+  peaks: z.array(TripSummitSchema).nullable().optional(),
+  parkCodes: z.array(z.string()).nullable().optional(),
   deleted: z.boolean(),
   localCreatedAt: datetimeString.optional(),
   localUpdatedAt: datetimeString.optional(),
@@ -43,25 +47,44 @@ const goalFields = {
   name: z.string().trim().max(120).nullable().optional(),
   startDate: z.string().nullable().optional(),
   endDate: z.string().nullable().optional(),
+  trailCode: z.string().trim().min(1).max(16).nullable().optional(),
+  peaks: z.array(TripSummitSchema).max(500).nullable().optional(),
+  parkCodes: z.array(z.string().trim().min(1).max(16)).max(100).nullable().optional(),
 };
 
 /**
- * An annual goal names its year; a custom goal names its window. Checked here so
- * a goal the stats screen could never place is refused at the door.
+ * An annual goal names its year; a custom goal names its window. A list goal
+ * counts every trip ever, so its dates are optional, but it names what it
+ * lists: a long-trail goal its trail, a peak list at least one peak. Checked
+ * here so a goal the stats screen could never place is refused at the door.
  */
-function hasWindow(goal: {
+function isPlaceable(goal: {
   kind: string;
   year?: number | null;
   startDate?: string | null;
   endDate?: string | null;
+  trailCode?: string | null;
+  peaks?: unknown[] | null;
 }) {
-  if (goal.kind === 'annual') return goal.year != null;
-  if (!goal.startDate || !goal.endDate) return false;
-  return new Date(goal.startDate) <= new Date(goal.endDate);
+  const ordered =
+    !goal.startDate || !goal.endDate || new Date(goal.startDate) <= new Date(goal.endDate);
+  switch (goal.kind) {
+    case 'annual':
+      return goal.year != null;
+    case 'custom':
+      return !!goal.startDate && !!goal.endDate && ordered;
+    case 'longTrail':
+      return !!goal.trailCode && ordered;
+    case 'peakList':
+      return (goal.peaks?.length ?? 0) > 0 && ordered;
+    default:
+      return ordered;
+  }
 }
 
-const windowMessage =
-  'Annual goals need a year; custom goals need a start date before the end date';
+const placeableMessage =
+  'Annual goals need a year; custom goals need a start date before the end date; ' +
+  'long-trail goals need a trailCode; peak lists need at least one peak';
 
 export const CreateTripGoalBodySchema = z
   .object({
@@ -70,7 +93,7 @@ export const CreateTripGoalBodySchema = z
     localCreatedAt: z.string().datetime(),
     localUpdatedAt: z.string().datetime(),
   })
-  .refine(hasWindow, { message: windowMessage });
+  .refine(isPlaceable, { message: placeableMessage });
 
 /** Full replace: clients always send the whole goal, so the window check still holds. */
 export const UpdateTripGoalBodySchema = z
@@ -78,7 +101,7 @@ export const UpdateTripGoalBodySchema = z
     ...goalFields,
     localUpdatedAt: z.string().datetime().optional(),
   })
-  .refine(hasWindow, { message: windowMessage });
+  .refine(isPlaceable, { message: placeableMessage });
 
 /** `enabled` is null until the user answers the opt-in. */
 export const TripStatsSettingsSchema = z.object({

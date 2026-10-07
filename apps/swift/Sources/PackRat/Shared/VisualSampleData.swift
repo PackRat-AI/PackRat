@@ -793,6 +793,19 @@ enum VisualSampleData {
                 id: "visual-goal-past", kind: .custom, metric: .trips, target: 3, name: "Spring shakedown",
                 startDate: day(-220), endDate: day(-120), localCreatedAt: created
             ),
+            TripGoal(
+                id: "visual-goal-pct", kind: .longTrail, metric: .distance,
+                target: LongTrails.trail(code: "PCT")?.officialMeters ?? 4_264_762,
+                startDate: day(-90), endDate: "2030-09-30T00:00:00.000Z", trailCode: "PCT", localCreatedAt: created
+            ),
+            TripGoal(
+                id: "visual-goal-giants", kind: .peakList, metric: .summits, target: 3, name: "West Coast Giants",
+                startDate: day(-90), peaks: [
+                    TripSummit(name: "Mount Whitney", elevationMeters: 4_421, latitude: 36.5785, longitude: -118.2923, osmId: nil),
+                    TripSummit(name: "Mount Adams", elevationMeters: 3_743, latitude: 46.2024, longitude: -121.4909, osmId: nil),
+                    TripSummit(name: "Mount Hood", elevationMeters: 3_429, latitude: 45.3736, longitude: -121.6959, osmId: nil),
+                ], localCreatedAt: created
+            ),
         ]
     }
 
@@ -823,6 +836,7 @@ enum VisualSampleData {
             ("Grand Canyon Rim to Rim", "Grand Canyon, AZ", 36.057, -112.140, -380, 3, desertPackId),
             ("North Cascades Day Hike", "Marblemount, WA", 48.771, -121.298, -420, 0, nil),
             ("Torres del Paine W Trek", "Puerto Natales, Chile", -50.942, -73.406, -500, 4, alpinePackId),
+            ("PCT: Snoqualmie to Stevens Pass", "Snoqualmie Pass, WA", 47.425, -121.414, -70, 5, alpinePackId),
         ]
         // Logs for most trips, leaving two unlogged so the screen shows
         // figures that count only the trips holding them.
@@ -840,6 +854,7 @@ enum VisualSampleData {
                 TripSummit(name: "Sahale Mountain", elevationMeters: 2_630, latitude: 48.4784, longitude: -121.0482, osmId: nil),
             ]),
             nil,
+            trailSectionLog("PCT", fromLatitude: 47.39, toLatitude: 47.75, gain: 4_900),
         ]
         return samples.enumerated().map { index, sample in
             let start = Calendar.current.date(byAdding: .day, value: sample.4, to: Date())
@@ -860,6 +875,24 @@ enum VisualSampleData {
                 log: logs[index]
             )
         }
+    }
+
+    /// A section hike: the bundled long trail's own line between two
+    /// latitudes, so the Long Trails card has a stretch walked.
+    private static func trailSectionLog(_ code: String, fromLatitude: Double, toLatitude: Double, gain: Double) -> TripLog? {
+        guard let trail = LongTrails.trail(code: code) else { return nil }
+        let points = trail.stations
+            .filter { $0.coordinate.latitude >= fromLatitude && $0.coordinate.latitude <= toLatitude }
+            .map(\.coordinate)
+        guard points.count >= 2 else { return nil }
+        let metres = zip(points, points.dropFirst()).reduce(0) { $0 + LocalProjection.distance($1.0, $1.1) }
+        return TripLog(
+            activities: [.backpacking],
+            distanceMeters: metres,
+            elevationGainMeters: gain,
+            route: Polyline.encode(points),
+            source: .track
+        )
     }
 
     /// A wandering loop near the trip's location, long enough to draw.
