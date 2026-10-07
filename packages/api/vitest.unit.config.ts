@@ -51,6 +51,9 @@ export default defineConfig({
         'src/routes/**',
         // Infrastructure (no business logic)
         'src/containers/**',
+        // Durable Object socket plumbing needs workerd (WebSocketPair, 101 responses);
+        // exercised end to end against `wrangler dev`.
+        'src/durable-objects/**',
         // Index files (just exports, no business logic)
         'src/**/index.ts',
         // CLI stub for `bunx auth generate` — not production logic

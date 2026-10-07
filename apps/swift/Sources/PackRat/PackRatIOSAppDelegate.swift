@@ -49,6 +49,15 @@ final class PackRatIOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
         didReceive response: UNNotificationResponse
     ) async {
         let userInfo = response.notification.request.content.userInfo
+        // Feed tag, comment and reply notifications carry the post's id.
+        if let postId = (userInfo["postId"] as? Int) ?? (userInfo["postId"] as? String).flatMap(Int.init) {
+            NotificationCenter.default.post(
+                name: .feedPostNotificationTapped,
+                object: nil,
+                userInfo: ["postId": postId]
+            )
+            return
+        }
         if let tripId = userInfo[TripReminderScheduler.tripIdKey] as? String {
             NotificationCenter.default.post(
                 name: .tripReminderNotificationTapped,
@@ -69,6 +78,7 @@ final class PackRatIOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
 
 extension Notification.Name {
     static let weatherAlertNotificationTapped = Notification.Name("weatherAlertNotificationTapped")
+    static let feedPostNotificationTapped = Notification.Name("feedPostNotificationTapped")
     static let tripReminderNotificationTapped = Notification.Name("tripReminderNotificationTapped")
 }
 #endif

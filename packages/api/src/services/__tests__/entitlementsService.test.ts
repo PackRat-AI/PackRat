@@ -32,6 +32,7 @@ vi.mock('drizzle-orm', () => ({
   isNull: (col: unknown) => ({ isNull: col }),
   or: (...conds: unknown[]) => ({ or: conds }),
   relations: vi.fn(() => ({})),
+  sql: vi.fn(),
 }));
 
 import {

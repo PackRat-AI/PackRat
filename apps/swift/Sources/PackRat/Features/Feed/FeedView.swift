@@ -1,5 +1,4 @@
 import SwiftUI
-import NukeUI
 
 struct FeedView: View {
     let viewModel: FeedViewModel
@@ -16,30 +15,34 @@ struct FeedView: View {
                 )
             } else if viewModel.isLoading && viewModel.posts.isEmpty {
                 ProgressView("Loading feed…").frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.error {
+            } else if let error = viewModel.error, viewModel.posts.isEmpty {
                 ErrorView(error, retry: { await viewModel.load(refresh: true) })
             } else if viewModel.posts.isEmpty {
                 EmptyStateView(
                     "No Posts Yet",
-                    subtitle: "Be the first to share a trip or pack",
-                    systemImage: "newspaper",
+                    subtitle: "Share photos from the trail and tag the people you hiked with.",
+                    systemImage: "photo.on.rectangle.angled",
                     actionLabel: "Write a Post",
                     action: { showingCompose = true }
                 )
             } else {
-                feedList
+                PostList(viewModel: viewModel)
             }
         }
         .navigationTitle("Community Feed")
         .toolbar {
+            if authManager.isAuthenticated {
+                ToolbarItem(placement: overflowPlacement) {
+                    FeedLibraryMenu(feed: viewModel)
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button("New Post", systemImage: "square.and.pencil") {
                     showingCompose = true
                 }
-                .accessibilityIdentifier("feed_new_post_button")
                 .disabled(!authManager.isAuthenticated)
                 .keyboardShortcut("n", modifiers: .command)
-                .accessibilityIdentifier("new_post_button")
+                .accessibilityIdentifier("feed_new_post_button")
             }
         }
         .task { if authManager.isAuthenticated && viewModel.posts.isEmpty { await viewModel.load() } }
@@ -47,14 +50,29 @@ struct FeedView: View {
         .sheet(isPresented: $showingCompose) {
             ComposePostView(viewModel: viewModel)
         }
+        .feedAlerts(viewModel)
     }
 
-    private var feedList: some View {
+    private var overflowPlacement: ToolbarItemPlacement {
+        #if os(iOS)
+        .topBarTrailing
+        #else
+        .primaryAction
+        #endif
+    }
+}
+
+/// A scrolling column of post cards with infinite paging.
+struct PostList: View {
+    let viewModel: FeedViewModel
+
+    var body: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
                 ForEach(viewModel.posts) { post in
                     PostCard(post: post, viewModel: viewModel)
                         .padding(.horizontal)
+                        .frame(maxWidth: 640)
                 }
                 if viewModel.hasMore {
                     ProgressView()
@@ -62,117 +80,97 @@ struct FeedView: View {
                         .task { await viewModel.loadMore() }
                 }
             }
-            .padding(.bottom)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
         }
+        .accessibilityIdentifier("feed_post_list")
     }
 }
 
-struct PostCard: View {
-    let post: Post
-    let viewModel: FeedViewModel
-    @Environment(AuthManager.self) private var authManager
-    @State private var isLiked = false
-    @State private var showingComments = false
+/// Saved posts, posts I'm tagged in, and feed settings.
+private struct FeedLibraryMenu: View {
+    let feed: FeedViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            header
-            if let caption = post.caption, !caption.isEmpty {
-                Text(caption)
-                    .font(.body)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-            }
-            if !post.images.isEmpty {
-                imageGrid(post.images)
-            }
-            actionBar
-        }
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .sheet(isPresented: $showingComments) {
-            PostCommentsView(post: post, viewModel: viewModel)
-        }
-    }
-
-    private var header: some View {
-        HStack(spacing: 10) {
-            AvatarView(
-                url: nil,
-                fallbackText: post.author?.displayName ?? "?",
-                size: 38
-            )
-            VStack(alignment: .leading, spacing: 1) {
-                Text(post.author?.displayName ?? "Unknown")
-                    .font(.callout.bold())
-                Text(post.timeAgo)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            if post.userId == authManager.currentUser?.id {
-                Menu {
-                    Button("Delete", systemImage: "trash", role: .destructive) {
-                        Task { await viewModel.deletePost(post.id) }
-                    }
-                } label: {
-                    Image(systemName: "ellipsis").foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(14)
-    }
-
-    @ViewBuilder
-    private func imageGrid(_ images: [String]) -> some View {
-        let cols = min(images.count, 3)
-        let layout = Array(repeating: GridItem(.flexible(), spacing: 2), count: cols)
-        LazyVGrid(columns: layout, spacing: 2) {
-            ForEach(images.prefix(cols), id: \.self) { url in
-                RemoteImage(url: url, contentMode: .fill) {
-                    Rectangle().fill(.fill.secondary)
-                }
-                .frame(height: 180)
-                .clipped()
-            }
-        }
-    }
-
-    private var actionBar: some View {
-        HStack(spacing: 20) {
-            Button {
-                isLiked.toggle()
-                Task { await viewModel.toggleLike(post: post, isLiked: isLiked) }
+        Menu {
+            NavigationLink {
+                ScopedPostListView(scope: .saved, feed: feed)
             } label: {
-                Label("\(post.likeCount + (isLiked ? 1 : 0))", systemImage: isLiked ? "heart.fill" : "heart")
-                    .font(.callout)
-                    .foregroundStyle(isLiked ? .red : .secondary)
-                    .contentTransition(.numericText())
+                Label("Saved", systemImage: "bookmark")
             }
-            .buttonStyle(.plain)
-            .animation(.spring(response: 0.3), value: isLiked)
-            .accessibilityIdentifier("feed_like_button_\(post.id)")
+            .accessibilityIdentifier("feed_saved_link")
 
-            Button {
-                showingComments = true
+            NavigationLink {
+                ScopedPostListView(scope: .tagged, feed: feed)
             } label: {
-                Label("\(post.commentCount)", systemImage: "bubble.right")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                Label("Tagged in", systemImage: "person.crop.square")
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("feed_comments_button_\(post.id)")
+            .accessibilityIdentifier("feed_tagged_link")
 
-            Spacer()
+            Divider()
 
-            ShareLink(item: "Check out this post on PackRat!") {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+            NavigationLink {
+                FeedSettingsView()
+            } label: {
+                Label("Feed Settings", systemImage: "gearshape")
             }
-            .buttonStyle(.plain)
+            .accessibilityIdentifier("feed_settings_link")
+        } label: {
+            Label("More", systemImage: "ellipsis.circle")
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .accessibilityLabel("More")
+        .accessibilityIdentifier("feed_more_menu_button")
+    }
+}
+
+/// Saved posts or posts I'm tagged in. Changes made here are mirrored into
+/// the community feed.
+struct ScopedPostListView: View {
+    let scope: FeedScope
+    @State private var viewModel: FeedViewModel
+
+    init(scope: FeedScope, feed: FeedViewModel) {
+        self.scope = scope
+        let model = FeedViewModel(scope: scope)
+        model.linked = feed
+        _viewModel = State(initialValue: model)
+    }
+
+    private var title: String { scope == .saved ? "Saved" : "Tagged in" }
+
+    var body: some View {
+        Group {
+            if viewModel.isLoading && viewModel.posts.isEmpty {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let error = viewModel.error, viewModel.posts.isEmpty {
+                ErrorView(error, retry: { await viewModel.load(refresh: true) })
+            } else if viewModel.posts.isEmpty {
+                if scope == .saved {
+                    EmptyStateView(
+                        "Nothing Saved Yet",
+                        subtitle: "Tap the bookmark on any post to keep it here. Only you can see what you save.",
+                        systemImage: "bookmark",
+                        accessibilityIdentifier: "feed_saved_empty"
+                    )
+                } else {
+                    EmptyStateView(
+                        "No Tags Yet",
+                        subtitle: "When someone tags you in a post, it shows up here.",
+                        systemImage: "person.crop.square",
+                        accessibilityIdentifier: "feed_tagged_empty"
+                    )
+                }
+            } else {
+                PostList(viewModel: viewModel)
+            }
+        }
+        .navigationTitle(title)
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .task { if viewModel.posts.isEmpty { await viewModel.load() } }
+        .refreshable { await viewModel.load(refresh: true) }
+        .feedAlerts(viewModel)
+        .accessibilityIdentifier(scope == .saved ? "feed_saved_screen" : "feed_tagged_screen")
     }
 }

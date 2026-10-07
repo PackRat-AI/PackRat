@@ -133,6 +133,21 @@ describe('sendApnsPush', () => {
     expect(body).not.toHaveProperty('weatherLocationId');
   });
 
+  it('routes a feed notification by postId', async () => {
+    const { sendApnsPush } = await loadClient();
+
+    await sendApnsPush({
+      env,
+      deviceToken: 'device-1',
+      payload: { alert: { title: 'Maya tagged you', body: 'Tap to see the post.' }, postId: 7 },
+    });
+
+    const init = fetchMock.mock.calls[0]?.[1] as { body: string };
+    const body = JSON.parse(init.body);
+    expect(body.postId).toBe(7);
+    expect(body).not.toHaveProperty('tripId');
+  });
+
   it('passes an explicit sound and badge through instead of the default', async () => {
     const { sendApnsPush } = await loadClient();
 
