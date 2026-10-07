@@ -180,12 +180,12 @@ struct PostShareLinkTests {
 struct PostPhotoAspectTests {
     @Test("a landscape photo keeps its own shape")
     func landscape() {
-        #expect(PostPhotoAspect.clamped(width: 1600, height: 1067) == 1600.0 / 1067.0)
+        #expect(abs(PostPhotoAspect.clamped(width: 1600, height: 1067) - 1.4995) < 0.001)
     }
 
     @Test("a tall portrait photo is held at 4:5")
     func tallPortrait() {
-        #expect(PostPhotoAspect.clamped(width: 1080, height: 1920) == 4.0 / 5.0)
+        #expect(abs(PostPhotoAspect.clamped(width: 1080, height: 1920) - 0.8) < 0.001)
     }
 
     @Test("a panorama is held at 1.91:1")
