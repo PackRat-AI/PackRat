@@ -84,7 +84,13 @@ function statusFor(payload: SharedPostPayload): number {
   return 200;
 }
 
-export function rewriteShell(shell: Response, payload: SharedPostPayload): Response {
+export function rewriteShell({
+  shell,
+  payload,
+}: {
+  shell: Response;
+  payload: SharedPostPayload;
+}): Response {
   let rewriter = new HTMLRewriter();
   if (payload.status === 'ok') {
     const { post } = payload;
@@ -129,6 +135,6 @@ export default {
     const payload: SharedPostPayload = publicId
       ? await fetchPost({ env, publicId })
       : { status: 'not-found' };
-    return rewriteShell(shell, payload);
+    return rewriteShell({ shell, payload });
   },
 };

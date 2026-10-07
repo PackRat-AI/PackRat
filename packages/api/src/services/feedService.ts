@@ -54,7 +54,13 @@ export type ServiceResult<T> =
   | { ok: false; status: 400 | 403 | 404; error: string };
 
 const ok = <T>(value: T): ServiceResult<T> => ({ ok: true, value });
-const fail = (status: 400 | 403 | 404, error: string): ServiceResult<never> => ({
+const fail = ({
+  status,
+  error,
+}: {
+  status: 400 | 403 | 404;
+  error: string;
+}): ServiceResult<never> => ({
   ok: false,
   status,
   error,
@@ -366,7 +372,7 @@ async function authorName({ db, userId }: { db: Db; userId: string }): Promise<s
   return row ? displayName(row) : 'Someone';
 }
 
-function preview(text: string | null | undefined, max = 80): string {
+function preview({ text, max = 80 }: { text: string | null | undefined; max?: number }): string {
   const t = (text ?? '').trim();
   return t.length > max ? `${t.slice(0, max - 1)}…` : t;
 }
@@ -474,7 +480,7 @@ export async function getPost({
     )
     .limit(1);
   const [post] = await hydratePosts({ db, viewerId, rows });
-  return post ? ok(post) : fail(404, 'Post not found');
+  return post ? ok(post) : fail({ status: 404, error: 'Post not found' });
 }
 
 /** Resolves a shared link's public id to the post, for a signed-in viewer. */
@@ -492,12 +498,12 @@ export async function getPostByPublicId({
     .from(posts)
     .where(eq(posts.publicId, publicId))
     .limit(1);
-  if (!row) return fail(404, 'Post not found');
+  if (!row) return fail({ status: 404, error: 'Post not found' });
   return getPost({ viewerId, postId: row.id });
 }
 
 /** Image keys must be objects this user uploaded (`{userId}-…`, no path). */
-function ownsImageKeys(userId: string, images: string[]): boolean {
+function ownsImageKeys({ userId, images }: { userId: string; images: string[] }): boolean {
   return images.every((key) => key.startsWith(`${userId}-`) && !key.includes('/'));
 }
 
@@ -513,8 +519,10 @@ export async function createPost({
   taggedUserIds: string[] | undefined;
 }): Promise<ServiceResult<FeedPost>> {
   const db = createDb();
-  if (await isSuspended({ db, userId })) return fail(403, 'Posting is suspended for this account');
-  if (!ownsImageKeys(userId, images)) return fail(400, 'Images must be uploaded by the poster');
+  if (await isSuspended({ db, userId }))
+    return fail({ status: 403, error: 'Posting is suspended for this account' });
+  if (!ownsImageKeys({ userId, images }))
+    return fail({ status: 400, error: 'Images must be uploaded by the poster' });
 
   const trimmed = caption?.trim() || null;
   const [created] = await db
@@ -522,7 +530,7 @@ export async function createPost({
     .insert(posts)
     .values({ userId, caption: trimmed, images })
     .returning();
-  if (!created) return fail(400, 'Failed to create post');
+  if (!created) return fail({ status: 400, error: 'Failed to create post' });
 
   const taggedIds = await applyTags({
     db,
@@ -553,12 +561,12 @@ export async function updatePost({
     .from(posts)
     .where(and(eq(posts.id, postId), livePost()))
     .limit(1);
-  if (!post) return fail(404, 'Post not found');
-  if (post.userId !== userId) return fail(403, 'Forbidden');
+  if (!post) return fail({ status: 404, error: 'Post not found' });
+  if (post.userId !== userId) return fail({ status: 403, error: 'Forbidden' });
 
   const trimmed = caption?.trim() || null;
   if (!trimmed && (post.images ?? []).length === 0) {
-    return fail(400, 'A post needs at least one photo or a caption');
+    return fail({ status: 400, error: 'A post needs at least one photo or a caption' });
   }
 
   const now = new Date();
@@ -588,8 +596,8 @@ export async function deletePost({
     .from(posts)
     .where(and(eq(posts.id, postId), isNull(posts.deletedAt)))
     .limit(1);
-  if (!post) return fail(404, 'Post not found');
-  if (post.userId !== userId) return fail(403, 'Forbidden');
+  if (!post) return fail({ status: 404, error: 'Post not found' });
+  if (post.userId !== userId) return fail({ status: 403, error: 'Forbidden' });
 
   await db
     .tag('feed.softDeletePost')
@@ -608,7 +616,7 @@ export async function togglePostLike({
 }): Promise<ServiceResult<{ liked: boolean; likeCount: number }>> {
   const db = createDb();
   if (!(await findVisiblePost({ db, viewerId: userId, postId }))) {
-    return fail(404, 'Post not found');
+    return fail({ status: 404, error: 'Post not found' });
   }
 
   const removed = await db
@@ -644,7 +652,7 @@ export async function setPostSaved({
   const db = createDb();
   if (saved) {
     if (!(await findVisiblePost({ db, viewerId: userId, postId }))) {
-      return fail(404, 'Post not found');
+      return fail({ status: 404, error: 'Post not found' });
     }
     await db
       .tag('feed.savePost')
@@ -689,7 +697,8 @@ export async function listComments({
   limit: number;
 }) {
   const db = createDb();
-  if (!(await findVisiblePost({ db, viewerId, postId }))) return fail(404, 'Post not found');
+  if (!(await findVisiblePost({ db, viewerId, postId })))
+    return fail({ status: 404, error: 'Post not found' });
 
   const offset = (page - 1) * limit;
   const where = and(
@@ -777,10 +786,10 @@ export async function createComment({
 }): Promise<ServiceResult<FeedComment>> {
   const db = createDb();
   if (await isSuspended({ db, userId })) {
-    return fail(403, 'Commenting is suspended for this account');
+    return fail({ status: 403, error: 'Commenting is suspended for this account' });
   }
   const post = await findVisiblePost({ db, viewerId: userId, postId });
-  if (!post) return fail(404, 'Post not found');
+  if (!post) return fail({ status: 404, error: 'Post not found' });
 
   // Threads are one level deep: a reply to a reply joins the top-level thread.
   let threadParentId: number | null = null;
@@ -798,7 +807,7 @@ export async function createComment({
         and(eq(postComments.id, parentCommentId), eq(postComments.postId, postId), liveComment()),
       )
       .limit(1);
-    if (!parent) return fail(404, 'Comment not found');
+    if (!parent) return fail({ status: 404, error: 'Comment not found' });
     threadParentId = parent.parentCommentId ?? parent.id;
     replyToUserId = parent.userId;
   }
@@ -808,14 +817,14 @@ export async function createComment({
     .insert(postComments)
     .values({ postId, userId, content: content.trim(), parentCommentId: threadParentId })
     .returning();
-  if (!created) return fail(400, 'Failed to create comment');
+  if (!created) return fail({ status: 400, error: 'Failed to create comment' });
   await signalCommentsChanged(postId);
 
   const taggedIds = await applyTags({ db, postId, taggerId: userId, candidateIds: taggedUserIds });
   await notifyTagged({ db, postId, taggerId: userId, taggedIds });
 
   const name = await authorName({ db, userId });
-  const body = preview(content);
+  const body = preview({ text: content });
   const alreadyNotified = new Set([userId, ...taggedIds]);
   if (replyToUserId && !alreadyNotified.has(replyToUserId)) {
     alreadyNotified.add(replyToUserId);
@@ -915,8 +924,8 @@ export async function updateComment({
 }): Promise<ServiceResult<{ id: number; content: string; editedAt: string }>> {
   const db = createDb();
   const comment = await findLiveComment({ db, postId, commentId });
-  if (!comment) return fail(404, 'Comment not found');
-  if (comment.userId !== userId) return fail(403, 'Forbidden');
+  if (!comment) return fail({ status: 404, error: 'Comment not found' });
+  if (comment.userId !== userId) return fail({ status: 403, error: 'Forbidden' });
 
   const now = new Date();
   await db
@@ -944,7 +953,7 @@ export async function deleteComment({
 }): Promise<ServiceResult<{ success: true }>> {
   const db = createDb();
   const comment = await findLiveComment({ db, postId, commentId });
-  if (!comment) return fail(404, 'Comment not found');
+  if (!comment) return fail({ status: 404, error: 'Comment not found' });
 
   if (comment.userId !== userId) {
     const [post] = await db
@@ -953,7 +962,7 @@ export async function deleteComment({
       .from(posts)
       .where(eq(posts.id, postId))
       .limit(1);
-    if (post?.userId !== userId) return fail(403, 'Forbidden');
+    if (post?.userId !== userId) return fail({ status: 403, error: 'Forbidden' });
   }
 
   await db
@@ -976,9 +985,10 @@ export async function toggleCommentLike({
 }): Promise<ServiceResult<{ liked: boolean; likeCount: number }>> {
   const db = createDb();
   if (!(await findVisiblePost({ db, viewerId: userId, postId }))) {
-    return fail(404, 'Post not found');
+    return fail({ status: 404, error: 'Post not found' });
   }
-  if (!(await findLiveComment({ db, postId, commentId }))) return fail(404, 'Comment not found');
+  if (!(await findLiveComment({ db, postId, commentId })))
+    return fail({ status: 404, error: 'Comment not found' });
 
   const removed = await db
     .tag('feed.unlikeComment')
@@ -1023,7 +1033,7 @@ export async function reportContent({
       .from(posts)
       .where(eq(posts.id, postId))
       .limit(1);
-    if (!post) return fail(404, 'Post not found');
+    if (!post) return fail({ status: 404, error: 'Post not found' });
   } else if (commentId !== undefined) {
     const [comment] = await db
       .tag('feed.getReportedComment')
@@ -1031,7 +1041,7 @@ export async function reportContent({
       .from(postComments)
       .where(eq(postComments.id, commentId))
       .limit(1);
-    if (!comment) return fail(404, 'Comment not found');
+    if (!comment) return fail({ status: 404, error: 'Comment not found' });
   }
 
   const target =
@@ -1115,7 +1125,7 @@ export async function blockUser({
   userId: string;
   blockedId: string;
 }): Promise<ServiceResult<{ success: true }>> {
-  if (userId === blockedId) return fail(400, 'You cannot block yourself');
+  if (userId === blockedId) return fail({ status: 400, error: 'You cannot block yourself' });
   const db = createDb();
   const [target] = await db
     .tag('feed.getBlockTarget')
@@ -1123,7 +1133,7 @@ export async function blockUser({
     .from(users)
     .where(eq(users.id, blockedId))
     .limit(1);
-  if (!target) return fail(404, 'User not found');
+  if (!target) return fail({ status: 404, error: 'User not found' });
 
   await db
     .tag('feed.blockUser')
@@ -1231,7 +1241,7 @@ export async function getPublicPost({
       ),
     )
     .limit(1);
-  if (!row) return fail(404, 'Post not found');
+  if (!row) return fail({ status: 404, error: 'Post not found' });
 
   return ok({
     publicId: row.publicId,
@@ -1416,7 +1426,7 @@ export async function resolveReports({
             .where(eq(postComments.id, targetId))
             .returning();
     const [removed] = updated;
-    if (!removed) return fail(404, 'Not found');
+    if (!removed) return fail({ status: 404, error: 'Not found' });
     if (targetType === 'comment' && 'postId' in removed) {
       await signalCommentsChanged(removed.postId);
     }
@@ -1444,7 +1454,7 @@ export async function setUserSuspended({
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
-  if (!target) return fail(404, 'User not found');
+  if (!target) return fail({ status: 404, error: 'User not found' });
 
   const suspendedAt = suspended ? new Date() : null;
   await db

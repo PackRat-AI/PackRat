@@ -76,9 +76,9 @@ describe('toSharedPost', () => {
 describe('postPhotoAspect', () => {
   it('follows the first photo within 4:5 and 1.91:1', async () => {
     const { postPhotoAspect, PLACEHOLDER_PHOTO_ASPECT } = await import('../lib/shared-post');
-    expect(postPhotoAspect(1600, 1067)).toBeCloseTo(1.4995, 3);
-    expect(postPhotoAspect(1080, 1920)).toBeCloseTo(0.8, 5);
-    expect(postPhotoAspect(4000, 1000)).toBeCloseTo(1.91, 5);
-    expect(postPhotoAspect(0, 0)).toBe(PLACEHOLDER_PHOTO_ASPECT);
+    expect(postPhotoAspect({ width: 1600, height: 1067 })).toBeCloseTo(1.4995, 3);
+    expect(postPhotoAspect({ width: 1080, height: 1920 })).toBeCloseTo(0.8, 5);
+    expect(postPhotoAspect({ width: 4000, height: 1000 })).toBeCloseTo(1.91, 5);
+    expect(postPhotoAspect({ width: 0, height: 0 })).toBe(PLACEHOLDER_PHOTO_ASPECT);
   });
 });

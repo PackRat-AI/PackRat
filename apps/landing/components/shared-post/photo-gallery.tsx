@@ -49,10 +49,10 @@ export function PhotoGallery({ images, alt }: { images: string[]; alt: string })
                 index === 0
                   ? (event) =>
                       setAspect(
-                        postPhotoAspect(
-                          event.currentTarget.naturalWidth,
-                          event.currentTarget.naturalHeight,
-                        ),
+                        postPhotoAspect({
+                          width: event.currentTarget.naturalWidth,
+                          height: event.currentTarget.naturalHeight,
+                        }),
                       )
                   : undefined
               }
