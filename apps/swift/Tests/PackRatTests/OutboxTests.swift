@@ -176,7 +176,7 @@ struct OutboxEnqueueTests {
     /// In-memory store so each test gets a clean queue.
     private func makeContext() throws -> ModelContext {
         let container = try ModelContainer(
-            for: PendingMutation.self, CachedPack.self, CachedTrip.self, CachedTripGoal.self,
+            for: PendingMutation.self, CachedPack.self, CachedTrip.self, CachedTripGoal.self, CachedTripStatsEntry.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         return ModelContext(container)
@@ -339,7 +339,7 @@ struct OutboxEnqueueTests {
 struct LegacyLocalIDMigrationTests {
     private func makeContext() throws -> ModelContext {
         let container = try ModelContainer(
-            for: PendingMutation.self, CachedPack.self, CachedTrip.self, CachedTripGoal.self,
+            for: PendingMutation.self, CachedPack.self, CachedTrip.self, CachedTripGoal.self, CachedTripStatsEntry.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         return ModelContext(container)
@@ -462,7 +462,7 @@ struct LegacyLocalIDMigrationTests {
 struct SignOutOutboxTests {
     private func makeContext() throws -> ModelContext {
         let container = try ModelContainer(
-            for: PendingMutation.self, CachedPack.self, CachedTrip.self, CachedTripGoal.self,
+            for: PendingMutation.self, CachedPack.self, CachedTrip.self, CachedTripGoal.self, CachedTripStatsEntry.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         return ModelContext(container)

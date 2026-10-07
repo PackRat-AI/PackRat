@@ -84,7 +84,7 @@ struct Trip: Codable, Identifiable, Sendable {
     let endDate: String?
     let userId: String?
     let packId: String?
-    let checklist: [TripChecklistItem]?
+    var checklist: [TripChecklistItem]? = nil
     let deleted: Bool
     let createdAt: String?
     let updatedAt: String?

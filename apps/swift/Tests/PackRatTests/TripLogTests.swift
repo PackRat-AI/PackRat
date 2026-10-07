@@ -216,7 +216,7 @@ struct TripLogTests {
     func updateEncodesClearedLog() throws {
         let request = UpdateTripRequest(
             name: "Trip", description: nil, location: nil, startDate: nil, endDate: nil,
-            notes: nil, packId: nil, log: nil, excludedFromStats: true,
+            notes: nil, packId: nil, checklist: nil, log: nil, excludedFromStats: true,
             localUpdatedAt: "2026-01-01T00:00:00Z"
         )
         let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any]
