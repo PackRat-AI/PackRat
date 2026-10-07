@@ -32,7 +32,7 @@ struct FeedView: View {
         .navigationTitle("Community Feed")
         .toolbar {
             if authManager.isAuthenticated {
-                ToolbarItem(placement: .secondaryAction) {
+                ToolbarItem(placement: overflowPlacement) {
                     FeedLibraryMenu(feed: viewModel)
                 }
             }
@@ -51,6 +51,14 @@ struct FeedView: View {
             ComposePostView(viewModel: viewModel)
         }
         .feedAlerts(viewModel)
+    }
+
+    private var overflowPlacement: ToolbarItemPlacement {
+        #if os(iOS)
+        .topBarTrailing
+        #else
+        .primaryAction
+        #endif
     }
 }
 
