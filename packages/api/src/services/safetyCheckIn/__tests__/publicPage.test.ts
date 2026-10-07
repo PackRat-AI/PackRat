@@ -80,7 +80,7 @@ describe('renderEndedPage', () => {
 
 describe('renderCheckInPage', () => {
   it('escapes all user-provided content', () => {
-    const html = renderCheckInPage(view(), new Date('2026-09-13T22:00:00.000Z'));
+    const html = renderCheckInPage({ view: view(), now: new Date('2026-09-13T22:00:00.000Z') });
     expect(html).not.toContain('Enchantments <script>');
     expect(html).toContain('Alex &amp; Co · Enchantments &lt;script&gt;');
     expect(html).toContain('near Colchuck &lt;Lake&gt;');
@@ -91,7 +91,7 @@ describe('renderCheckInPage', () => {
   });
 
   it('shows the ok banner before the overdue time', () => {
-    const html = renderCheckInPage(view(), new Date('2026-09-13T22:00:00.000Z'));
+    const html = renderCheckInPage({ view: view(), now: new Date('2026-09-13T22:00:00.000Z') });
     expect(html).toContain(
       '<div class="banner ok">On their trip. Expected back Sun, Sep 13, 7:00 PM.',
     );
@@ -100,24 +100,27 @@ describe('renderCheckInPage', () => {
   });
 
   it('shows the overdue banner once expected return + grace has passed', () => {
-    const html = renderCheckInPage(view(), new Date('2026-09-14T05:00:00.000Z'));
+    const html = renderCheckInPage({ view: view(), now: new Date('2026-09-14T05:00:00.000Z') });
     expect(html).toContain('<div class="banner overdue">Alex &amp; Co is overdue by 3 hours.');
   });
 
   it('shows the latest position, with coordinates only when unnamed', () => {
-    const html = renderCheckInPage(view(), RETURN);
+    const html = renderCheckInPage({ view: view(), now: RETURN });
     expect(html).toContain('</strong> — 47.60000, -120.70000</p>');
     expect(html).not.toContain('<p class="muted">47.60000');
   });
 
   it('shows coordinates under a named last location', () => {
     const v = view();
-    const html = renderCheckInPage({ ...v, locations: v.locations.slice(0, 1) }, RETURN);
+    const html = renderCheckInPage({
+      view: { ...v, locations: v.locations.slice(0, 1) },
+      now: RETURN,
+    });
     expect(html).toContain('<p class="muted">47.50500, -120.80000</p>');
   });
 
   it('inlines map data safely', () => {
-    const html = renderCheckInPage(view(), RETURN);
+    const html = renderCheckInPage({ view: view(), now: RETURN });
     expect(html).toContain('unpkg.com/leaflet@1.9.4');
     expect(html).toContain('"destination":[47.5,-120.8]');
     expect(html).toContain('"route":[[47.5,-120.8],[47.51,-120.8]]');
@@ -125,16 +128,16 @@ describe('renderCheckInPage', () => {
 
   it('handles a trip with nothing to map or list', () => {
     const v = view();
-    const html = renderCheckInPage(
-      {
+    const html = renderCheckInPage({
+      view: {
         ...v,
         checkIn: { ...v.checkIn, identifyingGear: [] },
         trip: { ...v.trip, location: null, plannedRoute: null },
         locations: [],
         gear: [],
       },
-      RETURN,
-    );
+      now: RETURN,
+    });
     expect(html).not.toContain('id="map"');
     expect(html).not.toContain('leaflet');
     expect(html).toContain('No location has been shared yet.');
@@ -148,13 +151,10 @@ describe('renderCheckInPage', () => {
     const v = view();
     const [first] = v.locations;
     if (!first) throw new Error('fixture has a location');
-    const html = renderCheckInPage(
-      {
-        ...v,
-        locations: [{ ...first, placeName: null, note: null }],
-      },
-      RETURN,
-    );
+    const html = renderCheckInPage({
+      view: { ...v, locations: [{ ...first, placeName: null, note: null }] },
+      now: RETURN,
+    });
     expect(html).toContain('<li><strong>1:00 PM</strong> </li>');
   });
 });

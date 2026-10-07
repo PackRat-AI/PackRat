@@ -23,7 +23,13 @@ const toRadians = (deg: number) => (deg * Math.PI) / 180;
  * point. Over the few kilometres that matter for "off route" the error is
  * well under a percent, and it avoids spherical cross-track maths per segment.
  */
-export function distanceToRouteMeters(point: LatLon, route: LatLon[]): number {
+export function distanceToRouteMeters({
+  point,
+  route,
+}: {
+  point: LatLon;
+  route: LatLon[];
+}): number {
   const [first, ...rest] = route;
   if (!first) return Number.POSITIVE_INFINITY;
 
@@ -59,12 +65,18 @@ export function distanceToRouteMeters(point: LatLon, route: LatLon[]): number {
  * stayed away. Returns the latest distance when they have, otherwise null.
  * `recent` must be ordered oldest first.
  */
-export function detectOffRoute(recent: LatLon[], route: LatLon[]): number | null {
+export function detectOffRoute({
+  recent,
+  route,
+}: {
+  recent: LatLon[];
+  route: LatLon[];
+}): number | null {
   if (route.length < 2) return null;
   if (recent.length < OFF_ROUTE_CONSECUTIVE_FIXES) return null;
 
   const window = recent.slice(-OFF_ROUTE_CONSECUTIVE_FIXES);
-  const distances = window.map((p) => distanceToRouteMeters(p, route));
+  const distances = window.map((point) => distanceToRouteMeters({ point, route }));
   if (distances.every((d) => d > OFF_ROUTE_THRESHOLD_METERS)) {
     return distances[distances.length - 1] ?? null;
   }

@@ -36,7 +36,7 @@ export interface KnownLocation {
 }
 
 /** "Sat 14 Sep, 7:00 PM" in the user's time zone. Falls back to UTC on a bad zone. */
-export function formatMessageTime(date: Date, timeZone: string): string {
+export function formatMessageTime({ date, timeZone }: { date: Date; timeZone: string }): string {
   const options: Intl.DateTimeFormatOptions = {
     weekday: 'short',
     day: 'numeric',
@@ -52,7 +52,7 @@ export function formatMessageTime(date: Date, timeZone: string): string {
 }
 
 /** "2:14 PM" in the user's time zone. */
-export function formatClockTime(date: Date, timeZone: string): string {
+export function formatClockTime({ date, timeZone }: { date: Date; timeZone: string }): string {
   const options: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit' };
   try {
     return new Intl.DateTimeFormat('en-US', { ...options, timeZone }).format(date);
@@ -80,10 +80,16 @@ function describePlace(location: Pick<KnownLocation, 'latitude' | 'longitude' | 
 }
 
 /** "4:40 PM · near Colchuck Lake (47.4960, -120.8050)" */
-function describeLocationDetail(location: KnownLocation, timeZone: string) {
+function describeLocationDetail({
+  location,
+  timeZone,
+}: {
+  location: KnownLocation;
+  timeZone: string;
+}) {
   const coords = `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`;
   const name = location.placeName?.trim();
-  return `${formatMessageTime(location.recordedAt, timeZone)} · ${name ? `near ${name} (${coords})` : coords}`;
+  return `${formatMessageTime({ date: location.recordedAt, timeZone: timeZone })} · ${name ? `near ${name} (${coords})` : coords}`;
 }
 
 /** "2 hours", "45 minutes", "1 hour". */
@@ -144,7 +150,7 @@ export function tripStartedMessage({
     subject: `${userName} has started their trip: ${tripName}`,
     text:
       `${userName} has started their trip: ${tripName}. ` +
-      `Expected return: ${formatMessageTime(expectedReturnAt, timeZone)}. ` +
+      `Expected return: ${formatMessageTime({ date: expectedReturnAt, timeZone: timeZone })}. ` +
       (carrying ? `They are carrying: ${carrying}. ` : '') +
       `Track live progress: ${link}`,
     email: {
@@ -156,7 +162,10 @@ export function tripStartedMessage({
       ],
       details: [
         { label: 'Trip', value: tripName },
-        { label: 'Expected back', value: formatMessageTime(expectedReturnAt, timeZone) },
+        {
+          label: 'Expected back',
+          value: formatMessageTime({ date: expectedReturnAt, timeZone: timeZone }),
+        },
         ...(carrying ? [{ label: 'Look for', value: carrying }] : []),
       ],
       cta: { label: 'Follow their trip', url: link },
@@ -183,7 +192,7 @@ export function checkedInMessage({
   return {
     subject: `${userName} checked in on ${tripName}`,
     text:
-      `${userName} checked in at ${formatClockTime(location.recordedAt, timeZone)} ` +
+      `${userName} checked in at ${formatClockTime({ date: location.recordedAt, timeZone: timeZone })} ` +
       `${describePlace(location)}.` +
       (trimmed ? ` "${trimmed}"` : '') +
       ` Track progress: ${link}`,
@@ -193,7 +202,10 @@ export function checkedInMessage({
       heading: `${userName} checked in`,
       paragraphs: [`${userName} sent a check-in from ${tripName}.`],
       details: [
-        { label: 'Where', value: describeLocationDetail(location, timeZone) },
+        {
+          label: 'Where',
+          value: describeLocationDetail({ location: location, timeZone: timeZone }),
+        },
         ...(trimmed ? [{ label: 'Note', value: `“${trimmed}”` }] : []),
       ],
       cta: { label: 'See their progress', url: link },
@@ -218,7 +230,7 @@ export function returnExtendedMessage({
     subject: `${userName} updated their return time`,
     text:
       `${userName} has updated their expected return from ${tripName} to ` +
-      `${formatMessageTime(expectedReturnAt, timeZone)}. Trip details: ${link}`,
+      `${formatMessageTime({ date: expectedReturnAt, timeZone: timeZone })}. Trip details: ${link}`,
     email: {
       tone: 'info',
       eyebrow: 'Plan changed',
@@ -228,7 +240,10 @@ export function returnExtendedMessage({
       ],
       details: [
         { label: 'Trip', value: tripName },
-        { label: 'Now expected back', value: formatMessageTime(expectedReturnAt, timeZone) },
+        {
+          label: 'Now expected back',
+          value: formatMessageTime({ date: expectedReturnAt, timeZone: timeZone }),
+        },
       ],
       cta: { label: 'View trip details', url: link },
     },
@@ -280,7 +295,7 @@ export function overdueMessage({
   link: string;
 }): SafetyMessage {
   const last = lastKnown
-    ? `Last known location: ${formatClockTime(lastKnown.recordedAt, timeZone)} ${describePlace(lastKnown)}. `
+    ? `Last known location: ${formatClockTime({ date: lastKnown.recordedAt, timeZone: timeZone })} ${describePlace(lastKnown)}. `
     : 'No location has been shared since they set out. ';
   return {
     subject: `${userName} is overdue on ${tripName}`,
@@ -300,7 +315,7 @@ export function overdueMessage({
         {
           label: 'Last known location',
           value: lastKnown
-            ? describeLocationDetail(lastKnown, timeZone)
+            ? describeLocationDetail({ location: lastKnown, timeZone: timeZone })
             : 'None shared since they set out',
         },
       ],

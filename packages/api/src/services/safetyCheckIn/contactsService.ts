@@ -53,7 +53,7 @@ export async function listEmergencyContacts(userId: string): Promise<ContactRow[
 }
 
 /** Only one contact is the default; setting one clears the rest. */
-async function clearOtherDefaults(userId: string, keepId: string) {
+async function clearOtherDefaults({ userId, keepId }: { userId: string; keepId: string }) {
   const db = createDb();
   await db
     .tag('safetyCheckIn.clearDefaultContacts')
@@ -100,7 +100,7 @@ export async function createEmergencyContact({
     )[0];
   if (!stored) throw new Error('Emergency contact id is already in use');
 
-  if (row && isDefault) await clearOtherDefaults(userId, row.id);
+  if (row && isDefault) await clearOtherDefaults({ userId: userId, keepId: row.id });
   return stored;
 }
 
@@ -141,7 +141,7 @@ export async function updateEmergencyContact({
     .returning();
   if (!row) return null;
 
-  if (request.isDefault) await clearOtherDefaults(userId, contactId);
+  if (request.isDefault) await clearOtherDefaults({ userId: userId, keepId: contactId });
   return row;
 }
 

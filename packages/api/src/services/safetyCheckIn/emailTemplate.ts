@@ -48,7 +48,7 @@ function detailsTable(details: EmailContent['details']): string {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e6e8e7;border-radius:10px;border-collapse:separate;margin:8px 0 24px;">${rows}</table>`;
 }
 
-function button(cta: NonNullable<EmailContent['cta']>, color: string): string {
+function button({ cta, color }: { cta: NonNullable<EmailContent['cta']>; color: string }): string {
   const url = escapeHtml(cta.url);
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 8px;"><tr>
 <td style="border-radius:8px;background:${color};">
@@ -87,7 +87,7 @@ export function renderSafetyEmail({
 <h1 style="margin:16px 0 16px;font:700 24px/1.25 ${FONT};color:#111814;">${escapeHtml(email.heading)}</h1>
 ${paragraphs}
 ${detailsTable(email.details)}
-${email.cta ? button(email.cta, tone.accent) : ''}
+${email.cta ? button({ cta: email.cta, color: tone.accent }) : ''}
 </td></tr>
 <tr><td style="padding:20px 8px 0;font:12px/1.6 ${FONT};color:#7a837f;">
 You're receiving this because someone added you as their emergency contact in PackRat, the trip planning app. Messages come from PackRat, never from their own address.

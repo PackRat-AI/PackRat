@@ -136,7 +136,7 @@ describe('helpers', () => {
   });
 
   it('CheckInError carries its status', () => {
-    const error = new CheckInError('nope', 409);
+    const error = new CheckInError({ message: 'nope', httpStatus: 409 });
     expect(error.httpStatus).toBe(409);
     expect(error.name).toBe('CheckInError');
   });

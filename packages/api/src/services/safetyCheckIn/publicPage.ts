@@ -47,7 +47,13 @@ export function renderEndedPage(): string {
   });
 }
 
-export function renderCheckInPage(view: PublicCheckInView, now = new Date()): string {
+export function renderCheckInPage({
+  view,
+  now = new Date(),
+}: {
+  view: PublicCheckInView;
+  now?: Date;
+}): string {
   const { checkIn, trip, userName, locations, gear } = view;
   const tz = checkIn.timeZone;
   const due = overdueAt(checkIn);
@@ -61,13 +67,13 @@ export function renderCheckInPage(view: PublicCheckInView, now = new Date()): st
         (now.getTime() - checkIn.expectedReturnAt.getTime()) / 60_000,
       )}.<small>If you can't reach them, contact the local authorities and share this page.</small></div>`
     : `<div class="banner ok">On their trip. Expected back ${escapeHtml(
-        formatMessageTime(checkIn.expectedReturnAt, tz),
+        formatMessageTime({ date: checkIn.expectedReturnAt, timeZone: tz }),
       )}.<small>If they haven't marked themselves safe by ${escapeHtml(
-        formatMessageTime(due, tz),
+        formatMessageTime({ date: due, timeZone: tz }),
       )}, you'll get an alert.</small></div>`;
 
   const lastKnown = last
-    ? `<p><strong>${escapeHtml(formatMessageTime(last.recordedAt, tz))}</strong> — ${
+    ? `<p><strong>${escapeHtml(formatMessageTime({ date: last.recordedAt, timeZone: tz }))}</strong> — ${
         last.placeName
           ? `near ${escapeHtml(last.placeName)}`
           : `${last.latitude.toFixed(5)}, ${last.longitude.toFixed(5)}`
@@ -83,7 +89,7 @@ export function renderCheckInPage(view: PublicCheckInView, now = new Date()): st
       ? `<ul>${checkIns
           .map(
             (c) =>
-              `<li><strong>${escapeHtml(formatClockTime(c.recordedAt, tz))}</strong> ${
+              `<li><strong>${escapeHtml(formatClockTime({ date: c.recordedAt, timeZone: tz }))}</strong> ${
                 c.placeName ? `near ${escapeHtml(c.placeName)}` : ''
               }${c.note ? ` — “${escapeHtml(c.note)}”` : ''}</li>`,
           )
@@ -136,14 +142,14 @@ export function renderCheckInPage(view: PublicCheckInView, now = new Date()): st
 
   const body = `<header><p>PackRat safety check-in</p>
 <h1>${escapeHtml(userName)} · ${escapeHtml(trip.name)}</h1>
-<p>Started ${escapeHtml(formatMessageTime(checkIn.startedAt, tz))}</p></header>
+<p>Started ${escapeHtml(formatMessageTime({ date: checkIn.startedAt, timeZone: tz }))}</p></header>
 ${banner}
 ${hasMap ? '<div class="card"><h2>Progress</h2><div id="map"></div></div>' : ''}
 <div class="card"><h2>Last known location</h2>${lastKnown}</div>
 <div class="card"><h2>Trip plan</h2><dl>
 ${destination ? `<dt>Destination</dt><dd>${destination}</dd>` : ''}
-<dt>Expected back</dt><dd>${escapeHtml(formatMessageTime(checkIn.expectedReturnAt, tz))}</dd>
-<dt>Overdue alert</dt><dd>${escapeHtml(formatMessageTime(due, tz))}</dd>
+<dt>Expected back</dt><dd>${escapeHtml(formatMessageTime({ date: checkIn.expectedReturnAt, timeZone: tz }))}</dd>
+<dt>Overdue alert</dt><dd>${escapeHtml(formatMessageTime({ date: due, timeZone: tz }))}</dd>
 ${identifying ? `<dt>Look for</dt><dd>${escapeHtml(identifying)}</dd>` : ''}
 </dl></div>
 <div class="card"><h2>Check-ins</h2>${checkInList}</div>

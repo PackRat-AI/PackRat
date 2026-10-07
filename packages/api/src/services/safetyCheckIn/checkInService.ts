@@ -35,11 +35,11 @@ const BASE64_SLASH = /\//g;
 const BASE64_PADDING = /=+$/;
 
 export class CheckInError extends Error {
-  constructor(
-    message: string,
-    readonly httpStatus: 400 | 404 | 409,
-  ) {
+  readonly httpStatus: 400 | 404 | 409;
+
+  constructor({ message, httpStatus }: { message: string; httpStatus: 400 | 404 | 409 }) {
     super(message);
+    this.httpStatus = httpStatus;
     this.name = 'CheckInError';
   }
 }
@@ -132,14 +132,20 @@ async function toResponse(row: SafetyCheckInRow): Promise<SafetyCheckIn> {
   };
 }
 
-async function loadOwnedCheckIn(userId: string, checkInId: string): Promise<SafetyCheckInRow> {
+async function loadOwnedCheckIn({
+  userId,
+  checkInId,
+}: {
+  userId: string;
+  checkInId: string;
+}): Promise<SafetyCheckInRow> {
   const db = createDb();
   const [row] = await db
     .tag('safetyCheckIn.get')
     .select()
     .from(safetyCheckIns)
     .where(and(eq(safetyCheckIns.id, checkInId), eq(safetyCheckIns.userId, userId)));
-  if (!row) throw new CheckInError('Check-in not found', 404);
+  if (!row) throw new CheckInError({ message: 'Check-in not found', httpStatus: 404 });
   return row;
 }
 
@@ -155,7 +161,7 @@ async function loadTripAndUser(checkIn: Pick<SafetyCheckInRow, 'tripId' | 'userI
     .select({ name: users.name, firstName: users.firstName })
     .from(users)
     .where(eq(users.id, checkIn.userId));
-  if (!trip || !user) throw new CheckInError('Trip not found', 404);
+  if (!trip || !user) throw new CheckInError({ message: 'Trip not found', httpStatus: 404 });
   return { trip, userName: displayName(user) };
 }
 
@@ -201,7 +207,8 @@ export async function startCheckIn({
     .from(safetyCheckIns)
     .where(eq(safetyCheckIns.id, request.id));
   if (existing) {
-    if (existing.userId !== userId) throw new CheckInError('Check-in id is already in use', 409);
+    if (existing.userId !== userId)
+      throw new CheckInError({ message: 'Check-in id is already in use', httpStatus: 409 });
     return toResponse(existing);
   }
 
@@ -210,14 +217,18 @@ export async function startCheckIn({
     .select({ id: trips.id, name: trips.name })
     .from(trips)
     .where(and(eq(trips.id, tripId), eq(trips.userId, userId), eq(trips.deleted, false)));
-  if (!trip) throw new CheckInError('Trip not found', 404);
+  if (!trip) throw new CheckInError({ message: 'Trip not found', httpStatus: 404 });
 
   const [active] = await db
     .tag('safetyCheckIn.getActiveForTrip')
     .select({ id: safetyCheckIns.id })
     .from(safetyCheckIns)
     .where(and(eq(safetyCheckIns.tripId, tripId), eq(safetyCheckIns.status, 'active')));
-  if (active) throw new CheckInError('This trip already has an active check-in', 409);
+  if (active)
+    throw new CheckInError({
+      message: 'This trip already has an active check-in',
+      httpStatus: 409,
+    });
 
   const contacts = await db
     .tag('safetyCheckIn.getContactsForStart')
@@ -236,12 +247,16 @@ export async function startCheckIn({
         eq(emergencyContacts.deleted, false),
       ),
     );
-  if (contacts.length === 0) throw new CheckInError('Choose at least one emergency contact', 400);
+  if (contacts.length === 0)
+    throw new CheckInError({ message: 'Choose at least one emergency contact', httpStatus: 400 });
 
   const expectedReturnAt = new Date(request.expectedReturnAt);
   const startedAt = new Date(request.startedAt);
   if (expectedReturnAt <= startedAt) {
-    throw new CheckInError('Expected return must be after the trip starts', 400);
+    throw new CheckInError({
+      message: 'Expected return must be after the trip starts',
+      httpStatus: 400,
+    });
   }
 
   const [row] = await db
@@ -334,11 +349,13 @@ export async function extendCheckIn({
   checkInId: string;
   expectedReturnAt: string;
 }): Promise<SafetyCheckIn> {
-  const current = await loadOwnedCheckIn(userId, checkInId);
-  if (current.status !== 'active') throw new CheckInError('This check-in has ended', 409);
+  const current = await loadOwnedCheckIn({ userId, checkInId });
+  if (current.status !== 'active')
+    throw new CheckInError({ message: 'This check-in has ended', httpStatus: 409 });
 
   const next = new Date(expectedReturnAt);
-  if (next <= new Date()) throw new CheckInError('Pick a return time in the future', 400);
+  if (next <= new Date())
+    throw new CheckInError({ message: 'Pick a return time in the future', httpStatus: 400 });
 
   const db = createDb();
   const [row] = await db
@@ -352,7 +369,7 @@ export async function extendCheckIn({
     })
     .where(eq(safetyCheckIns.id, checkInId))
     .returning();
-  if (!row) throw new CheckInError('Check-in not found', 404);
+  if (!row) throw new CheckInError({ message: 'Check-in not found', httpStatus: 404 });
 
   const { trip, userName } = await loadTripAndUser(row);
   await deliverToContacts({
@@ -387,7 +404,7 @@ export async function endCheckIn({
   outcome: 'safe' | 'cancelled';
   endedAt: string;
 }): Promise<SafetyCheckIn> {
-  const current = await loadOwnedCheckIn(userId, checkInId);
+  const current = await loadOwnedCheckIn({ userId, checkInId });
   // Replayed from the outbox after it already landed.
   if (current.status !== 'active') return toResponse(current);
 
@@ -399,7 +416,7 @@ export async function endCheckIn({
     .set({ status: outcome, endedAt: ended, updatedAt: new Date() })
     .where(and(eq(safetyCheckIns.id, checkInId), eq(safetyCheckIns.status, 'active')))
     .returning();
-  if (!row) return toResponse(await loadOwnedCheckIn(userId, checkInId));
+  if (!row) return toResponse(await loadOwnedCheckIn({ userId, checkInId }));
 
   await db
     .tag('safetyCheckIn.deleteLocations')
@@ -446,7 +463,7 @@ export async function addLocations({
   checkInId: string;
   locations: SafetyCheckInLocationInput[];
 }): Promise<{ accepted: number }> {
-  const checkIn = await loadOwnedCheckIn(userId, checkInId);
+  const checkIn = await loadOwnedCheckIn({ userId, checkInId });
   // A batch arriving after I'm Safe must not resurrect deleted history.
   if (checkIn.status !== 'active') return { accepted: 0 };
 
@@ -508,7 +525,7 @@ export async function addLocations({
       .where(eq(safetyCheckInLocations.checkInId, checkInId))
       .orderBy(desc(safetyCheckInLocations.recordedAt))
       .limit(OFF_ROUTE_CONSECUTIVE_FIXES);
-    const distance = detectOffRoute(recent.reverse(), trip.plannedRoute);
+    const distance = detectOffRoute({ recent: recent.reverse(), route: trip.plannedRoute });
     if (distance !== null) {
       // Claim the notification first so concurrent uploads can't double-send.
       const [claimed] = await db

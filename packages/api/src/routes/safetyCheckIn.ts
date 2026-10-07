@@ -266,7 +266,7 @@ export const safetyCheckInPublicRoutes = new Elysia({ prefix: '/safety' }).get(
       set.status = 404;
       return renderEndedPage();
     }
-    return renderCheckInPage(view);
+    return renderCheckInPage({ view });
   },
   {
     params: z.object({ token: z.string().min(16).max(64) }),

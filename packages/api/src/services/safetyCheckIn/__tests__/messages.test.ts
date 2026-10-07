@@ -21,13 +21,13 @@ const LA = 'America/Los_Angeles';
 
 describe('formatMessageTime / formatClockTime', () => {
   it('formats in the user time zone', () => {
-    expect(formatMessageTime(RETURN, LA)).toBe('Sun, Sep 13, 7:00 PM');
-    expect(formatClockTime(RETURN, LA)).toBe('7:00 PM');
+    expect(formatMessageTime({ date: RETURN, timeZone: LA })).toBe('Sun, Sep 13, 7:00 PM');
+    expect(formatClockTime({ date: RETURN, timeZone: LA })).toBe('7:00 PM');
   });
 
   it('falls back to UTC for an invalid time zone', () => {
-    expect(formatMessageTime(RETURN, 'Not/AZone')).toBe('Mon, Sep 14, 2:00 AM');
-    expect(formatClockTime(RETURN, 'Not/AZone')).toBe('2:00 AM');
+    expect(formatMessageTime({ date: RETURN, timeZone: 'Not/AZone' })).toBe('Mon, Sep 14, 2:00 AM');
+    expect(formatClockTime({ date: RETURN, timeZone: 'Not/AZone' })).toBe('2:00 AM');
   });
 });
 

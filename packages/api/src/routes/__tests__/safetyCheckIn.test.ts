@@ -52,11 +52,11 @@ vi.mock('@packrat/api/services/safetyCheckIn/contactsService', async () => {
 });
 vi.mock('@packrat/api/services/safetyCheckIn/checkInService', () => {
   class CheckInError extends Error {
-    constructor(
-      message: string,
-      readonly httpStatus: number,
-    ) {
+    readonly httpStatus: number;
+
+    constructor({ message, httpStatus }: { message: string; httpStatus: number }) {
       super(message);
+      this.httpStatus = httpStatus;
     }
   }
   return {
@@ -257,7 +257,9 @@ describe('check-in routes', () => {
     fn,
   ]) => {
     const service = mocks[fn];
-    service.mockRejectedValueOnce(new CheckInError('This check-in has ended', 409));
+    service.mockRejectedValueOnce(
+      new CheckInError({ message: 'This check-in has ended', httpStatus: 409 }),
+    );
     const conflict = await json(method, path, body);
     expect(conflict.status).toBe(409);
     expect(await conflict.json()).toEqual({ error: 'This check-in has ended' });
