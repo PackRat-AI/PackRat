@@ -5,6 +5,7 @@ import Foundation
 final class TripStatsService: Sendable {
     static let shared = TripStatsService()
     private let api: APIClient
+    private let peaksCache = PeaksCache()
 
     init(api: APIClient = .shared) { self.api = api }
 
@@ -47,11 +48,19 @@ final class TripStatsService: Sendable {
     }
 
     /// Named peaks in a box at most ~1° tall and 1.5° wide (the server refuses larger).
+    /// The box snaps outward to the server's 0.01° cache grid, and answers are
+    /// kept in memory for the session, so reopening the picker or panning back
+    /// is instant and offline-safe.
     func nearbyPeaks(south: Double, west: Double, north: Double, east: Double) async throws -> [NearbyPeak] {
+        let box = PeaksCache.snap(south: south, west: west, north: north, east: east)
+        if let hit = await peaksCache.peaks(for: box.key) { return hit }
         let query: [String: String?] = [
-            "south": String(south), "west": String(west), "north": String(north), "east": String(east),
+            "south": String(box.south), "west": String(box.west),
+            "north": String(box.north), "east": String(box.east),
         ]
-        return try await api.send(Endpoint(.get, "/api/trip-stats/peaks/nearby", query: query))
+        let peaks: [NearbyPeak] = try await api.send(Endpoint(.get, "/api/trip-stats/peaks/nearby", query: query))
+        await peaksCache.store(peaks, for: box.key)
+        return peaks
     }
 
     func settings() async throws -> TripStatsSettings {
@@ -69,5 +78,30 @@ struct Lenient<Value: Decodable>: Decodable {
 
     init(from decoder: any Decoder) throws {
         value = try? Value(from: decoder)
+    }
+}
+
+/// Nearby-peak answers for this session, by snapped box. Peaks don't move,
+/// so the only limit is size.
+actor PeaksCache {
+    private static let capacity = 40
+    private var entries: [String: [NearbyPeak]] = [:]
+    private var order: [String] = []
+
+    func peaks(for key: String) -> [NearbyPeak]? { entries[key] }
+
+    func store(_ peaks: [NearbyPeak], for key: String) {
+        if entries[key] == nil { order.append(key) }
+        entries[key] = peaks
+        while order.count > Self.capacity { entries[order.removeFirst()] = nil }
+    }
+
+    /// Outward to 0.01°, matching `snapBounds` in the API's peaks service.
+    static func snap(south: Double, west: Double, north: Double, east: Double)
+        -> (south: Double, west: Double, north: Double, east: Double, key: String) {
+        let down = { (v: Double) in (v * 100).rounded(.down) / 100 }
+        let up = { (v: Double) in (v * 100).rounded(.up) / 100 }
+        let box = (down(south), down(west), up(north), up(east))
+        return (box.0, box.1, box.2, box.3, "\(box.0),\(box.1),\(box.2),\(box.3)")
     }
 }

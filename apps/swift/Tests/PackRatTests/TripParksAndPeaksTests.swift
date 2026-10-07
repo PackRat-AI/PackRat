@@ -295,4 +295,25 @@ struct TripParksAndPeaksTests {
         #expect(TripDistanceUnit.metric.formatShortDistance(1_500) == "1.5 km")
         #expect(TripDistanceUnit.imperial.formatShortDistance(1_609.344) == "1.0 mi")
     }
+
+    // MARK: - Peaks cache
+
+    @Test("Boxes snap outward to the server's 0.01° grid, and a pan inside a cell shares a key")
+    func peaksCacheSnap() {
+        let a = PeaksCache.snap(south: 46.7512, west: -121.9049, north: 46.9488, east: -121.6011)
+        #expect(a.south == 46.75 && a.west == -121.91 && a.north == 46.95 && a.east == -121.6)
+        let b = PeaksCache.snap(south: 46.7519, west: -121.9041, north: 46.9481, east: -121.6019)
+        #expect(a.key == b.key)
+    }
+
+    @Test("The cache answers repeats and drops the oldest past capacity")
+    func peaksCacheStore() async {
+        let cache = PeaksCache()
+        let peak = NearbyPeak(osmId: 1, name: "A", elevationMeters: nil, latitude: 0, longitude: 0)
+        await cache.store([peak], for: "first")
+        #expect(await cache.peaks(for: "first") == [peak])
+        for i in 0..<40 { await cache.store([], for: "k\(i)") }
+        #expect(await cache.peaks(for: "first") == nil)
+        #expect(await cache.peaks(for: "k39") == [])
+    }
 }

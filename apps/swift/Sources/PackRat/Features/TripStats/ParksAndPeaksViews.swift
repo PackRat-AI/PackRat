@@ -672,17 +672,14 @@ struct PeakPickerView: View {
         map(ranked, bottomInset: Self.peekHeight)
             .ignoresSafeArea()
             .overlay(alignment: .top) { searchAreaButton.padding(.top, 8) }
+            // Back sits on the map, like Maps' floating controls, rather than
+            // in the panel: leaving is about the screen, not the list.
+            .overlay(alignment: .topLeading) { backButton.padding(.leading, 16).padding(.top, 8) }
             .sheet(isPresented: .constant(true)) {
                 NavigationStack {
                     listPanel(ranked)
                         .navigationTitle("Choose a Peak")
                         .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Cancel") { dismiss() }
-                                    .accessibilityIdentifier("peak_picker_cancel")
-                            }
-                        }
                 }
                 .presentationDetents([.height(Self.peekHeight), .medium, .large], selection: $detent)
                 .presentationDragIndicator(.visible)
@@ -703,6 +700,21 @@ struct PeakPickerView: View {
                 // A pin tapped while the panel is low lifts it so the row shows.
                 if id != nil, detent == .height(Self.peekHeight) { detent = .medium }
             }
+    }
+
+    private var backButton: some View {
+        Button {
+            dismiss()
+        } label: {
+            Image(systemName: "chevron.left")
+                .font(.body.weight(.semibold))
+                .frame(width: 44, height: 44)
+                .background(.regularMaterial, in: Circle())
+                .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Back")
+        .accessibilityIdentifier("peak_picker_back")
     }
     #endif
 
@@ -812,6 +824,12 @@ struct PeakPickerView: View {
     @ViewBuilder
     private func list(_ ranked: PeakSuggestions) -> some View {
         List {
+            // First, so a peak that isn't mapped never means scrolling past the list.
+            Section {
+                Button("Enter a Peak by Hand", systemImage: "pencil") { typing = true }
+                    .accessibilityIdentifier("peak_picker_by_hand")
+            }
+
             switch state {
             case .loading:
                 HStack { Spacer(); ProgressView("Finding peaks…"); Spacer() }
@@ -847,8 +865,7 @@ struct PeakPickerView: View {
             }
 
             Section {
-                Button("Enter a Peak by Hand", systemImage: "pencil") { typing = true }
-                    .accessibilityIdentifier("peak_picker_by_hand")
+                EmptyView()
             } footer: {
                 Text("Peak data © OpenStreetMap contributors.")
             }
