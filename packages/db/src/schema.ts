@@ -649,6 +649,11 @@ export const trips = pgTable('trips', {
 /**
  * A user's trip stats goal. `annual` goals cover `year` and reset on 1 January;
  * `custom` goals run from `startDate` to `endDate` and carry a user-chosen name.
+ * The list goals count every trip ever, with an optional `endDate` to pace
+ * against: `longTrail` follows the trail named by `trailCode` (metric
+ * `distance`, target its length in metres), `peakList` ticks off `peaks`
+ * (metric `summits`), and `parkList` ticks off `parkCodes`, or all National
+ * Parks when that is null (metric `parks`).
  * `target` is in the metric's base unit: a count, or metres for distance and
  * elevation. Progress is never stored — clients work it out from the trips.
  */
@@ -659,7 +664,9 @@ export const tripGoals = pgTable(
     userId: text('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
-    kind: text('kind').$type<'annual' | 'custom'>().notNull(),
+    kind: text('kind')
+      .$type<'annual' | 'custom' | 'longTrail' | 'peakList' | 'parkList'>()
+      .notNull(),
     metric: text('metric')
       .$type<'trips' | 'nights' | 'days' | 'distance' | 'elevation' | 'summits' | 'parks'>()
       .notNull(),
@@ -668,6 +675,12 @@ export const tripGoals = pgTable(
     name: text('name'),
     startDate: timestamp('start_date'),
     endDate: timestamp('end_date'),
+    /** `longTrail` goals only, e.g. "PCT". */
+    trailCode: text('trail_code'),
+    /** `peakList` goals only. */
+    peaks: jsonb('peaks').$type<TripSummit[]>(),
+    /** `parkList` goals only; null means every park. */
+    parkCodes: jsonb('park_codes').$type<string[]>(),
     localCreatedAt: timestamp('local_created_at').notNull(),
     localUpdatedAt: timestamp('local_updated_at').notNull(),
     deleted: boolean('deleted').notNull().default(false),

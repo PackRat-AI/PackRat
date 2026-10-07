@@ -157,6 +157,71 @@ describe('Trip Stats Routes', () => {
       expect(res.status).toBe(422);
     });
 
+    it('stores a long-trail goal with its trail and an open start', async () => {
+      const res = await apiWithAuth(
+        '/trip-stats/goals',
+        httpMethods.post(
+          annualGoal({
+            kind: 'longTrail',
+            year: null,
+            target: 4_264_788,
+            trailCode: 'PCT',
+            endDate: '2030-09-30T00:00:00.000Z',
+            peaks: [{ name: 'Mount Whitney' }],
+          }),
+        ),
+      );
+      expect(res.status).toBe(200);
+      expect(await res.json()).toMatchObject({
+        kind: 'longTrail',
+        trailCode: 'PCT',
+        startDate: null,
+        endDate: '2030-09-30T00:00:00.000Z',
+        peaks: null,
+        parkCodes: null,
+      });
+    });
+
+    it('refuses a long-trail goal with no trail', async () => {
+      const res = await apiWithAuth(
+        '/trip-stats/goals',
+        httpMethods.post(annualGoal({ kind: 'longTrail', year: null })),
+      );
+      expect(res.status).toBe(422);
+    });
+
+    it('stores a peak list and refuses an empty one', async () => {
+      const peaks = [
+        { name: 'Mount Whitney', elevationMeters: 4421, osmId: 358_910_543 },
+        { name: 'Mount Rainier', elevationMeters: 4392 },
+      ];
+      const res = await apiWithAuth(
+        '/trip-stats/goals',
+        httpMethods.post(
+          annualGoal({ kind: 'peakList', metric: 'summits', target: 2, year: null, peaks }),
+        ),
+      );
+      expect(res.status).toBe(200);
+      expect(await res.json()).toMatchObject({ kind: 'peakList', year: null, peaks });
+
+      const empty = await apiWithAuth(
+        '/trip-stats/goals',
+        httpMethods.post(annualGoal({ kind: 'peakList', year: null, peaks: [] })),
+      );
+      expect(empty.status).toBe(422);
+    });
+
+    it('reads an empty park list as every park', async () => {
+      const res = await apiWithAuth(
+        '/trip-stats/goals',
+        httpMethods.post(
+          annualGoal({ kind: 'parkList', metric: 'parks', target: 63, year: null, parkCodes: [] }),
+        ),
+      );
+      expect(res.status).toBe(200);
+      expect(await res.json()).toMatchObject({ kind: 'parkList', parkCodes: null });
+    });
+
     it('answers a replayed create with 409 rather than a duplicate', async () => {
       const goal = annualGoal();
       await apiWithAuth('/trip-stats/goals', httpMethods.post(goal));

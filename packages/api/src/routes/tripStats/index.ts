@@ -18,6 +18,28 @@ import { and, eq } from 'drizzle-orm';
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
+type GoalBody = z.infer<typeof UpdateTripGoalBodySchema>;
+
+/**
+ * The columns a goal body writes. Each kind keeps only its own fields, so a
+ * goal edited from one kind to another drops what no longer applies.
+ */
+function goalValues(body: GoalBody) {
+  const dated = body.kind !== 'annual';
+  return {
+    kind: body.kind,
+    metric: body.metric,
+    target: body.target,
+    year: body.kind === 'annual' ? (body.year ?? null) : null,
+    name: body.name ?? null,
+    startDate: dated && body.startDate ? new Date(body.startDate) : null,
+    endDate: dated && body.endDate ? new Date(body.endDate) : null,
+    trailCode: body.kind === 'longTrail' ? (body.trailCode ?? null) : null,
+    peaks: body.kind === 'peakList' ? (body.peaks ?? null) : null,
+    parkCodes: body.kind === 'parkList' && body.parkCodes?.length ? body.parkCodes : null,
+  };
+}
+
 /**
  * Goals and settings behind trip stats. Progress is never stored here: the
  * client works it out from the user's trips, so a goal is only its definition.
@@ -130,13 +152,7 @@ export const tripStatsRoutes = new Elysia({ prefix: '/trip-stats' })
         .values({
           id: body.id,
           userId: user.userId,
-          kind: body.kind,
-          metric: body.metric,
-          target: body.target,
-          year: body.kind === 'annual' ? (body.year ?? null) : null,
-          name: body.name ?? null,
-          startDate: body.kind === 'custom' && body.startDate ? new Date(body.startDate) : null,
-          endDate: body.kind === 'custom' && body.endDate ? new Date(body.endDate) : null,
+          ...goalValues(body),
           localCreatedAt: new Date(body.localCreatedAt),
           localUpdatedAt: new Date(body.localUpdatedAt),
         })
@@ -166,13 +182,7 @@ export const tripStatsRoutes = new Elysia({ prefix: '/trip-stats' })
         .tag('tripStats.updateGoal')
         .update(tripGoals)
         .set({
-          kind: body.kind,
-          metric: body.metric,
-          target: body.target,
-          year: body.kind === 'annual' ? (body.year ?? null) : null,
-          name: body.name ?? null,
-          startDate: body.kind === 'custom' && body.startDate ? new Date(body.startDate) : null,
-          endDate: body.kind === 'custom' && body.endDate ? new Date(body.endDate) : null,
+          ...goalValues(body),
           localUpdatedAt: body.localUpdatedAt ? new Date(body.localUpdatedAt) : new Date(),
           updatedAt: new Date(),
         })
