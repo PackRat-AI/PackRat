@@ -103,7 +103,8 @@ export async function sendApnsPush({
     alert: { title: string; body: string };
     sound?: string;
     badge?: number;
-    weatherLocationId: number;
+    // Custom top-level keys the app reads to route a tap (e.g. weatherLocationId, postId).
+    data: Record<string, string | number>;
   };
 }): Promise<ApnsSendResult> {
   const { APNS_BUNDLE_ID, APNS_ENVIRONMENT } = env;
@@ -126,7 +127,7 @@ export async function sendApnsPush({
         sound: payload.sound ?? 'default',
         badge: payload.badge,
       },
-      weatherLocationId: payload.weatherLocationId,
+      ...payload.data,
     }),
   });
 

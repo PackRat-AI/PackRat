@@ -35,7 +35,7 @@ function envWithout(key: keyof typeof env) {
 
 const payload = {
   alert: { title: 'Flood Warning', body: 'Rising water expected' },
-  weatherLocationId: 42,
+  data: { weatherLocationId: 42 },
 };
 
 function okResponse() {
