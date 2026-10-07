@@ -346,10 +346,8 @@ export async function extendCheckIn({
     .update(safetyCheckIns)
     .set({
       expectedReturnAt: next,
-      // A new return time earns a fresh reminder. If the overdue alert already
-      // went out, extending doesn't unsend it; it stays recorded so I'm Safe
-      // still sends the "safe after all" follow-up.
-      reminderSentAt: null,
+      // If the overdue alert already went out, extending doesn't unsend it; it
+      // stays recorded so I'm Safe still sends the "safe after all" follow-up.
       updatedAt: new Date(),
     })
     .where(eq(safetyCheckIns.id, checkInId))

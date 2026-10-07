@@ -24,7 +24,6 @@ function view(overrides: Partial<PublicCheckInView> = {}): PublicCheckInView {
       identifyingGear: [{ name: 'tent', note: 'orange' }],
       trackingEnabled: true,
       startedAt: new Date('2026-09-13T15:00:00.000Z'),
-      reminderSentAt: null,
       overdueAlertSentAt: null,
       offRouteNotifiedAt: null,
       endedAt: null,

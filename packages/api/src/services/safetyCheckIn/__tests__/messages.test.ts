@@ -11,7 +11,6 @@ import {
   offRouteMessage,
   overdueMessage,
   returnExtendedMessage,
-  returnReminderNotification,
   safeMessage,
   tripStartedMessage,
 } from '../messages';
@@ -190,14 +189,5 @@ describe('message builders', () => {
     expect(cancelledMessage({ userName: 'A', tripName: 'T' }).text).toBe(
       "A has called off the safety check-in for T. You won't receive further updates for this trip.",
     );
-  });
-
-  it('returnReminderNotification addresses the user', () => {
-    expect(
-      returnReminderNotification({ tripName: 'T', expectedReturnAt: RETURN, timeZone: LA }),
-    ).toEqual({
-      title: 'Your contacts are expecting you',
-      body: "You're due back from T at 7:00 PM. Mark yourself safe, or push your return time back.",
-    });
   });
 });

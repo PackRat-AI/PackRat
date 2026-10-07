@@ -597,9 +597,7 @@ const workerHandler = {
               extra: { cron: controller.cron },
               fn: async () => sweepSafetyCheckIns({ env }),
             });
-            console.log(
-              `[safetyCheckIn] sweep: reminded=${result.reminded} alerted=${result.alerted}`,
-            );
+            console.log(`[safetyCheckIn] sweep: alerted=${result.alerted}`);
           }
           return;
         }

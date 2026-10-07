@@ -1,5 +1,5 @@
 {
-  "id": "64df1eaf-249d-4a5e-89bb-ac876e1d62ba",
+  "id": "6ecd4498-77a4-42ba-8c5b-d8e0b2236b0d",
   "prevId": "1de2ca25-6978-4cf2-a6fb-7fc649f1fdbc",
   "version": "7",
   "dialect": "postgresql",
@@ -3386,6 +3386,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "time_zone": {
+          "name": "time_zone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'UTC'"
+        },
         "grace_minutes": {
           "name": "grace_minutes",
           "type": "integer",
@@ -3412,12 +3419,6 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true
-        },
-        "reminder_sent_at": {
-          "name": "reminder_sent_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
         },
         "overdue_alert_sent_at": {
           "name": "overdue_alert_sent_at",

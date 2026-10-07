@@ -1214,7 +1214,6 @@ export const safetyCheckIns = pgTable(
     // When the user started the trip on the phone, which may be earlier than
     // createdAt if the start was queued offline.
     startedAt: timestamp('started_at').notNull(),
-    reminderSentAt: timestamp('reminder_sent_at'),
     overdueAlertSentAt: timestamp('overdue_alert_sent_at'),
     offRouteNotifiedAt: timestamp('off_route_notified_at'),
     endedAt: timestamp('ended_at'),

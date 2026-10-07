@@ -75,7 +75,6 @@ const checkInRow = (overrides: Record<string, unknown> = {}) => ({
   identifyingGear: [{ name: 'tent', note: 'orange' }],
   trackingEnabled: true,
   startedAt: STARTED,
-  reminderSentAt: null,
   overdueAlertSentAt: null,
   offRouteNotifiedAt: null,
   endedAt: null,
@@ -333,7 +332,6 @@ describe('extendCheckIn', () => {
     expect(result.expectedReturnAt).toBe(future);
     expect(callsFor('safetyCheckIn.extend', 'set')[0]).toMatchObject({
       expectedReturnAt: new Date(future),
-      reminderSentAt: null,
     });
     expect(deliveries()[0]?.operation).toBe('extend');
   });

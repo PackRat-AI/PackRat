@@ -248,21 +248,3 @@ export function cancelledMessage({
       `You won't receive further updates for this trip.`,
   };
 }
-
-/** Push to the user an hour before their contacts start expecting them. */
-export function returnReminderNotification({
-  tripName,
-  expectedReturnAt,
-  timeZone,
-}: {
-  tripName: string;
-  expectedReturnAt: Date;
-  timeZone: string;
-}): { title: string; body: string } {
-  return {
-    title: 'Your contacts are expecting you',
-    body:
-      `You're due back from ${tripName} at ${formatClockTime(expectedReturnAt, timeZone)}. ` +
-      `Mark yourself safe, or push your return time back.`,
-  };
-}
