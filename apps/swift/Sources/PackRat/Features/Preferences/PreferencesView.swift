@@ -90,6 +90,7 @@ struct PreferencesView: View {
             SyncStatusSection()
             unitsSection
             notificationSection
+            safetySection
             advancedSection
             aboutSection
             developerSection
@@ -225,6 +226,28 @@ struct PreferencesView: View {
                 Text("Trip Reminders help you pack and charge in the week before a trip. Turn them off for a single trip from that trip.")
             }
         }
+    }
+
+    // MARK: - Safety
+
+    @ViewBuilder
+    private var safetySection: some View {
+        #if os(iOS)
+        if SafetyCheckInStore.isEnabled {
+            Section {
+                NavigationLink {
+                    EmergencyContactsView()
+                } label: {
+                    Label("Emergency Contacts", systemImage: "shield.lefthalf.filled")
+                }
+                .accessibilityIdentifier("settings_emergency_contacts")
+            } header: {
+                Text("Safety")
+            } footer: {
+                Text("Told when you start a trip, and alerted if you don't come back on time.")
+            }
+        }
+        #endif
     }
 
     private func refreshNotificationStatus() async {

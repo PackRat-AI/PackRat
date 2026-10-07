@@ -48,9 +48,18 @@ struct TripDetailView: View {
         FeatureFlagStore.shared.isEnabled(TripReminderPlanner.flagKey)
     }
 
+    private var safetyEnabled: Bool { SafetyCheckInStore.isEnabled }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                #if os(iOS)
+                if safetyEnabled {
+                    TripSafetySection(trip: trip, viewModel: viewModel)
+                        .padding(.top, 8)
+                }
+                #endif
+
                 if remindersEnabled, TripReminderPlanner.isDepartureNear(trip, now: Date()) {
                     TripReadinessCard(
                         trip: trip,
@@ -104,6 +113,12 @@ struct TripDetailView: View {
 
                 packSection
 
+                #if os(iOS)
+                if safetyEnabled {
+                    PlannedRouteSection(trip: trip, viewModel: viewModel)
+                }
+                #endif
+
                 if remindersEnabled {
                     TripChecklistSection(trip: trip, viewModel: viewModel)
                 }
@@ -121,6 +136,16 @@ struct TripDetailView: View {
         .navigationBarTitleDisplayMode(.large)
         #endif
         .toolbar {
+            #if os(iOS)
+            if safetyEnabled, SafetyCheckInStore.shared.checkIn(forTrip: trip.id) != nil {
+                ToolbarItem(placement: .primaryAction) {
+                    Image(systemName: "shield.lefthalf.filled")
+                        .foregroundStyle(.green)
+                        .accessibilityLabel("Safety check-in active")
+                        .accessibilityIdentifier("trip_safety_shield")
+                }
+            }
+            #endif
             ToolbarItem(placement: .primaryAction) {
                 Button("Edit", systemImage: "pencil") { showingEditSheet = true }
                     .accessibilityIdentifier("trip_detail_edit_button")
@@ -271,6 +296,12 @@ struct TripDetailView: View {
 
     private func tripMap(coord: CLLocationCoordinate2D) -> some View {
         Map(position: $mapPosition) {
+            if let route = trip.plannedRoute, route.count >= 2 {
+                MapPolyline(coordinates: route.map {
+                    CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+                })
+                .stroke(.orange, style: StrokeStyle(lineWidth: 3, dash: [6, 4]))
+            }
             Annotation(trip.location?.name ?? trip.name, coordinate: coord) {
                 ZStack {
                     Circle().fill(.red).frame(width: 36, height: 36)

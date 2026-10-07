@@ -5,9 +5,27 @@ extension Array where Element == Trip {
     var activeTrips: [Trip] { filter { !$0.deleted } }
 }
 
+// MARK: - Trip lifecycle
+
+/// A trip is planned until the user starts it, in progress while they're out,
+/// and complete once they finish it or mark themselves safe.
+enum TripStatus: String, Codable, Sendable {
+    case planned
+    case inProgress = "in_progress"
+    case complete
+}
+
+/// One point of a trip's planned route, e.g. from an imported GPX track.
+struct TripRoutePoint: Codable, Hashable, Sendable {
+    let latitude: Double
+    let longitude: Double
+}
+
 // MARK: - Trip extensions (structs defined in Generated.swift)
 
 extension Trip {
+    var lifecycle: TripStatus { status ?? .planned }
+
     var dateRange: String {
         let parts = [startDate, endDate].compactMap { $0?.toDate()?.formatted(date: .abbreviated, time: .omitted) }
         return parts.joined(separator: " – ")
@@ -39,10 +57,16 @@ struct UpdateTripRequest: Encodable {
     let notes: String?
     let packId: String?
     let checklist: [TripChecklistItem]?
+    var status: TripStatus? = nil
+    var startedAt: String? = nil
+    var completedAt: String? = nil
+    /// Nil leaves the route as is; an empty array clears it.
+    var plannedRoute: [TripRoutePoint]? = nil
     let localUpdatedAt: String
 
     enum CodingKeys: String, CodingKey {
-        case name, description, location, startDate, endDate, notes, packId, checklist, localUpdatedAt
+        case name, description, location, startDate, endDate, notes, packId, checklist
+        case status, startedAt, completedAt, plannedRoute, localUpdatedAt
     }
 
     /// `packId` is encoded unconditionally — as an explicit `null` when the user
@@ -61,6 +85,17 @@ struct UpdateTripRequest: Encodable {
         try container.encodeIfPresent(notes, forKey: .notes)
         try container.encode(packId, forKey: .packId)
         try container.encodeIfPresent(checklist, forKey: .checklist)
+        try container.encodeIfPresent(status, forKey: .status)
+        try container.encodeIfPresent(startedAt, forKey: .startedAt)
+        try container.encodeIfPresent(completedAt, forKey: .completedAt)
+        if let plannedRoute {
+            // An empty route is sent as null so the server clears it.
+            if plannedRoute.isEmpty {
+                try container.encodeNil(forKey: .plannedRoute)
+            } else {
+                try container.encode(plannedRoute, forKey: .plannedRoute)
+            }
+        }
         try container.encode(localUpdatedAt, forKey: .localUpdatedAt)
     }
 }

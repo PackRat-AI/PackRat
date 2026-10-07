@@ -392,7 +392,11 @@ final class OutboxService {
                     location: payload.location,
                     notes: payload.notes,
                     packId: payload.packId,
-                    checklist: payload.checklist
+                    checklist: payload.checklist,
+                    status: payload.status,
+                    startedAt: payload.startedAt,
+                    completedAt: payload.completedAt,
+                    plannedRoute: payload.plannedRoute
                 )
             case (.trip, .delete):
                 try await tripService.deleteTrip(mutation.entityId)
