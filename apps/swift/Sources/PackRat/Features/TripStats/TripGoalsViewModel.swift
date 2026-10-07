@@ -236,9 +236,12 @@ final class TripGoalsViewModel {
     // MARK: - Helpers
 
     /// Annual goals first (they're the year's headline), then custom goals by
-    /// when they end, then by creation.
+    /// when they end, then the list goals, then by creation.
     private static func order(_ lhs: TripGoal, _ rhs: TripGoal) -> Bool {
-        if lhs.kind != rhs.kind { return lhs.kind == .annual }
+        if lhs.kind != rhs.kind {
+            let rank = TripGoal.Kind.allCases
+            return (rank.firstIndex(of: lhs.kind) ?? 0) < (rank.firstIndex(of: rhs.kind) ?? 0)
+        }
         if lhs.kind == .custom, lhs.endDate != rhs.endDate { return (lhs.endDate ?? "") < (rhs.endDate ?? "") }
         return (lhs.localCreatedAt ?? "") < (rhs.localCreatedAt ?? "")
     }

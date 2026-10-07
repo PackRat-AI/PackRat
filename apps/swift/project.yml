@@ -83,6 +83,8 @@ targets:
       - path: Resources/SpeciesModels
       - path: Resources/NationalParks.json
         buildPhase: resources
+      - path: Resources/LongTrails.json
+        buildPhase: resources
     entitlements:
       path: Resources/PackRat-iOS.entitlements
       properties:
@@ -252,6 +254,8 @@ targets:
       # not a plain resource, so Xcode compiles the .mlpackage to .mlmodelc.
       - path: Resources/SpeciesModels
       - path: Resources/NationalParks.json
+        buildPhase: resources
+      - path: Resources/LongTrails.json
         buildPhase: resources
     entitlements:
       path: Resources/PackRat-macOS.entitlements

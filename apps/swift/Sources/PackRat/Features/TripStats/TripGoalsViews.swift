@@ -194,22 +194,27 @@ private struct GoalRow: View {
             case .ended:
                 Text("Ended")
             case .active:
-                HStack(spacing: 4) {
-                    switch progress.pace {
-                    case .ahead(let by): Text("\(metric.format(by, unit: unit)) ahead of pace")
-                    case .behind(let by): Text("\(metric.format(by, unit: unit)) behind pace")
-                    case .onPace, nil: Text("On pace")
+                if let end = progress.end {
+                    HStack(spacing: 4) {
+                        switch progress.pace {
+                        case .ahead(let by): Text("\(metric.format(by, unit: unit)) ahead of pace")
+                        case .behind(let by): Text("\(metric.format(by, unit: unit)) behind pace")
+                        case .onPace, nil: Text("On pace")
+                        }
+                        Text("·")
+                        Text(daysLeft(until: end))
                     }
-                    Text("·")
-                    Text(daysLeft)
+                } else {
+                    // No finish date, so no pace: just what's left.
+                    Text("\(metric.format(progress.remaining, unit: unit)) to go")
                 }
             }
         }
     }
 
-    private var daysLeft: String {
+    private func daysLeft(until end: Date) -> String {
         let calendar = Calendar.current
-        let days = (calendar.dateComponents([.day], from: calendar.startOfDay(for: .now), to: progress.end).day ?? 0) + 1
+        let days = (calendar.dateComponents([.day], from: calendar.startOfDay(for: .now), to: end).day ?? 0) + 1
         return days == 1 ? "last day" : "\(days) days left"
     }
 }
@@ -238,7 +243,9 @@ private struct PastGoalRow: View {
 
     private var window: String {
         if progress.goal.kind == .annual, let year = progress.goal.year { return String(year) }
-        return "\(progress.start.formatted(date: .abbreviated, time: .omitted)) – \(progress.end.formatted(date: .abbreviated, time: .omitted))"
+        let start = progress.start.formatted(date: .abbreviated, time: .omitted)
+        guard let end = progress.end else { return "Since \(start)" }
+        return "\(start) – \(end.formatted(date: .abbreviated, time: .omitted))"
     }
 }
 
@@ -260,7 +267,7 @@ private struct GoalRing: View {
                     .offset(y: -28)
                     .rotationEffect(.degrees(progress.elapsed * 360))
             }
-            Image(systemName: progress.isComplete ? "checkmark" : progress.goal.metric.symbol)
+            Image(systemName: progress.isComplete ? "checkmark" : progress.goal.kind.isList ? progress.goal.kind.symbol : progress.goal.metric.symbol)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Color.accentColor)
         }
@@ -290,6 +297,9 @@ struct GoalEditorView: View {
     let finished: [TripStats.FinishedTrip]
     var parksAndPeaks: TripParksAndPeaks? = nil
     let unit: TripDistanceUnit
+    /// For a new goal: what to start on, e.g. following a trail from its card.
+    var initialKind: TripGoal.Kind = .annual
+    var initialTrailCode: String? = nil
 
     @State private var kind: TripGoal.Kind = .annual
     @State private var metric: TripGoal.Metric = .nights
@@ -297,6 +307,12 @@ struct GoalEditorView: View {
     @State private var name = ""
     @State private var startDate = Calendar.current.startOfDay(for: .now)
     @State private var endDate = Calendar.current.date(byAdding: .month, value: 3, to: Calendar.current.startOfDay(for: .now)) ?? .now
+    @State private var hasFinishDate = false
+    @State private var trailCode = LongTrails.all.first?.code ?? ""
+    @State private var peaks: [TripSummit] = []
+    @State private var everyPark = true
+    @State private var parkCodes: Set<String> = []
+    @State private var choosingPeak = false
     @State private var confirmingDelete = false
     @FocusState private var targetFocused: Bool
 
@@ -306,48 +322,33 @@ struct GoalEditorView: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Goal Type", selection: $kind) {
-                        Text("This Year").tag(TripGoal.Kind.annual)
-                        Text("Custom Dates").tag(TripGoal.Kind.custom)
+                    Picker("Goal", selection: $kind) {
+                        ForEach(TripGoal.Kind.allCases) { kind in
+                            Label(kind.label, systemImage: kind.symbol).tag(kind)
+                        }
                     }
-                    .pickerStyle(.segmented)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
                     .accessibilityIdentifier("goal_editor_kind")
                 }
 
-                if kind == .custom {
-                    Section {
-                        TextField("Name (optional)", text: $name, prompt: Text("Ten nights out before the baby arrives"))
-                            .accessibilityIdentifier("goal_editor_name")
-                        DatePicker("Starts", selection: $startDate, displayedComponents: .date)
-                        DatePicker("Ends", selection: $endDate, in: startDate..., displayedComponents: .date)
-                    }
+                switch kind {
+                case .annual, .custom: windowedSections
+                case .longTrail: longTrailSections
+                case .peakList: peakListSections
+                case .parkList: parkListSections
                 }
 
-                Section {
-                    Picker("Measure", selection: $metric) {
-                        ForEach(TripGoal.Metric.allCases) { metric in
-                            Label(metric.label, systemImage: metric.symbol).tag(metric)
+                if kind.isList {
+                    Section {
+                        Toggle("Finish By", isOn: $hasFinishDate.animation())
+                            .accessibilityIdentifier("goal_editor_finish_toggle")
+                        if hasFinishDate {
+                            DatePicker("Date", selection: $endDate, in: startDate..., displayedComponents: .date)
                         }
+                    } footer: {
+                        Text(hasFinishDate
+                            ? "Pace is measured from \(startDate.formatted(date: .abbreviated, time: .omitted)) to this date."
+                            : "Without a date there's no pace, just what's left.")
                     }
-                    .accessibilityIdentifier("goal_editor_metric")
-                    HStack {
-                        Text("Target")
-                        Spacer()
-                        TextField("0", text: $targetText)
-                            .multilineTextAlignment(.trailing)
-                            .monospacedDigit()
-                            .focused($targetFocused)
-                            #if os(iOS)
-                            .keyboardType(metric.isMeasured ? .decimalPad : .numberPad)
-                            #endif
-                            .frame(maxWidth: 120)
-                            .accessibilityIdentifier("goal_editor_target")
-                        Text(targetSymbol).foregroundStyle(.secondary)
-                    }
-                } footer: {
-                    if let hint { Text(hint) }
                 }
 
                 if goal != nil {
@@ -367,7 +368,7 @@ struct GoalEditorView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
-                        .disabled(parsedTarget == nil)
+                        .disabled(!canSave)
                         .accessibilityIdentifier("goal_editor_save")
                 }
                 ToolbarItemGroup(placement: .keyboard) {
@@ -386,9 +387,144 @@ struct GoalEditorView: View {
             } message: {
                 Text("Your trips and stats stay as they are.")
             }
+            .peakPicker(isPresented: $choosingPeak) {
+                PeakPickerView(
+                    region: PeakPickerView.region(route: [], location: peakSearchLocation),
+                    excluded: Set(peaks.map(\.peakKey))
+                ) { picked in
+                    if !peaks.contains(where: { $0.peakKey == picked.peakKey }) { peaks.append(picked) }
+                }
+            }
             .onAppear(perform: prefill)
         }
         .formSheetSize(minWidth: 480, minHeight: 520)
+    }
+
+    // MARK: Sections
+
+    @ViewBuilder
+    private var windowedSections: some View {
+        if kind == .custom {
+            Section {
+                TextField("Name (optional)", text: $name, prompt: Text("Ten nights out before the baby arrives"))
+                    .accessibilityIdentifier("goal_editor_name")
+                DatePicker("Starts", selection: $startDate, displayedComponents: .date)
+                DatePicker("Ends", selection: $endDate, in: startDate..., displayedComponents: .date)
+            }
+        }
+
+        Section {
+            Picker("Measure", selection: $metric) {
+                ForEach(TripGoal.Metric.allCases) { metric in
+                    Label(metric.label, systemImage: metric.symbol).tag(metric)
+                }
+            }
+            .accessibilityIdentifier("goal_editor_metric")
+            HStack {
+                Text("Target")
+                Spacer()
+                TextField("0", text: $targetText)
+                    .multilineTextAlignment(.trailing)
+                    .monospacedDigit()
+                    .focused($targetFocused)
+                    #if os(iOS)
+                    .keyboardType(metric.isMeasured ? .decimalPad : .numberPad)
+                    #endif
+                    .frame(maxWidth: 120)
+                    .accessibilityIdentifier("goal_editor_target")
+                Text(targetSymbol).foregroundStyle(.secondary)
+            }
+        } footer: {
+            if let hint { Text(hint) }
+        }
+    }
+
+    private var longTrailSections: some View {
+        Section {
+            Picker("Trail", selection: $trailCode) {
+                ForEach(LongTrails.all) { trail in
+                    Text(trail.name).tag(trail.code)
+                }
+            }
+            .accessibilityIdentifier("goal_editor_trail")
+            if let trail = LongTrails.trail(code: trailCode) {
+                LabeledContent("Length", value: unit.formatDistance(trail.officialMeters))
+                LabeledContent("States", value: trail.states.joined(separator: ", "))
+            }
+        } footer: {
+            Text("Every trip with a logged route on the trail counts, in any order and any year. A stretch walked twice counts once.")
+        }
+    }
+
+    @ViewBuilder
+    private var peakListSections: some View {
+        Section {
+            TextField("Name (optional)", text: $name, prompt: Text("Colorado Fourteeners"))
+                .accessibilityIdentifier("goal_editor_name")
+        }
+        Section {
+            ForEach(peaks, id: \.peakKey) { peak in
+                HStack {
+                    SummitRow(summit: peak, unit: unit)
+                    Spacer()
+                    if climbed.contains(peak.peakKey) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(Color.accentColor)
+                            .accessibilityLabel("Climbed")
+                    }
+                }
+            }
+            .onDelete { peaks.remove(atOffsets: $0) }
+            Button {
+                choosingPeak = true
+            } label: {
+                Label("Add a Peak", systemImage: "plus")
+            }
+            .accessibilityIdentifier("goal_editor_add_peak")
+        } header: {
+            Text(peaks.isEmpty ? "Peaks" : "\(peaks.count) Peak\(peaks.count == 1 ? "" : "s")")
+        } footer: {
+            Text("A peak ticks off when a trip logs it or you add it as a past summit, whenever that was.")
+        }
+    }
+
+    @ViewBuilder
+    private var parkListSections: some View {
+        Section {
+            TextField("Name (optional)", text: $name, prompt: Text("Utah's Mighty Five"))
+                .accessibilityIdentifier("goal_editor_name")
+            Toggle("Every National Park", isOn: $everyPark.animation())
+                .accessibilityIdentifier("goal_editor_every_park")
+            if !everyPark {
+                NavigationLink {
+                    ParkSelectionView(selection: $parkCodes)
+                } label: {
+                    LabeledContent("Parks", value: parkCodes.isEmpty ? "None" : "\(parkCodes.count)")
+                }
+                .accessibilityIdentifier("goal_editor_choose_parks")
+            }
+        } footer: {
+            Text(everyPark
+                ? "All \(NationalParks.count) US National Parks. Visits from before you set the goal count too."
+                : "Pick the parks on your list. Visits from before you set the goal count too.")
+        }
+    }
+
+    // MARK: Values
+
+    private var climbed: Set<String> { TripGoalProgress.peaksClimbed(peaks, record: parksAndPeaks) }
+
+    private var peakSearchLocation: TripLocation? {
+        finished.max { $0.start < $1.start }?.trip.location
+    }
+
+    private var canSave: Bool {
+        switch kind {
+        case .annual, .custom: return parsedTarget != nil
+        case .longTrail: return LongTrails.trail(code: trailCode) != nil
+        case .peakList: return !peaks.isEmpty
+        case .parkList: return everyPark || !parkCodes.isEmpty
+        }
     }
 
     private var targetSymbol: String {
@@ -449,12 +585,23 @@ struct GoalEditorView: View {
     }
 
     private func prefill() {
-        guard let goal else { return }
+        guard let goal else {
+            kind = initialKind
+            if let initialTrailCode { trailCode = initialTrailCode }
+            return
+        }
         kind = goal.kind
         metric = goal.metric
         name = goal.name ?? ""
         if let start = TripGoal.day(from: goal.startDate) { startDate = start }
-        if let end = TripGoal.day(from: goal.endDate) { endDate = end }
+        if let end = TripGoal.day(from: goal.endDate) {
+            endDate = end
+            hasFinishDate = true
+        }
+        if let code = goal.trailCode { trailCode = code }
+        peaks = goal.peaks ?? []
+        everyPark = goal.parkCodes == nil
+        parkCodes = Set(goal.parkCodes ?? [])
         let shown: Double
         switch goal.metric {
         case .distance: shown = unit.distanceValue(goal.target)
@@ -465,21 +612,96 @@ struct GoalEditorView: View {
     }
 
     private func save() {
-        guard let target = parsedTarget else { return }
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let next = TripGoal(
-            id: goal?.id ?? UUID().uuidString.lowercased(),
-            kind: kind,
-            metric: metric,
-            target: target,
-            year: kind == .annual ? year : nil,
-            name: kind == .custom && !trimmedName.isEmpty ? trimmedName : nil,
-            startDate: kind == .custom ? TripGoal.dayString(from: startDate) : nil,
-            endDate: kind == .custom ? TripGoal.dayString(from: max(endDate, startDate)) : nil,
-            localCreatedAt: goal?.localCreatedAt
-        )
+        let next: TripGoal
+        let id = goal?.id ?? UUID().uuidString.lowercased()
+        switch kind {
+        case .annual, .custom:
+            guard let target = parsedTarget else { return }
+            next = TripGoal(
+                id: id,
+                kind: kind,
+                metric: metric,
+                target: target,
+                year: kind == .annual ? year : nil,
+                name: kind == .custom && !trimmedName.isEmpty ? trimmedName : nil,
+                startDate: kind == .custom ? TripGoal.dayString(from: startDate) : nil,
+                endDate: kind == .custom ? TripGoal.dayString(from: max(endDate, startDate)) : nil,
+                localCreatedAt: goal?.localCreatedAt
+            )
+        case .longTrail, .peakList, .parkList:
+            let trail = LongTrails.trail(code: trailCode)
+            let codes = everyPark ? nil : NationalParks.all.map(\.code).filter(parkCodes.contains)
+            let target: Double
+            switch kind {
+            case .longTrail: target = trail?.officialMeters ?? 0
+            case .peakList: target = Double(peaks.count)
+            default: target = Double(codes?.count ?? NationalParks.count)
+            }
+            guard target > 0 else { return }
+            next = TripGoal(
+                id: id,
+                kind: kind,
+                metric: kind.fixedMetric ?? metric,
+                target: target,
+                name: kind != .longTrail && !trimmedName.isEmpty ? trimmedName : nil,
+                // A list goal is paced from the day it was set, which an edit keeps.
+                startDate: goal?.kind.isList == true ? goal?.startDate : TripGoal.dayString(from: .now),
+                endDate: hasFinishDate ? TripGoal.dayString(from: max(endDate, startDate)) : nil,
+                trailCode: kind == .longTrail ? trail?.code : nil,
+                peaks: kind == .peakList ? peaks : nil,
+                parkCodes: kind == .parkList ? codes : nil,
+                localCreatedAt: goal?.localCreatedAt
+            )
+        }
         Task { await appState.tripGoalsVM.save(next, context: modelContext) }
         dismiss()
+    }
+}
+
+/// Picks the parks on a park-list goal, with the ones already visited marked.
+private struct ParkSelectionView: View {
+    @Environment(AppState.self) private var appState
+    @Binding var selection: Set<String>
+    @State private var query = ""
+
+    var body: some View {
+        let visited = Set(appState.parksAndPeaks.visitedParks.map(\.park.code))
+        let parks = NationalParks.all.filter {
+            query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) || $0.states.contains(query.uppercased())
+        }
+        List(parks) { park in
+            Button {
+                if selection.contains(park.code) { selection.remove(park.code) } else { selection.insert(park.code) }
+            } label: {
+                HStack {
+                    Image(systemName: selection.contains(park.code) ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(selection.contains(park.code) ? Color.accentColor : Color.secondary)
+                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(park.name).foregroundStyle(.primary)
+                        Text(park.states.joined(separator: ", ")).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if visited.contains(park.code) {
+                        Text("Visited").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(selection.contains(park.code) ? .isSelected : [])
+            .accessibilityIdentifier("park_select_\(park.code)")
+        }
+        .searchable(text: $query, prompt: "Park or state")
+        .navigationTitle(selection.isEmpty ? "Choose Parks" : "\(selection.count) Selected")
+        .toolbar {
+            if !selection.isEmpty {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Clear") { selection.removeAll() }
+                }
+            }
+        }
     }
 }
 
