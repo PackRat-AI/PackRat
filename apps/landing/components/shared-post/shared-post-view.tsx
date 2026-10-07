@@ -1,5 +1,6 @@
 'use client';
 
+import { safeJsonParse } from '@packrat/utils';
 import { Button } from '@packrat/web-ui/components/button';
 import { Skeleton } from '@packrat/web-ui/components/skeleton';
 import { GetTheApp } from 'landing-app/components/shared-post/get-the-app';
@@ -19,7 +20,7 @@ function readPayload(): SharedPostPayload {
   const text = document.getElementById(SHARED_POST_DATA_ID)?.textContent;
   if (!text) return { status: 'not-found' };
   try {
-    return JSON.parse(text) as SharedPostPayload;
+    return safeJsonParse<SharedPostPayload>(text, { strict: true });
   } catch {
     return { status: 'error' };
   }

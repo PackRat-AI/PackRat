@@ -4,6 +4,7 @@
  * link-preview tags into the static `/p` shell, and the client view that
  * renders it. Kept free of React and Next imports so the Worker can bundle it.
  */
+import { safeJsonStringify } from '@packrat/utils';
 import { siteConfig } from '../config/site';
 
 /** `GET /api/feed/public/:publicId` response. Mirrors `PublicPostSchema` in `@packrat/schemas`. */
@@ -111,6 +112,6 @@ export function renderMetaTags(tags: MetaTag[]): string {
 
 /** The payload as a JSON `<script>`. `<` is escaped so a caption cannot close the tag early. */
 export function renderPayloadScript(payload: SharedPostPayload): string {
-  const json = JSON.stringify(payload).replaceAll('<', '\\u003c');
+  const json = safeJsonStringify(payload).replaceAll('<', '\\u003c');
   return `<script id="${SHARED_POST_DATA_ID}" type="application/json">${json}</script>`;
 }
