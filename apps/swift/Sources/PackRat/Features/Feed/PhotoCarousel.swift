@@ -124,7 +124,9 @@ struct PhotoViewer: View {
                     .padding(.top, 22)
             }
         }
+        #if os(iOS)
         .statusBarHidden()
+        #endif
         .accessibilityIdentifier("feed_photo_viewer")
     }
 
