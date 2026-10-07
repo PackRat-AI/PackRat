@@ -1,11 +1,10 @@
 import { getEnv } from '@packrat/api/utils/env-validation';
 import {
   type WeatherAlertItem,
-  WeatherAlertItemSchema,
+  WeatherAPIAlertsOnlyResponseSchema,
   type WeatherAPIForecastResponse,
   WeatherAPIForecastResponseSchema,
 } from '@packrat/schemas/weather';
-import { z } from 'zod';
 
 const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
 
@@ -33,10 +32,6 @@ export async function fetchLocationAlerts(weatherLocationId: number): Promise<We
   return parsed.alerts?.alert ?? [];
 }
 
-const CoordinateAlertsResponseSchema = z.object({
-  alerts: z.object({ alert: z.array(WeatherAlertItemSchema).optional() }).optional(),
-});
-
 /**
  * Current alerts at a coordinate — a trip's destination, which is a point the
  * user picked rather than a WeatherAPI location id. Only the alert block is
@@ -57,6 +52,6 @@ export async function fetchCoordinateAlerts({
   if (!response.ok) {
     throw new Error(`WeatherAPI HTTP ${response.status} for ${q}`);
   }
-  const parsed = CoordinateAlertsResponseSchema.parse(await response.json());
+  const parsed = WeatherAPIAlertsOnlyResponseSchema.parse(await response.json());
   return parsed.alerts?.alert ?? [];
 }
