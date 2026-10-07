@@ -300,6 +300,7 @@ struct TripLogEditor: View {
             .sheet(isPresented: $showingPeakPicker) {
                 PeakPickerView(
                     region: PeakPickerView.region(route: routeCoordinates, location: trip.location),
+                    route: routeCoordinates,
                     excluded: Set(summits.map(\.peakKey))
                 ) { picked in
                     if !summits.contains(where: { $0.peakKey == picked.peakKey }) { summits.append(picked) }

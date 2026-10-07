@@ -31,4 +31,13 @@ enum TripDistanceUnit: Sendable {
     func formatElevation(_ metres: Double) -> String {
         elevationValue(metres).formatted(.number.precision(.fractionLength(0))) + " " + elevationSymbol
     }
+
+    /// Short gaps, like how far a peak sits from a route: "0.4 mi" or "650 m".
+    func formatShortDistance(_ metres: Double) -> String {
+        if self == .metric, metres < 1_000 {
+            return "\(Int((metres / 10).rounded()) * 10) m"
+        }
+        let value = distanceValue(metres)
+        return value.formatted(.number.precision(.fractionLength(value < 10 ? 1 : 0))) + " " + distanceSymbol
+    }
 }

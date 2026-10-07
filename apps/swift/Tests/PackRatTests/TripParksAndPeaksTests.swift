@@ -251,5 +251,48 @@ struct TripParksAndPeaksTests {
         #expect(box.east - box.west <= 1.5)
         #expect(abs((box.north + box.south) / 2 - 40) < 0.0001)
     }
-}
 
+    // MARK: - Peak suggestions
+
+    private func nearby(_ id: Int, _ name: String, _ lat: Double, _ lng: Double, _ metres: Double? = nil) -> NearbyPeak {
+        NearbyPeak(osmId: id, name: name, elevationMeters: metres, latitude: lat, longitude: lng)
+    }
+
+    @Test("Peaks the route crosses come first, in route order; the rest by distance")
+    func suggestionsWithRoute() {
+        // A route running north along longitude 0 from 0° to 0.1°.
+        let route = stride(from: 0.0, through: 0.1, by: 0.001).map { CLLocationCoordinate2D(latitude: $0, longitude: 0) }
+        let ranked = PeakSuggestions(
+            peaks: [
+                nearby(1, "Far High", 0.05, 0.05, 3_000),   // ~5.5 km off
+                nearby(2, "Late Summit", 0.09, 0.001, 900),  // ~110 m off, near the end
+                nearby(3, "Early Summit", 0.01, 0.0005, 800),// ~55 m off, near the start
+                nearby(4, "Close By", 0.05, 0.01, 500),     // ~1.1 km off
+            ],
+            route: route,
+            center: CLLocationCoordinate2D(latitude: 0.05, longitude: 0)
+        )
+        #expect(ranked.onRoute.map(\.peak.name) == ["Early Summit", "Late Summit"])
+        #expect(ranked.nearby.map(\.peak.name) == ["Close By", "Far High"])
+        #expect(ranked.onRoute.allSatisfy { $0.isOnRoute && $0.distanceMeters <= PeakSuggestions.onRouteMeters })
+        #expect(ranked.all.count == 4)
+    }
+
+    @Test("Without a route every peak is nearby, nearest to the map centre first")
+    func suggestionsWithoutRoute() {
+        let ranked = PeakSuggestions(
+            peaks: [nearby(1, "Far", 1, 1), nearby(2, "Near", 0.01, 0.01)],
+            route: [],
+            center: CLLocationCoordinate2D(latitude: 0, longitude: 0)
+        )
+        #expect(ranked.onRoute.isEmpty)
+        #expect(ranked.nearby.map(\.peak.name) == ["Near", "Far"])
+    }
+
+    @Test("Short distances read in metres or tenths of a mile")
+    func shortDistance() {
+        #expect(TripDistanceUnit.metric.formatShortDistance(247) == "250 m")
+        #expect(TripDistanceUnit.metric.formatShortDistance(1_500) == "1.5 km")
+        #expect(TripDistanceUnit.imperial.formatShortDistance(1_609.344) == "1.0 mi")
+    }
+}

@@ -567,14 +567,20 @@ private struct PastSummitEditor: View {
 
 // MARK: - Peak picker
 
-/// Named peaks from OpenStreetMap in the area on the map, highest first. Pan
-/// and "Search This Area" to look elsewhere; a peak that isn't mapped can be
-/// typed in by hand.
+/// Named peaks from OpenStreetMap around a trip, for logging its summits.
+///
+/// Map and list are one selection (coordinated views): tapping a pin picks
+/// out its row, and the selected peak is the only labelled pin. Peaks the
+/// route passes over come first, the way Summits and Strava's summit
+/// detection lead with what the track actually crossed; the rest follow by
+/// distance from the route. Pan and "Search This Area" to look elsewhere; a
+/// peak that isn't mapped can be typed in by hand.
 struct PeakPickerView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
 
     let region: MKCoordinateRegion
+    var route: [CLLocationCoordinate2D] = []
     let excluded: Set<String>
     let onPick: (TripSummit) -> Void
 
@@ -588,12 +594,19 @@ struct PeakPickerView: View {
     @State private var peaks: [NearbyPeak] = []
     @State private var state: LoadState = .loading
     @State private var query = ""
+    @State private var selection: Int?
     @State private var typing = false
     @State private var typedName = ""
     @State private var typedElevation = ""
 
-    init(region: MKCoordinateRegion, excluded: Set<String>, onPick: @escaping (TripSummit) -> Void) {
+    init(
+        region: MKCoordinateRegion,
+        route: [CLLocationCoordinate2D] = [],
+        excluded: Set<String>,
+        onPick: @escaping (TripSummit) -> Void
+    ) {
         self.region = region
+        self.route = route
         self.excluded = excluded
         self.onPick = onPick
         _position = State(initialValue: .region(region))
@@ -601,27 +614,20 @@ struct PeakPickerView: View {
 
     private var unit: TripDistanceUnit { TripDistanceUnit(speedUnit: speedUnit) }
 
-    private var filtered: [NearbyPeak] {
-        peaks.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
+    private var ranked: PeakSuggestions {
+        PeakSuggestions(
+            peaks: peaks.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) },
+            route: route,
+            center: (searchedRegion ?? region).center
+        )
     }
 
     var body: some View {
+        let ranked = ranked
         NavigationStack {
             VStack(spacing: 0) {
                 ZStack(alignment: .top) {
-                    Map(position: $position) {
-                        ForEach(filtered) { peak in
-                            Annotation(peak.name, coordinate: CLLocationCoordinate2D(latitude: peak.latitude, longitude: peak.longitude)) {
-                                Image(systemName: "triangle.fill")
-                                    .font(.caption2)
-                                    .foregroundStyle(.brown)
-                            }
-                            .annotationTitles(.hidden)
-                        }
-                    }
-                    .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
-                    .onMapCameraChange(frequency: .onEnd) { visibleRegion = $0.region }
-
+                    map(ranked)
                     if let visibleRegion, visibleRegion.differs(from: searchedRegion) {
                         Button {
                             Task { await load(visibleRegion) }
@@ -635,52 +641,15 @@ struct PeakPickerView: View {
                         .accessibilityIdentifier("peak_picker_search_area")
                     }
                 }
-                .frame(height: 220)
+                .frame(height: 240)
 
-                List {
-                    switch state {
-                    case .loading:
-                        HStack { Spacer(); ProgressView("Finding peaks…"); Spacer() }
-                            .listRowBackground(Color.clear)
-                    case .failed(let message):
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(message).foregroundStyle(.secondary)
-                            if KeychainService.shared.sessionToken != nil {
-                                Button("Try Again") { Task { await load(searchedRegion ?? region) } }
-                            }
+                ScrollViewReader { proxy in
+                    list(ranked)
+                        .onChange(of: selection) { _, id in
+                            guard let id else { return }
+                            withAnimation { proxy.scrollTo(id, anchor: .center) }
                         }
-                    case .loaded:
-                        if filtered.isEmpty {
-                            Text(peaks.isEmpty ? "No named peaks here. Move the map or zoom out, then search this area." : "No peaks match “\(query)”.")
-                                .foregroundStyle(.secondary)
-                        }
-                        ForEach(filtered) { peak in
-                            let taken = excluded.contains(peak.summit.peakKey)
-                            Button {
-                                onPick(peak.summit)
-                                dismiss()
-                            } label: {
-                                HStack {
-                                    SummitRow(summit: peak.summit, unit: unit)
-                                    Spacer()
-                                    if taken { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) }
-                                }
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(taken)
-                            .accessibilityIdentifier("peak_option_\(peak.osmId)")
-                        }
-                    }
-
-                    Section {
-                        Button("Enter a Peak by Hand", systemImage: "pencil") { typing = true }
-                            .accessibilityIdentifier("peak_picker_by_hand")
-                    } footer: {
-                        Text("Peak data © OpenStreetMap contributors.")
-                    }
                 }
-                .searchable(text: $query, prompt: "Filter peaks")
             }
             .navigationTitle("Choose a Peak")
             #if os(iOS)
@@ -702,7 +671,118 @@ struct PeakPickerView: View {
             }
             .task { await load(region) }
         }
-        .formSheetSize(minWidth: 520, minHeight: 640)
+        .formSheetSize(minWidth: 520, minHeight: 680)
+    }
+
+    private func map(_ ranked: PeakSuggestions) -> some View {
+        Map(position: $position, selection: $selection) {
+            if route.count >= 2 {
+                MapPolyline(coordinates: route)
+                    .stroke(.orange, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+            }
+            ForEach(ranked.all) { item in
+                let coordinate = CLLocationCoordinate2D(latitude: item.peak.latitude, longitude: item.peak.longitude)
+                if selection == item.peak.osmId {
+                    Marker(item.peak.name, systemImage: "mountain.2.fill", coordinate: coordinate)
+                        .tint(.orange)
+                        .tag(item.peak.osmId)
+                } else {
+                    // Unlabelled dots: names on every pin are unreadable at
+                    // this density, so only the selected peak is labelled.
+                    Annotation(item.peak.name, coordinate: coordinate) {
+                        Circle()
+                            .fill(item.isOnRoute ? Color.orange : Color.brown.opacity(0.85))
+                            .stroke(.white, lineWidth: 1.5)
+                            .frame(width: item.isOnRoute ? 12 : 9, height: item.isOnRoute ? 12 : 9)
+                    }
+                    .annotationTitles(.hidden)
+                    .tag(item.peak.osmId)
+                }
+            }
+        }
+        .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
+        .onMapCameraChange(frequency: .onEnd) { visibleRegion = $0.region }
+        .accessibilityIdentifier("peak_picker_map")
+    }
+
+    @ViewBuilder
+    private func list(_ ranked: PeakSuggestions) -> some View {
+        List {
+            switch state {
+            case .loading:
+                HStack { Spacer(); ProgressView("Finding peaks…"); Spacer() }
+                    .listRowBackground(Color.clear)
+            case .failed(let message):
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(message).foregroundStyle(.secondary)
+                    if KeychainService.shared.sessionToken != nil {
+                        Button("Try Again") { Task { await load(searchedRegion ?? region) } }
+                    }
+                }
+            case .loaded:
+                if ranked.all.isEmpty {
+                    Text(peaks.isEmpty
+                         ? "No named peaks here. Move the map or zoom out, then search this area."
+                         : "No peaks match “\(query)”.")
+                        .foregroundStyle(.secondary)
+                }
+                if !ranked.onRoute.isEmpty {
+                    Section {
+                        ForEach(ranked.onRoute) { row($0) }
+                    } header: {
+                        Text("On Your Route")
+                    } footer: {
+                        Text("Peaks your track passes within \(unit.formatShortDistance(PeakSuggestions.onRouteMeters)) of.")
+                    }
+                }
+                if !ranked.nearby.isEmpty {
+                    Section(route.count >= 2 ? "Nearby" : "Peaks in This Area") {
+                        ForEach(ranked.nearby) { row($0) }
+                    }
+                }
+            }
+
+            Section {
+                Button("Enter a Peak by Hand", systemImage: "pencil") { typing = true }
+                    .accessibilityIdentifier("peak_picker_by_hand")
+            } footer: {
+                Text("Peak data © OpenStreetMap contributors.")
+            }
+        }
+        .searchable(text: $query, prompt: "Filter peaks")
+    }
+
+    private func row(_ item: PeakSuggestions.Item) -> some View {
+        let taken = excluded.contains(item.peak.summit.peakKey)
+        let detail = [
+            item.peak.elevationMeters.map(unit.formatElevation),
+            item.isOnRoute ? "On route" : "\(unit.formatShortDistance(item.distanceMeters)) \(route.count >= 2 ? "from route" : "away")",
+        ].compactMap { $0 }.joined(separator: " · ")
+        return Button {
+            onPick(item.peak.summit)
+            dismiss()
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.peak.name).lineLimit(1)
+                    Text(detail).font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                }
+                Spacer()
+                if taken {
+                    Image(systemName: "checkmark").foregroundStyle(Color.accentColor)
+                } else {
+                    Image(systemName: "plus.circle").foregroundStyle(Color.accentColor)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(taken)
+        .listRowBackground(selection == item.peak.osmId ? Color.orange.opacity(0.18) : nil)
+        .id(item.peak.osmId)
+        .accessibilityLabel("\(item.peak.name), \(detail)")
+        .accessibilityHint(taken ? "Already added" : "Adds this summit")
+        .accessibilityIdentifier("peak_option_\(item.peak.osmId)")
     }
 
     private func load(_ region: MKCoordinateRegion) async {
