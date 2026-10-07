@@ -34,6 +34,7 @@ import type {
   TrailSearchItem,
   TrailSearchResult as TrailSearchResultList,
 } from '@packrat/schemas/admin';
+import type { AdminFeedReport } from '@packrat/schemas/feed';
 import { clearToken, getAuthHeader } from './auth';
 import { adminEnv } from './env';
 
@@ -611,4 +612,49 @@ export async function deleteFeaturedPackItem(id: string): Promise<{ success: boo
   const { data, error } = await adminClient['pack-templates'].items({ id }).delete();
   if (error) throwOnError({ error });
   return unwrap({ data, name: 'deleteFeaturedPackItem' });
+}
+
+// ─── Feed moderation ──────────────────────────────────────────────────────────
+
+export type { AdminFeedReport };
+
+export type FeedReportAction = 'dismiss' | 'remove';
+
+export async function getFeedReports(): Promise<AdminFeedReport[]> {
+  const { data, error } = await adminClient.feed.reports.get();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'feedReports' }).items;
+}
+
+/**
+ * Resolves every pending report on one item. `dismiss` keeps it up; `remove`
+ * hides it for everyone.
+ */
+export async function resolveFeedReport({
+  targetType,
+  targetId,
+  action,
+}: {
+  targetType: AdminFeedReport['targetType'];
+  targetId: number;
+  action: FeedReportAction;
+}): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient.feed
+    .reports({ targetType })({ targetId })({ action })
+    .post();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'resolveFeedReport' });
+}
+
+/** Suspending hides everything the account has posted until it is reinstated. */
+export async function setFeedUserSuspended({
+  userId,
+  suspended,
+}: {
+  userId: string;
+  suspended: boolean;
+}): Promise<{ suspended: boolean }> {
+  const { data, error } = await adminClient.feed.users({ userId }).suspension.put({ suspended });
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'setFeedUserSuspended' });
 }

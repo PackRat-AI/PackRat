@@ -41,6 +41,10 @@ export const queryKeys = {
       all: () => [...queryKeys.admin.all(), 'featuredPacks'] as const,
       detail: (id: string) => [...queryKeys.admin.featuredPacks.all(), id] as const,
     },
+
+    feedReports: {
+      all: () => [...queryKeys.admin.all(), 'feedReports'] as const,
+    },
   },
 
   platform: {
