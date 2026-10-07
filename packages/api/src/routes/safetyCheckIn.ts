@@ -34,8 +34,7 @@ import { z } from 'zod';
 
 const SAFETY_CHECK_IN_ACCESS_KEY = featureAccessKeyForFlag(FeatureFlag.EnableSafetyCheckIn);
 
-const authed = (summary: string) => ({
-  isAuthenticated: true as const,
+const docs = (summary: string) => ({
   detail: { tags: ['Safety Check-In'], summary, security: [{ bearerAuth: [] }] },
 });
 
@@ -61,7 +60,7 @@ export const emergencyContactsRoutes = new Elysia({ prefix: '/emergency-contacts
       const rows = await listEmergencyContacts(user.userId);
       return rows.map(toEmergencyContactResponse);
     },
-    authed('List emergency contacts'),
+    { isAuthenticated: true, ...docs('List emergency contacts') },
   )
   .post(
     '/',
@@ -73,7 +72,8 @@ export const emergencyContactsRoutes = new Elysia({ prefix: '/emergency-contacts
     },
     {
       body: 'safetyCheckIn.CreateEmergencyContactRequest',
-      ...authed('Add an emergency contact'),
+      isAuthenticated: true,
+      ...docs('Add an emergency contact'),
     },
   )
   .put(
@@ -96,7 +96,8 @@ export const emergencyContactsRoutes = new Elysia({ prefix: '/emergency-contacts
     {
       params: z.object({ id: z.string() }),
       body: 'safetyCheckIn.UpdateEmergencyContactRequest',
-      ...authed('Edit an emergency contact'),
+      isAuthenticated: true,
+      ...docs('Edit an emergency contact'),
     },
   )
   .delete(
@@ -108,7 +109,11 @@ export const emergencyContactsRoutes = new Elysia({ prefix: '/emergency-contacts
       if (!removed) return status(404, { error: 'Emergency contact not found' });
       return { success: true };
     },
-    { params: z.object({ id: z.string() }), ...authed('Remove an emergency contact') },
+    {
+      params: z.object({ id: z.string() }),
+      isAuthenticated: true,
+      ...docs('Remove an emergency contact'),
+    },
   );
 
 export const safetyCheckInRoutes = new Elysia()
@@ -133,7 +138,8 @@ export const safetyCheckInRoutes = new Elysia()
     },
     {
       params: z.object({ tripId: z.string() }),
-      ...authed("Get a trip's active safety check-in"),
+      isAuthenticated: true,
+      ...docs("Get a trip's active safety check-in"),
     },
   )
   .post(
@@ -150,7 +156,8 @@ export const safetyCheckInRoutes = new Elysia()
     {
       params: z.object({ tripId: z.string() }),
       body: 'safetyCheckIn.StartRequest',
-      ...authed('Start a safety check-in and notify contacts'),
+      isAuthenticated: true,
+      ...docs('Start a safety check-in and notify contacts'),
     },
   )
   .post(
@@ -171,7 +178,8 @@ export const safetyCheckInRoutes = new Elysia()
     {
       params: z.object({ id: z.string() }),
       body: 'safetyCheckIn.ExtendRequest',
-      ...authed('Push the expected return back'),
+      isAuthenticated: true,
+      ...docs('Push the expected return back'),
     },
   )
   .post(
@@ -193,7 +201,8 @@ export const safetyCheckInRoutes = new Elysia()
     {
       params: z.object({ id: z.string() }),
       body: 'safetyCheckIn.EndRequest',
-      ...authed("I'm Safe: end the check-in and complete the trip"),
+      isAuthenticated: true,
+      ...docs("I'm Safe: end the check-in and complete the trip"),
     },
   )
   .post(
@@ -215,7 +224,8 @@ export const safetyCheckInRoutes = new Elysia()
     {
       params: z.object({ id: z.string() }),
       body: 'safetyCheckIn.EndRequest',
-      ...authed('Call off a safety check-in'),
+      isAuthenticated: true,
+      ...docs('Call off a safety check-in'),
     },
   )
   .post(
@@ -236,12 +246,14 @@ export const safetyCheckInRoutes = new Elysia()
     {
       params: z.object({ id: z.string() }),
       body: 'safetyCheckIn.UploadLocationsRequest',
-      ...authed('Upload check-ins and tracked locations'),
+      isAuthenticated: true,
+      ...docs('Upload check-ins and tracked locations'),
     },
   );
 
 /** The page emergency contacts open from their messages. No account needed. */
 export const safetyCheckInPublicRoutes = new Elysia({ prefix: '/safety' }).get(
+  // public-route: contacts open this from their email without an account; the unguessable token is the credential
   '/:token',
   async ({ params, set }) => {
     set.headers['content-type'] = 'text/html; charset=utf-8';
