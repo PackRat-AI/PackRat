@@ -11,6 +11,7 @@ enum UITestFeatureFlags {
     static let enablePackInsights = false
     static let enablePackTemplates = true
     static let enableRevenueCat = true
+    static let enableSafetyCheckIn = false
     static let enableSharedPacks = false
     static let enableShoppingList = false
     static let enableTrailConditions = true
@@ -31,6 +32,7 @@ enum UITestFeatureFlags {
         "enablePackInsights": false,
         "enablePackTemplates": true,
         "enableRevenueCat": true,
+        "enableSafetyCheckIn": false,
         "enableSharedPacks": false,
         "enableShoppingList": false,
         "enableTrailConditions": true,

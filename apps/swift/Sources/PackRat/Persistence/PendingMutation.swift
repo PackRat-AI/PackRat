@@ -267,6 +267,22 @@ struct TripMutationPayload: Codable, Sendable {
     var packId: String?
     /// Optional so a payload queued before the Before-you-go list existed still decodes.
     var checklist: [TripChecklistItem]?
+    /// Lifecycle and route. Optional so older queued payloads still decode, and
+    /// so a replay that doesn't carry them leaves the server's values alone.
+    var status: TripStatus? = nil
+    var startedAt: String? = nil
+    var completedAt: String? = nil
+    var plannedRoute: [TripRoutePoint]? = nil
+
+    /// Queued trip updates collapse to the latest payload, so every one carries
+    /// the lifecycle and route — otherwise a checklist tick queued after Start
+    /// Trip would replace that update and the trip would never start upstream.
+    mutating func carryLifecycle(of trip: Trip) {
+        status = trip.status
+        startedAt = trip.startedAt
+        completedAt = trip.completedAt
+        plannedRoute = trip.plannedRoute
+    }
     var log: TripLog? = nil
     var excludedFromStats: Bool? = nil
 

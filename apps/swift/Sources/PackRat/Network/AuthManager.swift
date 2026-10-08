@@ -365,6 +365,9 @@ final class AuthManager {
     @MainActor
     private static func purgeCachedUserContent(discardsPendingWrites: Bool) {
         let context = PersistenceController.shared.container.mainContext
+        // Contacts and check-ins belong to the account; never leave another
+        // user's emergency contacts or location history on the device.
+        SafetyCheckInStore.shared.reset()
         do {
             try purgeCachedUserContent(in: context, discardsPendingWrites: discardsPendingWrites)
             if discardsPendingWrites {
@@ -413,6 +416,7 @@ final class AuthManager {
         }
 
         URLCache.shared.removeAllCachedResponses()
+        Task { @MainActor in SafetyCheckInStore.shared.reset() }
 
         isGuest = false
         currentUser = nil

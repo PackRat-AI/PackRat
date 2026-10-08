@@ -4,10 +4,13 @@ export async function sendEmail({
   to,
   subject,
   html,
+  text,
 }: {
   to: string;
   subject: string;
   html: string;
+  /** Plain-text alternative; improves deliverability and accessibility. */
+  text?: string;
 }): Promise<void> {
   const { RESEND_API_KEY, EMAIL_FROM } = getEnv();
   const { Resend } = await import('resend');
@@ -18,6 +21,7 @@ export async function sendEmail({
     to,
     subject,
     html,
+    ...(text ? { text } : {}),
   });
 }
 

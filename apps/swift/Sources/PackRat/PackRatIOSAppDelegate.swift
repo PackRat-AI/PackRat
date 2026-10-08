@@ -11,6 +11,9 @@ final class PackRatIOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        // Relaunched in the background for a significant location change:
+        // restart monitoring so the update is delivered and queued.
+        Task { @MainActor in SafetyLocationTracker.shared.resumeIfNeeded() }
         return true
     }
 

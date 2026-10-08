@@ -108,6 +108,14 @@ export const apiEnvObjectSchema = z.object({
   // targets the sandbox gateway, api.sandbox.push.apple.com.
   APNS_ENVIRONMENT: z.enum(['production', 'sandbox']).optional(),
 
+  // Twilio SMS for safety check-in messages to emergency contacts. Optional so
+  // deploys without SMS still validate; SMS sends no-op (with a warning) when
+  // unset and contacts with an email address still get email.
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN: z.string().optional(),
+  // Verified toll-free number in E.164, e.g. +18885550100.
+  TWILIO_FROM_NUMBER: z.string().optional(),
+
   // Cloudflare R2 Storage (config values)
   CLOUDFLARE_ACCOUNT_ID: z.string(),
   CLOUDFLARE_AI_GATEWAY_ID: z.string().optional(),

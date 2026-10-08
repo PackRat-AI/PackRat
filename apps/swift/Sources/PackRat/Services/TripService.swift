@@ -56,6 +56,10 @@ final class TripService: Sendable {
         notes: String? = nil,
         packId: String? = nil,
         checklist: [TripChecklistItem]? = nil,
+        status: TripStatus? = nil,
+        startedAt: String? = nil,
+        completedAt: String? = nil,
+        plannedRoute: [TripRoutePoint]? = nil,
         log: TripLog? = nil,
         excludedFromStats: Bool = false
     ) async throws -> Trip {
@@ -68,6 +72,10 @@ final class TripService: Sendable {
             notes: notes,
             packId: packId,
             checklist: checklist,
+            status: status,
+            startedAt: startedAt,
+            completedAt: completedAt,
+            plannedRoute: plannedRoute,
             log: log,
             excludedFromStats: excludedFromStats,
             localUpdatedAt: Date.iso8601Now()

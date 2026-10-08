@@ -18,15 +18,23 @@ private struct OutboxFlushModifier: ViewModifier {
             .task {
                 outbox.refreshCounts(modelContext)
                 await outbox.flush(context: modelContext)
+                await SafetyCheckInStore.shared.flush()
             }
             // NetworkMonitor is @Observable, so this fires on every connectivity change.
             .onChange(of: isConnected) { _, connected in
                 guard connected else { return }
-                Task { await outbox.flush(context: modelContext) }
+                Task {
+                    await outbox.flush(context: modelContext)
+                    // Check-ins and I'm Safe queued without signal go out now.
+                    await SafetyCheckInStore.shared.flush()
+                }
             }
             .onChange(of: scenePhase) { _, phase in
                 guard phase == .active else { return }
-                Task { await outbox.flush(context: modelContext) }
+                Task {
+                    await outbox.flush(context: modelContext)
+                    await SafetyCheckInStore.shared.flush()
+                }
             }
     }
 }

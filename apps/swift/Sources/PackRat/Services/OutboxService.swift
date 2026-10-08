@@ -398,6 +398,10 @@ final class OutboxService {
                     notes: payload.notes,
                     packId: payload.packId,
                     checklist: payload.checklist,
+                    status: payload.status,
+                    startedAt: payload.startedAt,
+                    completedAt: payload.completedAt,
+                    plannedRoute: payload.plannedRoute,
                     log: payload.log,
                     excludedFromStats: payload.excludedFromStats ?? false
                 )

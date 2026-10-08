@@ -21,6 +21,12 @@ export const TripChecklistItemSchema = z.object({
 
 const TripChecklistSchema = z.array(TripChecklistItemSchema).max(50);
 
+export const TripStatusSchema = z.enum(['planned', 'in_progress', 'complete']);
+
+/** The route a user intends to follow, e.g. an imported GPX track. */
+export const TripPlannedRouteSchema = z
+  .array(z.object({ latitude: z.number(), longitude: z.number() }))
+  .max(20000);
 export const TripActivitySchema = z.enum([
   'hiking',
   'backpacking',
@@ -63,6 +69,10 @@ export const TripSchema = z.object({
   userId: z.string().optional(),
   packId: z.string().nullable().optional(),
   checklist: TripChecklistSchema.nullable().optional(),
+  status: TripStatusSchema.optional(),
+  startedAt: nullableDateString.optional(),
+  completedAt: nullableDateString.optional(),
+  plannedRoute: TripPlannedRouteSchema.nullable().optional(),
   log: TripLogSchema.nullable().optional(),
   excludedFromStats: z.boolean().optional(),
   deleted: z.boolean(),
@@ -99,6 +109,10 @@ export const UpdateTripBodySchema = z.object({
   endDate: z.string().nullable().optional(),
   packId: z.string().nullable().optional(),
   checklist: TripChecklistSchema.nullable().optional(),
+  status: TripStatusSchema.optional(),
+  startedAt: z.string().datetime().nullable().optional(),
+  completedAt: z.string().datetime().nullable().optional(),
+  plannedRoute: TripPlannedRouteSchema.nullable().optional(),
   log: TripLogSchema.nullable().optional(),
   excludedFromStats: z.boolean().optional(),
   localUpdatedAt: z.string().datetime().optional(),
@@ -106,5 +120,7 @@ export const UpdateTripBodySchema = z.object({
 
 export type TripLocation = z.infer<typeof TripLocationSchema>;
 export type TripChecklistItem = z.infer<typeof TripChecklistItemSchema>;
+export type TripStatus = z.infer<typeof TripStatusSchema>;
+export type TripPlannedRoute = z.infer<typeof TripPlannedRouteSchema>;
 export type TripActivity = z.infer<typeof TripActivitySchema>;
 export type TripSummit = z.infer<typeof TripSummitSchema>;

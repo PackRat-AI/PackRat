@@ -88,6 +88,10 @@ struct Trip: Codable, Identifiable, Sendable {
     let deleted: Bool
     let createdAt: String?
     let updatedAt: String?
+    var status: TripStatus? = nil
+    var startedAt: String? = nil
+    var completedAt: String? = nil
+    var plannedRoute: [TripRoutePoint]? = nil
     /// What happened on the trip, once it's over. See `TripLog`.
     var log: TripLog? = nil
     var excludedFromStats: Bool? = nil
