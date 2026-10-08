@@ -15,13 +15,13 @@ export interface TrailDb {
   tag(label: string): { execute(query: SQL): Promise<unknown> };
 }
 
+const resultWithRowsSchema = z.object({ rows: z.array(z.unknown()) });
+
 /** Rows from either driver's result shape (array, or `{ rows }`). */
 function rowsOf(result: unknown): unknown[] {
   if (Array.isArray(result)) return result;
-  if (result && typeof result === 'object' && 'rows' in result && Array.isArray(result.rows)) {
-    return result.rows;
-  }
-  return [];
+  const withRows = resultWithRowsSchema.safeParse(result);
+  return withRows.success ? withRows.data.rows : [];
 }
 
 export const TRAIL_SEARCH_LIMIT = 20;
@@ -62,9 +62,12 @@ export function toTrailSummary(row: SummaryRow): TrailSummary {
   };
 }
 
+const LIKE_SPECIAL_CHARS: ReadonlySet<string> = new Set(['\\', '%', '_']);
+
 /** `%`, `_` and `\` match literally inside the ILIKE pattern. */
 export function likePattern(q: string): string {
-  return `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+  const escaped = Array.from(q, (c) => (LIKE_SPECIAL_CHARS.has(c) ? `\\${c}` : c)).join('');
+  return `%${escaped}%`;
 }
 
 /**
