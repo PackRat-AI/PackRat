@@ -48,6 +48,8 @@ struct TripLog: Codable, Equatable, Sendable {
     var source: Source?
     /// Named peaks reached on the trip.
     var summits: [TripSummit]
+    /// Trails from the trail registry walked on the trip.
+    var trails: [TripTrail]
 
     enum Source: String, Codable, Sendable {
         case manual, track, trail
@@ -59,7 +61,8 @@ struct TripLog: Codable, Equatable, Sendable {
         elevationGainMeters: Double? = nil,
         route: String? = nil,
         source: Source? = nil,
-        summits: [TripSummit] = []
+        summits: [TripSummit] = [],
+        trails: [TripTrail] = []
     ) {
         self.activities = activities
         self.distanceMeters = distanceMeters
@@ -67,6 +70,7 @@ struct TripLog: Codable, Equatable, Sendable {
         self.route = route
         self.source = source
         self.summits = summits
+        self.trails = trails
     }
 
     /// Unknown activity strings from a newer server are dropped rather than
@@ -81,12 +85,14 @@ struct TripLog: Codable, Equatable, Sendable {
         source = try? container.decodeIfPresent(Source.self, forKey: .source)
         summits = (try? container.decodeIfPresent([Lenient<TripSummit>].self, forKey: .summits))?
             .compactMap(\.value) ?? []
+        trails = (try? container.decodeIfPresent([Lenient<TripTrail>].self, forKey: .trails))?
+            .compactMap(\.value) ?? []
     }
 
     /// True when the log carries nothing worth saving.
     var isEmpty: Bool {
         activities.isEmpty && distanceMeters == nil && elevationGainMeters == nil
-            && (route?.isEmpty ?? true) && summits.isEmpty
+            && (route?.isEmpty ?? true) && summits.isEmpty && trails.isEmpty
     }
 }
 
@@ -104,6 +110,14 @@ struct TripSummit: Codable, Equatable, Hashable, Sendable {
         if let osmId { return "osm:\(osmId)" }
         return "name:" + name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
+}
+
+/// A trail walked on a trip. Mirrors `TripTrailSchema`; `id` is the trail's
+/// id in PackRat's trail registry, stable across data refreshes.
+struct TripTrail: Codable, Equatable, Hashable, Sendable {
+    var id: String
+    var name: String
+    var lengthMeters: Double?
 }
 
 enum TripActivity: String, Codable, CaseIterable, Identifiable, Sendable {
