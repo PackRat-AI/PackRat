@@ -172,4 +172,62 @@ struct TripStatsTests {
         #expect(s.topGear.last?.name == "Stove")
         #expect(s.packWeights.map(\.grams) == [5_000, 4_000])
     }
+
+    // MARK: - Scope
+
+    private func logged(_ trip: Trip, _ activities: [TripActivity]) -> Trip {
+        var trip = trip
+        trip.log = TripLog(activities: activities, distanceMeters: 1_000)
+        return trip
+    }
+
+    private var scopeTrips: [Trip] {
+        [
+            logged(trip("a", day(2024, 7, 1), day(2024, 7, 3)), [.hiking]),
+            logged(trip("b", day(2025, 3, 1), day(2025, 3, 2)), [.skiing]),
+            logged(trip("c", day(2025, 8, 1), day(2025, 8, 4)), [.hiking, .camping]),
+            trip("d", day(2026, 2, 1), day(2026, 2, 2)),
+        ]
+    }
+
+    @Test("A year scope keeps that year's trips and charts its January to December")
+    func yearScope() {
+        let s = TripStats(trips: scopeTrips, packs: [], scope: .init(year: 2025), now: now, calendar: calendar)
+        #expect(s.finished.map(\.id) == ["b", "c"])
+        #expect(s.totals.nights == 1 + 3)
+        #expect(s.months.count == 12)
+        #expect(s.months.first?.month == calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
+        #expect(s.months.map(\.trips).reduce(0, +) == 2)
+    }
+
+    @Test("An activity scope keeps only trips logged with it, across years")
+    func activityScope() {
+        let s = TripStats(trips: scopeTrips, packs: [], scope: .init(activity: .hiking), now: now, calendar: calendar)
+        #expect(s.finished.map(\.id) == ["a", "c"])
+        let both = TripStats(trips: scopeTrips, packs: [], scope: .init(year: 2025, activity: .hiking), now: now, calendar: calendar)
+        #expect(both.finished.map(\.id) == ["c"])
+    }
+
+    @Test("Menus list every year and logged activity whatever the scope")
+    func scopeOptionsIgnoreScope() {
+        let s = TripStats(trips: scopeTrips, packs: [], scope: .init(year: 2024), now: now, calendar: calendar)
+        #expect(s.availableYears == [2026, 2025, 2024])
+        #expect(s.availableActivities == [.hiking, .camping, .skiing])
+        #expect(s.hasTrips)
+    }
+
+    @Test("A scope nothing matches is empty, but the record still has trips")
+    func emptyScope() {
+        let s = TripStats(trips: scopeTrips, packs: [], scope: .init(year: 2026, activity: .skiing), now: now, calendar: calendar)
+        #expect(s.isEmpty)
+        #expect(s.hasTrips)
+    }
+
+    @Test("Scope titles read naturally")
+    func scopeTitles() {
+        #expect(TripStatsScopeBar.title(.all) == "All Time")
+        #expect(TripStatsScopeBar.title(.init(year: 2025)) == "2025")
+        #expect(TripStatsScopeBar.title(.init(activity: .hiking)) == "Hiking")
+        #expect(TripStatsScopeBar.title(.init(year: 2025, activity: .hiking)) == "Hiking in 2025")
+    }
 }
