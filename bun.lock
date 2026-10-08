@@ -727,6 +727,13 @@
         "typescript": "catalog:",
       },
     },
+    "packages/trails-import": {
+      "name": "@packrat/trails-import",
+      "version": "2.2.3",
+      "dependencies": {
+        "@packrat/env": "workspace:*",
+      },
+    },
     "packages/types": {
       "name": "@packrat/types",
       "version": "2.2.3",
@@ -1697,6 +1704,8 @@
     "@packrat/overpass": ["@packrat/overpass@workspace:packages/overpass"],
 
     "@packrat/schemas": ["@packrat/schemas@workspace:packages/schemas"],
+
+    "@packrat/trails-import": ["@packrat/trails-import@workspace:packages/trails-import"],
 
     "@packrat/types": ["@packrat/types@workspace:packages/types"],
 
