@@ -77,3 +77,28 @@ export type TrailSummary = z.infer<typeof TrailSummarySchema>;
 export type TrailDetail = z.infer<typeof TrailDetailSchema>;
 export type TrailMatch = z.infer<typeof TrailMatchSchema>;
 export type TrailSearchQuery = z.infer<typeof TrailSearchQuerySchema>;
+
+/** A `trails` row from the trail database, with its bounding box. Columns are snake_case. */
+export const TrailRegistryRowSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  length_m: z.coerce.number(),
+  distance_m: z.coerce.number().nullable().optional(),
+  west: z.coerce.number(),
+  south: z.coerce.number(),
+  east: z.coerce.number(),
+  north: z.coerce.number(),
+});
+
+export const TrailRegistryDetailRowSchema = TrailRegistryRowSchema.extend({
+  lines: z.array(z.string()),
+});
+
+export const TrailRegistryMatchRowSchema = TrailRegistryRowSchema.extend({
+  coverage: z.coerce.number(),
+});
+
+/** A raw SQL result in the `{ rows }` shape some drivers return. */
+export const SqlRowsResultSchema = z.object({ rows: z.array(z.unknown()) });
+
+export type TrailRegistryRow = z.infer<typeof TrailRegistryRowSchema>;

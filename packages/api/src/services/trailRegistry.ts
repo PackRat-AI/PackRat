@@ -1,8 +1,13 @@
-import type {
-  TrailDetail,
-  TrailMatch,
-  TrailSearchQuery,
-  TrailSummary,
+import {
+  SqlRowsResultSchema,
+  type TrailDetail,
+  type TrailMatch,
+  TrailRegistryDetailRowSchema,
+  TrailRegistryMatchRowSchema,
+  type TrailRegistryRow,
+  TrailRegistryRowSchema,
+  type TrailSearchQuery,
+  type TrailSummary,
 } from '@packrat/schemas/trails';
 import { type SQL, sql } from 'drizzle-orm';
 import { z } from 'zod';
@@ -15,12 +20,10 @@ export interface TrailDb {
   tag(label: string): { execute(query: SQL): Promise<unknown> };
 }
 
-const resultWithRowsSchema = z.object({ rows: z.array(z.unknown()) });
-
 /** Rows from either driver's result shape (array, or `{ rows }`). */
 function rowsOf(result: unknown): unknown[] {
   if (Array.isArray(result)) return result;
-  const withRows = resultWithRowsSchema.safeParse(result);
+  const withRows = SqlRowsResultSchema.safeParse(result);
   return withRows.success ? withRows.data.rows : [];
 }
 
@@ -34,25 +37,9 @@ const TRAIL_MATCH_LIMIT = 20;
 /** Degrees of latitude in a kilometre, for the index prefilter box. */
 const DEGREES_PER_KM = 1 / 111;
 
-const SummaryRowSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  length_m: z.coerce.number(),
-  distance_m: z.coerce.number().nullable().optional(),
-  west: z.coerce.number(),
-  south: z.coerce.number(),
-  east: z.coerce.number(),
-  north: z.coerce.number(),
-});
-
-const DetailRowSchema = SummaryRowSchema.extend({ lines: z.array(z.string()) });
-const MatchRowSchema = SummaryRowSchema.extend({ coverage: z.coerce.number() });
-
-type SummaryRow = z.infer<typeof SummaryRowSchema>;
-
 const BBOX_COLUMNS = sql`ST_XMin(t.geom) AS west, ST_YMin(t.geom) AS south, ST_XMax(t.geom) AS east, ST_YMax(t.geom) AS north`;
 
-export function toTrailSummary(row: SummaryRow): TrailSummary {
+export function toTrailSummary(row: TrailRegistryRow): TrailSummary {
   return {
     id: row.id,
     name: row.name,
@@ -108,7 +95,7 @@ export async function searchTrails(db: TrailDb, query: TrailSearchQuery): Promis
     ORDER BY ${sql.join(order, sql`, `)}
     LIMIT ${limit}
   `);
-  return z.array(SummaryRowSchema).parse(rowsOf(result)).map(toTrailSummary);
+  return z.array(TrailRegistryRowSchema).parse(rowsOf(result)).map(toTrailSummary);
 }
 
 /** One trail with its geometry, or null when the id is unknown. */
@@ -123,7 +110,7 @@ export async function getTrail(db: TrailDb, id: string): Promise<TrailDetail | n
     FROM trails t
     WHERE t.id = ${id}::uuid
   `);
-  const row = DetailRowSchema.nullable().parse(rowsOf(result)[0] ?? null);
+  const row = TrailRegistryDetailRowSchema.nullable().parse(rowsOf(result)[0] ?? null);
   if (!row) return null;
   const { distanceMeters: _, ...summary } = toTrailSummary(row);
   return { ...summary, lines: row.lines };
@@ -154,7 +141,7 @@ export async function matchRoute(db: TrailDb, route: string): Promise<TrailMatch
     LIMIT ${TRAIL_MATCH_LIMIT}
   `);
   return z
-    .array(MatchRowSchema)
+    .array(TrailRegistryMatchRowSchema)
     .parse(rowsOf(result))
     .map((row) => {
       const { distanceMeters: _, ...summary } = toTrailSummary(row);

@@ -4,6 +4,7 @@ import { authPlugin } from '@packrat/api/middleware/auth';
 import { getTrail, matchRoute, searchTrails } from '@packrat/api/services/trailRegistry';
 import { stitchRouteGeometry } from '@packrat/api/services/trails';
 import { captureApiException } from '@packrat/api/utils/sentry';
+import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
   RouteDetailRowSchema,
   RouteSearchRowSchema,
@@ -17,8 +18,6 @@ import { safeJsonParse } from '@packrat/utils';
 import { sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
-
-const ErrorSchema = z.object({ error: z.string() });
 
 /** 503 when this server has no trail database; anything else is reported. */
 function registryError({
@@ -67,8 +66,8 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
       query: TrailSearchQuerySchema,
       response: {
         200: z.array(TrailSummarySchema),
-        500: ErrorSchema,
-        503: ErrorSchema,
+        500: ErrorResponseSchema,
+        503: ErrorResponseSchema,
       },
       isAuthenticated: true,
       detail: {
@@ -97,8 +96,8 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
       body: TrailMatchBodySchema,
       response: {
         200: z.array(TrailMatchSchema),
-        500: ErrorSchema,
-        503: ErrorSchema,
+        500: ErrorResponseSchema,
+        503: ErrorResponseSchema,
       },
       isAuthenticated: true,
       detail: {
@@ -125,9 +124,9 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
       params: z.object({ id: z.string().uuid() }),
       response: {
         200: TrailDetailSchema,
-        404: ErrorSchema,
-        500: ErrorSchema,
-        503: ErrorSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+        503: ErrorResponseSchema,
       },
       isAuthenticated: true,
       detail: {
