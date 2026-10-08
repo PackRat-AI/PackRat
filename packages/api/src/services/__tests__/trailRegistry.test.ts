@@ -66,7 +66,7 @@ describe('likePattern', () => {
 describe('searchTrails', () => {
   it('searches by name across the registry, longest first among equal matches', async () => {
     const { db, calls } = fakeDb([{ ...halfDome, distance_m: null }]);
-    const trails = await searchTrails(db, { q: 'half dome' });
+    const trails = await searchTrails({ db, query: { q: 'half dome' } });
 
     expect(trails.map((t) => t.name)).toEqual(['Half Dome Trail']);
     expect(calls[0]?.label).toBe('trailRegistry.search');
@@ -86,7 +86,10 @@ describe('searchTrails', () => {
 
   it('keeps a point search inside the radius and orders it nearest first', async () => {
     const { db, calls } = fakeDb({ rows: [{ ...halfDome, distance_m: 614 }] });
-    const trails = await searchTrails(db, { lat: 37.74, lon: -119.53, radiusKm: 5, limit: 4 });
+    const trails = await searchTrails({
+      db,
+      query: { lat: 37.74, lon: -119.53, radiusKm: 5, limit: 4 },
+    });
 
     expect(trails[0]?.distanceMeters).toBe(614);
     expect(calls[0]?.sql).toContain('ST_DWithin(t.geom::geography');
@@ -98,7 +101,7 @@ describe('searchTrails', () => {
 
   it('never returns trails that vanished upstream', async () => {
     const { db, calls } = fakeDb([]);
-    await expect(searchTrails(db, { q: 'mist' })).resolves.toEqual([]);
+    await expect(searchTrails({ db, query: { q: 'mist' } })).resolves.toEqual([]);
     expect(calls[0]?.sql).toContain('t.missing_since_release IS NULL');
   });
 });
@@ -106,7 +109,7 @@ describe('searchTrails', () => {
 describe('getTrail', () => {
   it('returns the trail with one encoded polyline per part', async () => {
     const { db, calls } = fakeDb([{ ...halfDome, lines: ['abc', 'def'] }]);
-    await expect(getTrail(db, halfDome.id)).resolves.toEqual({
+    await expect(getTrail({ db, id: halfDome.id })).resolves.toEqual({
       id: halfDome.id,
       name: 'Half Dome Trail',
       lengthMeters: 3284,
@@ -119,14 +122,14 @@ describe('getTrail', () => {
 
   it('returns null for an unknown id', async () => {
     const { db } = fakeDb([]);
-    await expect(getTrail(db, halfDome.id)).resolves.toBeNull();
+    await expect(getTrail({ db, id: halfDome.id })).resolves.toBeNull();
   });
 });
 
 describe('matchRoute', () => {
   it('buffers the route and keeps trails it covers enough of', async () => {
     const { db, calls } = fakeDb([{ ...halfDome, coverage: '0.98765' }]);
-    const matches = await matchRoute(db, '_p~iF~ps|U');
+    const matches = await matchRoute({ db, route: '_p~iF~ps|U' });
 
     expect(matches).toEqual([
       {

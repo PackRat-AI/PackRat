@@ -49,18 +49,18 @@ if (!/^\d{4}-\d{2}-\d{2}\.\d+$/.test(release)) {
   process.exit(1);
 }
 
-async function run(cmd: string[], stdin?: string): Promise<void> {
+async function run({ cmd, stdin }: { cmd: string[]; stdin?: string }): Promise<void> {
   const proc = Bun.spawn(cmd, {
     stdin: stdin === undefined ? 'inherit' : new TextEncoder().encode(stdin),
     stdout: 'inherit',
     stderr: 'inherit',
   });
   const code = await proc.exited;
-  if (code !== 0) throw new Error(`${cmd[0]} exited with ${code}`);
+  if (code !== 0) throw new Error(`${cmd.at(0)} exited with ${code}`);
 }
 
 const psql = (file: string) =>
-  run(['psql', DB_URL, '-v', 'ON_ERROR_STOP=1', '-v', `release=${release}`, '-f', file]);
+  run({ cmd: ['psql', DB_URL, '-v', 'ON_ERROR_STOP=1', '-v', `release=${release}`, '-f', file] });
 
 console.log('Applying schema...');
 await psql(join(__dirname, 'schema.sql'));
@@ -75,9 +75,9 @@ if (!values['reconcile-only']) {
   const classes = TRAIL_CLASSES.map((c) => `'${c}'`).join(', ');
 
   console.log(`Loading Overture ${release} named trail segments in ${values.bbox}...`);
-  await run(
-    ['duckdb'],
-    `
+  await run({
+    cmd: ['duckdb'],
+    stdin: `
 INSTALL spatial; LOAD spatial;
 INSTALL httpfs; LOAD httpfs;
 INSTALL postgres; LOAD postgres;
@@ -95,7 +95,7 @@ WHERE subtype = 'road'
   AND bbox.ymin <= ${north} AND bbox.ymax >= ${south};
 CALL postgres_execute('pg', 'INSERT INTO trail_segments SELECT overture_id, name, class, subtype, ST_SetSRID(ST_GeomFromWKB(decode(wkb, ''hex'')), 4326) FROM trail_segments_load ON CONFLICT DO NOTHING; DROP TABLE trail_segments_load; ANALYZE trail_segments;');
 `,
-  );
+  });
 }
 
 console.log(`Reconciling trails for release ${release}...`);

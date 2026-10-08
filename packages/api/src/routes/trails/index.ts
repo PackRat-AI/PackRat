@@ -57,7 +57,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
     '/registry/search',
     async ({ query }) => {
       try {
-        return await searchTrails(createOsmDb(), query);
+        return await searchTrails({ db: createOsmDb(), query });
       } catch (error) {
         return registryError({ error, operation: 'trailRegistry.search', extra: { ...query } });
       }
@@ -83,7 +83,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
     '/registry/match',
     async ({ body }) => {
       try {
-        return await matchRoute(createOsmDb(), body.route);
+        return await matchRoute({ db: createOsmDb(), route: body.route });
       } catch (error) {
         return registryError({
           error,
@@ -113,7 +113,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
     '/registry/:id',
     async ({ params }) => {
       try {
-        const trail = await getTrail(createOsmDb(), params.id);
+        const trail = await getTrail({ db: createOsmDb(), id: params.id });
         if (!trail) return status(404, { error: 'Trail not found' });
         return trail;
       } catch (error) {

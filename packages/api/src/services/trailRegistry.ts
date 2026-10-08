@@ -62,7 +62,13 @@ export function likePattern(q: string): string {
  * radius and nearer trails rank higher among equal name matches; without
  * one, the whole registry is searched by name.
  */
-export async function searchTrails(db: TrailDb, query: TrailSearchQuery): Promise<TrailSummary[]> {
+export async function searchTrails({
+  db,
+  query,
+}: {
+  db: TrailDb;
+  query: TrailSearchQuery;
+}): Promise<TrailSummary[]> {
   const { q, lat, lon } = query;
   const limit = query.limit ?? TRAIL_SEARCH_LIMIT;
   const radiusKm = query.radiusKm ?? TRAIL_SEARCH_RADIUS_KM;
@@ -99,7 +105,13 @@ export async function searchTrails(db: TrailDb, query: TrailSearchQuery): Promis
 }
 
 /** One trail with its geometry, or null when the id is unknown. */
-export async function getTrail(db: TrailDb, id: string): Promise<TrailDetail | null> {
+export async function getTrail({
+  db,
+  id,
+}: {
+  db: TrailDb;
+  id: string;
+}): Promise<TrailDetail | null> {
   const result = await db.tag('trailRegistry.get').execute(sql`
     SELECT t.id::text AS id, t.name, t.length_m, ${BBOX_COLUMNS},
       ARRAY(
@@ -120,7 +132,13 @@ export async function getTrail(db: TrailDb, id: string): Promise<TrailDetail | n
  * The trails a recorded route walks along, with the share of each trail's
  * length it covers. Trails it only crosses or brushes are dropped.
  */
-export async function matchRoute(db: TrailDb, route: string): Promise<TrailMatch[]> {
+export async function matchRoute({
+  db,
+  route,
+}: {
+  db: TrailDb;
+  route: string;
+}): Promise<TrailMatch[]> {
   const result = await db.tag('trailRegistry.match').execute(sql`
     WITH corridor AS (
       SELECT ST_Buffer(
