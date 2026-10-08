@@ -428,6 +428,13 @@
       "when": 1791401538871,
       "tag": "0060_warm_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1791453734665,
+      "tag": "0061_reapply_trip_goal_columns",
+      "breakpoints": true
     }
   ]
 }
