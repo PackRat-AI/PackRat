@@ -89,6 +89,7 @@ struct GoalsCard: View {
     let unit: TripDistanceUnit
     let onAdd: () -> Void
     let onEdit: (TripGoal) -> Void
+    var onShare: (TripGoalProgress) -> Void = { _ in }
 
     private var current: [TripGoalProgress] { progress.filter { $0.phase != .ended } }
     private var past: [TripGoalProgress] { progress.filter { $0.phase == .ended } }
@@ -123,6 +124,11 @@ struct GoalsCard: View {
                             GoalRow(progress: item, unit: unit)
                         }
                         .buttonStyle(.plain)
+                        .contextMenu {
+                            Button { onEdit(item.goal) } label: { Label("Edit Goal", systemImage: "pencil") }
+                            Button { onShare(item) } label: { Label("Share Goal", systemImage: "square.and.arrow.up") }
+                        }
+                        .accessibilityAction(named: "Share Goal") { onShare(item) }
                         .accessibilityIdentifier("trip_stats_goal_\(item.goal.id)")
                     }
                 }
@@ -142,6 +148,10 @@ struct GoalsCard: View {
                                 PastGoalRow(progress: item, unit: unit)
                             }
                             .buttonStyle(.plain)
+                            .contextMenu {
+                                Button { onShare(item) } label: { Label("Share Goal", systemImage: "square.and.arrow.up") }
+                            }
+                            .accessibilityAction(named: "Share Goal") { onShare(item) }
                         }
                     }
                     .padding(.top, 8)
