@@ -1,13 +1,45 @@
 import { createOsmDb } from '@packrat/api/db';
 import { firstQueryRow, queryRows } from '@packrat/api/db/queryRows';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { getTrail, matchRoute, searchTrails } from '@packrat/api/services/trailRegistry';
 import { stitchRouteGeometry } from '@packrat/api/services/trails';
 import { captureApiException } from '@packrat/api/utils/sentry';
-import { RouteDetailRowSchema, RouteSearchRowSchema } from '@packrat/schemas/trails';
+import { ErrorResponseSchema } from '@packrat/schemas/shared';
+import {
+  RouteDetailRowSchema,
+  RouteSearchRowSchema,
+  TrailDetailSchema,
+  TrailMatchBodySchema,
+  TrailMatchSchema,
+  TrailSearchQuerySchema,
+  TrailSummarySchema,
+} from '@packrat/schemas/trails';
 import { safeJsonParse } from '@packrat/utils';
 import { sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
+
+/** 503 when this server has no trail database; anything else is reported. */
+function registryError({
+  error,
+  operation,
+  extra,
+}: {
+  error: unknown;
+  operation: string;
+  extra: Record<string, unknown>;
+}) {
+  if (error instanceof Error && error.message.includes('not configured')) {
+    return status(503, { error: 'Trail features are not enabled on this server' });
+  }
+  captureApiException({
+    error,
+    operation,
+    tags: { feature: 'trails' },
+    extra: { ...extra, httpStatus: 500, errorCode: 'TRAIL_REGISTRY_ERROR' },
+  });
+  return status(500, { error: 'Trail lookup failed' });
+}
 
 // ── Routes ─────────────────────────────────────────────────────────────────
 
@@ -17,6 +49,93 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
     'trails.RouteSearchRow': RouteSearchRowSchema,
   })
   .use(authPlugin)
+
+  // ── Trail registry (PackRat's own trails table, stable ids) ──────────────
+
+  /** GET /api/trails/registry/search — trails by name and/or near a point. */
+  .get(
+    '/registry/search',
+    async ({ query }) => {
+      try {
+        return await searchTrails({ db: createOsmDb(), query });
+      } catch (error) {
+        return registryError({ error, operation: 'trailRegistry.search', extra: { ...query } });
+      }
+    },
+    {
+      query: TrailSearchQuerySchema,
+      response: {
+        200: z.array(TrailSummarySchema),
+        500: ErrorResponseSchema,
+        503: ErrorResponseSchema,
+      },
+      isAuthenticated: true,
+      detail: {
+        tags: ['Trails'],
+        summary: 'Search the trail registry by name and/or location',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+
+  /** POST /api/trails/registry/match — trails a recorded route walked along. */
+  .post(
+    '/registry/match',
+    async ({ body }) => {
+      try {
+        return await matchRoute({ db: createOsmDb(), route: body.route });
+      } catch (error) {
+        return registryError({
+          error,
+          operation: 'trailRegistry.match',
+          extra: { routeLength: body.route.length },
+        });
+      }
+    },
+    {
+      body: TrailMatchBodySchema,
+      response: {
+        200: z.array(TrailMatchSchema),
+        500: ErrorResponseSchema,
+        503: ErrorResponseSchema,
+      },
+      isAuthenticated: true,
+      detail: {
+        tags: ['Trails'],
+        summary: 'Trails a route (encoded polyline) passes along, with coverage',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+
+  /** GET /api/trails/registry/:id — one trail with its geometry. */
+  .get(
+    '/registry/:id',
+    async ({ params }) => {
+      try {
+        const trail = await getTrail({ db: createOsmDb(), id: params.id });
+        if (!trail) return status(404, { error: 'Trail not found' });
+        return trail;
+      } catch (error) {
+        return registryError({ error, operation: 'trailRegistry.get', extra: { id: params.id } });
+      }
+    },
+    {
+      params: z.object({ id: z.string().uuid() }),
+      response: {
+        200: TrailDetailSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+        503: ErrorResponseSchema,
+      },
+      isAuthenticated: true,
+      detail: {
+        tags: ['Trails'],
+        summary: 'Get a registry trail with its geometry as encoded polylines',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
 
   /**
    * GET /api/trails/search

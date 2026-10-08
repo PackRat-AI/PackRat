@@ -110,7 +110,17 @@ struct TripLogSection: View {
                     .lineLimit(2)
                     .accessibilityIdentifier("trip_log_summits")
                 }
-                if log.distanceMeters == nil, log.elevationGainMeters == nil, log.activities.isEmpty, log.summits.isEmpty {
+                if !log.trails.isEmpty {
+                    Label(
+                        log.trails.map(\.name).formatted(.list(type: .and)),
+                        systemImage: "point.bottomleft.forward.to.point.topright.scurvepath"
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .accessibilityIdentifier("trip_log_trails")
+                }
+                if log.distanceMeters == nil, log.elevationGainMeters == nil, log.activities.isEmpty, log.summits.isEmpty, log.trails.isEmpty {
                     Text("Route saved").font(.callout).foregroundStyle(.secondary)
                 }
             }
@@ -171,7 +181,9 @@ struct TripLogEditor: View {
     @State private var route: String?
     @State private var source: TripLog.Source?
     @State private var summits: [TripSummit] = []
+    @State private var trails: [TripTrail] = []
     @State private var showingPeakPicker = false
+    @State private var showingTrailPicker = false
     @State private var showingImporter = false
     @State private var importError: String?
     @State private var isSaving = false
@@ -226,6 +238,25 @@ struct TripLogEditor: View {
                     Text("Route")
                 } footer: {
                     Text("Export a GPX file from your watch, Strava, AllTrails, Gaia GPS or another app. PackRat reads the distance, climbing and route from it.")
+                }
+
+                Section {
+                    ForEach(trails, id: \.self) { trail in
+                        TripTrailRow(trail: trail, unit: unit)
+                    }
+                    .onDelete { trails.remove(atOffsets: $0) }
+                    Button {
+                        showingTrailPicker = true
+                    } label: {
+                        Label("Add Trail", systemImage: "plus")
+                    }
+                    .accessibilityIdentifier("trip_log_add_trail")
+                } header: {
+                    Text("Trails")
+                } footer: {
+                    Text(routeCoordinates.count >= 2
+                        ? "Trails your route follows are suggested first. Trails count toward your Trails list."
+                        : "Picking a trail fills in its route and length if you haven't added them. Trails count toward your Trails list.")
                 }
 
                 Section {
@@ -295,7 +326,7 @@ struct TripLogEditor: View {
                     }
                 }
             } message: {
-                Text("The trip stays, but its activity, distance, climbing, route and summits stop counting in your stats.")
+                Text("The trip stays, but its activity, distance, climbing, route, summits and trails stop counting in your stats.")
             }
             .peakPicker(isPresented: $showingPeakPicker) {
                 PeakPickerView(
@@ -304,6 +335,17 @@ struct TripLogEditor: View {
                     excluded: Set(summits.map(\.peakKey))
                 ) { picked in
                     if !summits.contains(where: { $0.peakKey == picked.peakKey }) { summits.append(picked) }
+                }
+            }
+            .sheet(isPresented: $showingTrailPicker) {
+                TrailPickerView(
+                    route: routeCoordinates,
+                    location: trip.location,
+                    excluded: Set(trails.map(\.id))
+                ) { picked in
+                    guard !trails.contains(where: { $0.id == picked.id }) else { return }
+                    trails.append(picked)
+                    Task { await fillFromTrail(picked) }
                 }
             }
             .onAppear(perform: prefill)
@@ -360,6 +402,20 @@ struct TripLogEditor: View {
         route = log.route
         source = log.source
         summits = log.summits
+        trails = log.trails
+    }
+
+    /// The first trail picked on an empty log supplies the route and length,
+    /// which the user can still correct (an out-and-back walks it twice).
+    private func fillFromTrail(_ trail: TripTrail) async {
+        guard route == nil, parse(distanceText) == nil else { return }
+        if let length = trail.lengthMeters {
+            distanceText = format(unit.distanceValue(length), digits: 1)
+        }
+        guard let detail = try? await TrailRegistryService.shared.trail(id: trail.id),
+              route == nil, let line = TrailRoute.encoded(detail.parts) else { return }
+        route = line
+        source = .trail
     }
 
     private func format(_ value: Double, digits: Int) -> String {
@@ -400,13 +456,33 @@ struct TripLogEditor: View {
             elevationGainMeters: parse(elevationText).map(unit.metres(fromElevation:)),
             route: route,
             source: source ?? .manual,
-            summits: summits
+            summits: summits,
+            trails: trails
         )
         Task {
             await viewModel.saveLog(log, for: trip.id, context: modelContext)
             isSaving = false
             dismiss()
         }
+    }
+}
+
+private struct TripTrailRow: View {
+    let trail: TripTrail
+    let unit: TripDistanceUnit
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "point.bottomleft.forward.to.point.topright.scurvepath")
+                .foregroundStyle(Color.accentColor)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(trail.name)
+                if let length = trail.lengthMeters {
+                    Text(unit.formatDistance(length)).font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 

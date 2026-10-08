@@ -1,0 +1,14 @@
+{
+  "name": "@packrat/trails-import",
+  "version": "2.2.3",
+  "private": true,
+  "description": "Overture Maps trail import and id reconciliation for the trail database",
+  "type": "module",
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "import": "bun run import.ts"
+  },
+  "dependencies": {
+    "@packrat/env": "workspace:*"
+  }
+}

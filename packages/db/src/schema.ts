@@ -610,6 +610,14 @@ export type TripLog = {
   route?: string | null;
   source?: 'manual' | 'track' | 'trail' | null;
   summits?: TripSummit[] | null;
+  trails?: TripTrail[] | null;
+};
+
+/** A trail walked on a trip; `id` is `trails.id` on the trail database. */
+export type TripTrail = {
+  id: string;
+  name: string;
+  lengthMeters?: number | null;
 };
 
 /** A named peak reached on a trip. `osmId` is the OpenStreetMap node it was picked from. */
