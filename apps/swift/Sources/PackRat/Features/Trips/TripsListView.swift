@@ -194,5 +194,11 @@ private struct TripRowView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+        if trip.isExcludedFromStats, NavItem.tripStats.isFeatureEnabled {
+            Label("Not in Trip Stats", systemImage: "eye.slash")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("trip_row_excluded_from_stats")
+        }
     }
 }

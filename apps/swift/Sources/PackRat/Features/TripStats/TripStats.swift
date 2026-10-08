@@ -106,6 +106,30 @@ struct TripStats: Sendable {
         }
     }
 
+    /// Narrows the record to one year, one activity, or both. Lifetime
+    /// collections (goals, parks, peaks, long trails) aren't scoped.
+    struct Scope: Equatable, Hashable, Sendable {
+        var year: Int?
+        var activity: TripActivity?
+
+        static let all = Scope()
+        var isAll: Bool { year == nil && activity == nil }
+
+        func includes(_ trip: FinishedTrip, calendar: Calendar) -> Bool {
+            if let year, calendar.component(.year, from: trip.start) != year { return false }
+            if let activity, trip.trip.log?.activities.contains(activity) != true { return false }
+            return true
+        }
+    }
+
+    let scope: Scope
+    /// Years holding a finished trip, newest first, whatever the scope.
+    let availableYears: [Int]
+    /// Activities logged on any finished trip, in menu order, whatever the scope.
+    let availableActivities: [TripActivity]
+    /// True when there are finished trips at all, before the scope narrows them.
+    let hasTrips: Bool
+    /// Finished trips inside the scope.
     let finished: [FinishedTrip]
     let totals: Totals
     let thisYear: Totals
@@ -120,7 +144,7 @@ struct TripStats: Sendable {
     /// Trips per activity, busiest first. A trip with two activities counts in both.
     let activities: [ActivityBucket]
     let routes: [Route]
-    /// The last twelve months, oldest first, including empty ones.
+    /// The last twelve months, or the scoped year's twelve, oldest first, including empty ones.
     let months: [MonthBucket]
     /// Busiest calendar month across the whole history, by nights then trips.
     let busiestMonth: Int?
@@ -133,10 +157,10 @@ struct TripStats: Sendable {
 
     var isEmpty: Bool { finished.isEmpty }
 
-    init(trips: [Trip], packs: [Pack], now: Date = .now, calendar: Calendar = .current) {
+    init(trips: [Trip], packs: [Pack], scope: Scope = .all, now: Date = .now, calendar: Calendar = .current) {
         let today = calendar.startOfDay(for: now)
 
-        let finished: [FinishedTrip] = trips.activeTrips.compactMap { trip in
+        let everyFinished: [FinishedTrip] = trips.activeTrips.compactMap { trip in
             guard !trip.isExcludedFromStats, let start = trip.startDate?.toDate() else { return nil }
             let end = trip.endDate?.toDate() ?? start
             let startDay = calendar.startOfDay(for: start)
@@ -146,6 +170,12 @@ struct TripStats: Sendable {
             return FinishedTrip(trip: trip, start: startDay, end: endDay, nights: max(nights, 0))
         }
         .sorted { $0.start < $1.start }
+        self.scope = scope
+        self.hasTrips = !everyFinished.isEmpty
+        self.availableYears = Set(everyFinished.map { calendar.component(.year, from: $0.start) }).sorted(by: >)
+        let logged = Set(everyFinished.flatMap { $0.trip.log?.activities ?? [] })
+        self.availableActivities = TripActivity.allCases.filter(logged.contains)
+        let finished = everyFinished.filter { scope.includes($0, calendar: calendar) }
         self.finished = finished
 
         self.totals = Self.totals(finished, calendar: calendar)
@@ -193,7 +223,13 @@ struct TripStats: Sendable {
             return Route(id: trip.id, name: trip.trip.name, coordinates: coordinates)
         }
 
-        self.months = Self.lastTwelveMonths(finished, today: today, calendar: calendar)
+        let firstMonth: Date? = if let year = scope.year {
+            calendar.date(from: DateComponents(year: year, month: 1, day: 1))
+        } else {
+            calendar.date(from: calendar.dateComponents([.year, .month], from: today))
+                .flatMap { calendar.date(byAdding: .month, value: -11, to: $0) }
+        }
+        self.months = firstMonth.map { Self.twelveMonths(finished, from: $0, calendar: calendar) } ?? []
 
         var byMonth: [Int: (nights: Int, trips: Int)] = [:]
         var bySeason: [Season: (nights: Int, trips: Int)] = [:]
@@ -290,10 +326,9 @@ struct TripStats: Sendable {
         }
     }
 
-    private static func lastTwelveMonths(_ trips: [FinishedTrip], today: Date, calendar: Calendar) -> [MonthBucket] {
-        guard let thisMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: today)) else { return [] }
-        var buckets: [MonthBucket] = (0..<12).reversed().compactMap { offset in
-            calendar.date(byAdding: .month, value: -offset, to: thisMonth).map { MonthBucket(month: $0) }
+    private static func twelveMonths(_ trips: [FinishedTrip], from first: Date, calendar: Calendar) -> [MonthBucket] {
+        var buckets: [MonthBucket] = (0..<12).compactMap { offset in
+            calendar.date(byAdding: .month, value: offset, to: first).map { MonthBucket(month: $0) }
         }
         for trip in trips {
             guard let month = calendar.date(from: calendar.dateComponents([.year, .month], from: trip.start)),
