@@ -261,6 +261,11 @@ struct TripStatsView: View {
             PlacesCard(places: places, scope: scope)
         }
 
+        let landscapes = TripLandscapes(finished: stats.finished)
+        if !landscapes.isEmpty {
+            LandscapesCard(landscapes: landscapes, scope: scope)
+        }
+
         if isAll {
             ParksCard(record: record, unit: distanceUnit)
             PeaksCard(record: record, unit: distanceUnit)
@@ -494,6 +499,9 @@ private struct MonthlyChartCard: View {
             }
             .frame(height: 180)
             .animation(.snappy, value: metric)
+            .accessibilityChartDescriptor(TripStatsChartDescriptor(
+                descriptor: TripStatsChartDescriptors.monthly(months, metric: metric.rawValue, title: title)
+            ))
         }
     }
 }
@@ -537,6 +545,9 @@ private struct ActivitiesCard: View {
                 selectedLabel = nil
                 onSelect(bucket.activity)
             }
+            .accessibilityChartDescriptor(TripStatsChartDescriptor(
+                descriptor: TripStatsChartDescriptors.activities(activities)
+            ))
             .accessibilityIdentifier("trip_stats_activities_chart")
         }
     }
@@ -631,15 +642,24 @@ private struct TripsMapCard: View {
 
     @State private var position: MapCameraPosition = .automatic
     @State private var selection: String?
+    @State private var span: MKCoordinateSpan?
+    /// Trips under a cluster that can't split any further (same spot).
+    @State private var stacked: [String] = []
 
-    private var located: [(trip: TripStats.FinishedTrip, coordinate: CLLocationCoordinate2D)] {
+    private var located: [(id: String, coordinate: CLLocationCoordinate2D)] {
         trips.compactMap { trip in
-            trip.trip.location.map { (trip, CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)) }
+            trip.trip.location.map { (trip.id, CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)) }
         }
     }
 
-    private var selectedTrip: TripStats.FinishedTrip? {
-        trips.first { $0.id == selection }
+    private var clusters: [MapCluster<String>] {
+        MapClusters.cluster(located, span: span)
+    }
+
+    /// The trips listed under the map: the tapped pin, or a stack of trips at one spot.
+    private var listed: [TripStats.FinishedTrip] {
+        let ids = stacked.isEmpty ? selection.map { [$0] } ?? [] : stacked
+        return ids.compactMap { id in trips.first { $0.id == id } }
     }
 
     var body: some View {
@@ -650,18 +670,50 @@ private struct TripsMapCard: View {
                     MapPolyline(coordinates: route.coordinates)
                         .stroke(Color.orange.opacity(0.55), style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
                 }
-                ForEach(located, id: \.trip.id) { item in
-                    Marker(item.trip.trip.name, systemImage: "tent.fill", coordinate: item.coordinate)
-                        .tint(Color.accentColor)
-                        .tag(item.trip.id)
+                ForEach(clusters) { cluster in
+                    if cluster.isSingle, let id = cluster.members.first, let trip = trips.first(where: { $0.id == id }) {
+                        Marker(trip.trip.name, systemImage: "tent.fill", coordinate: cluster.coordinate)
+                            .tint(Color.accentColor)
+                            .tag(id)
+                    } else {
+                        Marker("\(cluster.members.count) trips", monogram: Text("\(cluster.members.count)"), coordinate: cluster.coordinate)
+                            .tint(Color.accentColor)
+                            .tag(cluster.id)
+                    }
                 }
             }
             .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
+            .onMapCameraChange(frequency: .onEnd) { context in
+                span = context.region.span
+            }
+            .task(id: trips.map(\.id)) {
+                // Frame every trip and route, not `.automatic`: that re-frames as clusters
+                // merge and split, and it lets the pins' heads run off the top.
+                if let region = MapClusters.region(
+                    framing: located.map(\.coordinate) + routes.flatMap(\.coordinates),
+                    headroom: true
+                ) {
+                    position = .region(region)
+                }
+            }
+            .onChange(of: selection) { _, id in
+                stacked = []
+                guard let id, let cluster = clusters.first(where: { $0.id == id }), !cluster.isSingle else { return }
+                selection = nil
+                let coordinates = located.filter { cluster.members.contains($0.id) }.map(\.coordinate)
+                guard let region = MapClusters.region(framing: coordinates) else { return }
+                if let span, region.span.latitudeDelta >= span.latitudeDelta * 0.9 {
+                    // Already as close as it gets: the trips share a spot, so list them.
+                    stacked = cluster.members
+                } else {
+                    withAnimation { position = .region(region) }
+                }
+            }
             .frame(height: 240)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .accessibilityIdentifier("trip_stats_map")
 
-            if let trip = selectedTrip {
+            ForEach(listed) { trip in
                 Button {
                     appState.selectedTripId = trip.id
                     appState.navItem = .trips
@@ -722,7 +774,7 @@ private struct PackWeightCard: View {
                     x: .value("Date", point.date),
                     y: .value("Base weight", point.grams / unit.gramsPerUnit)
                 )
-                                .foregroundStyle(Color.accentColor.opacity(0.6))
+                .foregroundStyle(Color.accentColor.opacity(0.6))
                 PointMark(
                     x: .value("Date", point.date),
                     y: .value("Base weight", point.grams / unit.gramsPerUnit)
@@ -739,6 +791,9 @@ private struct PackWeightCard: View {
             }
             .chartYAxis { AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) }
             .frame(height: 160)
+            .accessibilityChartDescriptor(TripStatsChartDescriptor(
+                descriptor: TripStatsChartDescriptors.weight(points, unit: unit)
+            ))
         }
     }
 }

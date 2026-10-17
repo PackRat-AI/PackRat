@@ -611,6 +611,8 @@ export type TripLog = {
   source?: 'manual' | 'track' | 'trail' | null;
   summits?: TripSummit[] | null;
   trails?: TripTrail[] | null;
+  /** Set by the user; null means the app reads it from where the trip was. */
+  landscape?: 'desert' | 'mountain' | 'forest' | 'coastal' | 'water' | 'grassland' | 'polar' | null;
 };
 
 /** A trail walked on a trip; `id` is `trails.id` on the trail database. */

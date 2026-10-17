@@ -56,6 +56,17 @@ export const TripTrailSchema = z.object({
   lengthMeters: z.number().nonnegative().nullable().optional(),
 });
 
+/** Set by the user on a trip log; otherwise the app reads it from the map. */
+export const TripLandscapeSchema = z.enum([
+  'desert',
+  'mountain',
+  'forest',
+  'coastal',
+  'water',
+  'grassland',
+  'polar',
+]);
+
 export const TripLogSchema = z.object({
   activities: z.array(TripActivitySchema),
   distanceMeters: z.number().nonnegative().nullable().optional(),
@@ -64,6 +75,7 @@ export const TripLogSchema = z.object({
   source: z.enum(['manual', 'track', 'trail']).nullable().optional(),
   summits: z.array(TripSummitSchema).max(100).nullable().optional(),
   trails: z.array(TripTrailSchema).max(50).nullable().optional(),
+  landscape: TripLandscapeSchema.nullable().optional(),
 });
 
 export const TripSchema = z.object({

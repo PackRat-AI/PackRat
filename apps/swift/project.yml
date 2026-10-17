@@ -87,6 +87,8 @@ targets:
         buildPhase: resources
       - path: Resources/Places.json
         buildPhase: resources
+      - path: Resources/Landscapes.bin
+        buildPhase: resources
     entitlements:
       path: Resources/PackRat-iOS.entitlements
       properties:
@@ -265,6 +267,8 @@ targets:
       - path: Resources/LongTrails.json
         buildPhase: resources
       - path: Resources/Places.json
+        buildPhase: resources
+      - path: Resources/Landscapes.bin
         buildPhase: resources
     entitlements:
       path: Resources/PackRat-macOS.entitlements

@@ -50,6 +50,8 @@ struct TripLog: Codable, Equatable, Sendable {
     var summits: [TripSummit]
     /// Trails from the trail registry walked on the trip.
     var trails: [TripTrail]
+    /// Set by the user; nil means "from where the trip was" (`TripLandscapes`).
+    var landscape: TripLandscape?
 
     enum Source: String, Codable, Sendable {
         case manual, track, trail
@@ -62,7 +64,8 @@ struct TripLog: Codable, Equatable, Sendable {
         route: String? = nil,
         source: Source? = nil,
         summits: [TripSummit] = [],
-        trails: [TripTrail] = []
+        trails: [TripTrail] = [],
+        landscape: TripLandscape? = nil
     ) {
         self.activities = activities
         self.distanceMeters = distanceMeters
@@ -71,6 +74,7 @@ struct TripLog: Codable, Equatable, Sendable {
         self.source = source
         self.summits = summits
         self.trails = trails
+        self.landscape = landscape
     }
 
     /// Unknown activity strings from a newer server are dropped rather than
@@ -87,12 +91,13 @@ struct TripLog: Codable, Equatable, Sendable {
             .compactMap(\.value) ?? []
         trails = (try? container.decodeIfPresent([Lenient<TripTrail>].self, forKey: .trails))?
             .compactMap(\.value) ?? []
+        landscape = try? container.decodeIfPresent(TripLandscape.self, forKey: .landscape)
     }
 
     /// True when the log carries nothing worth saving.
     var isEmpty: Bool {
         activities.isEmpty && distanceMeters == nil && elevationGainMeters == nil
-            && (route?.isEmpty ?? true) && summits.isEmpty && trails.isEmpty
+            && (route?.isEmpty ?? true) && summits.isEmpty && trails.isEmpty && landscape == nil
     }
 }
 
@@ -118,6 +123,32 @@ struct TripTrail: Codable, Equatable, Hashable, Sendable {
     var id: String
     var name: String
     var lengthMeters: Double?
+}
+
+/// The kind of country a trip was in. Mirrors `TripLandscapeSchema`.
+enum TripLandscape: String, Codable, CaseIterable, Identifiable, Sendable {
+    case desert, mountain, forest, coastal, water, grassland, polar
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .water: return "Lakes & Rivers"
+        default: return rawValue.capitalized
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .desert: return "sun.dust.fill"
+        case .mountain: return "mountain.2.fill"
+        case .forest: return "tree.fill"
+        case .coastal: return "water.waves"
+        case .water: return "drop.fill"
+        case .grassland: return "leaf.fill"
+        case .polar: return "snowflake"
+        }
+    }
 }
 
 enum TripActivity: String, Codable, CaseIterable, Identifiable, Sendable {
