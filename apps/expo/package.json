@@ -114,7 +114,7 @@
     "expo-location": "~57.0.7",
     "expo-navigation-bar": "~57.0.2",
     "expo-network": "~57.0.1",
-    "expo-router": "~57.0.10",
+    "expo-router": "~57.0.11",
     "expo-secure-store": "~57.0.1",
     "expo-splash-screen": "~57.0.5",
     "expo-sqlite": "~57.0.1",
