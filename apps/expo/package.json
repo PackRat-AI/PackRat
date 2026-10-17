@@ -87,7 +87,7 @@
     "@tanstack/query-async-storage-persister": "^5.100.10",
     "@tanstack/react-form": "^1.0.5",
     "@tanstack/react-query": "catalog:",
-    "@tanstack/react-query-persist-client": "^5.100.10",
+    "@tanstack/react-query-persist-client": "^5.101.4",
     "ai": "catalog:",
     "better-auth": "catalog:",
     "burnt": "^0.13.0",
