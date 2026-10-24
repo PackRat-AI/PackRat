@@ -25,8 +25,10 @@ import {
 import { ScopeBar } from '../components/ScopeBar';
 import { useDistanceUnit } from '../hooks/useDistanceUnit';
 import {
+  useFollowGoals,
   useGoalProgress,
   useIdleGear,
+  useLongTrailProgress,
   useParksAndPeaks,
   useTripPlaces,
   useTripStatsRecord,
@@ -50,7 +52,9 @@ export function TripStatsScreen() {
   };
   const record = useTripStatsRecord(scope);
   const parksAndPeaks = useParksAndPeaks(record);
-  const goals = useGoalProgress({ record, parksAndPeaks });
+  const longTrails = useLongTrailProgress(record);
+  const followGoals = useFollowGoals();
+  const goals = useGoalProgress({ record, parksAndPeaks, longTrails });
   const places = useTripPlaces(record);
   const idleGear = useIdleGear(record);
   const settings = use$(tripStatsSettingsStore);
@@ -172,6 +176,8 @@ export function TripStatsScreen() {
                   record={record}
                   places={places}
                   parksAndPeaks={parksAndPeaks}
+                  longTrails={longTrails}
+                  followGoals={followGoals}
                   unit={unit}
                   showLifetime={isAll}
                 />

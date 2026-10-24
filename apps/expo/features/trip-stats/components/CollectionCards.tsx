@@ -1,3 +1,4 @@
+import type { TripGoal } from '@packrat/schemas/tripStats';
 import { Text } from '@packrat/ui/src/text';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -8,6 +9,7 @@ import { View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { formatDay } from '../lib/useStatsFormat';
 import { scopeParams } from '../screens/PlacesScreens';
+import type { LongTrailProgress } from '../utils/longTrails';
 import {
   highestAscent,
   latestParkVisit,
@@ -20,6 +22,7 @@ import type { Coordinate } from '../utils/polyline';
 import type { TripPlaces } from '../utils/tripPlaces';
 import type { TripStatsRecord } from '../utils/tripStats';
 import { formatElevation, type TripDistanceUnit } from '../utils/units';
+import { LongTrailsCard } from './LongTrailCards';
 import { PlacesCard } from './PlacesAndGearCards';
 import { CardLink, ProgressBar, StatsCard } from './StatsParts';
 
@@ -162,12 +165,16 @@ export function CollectionCards({
   record,
   places,
   parksAndPeaks,
+  longTrails,
+  followGoals,
   unit,
   showLifetime,
 }: {
   record: TripStatsRecord;
   places: TripPlaces;
   parksAndPeaks: ParksAndPeaks;
+  longTrails: readonly LongTrailProgress[];
+  followGoals: ReadonlyMap<string, TripGoal>;
   unit: TripDistanceUnit;
   /** Parks and peaks are lifetime collections, shown only while the record isn't filtered. */
   showLifetime: boolean;
@@ -193,6 +200,21 @@ export function CollectionCards({
             parksAndPeaks={parksAndPeaks}
             unit={unit}
             onPress={() => router.push('/trip-stats/peaks')}
+          />
+          <LongTrailsCard
+            progress={longTrails}
+            followGoals={followGoals}
+            unit={unit}
+            onOpen={(code) =>
+              router.push({ pathname: '/trip-stats/trail/[code]', params: { code } })
+            }
+            onFollow={() => {
+              const next = longTrails.find((item) => !followGoals.has(item.trail.code));
+              router.push({
+                pathname: '/trip-stats/goal',
+                params: { kind: 'longTrail', ...(next ? { trailCode: next.trail.code } : {}) },
+              });
+            }}
           />
         </>
       ) : null}

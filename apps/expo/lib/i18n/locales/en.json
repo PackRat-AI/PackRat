@@ -492,7 +492,10 @@
       "deleteBody": "Your trips and stats stay as they are.",
       "kinds": {
         "annual": "This Year",
-        "custom": "Custom Dates"
+        "custom": "Custom Dates",
+        "longTrail": "Long Trail",
+        "peakList": "Peak List",
+        "parkList": "National Parks"
       },
       "metrics": {
         "trips": "Trips",
@@ -509,7 +512,39 @@
         "days": "days",
         "summits": "peaks",
         "parks": "parks"
-      }
+      },
+      "titles": {
+        "longTrail": "Long Trail",
+        "peakList": "Peak List",
+        "parkList": "National Parks",
+        "everyPark": "Every National Park"
+      },
+      "trail": "Trail",
+      "trailLength": "Length",
+      "trailStates": "States",
+      "trailFooter": "Every trip with a logged route on the trail counts, in any order and any year. A stretch walked twice counts once.",
+      "peakListPlaceholder": "Colorado Fourteeners",
+      "peaks": "Peaks",
+      "peaksCount_one": "{{count}} peak",
+      "peaksCount_other": "{{count}} peaks",
+      "addPeak": "Add a peak",
+      "removePeak": "Remove {{name}}",
+      "climbed": "Climbed",
+      "peaksFooter": "A peak ticks off when a trip logs it or you add it as a past summit, whenever that was.",
+      "parkListPlaceholder": "Utah's Mighty Five",
+      "everyPark": "Every National Park",
+      "chooseParks": "Choose parks",
+      "parksNone": "None chosen",
+      "everyParkFooter": "All {{count}} US National Parks. Visits from before you set the goal count too.",
+      "someParksFooter": "Pick the parks on your list. Visits from before you set the goal count too.",
+      "finishBy": "Finish by",
+      "finishDate": "Finish date",
+      "finishFooterOn": "Pace is measured from {{date}} to this date.",
+      "finishFooterOff": "Without a date there's no pace, just what's left.",
+      "parksSelected_one": "{{count}} selected",
+      "parksSelected_other": "{{count}} selected",
+      "clearParks": "Clear",
+      "visited": "Visited"
     },
     "thisYear": {
       "title": "This Year",
@@ -684,6 +719,28 @@
       "save": "Save",
       "cancel": "Cancel",
       "delete": "Delete"
+    },
+    "longTrails": {
+      "title": "Long Trails",
+      "followTitle": "Follow a long trail",
+      "followBody": "{{trails}}, walked in sections or all at once.",
+      "followTrail": "Follow a trail",
+      "notFollowed": "Not followed",
+      "summary": "{{value}} of {{total}} · {{share}}",
+      "followThis": "Follow this trail",
+      "setFinishDate": "Set finish date",
+      "stopFollowing": "Stop following",
+      "stopTitle": "Stop following this trail?",
+      "stopBody": "Your trips still count. Follow it again any time.",
+      "followingSince": "Following since {{date}}",
+      "finishBy": "Finish by {{date}}",
+      "trips": "Trips on the trail",
+      "noTrips": "No trips on this trail yet. A trip counts once its log has a route that follows the trail.",
+      "footer": "Counted from logged routes. A stretch walked twice counts once.",
+      "newStretch": "{{amount}} new",
+      "walkedBefore": "All walked before",
+      "moreOptions": "More options",
+      "mapLabel": "Map of the {{trail}}, with walked stretches highlighted"
     }
   },
   "trips": {

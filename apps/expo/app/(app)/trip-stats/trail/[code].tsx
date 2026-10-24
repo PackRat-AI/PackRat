@@ -1,0 +1,9 @@
+import { LongTrailDetailScreen } from 'expo-app/features/trip-stats/screens/LongTrailScreens';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
+import { Redirect } from 'expo-router';
+
+export default function TripStatsLongTrailRoute() {
+  const enableTripStats = useFeatureFlag('enableTripStats');
+  if (!enableTripStats) return <Redirect href="/" />;
+  return <LongTrailDetailScreen />;
+}

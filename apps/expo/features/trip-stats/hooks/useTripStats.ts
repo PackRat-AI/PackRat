@@ -3,12 +3,14 @@ import type { TripGoal, TripStatsEntry } from '@packrat/schemas/tripStats';
 import { useDetailedPacks } from 'expo-app/features/packs/hooks/useDetailedPacks';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { useMemo } from 'react';
+import { getLongTrails, longTrailCache } from '../lib/longTrails';
 import { getNationalParks } from '../lib/nationalParks';
 import { getPlaceAtlas, localizedCountryName, placesCache } from '../lib/places';
 import { tripStatsEntriesStore } from '../store/entries';
 import { tripGoalsStore } from '../store/goals';
 import { computeGoalProgress, type GoalProgress, sortGoals } from '../utils/goalProgress';
 import { computeIdleGear, type IdleGear } from '../utils/idleGear';
+import { computeLongTrailProgress, type LongTrailProgress } from '../utils/longTrails';
 import { computeParksAndPeaks, type ParksAndPeaks } from '../utils/parksAndPeaks';
 import { computeTripPlaces, type TripPlaces } from '../utils/tripPlaces';
 import { ALL_SCOPE, computeTripStats, type Scope, type TripStatsRecord } from '../utils/tripStats';
@@ -42,20 +44,53 @@ export function useParksAndPeaks(record: TripStatsRecord): ParksAndPeaks {
   );
 }
 
+/** Every long trail against every finished trip's route; lifetime, like parks and peaks. */
+export function useLongTrailProgress(record: TripStatsRecord): LongTrailProgress[] {
+  return useMemo(
+    () =>
+      getLongTrails().map((trail) =>
+        computeLongTrailProgress({ trail, finished: record.allFinished, cache: longTrailCache }),
+      ),
+    [record.allFinished],
+  );
+}
+
 export function useGoalProgress({
   record,
   parksAndPeaks,
+  longTrails,
 }: {
   record: TripStatsRecord;
   parksAndPeaks: ParksAndPeaks;
+  longTrails: readonly LongTrailProgress[];
 }): GoalProgress[] {
+  const goals = useTripGoals();
+  return useMemo(() => {
+    const longTrailMeters = (code: string) =>
+      longTrails.find((progress) => progress.trail.code === code)?.meters ?? null;
+    return goals.flatMap(
+      (goal) =>
+        computeGoalProgress({
+          goal,
+          finished: record.allFinished,
+          parksAndPeaks,
+          longTrailMeters,
+        }) ?? [],
+    );
+  }, [goals, record.allFinished, parksAndPeaks, longTrails]);
+}
+
+/** The goal behind following a trail, if the user follows it. */
+export function useFollowGoals(): Map<string, TripGoal> {
   const goals = useTripGoals();
   return useMemo(
     () =>
-      goals.flatMap(
-        (goal) => computeGoalProgress({ goal, finished: record.allFinished, parksAndPeaks }) ?? [],
+      new Map(
+        goals.flatMap((goal) =>
+          goal.kind === 'longTrail' && goal.trailCode ? [[goal.trailCode, goal] as const] : [],
+        ),
       ),
-    [goals, record.allFinished, parksAndPeaks],
+    [goals],
   );
 }
 

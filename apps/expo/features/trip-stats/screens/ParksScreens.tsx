@@ -1,4 +1,5 @@
 import DateTimePicker from '@expo/ui/community/datetime-picker';
+import { use$ } from '@legendapp/state/react';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
@@ -14,6 +15,7 @@ import { FlatList, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProgressBar, SearchField, StatsRow } from '../components/StatsParts';
 import { useParksAndPeaks, useTripStatsRecord } from '../hooks/useTripStats';
+import { goalParkSelection$ } from '../lib/parkSelection';
 import { formatDay } from '../lib/useStatsFormat';
 import { tripStatsEntriesStore } from '../store/entries';
 import { NATIONAL_PARK_COUNT, type ParkStatus, visitedParks } from '../utils/parksAndPeaks';
@@ -207,6 +209,99 @@ export function ParkDetailScreen() {
           }}
         />
       ) : null}
+    </SafeAreaView>
+  );
+}
+
+/**
+ * Picks the parks on a park-list goal: a Material 3 list with a checkbox per row, visited parks
+ * marked, and a clear action in the app bar while anything is chosen. Search matches a name or a
+ * state code.
+ */
+export function ChooseParksScreen() {
+  const { t } = useTranslation();
+  const { colors } = useColorScheme();
+  const record = useTripStatsRecord();
+  const parksAndPeaks = useParksAndPeaks(record);
+  const selection = use$(goalParkSelection$);
+  const [query, setQuery] = useState('');
+  const chosen = useMemo(() => new Set(selection), [selection]);
+  const parks = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return parksAndPeaks.parks;
+    return parksAndPeaks.parks.filter(
+      (status) =>
+        status.park.name.toLowerCase().includes(needle) ||
+        status.park.states.some((state) => state.toLowerCase() === needle),
+    );
+  }, [parksAndPeaks.parks, query]);
+  const toggle = (code: string) =>
+    goalParkSelection$.set(
+      chosen.has(code) ? selection.filter((item) => item !== code) : [...selection, code],
+    );
+
+  return (
+    <SafeAreaView className="flex-1" edges={['bottom']}>
+      <Stack.Screen
+        options={{
+          ...getAppBarOptions(),
+          title:
+            selection.length > 0
+              ? t('tripStats.goals.parksSelected', { count: selection.length })
+              : t('tripStats.goals.chooseParks'),
+          headerRight:
+            selection.length > 0
+              ? () => (
+                  <Button
+                    variant="plain"
+                    onPress={() => goalParkSelection$.set([])}
+                    testID={testIds.tripStats.parkSelectClearBtn}
+                  >
+                    <Text className="text-primary">{t('tripStats.goals.clearParks')}</Text>
+                  </Button>
+                )
+              : undefined,
+        }}
+      />
+      <FlatList
+        data={parks}
+        keyExtractor={(status) => status.park.code}
+        keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={
+          <SearchField
+            value={query}
+            onChangeText={setQuery}
+            placeholder={t('tripStats.parks.search')}
+            testID={testIds.tripStats.parkSearchInput}
+          />
+        }
+        renderItem={({ item: status }) => (
+          <StatsRow
+            title={status.park.name}
+            subtitle={[
+              status.park.states.join(', '),
+              status.visits.length > 0 ? t('tripStats.goals.visited') : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+            trailing={
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                pointerEvents="none"
+              >
+                <Icon
+                  name={chosen.has(status.park.code) ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                  size={24}
+                  color={chosen.has(status.park.code) ? colors.primary : colors.grey}
+                />
+              </View>
+            }
+            onPress={() => toggle(status.park.code)}
+            testID={testIds.tripStats.parkSelectRow(status.park.code)}
+          />
+        )}
+      />
     </SafeAreaView>
   );
 }

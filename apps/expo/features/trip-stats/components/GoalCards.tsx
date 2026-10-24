@@ -10,6 +10,7 @@ import { testIds } from 'expo-app/lib/testIds';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import type { z } from 'zod';
+import { findLongTrail } from '../lib/longTrails';
 import { formatDecimal, formatMonthDay, useStatsFormat } from '../lib/useStatsFormat';
 import {
   type GoalProgress,
@@ -172,13 +173,28 @@ function useGoalStatus() {
   };
 }
 
-/** A goal's own name, else what it measures. */
+/** A goal's own name, else what it lists or measures. */
 export function useGoalTitle() {
   const { t } = useTranslation();
   return (goal: GoalProgress['goal']): string => {
-    const named = goal.name?.trim();
-    if (goal.kind === 'custom' && named) return named;
-    return t(`tripStats.goals.metrics.${goal.metric}`);
+    const named = goal.name?.trim() || null;
+    switch (goal.kind) {
+      case 'longTrail':
+        return findLongTrail(goal.trailCode)?.name ?? t('tripStats.goals.titles.longTrail');
+      case 'peakList':
+        return named ?? t('tripStats.goals.titles.peakList');
+      case 'parkList':
+        return (
+          named ??
+          (goal.parkCodes
+            ? t('tripStats.goals.titles.parkList')
+            : t('tripStats.goals.titles.everyPark'))
+        );
+      case 'custom':
+        return named ?? t(`tripStats.goals.metrics.${goal.metric}`);
+      default:
+        return t(`tripStats.goals.metrics.${goal.metric}`);
+    }
   };
 }
 
@@ -220,11 +236,6 @@ function GoalRow({ progress, onPress }: { progress: GoalProgress; onPress?: () =
   );
 }
 
-/** Dated goals open the editor; long-trail and list goals are not edited here. */
-function isEditable(progress: GoalProgress): boolean {
-  return progress.goal.kind === 'annual' || progress.goal.kind === 'custom';
-}
-
 export function GoalsCard({
   progress,
   onAdd,
@@ -260,11 +271,7 @@ export function GoalsCard({
       ) : (
         <View>
           {current.map((item) => (
-            <GoalRow
-              key={item.goal.id}
-              progress={item}
-              onPress={isEditable(item) ? () => onEdit(item.goal.id) : undefined}
-            />
+            <GoalRow key={item.goal.id} progress={item} onPress={() => onEdit(item.goal.id)} />
           ))}
           <Button
             variant="plain"
@@ -294,8 +301,7 @@ export function GoalsCard({
             ? past.map((item) => (
                 <Pressable
                   key={item.goal.id}
-                  onPress={isEditable(item) ? () => onEdit(item.goal.id) : undefined}
-                  disabled={!isEditable(item)}
+                  onPress={() => onEdit(item.goal.id)}
                   testID={testIds.tripStats.goalRow(item.goal.id)}
                   android_ripple={{ color: colors.grey5 }}
                   className="min-h-12 flex-row items-center gap-3"
