@@ -27,6 +27,53 @@ struct ChatStreamViewModelTests {
         #expect(viewModel.messages.last?.content == "Trail ready")
     }
 
+    @Test("HTTP 200 SSE errors become visible failures")
+    func inBandErrorIsVisible() async throws {
+        let viewModel = ChatViewModel(service: MockChatService(chunks: [
+            #"{"type":"start","messageId":"m"}"#,
+            #"{"type":"error","errorText":"Chat is temporarily unavailable. Please try again."}"#,
+            #"{"type":"finish","finishReason":"error"}"#,
+        ]))
+        viewModel.inputText = "Hello"
+        viewModel.sendMessage()
+        try await waitUntil { !viewModel.isStreaming }
+        #expect(viewModel.error == "Chat is temporarily unavailable. Please try again.")
+        #expect(viewModel.messages.map(\.role) == [.assistant, .user])
+        viewModel.inputText = "Try again"
+        #expect(viewModel.canSend)
+    }
+
+    @Test("empty and malformed streams fail visibly", arguments: [
+        [String](),
+        [#"{"type":"finish","finishReason":"stop"}"#],
+        ["not JSON"],
+        [#"{"type":"error","errorText":"  "}"#],
+        [#"{"type":"finish","finishReason":"error"}"#],
+    ])
+    func unusableStreamIsVisible(chunks: [String]) async throws {
+        let viewModel = ChatViewModel(service: MockChatService(chunks: chunks))
+        viewModel.inputText = "Hello"
+        viewModel.sendMessage()
+        try await waitUntil { !viewModel.isStreaming }
+        #expect(viewModel.error?.isEmpty == false)
+        #expect(viewModel.messages.map(\.role) == [.assistant, .user])
+    }
+
+    @Test("partial text survives a later stream failure")
+    func partialResponseSurvivesFailure() async throws {
+        let viewModel = ChatViewModel(service: MockChatService(chunks: [
+            #"{"type":"text-delta","delta":"Bring water."}"#,
+            #"{"type":"tool-input-start","toolCallId":"c","toolName":"getWeather"}"#,
+            #"{"type":"error","errorText":"Please try again."}"#,
+        ]))
+        viewModel.inputText = "Hello"
+        viewModel.sendMessage()
+        try await waitUntil { !viewModel.isStreaming }
+        #expect(viewModel.error == "Please try again.")
+        #expect(viewModel.messages.last?.content == "Bring water.")
+        #expect(viewModel.messages.last?.toolInvocations.isEmpty == true)
+    }
+
     @Test("sendMessage removes placeholder and surfaces stream errors")
     func sendMessageSurfacesStreamErrors() async throws {
         let service = MockChatService(chunks: [], error: MockChatError.streamFailed)
@@ -307,5 +354,120 @@ private func waitUntil(
             return
         }
         try await Task.sleep(for: .milliseconds(10))
+    }
+}
+
+@Suite("Chat cancellation and recovery")
+@MainActor
+struct ChatRecoveryTests {
+    @Test("cancel then immediately send cannot be completed by the old task")
+    func cancelThenSend() async throws {
+        let service = ControlledChatService()
+        let model = ChatViewModel(service: service)
+        model.inputText = "First"
+        model.sendMessage()
+        try await service.waitForRequests(1)
+        model.cancelStreaming()
+        model.inputText = "Second"
+        model.sendMessage()
+        try await service.waitForRequests(2)
+        #expect(model.isStreaming)
+        #expect(model.error == nil)
+        await service.finish(1, chunks: [#"{"type":"text-delta","delta":"Second answer"}"#])
+        try await waitUntil { !model.isStreaming }
+        #expect(model.messages.map(\.content) == [ChatContext.general.greeting, "First", "Second", "Second answer"])
+    }
+
+    @Test("cancelling keeps partial text without an error")
+    func cancelPartialResponse() async throws {
+        let service = ControlledChatService()
+        let model = ChatViewModel(service: service)
+        model.inputText = "Hello"
+        model.sendMessage()
+        try await service.waitForRequests(1)
+        await service.yield(0, chunk: #"{"type":"text-delta","delta":"Partial answer"}"#)
+        try await waitUntil { model.messages.last?.content == "Partial answer" }
+        model.cancelStreaming()
+        await Task.yield()
+        #expect(!model.isStreaming)
+        #expect(model.error == nil)
+        #expect(model.messages.last?.content == "Partial answer")
+    }
+
+    @Test("a new request succeeds after an in-band failure")
+    func recoverAfterFailure() async throws {
+        let service = ControlledChatService()
+        let model = ChatViewModel(service: service)
+        model.inputText = "Hello"
+        model.sendMessage()
+        try await service.waitForRequests(1)
+        await service.finish(0, chunks: [#"{"type":"error","errorText":"Try again"}"#])
+        try await waitUntil { !model.isStreaming }
+        #expect(model.error == "Try again")
+        model.inputText = "Hello again"
+        model.sendMessage()
+        try await service.waitForRequests(2)
+        await service.finish(1, chunks: [#"{"type":"text-delta","delta":"Hello!"}"#])
+        try await waitUntil { !model.isStreaming }
+        #expect(model.error == nil)
+        #expect(model.messages.last?.content == "Hello!")
+    }
+
+    @Test("clearing an active chat rejects late output")
+    func clearActiveChat() async throws {
+        let service = ControlledChatService()
+        let model = ChatViewModel(service: service)
+        model.inputText = "Hello"
+        model.sendMessage()
+        try await service.waitForRequests(1)
+        model.clearHistory()
+        await service.finish(0, chunks: [#"{"type":"text-delta","delta":"Late answer"}"#])
+        await Task.yield()
+        #expect(!model.isStreaming)
+        #expect(model.error == nil)
+        #expect(model.messages.map(\.content) == ["Chat cleared. What can I help you with?"])
+    }
+
+    @Test("tool loop exhaustion is visible")
+    func toolLimit() async throws {
+        let service = MockChatService(chunks: [
+            #"{"type":"tool-input-start","toolCallId":"call","toolName":"getPackItemDetails"}"#,
+            #"{"type":"tool-input-available","toolCallId":"call","input":{}}"#,
+        ])
+        let model = ChatViewModel(service: service)
+        model.inputText = "Hello"
+        model.sendMessage()
+        try await waitUntil { !model.isStreaming }
+        #expect(model.error == "Chat could not finish the request. Please try again.")
+        #expect(model.messages.map(\.role) == [.assistant, .user])
+    }
+}
+
+private actor ControlledChatService: ChatServicing {
+    private var continuations: [AsyncThrowingStream<String, Error>.Continuation] = []
+
+    func sendMessage(messages: [ChatMessage], context: ChatContext) async -> AsyncThrowingStream<String, Error> {
+        let (stream, continuation) = AsyncThrowingStream<String, Error>.makeStream()
+        continuations.append(continuation)
+        return stream
+    }
+
+    func yield(_ index: Int, chunk: String) {
+        continuations[index].yield(chunk)
+    }
+
+    func finish(_ index: Int, chunks: [String]) {
+        for chunk in chunks { continuations[index].yield(chunk) }
+        continuations[index].finish()
+    }
+
+    func waitForRequests(_ count: Int) async throws {
+        let start = ContinuousClock.now
+        while continuations.count < count {
+            if start.duration(to: .now) > .seconds(5) {
+                throw MockChatError.streamFailed
+            }
+            try await Task.sleep(for: .milliseconds(10))
+        }
     }
 }
