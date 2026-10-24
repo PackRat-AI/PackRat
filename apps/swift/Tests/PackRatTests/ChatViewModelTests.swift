@@ -74,6 +74,24 @@ struct ChatStreamViewModelTests {
         #expect(viewModel.messages.last?.toolInvocations.isEmpty == true)
     }
 
+    @Test("recoverable tool errors do not discard a later answer", arguments: ["tool-output-error", "tool-input-error"])
+    func toolErrorCanRecover(type: String) async throws {
+        let viewModel = ChatViewModel(service: MockChatService(chunks: [
+            #"{"type":"tool-input-start","toolCallId":"c","toolName":"getWeather"}"#,
+            "{\"type\":\"\(type)\",\"toolCallId\":\"c\",\"errorText\":\"Weather unavailable\"}",
+            #"{"type":"text-delta","delta":"I couldn't check the weather, but bring water."}"#,
+            #"{"type":"finish","finishReason":"stop"}"#,
+        ]))
+        viewModel.inputText = "Help me pack"
+        viewModel.sendMessage()
+        try await waitUntil { !viewModel.isStreaming }
+        #expect(viewModel.error == nil)
+        #expect(viewModel.messages.last?.content == "I couldn't check the weather, but bring water.")
+        let tool = try #require(viewModel.messages.last?.toolInvocations.first)
+        #expect(tool.state == .complete)
+        #expect(tool.outputJSON.objectValue?["success"]?.boolValue == false)
+    }
+
     @Test("sendMessage removes placeholder and surfaces stream errors")
     func sendMessageSurfacesStreamErrors() async throws {
         let service = MockChatService(chunks: [], error: MockChatError.streamFailed)
@@ -394,6 +412,19 @@ struct ChatRecoveryTests {
         #expect(model.messages.last?.content == "Partial answer")
     }
 
+    @Test("an in-band error releases a still-open producer")
+    func inBandErrorStopsProducer() async throws {
+        let service = ControlledChatService()
+        let model = ChatViewModel(service: service)
+        model.inputText = "Hello"
+        model.sendMessage()
+        try await service.waitForRequests(1)
+        await service.yield(0, chunk: #"{"type":"error","errorText":"Please try again."}"#)
+        try await waitUntil { !model.isStreaming }
+        #expect(model.error == "Please try again.")
+        try await service.waitForTermination()
+    }
+
     @Test("a new request succeeds after an in-band failure")
     func recoverAfterFailure() async throws {
         let service = ControlledChatService()
@@ -445,9 +476,23 @@ struct ChatRecoveryTests {
 
 private actor ControlledChatService: ChatServicing {
     private var continuations: [AsyncThrowingStream<String, Error>.Continuation] = []
+    private var terminated = false
+
+    private func recordTermination() { terminated = true }
+
+    func waitForTermination() async throws {
+        let start = ContinuousClock.now
+        while !terminated {
+            if start.duration(to: .now) > .seconds(2) { throw MockChatError.streamFailed }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+    }
 
     func sendMessage(messages: [ChatMessage], context: ChatContext) async -> AsyncThrowingStream<String, Error> {
         let (stream, continuation) = AsyncThrowingStream<String, Error>.makeStream()
+        continuation.onTermination = { @Sendable _ in
+            Task { await self.recordTermination() }
+        }
         continuations.append(continuation)
         return stream
     }

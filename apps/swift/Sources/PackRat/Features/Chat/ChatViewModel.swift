@@ -178,10 +178,18 @@ final class ChatViewModel {
             else { throw ChatStreamError.invalidResponse }
 
             switch parsed.type {
-            case "error", "tool-output-error", "tool-input-error":
+            case "error":
                 let message = parsed.errorText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                 throw ChatStreamError.server(message.isEmpty
                     ? "Chat is temporarily unavailable. Please try again." : message)
+            case "tool-output-error", "tool-input-error":
+                // Tool errors are recoverable within the same server turn. The
+                // model can still explain the failure or answer without the tool.
+                if let callId = parsed.toolCallId {
+                    let output = Self.failure(parsed.errorText ?? "Tool unavailable")
+                    let data = try JSONSerialization.data(withJSONObject: output)
+                    updateToolOutput(id: placeholderId, callId: callId, data: data)
+                }
             case "abort":
                 throw ChatStreamError.interrupted
             case "finish":

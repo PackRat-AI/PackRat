@@ -55,7 +55,7 @@ In particular, a provider-side 401 is not proof of a missing iPhone session.
   unauthenticated HTTP 401; rate-limit HTTP 429; upstream cancellation.
   Auth session resolution, tools, database/schema and telemetry are mocked.
   No real Better Auth service, Worker runtime, AI gateway or provider was tested.
-- **PASS: 25 Swift Testing tests** in the portable harness, including existing
+- **PASS: 27 Swift Testing tests** in the portable harness, including existing
   context/wire/tool-continuation tests and new error, framing, empty/malformed,
   partial response, cancel/re-send, clear, recovery and tool-limit tests.
 - **Red before fix:** the new error tests on the original view model produced
@@ -129,7 +129,8 @@ xcodebuild -project apps/swift/PackRat.xcodeproj -scheme PackRat-iOS \
 2. `ChatTransportTests` uses URLProtocol to intercept every request. Verify HTTP
    401/429/500 message/status preservation, correct request headers/path, SSE
    success/error forwarding, bad content type, truncated EOF and cancellation
-   actually calling URLProtocol.stopLoading. These tests require no credentials.
+   actually calling URLProtocol.stopLoading, including a view-model error while
+   the HTTP response remains open. These tests require no credentials.
 3. Run the existing iPhone `ChatTests` against the existing isolated local E2E
    harness and its synthetic account/stub provider. Confirm assistant text (not
    just cleared input). Then use synthetic local fault responses to inspect the
@@ -145,3 +146,30 @@ xcodebuild -project apps/swift/PackRat.xcodeproj -scheme PackRat-iOS \
 Parity: Swift client handling only; Android unchanged. The backend safe stream
 error and abort propagation are shared. This work does not claim Android QA or
 that the production incident is resolved.
+
+## Final diff review
+
+A fresh contract review found one regression in the initial patch: treating
+`tool-input-error` / `tool-output-error` as terminal could discard a valid later
+answer. Both events are recoverable within the SDK's server turn. The final
+revision records a completed failed tool result and continues reading; only
+chat-level `error`, abort, malformed data, or interrupted transport ends the turn.
+The new parameterized regression failed with six assertions before correction
+and passes afterward. A new portable lifecycle regression also verifies that an
+in-band error releases a still-open producer without waiting for `[DONE]`.
+
+| Changed area | Contract / risk checked | Evidence |
+| --- | --- | --- |
+| ChatViewModel.swift | Error visibility; preserve partial text; remove unfinished spinners; cancel/re-send isolation; clear; retry; tool-level recovery; producer release | 27 focused Swift tests pass across view-model, encoding and parser suites |
+| ChatStreamParser.swift | SDK data lines, comments, optional space, DONE and truncated EOF | Portable Swift tests pass |
+| APIClient.swift | POST/path/origin/auth builder unchanged; SSE Accept; HTTP error decoding; session header capture; consumer cancellation | Diff reviewed; Apple transport tests added, runtime NOT RUN |
+| chat.ts | `/api/chat` auth required; safe in-band error; request abort reaches provider | 6 backend tests pass |
+| chat-e2e-stub.test.ts | Real route + SDK/adapter with synthetic dependencies; success, provider 401, session 401, 429, abort | PASS; no live endpoint claims |
+| ChatTransportTests.swift | URLProtocol-based HTTP status/headers, framing, truncation, explicit cancellation and early view-model error | Syntax parse PASS; Apple runtime NOT RUN |
+| test-chat-linux.sh / handoff | Repeatable portable test boundary and precise Apple follow-up | Script run PASS; no Apple-native claim |
+
+No auth requirement, bearer construction, provider/model selection, session
+refresh policy, trust settings, or stored credential changed. No automatic
+request retry was added. Cancellation cannot roll back a local tool mutation
+that had already completed; a user cancellation must not be described as an undo.
+The existing multi-tool/history behavior was not redesigned by this patch.

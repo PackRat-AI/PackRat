@@ -48,6 +48,30 @@ struct ChatTransportTests {
         }
     }
 
+    @Test("view-model in-band failure stops a still-open URLSession")
+    @MainActor
+    func inBandFailureStopsRequest() async throws {
+        ChatFixtureProtocol.resetStopped()
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [ChatFixtureProtocol.self]
+        let api = APIClient(session: URLSession(configuration: configuration))
+        let model = ChatViewModel(service: HangingErrorChatService(api: api))
+        model.inputText = "Hello"
+        model.sendMessage()
+        let start = ContinuousClock.now
+        while model.isStreaming || !ChatFixtureProtocol.hasStopped {
+            if start.duration(to: .now) > .seconds(5) {
+                model.cancelStreaming()
+                Issue.record("In-band failure did not stop the producer")
+                return
+            }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(model.error == "Please try again.")
+        #expect(model.messages.map(\.role) == [.assistant, .user])
+        #expect(ChatFixtureProtocol.hasStopped)
+    }
+
     @Test("consumer cancellation stops the underlying request")
     func cancellation() async throws {
         ChatFixtureProtocol.resetStopped()
@@ -102,8 +126,9 @@ private final class ChatFixtureProtocol: URLProtocol, @unchecked Sendable {
         } else if fixture == "html" {
             headers["Content-Type"] = "text/html"
             body = "<html>Unexpected page</html>"
-        } else if fixture == "error" {
-            body = "data: {\"type\":\"error\",\"errorText\":\"Please try again.\"}\n\ndata: [DONE]\n\n"
+        } else if fixture == "error" || fixture == "error-hanging" {
+            body = "data: {\"type\":\"error\",\"errorText\":\"Please try again.\"}\n\n"
+                + (fixture == "error" ? "data: [DONE]\n\n" : "")
         } else {
             body = "data: {\"type\":\"text-delta\",\"delta\":\"Ready\"}\n\n"
                 + (fixture == "success" ? "data: [DONE]\n\n" : "")
@@ -115,7 +140,7 @@ private final class ChatFixtureProtocol: URLProtocol, @unchecked Sendable {
         let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: nil, headerFields: headers)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: Data(body.utf8))
-        if fixture == "hanging" {
+        if fixture == "hanging" || fixture == "error-hanging" {
             Self.lock.withLock { Self.started = true }
         } else {
             client?.urlProtocolDidFinishLoading(self)
@@ -123,6 +148,19 @@ private final class ChatFixtureProtocol: URLProtocol, @unchecked Sendable {
     }
 
     override func stopLoading() {
-        Self.lock.withLock { Self.stopped = true }
+        let fixture = request.url.flatMap {
+            URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems?
+                .first(where: { $0.name == "fixture" })?.value
+        }
+        if fixture == "hanging" || fixture == "error-hanging" {
+            Self.lock.withLock { Self.stopped = true }
+        }
+    }
+}
+
+private struct HangingErrorChatService: ChatServicing {
+    let api: APIClient
+    func sendMessage(messages: [ChatMessage], context: ChatContext) async -> AsyncThrowingStream<String, Error> {
+        await api.stream(Endpoint(.post, "/api/chat", query: ["fixture": "error-hanging"], requiresAuth: false))
     }
 }
