@@ -56,9 +56,13 @@ jobs:
         with:
           ref: development
 
+      - name: Setup Node LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.22.1"
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: package.json
 
       - name: Install dependencies
         env:
@@ -77,9 +81,13 @@ jobs:
         with:
           ref: development
 
+      - name: Setup Node LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.22.1"
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: package.json
 
       - name: Install dependencies
         env:
@@ -98,9 +106,13 @@ jobs:
         with:
           ref: development
 
+      - name: Setup Node LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.22.1"
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: package.json
 
       - name: Install dependencies
         env:
@@ -147,9 +159,13 @@ jobs:
       - name: Create release branch (local)
         run: git checkout -b ${{ steps.norm.outputs.branch }}
 
+      - name: Setup Node LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.22.1"
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: package.json
 
       - name: Install dependencies (frozen)
         env:
@@ -355,9 +371,13 @@ jobs:
         with:
           ref: ${{ needs.cut.outputs.branch }}
 
+      - name: Setup Node LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.22.1"
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: package.json
 
       - name: Install dependencies
         env:

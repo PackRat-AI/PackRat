@@ -48,9 +48,13 @@ jobs:
         with:
           ref: ${{ steps.ref.outputs.tag }}
 
+      - name: Setup Node LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.22.1"
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: package.json
 
       - name: Install dependencies
         env:

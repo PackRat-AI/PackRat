@@ -42,9 +42,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Setup Node LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.22.1"
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: package.json
 
       - name: Collect changed files
         env:
@@ -79,9 +83,13 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - name: Setup Node LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.22.1"
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: package.json
 
       # A direct push carries no PR, so this resolves to empty and every
       # later step no-ops — only merges of a PR record anything.
