@@ -109,7 +109,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Node LTS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24.22.1"
       - name: Setup Bun
@@ -152,7 +152,7 @@ jobs:
           xcode-version: ${{ env.XCODE_VERSION }}
 
       - name: Setup Node LTS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24.22.1"
       - name: Setup Bun
@@ -206,7 +206,7 @@ jobs:
           xcode-version: ${{ env.XCODE_VERSION }}
 
       - name: Setup Node LTS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24.22.1"
       - name: Setup Bun
@@ -353,7 +353,7 @@ jobs:
           xcode-version: ${{ env.XCODE_VERSION }}
 
       - name: Setup Node LTS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24.22.1"
       - name: Setup Bun

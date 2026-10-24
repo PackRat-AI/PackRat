@@ -83,7 +83,7 @@ jobs:
           xcrun --show-sdk-version
 
       - name: Setup Node LTS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24.22.1"
       - uses: oven-sh/setup-bun@v2
