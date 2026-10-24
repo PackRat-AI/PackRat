@@ -51,7 +51,7 @@ jobs:
       - name: Set up Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: "24.22.1"
 
       # Read the Bun version from package.json#packageManager to keep a single source of truth.
       - name: Read Bun version from package.json

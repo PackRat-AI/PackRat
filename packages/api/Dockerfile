@@ -1,5 +1,4 @@
-FROM oven/bun:1
-
+FROM oven/bun:1.4.4
 WORKDIR /app
 
 # Create non-root user for security
