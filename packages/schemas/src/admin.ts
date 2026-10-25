@@ -641,3 +641,24 @@ export const AdminAiReportsResponseSchema = z.object({
 
 export const AdminAiReportActionSchema = z.enum(['dismiss', 'resolve']);
 export type AdminAiReportAction = z.infer<typeof AdminAiReportActionSchema>;
+
+// ─── AI pack generation ───────────────────────────────────────────────────────
+
+export const ADMIN_AI_PACKS_MAX = 10;
+
+export const AdminGeneratePacksBodySchema = z.object({
+  count: z.number().int().min(1).max(ADMIN_AI_PACKS_MAX),
+});
+
+export const AdminGeneratedPackSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  category: z.string(),
+  tags: z.array(z.string()),
+});
+export type AdminGeneratedPack = z.infer<typeof AdminGeneratedPackSchema>;
+
+export const AdminGeneratePacksResponseSchema = z.object({
+  items: z.array(AdminGeneratedPackSchema),
+});

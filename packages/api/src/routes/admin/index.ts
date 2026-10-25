@@ -22,6 +22,7 @@ import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
+import { adminAiPacksRoutes } from './aiPacks';
 import { adminAiReportModerationRoutes } from './aiReportModeration';
 import { analyticsRoutes } from './analytics';
 import { adminFeatureAccessRoutes } from './featureAccess';
@@ -811,4 +812,5 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   .use(adminPackTemplatesRoutes)
   .use(adminFeedModerationRoutes)
   .use(adminAiReportModerationRoutes)
+  .use(adminAiPacksRoutes)
   .use(adminTrailConditionModerationRoutes);
