@@ -355,9 +355,14 @@ export function TrailPickerScreen() {
     router.back();
   };
 
+  const note = (text: string) => (
+    <Text variant="body" className="px-4 py-6 text-center text-muted-foreground">
+      {text}
+    </Text>
+  );
   let status: ReactNode = null;
   if (!isSignedIn) {
-    status = t('tripStats.trails.signIn');
+    status = note(t('tripStats.trails.signIn'));
   } else if (isLoading) {
     status = (
       <View className="items-center py-8">
@@ -381,11 +386,13 @@ export function TrailPickerScreen() {
       </View>
     );
   } else if (sections.length === 0) {
-    status = isSearching
-      ? t('tripStats.trails.noMatch')
-      : center
-        ? t('tripStats.trails.noneNearby')
-        : t('tripStats.trails.noPlace');
+    status = note(
+      isSearching
+        ? t('tripStats.trails.noMatch')
+        : center
+          ? t('tripStats.trails.noneNearby')
+          : t('tripStats.trails.noPlace'),
+    );
   }
 
   return (
@@ -404,13 +411,7 @@ export function TrailPickerScreen() {
               placeholder={t('tripStats.trails.searchTrails')}
               testID={testIds.tripStats.trailSearchInput}
             />
-            {typeof status === 'string' ? (
-              <Text variant="body" className="px-4 py-6 text-center text-muted-foreground">
-                {status}
-              </Text>
-            ) : (
-              status
-            )}
+            {status}
           </View>
         }
         renderSectionHeader={({ section }) =>
