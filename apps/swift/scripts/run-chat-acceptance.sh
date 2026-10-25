@@ -30,7 +30,10 @@ chat_build_args=(
 xcodebuild build-for-testing "${chat_build_args[@]}"
 python3 scripts/lib/verify-chat-acceptance-build.py \
   "$chat_derived_data/Build/Products/Debug-iphonesimulator"
-bun scripts/chat-acceptance-server.ts > "$chat_log_dir/server.log" 2>&1 &
+# Node HTTP emits response close on peer cancellation; Bun 1.3.14 does not
+# reliably emit it on macOS. Bundle only, then execute the fixture with Node.
+bun build scripts/chat-acceptance-server.ts --target node --outfile "$chat_log_dir/server.mjs"
+node "$chat_log_dir/server.mjs" > "$chat_log_dir/server.log" 2>&1 &
 chat_server_pid=$!
 # Wait only for our own process to bind. Never attach to an existing listener.
 for attempt in {1..50}; do

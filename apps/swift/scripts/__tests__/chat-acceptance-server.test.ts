@@ -1,6 +1,8 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isString } from '@packrat/guards';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -135,16 +137,23 @@ it('registers exactly the dedicated acceptance suite without adding it to live f
   expect(suite).toContain('throw FixtureError.wrongServer');
 });
 
-it('owns the Bun CLI listener and exits cleanly on SIGTERM', async () => {
-  const child = spawn(
-    'bun',
-    [fileURLToPath(new URL('../chat-acceptance-server.ts', import.meta.url))],
-    {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    },
-  );
+it('bundled Node CLI observes cancellation and exits cleanly on SIGTERM', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'packrat-chat-node-'));
+  const bundle = join(directory, 'server.mjs');
+  const build = spawnSync('bun', [
+    'build',
+    fileURLToPath(new URL('../chat-acceptance-server.ts', import.meta.url)),
+    '--target',
+    'node',
+    '--outfile',
+    bundle,
+  ]);
+  expect(build.status).toBe(0);
+  const child = spawn(process.execPath, [bundle], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
   const exited = once(child, 'exit');
-  const deadline = setTimeout(() => child.kill('SIGKILL'), 3000);
+  const deadline = setTimeout(() => child.kill('SIGKILL'), 10000);
   try {
     const output = once(child.stdout, 'data');
     const ready = await Promise.race([
@@ -155,11 +164,29 @@ it('owns the Bun CLI listener and exits cleanly on SIGTERM', async () => {
     ]);
     expect(ready).toContain('Chat fixture listening only on http://127.0.0.1:18793');
     expect((await fetch('http://127.0.0.1:18793/fixture/health')).status).toBe(200);
+    const base = 'http://127.0.0.1:18793';
+    await fetch(`${base}/fixture/reset/hold`, { method: 'POST' });
+    const abort = new AbortController();
+    const first = await fetch(`${base}/api/chat`, {
+      method: 'POST',
+      headers: auth,
+      signal: abort.signal,
+    });
+    if (!first.body) throw new Error('Missing first stream');
+    const reader = first.body.getReader();
+    expect(await readThrough(reader, 'First partial')).toContain('First partial');
+    abort.abort();
+    await reader.cancel().catch(() => undefined);
+    const second = await fetch(`${base}/api/chat`, { method: 'POST', headers: auth });
+    await expect.poll(async () => (await fetch(`${base}/fixture/cancelled`)).status).toBe(200);
+    await fetch(`${base}/fixture/release`, { method: 'POST' });
+    expect(await second.text()).toContain('[DONE]');
     child.kill('SIGTERM');
     expect(await exited).toEqual([0, null]);
     await expect(fetch('http://127.0.0.1:18793/fixture/health')).rejects.toThrow();
   } finally {
     clearTimeout(deadline);
     if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+    await rm(directory, { recursive: true, force: true });
   }
 });
