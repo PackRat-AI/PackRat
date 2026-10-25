@@ -1,4 +1,4 @@
-import type { WeatherAlertItem } from '@packrat/schemas/weather';
+import type { WeatherAlertItem, WeatherAttribution } from '@packrat/schemas/weather';
 import type { MaterialIconName } from 'expo-app/components/Icon';
 
 export interface WeatherApiForecastResponse {
@@ -192,6 +192,8 @@ export interface WeatherLocation {
   lat: number;
   lon: number;
   isActive?: boolean;
+  /** Credit owed for Apple Weather days in the forecast; shown under the daily list. */
+  attribution?: WeatherAttribution;
   details?: {
     feelsLike: number;
     humidity: number;

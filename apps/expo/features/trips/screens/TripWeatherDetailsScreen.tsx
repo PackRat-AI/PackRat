@@ -153,6 +153,7 @@ export default function TripWeatherDetailsScreen() {
               windSpeed: Math.round(current.wind_kph),
             }}
             temperature={current.temp_c}
+            attribution={weather.attribution}
           />
         </ScrollView>
       </LinearGradient>

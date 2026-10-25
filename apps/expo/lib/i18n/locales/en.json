@@ -1208,6 +1208,7 @@
     "todaySummary": "{{condition}} conditions expected today.",
     "rainChanceSentence": "There is a {{percent}}% chance of precipitation.",
     "tenDayForecast": "10-day forecast",
+    "attributionLegal": "Legal",
     "watchLocationA11y": "Watch this location for alerts",
     "stopWatchingA11y": "Stop watching this location",
     "addNamedLocationA11y": "Add {{name}} to your locations",

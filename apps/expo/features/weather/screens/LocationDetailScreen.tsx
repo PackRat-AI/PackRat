@@ -17,6 +17,7 @@ import {
   ForecastHero,
   HourlyForecastStrip,
 } from '../components/forecast/ForecastSections';
+import { WeatherAttribution } from '../components/WeatherAttribution';
 import { useLocations, useSeenAlerts, useWatchList } from '../hooks';
 import { useWatchFeedback } from '../hooks/useWatchFeedback';
 import {
@@ -217,6 +218,9 @@ export default function LocationDetailScreen() {
             ) : null}
             <HourlyForecastStrip location={location} />
             <DailyForecastList location={location} />
+            {location.attribution ? (
+              <WeatherAttribution attribution={location.attribution} />
+            ) : null}
             <ConditionTiles location={location} />
           </ScrollView>
         )}
