@@ -235,7 +235,7 @@ describe('adminPackTemplatesService', () => {
           item: { name: 'Stove', weight: 80, weightUnit: 'g' },
         }),
       ).resolves.toBeNull();
-      expect(mocks.insertValues).not.toHaveBeenCalled();
+      expect(mocks.insertValues).toHaveBeenCalledTimes(0);
     });
 
     it('updates an item and returns its admin shape', async () => {
