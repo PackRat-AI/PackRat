@@ -616,3 +616,28 @@ export const AdminPackTemplateItemCreateBodySchema = z.object({
 export type AdminPackTemplateItemCreateBody = z.infer<typeof AdminPackTemplateItemCreateBodySchema>;
 
 export const AdminPackTemplateIdParamSchema = z.object({ id: z.string().min(1) });
+
+// ─── AI content moderation ────────────────────────────────────────────────────
+
+export const AdminAiReportSchema = z.object({
+  id: z.number().int(),
+  userQuery: z.string(),
+  aiResponse: z.string(),
+  reason: z.string(),
+  userComment: z.string().nullable(),
+  reporter: z.object({
+    id: z.string(),
+    firstName: z.string().nullable(),
+    lastName: z.string().nullable(),
+    avatarUrl: z.string().nullable(),
+  }),
+  reportedAt: z.string().datetime(),
+});
+export type AdminAiReport = z.infer<typeof AdminAiReportSchema>;
+
+export const AdminAiReportsResponseSchema = z.object({
+  items: z.array(AdminAiReportSchema),
+});
+
+export const AdminAiReportActionSchema = z.enum(['dismiss', 'resolve']);
+export type AdminAiReportAction = z.infer<typeof AdminAiReportActionSchema>;
