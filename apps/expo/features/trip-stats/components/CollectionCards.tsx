@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
-import { formatDay } from '../lib/useStatsFormat';
+import { formatDay, formatList } from '../lib/useStatsFormat';
 import { scopeParams } from '../screens/PlacesScreens';
 import type { LongTrailProgress } from '../utils/longTrails';
 import {
@@ -21,10 +21,11 @@ import {
 import type { Coordinate } from '../utils/polyline';
 import type { TripPlaces } from '../utils/tripPlaces';
 import type { TripStatsRecord } from '../utils/tripStats';
-import { formatElevation, type TripDistanceUnit } from '../utils/units';
+import type { TripTrailsRecord } from '../utils/tripTrails';
+import { formatDistance, formatElevation, type TripDistanceUnit } from '../utils/units';
 import { LongTrailsCard } from './LongTrailCards';
 import { PlacesCard } from './PlacesAndGearCards';
-import { CardLink, ProgressBar, StatsCard } from './StatsParts';
+import { CardLink, ProgressBar, StatsCard, StatTile } from './StatsParts';
 
 export function ParksCard({
   parksAndPeaks,
@@ -84,6 +85,54 @@ export function PeaksCard({
         ) : (
           <Text variant="subhead" className="text-muted-foreground">
             {t('tripStats.peaks.emptyBody')}
+          </Text>
+        )}
+      </CardLink>
+    </StatsCard>
+  );
+}
+
+/**
+ * How many trails the user has walked and how far they add up to, opening the full list. With
+ * none logged yet it says how to add one instead of showing zeros.
+ */
+export function TrailsCard({
+  trails,
+  unit,
+  onPress,
+}: {
+  trails: TripTrailsRecord;
+  unit: TripDistanceUnit;
+  onPress: () => void;
+}) {
+  const { t } = useTranslation();
+  const count = trails.trails.length;
+  return (
+    <StatsCard title={t('tripStats.trails.title')}>
+      <CardLink onPress={onPress} testID={testIds.tripStats.trailsCard}>
+        {count > 0 ? (
+          <>
+            <View className="flex-row gap-4">
+              <StatTile
+                value={String(count)}
+                label={t('tripStats.trails.figureTrails', { count })}
+              />
+              {trails.totalLengthMeters > 0 ? (
+                <StatTile
+                  value={formatDistance({ metres: trails.totalLengthMeters, unit })}
+                  label={t('tripStats.trails.ofTrail')}
+                />
+              ) : null}
+            </View>
+            <Text variant="subhead" className="text-muted-foreground" numberOfLines={2}>
+              {t('tripStats.trails.latest', {
+                trails: formatList(trails.trails.slice(0, 3).map((item) => item.trail.name)),
+              })}
+            </Text>
+          </>
+        ) : (
+          <Text variant="subhead" className="text-muted-foreground">
+            {t('tripStats.trails.emptyBody')}
           </Text>
         )}
       </CardLink>
@@ -165,6 +214,7 @@ export function CollectionCards({
   record,
   places,
   parksAndPeaks,
+  trails,
   longTrails,
   followGoals,
   unit,
@@ -173,6 +223,7 @@ export function CollectionCards({
   record: TripStatsRecord;
   places: TripPlaces;
   parksAndPeaks: ParksAndPeaks;
+  trails: TripTrailsRecord;
   longTrails: readonly LongTrailProgress[];
   followGoals: ReadonlyMap<string, TripGoal>;
   unit: TripDistanceUnit;
@@ -200,6 +251,11 @@ export function CollectionCards({
             parksAndPeaks={parksAndPeaks}
             unit={unit}
             onPress={() => router.push('/trip-stats/peaks')}
+          />
+          <TrailsCard
+            trails={trails}
+            unit={unit}
+            onPress={() => router.push('/trip-stats/trails')}
           />
           <LongTrailsCard
             progress={longTrails}

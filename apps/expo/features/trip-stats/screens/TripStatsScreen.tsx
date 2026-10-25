@@ -32,6 +32,7 @@ import {
   useParksAndPeaks,
   useTripPlaces,
   useTripStatsRecord,
+  useTripTrails,
 } from '../hooks/useTripStats';
 import { useScopeTitle } from '../lib/useStatsFormat';
 import { tripStatsSettingsStore } from '../store/settings';
@@ -53,6 +54,7 @@ export function TripStatsScreen() {
   const record = useTripStatsRecord(scope);
   const parksAndPeaks = useParksAndPeaks(record);
   const longTrails = useLongTrailProgress(record);
+  const trails = useTripTrails(record);
   const followGoals = useFollowGoals();
   const goals = useGoalProgress({ record, parksAndPeaks, longTrails });
   const places = useTripPlaces(record);
@@ -176,6 +178,7 @@ export function TripStatsScreen() {
                   record={record}
                   places={places}
                   parksAndPeaks={parksAndPeaks}
+                  trails={trails}
                   longTrails={longTrails}
                   followGoals={followGoals}
                   unit={unit}
