@@ -83,7 +83,8 @@ export class PackService {
     return computePackWeights({ pack });
   }
 
-  async generatePacks(count: number) {
+  // The admin console passes isPublic: false so packs land as drafts for review.
+  async generatePacks(count: number, { isPublic = true }: { isPublic?: boolean } = {}) {
     if (count < 1) throw new Error('Count must be a positive integer');
 
     const concepts = await this.generatePackConcepts(count);
@@ -109,7 +110,7 @@ export class PackService {
           description: pack.description,
           category: pack.category,
           tags: pack.tags,
-          isPublic: true,
+          isPublic,
           isAIGenerated: true,
           localCreatedAt: new Date(),
           localUpdatedAt: new Date(),

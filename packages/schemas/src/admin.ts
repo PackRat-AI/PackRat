@@ -1,5 +1,6 @@
 import { type ClientPlatformValue, FeatureFlag } from '@packrat/config';
 import { z } from 'zod';
+import { PackCategorySchema } from './constants';
 
 // All flag keys known to the codebase, as a non-empty tuple for z.enum.
 const FEATURE_FLAG_KEYS = Object.values(FeatureFlag) as [string, ...string[]];
@@ -662,3 +663,34 @@ export type AdminGeneratedPack = z.infer<typeof AdminGeneratedPackSchema>;
 export const AdminGeneratePacksResponseSchema = z.object({
   items: z.array(AdminGeneratedPackSchema),
 });
+
+// ─── Pack review (AI-generated packs) ─────────────────────────────────────────
+
+export const AdminPackDetailSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  category: z.string(),
+  image: z.string().nullable(),
+  tags: z.array(z.string()),
+  isPublic: z.boolean(),
+  isAIGenerated: z.boolean(),
+  ownerEmail: z.string().nullable(),
+  itemCount: z.number(),
+  totalWeightGrams: z.number(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  items: z.array(AdminPackTemplateItemSchema),
+});
+export type AdminPackDetail = z.infer<typeof AdminPackDetailSchema>;
+
+export const AdminPackUpdateBodySchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().nullable().optional(),
+  category: PackCategorySchema.optional(),
+  tags: z.array(z.string().min(1)).optional(),
+  isPublic: z.boolean().optional(),
+});
+export type AdminPackUpdateBody = z.infer<typeof AdminPackUpdateBodySchema>;
+
+export const AdminPackIdParamSchema = z.object({ id: z.string().min(1) });

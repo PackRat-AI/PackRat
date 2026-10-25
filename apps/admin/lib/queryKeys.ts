@@ -21,6 +21,7 @@ export const queryKeys = {
       all: () => [...queryKeys.admin.all(), 'packs'] as const,
       list: (params?: { q?: string; page?: number; limit?: number }) =>
         [...queryKeys.admin.packs.all(), params] as const,
+      detail: (id: string) => [...queryKeys.admin.packs.all(), 'detail', id] as const,
     },
 
     catalog: {

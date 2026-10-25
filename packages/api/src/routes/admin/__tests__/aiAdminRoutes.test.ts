@@ -12,6 +12,19 @@ const mocks = vi.hoisted(() => ({
   generatePacks: vi.fn(),
   packServiceUser: vi.fn(),
   captureApiException: vi.fn(),
+  getAdminPack: vi.fn(),
+  updateAdminPack: vi.fn(),
+  createAdminPackItem: vi.fn(),
+  updateAdminPackItem: vi.fn(),
+  deleteAdminPackItem: vi.fn(),
+}));
+
+vi.mock('@packrat/api/services/adminPacksService', () => ({
+  getAdminPack: mocks.getAdminPack,
+  updateAdminPack: mocks.updateAdminPack,
+  createAdminPackItem: mocks.createAdminPackItem,
+  updateAdminPackItem: mocks.updateAdminPackItem,
+  deleteAdminPackItem: mocks.deleteAdminPackItem,
 }));
 
 vi.mock('@packrat/api/services/aiReportModeration', () => ({
@@ -93,7 +106,7 @@ describe('admin AI pack generation route', () => {
     );
     expect(res.status).toBe(200);
     expect(mocks.packServiceUser).toHaveBeenCalledWith('admin_1');
-    expect(mocks.generatePacks).toHaveBeenCalledWith(1);
+    expect(mocks.generatePacks).toHaveBeenCalledWith(1, { isPublic: false });
     await expect(res.json()).resolves.toEqual({
       items: [
         { id: 'p1', name: 'Desert Overnighter', description: null, category: 'desert', tags: [] },
@@ -128,5 +141,109 @@ describe('admin AI pack generation route', () => {
       request('/packs/generate', { method: 'POST', body: { count: 11 } }),
     );
     expect(res.status).toBe(422);
+  });
+});
+
+describe('admin pack review routes', () => {
+  const pack = {
+    id: 'p1',
+    name: 'Desert Overnighter',
+    description: null,
+    category: 'desert',
+    image: null,
+    tags: [],
+    isPublic: false,
+    isAIGenerated: true,
+    ownerEmail: 'admin@example.com',
+    itemCount: 0,
+    totalWeightGrams: 0,
+    createdAt: '2026-10-25T00:00:00.000Z',
+    updatedAt: '2026-10-25T00:00:00.000Z',
+    items: [],
+  };
+
+  it('returns a pack with its items', async () => {
+    mocks.getAdminPack.mockResolvedValue(pack);
+    const res = await adminAiPacksRoutes.handle(request('/packs/p1'));
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual(pack);
+  });
+
+  it('returns 404 for a missing pack', async () => {
+    mocks.getAdminPack.mockResolvedValue(null);
+    const res = await adminAiPacksRoutes.handle(request('/packs/nope'));
+    expect(res.status).toBe(404);
+  });
+
+  it('publishes by passing isPublic through', async () => {
+    mocks.updateAdminPack.mockResolvedValue({ ...pack, isPublic: true });
+    const res = await adminAiPacksRoutes.handle(
+      request('/packs/p1', { method: 'PATCH', body: { isPublic: true } }),
+    );
+    expect(res.status).toBe(200);
+    expect(mocks.updateAdminPack).toHaveBeenCalledWith({
+      id: 'p1',
+      changes: { isPublic: true },
+    });
+  });
+
+  it('returns 404 when the pack is not AI-generated', async () => {
+    mocks.updateAdminPack.mockResolvedValue(null);
+    const res = await adminAiPacksRoutes.handle(
+      request('/packs/p1', { method: 'PATCH', body: { name: 'Mine' } }),
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it('rejects an unknown category', async () => {
+    const res = await adminAiPacksRoutes.handle(
+      request('/packs/p1', { method: 'PATCH', body: { category: 'spelunking' } }),
+    );
+    expect(res.status).toBe(422);
+    expect(mocks.updateAdminPack).toHaveBeenCalledTimes(0);
+  });
+
+  it('adds an item to the pack', async () => {
+    const item = {
+      id: 'i1',
+      name: 'Tent',
+      description: null,
+      weight: 900,
+      weightUnit: 'g',
+      quantity: 1,
+      category: 'shelter',
+      consumable: false,
+      worn: false,
+      image: null,
+      notes: null,
+      catalogItemId: null,
+    };
+    mocks.createAdminPackItem.mockResolvedValue(item);
+    const body = { name: 'Tent', weight: 900, weightUnit: 'g', category: 'shelter' };
+    const res = await adminAiPacksRoutes.handle(
+      request('/packs/p1/items', { method: 'POST', body }),
+    );
+    expect(res.status).toBe(200);
+    expect(mocks.createAdminPackItem).toHaveBeenCalledWith({ packId: 'p1', item: body });
+  });
+
+  it('edits an item', async () => {
+    mocks.updateAdminPackItem.mockResolvedValue(null);
+    const res = await adminAiPacksRoutes.handle(
+      request('/packs/items/i1', { method: 'PATCH', body: { quantity: 2 } }),
+    );
+    expect(res.status).toBe(404);
+    expect(mocks.updateAdminPackItem).toHaveBeenCalledWith({
+      itemId: 'i1',
+      changes: { quantity: 2 },
+    });
+  });
+
+  it('removes an item', async () => {
+    mocks.deleteAdminPackItem.mockResolvedValue(true);
+    const res = await adminAiPacksRoutes.handle(request('/packs/items/i1', { method: 'DELETE' }));
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({ success: true });
+    expect(mocks.deleteAdminPackItem).toHaveBeenCalledWith('i1');
   });
 });

@@ -17,16 +17,22 @@ import { Label } from '@packrat/web-ui/components/label';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type AdminGeneratedPack, generateAiPacks } from 'admin-app/lib/api';
 import { queryKeys } from 'admin-app/lib/queryKeys';
-import { CheckCircle2, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 
 function GeneratedList({ packs }: { packs: AdminGeneratedPack[] }) {
   return (
     <div className="space-y-3 py-2">
-      <p className="flex items-center gap-1.5 text-sm font-medium">
-        <CheckCircle2 className="h-4 w-4 text-primary" />
-        {packs.length === 1 ? '1 pack created' : `${packs.length} packs created`}
-      </p>
+      <div>
+        <p className="flex items-center gap-1.5 text-sm font-medium">
+          <CheckCircle2 className="h-4 w-4 text-primary" />
+          {packs.length === 1 ? '1 draft ready' : `${packs.length} drafts ready`}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Open each one to check the gear, edit it, and publish.
+        </p>
+      </div>
       <ul className="max-h-80 space-y-2 overflow-y-auto">
         {packs.map((pack) => (
           <li key={pack.id} className="rounded-md border border-border/60 px-3 py-2">
@@ -35,6 +41,13 @@ function GeneratedList({ packs }: { packs: AdminGeneratedPack[] }) {
               <Badge variant="outline" className="text-[10px] capitalize">
                 {pack.category}
               </Badge>
+              <Link
+                href={`/dashboard/packs?id=${pack.id}`}
+                className="ml-auto inline-flex shrink-0 items-center gap-0.5 text-xs font-medium text-primary hover:underline underline-offset-2"
+              >
+                Review
+                <ArrowRight className="h-3 w-3" />
+              </Link>
             </div>
             {pack.description && (
               <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
@@ -80,8 +93,8 @@ export function GenerateAiPacksDialog() {
         <DialogHeader>
           <DialogTitle>Generate packs with AI</DialogTitle>
           <DialogDescription>
-            Each pack gets its own theme and is filled with real catalog gear. New packs are public
-            and marked AI.
+            Each pack gets its own theme and is filled with real catalog gear. New packs are saved
+            as drafts, so nothing goes public until you publish it.
           </DialogDescription>
         </DialogHeader>
         {data ? (
