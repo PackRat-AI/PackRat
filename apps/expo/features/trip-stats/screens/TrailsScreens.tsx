@@ -4,7 +4,6 @@ import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
-import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -16,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchField, StatsRow, StatTile, ValueRow } from '../components/StatsParts';
 import { useDistanceUnit } from '../hooks/useDistanceUnit';
 import {
+  isTrailMissing,
+  useIsSignedIn,
   useNearbyTrails,
   useRegistryTrail,
   useRouteTrails,
@@ -153,8 +154,8 @@ export function WalkedTrailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const record = useTripTrails(useTripStatsRecord());
   const walked = record.trails.find((item) => item.trail.id === id);
-  const { isQueryEnabledWithAccessToken: isSignedIn } = useAuthenticatedQueryToolkit();
-  const { data: detail, isError } = useRegistryTrail(id);
+  const isSignedIn = useIsSignedIn();
+  const { data: detail, isError, error } = useRegistryTrail(id);
   const parts = useMemo(
     () => (detail?.lines ?? []).map(decodePolyline).filter((part) => part.length >= 2),
     [detail],
@@ -189,9 +190,11 @@ export function WalkedTrailScreen() {
         <Text variant="body" className="font-medium">
           {t('tripStats.trails.mapUnavailable')}
         </Text>
-        <Text variant="subhead" className="text-center text-muted-foreground">
-          {isSignedIn ? t('tripStats.trails.mapFailed') : t('tripStats.trails.mapSignIn')}
-        </Text>
+        {isTrailMissing(error) ? null : (
+          <Text variant="subhead" className="text-center text-muted-foreground">
+            {isSignedIn ? t('tripStats.trails.mapFailed') : t('tripStats.trails.mapSignIn')}
+          </Text>
+        )}
       </View>
     );
   } else {
@@ -287,7 +290,7 @@ export function TrailPickerScreen() {
     return null;
   }, [route, params.lat, params.lng]);
   const excluded = useMemo(() => new Set(params.exclude?.split(',') ?? []), [params.exclude]);
-  const { isQueryEnabledWithAccessToken: isSignedIn } = useAuthenticatedQueryToolkit();
+  const isSignedIn = useIsSignedIn();
 
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');

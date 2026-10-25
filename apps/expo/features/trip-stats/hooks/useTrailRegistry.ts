@@ -1,3 +1,4 @@
+import { use$ } from '@legendapp/state/react';
 import {
   type TrailDetail,
   TrailDetailSchema,
@@ -6,12 +7,34 @@ import {
 } from '@packrat/schemas/trails';
 import * as Sentry from '@sentry/react-native';
 import { type QueryClient, useQuery } from '@tanstack/react-query';
+import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
-import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 import type { Coordinate } from '../utils/polyline';
 
 /** Registry trails don't change within a session. */
 const STALE_TIME = 24 * 60 * 60 * 1000;
+
+/** A failed registry call, carrying the HTTP status so screens can tell a missing trail apart. */
+export class TrailRegistryError extends Error {
+  readonly status: number;
+  constructor({ message, status }: { message: string; status: number }) {
+    super(message);
+    this.status = status;
+  }
+}
+
+/** A trail the registry doesn't have (404), or no trail database on this server (503). */
+export function isTrailMissing(error: unknown): boolean {
+  return error instanceof TrailRegistryError && (error.status === 404 || error.status === 503);
+}
+
+/**
+ * The app's own signed-in state. Not Better Auth's `useSession`, which can sit empty while the
+ * app is signed in and would leave these queries disabled.
+ */
+export function useIsSignedIn(): boolean {
+  return use$(isAuthed);
+}
 
 /**
  * Reports a failed registry call and returns the error to throw. A 503 means the server has no
@@ -25,9 +48,12 @@ function registryError({
   action: string;
   error: { status: number; value: unknown };
   extra?: Record<string, unknown>;
-}): Error {
-  const err = new Error(String(error.value ?? 'Trail registry request failed'));
-  if (error.status !== 503) {
+}): TrailRegistryError {
+  const err = new TrailRegistryError({
+    message: String(error.value ?? 'Trail registry request failed'),
+    status: error.status,
+  });
+  if (error.status !== 503 && error.status !== 404) {
     Sentry.captureException(err, {
       tags: { feature: 'tripStats', action },
       extra: { ...extra, httpStatus: error.status, apiError: error.value },
@@ -64,45 +90,45 @@ const trailKey = (id: string) => ['registryTrail', id] as const;
 
 /** Trails whose names match, from the whole registry. Needs two characters or more. */
 export function useTrailSearch(query: string) {
-  const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
+  const isSignedIn = useIsSignedIn();
   const q = query.trim();
   return useQuery({
     queryKey: ['registryTrailSearch', q],
     queryFn: () => searchTrails({ q }),
-    enabled: isQueryEnabledWithAccessToken && q.length >= 2,
+    enabled: isSignedIn && q.length >= 2,
     staleTime: STALE_TIME,
   });
 }
 
 /** Trails near a point, nearest first. */
 export function useNearbyTrails(near: Coordinate | null) {
-  const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
+  const isSignedIn = useIsSignedIn();
   return useQuery({
     queryKey: ['registryTrailsNear', near?.latitude, near?.longitude],
     queryFn: () => searchTrails({ near }),
-    enabled: isQueryEnabledWithAccessToken && near != null,
+    enabled: isSignedIn && near != null,
     staleTime: STALE_TIME,
   });
 }
 
 /** The trails a route walked along, best covered first. */
 export function useRouteTrails(route: string | null) {
-  const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
+  const isSignedIn = useIsSignedIn();
   return useQuery({
     queryKey: ['registryTrailsOnRoute', route],
     queryFn: () => (route ? matchRoute(route) : Promise.resolve([])),
-    enabled: isQueryEnabledWithAccessToken && !!route,
+    enabled: isSignedIn && !!route,
     staleTime: STALE_TIME,
   });
 }
 
 /** One trail with its geometry. */
 export function useRegistryTrail(id: string | undefined) {
-  const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
+  const isSignedIn = useIsSignedIn();
   return useQuery({
     queryKey: trailKey(id ?? ''),
     queryFn: () => getTrail(id ?? ''),
-    enabled: isQueryEnabledWithAccessToken && !!id,
+    enabled: isSignedIn && !!id,
     staleTime: STALE_TIME,
   });
 }

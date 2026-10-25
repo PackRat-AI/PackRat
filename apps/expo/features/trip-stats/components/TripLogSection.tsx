@@ -58,7 +58,9 @@ export function TripLogSection({ trip }: { trip: Trip }) {
       <Text className="mb-2 text-lg font-semibold text-foreground">
         {t('tripStats.log.sectionTitle')}
       </Text>
-      <Card className="gap-3 p-4">
+      {/* Keyed by the summary: a Compose card sizes to its content once, so a longer summary
+          after an edit would stay clipped instead of growing the card. */}
+      <Card key={summary.join('|')} className="gap-3 p-4">
         <Text variant="body" className={hasLog ? undefined : 'text-muted-foreground'}>
           {hasLog ? summary.join(' · ') : t('tripStats.log.prompt')}
         </Text>
