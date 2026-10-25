@@ -1,6 +1,7 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createPerplexity } from '@ai-sdk/perplexity';
+import { mockFetch } from '@packrat/api/__test-stubs__/fetch';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createAIProvider,
@@ -58,6 +59,22 @@ describe('createAIProvider', () => {
       billingPath: 'cloudflare-unified',
       cloudflareGatewayId: 'test-gateway',
     });
+  });
+
+  it('preserves Bun fetch extensions on the gateway transport', () => {
+    const nativeFetch = mockFetch(async () => new Response());
+    vi.stubGlobal('fetch', nativeFetch);
+    try {
+      createAIProvider(baseConfig);
+      const transport = vi.mocked(createOpenAI).mock.calls.at(-1)?.[0]?.fetch;
+      if (!transport) throw new Error('Expected gateway transport');
+      expect(transport.preconnect).toBe(nativeFetch.preconnect);
+      transport.preconnect('https://gateway.ai.cloudflare.com');
+      expect(nativeFetch.preconnect).toHaveBeenCalledWith('https://gateway.ai.cloudflare.com');
+      expect(nativeFetch).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('falls back to direct OpenAI when Cloudflare API token is absent', () => {

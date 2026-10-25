@@ -1,4 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai';
+import { mockFetch } from '@packrat/api/__test-stubs__/fetch';
 import { getAuth } from '@packrat/api/auth';
 import { chatRoutes } from '@packrat/api/routes/chat';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
@@ -133,7 +134,7 @@ describe('iPhone chat wire contract', () => {
       AI_PROVIDER: 'openai',
       OPENAI_API_KEY: 'synthetic-provider-key',
     } as never);
-    const upstream = vi.fn(
+    const upstream = mockFetch(
       async () =>
         new Response(
           JSON.stringify({
@@ -183,7 +184,7 @@ describe('iPhone chat wire contract', () => {
       },
       { type: 'response.completed', response: { usage: { input_tokens: 1, output_tokens: 3 } } },
     ];
-    const upstream = vi.fn(
+    const upstream = mockFetch(
       async () =>
         new Response(events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join(''), {
           headers: { 'content-type': 'text/event-stream' },
@@ -208,7 +209,7 @@ describe('iPhone chat wire contract', () => {
       OPENAI_API_KEY: 'synthetic-provider-key',
     } as never);
     let upstreamAborted = false;
-    const upstream: typeof fetch = vi.fn(
+    const upstream = mockFetch(
       async (_input, init) =>
         new Promise<Response>((_resolve, reject) => {
           const abort = () => {

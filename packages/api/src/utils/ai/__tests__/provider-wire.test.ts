@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { mockFetch } from '@packrat/api/__test-stubs__/fetch';
 import { generateText } from 'ai';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAIProvider } from '../provider';
@@ -20,7 +21,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('OpenAI provider wire authentication', () => {
   it('completes a chat against the documented authenticated native gateway contract', async () => {
-    const upstream = vi.fn<typeof fetch>(async (_url, init) => {
+    const upstream = mockFetch(async (_url, init) => {
       const headers = new Headers(init?.headers);
       if (
         headers.get('cf-aig-authorization') !== 'Bearer synthetic-cloudflare-token' ||
@@ -62,7 +63,7 @@ describe('OpenAI provider wire authentication', () => {
     'chat',
     'embedding',
   ] as const)('authenticates the %s endpoint without provider credentials', async (kind) => {
-    const upstream = vi.fn<typeof fetch>(
+    const upstream = mockFetch(
       async () =>
         new Response(
           JSON.stringify({ error: { message: 'Synthetic denial', type: 'authentication_error' } }),
@@ -92,7 +93,7 @@ describe('OpenAI provider wire authentication', () => {
 
   it('preserves cancellation through the gateway transport', async () => {
     let upstreamSignal: AbortSignal | null | undefined;
-    const upstream = vi.fn<typeof fetch>(async (_url, init) => {
+    const upstream = mockFetch(async (_url, init) => {
       upstreamSignal = init?.signal;
       return new Promise<Response>((_resolve, reject) => {
         const abort = () => reject(new DOMException('Synthetic cancellation', 'AbortError'));
@@ -121,7 +122,7 @@ describe('OpenAI provider wire authentication', () => {
     ['cloudflareGatewayId', ''],
     ['cloudflareApiToken', ''],
   ] as const)('preserves direct fallback for incomplete %s=%s', async (key, value) => {
-    const upstream = vi.fn<typeof fetch>(async () => new Response('{}', { status: 401 }));
+    const upstream = mockFetch(async () => new Response('{}', { status: 401 }));
     vi.stubGlobal('fetch', upstream);
     const provider = createAIProvider({ ...config, [key]: value });
     await expect(provider('gpt-4o').doStream({ prompt: [] })).rejects.toMatchObject({
@@ -136,7 +137,7 @@ describe('OpenAI provider wire authentication', () => {
   });
 
   it('rejects missing credentials locally without issuing any request', () => {
-    const upstream = vi.fn<typeof fetch>();
+    const upstream = mockFetch();
     vi.stubGlobal('fetch', upstream);
     expect(() =>
       createAIProvider({ ...config, cloudflareApiToken: undefined, openAiApiKey: undefined }),
@@ -145,7 +146,7 @@ describe('OpenAI provider wire authentication', () => {
   });
 
   it('does not switch to direct-provider billing when gateway auth is rejected', async () => {
-    const upstream = vi.fn<typeof fetch>(
+    const upstream = mockFetch(
       async () =>
         new Response(JSON.stringify({ error: { message: 'Synthetic invalid token' } }), {
           status: 401,
@@ -173,7 +174,7 @@ describe('OpenAI provider wire authentication', () => {
 
   it('uses complete gateway configuration even without the unused direct key', async () => {
     const log = vi.spyOn(console, 'info').mockImplementation(() => {});
-    const upstream = vi.fn<typeof fetch>(async () => new Response('{}', { status: 401 }));
+    const upstream = mockFetch(async () => new Response('{}', { status: 401 }));
     vi.stubGlobal('fetch', upstream);
     try {
       await expect(
@@ -214,9 +215,7 @@ describe('OpenAI provider wire authentication', () => {
     const gatewayPort = (gateway.address() as AddressInfo).port;
     vi.stubGlobal(
       'fetch',
-      vi.fn<typeof fetch>((_url, init) =>
-        realFetch(`http://127.0.0.1:${gatewayPort}/responses`, init),
-      ),
+      mockFetch((_url, init) => realFetch(`http://127.0.0.1:${gatewayPort}/responses`, init)),
     );
     try {
       await expect(createAIProvider(config)('gpt-4o').doStream({ prompt: [] })).rejects.toThrow();
@@ -237,7 +236,7 @@ describe('OpenAI provider wire authentication', () => {
   });
 
   it('keeps the direct-provider fallback credentials and URL unchanged', async () => {
-    const upstream = vi.fn<typeof fetch>(
+    const upstream = mockFetch(
       async () =>
         new Response(JSON.stringify({ error: { message: 'Synthetic denial' } }), {
           status: 401,

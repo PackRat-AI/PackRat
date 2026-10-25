@@ -106,13 +106,16 @@ export function createAIProvider(config: AIProviderConfig): CreateAIProviderRetu
       // The SDK always adds Authorization from apiKey; remove it so this path
       // uses gateway-managed credentials rather than forwarding a CF token to OpenAI.
       // Keep RequestInit (including abort signal) intact.
-      fetch: (url, init) => {
-        const headers = new Headers(init?.headers);
-        headers.delete('authorization');
-        // Unlike Authorization, Fetch does not strip this custom credential
-        // on a cross-origin redirect. Gateway endpoints must respond directly.
-        return fetch(url, { ...init, headers, redirect: 'error' });
-      },
+      // Proxy retains runtime fetch extensions (notably Bun.preconnect).
+      fetch: new Proxy(fetch, {
+        apply(...args: [typeof fetch, unknown, Parameters<typeof fetch>]) {
+          const [target, , [url, init]] = args;
+          const headers = new Headers(init?.headers);
+          headers.delete('authorization');
+          // Fetch does not strip custom credentials on cross-origin redirects.
+          return target(url, { ...init, headers, redirect: 'error' });
+        },
+      }),
     });
   }
 
