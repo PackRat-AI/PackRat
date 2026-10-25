@@ -48,7 +48,7 @@ export function computeTripTrails(finished: readonly FinishedTrip[]): TripTrails
       const newestFirst = [...(walks.get(trail.id) ?? [])].sort(
         (a, b) => b.date.getTime() - a.date.getTime(),
       );
-      return { trail, walks: newestFirst, latest: newestFirst[0]?.date ?? new Date(0) };
+      return { trail, walks: newestFirst, latest: newestFirst.at(0)?.date ?? new Date(0) };
     })
     .sort(
       (a, b) => b.latest.getTime() - a.latest.getTime() || a.trail.name.localeCompare(b.trail.name),
@@ -79,7 +79,7 @@ export function joinTrailParts(parts: readonly (readonly Coordinate[])[]): Coord
     if (!tail) break;
     let best = { index: 0, reversed: false, distance: Number.POSITIVE_INFINITY };
     remaining.forEach((part, index) => {
-      const head = part[0];
+      const head = part.at(0);
       const end = part.at(-1);
       if (!head || !end) return;
       const toHead = distanceMeters({ from: tail, to: head });
