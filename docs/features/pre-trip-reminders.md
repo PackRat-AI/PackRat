@@ -65,7 +65,7 @@ bringing a way to recharge in the field, unless the pack already has one.
 A trip with a destination is checked against the weather and trail
 conditions PackRat already knows about for that place.
 
-- **Weather.** The forecast reaches ten days ahead, so from the week-out reminder onward every countdown reminder carries the daily highs, lows, chance of rain or snow and conditions for the trip's dates, and says what they mean for the pack — "Lows near freezing — pack your warm layers." The readiness summary shows the same forecast with the weather provider's attribution. If a hazard is issued for the destination while the trip is upcoming, the user hears about it the same way a watched weather location does, without having to have watched it.
+- **Weather.** The forecast reaches more than a week ahead, so from the week-out reminder onward every countdown reminder carries the daily highs, lows, chance of rain or snow and conditions for the trip's dates, and says what they mean for the pack — "Lows near freezing — pack your warm layers." The readiness summary shows the same forecast with the weather provider's attribution. If a hazard is issued for the destination while the trip is upcoming, the user hears about it the same way a watched weather location does, without having to have watched it.
 - **Trail conditions.** If a hiker reports on the trip's trail in the days
   before departure, the user is told, and the report is in the trip's
   readiness summary.
@@ -109,6 +109,6 @@ trail parts use the latest the app has.
   or passing a gear shop.
 - No group readiness — reminders are about the user's own trip and pack, not
   what others in a group have packed.
-- No forecast for days more than ten days out; a trip further away shows its forecast once its dates come into range.
+- No forecast for days beyond that window; a trip further away shows its forecast once its dates come into range.
 - No suggestions learned from past trips. Recommendations come from the trip
   in front of the user: its pack, its length, its destination's conditions.
