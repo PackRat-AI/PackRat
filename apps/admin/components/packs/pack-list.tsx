@@ -23,7 +23,7 @@ import { queryKeys } from 'admin-app/lib/queryKeys';
 import { cn } from 'admin-app/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const PAGE_SIZE = 50;
 
@@ -56,6 +56,8 @@ function visibilityLabel(pack: Pick<AdminPack, 'isPublic' | 'isAIGenerated'>) {
 
 function PackRow({ pack }: { pack: AdminPack }) {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const href = `/dashboard/packs?id=${encodeURIComponent(pack.id)}`;
 
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deletePack(pack.id),
@@ -65,7 +67,21 @@ function PackRow({ pack }: { pack: AdminPack }) {
   });
 
   return (
-    <TableRow className="hover:bg-muted/20">
+    // The whole row opens the pack. The actions cell stops propagation so its
+    // buttons, and the dialogs they portal, never trigger the row.
+    <TableRow
+      className="group cursor-pointer hover:bg-muted/30 focus-visible:bg-muted/30 focus-visible:outline-none"
+      tabIndex={0}
+      aria-label={`Open ${pack.name}`}
+      onClick={() => router.push(href)}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          router.push(href);
+        }
+      }}
+    >
       <TableCell>
         <div className="flex items-start gap-2.5">
           {pack.image ? (
@@ -81,12 +97,7 @@ function PackRow({ pack }: { pack: AdminPack }) {
           )}
           <div>
             <div className="flex items-center gap-1.5">
-              <Link
-                href={`/dashboard/packs?id=${pack.id}`}
-                className="text-sm font-medium hover:underline underline-offset-2"
-              >
-                {pack.name}
-              </Link>
+              <p className="text-sm font-medium">{pack.name}</p>
               {pack.isAIGenerated && (
                 <Badge variant="secondary" className="text-[10px] px-1 py-0">
                   AI
@@ -145,7 +156,12 @@ function PackRow({ pack }: { pack: AdminPack }) {
         </div>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-1">
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: only stops bubbling to the row; the buttons inside handle their own input */}
+        <div
+          className="flex items-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
           <RawObjectDialog label={`pack:${pack.id}`} data={pack} />
           <DeleteButton
             label={pack.name}
@@ -155,6 +171,12 @@ function PackRow({ pack }: { pack: AdminPack }) {
             }}
           />
         </div>
+      </TableCell>
+      <TableCell className="w-8 pl-0">
+        <ChevronRight
+          aria-hidden
+          className="h-4 w-4 text-muted-foreground/50 transition-colors group-hover:text-foreground"
+        />
       </TableCell>
     </TableRow>
   );
@@ -219,12 +241,13 @@ export function PackList() {
                       Created
                     </TableHead>
                     <TableHead className="font-medium text-xs uppercase tracking-wide w-16" />
+                    <TableHead className="w-8" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {packs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         No packs found{q ? ` matching "${q}"` : ''}.
                       </TableCell>
                     </TableRow>
