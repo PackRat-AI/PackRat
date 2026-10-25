@@ -28,6 +28,9 @@ describe('dayFromString / dayToString', () => {
   it('reads the calendar day whatever the time part', () => {
     expect(dayFromString('2026-03-01T00:00:00.000Z')).toEqual(new Date(2026, 2, 1));
     expect(dayFromString('2026-03-01')).toEqual(new Date(2026, 2, 1));
+    // An edited trip can hold a Date in the store; its UTC day is the picked day.
+    expect(dayFromString(new Date('2026-03-01T00:00:00.000Z'))).toEqual(new Date(2026, 2, 1));
+    expect(dayFromString(new Date(Number.NaN))).toBeNull();
   });
 
   it('rejects missing or malformed input', () => {
