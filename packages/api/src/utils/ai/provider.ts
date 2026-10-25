@@ -3,6 +3,7 @@ import type { OpenAIProvider } from '@ai-sdk/openai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createPerplexity, type PerplexityProvider } from '@ai-sdk/perplexity';
 import type { Env } from '@packrat/api/utils/env-validation';
+import { copyRequestHeaders } from './request-headers';
 
 export type AIProvider = 'openai' | 'cloudflare-workers-ai';
 
@@ -110,7 +111,7 @@ export function createAIProvider(config: AIProviderConfig): CreateAIProviderRetu
       fetch: new Proxy(fetch, {
         apply(...args: [typeof fetch, unknown, Parameters<typeof fetch>]) {
           const [target, , [url, init]] = args;
-          const headers = new Headers(init?.headers);
+          const headers = copyRequestHeaders(init?.headers);
           headers.delete('authorization');
           // Fetch does not strip custom credentials on cross-origin redirects.
           return target(url, { ...init, headers, redirect: 'error' });

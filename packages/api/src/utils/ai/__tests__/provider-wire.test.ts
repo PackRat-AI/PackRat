@@ -4,6 +4,7 @@ import { mockFetch } from '@packrat/api/__test-stubs__/fetch';
 import { generateText } from 'ai';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAIProvider } from '../provider';
+import { copyRequestHeaders } from '../request-headers';
 
 // Exercise the real SDK adapter. Only fetch is replaced: no credentials or
 // network are used. Gateway validation below models the documented native API
@@ -22,7 +23,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe('OpenAI provider wire authentication', () => {
   it('completes a chat against the documented authenticated native gateway contract', async () => {
     const upstream = mockFetch(async (_url, init) => {
-      const headers = new Headers(init?.headers);
+      const headers = copyRequestHeaders(init?.headers);
       if (
         headers.get('cf-aig-authorization') !== 'Bearer synthetic-cloudflare-token' ||
         headers.has('authorization')
@@ -85,7 +86,7 @@ describe('OpenAI provider wire authentication', () => {
     expect(String(url)).toBe(
       `https://gateway.ai.cloudflare.com/v1/synthetic-account/synthetic-gateway/openai/${kind === 'embedding' ? 'embeddings' : kind === 'chat' ? 'chat/completions' : 'responses'}`,
     );
-    const headers = new Headers(init?.headers);
+    const headers = copyRequestHeaders(init?.headers);
     expect(headers.get('cf-aig-authorization')).toBe('Bearer synthetic-cloudflare-token');
     expect(headers.has('authorization')).toBe(false);
     expect(headers.get('content-type')).toBe('application/json');
@@ -132,8 +133,10 @@ describe('OpenAI provider wire authentication', () => {
     const call = upstream.mock.calls[0];
     if (!call) throw new Error('Expected request');
     expect(String(call[0])).toBe('https://api.openai.com/v1/responses');
-    expect(new Headers(call[1]?.headers).get('authorization')).toBe('Bearer sk-synthetic-direct');
-    expect(new Headers(call[1]?.headers).has('cf-aig-authorization')).toBe(false);
+    expect(copyRequestHeaders(call[1]?.headers).get('authorization')).toBe(
+      'Bearer sk-synthetic-direct',
+    );
+    expect(copyRequestHeaders(call[1]?.headers).has('cf-aig-authorization')).toBe(false);
   });
 
   it('rejects missing credentials locally without issuing any request', () => {
@@ -166,10 +169,10 @@ describe('OpenAI provider wire authentication', () => {
     const call = upstream.mock.calls[0];
     if (!call) throw new Error('Expected request');
     expect(String(call[0])).toContain('gateway.ai.cloudflare.com/');
-    expect(new Headers(call[1]?.headers).get('cf-aig-authorization')).toBe(
+    expect(copyRequestHeaders(call[1]?.headers).get('cf-aig-authorization')).toBe(
       'Bearer invalid-synthetic-token',
     );
-    expect(new Headers(call[1]?.headers).has('authorization')).toBe(false);
+    expect(copyRequestHeaders(call[1]?.headers).has('authorization')).toBe(false);
   });
 
   it('uses complete gateway configuration even without the unused direct key', async () => {
@@ -253,7 +256,7 @@ describe('OpenAI provider wire authentication', () => {
     if (!call) throw new Error('Expected SDK HTTP request');
     const [url, init] = call;
     expect(String(url)).toBe('https://api.openai.com/v1/responses');
-    const headers = new Headers(init?.headers);
+    const headers = copyRequestHeaders(init?.headers);
     expect(headers.get('authorization')).toBe('Bearer sk-synthetic-direct');
     expect(headers.has('cf-aig-authorization')).toBe(false);
   });
