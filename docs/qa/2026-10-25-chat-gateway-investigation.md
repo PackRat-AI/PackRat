@@ -47,7 +47,7 @@ Sources inspected October 25:
 
 | Check | Result |
 | --- | --- |
-| New real-SDK wire suite | 6 PASS: synthetic authenticated gateway chat success; Responses, Chat Completions and embedding headers/URLs; abort propagation; unchanged direct fallback |
+| New real-SDK wire suite | 16 PASS: synthetic authenticated gateway chat success; Responses, Chat Completions and embedding headers/URLs; abort propagation; unchanged direct fallback; missing/empty configuration; missing credentials; rejected token without fallback; safe logging; real loopback redirect denial |
 | Existing provider suite | 18 PASS, including Google and Perplexity selection regression checks |
 | Existing chat route suite | 6 PASS, preserving session rejection, rate limit, safe stream errors, success and cancellation |
 | Biome on all changed TS files | PASS |
@@ -103,10 +103,64 @@ The fetch wrapper is confined to the gateway branch and preserves cancellation.
 The SDK-generated Cloudflare token never becomes provider authorization on that
 branch. The direct branch continues using the provider key. No authentication is
 disabled and no trust boundary is relaxed. Missing/invalid gateway credentials
-still fail closed, and there is no implicit direct-provider retry or billing change.
+still fail closed, and there is no implicit direct-provider retry. Actual gateway billing depends on stored BYOK credentials and gateway settings.
 
 Remaining: deployed trace attribution; an authorized staging gateway check of
 Responses streaming and embeddings; full backend typecheck/Worker validation;
 and the Apple-only transport/UI gate described in the October 24 handoff.
 Neither this change nor prior fixes have been pushed, published, or deployed.
 The earlier Library transfer failure was not retried.
+
+
+## Independent pre-rollout review and correction
+
+A fresh read-only reviewer inspected the actual provider code, official
+Cloudflare guidance, credential handling, and configuration behavior. The reviewer
+independently reproduced a security regression in the initial gateway patch:
+Fetch strips standard Authorization on cross-origin redirects, but forwards the
+new custom `cf-aig-authorization` header. A local two-server test with synthetic
+credentials reproduced this; no external service or real credential was involved.
+
+Corrected by setting `redirect: 'error'` only in the gateway transport. The primary
+regression test failed before the correction (one unexpected destination request)
+and now verifies zero destination requests and no forwarded credential. The
+reviewer separately confirmed the fix with a synthetic 307 redirect. Unexpected
+redirects now fail closed; staging must verify normal gateway endpoints respond
+directly. Direct OpenAI transport remains unchanged.
+
+Expanded negative tests cover each missing/empty gateway field, no direct key
+when neither path is usable (zero network calls), invalid gateway token (one
+gateway request and no direct fallback), and complete gateway config without an
+unused direct key. Logger assertions ensure synthetic credentials are absent.
+All **40 focused backend tests PASS**: 16 wire tests, 18 existing provider tests,
+6 route tests. Biome and diff checks pass. Apple checks remain unrun.
+
+### Classification of the original auth lead
+
+The old form is **not proved defective for the deployed project mode**. The
+factory's `cloudflare-unified` label only proves that three config fields are
+truthy; it does not establish authenticated-gateway settings, stored keys, credits,
+or compatibility handling of the old `apiKey` form. Official sources conflict on
+that legacy form. Missing explicit gateway authentication is a conditional failure
+risk when the gateway requires it and does not accept the legacy form. Only an
+authorized staging/live trace can decide whether that explains Andrew's incident.
+
+The explicit header path uses gateway-managed credentials: Cloudflare documents
+stored default BYOK first, then unified billing. It must not be described as
+necessarily forcing unified billing. The patch changes no stored keys, credits,
+provider selection, security settings, user sessions, or trust rules.
+
+### Exact handoff boundary
+
+The final gateway patch is additive to `31e9cd2af088b139a83a966eb44fd5171f9ee1ff`.
+Do not replace that candidate with the gateway-only patch on the older original
+base. The exported mailbox contains the gateway change and redirect correction;
+`git am` on an isolated checkout of `31e9cd2` is the intended application method.
+Keep all existing Mini changes and use the explicit simulator/shared DerivedData
+instructions in the October 24 handoff. Apple validation must include the earlier
+Swift transport changes; this backend review does not substitute for it.
+
+Library transfer remains unverified. The previous prepared-helper transfer failed
+at hosted-app tool discovery with a network error. There is no new evidence that
+that path has recovered, so no retry or alternate upload route was attempted.
+Local patch SHA256 and application/tree verification accompany the final response.

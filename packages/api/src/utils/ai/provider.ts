@@ -109,7 +109,9 @@ export function createAIProvider(config: AIProviderConfig): CreateAIProviderRetu
       fetch: (url, init) => {
         const headers = new Headers(init?.headers);
         headers.delete('authorization');
-        return fetch(url, { ...init, headers });
+        // Unlike Authorization, Fetch does not strip this custom credential
+        // on a cross-origin redirect. Gateway endpoints must respond directly.
+        return fetch(url, { ...init, headers, redirect: 'error' });
       },
     });
   }
