@@ -49,6 +49,8 @@ describe('createAIProvider', () => {
     expect(createOpenAI).toHaveBeenCalledWith({
       apiKey: 'cf-token',
       baseURL: 'https://gateway.ai.cloudflare.com/v1/test-account/test-gateway/openai',
+      headers: { 'cf-aig-authorization': 'Bearer cf-token' },
+      fetch: expect.any(Function),
     });
     expect(consoleInfoSpy).toHaveBeenCalledWith('ai.provider.selected', {
       provider: 'openai',

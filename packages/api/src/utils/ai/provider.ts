@@ -101,6 +101,16 @@ export function createAIProvider(config: AIProviderConfig): CreateAIProviderRetu
     return createOpenAI({
       apiKey: cloudflareApiToken,
       baseURL: `https://gateway.ai.cloudflare.com/v1/${cloudflareAccountId}/${cloudflareGatewayId}/openai`,
+      headers: { 'cf-aig-authorization': `Bearer ${cloudflareApiToken}` },
+      // Provider-native gateway authentication is separate from provider auth.
+      // The SDK always adds Authorization from apiKey; remove it so this path
+      // uses gateway-managed credentials rather than forwarding a CF token to OpenAI.
+      // Keep RequestInit (including abort signal) intact.
+      fetch: (url, init) => {
+        const headers = new Headers(init?.headers);
+        headers.delete('authorization');
+        return fetch(url, { ...init, headers });
+      },
     });
   }
 
