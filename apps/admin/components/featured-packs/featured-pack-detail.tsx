@@ -31,6 +31,7 @@ import {
   type AdminPackTemplateItem,
   type AdminPackTemplateItemUpdateBody,
   type AdminPackTemplateUpdateBody,
+  addFeaturedPackItem,
   deleteFeaturedPack,
   deleteFeaturedPackItem,
   getFeaturedPack,
@@ -270,6 +271,104 @@ function ItemRow({ item, templateId }: { item: AdminPackTemplateItem; templateId
   );
 }
 
+function AddItemRow({ templateId }: { templateId: string }) {
+  const invalidate = useInvalidate(templateId);
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
+  const [weight, setWeight] = useState('');
+  const [unit, setUnit] = useState<(typeof WEIGHT_UNITS)[number]>('g');
+  const [quantity, setQuantity] = useState('1');
+
+  const w = Number(weight);
+  const q = Number.parseInt(quantity, 10);
+  const isValid = name.trim().length > 0 && weight !== '' && Number.isFinite(w) && w >= 0 && q > 0;
+
+  const add = useMutation({
+    mutationFn: () =>
+      addFeaturedPackItem({
+        templateId,
+        item: {
+          name: name.trim(),
+          category: category.trim() || null,
+          weight: w,
+          weightUnit: unit,
+          quantity: q,
+        },
+      }),
+    onSuccess: () => {
+      setName('');
+      setCategory('');
+      setWeight('');
+      setQuantity('1');
+      invalidate();
+    },
+  });
+
+  return (
+    <TableRow>
+      <TableCell className="min-w-56">
+        <Input
+          className="h-8"
+          placeholder="New item name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </TableCell>
+      <TableCell className="w-40">
+        <Input
+          className="h-8"
+          placeholder="Category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        />
+      </TableCell>
+      <TableCell className="w-28">
+        <Input
+          className="h-8 text-right tabular-nums"
+          inputMode="decimal"
+          placeholder="0"
+          value={weight}
+          onChange={(e) => setWeight(e.target.value)}
+        />
+      </TableCell>
+      <TableCell className="w-24">
+        <Select value={unit} onValueChange={(u) => isWeightUnit(u) && setUnit(u)}>
+          <SelectTrigger className="h-8">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {WEIGHT_UNITS.map((u) => (
+              <SelectItem key={u} value={u}>
+                {u}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </TableCell>
+      <TableCell className="w-20">
+        <Input
+          className="h-8 text-right tabular-nums"
+          inputMode="numeric"
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
+        />
+      </TableCell>
+      <TableCell colSpan={2} />
+      <TableCell className="w-32 text-right">
+        <Button
+          size="sm"
+          className="h-7"
+          disabled={!isValid || add.isPending}
+          onClick={() => add.mutate()}
+        >
+          {add.isPending ? 'Adding…' : 'Add item'}
+        </Button>
+        {add.error && <p className="text-[11px] text-destructive mt-1">{add.error.message}</p>}
+      </TableCell>
+    </TableRow>
+  );
+}
+
 function ItemsCard({ template }: { template: AdminPackTemplateDetail }) {
   const sorted = useMemo(
     () =>
@@ -288,29 +387,26 @@ function ItemsCard({ template }: { template: AdminPackTemplateDetail }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        {sorted.length === 0 ? (
-          <p className="text-sm text-muted-foreground px-6 pb-6">No items in this pack.</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Weight</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead className="text-right">Qty</TableHead>
-                <TableHead>Worn</TableHead>
-                <TableHead>Consumable</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sorted.map((item) => (
-                <ItemRow key={item.id} item={item} templateId={template.id} />
-              ))}
-            </TableBody>
-          </Table>
-        )}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead className="text-right">Weight</TableHead>
+              <TableHead>Unit</TableHead>
+              <TableHead className="text-right">Qty</TableHead>
+              <TableHead>Worn</TableHead>
+              <TableHead>Consumable</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((item) => (
+              <ItemRow key={item.id} item={item} templateId={template.id} />
+            ))}
+            <AddItemRow templateId={template.id} />
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );

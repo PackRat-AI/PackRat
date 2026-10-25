@@ -602,4 +602,17 @@ export const AdminPackTemplateItemUpdateBodySchema = z.object({
 });
 export type AdminPackTemplateItemUpdateBody = z.infer<typeof AdminPackTemplateItemUpdateBodySchema>;
 
+export const AdminPackTemplateItemCreateBodySchema = z.object({
+  name: z.string().min(1),
+  description: z.string().nullable().optional(),
+  weight: z.number().nonnegative(),
+  weightUnit: WeightUnitSchema,
+  quantity: z.number().int().positive().optional(),
+  category: z.string().nullable().optional(),
+  consumable: z.boolean().optional(),
+  worn: z.boolean().optional(),
+  notes: z.string().nullable().optional(),
+});
+export type AdminPackTemplateItemCreateBody = z.infer<typeof AdminPackTemplateItemCreateBodySchema>;
+
 export const AdminPackTemplateIdParamSchema = z.object({ id: z.string().min(1) });

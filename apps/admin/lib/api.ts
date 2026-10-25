@@ -10,6 +10,7 @@ import type {
   AdminPackItem,
   AdminPackTemplateDetail,
   AdminPackTemplateItem,
+  AdminPackTemplateItemCreateBody,
   AdminPackTemplateItemUpdateBody,
   AdminPackTemplateSummary,
   AdminPackTemplateUpdateBody,
@@ -556,6 +557,7 @@ export function getQueryMetricsByCallSite({
 export type {
   AdminPackTemplateDetail,
   AdminPackTemplateItem,
+  AdminPackTemplateItemCreateBody,
   AdminPackTemplateItemUpdateBody,
   AdminPackTemplateSummary,
   AdminPackTemplateUpdateBody,
@@ -595,6 +597,18 @@ export async function deleteFeaturedPack(id: string): Promise<{ success: boolean
   const { data, error } = await adminClient['pack-templates']({ id }).delete();
   if (error) throwOnError({ error });
   return unwrap({ data, name: 'deleteFeaturedPack' });
+}
+
+export async function addFeaturedPackItem({
+  templateId,
+  item,
+}: {
+  templateId: string;
+  item: AdminPackTemplateItemCreateBody;
+}): Promise<AdminPackTemplateItem> {
+  const { data, error } = await adminClient['pack-templates']({ id: templateId }).items.post(item);
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'addFeaturedPackItem' });
 }
 
 export async function updateFeaturedPackItem({

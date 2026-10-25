@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => {
   const selectResults: unknown[][] = [];
   const findFirst = vi.fn();
   const updateReturning = vi.fn();
+  const insertReturning = vi.fn();
+  const insertValues = vi.fn((_values: unknown) => ({ returning: insertReturning }));
   const updateSet = vi.fn((_values: unknown) => ({
     where: (_cond: unknown) => ({ returning: updateReturning }),
   }));
@@ -22,6 +24,8 @@ const mocks = vi.hoisted(() => {
     findFirst,
     updateReturning,
     updateSet,
+    insertReturning,
+    insertValues,
     resolveOwner: vi.fn(),
     createDb: vi.fn(() => {
       const db = {
@@ -29,6 +33,7 @@ const mocks = vi.hoisted(() => {
         select: (_cols?: unknown) => chain(),
         query: { packTemplates: { findFirst } },
         update: (_table: unknown) => ({ set: updateSet }),
+        insert: (_table: unknown) => ({ values: insertValues }),
       };
       return db;
     }),
@@ -53,6 +58,7 @@ vi.mock('drizzle-orm', () => ({
 }));
 
 import {
+  createCuratedPackTemplateItem,
   deleteCuratedPackTemplate,
   deleteCuratedPackTemplateItem,
   getCuratedPackTemplate,
@@ -196,6 +202,42 @@ describe('adminPackTemplatesService', () => {
   });
 
   describe('items', () => {
+    it('adds an item owned by the template owner with defaults filled', async () => {
+      mocks.findFirst.mockResolvedValue({ id: 'pt_1', userId: 'admin_1' });
+      mocks.insertReturning.mockResolvedValue([{ ...item, id: 'pti_new', name: 'Stove' }]);
+      const created = await createCuratedPackTemplateItem({
+        templateId: 'pt_1',
+        item: { name: 'Stove', weight: 80, weightUnit: 'g' },
+      });
+      expect(mocks.insertValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: expect.stringMatching(/^pti_[0-9a-f]{21}$/),
+          packTemplateId: 'pt_1',
+          userId: 'admin_1',
+          name: 'Stove',
+          quantity: 1,
+          consumable: false,
+          worn: false,
+        }),
+      );
+      expect(mocks.updateSet).toHaveBeenCalledWith(
+        expect.objectContaining({ updatedAt: expect.any(Date) }),
+      );
+      expect(created).toMatchObject({ id: 'pti_new', name: 'Stove' });
+      expect(created).not.toHaveProperty('userId');
+    });
+
+    it('returns null without inserting when the template is missing', async () => {
+      mocks.findFirst.mockResolvedValue(undefined);
+      await expect(
+        createCuratedPackTemplateItem({
+          templateId: 'nope',
+          item: { name: 'Stove', weight: 80, weightUnit: 'g' },
+        }),
+      ).resolves.toBeNull();
+      expect(mocks.insertValues).not.toHaveBeenCalled();
+    });
+
     it('updates an item and returns its admin shape', async () => {
       mocks.updateReturning.mockResolvedValue([{ ...item, name: 'Down Puffy' }]);
       const updated = await updateCuratedPackTemplateItem({
