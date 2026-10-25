@@ -176,6 +176,7 @@ export default (): ExpoConfig =>
           ],
           'expo-secure-store',
           'expo-web-browser',
+          'expo-sharing',
           [
             'expo-dev-client',
             {
