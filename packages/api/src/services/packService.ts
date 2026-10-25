@@ -12,20 +12,23 @@ import { CatalogService } from './catalogService';
 
 const PACK_CONCEPTS_SYSTEM_PROMPT = `You are an expert Adventure Planner specializing in real-world outdoor and travel experiences. When given a specific count, generate that exact number of unique, practical adventure concepts that people can actually undertake. Each concept should include a name, a description, category, tags and a list of the logical items needed. Items should be rich descriptions optimized for a vector search against an items catalog to find the most suitable real-world item.`;
 
+// OpenAI structured output runs in strict mode, which requires every property
+// to be listed as required: no `.optional()` or `.default()` here, only
+// `.nullable()` for values the model may leave out.
 const packItemConceptSchema = z.object({
   item: z.string(),
-  quantity: z.number().int().positive().default(1),
+  quantity: z.number().int().min(1),
   category: z.string(),
-  consumable: z.boolean().default(false).describe('Whether the item is consumable'),
-  worn: z.boolean().default(false).describe('Whether the item is worn'),
-  notes: z.string().nullable().optional(),
+  consumable: z.boolean().describe('Whether the item is consumable'),
+  worn: z.boolean().describe('Whether the item is worn'),
+  notes: z.string().nullable(),
 });
 
 const packConceptSchema = z.object({
   name: z.string(),
   description: z.string(),
   category: z.enum(PACK_CATEGORIES),
-  tags: z.array(z.string()).optional(),
+  tags: z.array(z.string()),
   items: z.array(packItemConceptSchema),
 });
 
