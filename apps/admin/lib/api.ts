@@ -9,6 +9,7 @@ import type {
   AdminCatalogItem,
   AdminFeatureAccessItem,
   AdminFeatureFlagItem,
+  AdminGeneratedPack,
   AdminPackItem,
   AdminPackTemplateDetail,
   AdminPackTemplateItem,
@@ -725,4 +726,14 @@ export async function resolveAiReport({
   const { data, error } = await adminClient['ai-reports']({ id })({ action }).post();
   if (error) throwOnError({ error });
   return unwrap({ data, name: 'resolveAiReport' });
+}
+
+// ─── AI pack generation ───────────────────────────────────────────────────────
+
+export type { AdminGeneratedPack };
+
+export async function generateAiPacks(count: number): Promise<AdminGeneratedPack[]> {
+  const { data, error } = await adminClient.packs.generate.post({ count });
+  if (error) throwOnError({ error, fallback: 'Pack generation failed' });
+  return unwrap({ data, name: 'generateAiPacks' }).items;
 }

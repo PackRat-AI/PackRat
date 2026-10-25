@@ -13,6 +13,7 @@ import {
 } from '@packrat/web-ui/components/table';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DeleteButton } from 'admin-app/components/delete-button';
+import { GenerateAiPacksDialog } from 'admin-app/components/generate-ai-packs-dialog';
 import { RawObjectDialog } from 'admin-app/components/raw-object-dialog';
 import { SearchInput } from 'admin-app/components/search-input';
 import { usePaginatedSearch } from 'admin-app/hooks/use-paginated-search';
@@ -167,11 +168,14 @@ export default function PacksPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold tracking-tight">Packs</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Browse and manage all packing lists on the platform.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Packs</h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            Browse and manage all packing lists on the platform.
+          </p>
+        </div>
+        <GenerateAiPacksDialog />
       </div>
       <div className="space-y-4">
         <SearchInput placeholder="Search by name, owner, or category…" onSearch={setSearch} />
