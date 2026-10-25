@@ -4,7 +4,7 @@ import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import {
   formatDecimal,
@@ -20,14 +20,16 @@ export function TotalsCard({
   title,
   totals,
   unit,
+  action,
 }: {
   title: string;
   totals: Totals;
   unit: TripDistanceUnit;
+  action?: ReactNode;
 }) {
   const { t } = useTranslation();
   return (
-    <StatsCard title={title}>
+    <StatsCard title={title} action={action}>
       <View className="flex-row flex-wrap gap-x-4 gap-y-3">
         <StatTile label={t('tripStats.totals.trips')} value={formatNumber(totals.trips)} />
         {totals.distance != null ? (
@@ -57,7 +59,7 @@ function delta({ now, before }: { now: number; before: number }): string | null 
   return `${difference > 0 ? '+' : '−'}${formatNumber(Math.abs(difference))}`;
 }
 
-export function ThisYearCard({ record }: { record: TripStatsRecord }) {
+export function ThisYearCard({ record, action }: { record: TripStatsRecord; action?: ReactNode }) {
   const { t } = useTranslation();
   const { thisYear, lastYearToDate } = record;
   if (thisYear.trips === 0 && !lastYearToDate) return null;
@@ -69,6 +71,7 @@ export function ThisYearCard({ record }: { record: TripStatsRecord }) {
   return (
     <StatsCard
       title={t('tripStats.thisYear.title')}
+      action={action}
       subtitle={
         lastYearToDate ? t('tripStats.thisYear.compared') : t('tripStats.thisYear.firstYear')
       }

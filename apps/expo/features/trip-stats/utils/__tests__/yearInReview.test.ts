@@ -70,7 +70,7 @@ function goal({
   complete: boolean;
 }): GoalProgress {
   return {
-    goal: { id, kind, metric: 'trips', target: 2, year },
+    goal: { id, kind, metric: 'trips', target: 2, year, deleted: false },
     start: new Date(end.getFullYear(), 0, 1),
     end,
     phase: 'ended',

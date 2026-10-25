@@ -22,8 +22,9 @@ export function FullScreenDialogHeader({
 }: {
   title: string;
   onClose: () => void;
-  onSave: () => void;
-  canSave: boolean;
+  /** Left out when the screen's main action sits at the bottom instead. */
+  onSave?: () => void;
+  canSave?: boolean;
 }) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
@@ -45,23 +46,25 @@ export function FullScreenDialogHeader({
         <Text variant="title3" className="flex-1" numberOfLines={1}>
           {title}
         </Text>
-        <Pressable
-          onPress={onSave}
-          disabled={!canSave}
-          className="rounded-full px-3 py-2.5"
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !canSave }}
-          android_ripple={{ color: colors.grey5 }}
-          testID={testIds.tripStats.dialogSaveBtn}
-        >
-          <Text
-            variant="callout"
-            className="font-medium"
-            style={{ color: canSave ? colors.primary : colors.grey }}
+        {onSave ? (
+          <Pressable
+            onPress={onSave}
+            disabled={!canSave}
+            className="rounded-full px-3 py-2.5"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !canSave }}
+            android_ripple={{ color: colors.grey5 }}
+            testID={testIds.tripStats.dialogSaveBtn}
           >
-            {t('tripStats.dialog.save')}
-          </Text>
-        </Pressable>
+            <Text
+              variant="callout"
+              className="font-medium"
+              style={{ color: canSave ? colors.primary : colors.grey }}
+            >
+              {t('tripStats.dialog.save')}
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );

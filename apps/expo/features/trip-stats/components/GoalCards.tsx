@@ -198,7 +198,16 @@ export function useGoalTitle() {
   };
 }
 
-function GoalRow({ progress, onPress }: { progress: GoalProgress; onPress?: () => void }) {
+function GoalRow({
+  progress,
+  onPress,
+  onShare,
+}: {
+  progress: GoalProgress;
+  onPress?: () => void;
+  /** A long press shares the goal as a card, as the iOS context menu does. */
+  onShare?: () => void;
+}) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
   const { formatMetric, formatMetricValue } = useStatsFormat();
@@ -208,9 +217,16 @@ function GoalRow({ progress, onPress }: { progress: GoalProgress; onPress?: () =
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onShare}
       disabled={!onPress}
       testID={testIds.tripStats.goalRow(progress.goal.id)}
       accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityActions={
+        onShare ? [{ name: 'share', label: t('tripStats.share.shareGoal') }] : undefined
+      }
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === 'share') onShare?.();
+      }}
       android_ripple={onPress ? { color: colors.grey5 } : undefined}
       className="gap-2 py-3"
     >
@@ -240,10 +256,12 @@ export function GoalsCard({
   progress,
   onAdd,
   onEdit,
+  onShare,
 }: {
   progress: GoalProgress[];
   onAdd: () => void;
   onEdit: (goalId: string) => void;
+  onShare: (progress: GoalProgress) => void;
 }) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
@@ -271,7 +289,12 @@ export function GoalsCard({
       ) : (
         <View>
           {current.map((item) => (
-            <GoalRow key={item.goal.id} progress={item} onPress={() => onEdit(item.goal.id)} />
+            <GoalRow
+              key={item.goal.id}
+              progress={item}
+              onPress={() => onEdit(item.goal.id)}
+              onShare={() => onShare(item)}
+            />
           ))}
           <Button
             variant="plain"

@@ -4,7 +4,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import { View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { formatDay, formatList } from '../lib/useStatsFormat';
@@ -159,7 +159,7 @@ function regionFor(points: readonly Coordinate[]) {
 }
 
 /** Routes as lines and trip locations as pins, on a static map that scrolls with the page. */
-export function TripsMapCard({ record }: { record: TripStatsRecord }) {
+export function TripsMapCard({ record, action }: { record: TripStatsRecord; action?: ReactNode }) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
   const pins = useMemo(
@@ -177,7 +177,7 @@ export function TripsMapCard({ record }: { record: TripStatsRecord }) {
   );
   if (points.length === 0) return null;
   return (
-    <StatsCard title={t('tripStats.map.title')} hostsNativeView>
+    <StatsCard title={t('tripStats.map.title')} action={action} hostsNativeView>
       <View className="overflow-hidden rounded-xl" style={{ height: MAP_HEIGHT }}>
         <MapView
           style={{ flex: 1 }}
@@ -219,6 +219,7 @@ export function CollectionCards({
   followGoals,
   unit,
   showLifetime,
+  mapAction,
 }: {
   record: TripStatsRecord;
   places: TripPlaces;
@@ -229,11 +230,13 @@ export function CollectionCards({
   unit: TripDistanceUnit;
   /** Parks and peaks are lifetime collections, shown only while the record isn't filtered. */
   showLifetime: boolean;
+  /** The map card's share action. */
+  mapAction?: ReactNode;
 }) {
   const router = useRouter();
   return (
     <>
-      <TripsMapCard record={record} />
+      <TripsMapCard record={record} action={mapAction} />
       <PlacesCard
         places={places}
         scope={record.scope}

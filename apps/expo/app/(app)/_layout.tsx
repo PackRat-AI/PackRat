@@ -176,7 +176,13 @@ export default function AppLayout() {
         />
         {/* Trip Stats editors are Material full-screen dialogs: they rise from the bottom and
             close with an X, not a back arrow. */}
-        {['trip-stats/goal', 'trip-stats/add-summit', 'trip/[id]/log'].map((name) => (
+        {[
+          'trip-stats/goal',
+          'trip-stats/add-summit',
+          'trip-stats/share',
+          'trip-stats/year-in-review',
+          'trip/[id]/log',
+        ].map((name) => (
           <Stack.Screen
             key={name}
             name={name}

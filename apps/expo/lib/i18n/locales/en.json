@@ -782,6 +782,91 @@
       "walkedBefore": "All walked before",
       "moreOptions": "More options",
       "mapLabel": "Map of the {{trail}}, with walked stretches highlighted"
+    },
+    "moreOptions": "More options",
+    "share": {
+      "action": "Share",
+      "title": "Share",
+      "close": "Close",
+      "formats": {
+        "story": "Story",
+        "square": "Square",
+        "sticker": "Sticker"
+      },
+      "showNames": "Show trip names",
+      "zoomClose": "Zoom in close",
+      "mapFailed": "The map couldn't load. The card shares without it.",
+      "privacy": {
+        "mapClose": "The map is zoomed to your trips and may show exactly where they started.",
+        "mapRegion": "The map stays zoomed out, showing the region rather than exact spots.",
+        "namesOff": "Trip names stay off the card unless you turn them on.",
+        "numbersOnly": "Only the numbers on this card are shared. Trip names, notes and exact places stay private."
+      },
+      "send": "Share image",
+      "preview": "Preview of the {{format}} image",
+      "failed": "Couldn't make the image. Try again.",
+      "shareGoal": "Share goal",
+      "card": {
+        "eyebrowStats": "MY TRIP STATS",
+        "eyebrowGoal": "GOAL",
+        "eyebrowYear": "THIS YEAR",
+        "eyebrowReview": "MY {{year}} IN REVIEW",
+        "allTime": "All Time",
+        "yearSoFar": "{{year}} So Far",
+        "map": "Where I've Been",
+        "parks": "National Parks",
+        "climbed": "Climbed",
+        "nightsOut": "Nights Out",
+        "daysOutdoors": "Days Outdoors",
+        "logged": "logged",
+        "onLastYear": "{{delta}} on {{year}}",
+        "of": "of {{target}}",
+        "goalComplete": "Goal complete",
+        "parksVisited": "of {{total}} visited",
+        "summits": "Summits",
+        "newParks": "New Parks",
+        "goalsMet": "Goals Met"
+      }
+    },
+    "review": {
+      "bannerTitle": "Your {{year}} in Review",
+      "bannerBody": "{{trips}} · {{nights}} out. See the highlights and share them.",
+      "menu": "{{year}} in Review",
+      "card": "Card {{index}} of {{count}}",
+      "pages": {
+        "intro": "Your Year Outdoors",
+        "totals": "By the Numbers",
+        "busiestMonth": "Busiest Month",
+        "longestTrip": "Biggest Trips",
+        "newPlaces": "New Ground",
+        "summits": "Summits",
+        "goals": "Goals",
+        "summary": "That's a Wrap"
+      },
+      "introBody": "A look back at your year on the trail.",
+      "busiestBody": "was your busiest month: {{trips}}, {{nights}} out.",
+      "longestNamed": "on {{name}}, your longest trip.",
+      "longest": "on your longest trip.",
+      "farthestNamed": "on {{name}}, your farthest.",
+      "farthest": "on your farthest trip.",
+      "newPlaces_one": "new place you'd never been.",
+      "newPlaces_other": "new places you'd never been.",
+      "newParks_one": "New National Park",
+      "newParks_other": "{{count}} new National Parks",
+      "summitsReached_one": "summit reached.",
+      "summitsReached_other": "summits reached.",
+      "highest": "Highest",
+      "goalsMet_one": "goal met.",
+      "goalsMet_other": "goals met."
+    },
+    "export": {
+      "csv": "Save trips as spreadsheet",
+      "gpx": "Save routes as GPX",
+      "csvName": "PackRat Trips",
+      "gpxName": "PackRat Routes",
+      "saved": "Saved {{name}}",
+      "failed": "Couldn't save the file. Try again.",
+      "noRoutes": "No routes or summits to save yet."
     }
   },
   "trips": {
