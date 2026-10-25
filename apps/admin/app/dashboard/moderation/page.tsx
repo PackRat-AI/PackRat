@@ -3,8 +3,10 @@
 import { Button } from '@packrat/web-ui/components/button';
 import { Skeleton } from '@packrat/web-ui/components/skeleton';
 import { cn } from '@packrat/web-ui/lib/utils';
+import { AiReportCard } from 'admin-app/components/moderation/ai-report-card';
 import { ReportCard } from 'admin-app/components/moderation/report-card';
 import { TrailFlagCard } from 'admin-app/components/moderation/trail-flag-card';
+import { useAiReports } from 'admin-app/hooks/use-ai-moderation';
 import { reportKey, useFeedReports } from 'admin-app/hooks/use-feed-moderation';
 import { useTrailFlags } from 'admin-app/hooks/use-trail-moderation';
 import { RefreshCw, ShieldCheck } from 'lucide-react';
@@ -88,8 +90,10 @@ export default function ModerationPage() {
   const feed = useFeedReports();
   const trail = useTrailFlags();
   const feedCount = feed.data?.length ?? 0;
+  const ai = useAiReports();
   const trailCount = trail.data?.length ?? 0;
-  const isFetching = feed.isFetching || trail.isFetching;
+  const aiCount = ai.data?.length ?? 0;
+  const isFetching = feed.isFetching || trail.isFetching || ai.isFetching;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -97,8 +101,8 @@ export default function ModerationPage() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Moderation</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Reported feed posts and comments, and flagged trail reports, most-reported first.
-            Dismiss keeps the item up; remove hides it for everyone.
+            Reported feed posts and comments, flagged trail reports and reported AI answers. Dismiss
+            keeps the item up; remove hides it for everyone.
           </p>
         </div>
         <Button
@@ -108,6 +112,7 @@ export default function ModerationPage() {
           onClick={() => {
             feed.refetch();
             trail.refetch();
+            ai.refetch();
           }}
           disabled={isFetching}
         >
@@ -138,6 +143,18 @@ export default function ModerationPage() {
         >
           {trail.data?.map((flag) => (
             <TrailFlagCard key={flag.reportId} flag={flag} />
+          ))}
+        </QueueSection>
+
+        <QueueSection
+          title="AI answers"
+          count={aiCount}
+          isLoading={ai.isLoading}
+          isError={ai.isError}
+          emptyDescription="When someone reports an answer from the AI assistant it shows up here."
+        >
+          {ai.data?.map((report) => (
+            <AiReportCard key={report.id} report={report} />
           ))}
         </QueueSection>
       </div>

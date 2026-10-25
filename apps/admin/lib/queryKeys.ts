@@ -49,6 +49,10 @@ export const queryKeys = {
     trailFlags: {
       all: () => [...queryKeys.admin.all(), 'trailFlags'] as const,
     },
+
+    aiReports: {
+      all: () => [...queryKeys.admin.all(), 'aiReports'] as const,
+    },
   },
 
   platform: {

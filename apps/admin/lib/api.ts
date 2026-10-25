@@ -4,6 +4,8 @@ import { isObject } from '@packrat/guards';
 import type {
   ActiveUsers,
   ActivityPoint,
+  AdminAiReport,
+  AdminAiReportAction,
   AdminCatalogItem,
   AdminFeatureAccessItem,
   AdminFeatureFlagItem,
@@ -700,4 +702,27 @@ export async function resolveTrailFlags({
     .post();
   if (error) throwOnError({ error });
   return unwrap({ data, name: 'resolveTrailFlags' });
+}
+
+// ─── AI answer moderation ─────────────────────────────────────────────────────
+
+export type { AdminAiReport, AdminAiReportAction };
+
+export async function getAiReports(): Promise<AdminAiReport[]> {
+  const { data, error } = await adminClient['ai-reports'].get();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'aiReports' }).items;
+}
+
+/** `dismiss` closes a report that needs no change; `resolve` records that it was handled. */
+export async function resolveAiReport({
+  id,
+  action,
+}: {
+  id: number;
+  action: AdminAiReportAction;
+}): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient['ai-reports']({ id })({ action }).post();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'resolveAiReport' });
 }
