@@ -3,7 +3,6 @@ import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
@@ -25,7 +24,6 @@ export function PackTemplateDetailScreen() {
   const { t } = useTranslation();
 
   const packTemplate = usePackTemplateDetails(id as string);
-  const user = useUser();
 
   const getTabStyle = (tab: string) => {
     return `flex-1 items-center py-4 ${activeTab === tab ? 'border-b-2 border-primary' : ''}`;
@@ -165,7 +163,7 @@ export function PackTemplateDetailScreen() {
             >
               <Text>{t('packTemplates.applyToPack')}</Text>
             </Button>
-            {(!packTemplate.isAppTemplate || user?.role === 'ADMIN') && (
+            {!packTemplate.isAppTemplate && (
               <Button
                 className="flex-1"
                 variant="secondary"

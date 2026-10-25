@@ -6,19 +6,10 @@ import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { TextField } from '@packrat/ui/src/text-field';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { z } from 'zod';
 import { useCreatePackTemplate } from '../hooks/useCreatePackTemplate';
 import { useUpdatePackTemplate } from '../hooks/useUpdatePacktemplate';
@@ -30,7 +21,6 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
   const { t } = useTranslation();
   const createTemplate = useCreatePackTemplate();
   const updateTemplate = useUpdatePackTemplate();
-  const user = useUser();
   const isEditing = !!template;
 
   // Schema
@@ -169,35 +159,6 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
               )}
             </form.Field>
           </FormSection>
-          {user?.role === 'ADMIN' && (
-            <FormSection
-              ios={{ title: t('packTemplates.type') }}
-              footnote={t('packTemplates.appTemplateFootnote')}
-            >
-              <form.Field name="isAppTemplate">
-                {(field) => (
-                  <FormItem>
-                    <View className="flex-row items-center justify-between p-4">
-                      <View className="flex-row items-center">
-                        <Text className="ml-2 font-medium text-foreground">
-                          {t('packTemplates.markAsAppTemplate')}
-                        </Text>
-                      </View>
-                      <Switch
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                        trackColor={{
-                          false: 'hsl(var(--muted))',
-                          true: 'hsl(var(--primary))',
-                        }}
-                        ios_backgroundColor="hsl(var(--muted))"
-                      />
-                    </View>
-                  </FormItem>
-                )}
-              </form.Field>
-            </FormSection>
-          )}
         </Form>
 
         <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
