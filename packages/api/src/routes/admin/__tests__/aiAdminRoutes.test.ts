@@ -78,7 +78,7 @@ describe('admin AI report routes', () => {
       request('/ai-reports/7/remove', { method: 'POST' }),
     );
     expect(res.status).toBe(422);
-    expect(mocks.resolveAiReport).not.toHaveBeenCalled();
+    expect(mocks.resolveAiReport).toHaveBeenCalledTimes(0);
   });
 });
 
@@ -107,7 +107,7 @@ describe('admin AI pack generation route', () => {
       request('/packs/generate', { method: 'POST', body: { count: 1 } }),
     );
     expect(res.status).toBe(503);
-    expect(mocks.generatePacks).not.toHaveBeenCalled();
+    expect(mocks.generatePacks).toHaveBeenCalledTimes(0);
   });
 
   it('reports and returns 500 when generation throws', async () => {
