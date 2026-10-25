@@ -1,14 +1,12 @@
+import { isPrimitive } from '@packrat/guards';
+
 // Cloudflare permits arbitrary iterable header pairs; Bun and DOM constructor
 // types require arrays/tuples. Materialize pairs without relaxing validation.
 export function copyRequestHeaders(init?: HeadersInit | Iterable<Iterable<string>>): Headers {
   if (init && Symbol.iterator in init) {
     const pairs: [string, string][] = [];
     for (const pair of init) {
-      if (
-        (typeof pair !== 'object' && typeof pair !== 'function') ||
-        pair === null ||
-        !(Symbol.iterator in pair)
-      ) {
+      if (isPrimitive(pair) || !(Symbol.iterator in pair)) {
         throw new TypeError('Header pair must be an iterable object');
       }
       const iterator = pair[Symbol.iterator]();
