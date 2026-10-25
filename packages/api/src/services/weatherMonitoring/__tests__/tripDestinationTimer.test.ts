@@ -48,7 +48,7 @@ function trip(id: string, patch: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   mocks.env = {};
   mocks.upcoming = [];
 });
@@ -82,7 +82,7 @@ describe('syncTripDestinationTimer', () => {
   it('captures a failure instead of failing the trip write', async () => {
     fakeNamespace();
     mocks.arm.mockRejectedValueOnce(new Error('do down'));
-    await expect(syncTripDestinationTimer({ trip: trip('t1') })).resolves.toBeUndefined();
+    await expect(syncTripDestinationTimer({ trip: trip('t1'), now: NOW })).resolves.toBeUndefined();
     expect(mocks.captureApiException).toHaveBeenCalledWith(
       expect.objectContaining({
         operation: 'tripReminders.syncDestinationTimer',
