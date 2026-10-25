@@ -6,6 +6,7 @@ import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import type { TripInStore } from '../types';
+import { restoreTripDateStrings } from '../utils/tripStoreDates';
 
 const listTrips = async () => {
   const { data, error } = await apiClient.trips.get({ query: { includePublic: 0 } });
@@ -67,6 +68,7 @@ syncObservable(
       plugin: persistPlugin,
       retrySync: true,
       name: 'trips',
+      transform: { load: restoreTripDateStrings },
     },
     waitFor: isAuthed,
     waitForSet: isAuthed,
