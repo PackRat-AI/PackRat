@@ -795,7 +795,7 @@
       },
       "showNames": "Show trip names",
       "zoomClose": "Zoom in close",
-      "mapFailed": "The map couldn't load. The card shares without it.",
+      "mapFailed": "The map didn't load. The card will be shared without it.",
       "privacy": {
         "mapClose": "The map is zoomed to your trips and may show exactly where they started.",
         "mapRegion": "The map stays zoomed out, showing the region rather than exact spots.",
@@ -804,7 +804,7 @@
       },
       "send": "Share image",
       "preview": "Preview of the {{format}} image",
-      "failed": "Couldn't make the image. Try again.",
+      "failed": "Couldn't create the image. Try again.",
       "shareGoal": "Share goal",
       "card": {
         "eyebrowStats": "MY TRIP STATS",
@@ -866,7 +866,7 @@
       "gpxName": "PackRat Routes",
       "saved": "Saved {{name}}",
       "failed": "Couldn't save the file. Try again.",
-      "noRoutes": "No routes or summits to save yet."
+      "noRoutes": "No routes or summits to save yet. Add one to a trip's log first."
     }
   },
   "trips": {
