@@ -6,9 +6,8 @@
 export function restoreTripDateStrings<T extends object>(trips: Record<string, T>) {
   for (const trip of Object.values(trips)) {
     if (!trip) continue;
-    const fields = trip as Record<string, unknown>;
-    for (const [key, value] of Object.entries(fields)) {
-      if (value instanceof Date) fields[key] = value.toISOString();
+    for (const [key, value] of Object.entries(trip)) {
+      if (value instanceof Date) Reflect.set(trip, key, value.toISOString());
     }
   }
   return trips;
