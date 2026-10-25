@@ -477,6 +477,7 @@ schemes:
           defaultPlan: true
         - path: TestPlans/iOS-Smoke.xctestplan
         - path: TestPlans/iOS-Sanity.xctestplan
+        - path: TestPlans/iOS-ChatAcceptance.xctestplan
       targets:
         - PackRatTests
         - PackRatUITests
