@@ -14,6 +14,7 @@ import { computeLongTrailProgress, type LongTrailProgress } from '../utils/longT
 import { computeParksAndPeaks, type ParksAndPeaks } from '../utils/parksAndPeaks';
 import { computeTripPlaces, type TripPlaces } from '../utils/tripPlaces';
 import { ALL_SCOPE, computeTripStats, type Scope, type TripStatsRecord } from '../utils/tripStats';
+import { computeTripTrails, type TripTrailsRecord } from '../utils/tripTrails';
 
 export function useTripGoals(): TripGoal[] {
   return use$(() => sortGoals(Object.values(tripGoalsStore.get()).filter((goal) => !goal.deleted)));
@@ -42,6 +43,11 @@ export function useParksAndPeaks(record: TripStatsRecord): ParksAndPeaks {
       }),
     [record.allFinished, entries],
   );
+}
+
+/** Registry trails named in finished trips' logs; lifetime, like parks and peaks. */
+export function useTripTrails(record: TripStatsRecord): TripTrailsRecord {
+  return useMemo(() => computeTripTrails(record.allFinished), [record.allFinished]);
 }
 
 /** Every long trail against every finished trip's route; lifetime, like parks and peaks. */

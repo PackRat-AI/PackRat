@@ -152,6 +152,14 @@ export const testIds = Object.freeze({
     removeRouteBtn: 'trip-stats:remove-route',
     logAddSummitBtn: 'trip-stats:log-add-summit',
     logRemoveSummit: (index: number) => `trip-stats:log-remove-summit-${index}`,
+    logAddTrailBtn: 'trip-stats:log-add-trail',
+    logRemoveTrail: (index: number) => `trip-stats:log-remove-trail-${index}`,
+    trailsCard: 'trip-stats:trails-card',
+    walkedTrailRow: (id: string) => `trip-stats:walked-trail-${id}`,
+    walkedTrailMap: 'trip-stats:walked-trail-map',
+    walkedTrailTripRow: (id: string) => `trip-stats:walked-trail-trip-${id}`,
+    trailSearchInput: 'trip-stats:trail-search',
+    trailOption: (id: string) => `trip-stats:trail-option-${id}`,
   }),
   trips: Object.freeze({
     createBtn: 'create-trip-button', // keep Maestro value

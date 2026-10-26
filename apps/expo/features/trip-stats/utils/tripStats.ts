@@ -182,11 +182,14 @@ const DAY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})/;
 
 /**
  * A trip's calendar day. Dates go over the wire as `YYYY-MM-DD` or as that day at UTC midnight;
- * either way the first ten characters are the day the user picked, in any time zone.
+ * either way the first ten characters are the day the user picked, in any time zone. The trips
+ * store can also hold a `Date` after an edit, typed as a string; its UTC day is the same day.
  */
-export function dayFromString(value?: string | null): Date | null {
-  if (!value || value.length < 10) return null;
-  const match = DAY_PATTERN.exec(value);
+export function dayFromString(value?: string | Date | null): Date | null {
+  if (value instanceof Date && Number.isNaN(value.getTime())) return null;
+  const text = value instanceof Date ? value.toISOString() : value;
+  if (!text || text.length < 10) return null;
+  const match = DAY_PATTERN.exec(text);
   if (!match) return null;
   const [, year, month, day] = match;
   const date = new Date(Number(year), Number(month) - 1, Number(day));

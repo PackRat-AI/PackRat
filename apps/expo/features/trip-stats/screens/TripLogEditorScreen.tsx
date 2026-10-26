@@ -1,10 +1,11 @@
 import { FilterChip, FlowRow, Host, Text as JCText } from '@expo/ui/jetpack-compose';
 import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
-import type { TripActivity, TripLog, TripSummit } from '@packrat/schemas/trips';
+import type { TripActivity, TripLog, TripSummit, TripTrail } from '@packrat/schemas/trips';
 import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import { Icon } from 'expo-app/components/Icon';
 import { useTripDetailsFromStore } from 'expo-app/features/trips/hooks/useTripDetailsFromStore';
 import { useUpdateTrip } from 'expo-app/features/trips/hooks/useUpdateTrip';
@@ -20,22 +21,27 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FullScreenDialogHeader, OutlinedField, SectionLabel } from '../components/DialogParts';
 import { StatsRow } from '../components/StatsParts';
 import { useDistanceUnit } from '../hooks/useDistanceUnit';
+import { fetchRegistryTrail } from '../hooks/useTrailRegistry';
 import { consumePickedPeak, pickedPeak$ } from '../lib/peakPicker';
+import { consumePickedTrail, pickedTrail$ } from '../lib/trailPicker';
 import { peakKey } from '../utils/parksAndPeaks';
 import { decodePolyline } from '../utils/polyline';
 import { GpxParseError, parseGpx, summarizeTrack } from '../utils/trackGeometry';
 import { TRIP_ACTIVITIES } from '../utils/tripStats';
+import { trailRoute } from '../utils/tripTrails';
 import {
   distanceSymbol,
   distanceValue,
   elevationSymbol,
   elevationValue,
+  formatDistance,
   formatElevation,
   metresFromDistance,
   metresFromElevation,
 } from '../utils/units';
 
 const MAX_SUMMITS = 100;
+const MAX_TRAILS = 50;
 
 function shown(value: number | null | undefined): string {
   return value == null ? '' : String(Math.round(value * 10) / 10);
@@ -50,7 +56,8 @@ function parsed(text: string): number | null {
 
 /**
  * The trip log, as a Material 3 full-screen dialog: activities as filter chips, distance and
- * climbing in the user's units, a route imported from a GPX file, and the summits reached.
+ * climbing in the user's units, a route imported from a GPX file, and the trails walked and
+ * summits reached.
  */
 export function TripLogEditorScreen() {
   const { t } = useTranslation();
@@ -60,6 +67,7 @@ export function TripLogEditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const trip = useTripDetailsFromStore(id);
   const updateTrip = useUpdateTrip();
+  const queryClient = useQueryClient();
   const log = trip?.log;
   // Material 3 AlertDialog (Compose), not the legacy platform dialog `Alert.alert` draws.
   const alertRef = useRef<AlertMethods>(null);
@@ -84,6 +92,32 @@ export function TripLogEditorScreen() {
   const [route, setRoute] = useState<string | null>(log?.route ?? null);
   const [source, setSource] = useState<TripLog['source']>(log?.source ?? null);
   const [summits, setSummits] = useState<TripSummit[]>(log?.summits ?? []);
+  const [trails, setTrails] = useState<TripTrail[]>(log?.trails ?? []);
+  // The latest values, for the trail fill that resolves after a network round trip.
+  const routeRef = useRef(route);
+  routeRef.current = route;
+  const distanceRef = useRef(distanceText);
+  distanceRef.current = distanceText;
+
+  /**
+   * The first trail picked on an empty log supplies its length and route, which the user can still
+   * correct (an out-and-back walks it twice).
+   */
+  const fillFromTrail = async (trail: TripTrail) => {
+    if (routeRef.current || parsed(distanceRef.current) != null) return;
+    if (trail.lengthMeters != null) {
+      setDistanceText(shown(distanceValue({ metres: trail.lengthMeters, unit })));
+    }
+    try {
+      const detail = await fetchRegistryTrail({ queryClient, id: trail.id });
+      const line = trailRoute(detail.lines);
+      if (!line || routeRef.current) return;
+      setRoute(line);
+      setSource('trail');
+    } catch {
+      // The length is filled in already; without the trail's line the log just has no route.
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -94,6 +128,15 @@ export function TripLogEditorScreen() {
             ? current
             : [...current, picked].slice(0, MAX_SUMMITS),
         );
+      }
+      const trail = consumePickedTrail();
+      if (trail) {
+        setTrails((current) =>
+          current.some((item) => item.id === trail.id)
+            ? current
+            : [...current, trail].slice(0, MAX_TRAILS),
+        );
+        fillFromTrail(trail);
       }
     }, []),
   );
@@ -154,6 +197,19 @@ export function TripLogEditorScreen() {
     });
   };
 
+  const addTrail = () => {
+    pickedTrail$.set(null);
+    const location = trip.location;
+    router.push({
+      pathname: '/trip-stats/trail-picker',
+      params: {
+        ...(route ? { route } : {}),
+        ...(location ? { lat: String(location.latitude), lng: String(location.longitude) } : {}),
+        exclude: trails.map((trail) => trail.id).join(','),
+      },
+    });
+  };
+
   const save = () => {
     const distance = parsed(distanceText);
     const elevation = parsed(elevationText);
@@ -165,7 +221,7 @@ export function TripLogEditorScreen() {
       route,
       source: route ? (source ?? 'track') : distance != null ? 'manual' : null,
       summits,
-      trails: log?.trails ?? null,
+      trails,
       landscape: log?.landscape ?? null,
     };
     updateTrip({ ...trip, log: next });
@@ -268,6 +324,47 @@ export function TripLogEditorScreen() {
             <Icon name="file-upload-outline" size={18} color={colors.foreground} />
             <Text>{route ? t('tripStats.log.replaceRoute') : t('tripStats.log.importGpx')}</Text>
           </Button>
+
+          <SectionLabel>{t('tripStats.log.trails')}</SectionLabel>
+          {trails.map((trail, index) => (
+            <StatsRow
+              key={trail.id}
+              icon="map-marker-path"
+              title={trail.name}
+              subtitle={
+                trail.lengthMeters != null
+                  ? formatDistance({ metres: trail.lengthMeters, unit })
+                  : null
+              }
+              trailing={
+                <Pressable
+                  onPress={() => setTrails((current) => current.filter((_, i) => i !== index))}
+                  hitSlop={8}
+                  className="p-2"
+                  accessibilityRole="button"
+                  accessibilityLabel={t('tripStats.trails.remove')}
+                  android_ripple={{ borderless: true, color: colors.grey5 }}
+                  testID={testIds.tripStats.logRemoveTrail(index)}
+                >
+                  <Icon name="close" size={24} color={colors.grey} />
+                </Pressable>
+              }
+            />
+          ))}
+          {trails.length < MAX_TRAILS ? (
+            <Button
+              variant="plain"
+              className="mx-2 self-start"
+              onPress={addTrail}
+              testID={testIds.tripStats.logAddTrailBtn}
+            >
+              <Icon name="plus" size={18} color={colors.primary} />
+              <Text className="text-primary">{t('tripStats.trails.addTrail')}</Text>
+            </Button>
+          ) : null}
+          <Text variant="footnote" className="px-4 pb-2 text-muted-foreground">
+            {route ? t('tripStats.trails.logHintRoute') : t('tripStats.trails.logHintNoRoute')}
+          </Text>
 
           <SectionLabel>{t('tripStats.log.summits')}</SectionLabel>
           {summits.map((summit, index) => (
