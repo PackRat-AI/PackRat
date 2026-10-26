@@ -102,7 +102,7 @@
     "better-auth": "catalog:",
     "drizzle-orm": "catalog:",
     "drizzle-seed": "^0.3.1",
-    "miniflare": "^4.20260515.0",
+    "miniflare": "^4.20260730.0",
     "typed-htmx": "^0.3.1",
     "vitest": "catalog:",
     "wrangler": "catalog:"
