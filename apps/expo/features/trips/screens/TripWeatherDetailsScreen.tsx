@@ -129,7 +129,9 @@ export default function TripWeatherDetailsScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingTop: 100, paddingBottom: 40 }}>
+        <ScrollView
+          contentContainerStyle={{ paddingTop: 100, paddingBottom: 40, paddingHorizontal: 16 }}
+        >
           <View className="items-center">
             <Text className="text-3xl text-white font-semibold">{displayLocationName}</Text>
 
