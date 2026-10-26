@@ -2,7 +2,7 @@ import type { TripSummit } from '@packrat/schemas/trips';
 import { describe, expect, it } from 'vitest';
 import type { GoalProgress } from '../goalProgress';
 import type { Ascent, NationalPark, ParksAndPeaks } from '../parksAndPeaks';
-import { fitMapRegion, type MapRegion, PRIVATE_SPAN_METRES } from '../shareMap';
+import { fitMapRegion, type MapRegion, mapCamera, PRIVATE_SPAN_METRES } from '../shareMap';
 import { finishedTrips, type StatsTrip } from '../tripStats';
 import { computeYearInReview, offeredReviewYear, reviewPages } from '../yearInReview';
 
@@ -273,9 +273,16 @@ describe('fitMapRegion', () => {
     const middle = (mercator(north) + mercator(south)) / 2;
     expect(middle).toBeCloseTo((mercator(51.36) + mercator(-50.94)) / 2, 6);
     expect(region.longitude).toBeCloseTo((-73.41 - 121.74) / 2, 6);
-    // The frame's shape on screen is its projected width over height.
+    // Under half the world wide, or Google Maps wraps the bounds the other way round the globe.
+    expect(region.longitudeDelta).toBeLessThan(180);
+  });
+
+  it('gives the frame the shape of the view, measured in the projection', () => {
+    const region = fitMapRegion({ points: FAR_APART.slice(1), aspect: 1.5, minSpanMetres: 0 });
+    if (!region) throw new Error('expected a region');
+    const { north, south } = edges(region);
     const width = (region.longitudeDelta * Math.PI) / 180;
-    expect(width / (mercator(north) - mercator(south))).toBeCloseTo(2, 6);
+    expect(width / (mercator(north) - mercator(south))).toBeCloseTo(1.5, 6);
   });
 
   it('leaves room above the top point for pins', () => {
@@ -301,5 +308,33 @@ describe('fitMapRegion', () => {
     });
     expect((region?.latitudeDelta ?? 0) * 111_320).toBeLessThan(PRIVATE_SPAN_METRES / 2);
     expect(fitMapRegion({ points: [], aspect: 1, minSpanMetres: 0 })).toBeNull();
+  });
+});
+
+describe('mapCamera', () => {
+  it('centres on the middle of the frame as drawn, not the middle of its latitudes', () => {
+    const region = fitMapRegion({ points: FAR_APART, aspect: 1, minSpanMetres: 0 });
+    if (!region) throw new Error('expected a region');
+    const { north, south } = edges(region);
+    const camera = mapCamera({ region, width: 300, height: 300 });
+    expect(mercator(camera.center.latitude)).toBeCloseTo(
+      (mercator(north) + mercator(south)) / 2,
+      6,
+    );
+    expect(camera.center.longitude).toBeCloseTo(region.longitude, 6);
+  });
+
+  it('zooms so the frame fills the map, one level per doubling of the map', () => {
+    const region = fitMapRegion({
+      points: FAR_APART.slice(2),
+      aspect: 1,
+      minSpanMetres: PRIVATE_SPAN_METRES,
+    });
+    if (!region) throw new Error('expected a region');
+    const small = mapCamera({ region, width: 200, height: 200 });
+    const large = mapCamera({ region, width: 400, height: 400 });
+    expect(large.zoom - small.zoom).toBeCloseTo(1, 6);
+    // The frame's width at that zoom is the map's width: 256dp per world at zoom 0.
+    expect((region.longitudeDelta / 360) * 256 * 2 ** small.zoom).toBeCloseTo(200, 0);
   });
 });

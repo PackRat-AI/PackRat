@@ -18,7 +18,7 @@ import {
   peakCount,
   visitedParks,
 } from '../utils/parksAndPeaks';
-import { fitMapRegion } from '../utils/shareMap';
+import { fitMapRegion, mapCamera } from '../utils/shareMap';
 import type { TripPlaces } from '../utils/tripPlaces';
 import type { TripStatsRecord } from '../utils/tripStats';
 import type { TripTrailsRecord } from '../utils/tripTrails';
@@ -178,42 +178,45 @@ export function TripsMapCard({ record, action }: { record: TripStatsRecord; acti
         : null,
     [points, width],
   );
+  const lines = record.routes.map((route) => (
+    <Polyline
+      key={route.id}
+      coordinates={route.coordinates}
+      strokeColor={colors.primary}
+      strokeWidth={3}
+    />
+  ));
+  const markers = pins.map((pin) => (
+    <Marker
+      key={pin.id}
+      coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
+      title={pin.name}
+    />
+  ));
   if (points.length === 0) return null;
+  const map = region ? (
+    <MapView
+      key={width}
+      style={{ flex: 1 }}
+      initialCamera={mapCamera({ region, width, height: MAP_HEIGHT })}
+      scrollEnabled={false}
+      zoomEnabled={false}
+      rotateEnabled={false}
+      pitchEnabled={false}
+      toolbarEnabled={false}
+    >
+      {lines}
+      {markers}
+    </MapView>
+  ) : null;
   return (
     <StatsCard title={t('tripStats.map.title')} action={action} hostsNativeView>
       <View
         className="overflow-hidden rounded-xl"
-        style={{ height: MAP_HEIGHT }}
+        style={{ height: MAP_HEIGHT, backgroundColor: colors.grey6 }}
         onLayout={(event) => setWidth(Math.round(event.nativeEvent.layout.width))}
       >
-        {region ? (
-          <MapView
-            key={width}
-            style={{ flex: 1 }}
-            initialRegion={region}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            rotateEnabled={false}
-            pitchEnabled={false}
-            toolbarEnabled={false}
-          >
-            {record.routes.map((route) => (
-              <Polyline
-                key={route.id}
-                coordinates={route.coordinates}
-                strokeColor={colors.primary}
-                strokeWidth={3}
-              />
-            ))}
-            {pins.map((pin) => (
-              <Marker
-                key={pin.id}
-                coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
-                title={pin.name}
-              />
-            ))}
-          </MapView>
-        ) : null}
+        {map}
       </View>
     </StatsCard>
   );

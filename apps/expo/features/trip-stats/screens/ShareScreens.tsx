@@ -10,13 +10,14 @@ import { testIds } from 'expo-app/lib/testIds';
 import { File, Paths } from 'expo-file-system';
 import { Stack, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import { Marker, Polyline } from 'react-native-maps';
 import PagerView from 'react-native-pager-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import { FullScreenDialogHeader } from '../components/DialogParts';
+import { useMapSnapshot } from '../components/MapSnapshot';
 import { SHARE_PALETTE, ShareCard, useCardTitle } from '../components/ShareCard';
 import { useShareCard } from '../components/ShareParts';
 import { SegmentedButtons } from '../components/StatsParts';
@@ -42,7 +43,6 @@ const PREVIEW_HEIGHT = 420;
 /** Long enough for slow tiles on mobile data; past it the card shares without the map. */
 // The filled button's label colour (`--primary-foreground`), white in both themes.
 const ON_PRIMARY = '#FFFFFF';
-const MAP_TIMEOUT_MS = 10_000;
 
 /**
  * A card on its way out: pick a shape, see exactly what will be shared, send it through the
@@ -76,7 +76,7 @@ function ShareCardEditor({ content }: { content: ShareContent }) {
   const [cardSize, setCardSize] = useState<{ width: number; height: number } | null>(null);
   const [sharing, setSharing] = useState(false);
   const cardRef = useRef<View>(null);
-  const map = useMapSnapshot({ content, format, zoomClose: options.zoomClose });
+  const map = useShareMap({ content, format, zoomClose: options.zoomClose });
 
   const height = cardHeight(format) ?? cardSize?.height ?? CARD_WIDTH;
   const scale = Math.min((windowWidth - 40) / CARD_WIDTH, PREVIEW_HEIGHT / height, 1);
@@ -271,9 +271,9 @@ const DARK_MAP_STYLE = Object.freeze([
 /**
  * A map card's map: a dark Google map, framed to the card's shape and held zoomed out unless the
  * user zooms in close, drawn off-screen behind the preview and snapshotted into an image the card
- * shows. Routes and pins are drawn by the map so they line up with it exactly.
+ * shows. Pins are dots centred on their place, so the frame needs no room above them.
  */
-function useMapSnapshot({
+function useShareMap({
   content,
   format,
   zoomClose,
@@ -283,56 +283,25 @@ function useMapSnapshot({
   zoomClose: boolean;
 }) {
   const aspect = mapAspect(format);
-  const key = `${aspect}-${zoomClose}`;
-  const [snapshot, setSnapshot] = useState<{ key: string; image: string | null } | null>(null);
-  const mapRef = useRef<MapView>(null);
   const isMap = content.kind === 'map';
-
-  useEffect(() => {
-    if (!isMap) return;
-    const timer = setTimeout(() => {
-      setSnapshot((current) => (current?.key === key ? current : { key, image: null }));
-    }, MAP_TIMEOUT_MS);
-    return () => clearTimeout(timer);
-  }, [isMap, key]);
-
-  if (content.kind !== 'map') return { element: null, image: null, failed: false };
-  const region = fitMapRegion({
-    points: [...content.routes.flat(), ...content.pins],
-    aspect,
-    minSpanMetres: zoomClose ? 0 : PRIVATE_SPAN_METRES,
-  });
-  const current = snapshot?.key === key ? snapshot : null;
-
-  const element = region ? (
-    <View
-      pointerEvents="none"
-      style={{ position: 'absolute', top: 0, left: 0, zIndex: -1, opacity: 0.01 }}
-    >
-      <MapView
-        key={key}
-        ref={mapRef}
-        style={{ width: CARD_WIDTH, height: CARD_WIDTH / aspect }}
-        initialRegion={region}
-        customMapStyle={[...DARK_MAP_STYLE]}
-        scrollEnabled={false}
-        zoomEnabled={false}
-        rotateEnabled={false}
-        pitchEnabled={false}
-        toolbarEnabled={false}
-        onMapLoaded={async () => {
-          try {
-            const image = await mapRef.current?.takeSnapshot({ format: 'png', result: 'file' });
-            setSnapshot({ key, image: image ? `file://${image.replace('file://', '')}` : null });
-          } catch (error) {
-            Sentry.captureException(error, {
-              tags: { feature: 'tripStats', action: 'shareMapSnapshot' },
-            });
-            setSnapshot({ key, image: null });
-          }
-        }}
-      >
-        {content.routes.map((route, index) => (
+  const routes = isMap ? content.routes : [];
+  const pins = isMap ? content.pins : [];
+  const region = isMap
+    ? fitMapRegion({
+        points: [...routes.flat(), ...pins],
+        aspect,
+        minSpanMetres: zoomClose ? 0 : PRIVATE_SPAN_METRES,
+      })
+    : null;
+  const snapshot = useMapSnapshot({
+    region,
+    width: CARD_WIDTH,
+    height: CARD_WIDTH / aspect,
+    customMapStyle: DARK_MAP_STYLE,
+    sentryTags: { action: 'shareMapSnapshot' },
+    children: (
+      <>
+        {routes.map((route, index) => (
           <Polyline
             key={index}
             coordinates={route}
@@ -340,7 +309,7 @@ function useMapSnapshot({
             strokeWidth={4}
           />
         ))}
-        {content.pins.map((pin) => (
+        {pins.map((pin) => (
           <Marker
             key={`${pin.latitude},${pin.longitude}`}
             coordinate={pin}
@@ -359,15 +328,10 @@ function useMapSnapshot({
             />
           </Marker>
         ))}
-      </MapView>
-    </View>
-  ) : null;
-
-  return {
-    element,
-    image: current?.image ?? null,
-    failed: region == null || (current != null && current.image == null),
-  };
+      </>
+    ),
+  });
+  return isMap ? snapshot : { element: null, image: null, failed: false };
 }
 
 /**
