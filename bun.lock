@@ -31,7 +31,7 @@
     },
     "apps/admin": {
       "name": "packrat-admin-app",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@elysiajs/eden": "catalog:",
         "@packrat/api-client": "workspace:*",
@@ -81,7 +81,7 @@
     },
     "apps/expo": {
       "name": "packrat-expo-app",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@ai-sdk/react": "^3.0.170",
         "@better-auth/expo": "^1.7.5",
@@ -221,7 +221,7 @@
     },
     "apps/guides": {
       "name": "packrat-guides-app",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@ai-sdk/openai": "catalog:",
         "@elysiajs/eden": "catalog:",
@@ -311,7 +311,7 @@
     },
     "apps/landing": {
       "name": "packrat-landing-app",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@emotion/is-prop-valid": "^1.3.1",
         "@hookform/resolvers": "catalog:",
@@ -382,7 +382,7 @@
     },
     "apps/trails": {
       "name": "packrat-trails-app",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@packrat/api-client": "workspace:*",
         "@packrat/app": "workspace:*",
@@ -457,7 +457,7 @@
     },
     "packages/analytics": {
       "name": "@packrat/analytics",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@duckdb/node-api": "catalog:",
         "@packrat/env": "workspace:*",
@@ -474,11 +474,11 @@
     },
     "packages/api": {
       "name": "@packrat/api",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@ai-sdk/google": "^3.0.64",
         "@ai-sdk/openai": "catalog:",
-        "@ai-sdk/perplexity": "^3.0.29",
+        "@ai-sdk/perplexity": "^5.0.19",
         "@aws-sdk/client-s3": "~3.787.0",
         "@aws-sdk/s3-request-presigner": "~3.1048.0",
         "@better-auth/oauth-provider": "1.7.5",
@@ -538,7 +538,7 @@
     },
     "packages/api-client": {
       "name": "@packrat/api-client",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@elysiajs/eden": "catalog:",
         "@packrat/guards": "workspace:*",
@@ -557,7 +557,7 @@
     },
     "packages/app": {
       "name": "@packrat/app",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@packrat/api-client": "workspace:*",
         "@packrat/schemas": "workspace:*",
@@ -578,11 +578,11 @@
     },
     "packages/checks": {
       "name": "@packrat/checks",
-      "version": "2.2.3",
+      "version": "2.2.4",
     },
     "packages/cli": {
       "name": "@packrat/cli",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "bin": {
         "packrat": "./src/index.ts",
       },
@@ -607,14 +607,14 @@
     },
     "packages/config": {
       "name": "@packrat/config",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@packrat/guards": "workspace:*",
       },
     },
     "packages/consent-ui": {
       "name": "@packrat/consent-ui",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@kitajs/html": "^4.2.13",
         "@packrat/guards": "workspace:*",
@@ -625,14 +625,14 @@
     },
     "packages/constants": {
       "name": "@packrat/constants",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "devDependencies": {
         "typescript": "catalog:",
       },
     },
     "packages/db": {
       "name": "@packrat/db",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@packrat/constants": "workspace:*",
         "drizzle-orm": "catalog:",
@@ -644,14 +644,14 @@
     },
     "packages/env": {
       "name": "@packrat/env",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "zod": "catalog:",
       },
     },
     "packages/guards": {
       "name": "@packrat/guards",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@packrat/utils": "workspace:*",
         "ts-extras": "catalog:",
@@ -660,7 +660,7 @@
     },
     "packages/mcp": {
       "name": "@packrat/mcp",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.29.0",
         "@packrat/api-client": "workspace:*",
@@ -684,7 +684,7 @@
     },
     "packages/osm-db": {
       "name": "@packrat/osm-db",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@neondatabase/serverless": "catalog:",
         "drizzle-orm": "catalog:",
@@ -698,7 +698,7 @@
     },
     "packages/osm-import": {
       "name": "@packrat/osm-import",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@packrat/env": "workspace:*",
         "pg": "catalog:",
@@ -706,7 +706,7 @@
     },
     "packages/overpass": {
       "name": "@packrat/overpass",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@packrat/guards": "workspace:*",
         "zod": "catalog:",
@@ -718,7 +718,7 @@
     },
     "packages/schemas": {
       "name": "@packrat/schemas",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@packrat/config": "workspace:*",
         "@packrat/constants": "workspace:*",
@@ -733,14 +733,14 @@
     },
     "packages/trails-import": {
       "name": "@packrat/trails-import",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@packrat/env": "workspace:*",
       },
     },
     "packages/types": {
       "name": "@packrat/types",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@packrat/constants": "workspace:*",
         "@packrat/schemas": "workspace:*",
@@ -751,11 +751,11 @@
     },
     "packages/typescript-config": {
       "name": "@packrat/typescript-config",
-      "version": "2.2.3",
+      "version": "2.2.4",
     },
     "packages/ui": {
       "name": "@packrat/ui",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@expo/ui": "~57.0.9",
         "@packrat/guards": "workspace:*",
@@ -772,7 +772,7 @@
     },
     "packages/units": {
       "name": "@packrat/units",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@packrat/constants": "workspace:*",
         "@packrat/guards": "workspace:*",
@@ -784,7 +784,7 @@
     },
     "packages/utils": {
       "name": "@packrat/utils",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "destr": "^2.0.5",
         "es-toolkit": "^1.47.0",
@@ -801,7 +801,7 @@
     },
     "packages/web-ui": {
       "name": "@packrat/web-ui",
-      "version": "2.2.3",
+      "version": "2.2.4",
       "dependencies": {
         "@packrat/guards": "workspace:*",
         "@radix-ui/react-accordion": "catalog:",
@@ -975,7 +975,7 @@
 
     "@ai-sdk/openai": ["@ai-sdk/openai@3.0.64", "", { "dependencies": { "@ai-sdk/provider": "3.0.10", "@ai-sdk/provider-utils": "4.0.27" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-epO4iS6QwktaY2PF6uBcPnDTJ3BxPOfsGS7/OEtBe3GtNj7C8h8gMDVtIe5K8W16HNDbn0tbR4dcQfpfs+XVFg=="],
 
-    "@ai-sdk/perplexity": ["@ai-sdk/perplexity@3.0.33", "", { "dependencies": { "@ai-sdk/provider": "3.0.10", "@ai-sdk/provider-utils": "4.0.27" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-aNt6pTAzq+akadDXVdg2SjN2dODtaVlkKbw8/35c+sekr+Tx0sJwVqMR1udxrjLzhQvz8qtfsWRuz+hB9pmOnQ=="],
+    "@ai-sdk/perplexity": ["@ai-sdk/perplexity@5.0.20", "", { "dependencies": { "@ai-sdk/provider": "4.0.34", "@ai-sdk/provider-utils": "5.0.68" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-VOaXGFo2dy4KSlsjKPTweiJugN4o5YuZN3iCsoUrlDiS7Aq0WjQJrYG5Ld6cz355QgvxGqiiodws7qLApM6xDQ=="],
 
     "@ai-sdk/provider": ["@ai-sdk/provider@3.0.10", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-Q3BZ27qfpYqnCYGvE3vt+Qi6LGOF9R5Nmzn+9JoM1lCRsD9mYaIhfJLkSunN48nfGXJ6n+XNV0J/XVpqGQl7Dw=="],
 
@@ -2388,6 +2388,8 @@
     "@vue/compiler-ssr": ["@vue/compiler-ssr@3.5.34", "", { "dependencies": { "@vue/compiler-dom": "3.5.34", "@vue/shared": "3.5.34" } }, "sha512-cDtTHKibkThKGHH1SP+WdccquNRYQDFH6rRjQCqT9G2ltFAfoR5pUftpab/z+aM5mW9HLLVQW7hfKKQe/1GBeQ=="],
 
     "@vue/shared": ["@vue/shared@3.5.34", "", {}, "sha512-24uqU4OIiX29ryC3MeWid/Xf2fa2EFRUVLb77nRhk+UrTVrh/XiGtFAFmJBAtBRbjwNdsPRP+jj/OL27Eg1NDA=="],
+
+    "@workflow/serde": ["@workflow/serde@4.1.0", "", {}, "sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ=="],
 
     "@xmldom/xmldom": ["@xmldom/xmldom@0.8.13", "", {}, "sha512-KRYzxepc14G/CEpEGc3Yn+JKaAeT63smlDr+vjB8jRfgTBBI9wRj/nkQEO+ucV8p8I9bfKLWp37uHgFrbntPvw=="],
 
@@ -5067,6 +5069,10 @@
 
     "zwitch": ["zwitch@2.0.4", "", {}, "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="],
 
+    "@ai-sdk/perplexity/@ai-sdk/provider": ["@ai-sdk/provider@4.0.34", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-Ip7ZQBq/FiGpM1mmOVseTtX9PBjnzo0bLC41WTgBSBBRUBz6LhNFGbYaNUzI6hPm6ll1oNSPOAZc/q/z+3QZEQ=="],
+
+    "@ai-sdk/perplexity/@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@5.0.68", "", { "dependencies": { "@ai-sdk/provider": "4.0.34", "@standard-schema/spec": "^1.1.0", "@workflow/serde": "4.1.0", "eventsource-parser": "^3.0.8", "undici": "^7.29.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-SASuC1DqSdWoYyYfpxbgPKm9VCnMP1VTahWY7WEYzi2QDmFdbw4runqmH7NKC33iB/INo+XbaN2hH3dXHSNQZw=="],
+
     "@ai-sdk/provider-utils/@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
     "@appium/base-driver/@colors/colors": ["@colors/colors@1.6.0", "", {}, "sha512-Ir+AOibqzrIsL6ajt3Rz3LskB7OiMVHqltZmspbW/TJuTVuyOMirVqAkjfY6JISiLHgyNqicAC8AyHHGzNd/dA=="],
@@ -5441,7 +5447,7 @@
 
     "agents/yargs": ["yargs@18.0.0", "", { "dependencies": { "cliui": "^9.0.1", "escalade": "^3.1.1", "get-caller-file": "^2.0.5", "string-width": "^7.2.0", "y18n": "^5.0.5", "yargs-parser": "^22.0.0" } }, "sha512-4UEqdc2RYGHZc7Doyqkrqiln3p9X2DZVxaGbwhn2pi7MrRagKaOcIKe8L3OxYcbhXLgLFUS3zAYuQjKBQgmuNg=="],
 
-    "agents/zod": ["zod@4.4.3", "", {}, "sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ=="],
+    "agents/zod": ["zod@4.6.5", "", {}, "sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q=="],
 
     "anymatch/picomatch": ["picomatch@2.3.2", "", {}, "sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA=="],
 
@@ -5898,6 +5904,10 @@
     "yauzl/buffer-crc32": ["buffer-crc32@0.2.13", "", {}, "sha512-VO9Ht/+p3SN7SKWqcrgEzjGbRSJYTx+Q1pTQC0wrWqHx0vpJraQ6GtHx8tvcg1rlK1byhU5gccxgOgj7B0TDkQ=="],
 
     "zip-stream/readable-stream": ["readable-stream@4.7.0", "", { "dependencies": { "abort-controller": "^3.0.0", "buffer": "^6.0.3", "events": "^3.3.0", "process": "^0.11.10", "string_decoder": "^1.3.0" } }, "sha512-oIGGmcpTLwPga8Bn6/Z75SVaH1z5dUut2ibSyAMVhmUggWpmDn2dapB0n7f8nwaSiRtepAsfJyfXIO5DCVAODg=="],
+
+    "@ai-sdk/perplexity/@ai-sdk/provider-utils/@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
+
+    "@ai-sdk/perplexity/@ai-sdk/provider-utils/undici": ["undici@7.30.1", "", {}, "sha512-03KrMbjIFDWQR5RNPrSw3bd1r12JpyFQl9/yxjUbJtqkjmllqC5lFjZh6ujeuJCKr8EOQvRW872Oy/az+nLYxg=="],
 
     "@appium/base-driver/asyncbox/p-limit": ["p-limit@7.3.0", "", { "dependencies": { "yocto-queue": "^1.2.1" } }, "sha512-7cIXg/Z0M5WZRblrsOla88S4wAK+zOQQWeBYfV3qJuJXMr+LnbYjaadrFaS0JILfEDPVqHyKnZ1Z/1d6J9VVUw=="],
 
