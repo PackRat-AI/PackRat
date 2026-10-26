@@ -330,7 +330,8 @@ struct AppNavigation: View {
         case .feed:
             FeedView(viewModel: appState.feedVM)
         case .guides:
-            GuidesView()
+            // Its own stack so a guide pushes its article in the column.
+            NavigationStack { GuidesView() }
         case .gearInventory:
             GearInventoryView().environment(appState)
         case .wildlife:
