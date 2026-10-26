@@ -1,5 +1,6 @@
 import { type ClientPlatformValue, FeatureFlag } from '@packrat/config';
 import { z } from 'zod';
+import { PackCategorySchema } from './constants';
 
 // All flag keys known to the codebase, as a non-empty tuple for z.enum.
 const FEATURE_FLAG_KEYS = Object.values(FeatureFlag) as [string, ...string[]];
@@ -602,4 +603,94 @@ export const AdminPackTemplateItemUpdateBodySchema = z.object({
 });
 export type AdminPackTemplateItemUpdateBody = z.infer<typeof AdminPackTemplateItemUpdateBodySchema>;
 
+export const AdminPackTemplateItemCreateBodySchema = z.object({
+  name: z.string().min(1),
+  description: z.string().nullable().optional(),
+  weight: z.number().nonnegative(),
+  weightUnit: WeightUnitSchema,
+  quantity: z.number().int().positive().optional(),
+  category: z.string().nullable().optional(),
+  consumable: z.boolean().optional(),
+  worn: z.boolean().optional(),
+  notes: z.string().nullable().optional(),
+});
+export type AdminPackTemplateItemCreateBody = z.infer<typeof AdminPackTemplateItemCreateBodySchema>;
+
 export const AdminPackTemplateIdParamSchema = z.object({ id: z.string().min(1) });
+
+// ─── AI content moderation ────────────────────────────────────────────────────
+
+export const AdminAiReportSchema = z.object({
+  id: z.number().int(),
+  userQuery: z.string(),
+  aiResponse: z.string(),
+  reason: z.string(),
+  userComment: z.string().nullable(),
+  reporter: z.object({
+    id: z.string(),
+    firstName: z.string().nullable(),
+    lastName: z.string().nullable(),
+    avatarUrl: z.string().nullable(),
+  }),
+  reportedAt: z.string().datetime(),
+});
+export type AdminAiReport = z.infer<typeof AdminAiReportSchema>;
+
+export const AdminAiReportsResponseSchema = z.object({
+  items: z.array(AdminAiReportSchema),
+});
+
+export const AdminAiReportActionSchema = z.enum(['dismiss', 'resolve']);
+export type AdminAiReportAction = z.infer<typeof AdminAiReportActionSchema>;
+
+// ─── AI pack generation ───────────────────────────────────────────────────────
+
+export const ADMIN_AI_PACKS_MAX = 10;
+
+export const AdminGeneratePacksBodySchema = z.object({
+  count: z.number().int().min(1).max(ADMIN_AI_PACKS_MAX),
+});
+
+export const AdminGeneratedPackSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  category: z.string(),
+  tags: z.array(z.string()),
+});
+export type AdminGeneratedPack = z.infer<typeof AdminGeneratedPackSchema>;
+
+export const AdminGeneratePacksResponseSchema = z.object({
+  items: z.array(AdminGeneratedPackSchema),
+});
+
+// ─── Pack review (AI-generated packs) ─────────────────────────────────────────
+
+export const AdminPackDetailSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  category: z.string(),
+  image: z.string().nullable(),
+  tags: z.array(z.string()),
+  isPublic: z.boolean(),
+  isAIGenerated: z.boolean(),
+  ownerEmail: z.string().nullable(),
+  itemCount: z.number(),
+  totalWeightGrams: z.number(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  items: z.array(AdminPackTemplateItemSchema),
+});
+export type AdminPackDetail = z.infer<typeof AdminPackDetailSchema>;
+
+export const AdminPackUpdateBodySchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().nullable().optional(),
+  category: PackCategorySchema.optional(),
+  tags: z.array(z.string().min(1)).optional(),
+  isPublic: z.boolean().optional(),
+});
+export type AdminPackUpdateBody = z.infer<typeof AdminPackUpdateBodySchema>;
+
+export const AdminPackIdParamSchema = z.object({ id: z.string().min(1) });

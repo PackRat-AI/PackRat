@@ -14,7 +14,6 @@ final class HomeTileTests: AppUITestCase {
     ]
 
     private let planningNavigationTiles: [Tile] = [
-        Tile(id: "home_action_aipacks", destinationTitle: "AI Packs"),
         Tile(id: "home_action_gearinventory", destinationTitle: "Gear Inventory"),
         Tile(id: "home_action_packtemplates", destinationTitle: "Pack Templates"),
     ]

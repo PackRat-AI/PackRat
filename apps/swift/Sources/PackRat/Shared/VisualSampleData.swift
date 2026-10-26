@@ -565,28 +565,6 @@ enum VisualSampleData {
             ),
         ]
 
-        appState.aiPacksVM.generatedPacks = [
-            Pack(
-                id: "visual-ai-pack-rainy-weekend",
-                userId: userId,
-                name: "AI Rainy Weekend Kit",
-                description: "Generated shoulder-season backpacking pack focused on warmth, dry storage, and simple camp cooking.",
-                category: .backpacking,
-                isPublic: true,
-                image: nil,
-                tags: ["ai-generated", "rain"],
-                templateId: nil,
-                deleted: false,
-                isAIGenerated: true,
-                items: [],
-                totalWeight: 3950,
-                baseWeight: 2950,
-                wornWeight: 320,
-                consumableWeight: 680,
-                createdAt: now,
-                updatedAt: now
-            )
-        ]
 
         let denver = WeatherLocation(
             id: 5419384,

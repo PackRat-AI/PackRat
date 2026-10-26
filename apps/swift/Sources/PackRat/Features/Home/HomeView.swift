@@ -389,7 +389,6 @@ struct HomeView: View {
                     appState.navItem = .chat
                 }
             },
-            HomeAction(title: "AI Packs", subtitle: "Generate pack ideas", symbol: "sparkles", color: .purple) { appState.navItem = .aiPacks },
             HomeAction(title: "Gear Inventory", subtitle: inventorySubtitle, symbol: "shippingbox.fill", color: .orange) { appState.navItem = .gearInventory },
             HomeAction(title: "Season Suggestions", subtitle: "AI-powered packing tips", symbol: "leaf.fill", color: .mint) { showingSeasonSuggestions = true },
             HomeAction(

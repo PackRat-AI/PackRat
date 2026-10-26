@@ -4,15 +4,21 @@ import { isObject } from '@packrat/guards';
 import type {
   ActiveUsers,
   ActivityPoint,
+  AdminAiReport,
+  AdminAiReportAction,
   AdminCatalogItem,
   AdminFeatureAccessItem,
   AdminFeatureFlagItem,
+  AdminGeneratedPack,
+  AdminPackDetail,
   AdminPackItem,
   AdminPackTemplateDetail,
   AdminPackTemplateItem,
+  AdminPackTemplateItemCreateBody,
   AdminPackTemplateItemUpdateBody,
   AdminPackTemplateSummary,
   AdminPackTemplateUpdateBody,
+  AdminPackUpdateBody,
   AdminStats,
   AdminTrailConditionReport,
   AdminUserItem,
@@ -556,6 +562,7 @@ export function getQueryMetricsByCallSite({
 export type {
   AdminPackTemplateDetail,
   AdminPackTemplateItem,
+  AdminPackTemplateItemCreateBody,
   AdminPackTemplateItemUpdateBody,
   AdminPackTemplateSummary,
   AdminPackTemplateUpdateBody,
@@ -595,6 +602,18 @@ export async function deleteFeaturedPack(id: string): Promise<{ success: boolean
   const { data, error } = await adminClient['pack-templates']({ id }).delete();
   if (error) throwOnError({ error });
   return unwrap({ data, name: 'deleteFeaturedPack' });
+}
+
+export async function addFeaturedPackItem({
+  templateId,
+  item,
+}: {
+  templateId: string;
+  item: AdminPackTemplateItemCreateBody;
+}): Promise<AdminPackTemplateItem> {
+  const { data, error } = await adminClient['pack-templates']({ id: templateId }).items.post(item);
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'addFeaturedPackItem' });
 }
 
 export async function updateFeaturedPackItem({
@@ -686,4 +705,89 @@ export async function resolveTrailFlags({
     .post();
   if (error) throwOnError({ error });
   return unwrap({ data, name: 'resolveTrailFlags' });
+}
+
+// ─── AI answer moderation ─────────────────────────────────────────────────────
+
+export type { AdminAiReport, AdminAiReportAction };
+
+export async function getAiReports(): Promise<AdminAiReport[]> {
+  const { data, error } = await adminClient['ai-reports'].get();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'aiReports' }).items;
+}
+
+/** `dismiss` closes a report that needs no change; `resolve` records that it was handled. */
+export async function resolveAiReport({
+  id,
+  action,
+}: {
+  id: number;
+  action: AdminAiReportAction;
+}): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient['ai-reports']({ id })({ action }).post();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'resolveAiReport' });
+}
+
+// ─── AI pack generation ───────────────────────────────────────────────────────
+
+export type { AdminGeneratedPack };
+
+export async function generateAiPacks(count: number): Promise<AdminGeneratedPack[]> {
+  const { data, error } = await adminClient.packs.generate.post({ count });
+  if (error) throwOnError({ error, fallback: 'Pack generation failed' });
+  return unwrap({ data, name: 'generateAiPacks' }).items;
+}
+
+// ─── Pack review ──────────────────────────────────────────────────────────────
+
+export type { AdminPackDetail, AdminPackUpdateBody };
+
+export async function getPack(id: string): Promise<AdminPackDetail> {
+  const { data, error } = await adminClient.packs({ id }).get();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'pack' });
+}
+
+export async function updatePack({
+  id,
+  changes,
+}: {
+  id: string;
+  changes: AdminPackUpdateBody;
+}): Promise<AdminPackDetail> {
+  const { data, error } = await adminClient.packs({ id }).patch(changes);
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'updatePack' });
+}
+
+export async function addPackItem({
+  packId,
+  item,
+}: {
+  packId: string;
+  item: AdminPackTemplateItemCreateBody;
+}): Promise<AdminPackTemplateItem> {
+  const { data, error } = await adminClient.packs({ id: packId }).items.post(item);
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'addPackItem' });
+}
+
+export async function updatePackItem({
+  id,
+  changes,
+}: {
+  id: string;
+  changes: AdminPackTemplateItemUpdateBody;
+}): Promise<AdminPackTemplateItem> {
+  const { data, error } = await adminClient.packs.items({ id }).patch(changes);
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'updatePackItem' });
+}
+
+export async function deletePackItem(id: string): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient.packs.items({ id }).delete();
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'deletePackItem' });
 }

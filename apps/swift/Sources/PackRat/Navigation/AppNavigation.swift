@@ -5,7 +5,7 @@ enum NavItem: String, CaseIterable, Identifiable {
     // Order matters: first entries are the primary iPhone tab bar destinations.
     case home, packs, trips, weather, chat
     case catalog, templates, trailConditions, feed
-    case guides, gearInventory, wildlife, aiPacks, tripStats
+    case guides, gearInventory, wildlife, tripStats
 
     var id: String { rawValue }
     var label: String {
@@ -22,7 +22,6 @@ enum NavItem: String, CaseIterable, Identifiable {
         case .guides:        return "Guides"
         case .gearInventory: return "Gear Inventory"
         case .wildlife:      return "Wildlife"
-        case .aiPacks:       return "AI Packs"
         case .tripStats:     return "Trip Stats"
         }
     }
@@ -40,7 +39,6 @@ enum NavItem: String, CaseIterable, Identifiable {
         case .guides:        return "book"
         case .gearInventory: return "shippingbox"
         case .wildlife:      return "pawprint"
-        case .aiPacks:       return "sparkles"
         case .tripStats:     return "chart.bar.xaxis"
         }
     }
@@ -343,8 +341,6 @@ struct AppNavigation: View {
             EarlyAccessGate(featureKey: "wildlife-identification") {
                 WildlifeDestination()
             }
-        case .aiPacks:
-            AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
         case .tripStats:
             TripStatsView().environment(appState)
         case .packs, .trips, .templates, .trailConditions:
@@ -522,7 +518,6 @@ struct AppNavigation: View {
             EarlyAccessGate(featureKey: "wildlife-identification") {
                 WildlifeDestination()
             }
-        case .aiPacks:         AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
         case .tripStats:       TripStatsView().environment(appState)
         }
     }

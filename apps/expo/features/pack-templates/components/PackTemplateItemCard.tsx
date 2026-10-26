@@ -2,7 +2,6 @@ import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Text } from '@packrat/ui/src/text';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -28,21 +27,14 @@ export function PackTemplateItemCard({
   const deleteItem = useDeletePackTemplateItem();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
-  const user = useUser();
 
   const { showActionSheetWithOptions } = useActionSheet();
   const insets = useSafeAreaInsets();
 
   const handleActionsPress = () => {
-    const options =
-      belongsToAppTemplate && user?.role !== 'ADMIN'
-        ? [t('packTemplates.viewDetails'), t('common.cancel')]
-        : [
-            t('packTemplates.viewDetails'),
-            t('common.edit'),
-            t('common.delete'),
-            t('common.cancel'),
-          ];
+    const options = belongsToAppTemplate
+      ? [t('packTemplates.viewDetails'), t('common.cancel')]
+      : [t('packTemplates.viewDetails'), t('common.edit'), t('common.delete'), t('common.cancel')];
 
     const cancelButtonIndex = options.length - 1;
     const destructiveButtonIndex = options.indexOf(t('common.delete'));

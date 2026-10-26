@@ -10,8 +10,6 @@ import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix
 import { Icon } from 'expo-app/components/Icon';
 import { appConfig } from 'expo-app/config';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
-import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
-import { AIPacksTile } from 'expo-app/features/ai-packs/components/AIPacksTile';
 import { FeedTile } from 'expo-app/features/feed/components/FeedTile';
 import { GuidesTile } from 'expo-app/features/guides/components/GuidesTile';
 import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
@@ -60,16 +58,6 @@ const tileInfo = {
     title: 'Ask PackRat AI',
     keywords: ['ai', 'chat', 'assistant', 'help'],
     component: AIChatTile,
-  },
-  'reported-ai-content': {
-    title: 'Reported AI Content',
-    keywords: ['reported', 'ai', 'content', 'flagged'],
-    component: ReportedContentTile,
-  },
-  'ai-packs': {
-    title: 'AI Packs',
-    keywords: ['ai', 'packs', 'generate', 'create'],
-    component: AIPacksTile,
   },
   'pack-stats': {
     title: 'Pack Statistics',

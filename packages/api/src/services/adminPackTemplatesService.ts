@@ -8,6 +8,7 @@ import {
 } from '@packrat/db/schema';
 import type {
   AdminPackTemplateDetail,
+  AdminPackTemplateItemCreateBody,
   AdminPackTemplateItemUpdateBody,
   AdminPackTemplateSummary,
   AdminPackTemplateUpdateBody,
@@ -152,6 +153,48 @@ export async function deleteCuratedPackTemplate(id: string): Promise<boolean> {
     .where(and(eq(packTemplates.id, id), eq(packTemplates.deleted, false)))
     .returning();
   return Boolean(deleted);
+}
+
+export async function createCuratedPackTemplateItem({
+  templateId,
+  item,
+}: {
+  templateId: string;
+  item: AdminPackTemplateItemCreateBody;
+}): Promise<AdminPackTemplateDetail['items'][number] | null> {
+  const db = createDb();
+  const template = await db.tag('adminPackTemplates.getForItem').query.packTemplates.findFirst({
+    columns: { id: true, userId: true },
+    where: and(eq(packTemplates.id, templateId), eq(packTemplates.deleted, false)),
+  });
+  if (!template) return null;
+
+  // Items belong to the template's owner, matching what an import creates.
+  const now = new Date();
+  const [created] = await db
+    .tag('adminPackTemplates.createItem')
+    .insert(packTemplateItems)
+    .values({
+      id: `pti_${crypto.randomUUID().replaceAll('-', '').slice(0, 21)}`,
+      packTemplateId: template.id,
+      userId: template.userId,
+      name: item.name,
+      description: item.description ?? null,
+      weight: item.weight,
+      weightUnit: item.weightUnit,
+      quantity: item.quantity ?? 1,
+      category: item.category ?? null,
+      consumable: item.consumable ?? false,
+      worn: item.worn ?? false,
+      notes: item.notes ?? null,
+    })
+    .returning();
+  await db
+    .tag('adminPackTemplates.touch')
+    .update(packTemplates)
+    .set({ updatedAt: now, localUpdatedAt: now })
+    .where(eq(packTemplates.id, template.id));
+  return created ? toItem(created) : null;
 }
 
 export async function updateCuratedPackTemplateItem({
