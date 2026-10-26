@@ -82,7 +82,7 @@
     "google-auth-library": "catalog:",
     "gray-matter": "catalog:",
     "jose": "^6.0.0",
-    "linkedom": "^0.18.11",
+    "linkedom": "^0.18.14",
     "pg": "catalog:",
     "resend": "^6.10.0",
     "ws": "catalog:",
