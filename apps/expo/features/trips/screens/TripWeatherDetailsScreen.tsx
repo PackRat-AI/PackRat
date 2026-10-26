@@ -31,6 +31,7 @@ export default function TripWeatherDetailsScreen() {
   const latitude = Number(lat);
   const longitude = Number(lon);
   const tripLocationName = locationName;
+  const { displayTemperature } = useTemperatureUnit();
 
   const [weather, setWeather] = useState<WeatherAPIForecastResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,7 +96,6 @@ export default function TripWeatherDetailsScreen() {
 
   const location = weather.location;
   const current = weather.current;
-  const { displayTemperature } = useTemperatureUnit();
 
   // Use the trip's location name if provided, otherwise fall back to weather API location
   const displayLocationName = tripLocationName || location.name;
@@ -129,7 +129,9 @@ export default function TripWeatherDetailsScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingTop: 100, paddingBottom: 40 }}>
+        <ScrollView
+          contentContainerStyle={{ paddingTop: 100, paddingBottom: 40, paddingHorizontal: 16 }}
+        >
           <View className="items-center">
             <Text className="text-3xl text-white font-semibold">{displayLocationName}</Text>
 
@@ -153,6 +155,7 @@ export default function TripWeatherDetailsScreen() {
               windSpeed: Math.round(current.wind_kph),
             }}
             temperature={current.temp_c}
+            attribution={weather.attribution}
           />
         </ScrollView>
       </LinearGradient>

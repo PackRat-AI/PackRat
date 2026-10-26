@@ -289,6 +289,7 @@ export const testIds = Object.freeze({
     moreMenu: 'weather:more-menu',
     watchListMenuItem: 'weather:menu-watch-list',
     snackbar: 'weather:snackbar',
+    attributionLegal: 'weather:attribution-legal',
     alertSection: 'weather:alert-section',
     watchCta: 'weather:watch-cta',
     watchToggle: 'weather:watch-toggle',

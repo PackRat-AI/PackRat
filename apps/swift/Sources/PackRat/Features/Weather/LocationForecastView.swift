@@ -71,6 +71,10 @@ struct LocationForecastView: View {
                         DailyForecastSection(days: days, temperatureUnit: temperatureUnit)
                     }
 
+                    if let attribution = forecast?.attribution {
+                        WeatherAttributionView(attribution: attribution, onDarkBackground: true)
+                    }
+
                     if let current = forecast?.current {
                         conditionDetailGrid(current)
                     }

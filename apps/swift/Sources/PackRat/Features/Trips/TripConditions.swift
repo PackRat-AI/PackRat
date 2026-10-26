@@ -26,6 +26,8 @@ struct TripConditions: Codable, Equatable, Sendable {
     let maxChanceOfSnow: Int
     let conditionText: String?
     let alerts: [Alert]
+    /// Credit owed for the forecast's source; shown with it in the readiness summary.
+    var attribution: WeatherAttribution? = nil
 
     /// Forecast thresholds that change what to bring.
     static let freezingF = 32.0
@@ -81,7 +83,8 @@ struct TripConditions: Codable, Equatable, Sendable {
             maxChanceOfRain: daily.compactMap(\.dailyChanceOfRain).max() ?? 0,
             maxChanceOfSnow: daily.compactMap(\.dailyChanceOfSnow).max() ?? 0,
             conditionText: daily.first?.condition?.text,
-            alerts: distinctAlerts
+            alerts: distinctAlerts,
+            attribution: forecast.attribution
         )
     }
 

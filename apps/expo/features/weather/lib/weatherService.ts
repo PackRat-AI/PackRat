@@ -179,6 +179,7 @@ export function formatWeatherData(data: WeatherAPIForecastResponse): WeatherLoca
     },
     hourlyForecast,
     dailyForecast,
+    attribution: data.attribution,
   };
 }
 
