@@ -1,0 +1,210 @@
+name: Release Apple
+
+# Builds the Swift app (apps/swift) for iOS + watchOS and macOS against the
+# production API, uploads both to App Store Connect, and submits each for App
+# Store review. Versions release automatically once Apple approves them.
+#
+# Called by release-cut.yml (API unchanged) and release-deploy.yml (release PR
+# merged). Run it by hand with a tag to re-ship a release.
+#
+# Secrets (base64 values are `base64 -i <file>`):
+#   IOS_DIST_CERT_P12 / IOS_DIST_CERT_PASSWORD
+#       "Apple Distribution: Bierman Collective LLC" identity (.p12)
+#   MAC_INSTALLER_CERT_P12 / MAC_INSTALLER_CERT_PASSWORD
+#       "3rd Party Mac Developer Installer" identity (.p12), signs the .pkg
+#   IOS_APPSTORE_PROVISIONING_PROFILE      "PackRat iOS AppStore 2026-10"
+#   WATCH_APPSTORE_PROVISIONING_PROFILE    "PackRat iOS AppStore watchkitapp 2026"
+#   MACOS_APPSTORE_PROVISIONING_PROFILE    "PackRat macOS App Store"
+#   ASC_API_KEY_P8 / ASC_API_KEY_ID / ASC_API_ISSUER_ID
+#       App Store Connect API key used to upload and submit
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Git ref to build (release tag or branch)'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Release tag to build (e.g. v2.2.5)'
+        required: true
+        type: string
+
+concurrency:
+  group: release-apple-${{ inputs.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  apple:
+    name: Build + Submit · iOS & macOS
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      APPLE_TEAM_ID: 666HGMV2LU
+      APPLE_ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+      APPLE_ASC_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -switch /Applications/Xcode.app
+          xcodebuild -version
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Generate Xcode project
+        run: bun swift
+
+      - name: Resolve version and build number
+        run: |
+          set -euo pipefail
+          VERSION=$(bun -e "console.log(require('./package.json').version)")
+          # YYYYMMDDHH sorts above the hand-set YYYYMMDDNN builds on any later day.
+          BUILD_NUMBER=$(date -u +%Y%m%d%H)
+          {
+            echo "MARKETING_VERSION=$VERSION"
+            echo "BUILD_NUMBER=$BUILD_NUMBER"
+          } >> "$GITHUB_ENV"
+          echo "Shipping $VERSION ($BUILD_NUMBER)"
+
+      # ─── Signing assets into a temporary keychain ──────────────────────────
+      # Deleted in the always() cleanup step so no key material outlives the job.
+      - name: Import certificates, profiles and API key
+        env:
+          IOS_DIST_CERT_P12: ${{ secrets.IOS_DIST_CERT_P12 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          MAC_INSTALLER_CERT_P12: ${{ secrets.MAC_INSTALLER_CERT_P12 }}
+          MAC_INSTALLER_CERT_PASSWORD: ${{ secrets.MAC_INSTALLER_CERT_PASSWORD }}
+          IOS_APPSTORE_PROVISIONING_PROFILE: ${{ secrets.IOS_APPSTORE_PROVISIONING_PROFILE }}
+          WATCH_APPSTORE_PROVISIONING_PROFILE: ${{ secrets.WATCH_APPSTORE_PROVISIONING_PROFILE }}
+          MACOS_APPSTORE_PROVISIONING_PROFILE: ${{ secrets.MACOS_APPSTORE_PROVISIONING_PROFILE }}
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          for name in IOS_DIST_CERT_P12 MAC_INSTALLER_CERT_P12 IOS_APPSTORE_PROVISIONING_PROFILE \
+            WATCH_APPSTORE_PROVISIONING_PROFILE MACOS_APPSTORE_PROVISIONING_PROFILE ASC_API_KEY_P8 \
+            APPLE_ASC_API_KEY_ID APPLE_ASC_API_ISSUER_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing secret for $name. See the header of release-apple.yml."
+              exit 1
+            fi
+          done
+
+          KEYCHAIN_PATH="$RUNNER_TEMP/release.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          echo -n "$IOS_DIST_CERT_P12" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          echo -n "$MAC_INSTALLER_CERT_P12" | base64 --decode > "$RUNNER_TEMP/installer.p12"
+          security import "$RUNNER_TEMP/dist.p12" -P "$IOS_DIST_CERT_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security import "$RUNNER_TEMP/installer.p12" -P "$MAC_INSTALLER_CERT_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          rm -f "$RUNNER_TEMP/dist.p12" "$RUNNER_TEMP/installer.p12"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+          for name in IOS_APPSTORE_PROVISIONING_PROFILE WATCH_APPSTORE_PROVISIONING_PROFILE; do
+            echo -n "${!name}" | base64 --decode > "$RUNNER_TEMP/p.mobileprovision"
+            UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< "$(security cms -D -i "$RUNNER_TEMP/p.mobileprovision")")
+            mv "$RUNNER_TEMP/p.mobileprovision" "$PROFILES_DIR/$UUID.mobileprovision"
+          done
+          echo -n "$MACOS_APPSTORE_PROVISIONING_PROFILE" | base64 --decode > "$RUNNER_TEMP/p.provisionprofile"
+          UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< "$(security cms -D -i "$RUNNER_TEMP/p.provisionprofile")")
+          mv "$RUNNER_TEMP/p.provisionprofile" "$PROFILES_DIR/$UUID.provisionprofile"
+
+          # altool only looks for the key in fixed directories.
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          echo -n "$ASC_API_KEY_P8" | base64 --decode > "$HOME/.appstoreconnect/private_keys/AuthKey_$APPLE_ASC_API_KEY_ID.p8"
+
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+
+      # Signing is scoped per target through an xcconfig: SPM dependencies
+      # reject a provisioning profile passed on the command line.
+      - name: Write signing config
+        run: |
+          cat > "$RUNNER_TEMP/ios-signing.xcconfig" <<'EOF'
+          DEVELOPMENT_TEAM = 666HGMV2LU
+          CODE_SIGN_STYLE[target=PackRat-iOS] = Manual
+          CODE_SIGN_IDENTITY[target=PackRat-iOS] = Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER[target=PackRat-iOS] = PackRat iOS AppStore 2026-10
+          CODE_SIGN_STYLE[target=PackRat-Watch] = Manual
+          CODE_SIGN_IDENTITY[target=PackRat-Watch] = Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER[target=PackRat-Watch] = PackRat iOS AppStore watchkitapp 2026
+          EOF
+          cat > "$RUNNER_TEMP/mac-signing.xcconfig" <<'EOF'
+          DEVELOPMENT_TEAM = 666HGMV2LU
+          CODE_SIGN_STYLE[target=PackRat-macOS] = Manual
+          CODE_SIGN_IDENTITY[target=PackRat-macOS] = Apple Distribution: Bierman Collective LLC (666HGMV2LU)
+          PROVISIONING_PROFILE_SPECIFIER[target=PackRat-macOS] = PackRat macOS App Store
+          EOF
+          cat > "$RUNNER_TEMP/ExportOptions-mac.plist" <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>666HGMV2LU</string>
+            <key>destination</key><string>export</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>installerSigningCertificate</key><string>3rd Party Mac Developer Installer</string>
+            <key>provisioningProfiles</key>
+            <dict><key>com.andrewbierman.packrat</key><string>PackRat macOS App Store</string></dict>
+            <key>uploadSymbols</key><true/>
+          </dict></plist>
+          EOF
+
+      - name: Build + upload · iOS
+        env:
+          XCODE_XCCONFIG_FILE: ${{ runner.temp }}/ios-signing.xcconfig
+          EXPORT_PROVISIONING_PROFILE: PackRat iOS AppStore 2026-10
+          EXPORT_WATCH_PROVISIONING_PROFILE: PackRat iOS AppStore watchkitapp 2026
+        run: bun apps/swift/scripts/upload-testflight.ts --production
+
+      - name: Build + upload · macOS
+        env:
+          XCODE_XCCONFIG_FILE: ${{ runner.temp }}/mac-signing.xcconfig
+        working-directory: apps/swift
+        run: |
+          set -euo pipefail
+          xcodebuild archive -project PackRat.xcodeproj -scheme PackRat-macOS -configuration Release \
+            -destination 'generic/platform=macOS' -archivePath "$RUNNER_TEMP/PackRat-mac.xcarchive" \
+            MARKETING_VERSION="$MARKETING_VERSION" CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID"
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/PackRat-mac.xcarchive" \
+            -exportPath "$RUNNER_TEMP/mac-export" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions-mac.plist"
+          xcrun altool --upload-app --type osx --file "$RUNNER_TEMP/mac-export/PackRat.pkg" \
+            --apiKey "$APPLE_ASC_API_KEY_ID" --apiIssuer "$APPLE_ASC_API_ISSUER_ID"
+
+      - name: Submit for review · iOS
+        run: bun apps/swift/scripts/submit-app-store-review.ts --platform IOS --version "$MARKETING_VERSION" --build "$BUILD_NUMBER"
+
+      - name: Submit for review · macOS
+        run: bun apps/swift/scripts/submit-app-store-review.ts --platform MAC_OS --version "$MARKETING_VERSION" --build "$BUILD_NUMBER"
+
+      - name: Clean up keychain, profiles and API key
+        if: always()
+        run: |
+          security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+          rm -rf "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/.appstoreconnect/private_keys"

@@ -25,16 +25,30 @@ struct TripFormView: View {
     @State private var isLoading = false
     @State private var error: String?
     @State private var showingLocationSearch = false
+    /// The trail the trip is for. Optional: without one, the trip shows
+    /// conditions from trails near its destination.
+    @State private var trail: (id: String, name: String)?
+    @State private var showingTrailPicker = false
+    @State private var trailLocation = TrailReportLocationProvider()
     @FocusState private var isInputFocused: Bool
 
     private var isEditing: Bool { existingTrip != nil }
     private var isValid: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
     private var availablePacks: [Pack] { (packsViewModel ?? appState.packsVM).packs }
 
-    init(viewModel: TripsViewModel, existingTrip: Trip? = nil, packsViewModel: PacksViewModel? = nil) {
+    /// A new trip started from a trail page: named after the trail, headed to it.
+    private let startingTrail: TrailSummary?
+
+    init(
+        viewModel: TripsViewModel,
+        existingTrip: Trip? = nil,
+        packsViewModel: PacksViewModel? = nil,
+        startingTrail: TrailSummary? = nil
+    ) {
         self.viewModel = viewModel
         self.existingTrip = existingTrip
         self.packsViewModel = packsViewModel
+        self.startingTrail = startingTrail
     }
 
     var body: some View {
@@ -79,6 +93,10 @@ struct TripFormView: View {
                             .font(.caption2.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }
+                }
+
+                if NavItem.trailConditions.isFeatureEnabled {
+                    trailSection
                 }
 
                 Section("Dates") {
@@ -145,6 +163,19 @@ struct TripFormView: View {
                 }
             }
             .onAppear { prefill() }
+            .navigationDestination(isPresented: $showingTrailPicker) {
+                ReportTrailPickerView(
+                    selectedTrailId: trail?.id,
+                    location: trailLocation,
+                    origin: destination,
+                    allowsPin: false
+                ) { picked in
+                    if case .trail(let summary) = picked {
+                        trail = (summary.id, summary.name)
+                    }
+                    showingTrailPicker = false
+                }
+            }
             .sheet(isPresented: $showingLocationSearch) {
                 LocationSearchView { result in
                     locationName = result.name
@@ -156,8 +187,56 @@ struct TripFormView: View {
         .formSheetSize(minWidth: 560, minHeight: 620)
     }
 
+    /// The destination, once one is chosen, so the picker lists trails there.
+    private var destination: CLLocationCoordinate2D? {
+        guard locationLat != 0 || locationLon != 0 else { return nil }
+        return CLLocationCoordinate2D(latitude: locationLat, longitude: locationLon)
+    }
+
+    private var trailSection: some View {
+        Section {
+            Button {
+                showingTrailPicker = true
+            } label: {
+                HStack {
+                    Image(systemName: "figure.hiking")
+                        .foregroundStyle(trail == nil ? Color.secondary : Color.accentColor)
+                    Text(trail?.name ?? "Choose a trail…")
+                        .foregroundStyle(trail == nil ? Color.secondary : Color.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("trip_trail_button")
+            if trail != nil {
+                Button("Remove Trail", systemImage: "xmark.circle") { trail = nil }
+                    .foregroundStyle(.red)
+            }
+        } header: {
+            Text("Trail")
+        } footer: {
+            Text(trail == nil
+                 ? "Optional. Without a trail, the trip shows conditions from trails near its destination."
+                 : "The trip shows conditions reported on this trail.")
+        }
+    }
+
     private func prefill() {
-        guard let trip = existingTrip else { return }
+        guard let trip = existingTrip else {
+            if let startingTrail {
+                trail = (startingTrail.id, startingTrail.name)
+                name = startingTrail.name
+                if let center = startingTrail.center {
+                    locationName = startingTrail.name
+                    locationLat = center.latitude
+                    locationLon = center.longitude
+                }
+            }
+            return
+        }
+        if let id = trip.trailId { trail = (id, trip.trailName ?? "Trail") }
         name = trip.name
         description = trip.description ?? ""
         notes = trip.notes ?? ""
@@ -203,6 +282,7 @@ struct TripFormView: View {
                         location: location,
                         notes: notes.isEmpty ? nil : notes,
                         packId: selectedPackId,
+                        trail: trail,
                         context: modelContext
                     )
                 } else {
@@ -214,6 +294,7 @@ struct TripFormView: View {
                         location: location,
                         notes: notes.isEmpty ? nil : notes,
                         packId: selectedPackId,
+                        trail: trail,
                         context: modelContext
                     )
                 }

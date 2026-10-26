@@ -1,6 +1,5 @@
 import { formatWeatherData, getWeatherData } from 'expo-app/features/weather/lib/weatherService';
 import { useState } from 'react';
-import type { WeatherLocation } from '../types';
 import { useLocations } from './useLocations';
 
 export function useLocationRefresh() {
@@ -20,8 +19,7 @@ export function useLocationRefresh() {
 
         updateLocation({
           locationId,
-          // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
-          updates: formattedData as unknown as Partial<WeatherLocation>,
+          updates: formattedData,
         });
 
         return true;
@@ -53,8 +51,7 @@ export function useLocationRefresh() {
 
             updateLocation({
               locationId: location.id,
-              // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
-              updates: formattedData as unknown as Partial<WeatherLocation>,
+              updates: formattedData,
             });
           }
         } catch (error) {

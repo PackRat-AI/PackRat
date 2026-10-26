@@ -39,6 +39,9 @@
  *                            Profile *name* for the iOS app. Set it to sign the
  *                            export manually — automatic signing fails with
  *                            `No Accounts` when Xcode has no Apple ID.
+ *   IOS_SENTRY_DSN           DSN of the Swift app's Sentry project. Without it the
+ *                            build ships with Sentry disabled, so it reports no
+ *                            crashes or errors.
  *   EXPORT_WATCH_PROVISIONING_PROFILE
  *                            Profile *name* for the embedded watch app. Required
  *                            alongside the above once the watch app ships, or the
@@ -47,6 +50,9 @@
  * Flags:
  *   --staging                Archive the Staging config (PACKRAT_ENV=dev) so the
  *                            build targets the deployed DEV API instead of production.
+ *   --allow-staging-upload   Required with --staging. Every upload targets the public
+ *                            listing, so a staging build reaches all TestFlight
+ *                            testers; this flag says that is intended.
  *   --production             Optional clarity flag; Release/production is the default
  *                            API profile when --staging is absent.
  *   --dry-run                Print the resolved archive identity/settings and exit
@@ -58,11 +64,11 @@
  *   bun apps/swift/scripts/upload-testflight.ts
  *   bun apps/swift/scripts/upload-testflight.ts --dry-run
  *   bun apps/swift/scripts/upload-testflight.ts --verify-archive-only
- *   bun apps/swift/scripts/upload-testflight.ts --staging
+ *   bun apps/swift/scripts/upload-testflight.ts --staging --allow-staging-upload
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { nodeEnv } from '@packrat/env/node';
 import { safeJsonStringify } from '@packrat/utils';
@@ -186,6 +192,31 @@ const ascApiKeyId = nodeEnv.APPLE_ASC_API_KEY_ID;
 const ascApiIssuer = nodeEnv.APPLE_ASC_API_ISSUER_ID;
 const usesApiKey = Boolean(ascApiKeyId && ascApiIssuer);
 
+// With no Apple ID signed in to Xcode, -allowProvisioningUpdates fails with
+// "No Accounts". Handing xcodebuild the same API key lets it fetch and update
+// profiles headlessly.
+const ascApiKeyPath = ascApiKeyId
+  ? [
+      'private_keys',
+      join(homedir(), 'private_keys'),
+      join(homedir(), '.private_keys'),
+      join(homedir(), '.appstoreconnect', 'private_keys'),
+    ]
+      .map((dir) => join(dir, `AuthKey_${ascApiKeyId}.p8`))
+      .find((path) => existsSync(path))
+  : undefined;
+const xcodeAuthArgs =
+  ascApiKeyId && ascApiIssuer && ascApiKeyPath
+    ? [
+        '-authenticationKeyPath',
+        ascApiKeyPath,
+        '-authenticationKeyID',
+        ascApiKeyId,
+        '-authenticationKeyIssuerID',
+        ascApiIssuer,
+      ]
+    : [];
+
 const appleId = VERIFY_ARCHIVE_ONLY || usesApiKey ? undefined : req({ name: 'APPLE_ID' });
 const appPassword =
   VERIFY_ARCHIVE_ONLY || usesApiKey ? undefined : req({ name: 'APPLE_APP_PASSWORD' });
@@ -215,6 +246,12 @@ function verifyBinary(input: {
   console.log(`✓ Verified ${label} metadata (${result.iosApp}, ${watch})`);
 }
 
+if (!nodeEnv.IOS_SENTRY_DSN) {
+  console.warn(
+    '⚠ IOS_SENTRY_DSN is not set: this build will ship with Sentry disabled and report no crashes or errors.',
+  );
+}
+
 // 1. Archive for a real device (TestFlight cannot accept a simulator build).
 run({
   cmd: 'xcodebuild',
@@ -233,7 +270,8 @@ run({
     // Lets Xcode register the App IDs and generate provisioning profiles for
     // the (new) bundle ids on the fly, using the signed-in account.
     '-allowProvisioningUpdates',
-    ...xcodeArchiveOverrides({ config: uploadConfig, teamId }),
+    ...xcodeAuthArgs,
+    ...xcodeArchiveOverrides({ config: uploadConfig, teamId, sentryDsn: nodeEnv.IOS_SENTRY_DSN }),
   ],
 });
 verifyBinary({
@@ -296,6 +334,7 @@ run({
     // Export also needs to generate the App Store distribution profiles for the
     // new bundle ids on the fly.
     '-allowProvisioningUpdates',
+    ...xcodeAuthArgs,
   ],
 });
 

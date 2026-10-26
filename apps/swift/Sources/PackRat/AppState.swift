@@ -13,7 +13,6 @@ final class AppState {
     let feedVM = FeedViewModel()
     let templatesVM = PackTemplatesViewModel()
     let trailConditionsVM = TrailConditionsViewModel()
-    let aiPacksVM = AIPacksViewModel()
     let tripGoalsVM = TripGoalsViewModel()
 
     // Per-feature detail selections
@@ -24,6 +23,9 @@ final class AppState {
     /// A feed post to open over whatever is on screen, from a notification
     /// tap or a shared link. `PostLinkPresenter` resolves and clears it.
     var pendingPostLink: PostLink?
+    /// A trail report to open over its trip, from a trail-report notification
+    /// tap. The trip's conditions section opens and clears it once loaded.
+    var pendingTrailReport: (tripId: String, reportId: String)?
 
     // Active nav item
     var navItem: NavItem = .home

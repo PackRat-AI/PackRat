@@ -205,9 +205,7 @@ struct PackDetailView: View {
                     // variant hides the extra choices behind a long press, which
                     // nothing on screen advertises, so most users would only ever
                     // find "Add Manually". Expo shows the same three in a bottom
-                    // sheet; a pull-down menu is the iOS-idiomatic equivalent
-                    // (cf. AIPacksView, which swaps Expo's alert for
-                    // .confirmationDialog on the same reasoning).
+                    // sheet; a pull-down menu is the iOS-idiomatic equivalent.
                     Menu {
                         Button("Add Manually", systemImage: "square.and.pencil") {
                             showingAddItemSheet = true

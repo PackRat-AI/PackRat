@@ -31,7 +31,7 @@ const REASON_LABELS: Readonly<Record<AdminFeedReport['reasons'][number], string>
 
 const MAX_THUMBNAILS = 4;
 
-function displayName(person: Person): string {
+export function displayName(person: Person): string {
   const name = [person.firstName, person.lastName].filter(Boolean).join(' ');
   return name || 'Unnamed user';
 }
@@ -44,7 +44,7 @@ function initials(person: Person): string {
   return letters.toUpperCase() || '?';
 }
 
-function PersonAvatar({ person, className }: { person: Person; className?: string }) {
+export function PersonAvatar({ person, className }: { person: Person; className?: string }) {
   return (
     <Avatar className={cn('h-8 w-8', className)}>
       {person.avatarUrl && <AvatarImage src={person.avatarUrl} alt="" />}
@@ -53,7 +53,7 @@ function PersonAvatar({ person, className }: { person: Person; className?: strin
   );
 }
 
-function ConfirmButton({
+export function ConfirmButton({
   trigger,
   title,
   description,

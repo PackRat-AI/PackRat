@@ -143,7 +143,7 @@ struct BlockedPeopleView: View {
             if people.isEmpty {
                 EmptyStateView(
                     "No One Blocked",
-                    subtitle: "People you block from a post, comment or notification show up here.",
+                    subtitle: "People you block from a post, comment, notification or trail report show up here.",
                     systemImage: "hand.raised",
                     accessibilityIdentifier: "feed_blocked_empty"
                 )
@@ -180,7 +180,7 @@ struct BlockedPeopleView: View {
             Button("Unblock") { Task { await unblock(person) } }
                 .accessibilityIdentifier("feed_confirm_unblock")
         } message: { _ in
-            Text("You'll see each other's posts and comments again, and you can tag each other.")
+            Text("You'll see each other's trail reports, posts and comments again.")
         }
         .alert(
             alert?.title ?? "",
@@ -200,8 +200,41 @@ struct BlockedPeopleView: View {
         do {
             try await service.unblock(userId: person.id)
             withAnimation { people.removeAll { $0.id == person.id } }
+            TrailReportModeration.shared.unhideBlocked(userId: person.id)
         } catch {
             alert = .failure("Couldn't Unblock \(person.displayName)", error)
+        }
+    }
+}
+
+/// The blocked list on its own, for accounts without the feed: blocks made
+/// from trail reports need somewhere to be undone. Loads the list itself.
+struct BlockedPeopleScreen: View {
+    @State private var people: [PostAuthor] = []
+    @State private var loaded = false
+    @State private var loadFailed = false
+
+    var body: some View {
+        Group {
+            if loaded {
+                BlockedPeopleView(people: $people)
+            } else if loadFailed {
+                ErrorView("Couldn't load blocked people.", retry: { await load() })
+            } else {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .navigationTitle("Blocked People")
+        .task { await load() }
+    }
+
+    private func load() async {
+        loadFailed = false
+        do {
+            people = try await FeedService.shared.blockedPeople()
+            loaded = true
+        } catch {
+            loadFailed = true
         }
     }
 }

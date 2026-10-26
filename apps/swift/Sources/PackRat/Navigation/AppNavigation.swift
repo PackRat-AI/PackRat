@@ -5,7 +5,7 @@ enum NavItem: String, CaseIterable, Identifiable {
     // Order matters: first entries are the primary iPhone tab bar destinations.
     case home, packs, trips, weather, chat
     case catalog, templates, trailConditions, feed
-    case guides, gearInventory, wildlife, aiPacks, tripStats
+    case guides, gearInventory, wildlife, tripStats
 
     var id: String { rawValue }
     var label: String {
@@ -22,7 +22,6 @@ enum NavItem: String, CaseIterable, Identifiable {
         case .guides:        return "Guides"
         case .gearInventory: return "Gear Inventory"
         case .wildlife:      return "Wildlife"
-        case .aiPacks:       return "AI Packs"
         case .tripStats:     return "Trip Stats"
         }
     }
@@ -40,7 +39,6 @@ enum NavItem: String, CaseIterable, Identifiable {
         case .guides:        return "book"
         case .gearInventory: return "shippingbox"
         case .wildlife:      return "pawprint"
-        case .aiPacks:       return "sparkles"
         case .tripStats:     return "chart.bar.xaxis"
         }
     }
@@ -190,6 +188,7 @@ struct AppNavigation: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .tripReminderNotificationTapped)) { notification in
                 guard let tripId = notification.userInfo?[TripReminderScheduler.tripIdKey] as? String else { return }
+                appState.pendingTrailReport = (notification.userInfo?["reportId"] as? String).map { (tripId, $0) }
                 appState.apply(.trip(id: tripId))
             }
             #endif
@@ -342,8 +341,6 @@ struct AppNavigation: View {
             EarlyAccessGate(featureKey: "wildlife-identification") {
                 WildlifeDestination()
             }
-        case .aiPacks:
-            AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
         case .tripStats:
             TripStatsView().environment(appState)
         case .packs, .trips, .templates, .trailConditions:
@@ -389,8 +386,17 @@ struct AppNavigation: View {
                     systemImage: "figure.hiking"
                 )
             } else if let id = appState.selectedReportId,
-               let report = appState.trailConditionsVM.reports.first(where: { $0.id == id }) {
-                TrailConditionDetailView(report: report)
+               let report = appState.trailConditionsVM.reports.first(where: { $0.id == id }),
+               // Gone once flagged, blocked or deleted from the list's menu.
+               !TrailReportModeration.shared.hides(report) {
+                // A stack of its own so the report can open its trail page.
+                NavigationStack {
+                    TrailConditionDetailView(
+                        report: report,
+                        authorName: appState.trailConditionsVM.authorNames[report.id]
+                    )
+                }
+                .id(report.id)
             } else {
                 placeholder("Select a Report", symbol: "figure.hiking")
             }
@@ -512,7 +518,6 @@ struct AppNavigation: View {
             EarlyAccessGate(featureKey: "wildlife-identification") {
                 WildlifeDestination()
             }
-        case .aiPacks:         AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
         case .tripStats:       TripStatsView().environment(appState)
         }
     }

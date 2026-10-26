@@ -1,5 +1,6 @@
 {
   "name": "packrat-web-app",
+  "version": "2.3.0",
   "private": true,
   "scripts": {
     "build": "next build",

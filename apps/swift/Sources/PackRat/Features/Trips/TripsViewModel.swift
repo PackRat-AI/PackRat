@@ -169,12 +169,15 @@ final class TripsViewModel {
     /// failing at the call site. Surfaced failures come from `OutboxService.failedCount`.
     func createTrip(name: String, description: String?, startDate: Date?, endDate: Date?,
                     location: TripLocationBody?, notes: String?, packId: String?,
+                    trail: (id: String, name: String)? = nil,
                     context: ModelContext? = nil) async {
-        let localTrip = makeLocalTrip(
+        var localTrip = makeLocalTrip(
             name: name, description: description, startDate: startDate, endDate: endDate,
             location: location, notes: notes, packId: packId
         )
-        let payload = TripMutationPayload(
+        localTrip.trailId = trail?.id
+        localTrip.trailName = trail?.name
+        var payload = TripMutationPayload(
             name: name,
             description: description,
             startDate: startDate?.iso8601String(),
@@ -185,6 +188,8 @@ final class TripsViewModel {
             notes: notes,
             packId: packId
         )
+        payload.trailId = trail?.id
+        payload.trailName = trail?.name
         func queueCreate() {
             outbox.enqueue(
                 entityType: .trip,
@@ -202,7 +207,8 @@ final class TripsViewModel {
                 trip = try await service.createTrip(
                     id: localTrip.id,
                     name: name, description: description, startDate: startDate, endDate: endDate,
-                    location: location, notes: notes, packId: packId
+                    location: location, notes: notes, packId: packId,
+                    trailId: trail?.id, trailName: trail?.name
                 )
             } catch {
                 trip = localTrip
@@ -218,9 +224,10 @@ final class TripsViewModel {
 
     func updateTrip(_ tripId: String, name: String, description: String?, startDate: Date?,
                     endDate: Date?, location: TripLocationBody?, notes: String?, packId: String?,
+                    trail: (id: String, name: String)?,
                     context: ModelContext? = nil) async throws {
         guard let existing = trips.first(where: { $0.id == tripId }) else { return }
-        let localUpdated = rebuildTrip(
+        var localUpdated = rebuildTrip(
             existing,
             name: name,
             description: description,
@@ -232,6 +239,8 @@ final class TripsViewModel {
             checklist: existing.checklist,
             updatedAt: Date.iso8601Now()
         )
+        localUpdated.trailId = trail?.id
+        localUpdated.trailName = trail?.name
         await pushUpdate(localUpdated, context: context)
     }
 
@@ -275,6 +284,8 @@ final class TripsViewModel {
         // Updates collapse to the latest payload, so each carries the lifecycle
         // and route or a later edit would undo Start Trip on replay.
         payload.carryLifecycle(of: localUpdated)
+        payload.trailId = localUpdated.trailId
+        payload.trailName = localUpdated.trailName
         func queueUpdate() {
             outbox.enqueue(
                 entityType: .trip,
@@ -292,7 +303,8 @@ final class TripsViewModel {
                     tripId, name: localUpdated.name, description: localUpdated.description,
                     startDate: startDate, endDate: endDate, location: location,
                     notes: localUpdated.notes, packId: localUpdated.packId,
-                    checklist: localUpdated.checklist, log: localUpdated.log, excludedFromStats: localUpdated.isExcludedFromStats
+                    checklist: localUpdated.checklist, log: localUpdated.log, excludedFromStats: localUpdated.isExcludedFromStats,
+                    trailId: localUpdated.trailId, trailName: localUpdated.trailName
                 )
             } catch {
                 updated = localUpdated
@@ -522,7 +534,9 @@ final class TripsViewModel {
             completedAt: trip.completedAt,
             plannedRoute: trip.plannedRoute,
             log: trip.log,
-            excludedFromStats: trip.excludedFromStats
+            excludedFromStats: trip.excludedFromStats,
+            trailId: trip.trailId,
+            trailName: trip.trailName
         )
     }
 

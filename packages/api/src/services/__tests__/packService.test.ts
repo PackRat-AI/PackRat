@@ -147,11 +147,15 @@ describe('PackService', () => {
   // -------------------------------------------------------------------------
   describe('generatePacks – input validation', () => {
     it('throws for count of 0', async () => {
-      await expect(service.generatePacks(0)).rejects.toThrow('Count must be a positive integer');
+      await expect(service.generatePacks({ count: 0 })).rejects.toThrow(
+        'Count must be a positive integer',
+      );
     });
 
     it('throws for negative count', async () => {
-      await expect(service.generatePacks(-1)).rejects.toThrow('Count must be a positive integer');
+      await expect(service.generatePacks({ count: -1 })).rejects.toThrow(
+        'Count must be a positive integer',
+      );
     });
 
     it('creates the AI provider with Cloudflare gateway configuration', async () => {

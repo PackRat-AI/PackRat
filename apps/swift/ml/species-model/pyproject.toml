@@ -7,12 +7,12 @@ dependencies = [
   "coremltools>=8.3",
   "numpy<2.3",
   "open-clip-torch>=2.32",
-  "pillow>=11",
+  "pillow>=13",
   "requests>=2.32",
   "scikit-learn>=1.5",
   "timm>=1.0.15",
-  "torch==2.7.0",
-  "torchvision==0.22.0",
+  "torch==2.14.1",
+  "torchvision==0.29.1",
 ]
 
 [tool.uv]

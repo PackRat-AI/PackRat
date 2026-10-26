@@ -2,12 +2,11 @@ import { Button } from '@packrat/ui/src/button';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { Text } from '@packrat/ui/src/text';
 import { Toggle } from '@packrat/ui/src/toggle';
-import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
-import { Platform, Pressable, ScrollView, View } from 'react-native';
+import { Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NotificationsScreen() {
@@ -16,10 +15,9 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = React.useState({
     push: true,
     email: false,
-    weatherAlerts: true,
   });
 
-  function onValueChange(type: 'push' | 'email' | 'weatherAlerts') {
+  function onValueChange(type: 'push' | 'email') {
     return (value: boolean) => {
       setNotifications((prev) => ({ ...prev, [type]: value }));
     };
@@ -71,40 +69,6 @@ export default function NotificationsScreen() {
                 <Text className="font-medium">{t('profile.emailNotifications')}</Text>
               </View>
               <Toggle value={notifications.email} onValueChange={onValueChange('email')} />
-            </FormItem>
-          </FormSection>
-
-          <FormSection materialIconProps={{ name: 'weather-cloudy-alert' }}>
-            <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row items-center justify-between px-2 pb-4">
-              <View className="flex-1 flex-row items-center gap-2">
-                <View className="h-8 w-8 items-center justify-center rounded-lg bg-amber-500">
-                  <Icon name="weather-rainy" size={18} color="white" />
-                </View>
-                <View className="flex-1">
-                  <Text className="font-medium">{t('profile.weatherAlerts')}</Text>
-                  <Text variant="caption1" className="text-muted-foreground" wrap>
-                    {t('profile.weatherAlertsNotif')}
-                  </Text>
-                </View>
-              </View>
-              <Toggle
-                value={notifications.weatherAlerts}
-                onValueChange={onValueChange('weatherAlerts')}
-              />
-            </FormItem>
-            <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 px-2 pb-4">
-              <Pressable
-                className="flex-row items-center justify-between"
-                onPress={() => router.push('/weather-alert-preferences')}
-              >
-                <View className="flex-1 flex-row items-center gap-2">
-                  <View className="h-8 w-8 items-center justify-center rounded-lg bg-blue-500">
-                    <Icon name="wrench" size={18} color="white" />
-                  </View>
-                  <Text className="font-medium">{t('profile.configureAlertTypes')}</Text>
-                </View>
-                <Icon name="chevron-right" size={17} color="#8E8E93" />
-              </Pressable>
             </FormItem>
           </FormSection>
 

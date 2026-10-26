@@ -5,7 +5,7 @@ import {
   searchLocationsByCoordinates,
 } from 'expo-app/features/weather/lib/weatherService';
 import { useState } from 'react';
-import type { LocationSearchResult, WeatherLocation } from '../types';
+import type { LocationSearchResult } from '../types';
 import { useLocations } from './useLocations';
 
 export function useLocationSearch() {
@@ -70,11 +70,7 @@ export function useLocationSearch() {
       if (weatherData) {
         const formattedData = formatWeatherData(weatherData);
 
-        // Create new location with weather data
-        // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
-        const newLocation = formattedData as unknown as WeatherLocation;
-
-        addLocation(newLocation);
+        addLocation(formattedData);
         return true;
       } else {
         setError('Failed to get weather data for this location');

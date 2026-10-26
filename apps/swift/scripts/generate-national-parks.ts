@@ -9,8 +9,9 @@
  * Run from repo root:
  *   bun apps/swift/scripts/generate-national-parks.ts
  *
- * Output:
+ * Output (the same file for both apps):
  *   apps/swift/Resources/NationalParks.json
+ *   apps/expo/features/trip-stats/data/nationalParks.json
  */
 
 import { writeFileSync } from 'node:fs';
@@ -19,7 +20,10 @@ import { fileURLToPath } from 'node:url';
 import { safeJsonStringify } from '@packrat/utils';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const outputPath = resolve(__dir, '../Resources/NationalParks.json');
+const outputPaths = [
+  resolve(__dir, '../Resources/NationalParks.json'),
+  resolve(__dir, '../../expo/features/trip-stats/data/nationalParks.json'),
+];
 
 const SERVICE =
   'https://services1.arcgis.com/fBc8EJBxQRMcHlei/arcgis/rest/services/NPS_Land_Resources_Division_Boundary_and_Tract_Data_Service/FeatureServer/2/query';
@@ -91,5 +95,7 @@ if (codes.size !== EXPECTED_PARK_COUNT) {
 const empty = parks.filter((p) => p.rings.length === 0).map((p) => p.code);
 if (empty.length > 0) throw new Error(`Parks without a boundary: ${empty.join(', ')}`);
 
-writeFileSync(outputPath, `${safeJsonStringify(parks)}\n`);
-console.log(`Wrote ${parks.length} parks to ${outputPath}`);
+for (const outputPath of outputPaths) {
+  writeFileSync(outputPath, `${safeJsonStringify(parks)}\n`);
+  console.log(`Wrote ${parks.length} parks to ${outputPath}`);
+}

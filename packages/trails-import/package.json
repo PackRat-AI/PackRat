@@ -1,6 +1,6 @@
 {
   "name": "@packrat/trails-import",
-  "version": "2.2.4",
+  "version": "2.3.0",
   "private": true,
   "description": "Overture Maps trail import and id reconciliation for the trail database",
   "type": "module",

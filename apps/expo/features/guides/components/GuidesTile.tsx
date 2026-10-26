@@ -1,5 +1,4 @@
 import { ListItem } from '@packrat/ui/src/list';
-import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -32,10 +31,7 @@ export const GuidesTile = () => {
         </View>
       }
       rightView={
-        <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-          <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
-            {t('guides.viewAll')}
-          </Text>
+        <View className="flex-1 flex-row items-center justify-center px-4">
           <Icon name="chevron-right" size={17} color={colors.grey} />
         </View>
       }

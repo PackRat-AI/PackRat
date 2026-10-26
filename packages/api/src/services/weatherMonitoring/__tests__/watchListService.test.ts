@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => {
     captureApiException: vi.fn(),
     armWatchedPlaceTimer: vi.fn(),
     disarmWatchedPlaceTimer: vi.fn(),
+    announceActiveAlertsToNewWatcher: vi.fn(),
     createDb: vi.fn(() => {
       const db = {
         tag: (label: string) => {
@@ -61,6 +62,10 @@ vi.mock('../watchedPlaceTimer', () => ({
   armWatchedPlaceTimer: mocks.armWatchedPlaceTimer,
   disarmWatchedPlaceTimer: mocks.disarmWatchedPlaceTimer,
 }));
+vi.mock('../announceToNewWatcher', () => ({
+  announceActiveAlertsToNewWatcher: mocks.announceActiveAlertsToNewWatcher,
+}));
+vi.mock('@packrat/api/utils/env-validation', () => ({ getEnv: () => ({ env: 'test' }) }));
 vi.mock('@packrat/api/utils/sentry', () => ({ captureApiException: mocks.captureApiException }));
 vi.mock('@packrat/db/schema', () => ({
   weatherWatchedLocations: {
@@ -95,7 +100,14 @@ const request = {
   lon: -105.27,
 };
 
-const storedRow = { id: 'watch-1', ...request, createdAt: new Date('2026-01-01') };
+const storedRow = {
+  id: 'watch-1',
+  ...request,
+  createdAt: new Date('2026-01-01'),
+  updatedAt: new Date('2026-01-01'),
+};
+// A re-add keeps the original createdAt and bumps updatedAt.
+const reAddedRow = { ...storedRow, updatedAt: new Date('2026-02-01') };
 
 describe('listWatchedLocations', () => {
   beforeEach(() => {
@@ -204,6 +216,47 @@ describe('addWatchedLocation', () => {
       expect.objectContaining({
         error: failure,
         userId: 'user-1',
+        extra: { weatherLocationId: 42 },
+      }),
+    );
+  });
+});
+
+describe('alerts already in effect', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('are announced to someone who just started watching the place', async () => {
+    mocks.insertReturning.mockResolvedValue([storedRow]);
+
+    await addWatchedLocation({ userId: 'user-1', request });
+
+    expect(mocks.announceActiveAlertsToNewWatcher).toHaveBeenCalledWith({
+      env: { env: 'test' },
+      userId: 'user-1',
+      weatherLocationId: 42,
+    });
+  });
+
+  it('are not announced again when an existing watcher re-adds the place', async () => {
+    mocks.insertReturning.mockResolvedValue([reAddedRow]);
+
+    await addWatchedLocation({ userId: 'user-1', request });
+
+    expect(mocks.announceActiveAlertsToNewWatcher).toHaveBeenCalledTimes(0);
+  });
+
+  it('do not fail the watch when announcing them fails, and the failure is reported', async () => {
+    const failure = new Error('WeatherAPI HTTP 503');
+    mocks.insertReturning.mockResolvedValue([storedRow]);
+    mocks.announceActiveAlertsToNewWatcher.mockRejectedValue(failure);
+
+    expect(await addWatchedLocation({ userId: 'user-1', request })).toEqual(storedRow);
+    expect(mocks.captureApiException).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: failure,
+        operation: 'weatherMonitoring.announceToNewWatcher',
         extra: { weatherLocationId: 42 },
       }),
     );

@@ -131,6 +131,25 @@ describe('sendApnsPush', () => {
     const body = JSON.parse(init.body);
     expect(body.tripId).toBe('trip-1');
     expect(body).not.toHaveProperty('weatherLocationId');
+    expect(body).not.toHaveProperty('reportId');
+  });
+
+  it('carries the report id alongside its trip for a trail report', async () => {
+    const { sendApnsPush } = await loadClient();
+
+    await sendApnsPush({
+      env,
+      deviceToken: 'device-1',
+      payload: {
+        alert: { title: 'New trail report for PCT', body: 'Mist Trail: Ice.' },
+        tripId: 'trip-1',
+        reportId: 'report-1',
+      },
+    });
+
+    const init = fetchMock.mock.calls[0]?.[1] as { body: string };
+    const body = JSON.parse(init.body);
+    expect(body).toMatchObject({ tripId: 'trip-1', reportId: 'report-1' });
   });
 
   it('routes a feed notification by postId', async () => {

@@ -1,60 +1,69 @@
-import { useAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
+import { useCallback } from 'react';
 import { baseLocationsAtom, locationsAtom } from '../atoms/locationsAtoms';
 import type { WeatherLocation } from '../types';
 
+type Updater = (locations: WeatherLocation[]) => WeatherLocation[];
+
+/**
+ * Saved locations. Every write is a functional update against the stored
+ * list, never against this render's snapshot — a refresh loop updates
+ * locations one after another, and snapshot writes overwrote each other so
+ * only the last location kept its fresh forecast.
+ */
 export function useLocations() {
   const [locationsState] = useAtom(locationsAtom);
-  const [, setBaseLocations] = useAtom(baseLocationsAtom);
+  const setBaseLocations = useSetAtom(baseLocationsAtom);
 
-  const addLocation = (location: WeatherLocation) => {
-    if (locationsState.state !== 'hasData') return;
+  // Synchronous once storage has loaded: handing the atom a promise puts the
+  // list back into its loading state, which left a swiped card stuck on screen.
+  const update = useCallback(
+    (updater: Updater) =>
+      setBaseLocations((current) =>
+        current instanceof Promise ? current.then(updater) : updater(current),
+      ),
+    [setBaseLocations],
+  );
 
-    const locations = locationsState.data;
+  const addLocation = useCallback(
+    (location: WeatherLocation) =>
+      update((locations) =>
+        locations.some((loc) => loc.id === location.id) ? locations : [...locations, location],
+      ),
+    [update],
+  );
 
-    // Check if location already exists
-    if (locations.some((loc) => loc.id === location.id)) {
-      return;
-    }
+  const removeLocation = useCallback(
+    (locationId: number) => update((locations) => locations.filter((loc) => loc.id !== locationId)),
+    [update],
+  );
 
-    // Add new location
-    setBaseLocations([...locations, location]);
-  };
+  const updateLocation = useCallback(
+    ({ locationId, updates }: { locationId: number; updates: Partial<WeatherLocation> }) =>
+      update((locations) =>
+        locations.map((loc) => (loc.id === locationId ? { ...loc, ...updates } : loc)),
+      ),
+    [update],
+  );
 
-  const removeLocation = (locationId: number) => {
-    if (locationsState.state !== 'hasData') return;
+  // Puts a just-removed location back where it was (snackbar Undo).
+  const restoreLocation = useCallback(
+    ({ location, index }: { location: WeatherLocation; index: number }) =>
+      update((locations) => {
+        const rest = locations.filter((loc) => loc.id !== location.id);
+        return [...rest.slice(0, index), location, ...rest.slice(index)];
+      }),
+    [update],
+  );
 
-    const locations = locationsState.data;
-
-    // Remove location
-    setBaseLocations(locations.filter((loc) => loc.id !== locationId));
-  };
-
-  const updateLocation = ({
-    locationId,
-    updates,
-  }: {
-    locationId: number;
-    updates: Partial<WeatherLocation>;
-  }) => {
-    if (locationsState.state !== 'hasData') return;
-
-    const locations = locationsState.data;
-
-    // Update location
-    setBaseLocations(
-      locations.map((loc) => (loc.id === locationId ? { ...loc, ...updates } : loc)),
-    );
-  };
-
-  const resetLocations = () => {
-    setBaseLocations([]); // Clear all locations
-  };
+  const resetLocations = useCallback(() => setBaseLocations([]), [setBaseLocations]);
 
   return {
     locationsState,
     addLocation,
     removeLocation,
     updateLocation,
+    restoreLocation,
     resetLocations,
   };
 }

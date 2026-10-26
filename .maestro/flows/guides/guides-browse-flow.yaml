@@ -49,18 +49,18 @@ appId: ${APP_ID}
 - runFlow:
     when:
       visible:
-        text: "Failed to load categories"
+        text: "Couldn't load guides"
     commands:
       - assertVisible:
-          text: "Retry"
+          text: "Try again"
 
 - runFlow:
     when:
       visible:
-        text: "No guides available"
+        text: "No guides yet"
     commands:
       - assertVisible:
-          text: "No guides available"
+          text: "No guides yet"
 
 - runFlow:
     when:
@@ -76,10 +76,10 @@ appId: ${APP_ID}
       - runFlow:
           when:
             visible:
-              text: "Failed to load guide"
+              text: "Couldn't load this guide"
           commands:
             - assertVisible:
-                text: "Failed to load guide"
+                text: "Couldn't load this guide"
       - runFlow:
           when:
             visible:
@@ -101,28 +101,28 @@ appId: ${APP_ID}
       - waitForAnimationToEnd
       - extendedWaitUntil:
           visible:
-            text: "All"
+            id: "guides:category-chip-all"
           timeout: 10000
 
 - runFlow:
     when:
       visible:
-        text: "All"
+        id: "guides:category-chip-all"
     commands:
       - tapOn:
-          text: "All"
+          id: "guides:category-chip-all"
       - waitForAnimationToEnd
 
 - runFlow:
     when:
       visible:
-        text: "Activity Specific"
+        id: "guides:category-chip-activity-specific"
     commands:
       - tapOn:
-          text: "Activity Specific"
+          id: "guides:category-chip-activity-specific"
       - waitForAnimationToEnd
       - tapOn:
-          text: "All"
+          id: "guides:category-chip-all"
       - waitForAnimationToEnd
 
 # Go back to dashboard

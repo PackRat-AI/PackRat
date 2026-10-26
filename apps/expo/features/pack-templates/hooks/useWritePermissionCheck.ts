@@ -1,10 +1,9 @@
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { obs } from 'expo-app/lib/store';
 import { packTemplatesStore } from '../store';
 
+// Featured (app) templates are curated in the admin console, so they are
+// read-only in the app.
 export function useWritePermissionCheck(id: string) {
   const packTemplate = obs({ store: packTemplatesStore, id: id }).get();
-  const user = useUser();
-
-  return packTemplate.isAppTemplate ? user?.role === 'ADMIN' : true;
+  return !packTemplate.isAppTemplate;
 }

@@ -111,6 +111,11 @@ export const apiEnvObjectSchema = z.object({
   // targets the sandbox gateway, api.sandbox.push.apple.com.
   APNS_ENVIRONMENT: z.enum(['production', 'sandbox']).optional(),
 
+  // FCM push delivery for Android. The Firebase service-account key file
+  // (JSON, as downloaded) — store via wrangler secret. Optional for the same
+  // reason as the APNs keys: unset means Android devices are skipped.
+  FCM_SERVICE_ACCOUNT_JSON: z.string().optional(),
+
   // Twilio SMS for safety check-in messages to emergency contacts. Optional so
   // deploys without SMS still validate; SMS sends no-op (with a warning) when
   // unset and contacts with an email address still get email.

@@ -463,3 +463,11 @@ with many saved places pays a burst of requests on each open. Acceptable at
 realistic list sizes; if it becomes chatter, the fix is a minimum interval
 between refreshes, not a move to push. There is also a brief window on a cold
 start where the markers are not yet drawn — the fetch has to return first.
+
+## ADR-012 — A new watcher hears about alerts already in effect
+
+**Decision.** When someone starts watching a place, they get a push for any alert there that the place's timer has already announced to earlier watchers. Alerts the timer has not seen yet are left to the timer, which tells every watcher, the new one included.
+
+**Why.** A place's timer announces each alert once, to whoever watches the place at that moment. Without this, a second person who watches a town under a flood warning never hears about it, while the first person did, and the two experiences of the same place diverge for no reason the user can see. Only the new watcher is told, so nobody who already heard about the alert hears it twice.
+
+**Consequence.** A user who watches a place from its forecast, with the alert on screen, also gets a push for it. Accepted: the push confirms the watch is live and gives every watcher the same record of what happened at the place. The catch-up is best effort; if it fails, the watch is still saved and the next new alert arrives as usual.

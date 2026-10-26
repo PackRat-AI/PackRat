@@ -82,7 +82,7 @@ describe('syncTripDestinationTimer', () => {
   it('captures a failure instead of failing the trip write', async () => {
     fakeNamespace();
     mocks.arm.mockRejectedValueOnce(new Error('do down'));
-    await expect(syncTripDestinationTimer({ trip: trip('t1') })).resolves.toBeUndefined();
+    await expect(syncTripDestinationTimer({ trip: trip('t1'), now: NOW })).resolves.toBeUndefined();
     expect(mocks.captureApiException).toHaveBeenCalledWith(
       expect.objectContaining({
         operation: 'tripReminders.syncDestinationTimer',
@@ -136,7 +136,7 @@ describe('rearmTripDestinationTimers', () => {
 
   it('arms nothing without the binding', async () => {
     mocks.upcoming = [trip('t1')];
-    const result = await rearmTripDestinationTimers({ env: {} as ValidatedEnv });
+    const result = await rearmTripDestinationTimers({ env: {} as ValidatedEnv, now: NOW });
     expect(result).toEqual({ armed: 0 });
     expect(mocks.arm).toHaveBeenCalledTimes(0);
   });

@@ -38,3 +38,5 @@ template in `.github/PULL_REQUEST_TEMPLATE.md` asks for it and
 iOS/watchOS/macOS ship through Xcode and App Store Connect, **not EAS**. EAS
 builds the Android app only. See `apps/swift/README.md` for the TestFlight and
 preflight commands.
+
+A release (`release-cut.yml`, or merging `release/vX.Y.Z` into `main`) runs `.github/workflows/release-apple.yml`, which builds iOS and macOS against the production API, uploads both, and submits each for App Store review with `scripts/submit-app-store-review.ts`.

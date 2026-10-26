@@ -1,0 +1,41 @@
+name: Release Branch Guard
+
+# Release PRs into main must come from release/vX.Y.Z, where X.Y.Z matches every
+# app version in the branch. release-deploy.yml derives the tag it checks out
+# from the branch name, so any other name (e.g. release/wildlife-beta) makes the
+# store build fail after merge.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: Release branch is release/vX.Y.Z
+    if: startsWith(github.event.pull_request.head.ref, 'release/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - name: Install semver
+        run: bun add --no-save semver
+
+      - name: Validate branch name against app versions
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          TAG="${HEAD_REF#release/}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release branch '$HEAD_REF' must be named release/vX.Y.Z. Cut releases with the Release Cut workflow."
+            exit 1
+          fi
+          bun .github/scripts/validate-release-version.ts "$TAG"

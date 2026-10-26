@@ -105,19 +105,6 @@ export function getTripDetailOptions(id: string) {
           >
             <Icon name="pencil-box-outline" color={colors.grey2} />
           </Button>
-
-          <Button
-            variant="plain"
-            size="icon"
-            onPress={() =>
-              router.push({
-                pathname: '/trip/new',
-                params: { copyFromTripId: id },
-              })
-            }
-          >
-            <Icon name="plus" color={colors.grey2} />
-          </Button>
         </View>
       );
     },

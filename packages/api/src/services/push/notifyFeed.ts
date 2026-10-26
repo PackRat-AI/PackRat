@@ -3,7 +3,7 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { socialSettings, userDeviceTokens } from '@packrat/db/schema';
 import { eq, inArray } from 'drizzle-orm';
-import { sendApnsPush } from './apnsClient';
+import { pushGateway, sendPush } from './sendPush';
 
 export type FeedNotificationKind = 'tag' | 'comment' | 'reply';
 
@@ -68,14 +68,19 @@ export async function notifyFeedRecipients({
 
     const tokens = await db
       .tag('feed.notify.listDeviceTokens')
-      .select({ id: userDeviceTokens.id, deviceToken: userDeviceTokens.deviceToken })
+      .select({
+        id: userDeviceTokens.id,
+        platform: userDeviceTokens.platform,
+        deviceToken: userDeviceTokens.deviceToken,
+      })
       .from(userDeviceTokens)
       .where(inArray(userDeviceTokens.userId, recipients));
 
     for (const token of tokens) {
       try {
-        const result = await sendApnsPush({
+        const result = await sendPush({
           env,
+          platform: token.platform,
           deviceToken: token.deviceToken,
           payload: { alert: { title, body }, postId },
         });
@@ -86,7 +91,9 @@ export async function notifyFeedRecipients({
             .where(eq(userDeviceTokens.id, token.id));
         } else if (result.outcome === 'error') {
           captureApiException({
-            error: new Error(`APNs push failed: ${result.status} ${result.body}`),
+            error: new Error(
+              `${pushGateway(token.platform)} push failed: ${result.status} ${result.body}`,
+            ),
             operation: 'feed.notifyFeedRecipients',
             tags: { feature: 'feed' },
             extra: { postId, kind, httpStatus: result.status },

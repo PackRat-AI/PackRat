@@ -507,7 +507,7 @@ private struct DraftPhotoThumbnail: View {
     }
 }
 
-private struct AddPhotoTile: View {
+struct AddPhotoTile: View {
     let title: String
     let systemImage: String
 

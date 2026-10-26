@@ -1,4 +1,5 @@
 import Foundation
+import Sentry
 
 actor APIClient {
     static let shared = APIClient()
@@ -21,8 +22,8 @@ actor APIClient {
     static let environments: [String: String] = [
         "local":      "http://localhost:8787",
         "dev-local":  "http://localhost:8791",
-        "dev":        "https://packrat-api-dev.orange-frost-d665.workers.dev",
-        "production": "https://packrat-api.orange-frost-d665.workers.dev",
+        "dev":        "https://api-dev.packratai.com",
+        "production": "https://api.packratai.com",
     ]
 
     /// Public R2 bucket URL for user-uploaded images (avatars, pack photos), per
@@ -47,6 +48,8 @@ actor APIClient {
     static func resolvedImageURL(_ value: String?) -> URL? {
         guard let value, !value.isEmpty else { return nil }
         if value.hasPrefix("http") { return URL(string: value) }
+        // Photos of a report still waiting to send live on the device.
+        if value.hasPrefix("file:") { return URL(string: value) }
         return URL(string: "\(r2PublicURL)/\(value)")
     }
 
@@ -87,7 +90,7 @@ actor APIClient {
         #if DEBUG
         return URL(string: "http://localhost:8787")!
         #else
-        return URL(string: "https://packrat-api.orange-frost-d665.workers.dev")!
+        return URL(string: "https://api.packratai.com")!
         #endif
     }
 
@@ -194,6 +197,7 @@ actor APIClient {
     }
 
     private func dataWithTransientRetry(for request: URLRequest) async throws -> (Data, URLResponse) {
+        let startedAt = Date()
         var lastError: Error?
 
         for attempt in 0..<2 {
@@ -216,7 +220,40 @@ actor APIClient {
             }
         }
 
+        if let lastError {
+            Self.reportTransportFailure(lastError, request: request, elapsed: Date().timeIntervalSince(startedAt))
+        }
         throw lastError ?? PackRatError.unknown
+    }
+
+    /// Transport failures (timeouts, DNS, TLS, unreachable host) never get an
+    /// HTTP status, so Sentry's failed-request capture misses them and a user
+    /// stuck on a spinner leaves no trace. Report them here, after the retry,
+    /// so each failed call is one event. Being offline and cancellation are
+    /// expected in an offline-first app and are not reported.
+    private static let unreportedURLErrorCodes: Set<URLError.Code> = [
+        .cancelled,
+        .notConnectedToInternet,
+        .dataNotAllowed,
+        .internationalRoamingOff,
+    ]
+
+    private static func reportTransportFailure(_ error: Error, request: URLRequest, elapsed: TimeInterval) {
+        guard let urlError = error as? URLError,
+              !unreportedURLErrorCodes.contains(urlError.code)
+        else { return }
+        let path = request.url?.path ?? "?"
+        SentrySDK.capture(error: urlError) { scope in
+            scope.setTag(value: "network", key: "feature")
+            scope.setTag(value: path, key: "api_path")
+            scope.setTag(value: String(urlError.code.rawValue), key: "url_error_code")
+            scope.setExtras([
+                "method": request.httpMethod ?? "?",
+                "host": request.url?.host ?? "?",
+                "elapsedSeconds": (elapsed * 10).rounded() / 10,
+                "attempts": 2,
+            ])
+        }
     }
 
     /// Better Auth returns the session token in the `set-auth-token` response

@@ -1,14 +1,17 @@
+import { Snackbar, type SnackbarHandle } from '@packrat/ui/src/snackbar';
 import { Text } from '@packrat/ui/src/text';
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { SearchInput } from 'expo-app/components/SearchInput';
+import { registerForPushIfNeeded } from 'expo-app/features/notifications/lib/pushRegistration';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import * as Location from 'expo-location';
-import { router } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,6 +20,7 @@ import {
   Keyboard,
   Linking,
   Platform,
+  Pressable,
   type TextInput,
   TouchableOpacity,
   View,
@@ -24,7 +28,7 @@ import {
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDebouncedCallback } from 'use-debounce';
-import { useLocationSearch } from '../hooks';
+import { useLocationSearch, useLocations, useWatchMutations } from '../hooks';
 import type { LocationSearchResult } from '../types';
 
 // Key for storing recent searches in AsyncStorage
@@ -41,6 +45,15 @@ export default function LocationSearchScreen() {
   const [isAdding, setIsAdding] = useState(false);
   const [addingLocationId, setAddingLocationId] = useState<number | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  // `mode=watch` is the watch list's add flow: choosing a place watches it.
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const isWatchMode = mode === 'watch';
+  const snackbar = useRef<SnackbarHandle>(null);
+  const { locationsState } = useLocations();
+  const { watch } = useWatchMutations();
+  const savedIds = new Set(
+    locationsState.state === 'hasData' ? locationsState.data.map((l) => l.id) : [],
+  );
   const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
 
   // Focus search input on mount
@@ -120,25 +133,9 @@ export default function LocationSearchScreen() {
         // Add to recent searches
         saveToRecentSearches(location.name);
 
-        // Show success message
-        Alert.alert(
-          t('weather.locationAdded'),
-          t('weather.locationAddedMessage', { name: location.name }),
-          [
-            {
-              text: t('weather.viewAllLocations'),
-              onPress: () => router.back(),
-            },
-            {
-              text: t('weather.addAnother'),
-              onPress: () => {
-                setQuery('');
-                searchInputRef.current?.focus();
-              },
-            },
-          ],
-          { cancelable: false },
-        );
+        snackbar.current?.show({
+          message: t('weather.addedToLocations', { name: location.name }),
+        });
       } else {
         Alert.alert(t('common.error'), t('weather.errorAddingLocation'));
       }
@@ -159,18 +156,22 @@ export default function LocationSearchScreen() {
   const handleViewLocationDetails = (location: LocationSearchResult) => {
     saveToRecentSearches(location.name);
 
-    // Navigate to preview screen with location coordinates
-    router.push({
-      pathname: '/weather/preview',
-      params: {
-        id: location.id.toString(),
-        lat: location.lat.toString(),
-        lon: location.lon.toString(),
-        name: location.name,
-        region: location.region || '',
-        country: location.country,
-      },
-    });
+    router.push({ pathname: '/weather/[id]', params: { id: location.id.toString() } });
+  };
+
+  const handleWatchLocation = async (location: LocationSearchResult) => {
+    setIsAdding(true);
+    setAddingLocationId(location.id);
+    try {
+      await watch.mutateAsync(location);
+      router.back();
+      registerForPushIfNeeded();
+    } catch {
+      snackbar.current?.show({ message: t('weather.watchFailed', { name: location.name }) });
+    } finally {
+      setIsAdding(false);
+      setAddingLocationId(null);
+    }
   };
 
   // Handle selecting a popular city
@@ -261,43 +262,63 @@ export default function LocationSearchScreen() {
     { name: 'Toronto', country: 'Canada' },
   ];
 
-  // Render a search result item
-  const renderResultItem = ({ item }: { item: LocationSearchResult }) => (
-    <View className="border-border/30 border-b px-4 py-3">
-      <View className="flex-row items-center justify-between">
+  // One M3 two-line list item per result: the row opens the forecast, the
+  // trailing icon button saves it. In watch mode the row watches instead.
+  const renderResultItem = ({ item }: { item: LocationSearchResult }) => {
+    const isSaved = savedIds.has(item.id);
+    const isBusy = isAdding && addingLocationId === item.id;
+    const subtitle = [item.region, item.country].filter(Boolean).join(', ');
+    return (
+      <Pressable
+        onPress={() => (isWatchMode ? handleWatchLocation(item) : handleViewLocationDetails(item))}
+        disabled={isBusy}
+        android_ripple={{ color: colors.grey5 }}
+        className="min-h-[72px] flex-row items-center gap-4 py-2 pl-4 pr-2"
+        testID={testIds.weather.location(item.id)}
+      >
+        <Icon name="map-marker-outline" size={24} color={colors.grey} />
         <View className="flex-1">
-          <Text className="font-medium">{item.name}</Text>
-          <Text className="text-sm text-muted-foreground">
-            {item.region ? `${item.region}, ` : ''}
-            {item.country}
-          </Text>
+          <Text className="text-base text-foreground">{item.name}</Text>
+          {subtitle ? (
+            <Text variant="subhead" className="text-muted-foreground">
+              {subtitle}
+            </Text>
+          ) : null}
         </View>
-
-        <View className="flex-row">
-          {/* View Details Button */}
-          <TouchableOpacity
-            className="bg-primary/10 mr-2 rounded-full px-3 py-1.5"
-            onPress={() => handleViewLocationDetails(item)}
-          >
-            <Text className="text-sm font-medium text-primary">{t('weather.view')}</Text>
-          </TouchableOpacity>
-
-          {/* Add Button */}
-          <TouchableOpacity
-            className="rounded-full bg-primary px-3 py-1.5"
+        {isWatchMode ? (
+          isBusy ? (
+            <View className="h-12 w-12 items-center justify-center">
+              <ActivityIndicator color={colors.primary} />
+            </View>
+          ) : null
+        ) : (
+          <Pressable
             onPress={() => handleAddLocation(item)}
-            disabled={isAdding && addingLocationId === item.id}
+            disabled={isSaved || isBusy}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isSaved
+                ? t('weather.alreadySavedA11y', { name: item.name })
+                : t('weather.saveNamedA11y', { name: item.name })
+            }
+            android_ripple={{ color: colors.grey5, borderless: true, radius: 24 }}
+            className="h-12 w-12 items-center justify-center"
+            testID={testIds.weather.addLocationBtn}
           >
-            {isAdding && addingLocationId === item.id ? (
-              <ActivityIndicator size="small" color="white" />
+            {isBusy ? (
+              <ActivityIndicator color={colors.primary} />
             ) : (
-              <Text className="text-sm font-medium text-white">{t('weather.add')}</Text>
+              <Icon
+                name={isSaved ? 'check-circle' : 'plus-circle-outline'}
+                size={24}
+                color={isSaved ? colors.primary : colors.foreground}
+              />
             )}
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
+          </Pressable>
+        )}
+      </Pressable>
+    );
+  };
 
   // Render empty list component
   const renderEmptyList = () => {
@@ -405,11 +426,13 @@ export default function LocationSearchScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
+      {isWatchMode ? <Stack.Screen options={{ title: t('weather.watchLocationTitle') }} /> : null}
       {/* Search Input */}
       <View className="px-4 my-4">
         <SearchInput
           ref={searchInputRef}
-          placeholder={t('weather.searchForCity')}
+          placeholder={t('weather.searchForPlace')}
+          testID={testIds.weather.searchInput}
           value={query}
           onChangeText={handleSearchChange}
           containerClassName="border border-border"
@@ -437,6 +460,7 @@ export default function LocationSearchScreen() {
           keyboardShouldPersistTaps="handled"
         />
       )}
+      <Snackbar ref={snackbar} testID={testIds.weather.snackbar} />
     </SafeAreaView>
   );
 }

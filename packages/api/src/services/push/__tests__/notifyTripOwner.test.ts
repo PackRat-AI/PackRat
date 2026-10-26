@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => {
   return {
     selectWhere,
     deleteWhere,
-    sendApnsPush: vi.fn(),
+    sendPush: vi.fn(),
     captureApiException: vi.fn(),
     createDbClient: vi.fn(() => {
       const db = {
@@ -23,7 +23,10 @@ const mocks = vi.hoisted(() => {
 
 vi.mock('@packrat/api/db', () => ({ createDbClient: mocks.createDbClient }));
 vi.mock('@packrat/api/utils/sentry', () => ({ captureApiException: mocks.captureApiException }));
-vi.mock('../apnsClient', () => ({ sendApnsPush: mocks.sendApnsPush }));
+vi.mock('../sendPush', () => ({
+  sendPush: mocks.sendPush,
+  pushGateway: (platform: string) => (platform === 'android' ? 'FCM' : 'APNs'),
+}));
 vi.mock('@packrat/db/schema', () => ({
   userDeviceTokens: { id: 'id', userId: 'userId', deviceToken: 'deviceToken' },
 }));
@@ -75,39 +78,39 @@ describe('notifyTripOwner', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.selectWhere.mockResolvedValue([
-      { id: 't1', deviceToken: 'device-1' },
-      { id: 't2', deviceToken: 'device-2' },
+      { id: 't1', platform: 'ios', deviceToken: 'device-1' },
+      { id: 't2', platform: 'ios', deviceToken: 'device-2' },
     ]);
-    mocks.sendApnsPush.mockResolvedValue({ outcome: 'sent' });
+    mocks.sendPush.mockResolvedValue({ outcome: 'sent' });
     mocks.deleteWhere.mockResolvedValue(undefined);
   });
 
   it('does nothing without new alerts', async () => {
     await notifyTripOwner({ ...base, newAlerts: [] });
-    expect(mocks.sendApnsPush).toHaveBeenCalledTimes(0);
+    expect(mocks.sendPush).toHaveBeenCalledTimes(0);
   });
 
   it("pushes to every one of the owner's devices with the trip id for deep-linking", async () => {
     await notifyTripOwner({ ...base, newAlerts: [alert('Flood Warning')] });
 
-    expect(mocks.sendApnsPush).toHaveBeenCalledTimes(2);
-    expect(mocks.sendApnsPush.mock.calls[0]?.[0]).toMatchObject({
+    expect(mocks.sendPush).toHaveBeenCalledTimes(2);
+    expect(mocks.sendPush.mock.calls[0]?.[0]).toMatchObject({
       deviceToken: 'device-1',
       payload: { tripId: 'trip-1', alert: { title: 'Weather alert for Enchantments' } },
     });
   });
 
   it('deletes an expired token and keeps going', async () => {
-    mocks.sendApnsPush.mockResolvedValueOnce({ outcome: 'invalid-token' });
+    mocks.sendPush.mockResolvedValueOnce({ outcome: 'invalid-token' });
 
     await notifyTripOwner({ ...base, newAlerts: [alert('Flood Warning')] });
 
     expect(mocks.deleteWhere).toHaveBeenCalledWith({ col: 'id', val: 't1' });
-    expect(mocks.sendApnsPush).toHaveBeenCalledTimes(2);
+    expect(mocks.sendPush).toHaveBeenCalledTimes(2);
   });
 
   it('captures an APNs error or a throw per device without aborting the batch', async () => {
-    mocks.sendApnsPush
+    mocks.sendPush
       .mockResolvedValueOnce({ outcome: 'error', status: 500, body: 'boom' })
       .mockRejectedValueOnce(new Error('network'));
 

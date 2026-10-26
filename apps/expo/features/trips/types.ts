@@ -1,3 +1,4 @@
+import type { TripLog } from '@packrat/schemas/trips';
 import type { Pack } from 'expo-app/features/packs/types';
 
 export type TripStatus = 'planned' | 'ongoing' | 'completed' | 'cancelled';
@@ -19,6 +20,8 @@ export interface Trip {
   endDate?: string;
   userId?: string;
   packId?: Pack['id'];
+  log?: TripLog | null;
+  excludedFromStats?: boolean;
   deleted: boolean;
   createdAt?: string;
   updatedAt?: string;

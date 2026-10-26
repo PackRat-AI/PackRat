@@ -1,3 +1,4 @@
+import type { WeatherAlertItem } from '@packrat/schemas/weather';
 import type { MaterialIconName } from 'expo-app/components/Icon';
 
 export interface WeatherApiForecastResponse {
@@ -182,6 +183,12 @@ export interface WeatherLocation {
   highTemp: number;
   lowTemp: number;
   alerts?: string;
+  /** Every active alert, in the order the forecast returned them. */
+  alertList?: WeatherAlertItem[];
+  region?: string;
+  country?: string;
+  /** Today's chance of rain, 0–100. */
+  chanceOfRain?: number;
   lat: number;
   lon: number;
   isActive?: boolean;
@@ -200,6 +207,7 @@ export interface WeatherLocation {
     icon: string;
     weatherCode: number;
     isDay: number;
+    chanceOfRain?: number;
   }>;
   dailyForecast?: Array<{
     day: string;
@@ -207,6 +215,7 @@ export interface WeatherLocation {
     low: number;
     icon: MaterialIconName;
     weatherCode: number;
+    chanceOfRain?: number;
   }>;
 }
 

@@ -10,8 +10,6 @@ import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix
 import { Icon } from 'expo-app/components/Icon';
 import { appConfig } from 'expo-app/config';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
-import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
-import { AIPacksTile } from 'expo-app/features/ai-packs/components/AIPacksTile';
 import { FeedTile } from 'expo-app/features/feed/components/FeedTile';
 import { GuidesTile } from 'expo-app/features/guides/components/GuidesTile';
 import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
@@ -27,9 +25,9 @@ import { SharedPacksTile } from 'expo-app/features/packs/components/SharedPacksT
 import { ShoppingListTile } from 'expo-app/features/packs/components/ShoppingListTile';
 import { WeightAnalysisTile } from 'expo-app/features/packs/components/WeightAnalysisTile';
 import { useHasMinimumInventory } from 'expo-app/features/packs/hooks/useHasMinimumInventory';
+import { TripStatsTile } from 'expo-app/features/trip-stats/components/TripStatsTile';
 import { TrailConditionsTile } from 'expo-app/features/trips/components/TrailConditionsTile';
 import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTripsTile';
-import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
 import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
 import { WildlifeTile } from 'expo-app/features/wildlife/components/WildlifeTile';
 import { useFeatureFlags } from 'expo-app/hooks/useFeatureFlags';
@@ -61,16 +59,6 @@ const tileInfo = {
     keywords: ['ai', 'chat', 'assistant', 'help'],
     component: AIChatTile,
   },
-  'reported-ai-content': {
-    title: 'Reported AI Content',
-    keywords: ['reported', 'ai', 'content', 'flagged'],
-    component: ReportedContentTile,
-  },
-  'ai-packs': {
-    title: 'AI Packs',
-    keywords: ['ai', 'packs', 'generate', 'create'],
-    component: AIPacksTile,
-  },
   'pack-stats': {
     title: 'Pack Statistics',
     keywords: ['stats', 'statistics', 'analytics'],
@@ -91,6 +79,11 @@ const tileInfo = {
     keywords: ['trips', 'upcoming', 'planned', 'schedule'],
     component: UpcomingTripsTile,
   },
+  'trip-stats': {
+    title: 'Trip Stats',
+    keywords: ['trips', 'stats', 'goals', 'parks', 'peaks', 'nights'],
+    component: TripStatsTile,
+  },
   'trail-conditions': {
     title: 'Trail Conditions',
     keywords: ['trail', 'conditions', 'terrain', 'path'],
@@ -100,11 +93,6 @@ const tileInfo = {
     title: 'Weather',
     keywords: ['weather', 'forecast', 'temperature', 'conditions'],
     component: WeatherTile,
-  },
-  'weather-alerts': {
-    title: 'Weather Alerts',
-    keywords: ['weather', 'alerts', 'warnings', 'emergency'],
-    component: WeatherAlertsTile,
   },
   'gear-inventory': {
     title: 'Gear Inventory',
@@ -210,11 +198,12 @@ export default function DashboardScreen() {
         ? [appConfig.dashboard.layout.conditional.tripsOrTrailSpacer]
         : []),
       ...(featureFlags.enableTrips ? [appConfig.dashboard.layout.conditional.trips] : []),
+      ...(featureFlags.enableTrips && featureFlags.enableTripStats
+        ? [appConfig.dashboard.layout.conditional.tripStats]
+        : []),
       ...(featureFlags.enableTrailConditions
         ? [appConfig.dashboard.layout.conditional.trailConditions]
         : []),
-      ...appConfig.dashboard.layout.weatherSection,
-      ...(featureFlags.enableTrips ? [appConfig.dashboard.layout.conditional.weatherAlerts] : []),
       ...appConfig.dashboard.layout.gearSection,
       ...(featureFlags.enableShoppingList
         ? [appConfig.dashboard.layout.conditional.shoppingList]

@@ -62,10 +62,13 @@ final class PackRatIOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
             return
         }
         if let tripId = userInfo[TripReminderScheduler.tripIdKey] as? String {
+            // Trail-report pushes also name the report, opened over its trip.
+            var routed: [String: String] = [TripReminderScheduler.tripIdKey: tripId]
+            routed["reportId"] = userInfo["reportId"] as? String
             NotificationCenter.default.post(
                 name: .tripReminderNotificationTapped,
                 object: nil,
-                userInfo: [TripReminderScheduler.tripIdKey: tripId]
+                userInfo: routed
             )
             return
         }

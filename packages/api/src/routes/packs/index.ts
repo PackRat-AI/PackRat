@@ -261,7 +261,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     '/generate-packs',
     async ({ body, user }) => {
       const packService = new PackService(user.userId);
-      return packService.generatePacks(body.count);
+      return packService.generatePacks({ count: body.count });
     },
     {
       body: z.object({ count: z.number().int().positive().default(1) }),

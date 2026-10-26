@@ -258,7 +258,7 @@ struct TripShareCardView: View {
                 .font(.system(size: 15, weight: .bold, design: .rounded))
             if !isSticker {
                 Spacer()
-                Text("packrat.world")
+                Text("packratai.com")
                     .font(.system(size: 12, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.6))
             }
