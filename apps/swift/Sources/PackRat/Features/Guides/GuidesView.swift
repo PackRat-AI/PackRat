@@ -310,18 +310,10 @@ struct GuidesView: View {
             }
         }
         .navigationTitle("Guides")
-        #if os(iOS)
-        // Inline, as for any screen pushed from Home. A large title also sits
-        // inside the chip strip's scroll edge effect and renders blurred.
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
     }
 
     private var library: some View {
         libraryContent
-            .topBar {
-                GuideTopicChips(topics: viewModel.categories, selection: $viewModel.selectedCategory)
-            }
             // Search sits over the library rather than replacing it, so
             // closing search returns to the same topic and scroll position.
             .overlay {
@@ -352,6 +344,11 @@ struct GuidesView: View {
     private var libraryContent: some View {
         let pager = viewModel.library
         return List {
+            // The first row rather than a pinned strip: a pinned strip under
+            // a large title renders the title blurred on iOS 26.
+            GuideTopicChips(topics: viewModel.categories, selection: $viewModel.selectedCategory)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
             switch pager.phase {
             case .idle, .loading: GuidePlaceholderRows()
             case .loaded: GuideRows(pager: pager)
@@ -388,27 +385,6 @@ struct GuidesView: View {
                 systemImage: "book",
                 description: Text("Check back soon for new guides.")
             )
-        }
-    }
-}
-
-private extension View {
-    /// Pins `content` under the navigation bar. On iOS 26 and macOS 26 it joins
-    /// the bar's scroll edge effect, so the list blurs out beneath the bar and
-    /// strip together instead of showing through a gap between them.
-    @ViewBuilder
-    func topBar(@ViewBuilder _ content: () -> some View) -> some View {
-        if #available(iOS 26, macOS 26, *) {
-            // A hard edge, as Apple uses under toolbars with controls: the soft
-            // default leaves rows legible behind the chips.
-            safeAreaBar(edge: .top, spacing: 0, content: content)
-                .scrollEdgeEffectStyle(.hard, for: .top)
-        } else {
-            // Only behind the strip: a bar background extends under the
-            // navigation bar by default and covers the large title.
-            safeAreaInset(edge: .top, spacing: 0) {
-                content().background(.bar, ignoresSafeAreaEdges: [])
-            }
         }
     }
 }

@@ -108,8 +108,8 @@ struct GuideRowView: View {
 
 // MARK: - Topic chips
 
-/// "All" plus one chip per topic, in a strip that stays put while the list
-/// scrolls. One topic at a time; the selected chip carries a checkmark.
+/// "All" plus one chip per topic, as the first row of the list. One topic at
+/// a time; the selected chip carries a checkmark.
 struct GuideTopicChips: View {
     let topics: [String]
     @Binding var selection: String?
