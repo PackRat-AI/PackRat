@@ -316,7 +316,9 @@ struct GuidesView: View {
         libraryContent
             .safeAreaInset(edge: .top, spacing: 0) {
                 GuideTopicChips(topics: viewModel.categories, selection: $viewModel.selectedCategory)
-                    .background(.bar)
+                    // Only behind the strip: a bar background extends under the
+                    // navigation bar by default and covers the large title.
+                    .background(.bar, ignoresSafeAreaEdges: [])
             }
             // Search sits over the library rather than replacing it, so
             // closing search returns to the same topic and scroll position.
@@ -326,7 +328,18 @@ struct GuidesView: View {
                         .background(.background)
                 }
             }
+            #if os(iOS)
+            // Always shown, like the Gear Catalog, so search is never hidden
+            // behind a pull-down.
+            .searchable(
+                text: $viewModel.searchText,
+                isPresented: $isSearching,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "Search guides"
+            )
+            #else
             .searchable(text: $viewModel.searchText, isPresented: $isSearching, prompt: "Search guides")
+            #endif
             .task { await viewModel.loadCategories() }
             .task(id: viewModel.selectedCategory) { await viewModel.loadLibrary() }
             .task(id: viewModel.searchText) { await viewModel.searchAfterPause() }
