@@ -94,7 +94,7 @@
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "date-fns": "catalog:",
-    "expo": "^57.0.0",
+    "expo": "^57.0.31",
     "expo-apple-authentication": "~57.0.1",
     "expo-blur": "~57.0.2",
     "expo-clipboard": "~57.0.1",
