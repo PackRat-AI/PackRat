@@ -213,7 +213,7 @@ const toF = (c: number) => (c * 9) / 5 + 32;
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
 /** `YYYY-MM-DD` of `iso` in `timezone` — the key WeatherAPI days are dated by. */
-function localDate(iso: string, timezone: string): string {
+function localDate({ iso, timezone }: { iso: string; timezone: string }): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: timezone,
     year: 'numeric',
@@ -223,7 +223,7 @@ function localDate(iso: string, timezone: string): string {
 }
 
 /** "06:42 AM" in `timezone`, the format WeatherAPI uses for sunrise and sunset. */
-function localClock(iso: string | undefined, timezone: string): string {
+function localClock({ iso, timezone }: { iso: string | undefined; timezone: string }): string {
   if (!iso) return '';
   return new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
@@ -237,14 +237,20 @@ function localClock(iso: string | undefined, timezone: string): string {
  * One WeatherKit day in the WeatherAPI `forecastday` shape both apps already
  * read. Daily only: `hour` is empty and moon data is left out.
  */
-export function toForecastDay(day: WeatherKitDay, timezone: string): WeatherForecastDay {
+export function toForecastDay({
+  day,
+  timezone,
+}: {
+  day: WeatherKitDay;
+  timezone: string;
+}): WeatherForecastDay {
   const condition = CONDITIONS[day.conditionCode] ?? UNKNOWN_CONDITION;
   const chance = Math.round(day.precipitationChance * 100);
   const type = day.precipitationType.toLowerCase();
   const windKph = day.daytimeForecast?.windSpeed ?? 0;
   const avgC = (day.temperatureMax + day.temperatureMin) / 2;
   return {
-    date: localDate(day.forecastStart, timezone),
+    date: localDate({ iso: day.forecastStart, timezone }),
     date_epoch: Math.floor(new Date(day.forecastStart).getTime() / 1000),
     day: {
       maxtemp_c: round1(day.temperatureMax),
@@ -267,8 +273,8 @@ export function toForecastDay(day: WeatherKitDay, timezone: string): WeatherFore
       daily_chance_of_snow: SNOW_TYPES.has(type) ? chance : 0,
     },
     astro: {
-      sunrise: localClock(day.sunrise, timezone),
-      sunset: localClock(day.sunset, timezone),
+      sunrise: localClock({ iso: day.sunrise, timezone }),
+      sunset: localClock({ iso: day.sunset, timezone }),
       moonrise: '',
       moonset: '',
       moon_phase: '',
@@ -308,7 +314,7 @@ export async function extendForecastWithWeatherKit({
       timezone,
     });
     const added = days
-      .map((day) => toForecastDay(day, timezone))
+      .map((day) => toForecastDay({ day, timezone }))
       .filter((day) => day.date > lastDate)
       .slice(0, WEATHERKIT_FORECAST_DAYS - existing.length);
     if (added.length === 0) return forecast;

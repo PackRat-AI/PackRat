@@ -77,7 +77,7 @@ afterEach(() => {
 describe('toForecastDay', () => {
   it('maps a WeatherKit day into the WeatherAPI day shape in the location timezone', async () => {
     const { toForecastDay } = await loadWeatherKit();
-    const day = toForecastDay(weatherKitDay(3), 'America/Denver');
+    const day = toForecastDay({ day: weatherKitDay(3), timezone: 'America/Denver' });
 
     expect(day.date).toBe('2026-07-19');
     expect(day.hour).toEqual([]);
@@ -104,14 +104,14 @@ describe('toForecastDay', () => {
 
   it('counts rain chance only for rain, and both for mixed precipitation', async () => {
     const { toForecastDay } = await loadWeatherKit();
-    const rain = toForecastDay(
-      weatherKitDay(0, { precipitationType: 'rain', conditionCode: 'Rain' }),
-      'UTC',
-    );
-    const mixed = toForecastDay(
-      weatherKitDay(0, { precipitationType: 'mixed', conditionCode: 'WintryMix' }),
-      'UTC',
-    );
+    const rain = toForecastDay({
+      day: weatherKitDay(0, { precipitationType: 'rain', conditionCode: 'Rain' }),
+      timezone: 'UTC',
+    });
+    const mixed = toForecastDay({
+      day: weatherKitDay(0, { precipitationType: 'mixed', conditionCode: 'WintryMix' }),
+      timezone: 'UTC',
+    });
 
     expect([rain.day.daily_chance_of_rain, rain.day.daily_chance_of_snow]).toEqual([60, 0]);
     expect([mixed.day.daily_chance_of_rain, mixed.day.daily_chance_of_snow]).toEqual([60, 60]);
@@ -120,7 +120,10 @@ describe('toForecastDay', () => {
 
   it('falls back to partly cloudy for a condition code it does not know', async () => {
     const { toForecastDay } = await loadWeatherKit();
-    const day = toForecastDay(weatherKitDay(0, { conditionCode: 'SomethingNew' }), 'UTC');
+    const day = toForecastDay({
+      day: weatherKitDay(0, { conditionCode: 'SomethingNew' }),
+      timezone: 'UTC',
+    });
 
     expect(day.day.condition).toEqual({ text: 'Partly cloudy', icon: '', code: 1003 });
   });
