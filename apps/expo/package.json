@@ -135,7 +135,7 @@
     "jotai": "catalog:",
     "jpeg-js": "^0.4.4",
     "leaflet": "catalog:",
-    "llama.rn": "0.10.1",
+    "llama.rn": "0.12.0",
     "nanoid": "^5.1.9",
     "nativewind": "^4.2.3",
     "react": "catalog:",
