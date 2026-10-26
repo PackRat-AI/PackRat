@@ -13,6 +13,7 @@ import { nanoid } from 'nanoid';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ShareIconButton, useShareCard } from '../components/ShareParts';
 import { ProgressBar, SearchField, StatsRow } from '../components/StatsParts';
 import { useParksAndPeaks, useTripStatsRecord } from '../hooks/useTripStats';
 import { goalParkSelection$ } from '../lib/parkSelection';
@@ -35,6 +36,7 @@ export function ParksScreen() {
   const { colors } = useColorScheme();
   const record = useTripStatsRecord();
   const parksAndPeaks = useParksAndPeaks(record);
+  const shareCard = useShareCard();
   const [query, setQuery] = useState('');
   const visited = visitedParks(parksAndPeaks).length;
   const parks = useMemo(() => {
@@ -49,7 +51,23 @@ export function ParksScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <Stack.Screen options={{ ...getAppBarOptions(), title: t('tripStats.parks.title') }} />
+      <Stack.Screen
+        options={{
+          ...getAppBarOptions(),
+          title: t('tripStats.parks.title'),
+          headerRight: () => (
+            <ShareIconButton
+              onPress={() =>
+                shareCard({
+                  kind: 'parks',
+                  visited: visitedParks(parksAndPeaks).map((status) => status.park.code),
+                })
+              }
+              testID={testIds.tripStats.shareParksBtn}
+            />
+          ),
+        }}
+      />
       <FlatList
         data={parks}
         keyExtractor={(status) => status.park.code}

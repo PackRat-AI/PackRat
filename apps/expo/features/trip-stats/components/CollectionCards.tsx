@@ -4,7 +4,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { formatDay, formatList } from '../lib/useStatsFormat';
@@ -18,7 +18,7 @@ import {
   peakCount,
   visitedParks,
 } from '../utils/parksAndPeaks';
-import type { Coordinate } from '../utils/polyline';
+import { fitMapRegion, mapCamera } from '../utils/shareMap';
 import type { TripPlaces } from '../utils/tripPlaces';
 import type { TripStatsRecord } from '../utils/tripStats';
 import type { TripTrailsRecord } from '../utils/tripTrails';
@@ -142,24 +142,13 @@ export function TrailsCard({
 
 const MAP_HEIGHT = 220;
 
-/** Fits every route and trip location, with a little room at the edges. */
-function regionFor(points: readonly Coordinate[]) {
-  const lats = points.map((point) => point.latitude);
-  const lngs = points.map((point) => point.longitude);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  return {
-    latitude: (minLat + maxLat) / 2,
-    longitude: (minLng + maxLng) / 2,
-    latitudeDelta: Math.max((maxLat - minLat) * 1.4, 0.2),
-    longitudeDelta: Math.max((maxLng - minLng) * 1.4, 0.2),
-  };
-}
+// The narrowest the stats map gets, so a single trip shows its surroundings.
+const MAP_MIN_SPAN_METRES = 20_000;
+// Google's default pin stands about 40dp above its point.
+const PIN_INSET = 40 / MAP_HEIGHT;
 
 /** Routes as lines and trip locations as pins, on a static map that scrolls with the page. */
-export function TripsMapCard({ record }: { record: TripStatsRecord }) {
+export function TripsMapCard({ record, action }: { record: TripStatsRecord; action?: ReactNode }) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
   const pins = useMemo(
@@ -175,35 +164,59 @@ export function TripsMapCard({ record }: { record: TripStatsRecord }) {
     () => [...pins, ...record.routes.flatMap((route) => route.coordinates)],
     [pins, record.routes],
   );
+  // The frame depends on the map's shape, so the map waits for its width and remounts if it changes.
+  const [width, setWidth] = useState(0);
+  const region = useMemo(
+    () =>
+      width > 0
+        ? fitMapRegion({
+            points,
+            aspect: width / MAP_HEIGHT,
+            minSpanMetres: MAP_MIN_SPAN_METRES,
+            topInset: PIN_INSET,
+          })
+        : null,
+    [points, width],
+  );
+  const lines = record.routes.map((route) => (
+    <Polyline
+      key={route.id}
+      coordinates={route.coordinates}
+      strokeColor={colors.primary}
+      strokeWidth={3}
+    />
+  ));
+  const markers = pins.map((pin) => (
+    <Marker
+      key={pin.id}
+      coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
+      title={pin.name}
+    />
+  ));
   if (points.length === 0) return null;
+  const map = region ? (
+    <MapView
+      key={width}
+      style={{ flex: 1 }}
+      initialCamera={mapCamera({ region, width, height: MAP_HEIGHT })}
+      scrollEnabled={false}
+      zoomEnabled={false}
+      rotateEnabled={false}
+      pitchEnabled={false}
+      toolbarEnabled={false}
+    >
+      {lines}
+      {markers}
+    </MapView>
+  ) : null;
   return (
-    <StatsCard title={t('tripStats.map.title')} hostsNativeView>
-      <View className="overflow-hidden rounded-xl" style={{ height: MAP_HEIGHT }}>
-        <MapView
-          style={{ flex: 1 }}
-          initialRegion={regionFor(points)}
-          scrollEnabled={false}
-          zoomEnabled={false}
-          rotateEnabled={false}
-          pitchEnabled={false}
-          toolbarEnabled={false}
-        >
-          {record.routes.map((route) => (
-            <Polyline
-              key={route.id}
-              coordinates={route.coordinates}
-              strokeColor={colors.primary}
-              strokeWidth={3}
-            />
-          ))}
-          {pins.map((pin) => (
-            <Marker
-              key={pin.id}
-              coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
-              title={pin.name}
-            />
-          ))}
-        </MapView>
+    <StatsCard title={t('tripStats.map.title')} action={action} hostsNativeView>
+      <View
+        className="overflow-hidden rounded-xl"
+        style={{ height: MAP_HEIGHT, backgroundColor: colors.grey6 }}
+        onLayout={(event) => setWidth(Math.round(event.nativeEvent.layout.width))}
+      >
+        {map}
       </View>
     </StatsCard>
   );
@@ -219,6 +232,7 @@ export function CollectionCards({
   followGoals,
   unit,
   showLifetime,
+  mapAction,
 }: {
   record: TripStatsRecord;
   places: TripPlaces;
@@ -229,11 +243,13 @@ export function CollectionCards({
   unit: TripDistanceUnit;
   /** Parks and peaks are lifetime collections, shown only while the record isn't filtered. */
   showLifetime: boolean;
+  /** The map card's share action. */
+  mapAction?: ReactNode;
 }) {
   const router = useRouter();
   return (
     <>
-      <TripsMapCard record={record} />
+      <TripsMapCard record={record} action={mapAction} />
       <PlacesCard
         places={places}
         scope={record.scope}

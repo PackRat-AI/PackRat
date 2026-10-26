@@ -1,13 +1,14 @@
 import { use$ } from '@legendapp/state/react';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Button } from '@packrat/ui/src/button';
+import { createDropdownItem, DropdownMenu } from '@packrat/ui/src/dropdown-menu';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
-import { Fragment, useRef, useState } from 'react';
+import { Fragment, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CollectionCards } from '../components/CollectionCards';
@@ -23,7 +24,14 @@ import {
   TotalsCard,
 } from '../components/RecordCards';
 import { ScopeBar } from '../components/ScopeBar';
+import {
+  ShareIconButton,
+  useOpenReview,
+  useShareCard,
+  YearInReviewBanner,
+} from '../components/ShareParts';
 import { useDistanceUnit } from '../hooks/useDistanceUnit';
+import { useTripExport } from '../hooks/useTripExport';
 import {
   useFollowGoals,
   useGoalProgress,
@@ -37,6 +45,7 @@ import {
 import { useScopeTitle } from '../lib/useStatsFormat';
 import { tripStatsSettingsStore } from '../store/settings';
 import { ALL_SCOPE, isAllScope, type Scope } from '../utils/tripStats';
+import { computeYearInReview, offeredReviewYear } from '../utils/yearInReview';
 
 export function TripStatsScreen() {
   const { t } = useTranslation();
@@ -60,6 +69,9 @@ export function TripStatsScreen() {
   const places = useTripPlaces(record);
   const idleGear = useIdleGear(record);
   const settings = use$(tripStatsSettingsStore);
+  const shareCard = useShareCard();
+  const openReview = useOpenReview();
+  const exportTrips = useTripExport();
 
   const addGoal = () => router.push('/trip-stats/goal');
   const comeback = record.comeback;
@@ -71,6 +83,33 @@ export function TripStatsScreen() {
   const isAll = isAllScope(scope);
   const scopeTitle = useScopeTitle(scope);
   const showScopeBar = record.availableYears.length > 1 || record.availableActivities.length > 0;
+  // Debug builds offer the review in any month, so it can be seen and tested all year.
+  const reviewYear = offeredReviewYear({ now: new Date(), force: __DEV__ });
+  const review = useMemo(
+    () =>
+      reviewYear == null
+        ? null
+        : computeYearInReview({
+            year: reviewYear,
+            finished: record.allFinished,
+            parksAndPeaks,
+            goals,
+          }),
+    [reviewYear, record.allFinished, parksAndPeaks, goals],
+  );
+  // The headline card shares as all-time totals, or as a year when only a year is picked.
+  const shareTotals =
+    isAll || (scope.year != null && scope.activity == null)
+      ? () =>
+          shareCard(
+            scope.year == null
+              ? { kind: 'totals', totals: record.totals }
+              : { kind: 'year', year: scope.year, totals: record.totals, lastYear: null },
+          )
+      : null;
+  const mapPins = record.finished.flatMap((trip) =>
+    trip.trip.location ? [trip.trip.location] : [],
+  );
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']} testID={testIds.tripStats.screen}>
@@ -80,16 +119,48 @@ export function TripStatsScreen() {
           title: t('tripStats.title'),
           headerRight: record.hasTrips
             ? () => (
-                <Pressable
-                  onPress={addGoal}
-                  hitSlop={8}
-                  className="p-3"
-                  accessibilityRole="button"
-                  accessibilityLabel={t('tripStats.addGoal')}
-                  android_ripple={{ borderless: true, color: colors.grey5 }}
-                >
-                  <Icon name="flag-plus-outline" size={24} color={colors.foreground} />
-                </Pressable>
+                <View className="flex-row items-center">
+                  <Pressable
+                    onPress={addGoal}
+                    hitSlop={8}
+                    className="p-3"
+                    accessibilityRole="button"
+                    accessibilityLabel={t('tripStats.addGoal')}
+                    android_ripple={{ borderless: true, color: colors.grey5 }}
+                  >
+                    <Icon name="flag-plus-outline" size={24} color={colors.foreground} />
+                  </Pressable>
+                  <DropdownMenu
+                    items={[
+                      ...(review
+                        ? [
+                            createDropdownItem({
+                              actionKey: 'review',
+                              title: t('tripStats.review.menu', { year: review.year }),
+                            }),
+                          ]
+                        : []),
+                      createDropdownItem({ actionKey: 'csv', title: t('tripStats.export.csv') }),
+                      createDropdownItem({ actionKey: 'gpx', title: t('tripStats.export.gpx') }),
+                    ]}
+                    onItemPress={(item) => {
+                      if (item.actionKey === 'review' && review) openReview(review);
+                      else if (item.actionKey === 'csv') exportTrips('csv');
+                      else if (item.actionKey === 'gpx') exportTrips('gpx');
+                    }}
+                  >
+                    {/* A plain View: the menu wraps its trigger in its own Pressable. */}
+                    <View
+                      className="p-3"
+                      accessible
+                      accessibilityRole="button"
+                      accessibilityLabel={t('tripStats.moreOptions')}
+                      testID={testIds.tripStats.menu}
+                    >
+                      <Icon name="dots-vertical" size={24} color={colors.foreground} />
+                    </View>
+                  </DropdownMenu>
+                </View>
               )
             : undefined,
         }}
@@ -137,7 +208,22 @@ export function TripStatsScreen() {
               // Keyed by the scope so the cards remount: a Compose card sizes to its content once,
               // and one that grows in place (a cleared filter's longer list) stays clipped.
               <Fragment key={`${scope.year ?? 'all'}-${scope.activity ?? 'all'}`}>
-                <TotalsCard title={scopeTitle} totals={record.totals} unit={unit} />
+                {isAll && review ? (
+                  <YearInReviewBanner review={review} onPress={() => openReview(review)} />
+                ) : null}
+                <TotalsCard
+                  title={scopeTitle}
+                  totals={record.totals}
+                  unit={unit}
+                  action={
+                    shareTotals ? (
+                      <ShareIconButton
+                        onPress={shareTotals}
+                        testID={testIds.tripStats.shareTotalsBtn}
+                      />
+                    ) : undefined
+                  }
+                />
                 {isAll && comeback ? (
                   <ComebackCard
                     comeback={comeback}
@@ -159,9 +245,27 @@ export function TripStatsScreen() {
                     onEdit={(goalId) =>
                       router.push({ pathname: '/trip-stats/goal', params: { goalId } })
                     }
+                    onShare={(progress) => shareCard({ kind: 'goal', progress })}
                   />
                 ) : null}
-                {isAll ? <ThisYearCard record={record} /> : null}
+                {isAll ? (
+                  <ThisYearCard
+                    record={record}
+                    action={
+                      <ShareIconButton
+                        onPress={() =>
+                          shareCard({
+                            kind: 'year',
+                            year: new Date().getFullYear(),
+                            totals: record.thisYear,
+                            lastYear: record.lastYearToDate,
+                          })
+                        }
+                        testID={testIds.tripStats.shareYearBtn}
+                      />
+                    }
+                  />
+                ) : null}
                 <MonthsCard record={record} />
                 <ActivitiesCard
                   record={record}
@@ -183,6 +287,20 @@ export function TripStatsScreen() {
                   followGoals={followGoals}
                   unit={unit}
                   showLifetime={isAll}
+                  mapAction={
+                    <ShareIconButton
+                      onPress={() =>
+                        shareCard({
+                          kind: 'map',
+                          routes: record.routes.map((route) => route.coordinates),
+                          pins: mapPins,
+                          trips: record.totals.trips,
+                          distance: record.totals.distance,
+                        })
+                      }
+                      testID={testIds.tripStats.shareMapBtn}
+                    />
+                  }
                 />
                 <TopGearCard record={record} />
                 {isAll ? (
