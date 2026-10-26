@@ -118,7 +118,9 @@ struct GuideDetailView: View {
                 .font(.title2.bold())
                 .accessibilityAddTraits(.isHeader)
             ForEach(related) { item in
-                NavigationLink(value: item) {
+                NavigationLink {
+                    GuideDetailView(guide: item)
+                } label: {
                     HStack(spacing: 12) {
                         GuideRowView(guide: item, showsSummary: false)
                         Image(systemName: "chevron.right")

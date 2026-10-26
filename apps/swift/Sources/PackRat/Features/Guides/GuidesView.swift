@@ -310,9 +310,6 @@ struct GuidesView: View {
             }
         }
         .navigationTitle("Guides")
-        .navigationDestination(for: Guide.self) { guide in
-            GuideDetailView(guide: guide)
-        }
     }
 
     private var library: some View {
@@ -335,25 +332,28 @@ struct GuidesView: View {
             .task(id: viewModel.searchText) { await viewModel.searchAfterPause() }
     }
 
-    @ViewBuilder
+    /// One List for every phase, with states laid over it: swapping the
+    /// scroll view underneath the navigation bar loses its large title.
     private var libraryContent: some View {
         let pager = viewModel.library
-        switch pager.phase {
-        case .idle, .loading:
-            GuideListPlaceholder()
-        case .failed:
-            GuidesLoadFailedView(title: "Couldn’t Load Guides") {
-                await viewModel.loadLibrary()
+        return List {
+            switch pager.phase {
+            case .idle, .loading: GuidePlaceholderRows()
+            case .loaded: GuideRows(pager: pager)
+            case .failed: EmptyView()
             }
-        case .loaded where pager.items.isEmpty:
-            emptyLibrary
-        case .loaded:
-            List {
-                GuideRows(pager: pager)
+        }
+        .listStyle(.plain)
+        .refreshable { await viewModel.loadLibrary(refreshing: true) }
+        .accessibilityIdentifier("guides_list")
+        .overlay {
+            if pager.phase == .failed {
+                GuidesLoadFailedView(title: "Couldn’t Load Guides") {
+                    await viewModel.loadLibrary()
+                }
+            } else if pager.phase == .loaded, pager.items.isEmpty {
+                emptyLibrary
             }
-            .listStyle(.plain)
-            .refreshable { await viewModel.loadLibrary(refreshing: true) }
-            .accessibilityIdentifier("guides_list")
         }
     }
 
@@ -384,34 +384,42 @@ private struct GuideSearchResultsView: View {
 
     var body: some View {
         let pager = viewModel.search
-        if viewModel.trimmedQuery.isEmpty {
-            ContentUnavailableView(
-                "Search Guides",
-                systemImage: "magnifyingglass",
-                description: Text("Search by topic, gear or destination.")
-            )
-        } else if viewModel.isSearchPending || pager.phase == .loading || pager.phase == .idle {
-            GuideListPlaceholder()
-        } else if pager.phase == .failed {
-            GuidesLoadFailedView(title: "Couldn’t Load Guides") {
-                await viewModel.runSearch()
-            }
-        } else if pager.items.isEmpty {
-            ContentUnavailableView {
-                Label("No Results for “\(viewModel.trimmedQuery)”", systemImage: "magnifyingglass")
-            } description: {
-                Text("Try another word, or browse by topic.")
-            }
-        } else {
-            List {
+        let isWaiting = viewModel.isSearchPending || pager.phase == .loading || pager.phase == .idle
+        List {
+            if viewModel.trimmedQuery.isEmpty {
+                EmptyView()
+            } else if isWaiting {
+                GuidePlaceholderRows()
+            } else if pager.phase == .loaded, !pager.items.isEmpty {
                 Section {
                     GuideRows(pager: pager)
                 } header: {
                     Text("^[\(pager.totalCount) result](inflect: true)")
                 }
             }
-            .listStyle(.plain)
-            .accessibilityIdentifier("guides_search_results")
+        }
+        .listStyle(.plain)
+        .accessibilityIdentifier("guides_search_results")
+        .overlay {
+            if viewModel.trimmedQuery.isEmpty {
+                ContentUnavailableView(
+                    "Search Guides",
+                    systemImage: "magnifyingglass",
+                    description: Text("Search by topic, gear or destination.")
+                )
+            } else if isWaiting {
+                EmptyView()
+            } else if pager.phase == .failed {
+                GuidesLoadFailedView(title: "Couldn’t Load Guides") {
+                    await viewModel.runSearch()
+                }
+            } else if pager.items.isEmpty {
+                ContentUnavailableView {
+                    Label("No Results for “\(viewModel.trimmedQuery)”", systemImage: "magnifyingglass")
+                } description: {
+                    Text("Try another word, or browse by topic.")
+                }
+            }
         }
     }
 }
@@ -425,7 +433,11 @@ private struct GuideRows: View {
 
     var body: some View {
         ForEach(pager.items) { guide in
-            NavigationLink(value: guide) {
+            // A destination link, not `NavigationLink(value:)`: the iPhone
+            // Home stack binds a typed `[NavItem]` path, which cannot hold a Guide.
+            NavigationLink {
+                GuideDetailView(guide: guide)
+            } label: {
                 GuideRowView(guide: guide)
             }
             .accessibilityIdentifier("guide_row_\(guide.id)")
@@ -455,16 +467,14 @@ private struct GuideRows: View {
 
 /// Placeholder rows in the same shape as real ones, so nothing moves when the
 /// first page arrives.
-private struct GuideListPlaceholder: View {
+private struct GuidePlaceholderRows: View {
     var body: some View {
-        List(GuideRowView.placeholders) { guide in
+        ForEach(GuideRowView.placeholders) { guide in
             GuideRowView(guide: guide)
         }
-        .listStyle(.plain)
         .redacted(reason: .placeholder)
         .disabled(true)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Loading guides")
+        .accessibilityHidden(true)
     }
 }
 
