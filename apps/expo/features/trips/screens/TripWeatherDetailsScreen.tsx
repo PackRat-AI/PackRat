@@ -31,6 +31,7 @@ export default function TripWeatherDetailsScreen() {
   const latitude = Number(lat);
   const longitude = Number(lon);
   const tripLocationName = locationName;
+  const { displayTemperature } = useTemperatureUnit();
 
   const [weather, setWeather] = useState<WeatherAPIForecastResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,7 +96,6 @@ export default function TripWeatherDetailsScreen() {
 
   const location = weather.location;
   const current = weather.current;
-  const { displayTemperature } = useTemperatureUnit();
 
   // Use the trip's location name if provided, otherwise fall back to weather API location
   const displayLocationName = tripLocationName || location.name;
