@@ -216,6 +216,11 @@ interface Tile {
   label: string;
 }
 
+interface Statement {
+  figure: string;
+  rest: string;
+}
+
 function CardBody({
   content,
   format,
@@ -283,7 +288,7 @@ function CardBody({
     </View>
   );
 
-  const statement = (figure: string, rest: string) => (
+  const statement = ({ figure, rest }: Statement) => (
     <View style={{ gap: 4 }}>
       <CardText size={isStory ? 64 : 42} weight="900" lines={1} shadow={isSticker}>
         {figure}
@@ -554,7 +559,7 @@ function ReviewBody({
   unit: TripDistanceUnit;
   tiles: (items: Tile[]) => ReactNode;
   totalTiles: (totals: Totals) => Tile[];
-  statement: (figure: string, rest: string) => ReactNode;
+  statement: (parts: Statement) => ReactNode;
 }) {
   const { t } = useTranslation();
   const isStory = format === 'story';
@@ -578,13 +583,13 @@ function ReviewBody({
       if (!busiest) return null;
       return (
         <View style={{ gap: 16 }}>
-          {statement(
-            formatMonthName(busiest.month.getMonth() + 1),
-            t('tripStats.review.busiestBody', {
+          {statement({
+            figure: formatMonthName(busiest.month.getMonth() + 1),
+            rest: t('tripStats.review.busiestBody', {
               trips: t('tripStats.countTrips', { count: busiest.trips }),
               nights: t('tripStats.countNights', { count: busiest.nights }),
             }),
-          )}
+          })}
           <MonthBars review={review} highlight={busiest.month} height={isStory ? 110 : 60} />
         </View>
       );
@@ -593,20 +598,23 @@ function ReviewBody({
       return (
         <View style={{ gap: isStory ? 26 : 14 }}>
           {review.longestTrip
-            ? statement(
-                t('tripStats.countNights', { count: review.longestTrip.nights }),
-                options.showNames
+            ? statement({
+                figure: t('tripStats.countNights', { count: review.longestTrip.nights }),
+                rest: options.showNames
                   ? t('tripStats.review.longestNamed', { name: review.longestTrip.trip.name })
                   : t('tripStats.review.longest'),
-              )
+              })
             : null}
           {review.farthestTrip?.trip.log?.distanceMeters != null
-            ? statement(
-                formatDistance({ metres: review.farthestTrip.trip.log.distanceMeters, unit }),
-                options.showNames
+            ? statement({
+                figure: formatDistance({
+                  metres: review.farthestTrip.trip.log.distanceMeters,
+                  unit,
+                }),
+                rest: options.showNames
                   ? t('tripStats.review.farthestNamed', { name: review.farthestTrip.trip.name })
                   : t('tripStats.review.farthest'),
-              )
+              })
             : null}
         </View>
       );
@@ -614,10 +622,10 @@ function ReviewBody({
       return (
         <View style={{ gap: isStory ? 22 : 12 }}>
           {review.newPlaces > 0
-            ? statement(
-                formatNumber(review.newPlaces),
-                t('tripStats.review.newPlaces', { count: review.newPlaces }),
-              )
+            ? statement({
+                figure: formatNumber(review.newPlaces),
+                rest: t('tripStats.review.newPlaces', { count: review.newPlaces }),
+              })
             : null}
           {review.newParks.length > 0 ? (
             <View style={{ gap: 6 }}>
@@ -636,10 +644,10 @@ function ReviewBody({
     case 'summits':
       return (
         <View style={{ gap: isStory ? 22 : 12 }}>
-          {statement(
-            formatNumber(review.peakCount),
-            t('tripStats.review.summitsReached', { count: review.peakCount }),
-          )}
+          {statement({
+            figure: formatNumber(review.peakCount),
+            rest: t('tripStats.review.summitsReached', { count: review.peakCount }),
+          })}
           {review.highest?.summit.elevationMeters != null ? (
             <View style={{ gap: 2 }}>
               <CardText size={15} weight="700" color={SHARE_PALETTE.mint} shadow={isSticker}>
@@ -693,7 +701,7 @@ function GoalsMet({
 }: {
   review: YearInReview;
   format: ShareFormat;
-  statement: (figure: string, rest: string) => ReactNode;
+  statement: (parts: Statement) => ReactNode;
 }) {
   const { t } = useTranslation();
   const isStory = format === 'story';
@@ -701,10 +709,10 @@ function GoalsMet({
   const { goalsMet } = review;
   return (
     <View style={{ gap: isStory ? 18 : 10 }}>
-      {statement(
-        formatNumber(goalsMet.length),
-        t('tripStats.review.goalsMet', { count: goalsMet.length }),
-      )}
+      {statement({
+        figure: formatNumber(goalsMet.length),
+        rest: t('tripStats.review.goalsMet', { count: goalsMet.length }),
+      })}
       {goalsMet.slice(0, isStory ? 5 : 2).map((progress) => (
         <View key={progress.goal.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <CardText size={17} weight="900" color={SHARE_PALETTE.mint} shadow={isSticker}>
