@@ -1,6 +1,54 @@
 import type { TrailConditionReport } from '@packrat/db/schema';
-import { describe, expect, it } from 'vitest';
-import { distanceMeters, rankNearbyReports, TRIP_REPORT_LIMIT } from '../tripTrailConditions';
+import { sql } from 'drizzle-orm';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+/**
+ * Every query starts with `db.tag(label)`; the fake db resolves each tagged
+ * chain with the rows queued for that label, defaulting to `[]`.
+ */
+const mocks = vi.hoisted(() => ({
+  labels: [] as string[],
+  results: new Map<string, unknown[]>(),
+  captureApiException: vi.fn(),
+}));
+
+vi.mock('@packrat/api/db', () => ({
+  createDb: () => ({
+    tag: (label: string) => {
+      mocks.labels.push(label);
+      const chain: object = new Proxy(
+        {},
+        {
+          get(_target, prop) {
+            if (prop === 'then') {
+              const value = mocks.results.get(label) ?? [];
+              return (resolve: (v: unknown) => void) => resolve(value);
+            }
+            return () => chain;
+          },
+        },
+      );
+      return chain;
+    },
+  }),
+}));
+
+vi.mock('@packrat/api/services/reportVisibility', () => ({
+  visibleToViewer: () => sql`true`,
+}));
+
+vi.mock('@packrat/api/utils/sentry', () => ({
+  captureApiException: mocks.captureApiException,
+}));
+
+import { createDb } from '@packrat/api/db';
+import type { TrailDb } from '../trailIndex';
+import {
+  distanceMeters,
+  getTripTrailConditions,
+  rankNearbyReports,
+  TRIP_REPORT_LIMIT,
+} from '../tripTrailConditions';
 
 const YOSEMITE_VALLEY = { latitude: 37.7459, longitude: -119.5332 };
 // A pin about 4 km east of the valley.
@@ -108,5 +156,102 @@ describe('rankNearbyReports', () => {
     });
 
     expect(ranked.map((r) => r.id)).toEqual(['t0', 't1', 't2', 't3', 't4']);
+  });
+});
+
+describe('getTripTrailConditions', () => {
+  const db = createDb();
+  const trailExecute = vi.fn();
+  const trailDb: TrailDb = { tag: () => ({ execute: trailExecute }) };
+  const trip = { id: 'trip-1', trailId: null, location: YOSEMITE_VALLEY };
+
+  beforeEach(() => {
+    mocks.labels.length = 0;
+    mocks.results.clear();
+    mocks.captureApiException.mockReset();
+    trailExecute.mockReset();
+  });
+
+  it("shows the named trail's latest reports, without distances", async () => {
+    mocks.results.set('tripTrailConditions.trailReports', [report({ id: 'a', trailId: 't1' })]);
+
+    const result = await getTripTrailConditions({
+      db,
+      trailDb,
+      trip: { ...trip, trailId: 't1' },
+      viewerId: 'viewer',
+    });
+
+    expect(result).toEqual({
+      scope: 'trail',
+      reports: [{ ...report({ id: 'a', trailId: 't1' }), distanceM: null }],
+    });
+    expect(trailExecute).toHaveBeenCalledTimes(0);
+  });
+
+  it('has nowhere to look when the trip names no trail and has no location', async () => {
+    const result = await getTripTrailConditions({
+      db,
+      trailDb,
+      trip: { ...trip, location: null },
+      viewerId: 'viewer',
+    });
+
+    expect(result).toEqual({ scope: 'none', reports: [] });
+    expect(mocks.labels).toEqual([]);
+  });
+
+  it('ranks reports on trails within the radius alongside nearby pins', async () => {
+    trailExecute.mockResolvedValueOnce({
+      rows: [
+        { id: 'near-trail', distance_m: 1_000 },
+        { id: 'far-trail', distance_m: 40_000 },
+      ],
+    });
+    mocks.results.set('tripTrailConditions.nearbyTrailReports', [
+      report({ id: 'trail-report', trailId: 'near-trail' }),
+    ]);
+    mocks.results.set('tripTrailConditions.nearbyPinReports', [report({ id: 'pin', ...PIN })]);
+
+    const result = await getTripTrailConditions({ db, trailDb, trip, viewerId: 'viewer' });
+
+    expect(result.scope).toBe('nearby');
+    expect(result.reports.map((r) => [r.id, r.distanceM])).toEqual([
+      ['trail-report', 1000],
+      ['pin', Math.round(distanceMeters({ from: YOSEMITE_VALLEY, to: PIN }))],
+    ]);
+  });
+
+  it('falls back to pins and reports the error when the trail database fails', async () => {
+    const outage = new Error('trail db down');
+    trailExecute.mockRejectedValueOnce(outage);
+    mocks.results.set('tripTrailConditions.nearbyPinReports', [report({ id: 'pin', ...PIN })]);
+
+    const result = await getTripTrailConditions({ db, trailDb, trip, viewerId: 'viewer' });
+
+    expect(result.reports.map((r) => r.id)).toEqual(['pin']);
+    expect(mocks.captureApiException).toHaveBeenCalledWith({
+      error: outage,
+      operation: 'tripTrailConditions.nearbyTrails',
+      extra: { tripId: 'trip-1' },
+    });
+    expect(mocks.labels).not.toContain('tripTrailConditions.nearbyTrailReports');
+  });
+
+  it('uses pins only when no trail database is configured', async () => {
+    mocks.results.set('tripTrailConditions.nearbyPinReports', [report({ id: 'pin', ...PIN })]);
+
+    const result = await getTripTrailConditions({ db, trailDb: null, trip, viewerId: 'viewer' });
+
+    expect(result).toEqual({
+      scope: 'nearby',
+      reports: [
+        {
+          ...report({ id: 'pin', ...PIN }),
+          distanceM: Math.round(distanceMeters({ from: YOSEMITE_VALLEY, to: PIN })),
+        },
+      ],
+    });
+    expect(trailExecute).toHaveBeenCalledTimes(0);
   });
 });
