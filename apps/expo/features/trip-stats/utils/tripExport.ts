@@ -194,3 +194,17 @@ export function exportFileName({
 }): string {
   return `${base} ${format(now, 'yyyy-MM-dd')}.${extension}`;
 }
+
+// Characters Android, Windows or a chat app would reject or mangle in a file name.
+const UNSAFE_FILE_CHARACTERS = /[\\/:*?"<>|]+/g;
+const RUNS_OF_SPACE = /\s+/g;
+const MAX_FILE_NAME = 96;
+
+/**
+ * A shared card's file name, read by whoever receives it: the card's own title, with characters a
+ * file system rejects dropped, e.g. "PackRat 2026 in Review - Busiest Month.png".
+ */
+export function shareImageFileName(title: string): string {
+  const name = title.replace(UNSAFE_FILE_CHARACTERS, ' ').replace(RUNS_OF_SPACE, ' ').trim();
+  return `${name.slice(0, MAX_FILE_NAME).trim() || 'PackRat'}.png`;
+}

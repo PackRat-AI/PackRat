@@ -111,7 +111,7 @@ export function ShareCard({
           <>
             <View style={{ flex: 1 }} />
             <CardText size={12} weight="500" color="rgba(255,255,255,0.6)">
-              packrat.world
+              packratai.com
             </CardText>
           </>
         )}

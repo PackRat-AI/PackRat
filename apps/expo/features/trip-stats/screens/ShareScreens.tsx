@@ -7,6 +7,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
+import { File, Paths } from 'expo-file-system';
 import { Stack, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useRef, useState } from 'react';
@@ -33,11 +34,14 @@ import {
   type ShareFormat,
   type ShareOptions,
 } from '../lib/share';
-import { PRIVATE_SPAN_METRES, shareMapRegion } from '../utils/shareMap';
+import { fitMapRegion, PRIVATE_SPAN_METRES } from '../utils/shareMap';
+import { shareImageFileName } from '../utils/tripExport';
 import { type ReviewPage, reviewPages, type YearInReview } from '../utils/yearInReview';
 
 const PREVIEW_HEIGHT = 420;
 /** Long enough for slow tiles on mobile data; past it the card shares without the map. */
+// The filled button's label colour (`--primary-foreground`), white in both themes.
+const ON_PRIMARY = '#FFFFFF';
 const MAP_TIMEOUT_MS = 10_000;
 
 /**
@@ -102,7 +106,17 @@ function ShareCardEditor({ content }: { content: ShareContent }) {
         width: Math.round(cardSize.width * CARD_SCALE),
         height: Math.round(cardSize.height * CARD_SCALE),
       });
-      await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: title });
+      // Named after the card, since the name is what the person it's sent to sees first.
+      const named = new File(
+        Paths.cache,
+        shareImageFileName(
+          content.kind === 'review'
+            ? t('tripStats.share.reviewFileName', { year: content.review.year, title })
+            : t('tripStats.share.fileName', { title }),
+        ),
+      );
+      await new File(uri).move(named, { overwrite: true });
+      await Sharing.shareAsync(named.uri, { mimeType: 'image/png', dialogTitle: title });
     } catch (error) {
       Sentry.captureException(error, {
         tags: { feature: 'tripStats', action: 'shareCard' },
@@ -210,9 +224,11 @@ function ShareCardEditor({ content }: { content: ShareContent }) {
           onPress={share}
           disabled={!ready || !cardSize || sharing}
           testID={testIds.tripStats.shareSendBtn}
+          // M3 buttons with an icon: 18dp icon in the label's colour, 8dp before the label.
+          className="gap-2"
         >
-          <Icon name="share-variant" size={20} color={colors.background} />
-          <Text>{t('tripStats.share.send')}</Text>
+          <Icon name="share-variant" size={18} color={ON_PRIMARY} />
+          <Text className="font-medium text-primary-foreground">{t('tripStats.share.send')}</Text>
         </Button>
       </View>
     </SafeAreaView>
@@ -281,7 +297,7 @@ function useMapSnapshot({
   }, [isMap, key]);
 
   if (content.kind !== 'map') return { element: null, image: null, failed: false };
-  const region = shareMapRegion({
+  const region = fitMapRegion({
     points: [...content.routes.flat(), ...content.pins],
     aspect,
     minSpanMetres: zoomClose ? 0 : PRIVATE_SPAN_METRES,
@@ -473,7 +489,7 @@ function ReviewPager({ review }: { review: YearInReview }) {
           accessibilityRole="button"
           testID={testIds.tripStats.reviewShareBtn}
         >
-          <Icon name="share-variant" size={20} color="#000000" />
+          <Icon name="share-variant" size={18} color="#000000" />
           <Text variant="callout" className="font-medium" style={{ color: '#000000' }}>
             {t('tripStats.share.action')}
           </Text>

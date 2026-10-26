@@ -2,7 +2,7 @@ import type { TripSummit } from '@packrat/schemas/trips';
 import { describe, expect, it } from 'vitest';
 import type { GoalProgress } from '../goalProgress';
 import type { Ascent, NationalPark, ParksAndPeaks } from '../parksAndPeaks';
-import { PRIVATE_SPAN_METRES, shareMapRegion } from '../shareMap';
+import { fitMapRegion, type MapRegion, PRIVATE_SPAN_METRES } from '../shareMap';
 import { finishedTrips, type StatsTrip } from '../tripStats';
 import { computeYearInReview, offeredReviewYear, reviewPages } from '../yearInReview';
 
@@ -227,21 +227,71 @@ describe('computeYearInReview', () => {
   });
 });
 
-describe('shareMapRegion', () => {
-  it('holds a lone point at the private span, centred, widened to the frame', () => {
-    const region = shareMapRegion({
+const mercator = (latitude: number) => Math.log(Math.tan(Math.PI / 4 + (latitude * Math.PI) / 360));
+
+function edges(region: MapRegion) {
+  return {
+    north: region.latitude + region.latitudeDelta / 2,
+    south: region.latitude - region.latitudeDelta / 2,
+    east: region.longitude + region.longitudeDelta / 2,
+    west: region.longitude - region.longitudeDelta / 2,
+  };
+}
+
+// Trips from Patagonia to the Canadian Rockies: the spread that knocked pins off the old frame.
+const FAR_APART = [
+  { latitude: -50.94, longitude: -73.41 },
+  { latitude: 51.36, longitude: -116.33 },
+  { latitude: 46.79, longitude: -121.74 },
+  { latitude: 35.61, longitude: -83.49 },
+];
+
+describe('fitMapRegion', () => {
+  it('holds a lone point at the private span, centred, in the frame shape', () => {
+    const region = fitMapRegion({
       points: [{ latitude: 0, longitude: 10 }],
       aspect: 2,
       minSpanMetres: PRIVATE_SPAN_METRES,
     });
-    expect(region?.latitude).toBe(0);
-    expect(region?.longitude).toBe(10);
-    expect((region?.latitudeDelta ?? 0) * 111_320).toBeCloseTo(PRIVATE_SPAN_METRES, 0);
-    expect((region?.longitudeDelta ?? 0) / (region?.latitudeDelta ?? 1)).toBeCloseTo(2, 5);
+    expect(region?.latitude).toBeCloseTo(0, 10);
+    expect(region?.longitude).toBeCloseTo(10, 10);
+    expect((region?.latitudeDelta ?? 0) * 111_320).toBeCloseTo(PRIVATE_SPAN_METRES, -3);
+    expect((region?.longitudeDelta ?? 0) / (region?.latitudeDelta ?? 1)).toBeCloseTo(2, 2);
+  });
+
+  it('keeps every point inside the frame and centres them on screen when they span a hemisphere', () => {
+    const region = fitMapRegion({ points: FAR_APART, aspect: 2, minSpanMetres: 0 });
+    if (!region) throw new Error('expected a region');
+    const { north, south, east, west } = edges(region);
+    for (const point of FAR_APART) {
+      expect(point.latitude).toBeLessThan(north);
+      expect(point.latitude).toBeGreaterThan(south);
+      expect(point.longitude).toBeLessThan(east);
+      expect(point.longitude).toBeGreaterThan(west);
+    }
+    // Centred on screen means centred in the projection, not in degrees.
+    const middle = (mercator(north) + mercator(south)) / 2;
+    expect(middle).toBeCloseTo((mercator(51.36) + mercator(-50.94)) / 2, 6);
+    expect(region.longitude).toBeCloseTo((-73.41 - 121.74) / 2, 6);
+    // The frame's shape on screen is its projected width over height.
+    const width = (region.longitudeDelta * Math.PI) / 180;
+    expect(width / (mercator(north) - mercator(south))).toBeCloseTo(2, 6);
+  });
+
+  it('leaves room above the top point for pins', () => {
+    const points = [
+      { latitude: 46.5, longitude: -121.2 },
+      { latitude: 46.6, longitude: -121.3 },
+    ];
+    const plain = fitMapRegion({ points, aspect: 1, minSpanMetres: 0 });
+    const pinned = fitMapRegion({ points, aspect: 1, minSpanMetres: 0, topInset: 0.2 });
+    if (!plain || !pinned) throw new Error('expected regions');
+    expect(edges(pinned).north - 46.6).toBeGreaterThan(edges(plain).north - 46.6);
+    expect(edges(pinned).south).toBeLessThan(46.5);
   });
 
   it('zooms in close to the points when the user allows it, and is null with no points', () => {
-    const region = shareMapRegion({
+    const region = fitMapRegion({
       points: [
         { latitude: 46.5, longitude: -121.2 },
         { latitude: 46.6, longitude: -121.3 },
@@ -250,6 +300,6 @@ describe('shareMapRegion', () => {
       minSpanMetres: 0,
     });
     expect((region?.latitudeDelta ?? 0) * 111_320).toBeLessThan(PRIVATE_SPAN_METRES / 2);
-    expect(shareMapRegion({ points: [], aspect: 1, minSpanMetres: 0 })).toBeNull();
+    expect(fitMapRegion({ points: [], aspect: 1, minSpanMetres: 0 })).toBeNull();
   });
 });

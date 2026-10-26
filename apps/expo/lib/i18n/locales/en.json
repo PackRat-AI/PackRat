@@ -787,6 +787,8 @@
     "share": {
       "action": "Share",
       "title": "Share",
+      "fileName": "PackRat Trip Stats - {{title}}",
+      "reviewFileName": "PackRat {{year}} in Review - {{title}}",
       "close": "Close",
       "formats": {
         "story": "Story",
