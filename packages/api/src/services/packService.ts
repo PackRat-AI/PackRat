@@ -84,7 +84,7 @@ export class PackService {
   }
 
   // The admin console passes isPublic: false so packs land as drafts for review.
-  async generatePacks(count: number, { isPublic = true }: { isPublic?: boolean } = {}) {
+  async generatePacks({ count, isPublic = true }: { count: number; isPublic?: boolean }) {
     if (count < 1) throw new Error('Count must be a positive integer');
 
     const concepts = await this.generatePackConcepts(count);

@@ -106,7 +106,7 @@ describe('admin AI pack generation route', () => {
     );
     expect(res.status).toBe(200);
     expect(mocks.packServiceUser).toHaveBeenCalledWith('admin_1');
-    expect(mocks.generatePacks).toHaveBeenCalledWith(1, { isPublic: false });
+    expect(mocks.generatePacks).toHaveBeenCalledWith({ count: 1, isPublic: false });
     await expect(res.json()).resolves.toEqual({
       items: [
         { id: 'p1', name: 'Desert Overnighter', description: null, category: 'desert', tags: [] },

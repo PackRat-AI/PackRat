@@ -35,7 +35,8 @@ export const adminAiPacksRoutes = new Elysia({ prefix: '/packs' })
         return status(503, { error: 'No ADMIN user exists to own generated packs' });
       }
       try {
-        const created = await new PackService(ownerUserId).generatePacks(body.count, {
+        const created = await new PackService(ownerUserId).generatePacks({
+          count: body.count,
           isPublic: false,
         });
         return {
