@@ -113,8 +113,21 @@ final class ChatAcceptanceTests: XCTestCase {
 
     func testMultipleDeltasFinishInIdleState() throws {
         try launch("success")
-        send("Stream the fixture answer")
+        let prompt = "Help me prepare for a three day hike with rain, cold mornings, and warm afternoons. Review my layers, shelter, food, water, and first aid supplies, and explain what I should change before leaving."
+        send(prompt)
         try completeAnswer()
+        let userMessage = app.descendants(matching: .any).matching(identifier: "chat_message_user")
+            .matching(NSPredicate(format: "label == %@", prompt)).firstMatch
+        XCTAssertTrue(userMessage.exists)
+        XCTAssertGreaterThan(userMessage.frame.height, 80, "Long prompt must wrap into multiple visible lines")
+        XCTAssertGreaterThanOrEqual(userMessage.frame.minX, app.frame.minX)
+        XCTAssertLessThanOrEqual(userMessage.frame.maxX, app.frame.maxX)
+        // The accessibility label alone cannot detect visually clipped text.
+        // Keep a rendered artifact for review in addition to the layout unit test.
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Long user prompt after streamed answer"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
     }
 
     private func control(_ path: String, method: String = "POST") throws -> Data {
