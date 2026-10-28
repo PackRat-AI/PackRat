@@ -436,7 +436,9 @@ jobs:
     name: Android E2E Tests
     needs: e2e-gate
     if: needs.e2e-gate.outputs.ready == 'true'
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-26.04 mounts /tmp as an 8 GB tmpfs, and `eas build --local`
+    # builds under /tmp, so Gradle runs out of space mid-build.
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
 
     env:
