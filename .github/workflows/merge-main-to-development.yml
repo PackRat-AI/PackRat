@@ -8,28 +8,43 @@ jobs:
   merge-main-into-development:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
     steps:
-      # Open a PR straight from main. peter-evans/create-pull-request only
-      # commits working-tree changes, so a plain branch sync left it with
-      # nothing to do and it silently opened no PR.
-      - name: Open main → development PR
+      - name: Checkout development
+        uses: actions/checkout@v6
+        with:
+          ref: development
+          fetch-depth: 0
+
+      # Merge main straight into development. On a conflict, push main to a
+      # sync branch and open a PR so someone resolves it by hand.
+      - name: Merge main into development
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          AHEAD=$(gh api "repos/$GH_REPO/compare/development...main" --jq '.ahead_by')
-          if [ "$AHEAD" = "0" ]; then
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+
+          if git merge-base --is-ancestor origin/main HEAD; then
             echo "development already contains main."
             exit 0
           fi
-          EXISTING=$(gh pr list --base development --head main --state open --json number --jq '.[0].number // empty')
-          if [ -n "$EXISTING" ]; then
-            echo "Sync PR #$EXISTING is already open."
+
+          if git merge --no-ff --no-edit origin/main -m "chore: merge main into development"; then
+            git push origin HEAD:development
             exit 0
           fi
-          gh pr create --base development --head main \
-            --title "chore: sync main to development" \
-            --body "Automated PR to sync changes from \`main\` to \`development\`. Opened when changes are pushed to \`main\`."
+
+          git merge --abort
+          git push --force origin origin/main:refs/heads/sync-main-to-development
+          EXISTING=$(gh pr list --base development --head sync-main-to-development --state open --json number --jq '.[0].number // empty')
+          if [ -z "$EXISTING" ]; then
+            gh pr create --base development --head sync-main-to-development \
+              --title "chore: sync main to development" \
+              --body "\`main\` no longer merges cleanly into \`development\`. Resolve the conflicts here to bring the release back."
+          fi
+          echo "::error::main conflicts with development; opened a sync PR to resolve by hand."
+          exit 1
