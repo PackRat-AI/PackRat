@@ -561,7 +561,10 @@
       "last12": "Last 12 Months",
       "nights": "Nights",
       "trips": "Trips",
-      "busiest": "Busiest: {{month}}"
+      "busiest": "Busiest: {{month}}",
+      "summary": "{{amount}} in {{period}}.",
+      "summaryLast12": "the last 12 months",
+      "summaryPeak": "Most in {{month}}, with {{count}}."
     },
     "scope": {
       "allActivities": "All Activities",
@@ -587,7 +590,10 @@
         "skiing": "Skiing",
         "biking": "Biking",
         "other": "Other"
-      }
+      },
+      "summary_one": "{{count}} activity across your logged trips.",
+      "summary_other": "{{count}} activities across your logged trips.",
+      "summaryTop": "{{activity}} leads with {{trips}}."
     },
     "highlights": {
       "title": "Highlights",
@@ -749,7 +755,9 @@
     },
     "weight": {
       "title": "Base Weight by Trip",
-      "subtitle": "Each pack's current base weight"
+      "subtitle": "Each pack's current base weight",
+      "summary": "Base weight across {{trips}}.",
+      "summaryRange": "From {{from}} to {{to}}."
     },
     "log": {
       "sectionTitle": "Trip log",
