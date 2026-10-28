@@ -42,7 +42,7 @@ permissions:
 jobs:
   apple:
     name: Build + Submit · iOS & macOS
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 120
     env:
       APPLE_TEAM_ID: 666HGMV2LU
