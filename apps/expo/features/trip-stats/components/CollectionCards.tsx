@@ -1,16 +1,18 @@
 import type { TripGoal } from '@packrat/schemas/tripStats';
 import { Text } from '@packrat/ui/src/text';
+import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
-import { type ReactNode, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { type ReactNode, useMemo, useRef, useState } from 'react';
+import { Pressable, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { formatDay, formatList } from '../lib/useStatsFormat';
 import { scopeParams } from '../screens/PlacesScreens';
 import type { LandscapeBucket } from '../utils/landscapes';
 import type { LongTrailProgress } from '../utils/longTrails';
+import { clusterPins, isStacked } from '../utils/mapClusters';
 import {
   highestAscent,
   latestParkVisit,
@@ -19,7 +21,7 @@ import {
   peakCount,
   visitedParks,
 } from '../utils/parksAndPeaks';
-import { fitMapRegion, mapCamera } from '../utils/shareMap';
+import { fitMapRegion, type MapRegion, mapCamera } from '../utils/shareMap';
 import type { TripPlaces } from '../utils/tripPlaces';
 import type { TripStatsRecord } from '../utils/tripStats';
 import type { TripTrailsRecord } from '../utils/tripTrails';
@@ -27,7 +29,7 @@ import { formatDistance, formatElevation, type TripDistanceUnit } from '../utils
 import { LandscapesCard } from './LandscapesCard';
 import { LongTrailsCard } from './LongTrailCards';
 import { PlacesCard } from './PlacesAndGearCards';
-import { CardLink, ProgressBar, StatsCard, StatTile } from './StatsParts';
+import { CardLink, ProgressBar, StatsCard, StatsRow, StatTile } from './StatsParts';
 
 export function ParksCard({
   parksAndPeaks,
@@ -149,10 +151,16 @@ const MAP_MIN_SPAN_METRES = 20_000;
 // Google's default pin stands about 40dp above its point.
 const PIN_INSET = 40 / MAP_HEIGHT;
 
-/** Routes as lines and trip locations as pins, on a static map that scrolls with the page. */
+/**
+ * Routes as lines and trip locations as pins, on a static map that scrolls with the page. Pins that
+ * would overlap become a count: tapping one zooms to its trips, or lists them under the map when
+ * they share a spot. Tapping a pin lists its trip.
+ */
 export function TripsMapCard({ record, action }: { record: TripStatsRecord; action?: ReactNode }) {
   const { t } = useTranslation();
+  const router = useRouter();
   const { colors } = useColorScheme();
+  const mapRef = useRef<MapView>(null);
   const pins = useMemo(
     () =>
       record.finished.flatMap((trip) =>
@@ -180,6 +188,35 @@ export function TripsMapCard({ record, action }: { record: TripStatsRecord; acti
         : null,
     [points, width],
   );
+  // Where a tapped cluster zoomed to; null is the frame around every trip.
+  const [zoomed, setZoomed] = useState<MapRegion | null>(null);
+  // The trips listed under the map: a tapped pin, or a cluster whose trips share a spot.
+  const [listed, setListed] = useState<string[]>([]);
+  const shown = zoomed ?? region;
+  const clusters = useMemo(() => clusterPins({ pins, region: shown }), [pins, shown]);
+
+  const moveTo = (next: MapRegion | null) => {
+    setZoomed(next);
+    const target = next ?? region;
+    if (target)
+      mapRef.current?.animateCamera(mapCamera({ region: target, width, height: MAP_HEIGHT }));
+  };
+
+  const openCluster = (members: readonly string[]) => {
+    const next = fitMapRegion({
+      points: pins.filter((pin) => members.includes(pin.id)),
+      aspect: width / MAP_HEIGHT,
+      minSpanMetres: MAP_MIN_SPAN_METRES,
+      topInset: PIN_INSET,
+    });
+    if (!next || !shown || isStacked({ current: shown, next })) {
+      setListed([...members]);
+      return;
+    }
+    setListed([]);
+    moveTo(next);
+  };
+
   const lines = record.routes.map((route) => (
     <Polyline
       key={route.id}
@@ -188,17 +225,45 @@ export function TripsMapCard({ record, action }: { record: TripStatsRecord; acti
       strokeWidth={3}
     />
   ));
-  const markers = pins.map((pin) => (
-    <Marker
-      key={pin.id}
-      coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
-      title={pin.name}
-    />
-  ));
+  const markers = clusters.map((cluster) => {
+    const coordinate = { latitude: cluster.latitude, longitude: cluster.longitude };
+    if (cluster.members.length === 1) {
+      const pin = pins.find((item) => item.id === cluster.id);
+      return (
+        <Marker
+          key={cluster.id}
+          coordinate={coordinate}
+          title={pin?.name}
+          onPress={() => setListed([cluster.id])}
+        />
+      );
+    }
+    const count = cluster.members.length;
+    return (
+      <Marker
+        key={cluster.id}
+        coordinate={coordinate}
+        anchor={{ x: 0.5, y: 0.5 }}
+        tracksViewChanges={false}
+        accessibilityLabel={t('tripStats.countTrips', { count })}
+        onPress={() => openCluster(cluster.members)}
+      >
+        <View
+          className="h-9 min-w-9 items-center justify-center rounded-full px-2"
+          style={{ backgroundColor: colors.primary, borderWidth: 2, borderColor: '#FFFFFF' }}
+        >
+          <Text variant="footnote" className="font-semibold" style={{ color: '#FFFFFF' }}>
+            {String(count)}
+          </Text>
+        </View>
+      </Marker>
+    );
+  });
   if (points.length === 0) return null;
   const map = region ? (
     <MapView
       key={width}
+      ref={mapRef}
       style={{ flex: 1 }}
       initialCamera={mapCamera({ region, width, height: MAP_HEIGHT })}
       scrollEnabled={false}
@@ -211,15 +276,54 @@ export function TripsMapCard({ record, action }: { record: TripStatsRecord; acti
       {markers}
     </MapView>
   ) : null;
+  const listedTrips = listed.flatMap((id) => {
+    const trip = record.finished.find((item) => item.trip.id === id);
+    return trip ? [trip] : [];
+  });
   return (
     <StatsCard title={t('tripStats.map.title')} action={action} hostsNativeView>
       <View
         className="overflow-hidden rounded-xl"
         style={{ height: MAP_HEIGHT, backgroundColor: colors.grey6 }}
-        onLayout={(event) => setWidth(Math.round(event.nativeEvent.layout.width))}
+        onLayout={(event) => {
+          setWidth(Math.round(event.nativeEvent.layout.width));
+          setZoomed(null);
+        }}
+        testID={testIds.tripStats.map}
       >
         {map}
+        {zoomed ? (
+          <Pressable
+            onPress={() => {
+              setListed([]);
+              moveTo(null);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t('tripStats.map.showAll')}
+            android_ripple={{ borderless: true, color: colors.grey5 }}
+            className="absolute top-2 right-2 h-10 w-10 items-center justify-center rounded-full"
+            style={{ backgroundColor: colors.card, elevation: 3 }}
+            testID={testIds.tripStats.mapShowAllBtn}
+          >
+            <Icon name="arrow-expand-all" size={20} color={colors.foreground} />
+          </Pressable>
+        ) : null}
       </View>
+      {listedTrips.length > 0 ? (
+        <View>
+          {listedTrips.map(({ trip, start }) => (
+            <StatsRow
+              key={trip.id}
+              inset={false}
+              icon="map-marker-outline"
+              title={trip.name}
+              subtitle={formatDay(start)}
+              onPress={() => router.push(`/trip/${trip.id}`)}
+              testID={testIds.tripStats.mapTripRow(trip.id)}
+            />
+          ))}
+        </View>
+      ) : null}
     </StatsCard>
   );
 }

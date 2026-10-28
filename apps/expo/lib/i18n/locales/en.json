@@ -606,7 +606,8 @@
       "averageNights": "{{value}} nights"
     },
     "map": {
-      "title": "Where You've Been"
+      "title": "Where You've Been",
+      "showAll": "Show all trips"
     },
     "places": {
       "title": "Countries & States",
