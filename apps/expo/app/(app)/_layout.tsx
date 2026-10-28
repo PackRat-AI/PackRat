@@ -5,8 +5,10 @@ import {
   isLoadingAtom,
   isSignOutRedirectingAtom,
   needsReauthAtom,
+  showSignOutPromptAtom,
   suppressSignOutNavAtom,
 } from 'expo-app/features/auth/atoms/authAtoms';
+import { SignOutPrompt } from 'expo-app/features/auth/components/SignOutPrompt';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { useNotificationSetup } from 'expo-app/features/notifications/hooks/useNotificationSetup';
@@ -44,6 +46,7 @@ export default function AppLayout() {
   const isLoadingGlobal = useAtomValue(isLoadingAtom);
   const isSignOutRedirecting = useAtomValue(isSignOutRedirectingAtom);
   const suppressSignOutNav = useAtomValue(suppressSignOutNavAtom);
+  const showSignOutPrompt = useAtomValue(showSignOutPromptAtom);
   const insets = useSafeAreaInsets();
   // Latches true once we dispatch router.replace('/auth') on sign-out.
   // Keeps the spinner rendered until AppLayout unmounts so that
@@ -86,6 +89,7 @@ export default function AppLayout() {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#3B82F6" />
+        {showSignOutPrompt && <SignOutPrompt />}
       </View>
     );
   }
