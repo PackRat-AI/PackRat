@@ -42,7 +42,7 @@ permissions:
 jobs:
   apple:
     name: Build + Submit · iOS & macOS
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 120
     env:
       APPLE_TEAM_ID: 666HGMV2LU
@@ -174,6 +174,15 @@ jobs:
             <key>uploadSymbols</key><true/>
           </dict></plist>
           EOF
+
+      # upload-testflight.ts refuses to upload without the current App Store
+      # build number to compare against, so read it from App Store Connect.
+      - name: Read current App Store build number · iOS
+        run: |
+          set -euo pipefail
+          CURRENT=$(bun apps/swift/scripts/latest-app-store-build.ts --platform IOS)
+          echo "APP_STORE_CURRENT_BUILD_NUMBER=$CURRENT" >> "$GITHUB_ENV"
+          echo "Current App Store build: $CURRENT"
 
       - name: Build + upload · iOS
         env:
