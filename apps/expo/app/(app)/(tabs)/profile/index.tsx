@@ -9,11 +9,7 @@ import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
-import {
-  isLoadingAtom,
-  isSignOutRedirectingAtom,
-  suppressSignOutNavAtom,
-} from 'expo-app/features/auth/atoms/authAtoms';
+import { showSignOutPromptAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
@@ -24,7 +20,6 @@ import { ProfileAuthWall } from 'expo-app/features/profile/components';
 import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
 import { useTripStatsRecord } from 'expo-app/features/trip-stats/hooks/useTripStats';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
-import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { cn } from 'expo-app/lib/cn';
 import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -291,9 +286,7 @@ function ListHeaderComponent() {
 function ListFooterComponent() {
   const { signOut } = useAuth();
   const { t } = useTranslation();
-  const setIsLoading = useSetAtom(isLoadingAtom);
-  const setIsSignOutRedirecting = useSetAtom(isSignOutRedirectingAtom);
-  const setSuppressSignOutNav = useSetAtom(suppressSignOutNavAtom);
+  const setShowSignOutPrompt = useSetAtom(showSignOutPromptAtom);
 
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -303,36 +296,8 @@ function ListFooterComponent() {
     setIsSigningOut(false);
 
     // signOut() has completed: auth cleared, spinner showing, auto-navigation
-    // suppressed. Ask the user what to do next.
-    Alert.alert(
-      t('auth.loggedOut'),
-      t('auth.loggedOutMessage'),
-      [
-        {
-          text: t('auth.stayLoggedOut'),
-          onPress: async () => {
-            // Clear spinner first so AppLayout doesn't show auth screen,
-            // then release the suppress flag and navigate home as guest.
-            setIsLoading(false);
-            setIsSignOutRedirecting(false);
-            setSuppressSignOutNav(false);
-            await AsyncStorage.setItem('skipped_login', 'true');
-            router.replace('/');
-          },
-        },
-        {
-          text: t('auth.signInAgain'),
-          style: 'destructive',
-          onPress: () => {
-            // Release suppress while isLoadingAtom is still true — AppLayout's
-            // useEffect sees isLoadingGlobal=true && !isAuthed and navigates to
-            // /auth via the NativeTabs-safe useEffect path.
-            setSuppressSignOutNav(false);
-          },
-        },
-      ],
-      { cancelable: false },
-    );
+    // suppressed. AppLayout's spinner asks the user what to do next.
+    setShowSignOutPrompt(true);
   };
 
   return (
