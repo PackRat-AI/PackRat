@@ -31,10 +31,12 @@ import { useDistanceUnit } from '../hooks/useDistanceUnit';
 import { fetchRegistryTrail } from '../hooks/useTrailRegistry';
 import { getLandscapeGrid } from '../lib/landscapes';
 import { consumePickedPeak, pickedPeak$ } from '../lib/peakPicker';
+import { consumeDrawnRoute, drawnRoute$ } from '../lib/routeDrawing';
 import { consumePickedTrail, pickedTrail$ } from '../lib/trailPicker';
 import { TRIP_LANDSCAPES, tripLandscape } from '../utils/landscapes';
 import { peakKey } from '../utils/parksAndPeaks';
-import { decodePolyline } from '../utils/polyline';
+import { decodePolyline, encodePolyline } from '../utils/polyline';
+import { drawnDistance, totalTrailLength, trailDistances } from '../utils/routeDrawing';
 import { GpxParseError, parseGpx, summarizeTrack } from '../utils/trackGeometry';
 import { TRIP_ACTIVITIES } from '../utils/tripStats';
 import { trailRoute } from '../utils/tripTrails';
@@ -110,15 +112,9 @@ export function TripLogEditorScreen() {
   const distanceRef = useRef(distanceText);
   distanceRef.current = distanceText;
 
-  /**
-   * The first trail picked on an empty log supplies its length and route, which the user can still
-   * correct (an out-and-back walks it twice).
-   */
+  /** The first trail picked on a log without a route supplies the trail's line. */
   const fillFromTrail = async (trail: TripTrail) => {
-    if (routeRef.current || parsed(distanceRef.current) != null) return;
-    if (trail.lengthMeters != null) {
-      setDistanceText(shown(distanceValue({ metres: trail.lengthMeters, unit })));
-    }
+    if (routeRef.current) return;
     try {
       const detail = await fetchRegistryTrail({ queryClient, id: trail.id });
       const line = trailRoute(detail.lines);
@@ -126,7 +122,7 @@ export function TripLogEditorScreen() {
       setRoute(line);
       setSource('trail');
     } catch {
-      // The length is filled in already; without the trail's line the log just has no route.
+      // Without the trail's line the log just has no route.
     }
   };
 
@@ -149,7 +145,13 @@ export function TripLogEditorScreen() {
         );
         fillFromTrail(trail);
       }
-    }, []),
+      const drawn = consumeDrawnRoute();
+      if (drawn) {
+        setRoute(encodePolyline(drawn));
+        setSource('manual');
+        setDistanceText(shown(distanceValue({ metres: drawnDistance(drawn), unit })));
+      }
+    }, [unit]),
   );
 
   if (!trip) return null;
@@ -208,6 +210,18 @@ export function TripLogEditorScreen() {
     });
   };
 
+  const drawRoute = () => {
+    drawnRoute$.set(null);
+    const location = trip.location;
+    router.push({
+      pathname: '/trip-stats/draw-route',
+      params: {
+        ...(route && source === 'manual' ? { route } : {}),
+        ...(location ? { lat: String(location.latitude), lng: String(location.longitude) } : {}),
+      },
+    });
+  };
+
   const addTrail = () => {
     pickedTrail$.set(null);
     const location = trip.location;
@@ -241,6 +255,9 @@ export function TripLogEditorScreen() {
   };
 
   const routePoints = route ? decodePolyline(route).length : 0;
+  const trailLength = totalTrailLength(trails);
+  // A distance read from a GPS track is kept as recorded, so trails offer none.
+  const showsTrailDistances = trailLength > 0 && source !== 'track';
   // "Automatic (Mountain)": what the trip reads as with the figures entered so far.
   const automaticLandscape = tripLandscape({
     trip: {
@@ -310,6 +327,38 @@ export function TripLogEditorScreen() {
             keyboardType="decimal-pad"
             testID={testIds.tripStats.logDistanceInput}
           />
+          {showsTrailDistances ? (
+            <View className="px-4 pb-1">
+              <Host matchContents={{ vertical: true, horizontal: false }} style={{ width: '100%' }}>
+                <FlowRow horizontalArrangement={{ spacedBy: 8 }}>
+                  {trailDistances(trailLength).map((option) => {
+                    const text = shown(distanceValue({ metres: option.metres, unit }));
+                    return (
+                      <FilterChip
+                        key={option.kind}
+                        selected={text === distanceText.trim()}
+                        onClick={() => setDistanceText(text)}
+                        modifiers={[
+                          testIDModifier(testIds.tripStats.logTrailDistance(option.kind)),
+                        ]}
+                      >
+                        <FilterChip.Label>
+                          <JCText>
+                            {t(`tripStats.log.${option.kind}`, {
+                              distance: `${text} ${distanceSymbol(unit)}`,
+                            })}
+                          </JCText>
+                        </FilterChip.Label>
+                      </FilterChip>
+                    );
+                  })}
+                </FlowRow>
+              </Host>
+              <Text variant="footnote" className="pt-1 text-muted-foreground">
+                {t('tripStats.log.trailDistanceHint')}
+              </Text>
+            </View>
+          ) : null}
           <OutlinedField
             label={t('tripStats.log.elevationGain', { unit: elevationSymbol(unit) })}
             value={elevationText}
@@ -323,7 +372,13 @@ export function TripLogEditorScreen() {
             <StatsRow
               icon="map-marker-path"
               title={t('tripStats.log.routePoints', { count: routePoints })}
-              subtitle={source === 'track' ? t('tripStats.log.routeImported') : null}
+              subtitle={
+                source === 'track'
+                  ? t('tripStats.log.routeImported')
+                  : source === 'manual'
+                    ? t('tripStats.log.routeDrawn')
+                    : null
+              }
               trailing={
                 <Pressable
                   onPress={() => {
@@ -342,15 +397,18 @@ export function TripLogEditorScreen() {
               }
             />
           ) : null}
-          <Button
-            variant="tonal"
-            className="mx-4 my-2 self-start"
-            onPress={importGpx}
-            testID={testIds.tripStats.importGpxBtn}
-          >
-            <Icon name="file-upload-outline" size={18} color={colors.foreground} />
-            <Text>{route ? t('tripStats.log.replaceRoute') : t('tripStats.log.importGpx')}</Text>
-          </Button>
+          <View className="flex-row flex-wrap gap-2 px-4 py-2">
+            <Button variant="tonal" onPress={importGpx} testID={testIds.tripStats.importGpxBtn}>
+              <Icon name="file-upload-outline" size={18} color={colors.foreground} />
+              <Text>{route ? t('tripStats.log.replaceRoute') : t('tripStats.log.importGpx')}</Text>
+            </Button>
+            {!route || source === 'manual' ? (
+              <Button variant="tonal" onPress={drawRoute} testID={testIds.tripStats.drawRouteBtn}>
+                <Icon name="draw" size={18} color={colors.foreground} />
+                <Text>{route ? t('tripStats.log.editRoute') : t('tripStats.log.drawRoute')}</Text>
+              </Button>
+            ) : null}
+          </View>
 
           <SectionLabel>{t('tripStats.log.trails')}</SectionLabel>
           {trails.map((trail, index) => (

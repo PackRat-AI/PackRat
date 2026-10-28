@@ -724,7 +724,7 @@
       "added": "Added",
       "remove": "Remove trail",
       "logHintRoute": "Trails your route follows are suggested first.",
-      "logHintNoRoute": "Picking a trail fills in its route and length if you haven't added them."
+      "logHintNoRoute": "Picking a trail fills in its route if you haven't added one."
     },
     "gear": {
       "title": "Packed Most Often",
@@ -773,7 +773,18 @@
       "gpxUnreadable": "This file isn't a GPX track PackRat can read.",
       "gpxNoPoints": "This file has no track points in it.",
       "importFailed": "Couldn't import the route",
-      "trails": "Trails"
+      "trails": "Trails",
+      "drawRoute": "Draw on map",
+      "editRoute": "Edit on map",
+      "routeDrawn": "Drawn on the map",
+      "drawTitle": "Draw route",
+      "drawPrompt": "Tap the map along the way you went.",
+      "undo": "Undo",
+      "outAndBack": "Out and back",
+      "clear": "Clear",
+      "oneWay": "One way {{distance}}",
+      "thereAndBack": "There and back {{distance}}",
+      "trailDistanceHint": "Tap a trail distance to use the length of the trails you picked."
     },
     "dialog": {
       "close": "Close",

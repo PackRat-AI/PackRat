@@ -182,6 +182,7 @@ export default function AppLayout() {
           'trip-stats/share',
           'trip-stats/year-in-review',
           'trip/[id]/log',
+          'trip-stats/draw-route',
         ].map((name) => (
           <Stack.Screen
             key={name}
