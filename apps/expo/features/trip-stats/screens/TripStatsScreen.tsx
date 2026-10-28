@@ -38,6 +38,7 @@ import {
   useIdleGear,
   useLongTrailProgress,
   useParksAndPeaks,
+  useTripLandscapes,
   useTripPlaces,
   useTripStatsRecord,
   useTripTrails,
@@ -67,6 +68,7 @@ export function TripStatsScreen() {
   const followGoals = useFollowGoals();
   const goals = useGoalProgress({ record, parksAndPeaks, longTrails });
   const places = useTripPlaces(record);
+  const landscapes = useTripLandscapes(record);
   const idleGear = useIdleGear(record);
   const settings = use$(tripStatsSettingsStore);
   const shareCard = useShareCard();
@@ -281,6 +283,7 @@ export function TripStatsScreen() {
                 <CollectionCards
                   record={record}
                   places={places}
+                  landscapes={landscapes}
                   parksAndPeaks={parksAndPeaks}
                   trails={trails}
                   longTrails={longTrails}

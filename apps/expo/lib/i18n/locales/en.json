@@ -629,6 +629,26 @@
       "firstVisit": "First visit {{date}}",
       "trips": "Trips"
     },
+    "landscapes": {
+      "title": "Landscapes",
+      "names": {
+        "desert": "Desert",
+        "mountain": "Mountain",
+        "forest": "Forest",
+        "coastal": "Coastal",
+        "water": "Lakes & Rivers",
+        "grassland": "Grassland",
+        "polar": "Polar"
+      },
+      "rowLabel": "{{landscape}}, {{trips}}",
+      "automatic": "Automatic",
+      "automaticWith": "Automatic ({{landscape}})",
+      "field": "Landscape",
+      "fieldHint": "Where this trip counts in Landscapes.",
+      "move": "Move to another landscape",
+      "emptyTitle": "No {{landscape}} Trips",
+      "attribution": "Climate zones © Beck et al. 2023, CC BY 4.0."
+    },
     "parks": {
       "title": "National Parks",
       "progress": "{{count}} of {{total}}",

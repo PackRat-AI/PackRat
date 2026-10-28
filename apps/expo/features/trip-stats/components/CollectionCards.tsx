@@ -9,6 +9,7 @@ import { View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { formatDay, formatList } from '../lib/useStatsFormat';
 import { scopeParams } from '../screens/PlacesScreens';
+import type { LandscapeBucket } from '../utils/landscapes';
 import type { LongTrailProgress } from '../utils/longTrails';
 import {
   highestAscent,
@@ -23,6 +24,7 @@ import type { TripPlaces } from '../utils/tripPlaces';
 import type { TripStatsRecord } from '../utils/tripStats';
 import type { TripTrailsRecord } from '../utils/tripTrails';
 import { formatDistance, formatElevation, type TripDistanceUnit } from '../utils/units';
+import { LandscapesCard } from './LandscapesCard';
 import { LongTrailsCard } from './LongTrailCards';
 import { PlacesCard } from './PlacesAndGearCards';
 import { CardLink, ProgressBar, StatsCard, StatTile } from './StatsParts';
@@ -222,10 +224,14 @@ export function TripsMapCard({ record, action }: { record: TripStatsRecord; acti
   );
 }
 
-/** The map, countries and states, then the lifetime collections, which open their own lists. */
+/**
+ * The map, countries and states, landscapes, then the lifetime collections, which open their own
+ * lists.
+ */
 export function CollectionCards({
   record,
   places,
+  landscapes,
   parksAndPeaks,
   trails,
   longTrails,
@@ -236,6 +242,7 @@ export function CollectionCards({
 }: {
   record: TripStatsRecord;
   places: TripPlaces;
+  landscapes: readonly LandscapeBucket[];
   parksAndPeaks: ParksAndPeaks;
   trails: TripTrailsRecord;
   longTrails: readonly LongTrailProgress[];
@@ -255,6 +262,15 @@ export function CollectionCards({
         scope={record.scope}
         onPress={() =>
           router.push({ pathname: '/trip-stats/places', params: scopeParams(record.scope) })
+        }
+      />
+      <LandscapesCard
+        buckets={landscapes}
+        onOpen={(landscape) =>
+          router.push({
+            pathname: '/trip-stats/landscape/[landscape]',
+            params: { landscape, ...scopeParams(record.scope) },
+          })
         }
       />
       {showLifetime ? (
