@@ -8,27 +8,28 @@ jobs:
   merge-main-into-development:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      actions: write
-      checks: write
+      contents: read
       pull-requests: write
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v6
-        with:
-          ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: sync-main-to-development
-          base: development
-          title: "chore: sync main to development"
-          body: |
-            Automated PR to sync changes from `main` to `development`.
-            
-            This PR is created automatically when changes are pushed to `main`.
-          labels: automated
-          delete-branch: true
+      # Open a PR straight from main. peter-evans/create-pull-request only
+      # commits working-tree changes, so a plain branch sync left it with
+      # nothing to do and it silently opened no PR.
+      - name: Open main → development PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          AHEAD=$(gh api "repos/$GH_REPO/compare/development...main" --jq '.ahead_by')
+          if [ "$AHEAD" = "0" ]; then
+            echo "development already contains main."
+            exit 0
+          fi
+          EXISTING=$(gh pr list --base development --head main --state open --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            echo "Sync PR #$EXISTING is already open."
+            exit 0
+          fi
+          gh pr create --base development --head main \
+            --title "chore: sync main to development" \
+            --body "Automated PR to sync changes from \`main\` to \`development\`. Opened when changes are pushed to \`main\`."
