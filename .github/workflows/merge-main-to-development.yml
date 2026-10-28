@@ -9,26 +9,42 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write
-      checks: write
       pull-requests: write
     steps:
-      - name: Checkout repo
+      - name: Checkout development
         uses: actions/checkout@v6
         with:
-          ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: development
           fetch-depth: 0
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: sync-main-to-development
-          base: development
-          title: "chore: sync main to development"
-          body: |
-            Automated PR to sync changes from `main` to `development`.
-            
-            This PR is created automatically when changes are pushed to `main`.
-          labels: automated
-          delete-branch: true
+
+      # Merge main straight into development. On a conflict, push main to a
+      # sync branch and open a PR so someone resolves it by hand.
+      - name: Merge main into development
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+
+          if git merge-base --is-ancestor origin/main HEAD; then
+            echo "development already contains main."
+            exit 0
+          fi
+
+          if git merge --no-ff --no-edit origin/main -m "chore: merge main into development"; then
+            git push origin HEAD:development
+            exit 0
+          fi
+
+          git merge --abort
+          git push --force origin origin/main:refs/heads/sync-main-to-development
+          EXISTING=$(gh pr list --base development --head sync-main-to-development --state open --json number --jq '.[0].number // empty')
+          if [ -z "$EXISTING" ]; then
+            gh pr create --base development --head sync-main-to-development \
+              --title "chore: sync main to development" \
+              --body "\`main\` no longer merges cleanly into \`development\`. Resolve the conflicts here to bring the release back."
+          fi
+          echo "::error::main conflicts with development; opened a sync PR to resolve by hand."
+          exit 1
