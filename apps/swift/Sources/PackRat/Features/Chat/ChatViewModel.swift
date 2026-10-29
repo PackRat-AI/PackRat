@@ -1,5 +1,8 @@
 import Foundation
 import Observation
+#if canImport(Sentry)
+import Sentry
+#endif
 
 @MainActor
 @Observable
@@ -15,6 +18,7 @@ final class ChatViewModel {
 
     private let service: any ChatServicing
     private var streamingTask: Task<Void, Never>?
+    private var activePlaceholderId: UUID?
 
     /// Backs the pack tools with the device's local store.
     ///
@@ -55,10 +59,20 @@ final class ChatViewModel {
         messages.append(placeholder)
         let placeholderId = placeholder.id
 
+        activePlaceholderId = placeholderId
         isStreaming = true
         streamingTask = Task { @MainActor in
-            defer { isStreaming = false }
+            defer {
+                // A cancelled task may unwind after a new turn has started.
+                if activePlaceholderId == placeholderId {
+                    finishPlaceholder(placeholderId)
+                    activePlaceholderId = nil
+                    streamingTask = nil
+                    isStreaming = false
+                }
+            }
             do {
+                try Task.checkCancellation()
                 var history = Array(messages.dropLast())
                 if sentText != text, let lastIdx = history.indices.last {
                     history[lastIdx].content = sentText
@@ -66,15 +80,23 @@ final class ChatViewModel {
 
                 // A turn can end waiting on a client-executed tool. Answer it and
                 // resume, bounded so a misbehaving model can't loop forever.
-                for _ in 0..<Self.maxToolRoundTrips {
+                for round in 0..<Self.maxToolRoundTrips {
+                    try Task.checkCancellation()
                     try await streamTurn(history: history, placeholderId: placeholderId)
 
+                    try Task.checkCancellation()
                     guard let pending = pendingClientToolCall(in: placeholderId) else { break }
+                    guard round < Self.maxToolRoundTrips - 1 else { throw ChatStreamError.toolLimit }
                     await answerClientTool(pending, in: placeholderId)
+                    try Task.checkCancellation()
 
                     guard let assistant = messages.first(where: { $0.id == placeholderId }) else { break }
                     history.append(assistant)
                     clearPlaceholderToolState(placeholderId)
+                }
+                guard let answer = messages.first(where: { $0.id == placeholderId }),
+                      !answer.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    throw ChatStreamError.emptyResponse
                 }
             } catch is CancellationError {
                 // User cancelled — leave the partial response in place
@@ -84,8 +106,16 @@ final class ChatViewModel {
                 // cancelled request looks like a failure and wipes the message
                 // the user just sent.
             } catch {
+                guard !Task.isCancelled, activePlaceholderId == placeholderId else { return }
                 self.error = error.localizedDescription
-                messages.removeAll { $0.id == placeholderId }
+                #if canImport(Sentry)
+                SentrySDK.capture(error: error) { scope in
+                    scope.setTag(value: "chat.stream", key: "operation")
+                    if case PackRatError.httpError(let status, _) = error {
+                        scope.setExtra(value: status, key: "httpStatus")
+                    }
+                }
+                #endif
             }
         }
     }
@@ -93,7 +123,19 @@ final class ChatViewModel {
     func cancelStreaming() {
         streamingTask?.cancel()
         streamingTask = nil
+        if let activePlaceholderId { finishPlaceholder(activePlaceholderId) }
+        activePlaceholderId = nil
         isStreaming = false
+    }
+
+    private func finishPlaceholder(_ id: UUID) {
+        guard let index = messages.firstIndex(where: { $0.id == id }) else { return }
+        if messages[index].content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            messages.remove(at: index)
+        } else {
+            // A failed/cancelled turn must not leave a tool spinner running forever.
+            messages[index].toolInvocations.removeAll { $0.state == .running }
+        }
     }
 
     func clearHistory() {
@@ -130,11 +172,28 @@ final class ChatViewModel {
     /// Streams one turn into the placeholder message.
     private func streamTurn(history: [ChatMessage], placeholderId: UUID) async throws {
         for try await chunk in await service.sendMessage(messages: history, context: context) {
+            try Task.checkCancellation()
             guard let data = chunk.data(using: .utf8),
                   let parsed = try? JSONDecoder().decode(UIStreamChunk.self, from: data)
-            else { continue }
+            else { throw ChatStreamError.invalidResponse }
 
             switch parsed.type {
+            case "error":
+                let message = parsed.errorText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                throw ChatStreamError.server(message.isEmpty
+                    ? "Chat is temporarily unavailable. Please try again." : message)
+            case "tool-output-error", "tool-input-error":
+                // Tool errors are recoverable within the same server turn. The
+                // model can still explain the failure or answer without the tool.
+                if let callId = parsed.toolCallId {
+                    let output = Self.failure(parsed.errorText ?? "Tool unavailable")
+                    let data = try JSONSerialization.data(withJSONObject: output)
+                    updateToolOutput(id: placeholderId, callId: callId, data: data)
+                }
+            case "abort":
+                throw ChatStreamError.interrupted
+            case "finish":
+                if parsed.finishReason == "error" { throw ChatStreamError.interrupted }
             case "text-delta":
                 if let delta = parsed.delta {
                     appendToPlaceholder(id: placeholderId, text: delta)
@@ -304,6 +363,8 @@ final class ChatViewModel {
 private struct UIStreamChunk: Decodable {
     let type: String
     let id: String?
+    let errorText: String?
+    let finishReason: String?
     let delta: String?       // text-delta
     let toolCallId: String?  // tool-input-start, tool-input-available, tool-output-available
     let toolName: String?    // tool-input-start, tool-input-available
@@ -312,13 +373,15 @@ private struct UIStreamChunk: Decodable {
     let rawOutputData: Data?
 
     enum CodingKeys: String, CodingKey {
-        case type, id, delta, toolCallId, toolName, input, output
+        case type, id, delta, toolCallId, toolName, input, output, errorText, finishReason
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         type = try c.decode(String.self, forKey: .type)
         id = try? c.decodeIfPresent(String.self, forKey: .id)
+        errorText = try? c.decodeIfPresent(String.self, forKey: .errorText)
+        finishReason = try? c.decodeIfPresent(String.self, forKey: .finishReason)
         delta = try? c.decodeIfPresent(String.self, forKey: .delta)
         toolCallId = try? c.decodeIfPresent(String.self, forKey: .toolCallId)
         toolName = try? c.decodeIfPresent(String.self, forKey: .toolName)

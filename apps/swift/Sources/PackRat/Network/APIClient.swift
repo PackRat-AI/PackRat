@@ -6,10 +6,10 @@ actor APIClient {
 
     private let session: URLSession
 
-    init() {
+    init(session: URLSession? = nil) {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
-        self.session = URLSession(configuration: config)
+        self.session = session ?? URLSession(configuration: config)
     }
 
     // xcconfig files treat // as a comment, so full URLs can't be stored there.
@@ -120,34 +120,47 @@ actor APIClient {
 
     func stream(_ endpoint: some APIEndpoint) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
-            Task {
+            let producer = Task {
                 do {
                     let token = KeychainService.shared.sessionToken
-                    let request = try self.buildRequest(endpoint, sessionToken: token)
+                    var request = try self.buildRequest(endpoint, sessionToken: token)
+                    request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
                     let (bytes, response) = try await self.session.bytes(for: request)
-                    guard let http = response as? HTTPURLResponse,
-                          (200...299).contains(http.statusCode)
-                    else {
-                        continuation.finish(throwing: PackRatError.unknown)
-                        return
+                    self.captureSessionTokenIfPresent(response)
+                    guard let http = response as? HTTPURLResponse else {
+                        throw PackRatError.unknown
                     }
-                    for try await line in bytes.lines {
-                        let trimmed = line.trimmingCharacters(in: .whitespaces)
-                        guard !trimmed.isEmpty else { continue }
-                        if trimmed.hasPrefix("data: ") {
-                            let payload = String(trimmed.dropFirst(6))
-                            if payload == "[DONE]" { break }
-                            continuation.yield(payload)
-                        } else {
-                            // Vercel AI SDK UI Message Stream (plain lines, no SSE wrapper)
-                            continuation.yield(trimmed)
+                    if !(200...299).contains(http.statusCode) {
+                        // Error responses are JSON, not SSE. Bound the read so an
+                        // unexpected response cannot grow memory without limit.
+                        var body = Data()
+                        for try await byte in bytes {
+                            try Task.checkCancellation()
+                            body.append(byte)
+                            if body.count >= 64 * 1024 { break }
                         }
+                        try self.validateStatus(response, data: body)
                     }
+                    guard http.value(forHTTPHeaderField: "Content-Type")?
+                        .lowercased().hasPrefix("text/event-stream") == true else {
+                        throw ChatStreamError.invalidResponse
+                    }
+                    var parser = ChatStreamParser()
+                    for try await line in bytes.lines {
+                        try Task.checkCancellation()
+                        if let payload = parser.payload(for: line) {
+                            continuation.yield(payload)
+                        }
+                        if parser.isDone { break }
+                    }
+                    try Task.checkCancellation()
+                    try parser.validateCompletion()
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)
                 }
             }
+            continuation.onTermination = { @Sendable _ in producer.cancel() }
         }
     }
 

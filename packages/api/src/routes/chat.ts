@@ -212,6 +212,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         system: systemPrompt,
         messages: await convertToModelMessages(messages || []),
         tools,
+        abortSignal: request.signal,
         maxOutputTokens: 1000,
         temperature: 0.7,
         stopWhen: stepCountIs(5),
@@ -226,7 +227,11 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         },
       });
 
-      const response = result.toUIMessageStreamResponse();
+      const response = result.toUIMessageStreamResponse({
+        // Keep provider diagnostics in Sentry, not in the user's conversation.
+        // Streaming failures arrive after HTTP 200; clients must handle this event.
+        onError: () => 'Chat is temporarily unavailable. Please try again.',
+      });
 
       if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_AI_GATEWAY_ID) {
         response.headers.set('Access-Control-Allow-Origin', '*');

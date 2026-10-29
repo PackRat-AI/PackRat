@@ -263,6 +263,9 @@ struct MessageBubble: View {
                 .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         } else if isUser {
             Text(message.content)
+                // Keep the proposed bubble width, but allow every wrapped line
+                // to contribute its height inside the lazy message list.
+                .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
