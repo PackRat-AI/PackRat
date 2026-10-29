@@ -11,7 +11,7 @@
   "defaultOptions" : {
     "areLocalizationScreenshotsEnabled" : false,
     "codeCoverage" : false,
-    "diagnosticCollectionPolicy" : "OnFailure",
+    "diagnosticCollectionPolicy" : "Never",
     "language" : "en",
     "region" : "US",
     "testTimeoutsEnabled" : true,

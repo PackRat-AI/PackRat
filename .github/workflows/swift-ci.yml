@@ -86,7 +86,9 @@ jobs:
           # provisioned for the runner. iOS Simulator never needs signing, but
           # it does need the same PACKRAT_E2E_* build settings as the local
           # wrapper so smoke auth does not depend on repository secrets.
+          DIAGNOSTIC_ARGS=()
           if [ "${{ matrix.scheme }}" = "PackRat-iOS" ]; then
+            DIAGNOSTIC_ARGS=(-collect-test-diagnostics on-failure)
             E2E_EMAIL="${E2E_EMAIL:-e2e@packrattest.local}"
             E2E_PASSWORD="${E2E_PASSWORD:-E2eTestPass123!}"
             CODE_SIGN_ARGS=(
@@ -124,6 +126,7 @@ jobs:
             -testPlan "${{ matrix.plan }}" \
             -resultBundlePath "/tmp/${{ matrix.scheme }}-smoke.xcresult" \
             -quiet \
+            "${DIAGNOSTIC_ARGS[@]}" \
             "${CODE_SIGN_ARGS[@]}" \
             | tee "/tmp/${{ matrix.scheme }}-smoke.log"
 
