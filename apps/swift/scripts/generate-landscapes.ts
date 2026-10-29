@@ -48,7 +48,7 @@ import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateRawSync } from 'node:zlib';
-import { safeJsonParse } from '@packrat/utils';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const outputPath = resolve(__dir, '../Resources/Landscapes.bin');
@@ -415,7 +415,7 @@ async function main() {
   writeFileSync(outputPath, compressed);
   writeFileSync(
     expoOutputPath,
-    JSON.stringify({ width: WIDTH, height: HEIGHT, runs: Buffer.from(runs).toString('base64') }),
+    safeJsonStringify({ width: WIDTH, height: HEIGHT, runs: Buffer.from(runs).toString('base64') }),
   );
   const counts = Object.entries(Code).map(
     ([name, value]) => `${name} ${grid.filter((v) => v === value).length}`,
