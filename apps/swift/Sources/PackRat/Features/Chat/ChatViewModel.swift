@@ -1,3 +1,4 @@
+import Defaults
 import Foundation
 import Observation
 
@@ -13,7 +14,14 @@ final class ChatViewModel {
     /// can attach pack context to the system prompt.
     let context: ChatContext
 
-    private let service: any ChatServicing
+    /// Where replies come from. Persisted, so the chat reopens in the last mode.
+    var mode: ChatAIMode {
+        didSet { Defaults[.chatAIMode] = mode }
+    }
+
+    private let cloudService: any ChatServicing
+    private let onDeviceService: any ChatServicing
+    private var service: any ChatServicing { mode == .onDevice ? onDeviceService : cloudService }
     private var streamingTask: Task<Void, Never>?
 
     /// Backs the pack tools with the device's local store.
@@ -25,16 +33,30 @@ final class ChatViewModel {
 
     init(
         service: any ChatServicing = ChatService.shared,
+        onDeviceService: any ChatServicing = LocalChatService(),
         context: ChatContext = .general,
-        packTools: (any ChatPackToolHandling)? = nil
+        packTools: (any ChatPackToolHandling)? = nil,
+        mode: ChatAIMode? = nil
     ) {
-        self.service = service
+        self.cloudService = service
+        self.onDeviceService = onDeviceService
+        self.mode = mode ?? Self.initialMode
         self.context = context
         self.packTools = packTools
         messages.append(ChatMessage(role: .assistant, content: context.greeting))
     }
 
     var canSend: Bool { !inputText.trimmingCharacters(in: .whitespaces).isEmpty && !isStreaming }
+
+    /// On-device mode is offered only with the flag on and a device that can run a model.
+    static var isOnDeviceOffered: Bool {
+        FeatureFlagStore.shared.isEnabled("enableAppleLocalAI") && OnDeviceAIAvailability.current.isOffered
+    }
+
+    /// The remembered mode, or Cloud when On-device is no longer offered.
+    static var initialMode: ChatAIMode {
+        isOnDeviceOffered ? Defaults[.chatAIMode] : .cloud
+    }
 
     func sendMessage() {
         let text = inputText.trimmingCharacters(in: .whitespaces)

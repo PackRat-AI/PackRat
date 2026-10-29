@@ -8,7 +8,7 @@ The AI chat has two modes: Cloud and On-device. Cloud is the default and the mos
 
 ## Choosing a mode
 
-The mode switch sits at the top of the AI chat. Switching is instant and applies to the next message; the conversation so far stays on screen. The chosen mode is remembered between launches. If On-device is chosen and the model stops being usable (Apple Intelligence turned off, or the downloaded model deleted), the chat falls back to Cloud and says so once.
+The mode switch sits at the top of the AI chat. Switching is instant and applies to the next message; the conversation so far stays on screen and carries over. The chosen mode is remembered between launches. If On-device is chosen but cannot answer yet (Apple Intelligence turned off or still preparing, or the model not downloaded), the chat shows what to do in place of sending, and Cloud stays one tap away.
 
 ## Apple Intelligence devices
 
@@ -16,11 +16,11 @@ On iPhone 15 Pro and newer, and on iPads and Macs with Apple silicon, running a 
 
 ## Downloaded model
 
-On other devices with enough memory, On-device uses Gemma, a compact open model. Choosing On-device the first time shows the download size and asks before starting. The download shows progress, can be cancelled, resumes after an interruption, and asks before using cellular data. Once downloaded, the model loads in a few seconds the first time a chat uses it. The model can be deleted from Settings to free space, and downloaded again later.
+On other devices with enough memory, On-device uses Gemma, a compact open model. Choosing On-device the first time shows the download size and asks before starting. The download shows progress, can be cancelled, picks up where it stopped after an interruption, and waits for Wi-Fi unless the user allows cellular data. Once downloaded, the model loads in a few seconds the first time a chat uses it. The model can be deleted from Settings to free space, and downloaded again later.
 
 ## What an on-device answer is
 
-On-device answers stream in as they are written, the same as Cloud. They draw on the conversation and general outdoor knowledge, plus the trip, trail and weather the user is looking at when they open the chat from one of those screens. They do not search the catalog, read other packs, or fetch live data. Answers carry the same report option as Cloud answers.
+On-device answers stream in as they are written, the same as Cloud. They draw on the conversation and general outdoor knowledge, plus the pack or gear item the chat was opened from. They do not search the catalog, read other packs, or fetch live data; when a question needs that, the answer says so and suggests Cloud. Long conversations keep their most recent turns in view.
 
 ## User controls
 
