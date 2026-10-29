@@ -60,10 +60,9 @@ import * as React from 'react';
 import {
   AppState,
   Dimensions,
-  type NativeSyntheticEvent,
   Platform,
   ScrollView,
-  type TextInputContentSizeChangeEventData,
+  type TextInputContentSizeChangeEvent,
   type TextStyle,
   TouchableOpacity,
   View,
@@ -725,7 +724,7 @@ function Composer({
   const { colors, isDarkColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
 
-  function onContentSizeChange(event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) {
+  function onContentSizeChange(event: TextInputContentSizeChangeEvent) {
     textInputHeight.value = Math.max(
       Math.min(event.nativeEvent.contentSize.height, 280),
       Platform.select({ ios: 20, default: 38 }),

@@ -117,7 +117,7 @@ export default function TripWeatherDetailsScreen() {
   return (
     <View className="flex-1">
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <StatusBar barStyle="light-content" />
 
       <LinearGradient colors={gradientColors} style={{ flex: 1 }}>
         <View className="absolute top-10 left-4 z-10">

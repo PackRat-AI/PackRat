@@ -50,7 +50,7 @@ export function useTripExport() {
     try {
       const folder = await Directory.pickDirectoryAsync();
       const file = folder.createFile(name, MIME_TYPES[kind]);
-      file.write(contents);
+      await file.write(contents);
       Burnt.toast({ title: t('tripStats.export.saved', { name }), preset: 'done' });
     } catch (error) {
       if (error instanceof Error && CANCELLED.test(error.message)) return;

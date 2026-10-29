@@ -16,11 +16,10 @@ import {
   Alert,
   Image,
   Keyboard,
-  type NativeSyntheticEvent,
   Platform,
   Pressable,
   type TextInput,
-  type TextInputKeyPressEventData,
+  type TextInputKeyPressEvent,
   View,
 } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardController } from 'react-native-keyboard-controller';
@@ -265,7 +264,7 @@ function OTPField({
   // Apply keyboard hide blur fix
   useKeyboardHideBlur({ textInputRef: asNonNullableRef(inputRef) });
 
-  function onKeyPress({ nativeEvent }: NativeSyntheticEvent<TextInputKeyPressEventData>) {
+  function onKeyPress({ nativeEvent }: TextInputKeyPressEvent) {
     if (nativeEvent.key === 'Backspace' && value === '') {
       KeyboardController.setFocusTo('prev');
     }
