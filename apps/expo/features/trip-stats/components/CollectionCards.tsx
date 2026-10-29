@@ -5,7 +5,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
-import { type ReactNode, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { formatDay, formatList } from '../lib/useStatsFormat';
@@ -145,11 +145,55 @@ export function TrailsCard({
 }
 
 const MAP_HEIGHT = 220;
+// Long enough for the count to draw before the marker's bitmap is frozen.
+const MARKER_SETTLE_MS = 500;
 
 // The narrowest the stats map gets, so a single trip shows its surroundings.
 const MAP_MIN_SPAN_METRES = 20_000;
 // Google's default pin stands about 40dp above its point.
 const PIN_INSET = 40 / MAP_HEIGHT;
+
+/**
+ * A count of trips at one place. Google Maps draws a custom marker as a bitmap of its view: one
+ * frozen straight away (`tracksViewChanges` off) is captured before the text lays out and shows an
+ * empty circle, so it tracks until the count has drawn, then stops to save redraws.
+ */
+function ClusterMarker({
+  coordinate,
+  count,
+  onPress,
+}: {
+  coordinate: { latitude: number; longitude: number };
+  count: number;
+  onPress: () => void;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useColorScheme();
+  const [tracking, setTracking] = useState(true);
+  useEffect(() => {
+    setTracking(true);
+    const timer = setTimeout(() => setTracking(false), MARKER_SETTLE_MS);
+    return () => clearTimeout(timer);
+  }, [count, colors.primary]);
+  return (
+    <Marker
+      coordinate={coordinate}
+      anchor={{ x: 0.5, y: 0.5 }}
+      tracksViewChanges={tracking}
+      accessibilityLabel={t('tripStats.countTrips', { count })}
+      onPress={onPress}
+    >
+      <View
+        className="h-9 min-w-9 items-center justify-center rounded-full px-2"
+        style={{ backgroundColor: colors.primary, borderWidth: 2, borderColor: '#FFFFFF' }}
+      >
+        <Text variant="footnote" className="font-semibold" style={{ color: '#FFFFFF' }}>
+          {String(count)}
+        </Text>
+      </View>
+    </Marker>
+  );
+}
 
 /**
  * Routes as lines and trip locations as pins, on a static map that scrolls with the page. Pins that
@@ -238,25 +282,13 @@ export function TripsMapCard({ record, action }: { record: TripStatsRecord; acti
         />
       );
     }
-    const count = cluster.members.length;
     return (
-      <Marker
+      <ClusterMarker
         key={cluster.id}
         coordinate={coordinate}
-        anchor={{ x: 0.5, y: 0.5 }}
-        tracksViewChanges={false}
-        accessibilityLabel={t('tripStats.countTrips', { count })}
+        count={cluster.members.length}
         onPress={() => openCluster(cluster.members)}
-      >
-        <View
-          className="h-9 min-w-9 items-center justify-center rounded-full px-2"
-          style={{ backgroundColor: colors.primary, borderWidth: 2, borderColor: '#FFFFFF' }}
-        >
-          <Text variant="footnote" className="font-semibold" style={{ color: '#FFFFFF' }}>
-            {String(count)}
-          </Text>
-        </View>
-      </Marker>
+      />
     );
   });
   if (points.length === 0) return null;
