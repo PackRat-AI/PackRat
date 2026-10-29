@@ -80,6 +80,7 @@ jobs:
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
         run: |
           set -o pipefail
+          touch /tmp/PackRat-smoke-started
           cd apps/swift
           # Use signing-bypass on macOS so CI can build/test without a Mac Development cert
           # provisioned for the runner. iOS Simulator never needs signing, but
@@ -140,6 +141,15 @@ jobs:
             fi
           fi
 
+      - name: Collect current iOS app crash reports on failure
+        if: failure() && matrix.scheme == 'PackRat-iOS'
+        run: |
+          python3 apps/swift/scripts/collect-smoke-crashes.py \
+            --since /tmp/PackRat-smoke-started \
+            --root "$HOME/Library/Logs/DiagnosticReports" \
+            --root "$HOME/Library/Developer/CoreSimulator/Devices/${IOS_SIMULATOR_ID}/data/Library/Logs/CrashReporter" \
+            --output /tmp/PackRat-iOS-smoke-crashes
+
       - name: Upload xcresult on failure
         if: failure()
         uses: actions/upload-artifact@v7
@@ -148,6 +158,7 @@ jobs:
           path: |
             /tmp/${{ matrix.scheme }}-smoke.xcresult
             /tmp/${{ matrix.scheme }}-smoke.log
+            /tmp/${{ matrix.scheme }}-smoke-crashes
           if-no-files-found: ignore
           retention-days: 7
 
@@ -170,3 +181,6 @@ jobs:
 
       - name: Run vitest
         run: bun test:swift:scripts
+
+      - name: Test smoke crash-report filtering
+        run: python3 -m unittest discover -s apps/swift/scripts/tests -p 'test_collect_smoke_crashes.py'
