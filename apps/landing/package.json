@@ -54,7 +54,7 @@
     "cmdk": "catalog:",
     "date-fns": "catalog:",
     "embla-carousel-react": "catalog:",
-    "framer-motion": "^13.4.0",
+    "framer-motion": "^14.6.0",
     "input-otp": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
