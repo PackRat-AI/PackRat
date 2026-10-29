@@ -12,6 +12,7 @@ import {
   formatMonthName,
   formatNumber,
 } from '../lib/useStatsFormat';
+import { activitiesSummary, monthsSummary, weightSummary } from '../utils/chartSummaries';
 import type { Totals, TripStatsRecord } from '../utils/tripStats';
 import { formatDistance, formatElevation, type TripDistanceUnit } from '../utils/units';
 import { SegmentedButtons, StackedValueRow, StatsCard, StatTile, ValueRow } from './StatsParts';
@@ -119,8 +120,24 @@ export function MonthsCard({ record }: { record: TripStatsRecord }) {
   const max = Math.max(...values, 1);
   const title =
     record.scope.year != null ? String(record.scope.year) : t('tripStats.months.last12');
+  const { total, peak } = monthsSummary({ months: record.months, metric });
+  const countKey = metric === 'nights' ? 'tripStats.countNights' : 'tripStats.countTrips';
+  const summary = [
+    t('tripStats.months.summary', {
+      amount: t(countKey, { count: total }),
+      period: record.scope.year != null ? title : t('tripStats.months.summaryLast12'),
+    }),
+    peak
+      ? t('tripStats.months.summaryPeak', {
+          month: peak.month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+          count: peak.value,
+        })
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
   return (
-    <StatsCard title={title}>
+    <StatsCard title={title} summary={summary}>
       <SegmentedButtons
         options={MONTH_METRICS}
         value={metric}
@@ -175,10 +192,23 @@ export function ActivitiesCard({
   const { colors } = useColorScheme();
   if (record.activities.length === 0) return null;
   const max = Math.max(...record.activities.map((bucket) => bucket.trips), 1);
+  const { count, top } = activitiesSummary(record.activities);
+  const summary = [
+    t('tripStats.activities.summary', { count }),
+    top
+      ? t('tripStats.activities.summaryTop', {
+          activity: t(`tripStats.activities.names.${top.activity}`),
+          trips: t('tripStats.countTrips', { count: top.trips }),
+        })
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
   return (
     <StatsCard
       title={t('tripStats.activities.title')}
       subtitle={t('tripStats.activities.subtitle')}
+      summary={summary}
     >
       <View>
         {record.activities.map((bucket) => (
@@ -307,8 +337,26 @@ export function BaseWeightCard({ record }: { record: TripStatsRecord }) {
   const { unit, convertWeight } = useWeightUnit();
   if (record.packWeights.length < 2) return null;
   const max = Math.max(...record.packWeights.map((point) => point.grams), 1);
+  const formatWeight = (grams: number) =>
+    `${formatDecimal(convertWeight({ weight: grams, fromUnit: 'g' }))} ${unit}`;
+  const { count, first, last } = weightSummary(record.packWeights);
+  const summary = [
+    t('tripStats.weight.summary', { trips: t('tripStats.countTrips', { count }) }),
+    first && last
+      ? t('tripStats.weight.summaryRange', {
+          from: formatWeight(first.grams),
+          to: formatWeight(last.grams),
+        })
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
   return (
-    <StatsCard title={t('tripStats.weight.title')} subtitle={t('tripStats.weight.subtitle')}>
+    <StatsCard
+      title={t('tripStats.weight.title')}
+      subtitle={t('tripStats.weight.subtitle')}
+      summary={summary}
+    >
       <View className="gap-2">
         {record.packWeights.map((point) => (
           <View key={point.id} className="gap-1">
@@ -317,7 +365,7 @@ export function BaseWeightCard({ record }: { record: TripStatsRecord }) {
                 {`${formatMonthDay(point.date)} · ${point.packName}`}
               </Text>
               <Text variant="subhead" style={{ fontVariant: ['tabular-nums'] }}>
-                {`${formatDecimal(convertWeight({ weight: point.grams, fromUnit: 'g' }))} ${unit}`}
+                {formatWeight(point.grams)}
               </Text>
             </View>
             <View

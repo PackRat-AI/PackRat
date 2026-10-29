@@ -561,7 +561,10 @@
       "last12": "Last 12 Months",
       "nights": "Nights",
       "trips": "Trips",
-      "busiest": "Busiest: {{month}}"
+      "busiest": "Busiest: {{month}}",
+      "summary": "{{amount}} in {{period}}.",
+      "summaryLast12": "the last 12 months",
+      "summaryPeak": "Most in {{month}}, with {{count}}."
     },
     "scope": {
       "allActivities": "All Activities",
@@ -587,7 +590,10 @@
         "skiing": "Skiing",
         "biking": "Biking",
         "other": "Other"
-      }
+      },
+      "summary_one": "{{count}} activity across your logged trips.",
+      "summary_other": "{{count}} activities across your logged trips.",
+      "summaryTop": "{{activity}} leads with {{trips}}."
     },
     "highlights": {
       "title": "Highlights",
@@ -606,7 +612,8 @@
       "averageNights": "{{value}} nights"
     },
     "map": {
-      "title": "Where You've Been"
+      "title": "Where You've Been",
+      "showAll": "Show all trips"
     },
     "places": {
       "title": "Countries & States",
@@ -628,6 +635,26 @@
       "emptyBody": "Give a trip a location and it shows up here.",
       "firstVisit": "First visit {{date}}",
       "trips": "Trips"
+    },
+    "landscapes": {
+      "title": "Landscapes",
+      "names": {
+        "desert": "Desert",
+        "mountain": "Mountain",
+        "forest": "Forest",
+        "coastal": "Coastal",
+        "water": "Lakes & Rivers",
+        "grassland": "Grassland",
+        "polar": "Polar"
+      },
+      "rowLabel": "{{landscape}}, {{trips}}",
+      "automatic": "Automatic",
+      "automaticWith": "Automatic ({{landscape}})",
+      "field": "Landscape",
+      "fieldHint": "Where this trip counts in Landscapes.",
+      "move": "Move to another landscape",
+      "emptyTitle": "No {{landscape}} Trips",
+      "attribution": "Climate zones © Beck et al. 2023, CC BY 4.0."
     },
     "parks": {
       "title": "National Parks",
@@ -704,7 +731,7 @@
       "added": "Added",
       "remove": "Remove trail",
       "logHintRoute": "Trails your route follows are suggested first.",
-      "logHintNoRoute": "Picking a trail fills in its route and length if you haven't added them."
+      "logHintNoRoute": "Picking a trail fills in its route if you haven't added one."
     },
     "gear": {
       "title": "Packed Most Often",
@@ -728,7 +755,9 @@
     },
     "weight": {
       "title": "Base Weight by Trip",
-      "subtitle": "Each pack's current base weight"
+      "subtitle": "Each pack's current base weight",
+      "summary": "Base weight across {{trips}}.",
+      "summaryRange": "From {{from}} to {{to}}."
     },
     "log": {
       "sectionTitle": "Trip log",
@@ -753,7 +782,18 @@
       "gpxUnreadable": "This file isn't a GPX track PackRat can read.",
       "gpxNoPoints": "This file has no track points in it.",
       "importFailed": "Couldn't import the route",
-      "trails": "Trails"
+      "trails": "Trails",
+      "drawRoute": "Draw on map",
+      "editRoute": "Edit on map",
+      "routeDrawn": "Drawn on the map",
+      "drawTitle": "Draw route",
+      "drawPrompt": "Tap the map along the way you went.",
+      "undo": "Undo",
+      "outAndBack": "Out and back",
+      "clear": "Clear",
+      "oneWay": "One way {{distance}}",
+      "thereAndBack": "There and back {{distance}}",
+      "trailDistanceHint": "Tap a trail distance to use the length of the trails you picked."
     },
     "dialog": {
       "close": "Close",

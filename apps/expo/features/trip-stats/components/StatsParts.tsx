@@ -25,9 +25,12 @@ export function StatsCard({
   children,
   testID,
   hostsNativeView = false,
+  summary,
 }: {
   title: string;
   subtitle?: string | null;
+  /** What a chart card shows at a glance, spoken with its heading by a screen reader. */
+  summary?: string | null;
   /** A trailing control in the header row, such as an overflow menu. */
   action?: ReactNode;
   children: ReactNode;
@@ -43,7 +46,12 @@ export function StatsCard({
     <Surface className="gap-3 p-4" testID={testID}>
       <View className="flex-row items-start gap-2">
         <View className="flex-1 gap-0.5">
-          <Text variant="heading" className="font-medium">
+          <Text
+            variant="heading"
+            className="font-medium"
+            accessibilityRole="header"
+            accessibilityLabel={summary ? `${title}. ${summary}` : undefined}
+          >
             {title}
           </Text>
           {subtitle ? (
