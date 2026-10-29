@@ -120,7 +120,10 @@ struct AppNavigation: View {
     /// the SwiftData cache for a location the user has not saved locally.
     /// The badge counts *unseen* rather than *active*: an alert the user has
     /// already opened still exists, but no longer needs to shout.
+    /// Zero when signed out: Weather is sign-in only, so any cached state is
+    /// left over from an earlier session and points at nothing to open.
     private var activeWeatherAlertCount: Int {
+        guard authManager.isAuthenticated else { return 0 }
         let unseenSaved = appState.weatherVM.savedLocations
             .filter { appState.weatherVM.hasUnseenAlert(locationId: $0.id) }
             .map(\.id)
