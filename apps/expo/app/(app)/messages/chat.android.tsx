@@ -14,10 +14,9 @@ import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import {
   Image,
-  type NativeSyntheticEvent,
   Platform,
   Pressable,
-  type TextInputContentSizeChangeEventData,
+  type TextInputContentSizeChangeEvent,
   type TextStyle,
   View,
   type ViewStyle,
@@ -527,7 +526,7 @@ function Composer({
   const [message, setMessage] = React.useState('');
   const [showOptions, setShowOptions] = React.useState(true);
 
-  function onContentSizeChange(event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) {
+  function onContentSizeChange(event: TextInputContentSizeChangeEvent) {
     textInputHeight.value = Math.max(
       Math.min(event.nativeEvent.contentSize.height, 280),
       Platform.select({ ios: 24, default: 44 }),

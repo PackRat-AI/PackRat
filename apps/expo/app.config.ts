@@ -3,7 +3,12 @@ import * as path from 'node:path';
 import { isString } from '@packrat/guards';
 import { withSentry } from '@sentry/react-native/expo';
 import type { ExpoConfig } from 'expo/config';
-import { type ConfigPlugin, withDangerousMod, withXcodeProject } from 'expo/config-plugins';
+import {
+  type ConfigPlugin,
+  withDangerousMod,
+  withGradleProperties,
+  withXcodeProject,
+} from 'expo/config-plugins';
 
 const IS_DEV = process.env.APP_VARIANT === 'development';
 const IS_PREVIEW = process.env.APP_VARIANT === 'preview';
@@ -148,8 +153,21 @@ const withSwiftUICoreFix: ConfigPlugin<void> = (config) => {
   return patched;
 };
 
+// SDK 58 turns on R8 for Android release builds. It has not been checked against
+// the reflection-heavy native libraries this app ships (RevenueCat, Sentry, llama.rn,
+// tflite), and it overruns the default Gradle heap, so release builds keep it off.
+const withR8Disabled: ConfigPlugin<void> = (config) =>
+  withGradleProperties(config, (c) => {
+    const key = 'android.enableMinifyInReleaseBuilds';
+    c.modResults = c.modResults.filter((item) => item.type !== 'property' || item.key !== key);
+    c.modResults.push({ type: 'property', key, value: 'false' });
+    return c;
+  });
+
+const withNativeFixes: ConfigPlugin<void> = (config) => withR8Disabled(withSwiftUICoreFix(config));
+
 export default (): ExpoConfig =>
-  withSwiftUICoreFix(
+  withNativeFixes(
     withSentry(
       {
         name: getAppName(),
