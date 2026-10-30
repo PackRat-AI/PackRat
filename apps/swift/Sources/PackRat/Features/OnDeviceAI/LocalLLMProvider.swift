@@ -1,4 +1,6 @@
 import Foundation
+import OSLog
+import Sentry
 
 /// One turn of an on-device conversation.
 struct LocalLLMMessage: Sendable, Equatable {
@@ -26,7 +28,10 @@ enum LocalLLMError: LocalizedError, Equatable {
     case conversationTooLong
     /// The model declined to answer (Apple's safety guardrails).
     case declined
-    case generationFailed(String)
+    /// The model failed for any other reason. The cause goes to Sentry and the
+    /// log, never to the chat: raw framework text reads as jargon, and words in
+    /// it ("session", "token") trip the chat's sign-in error copy.
+    case generationFailed
 
     var errorDescription: String? {
         switch self {
@@ -36,10 +41,22 @@ enum LocalLLMError: LocalizedError, Equatable {
             return "This conversation is too long for on-device AI. Clear the chat to keep going."
         case .declined:
             return "On-device AI can't help with that one. Try rephrasing, or switch to Cloud."
-        case .generationFailed(let message):
-            return message
+        case .generationFailed:
+            return "On-device AI couldn't answer. Try again, or switch to Cloud."
         }
     }
+
+    /// Records an unexpected model failure and returns the error the chat shows.
+    static func reporting(_ error: Error, model: String) -> LocalLLMError {
+        logger.error("\(model, privacy: .public) generation failed: \(String(describing: error), privacy: .public)")
+        SentrySDK.capture(error: error) { scope in
+            scope.setTag(value: "onDeviceAI", key: "feature")
+            scope.setTag(value: model, key: "model")
+        }
+        return .generationFailed
+    }
+
+    private static let logger = Logger(subsystem: "com.packrat.app", category: "onDeviceAI")
 }
 
 enum LocalLLMHistory {

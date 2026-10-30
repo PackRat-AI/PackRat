@@ -42,9 +42,7 @@ struct GemmaProvider: LocalLLMProvider {
                 } catch let error as LocalLLMError {
                     continuation.finish(throwing: error)
                 } catch {
-                    continuation.finish(throwing: LocalLLMError.generationFailed(
-                        "On-device AI stopped unexpectedly. Try again, or switch to Cloud."
-                    ))
+                    continuation.finish(throwing: LocalLLMError.reporting(error, model: "gemma"))
                 }
             }
             continuation.onTermination = { _ in task.cancel() }

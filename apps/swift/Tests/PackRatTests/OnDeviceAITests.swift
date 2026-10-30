@@ -138,6 +138,16 @@ struct ChatViewModelOnDeviceModeTests {
         #expect(viewModel.error == LocalLLMError.unavailable.errorDescription)
         #expect(viewModel.messages.map(\.role) == [.assistant, .user])
     }
+
+    @Test("every on-device error reads as its own message, never the sign-in prompt")
+    func errorsKeepTheirOwnCopy() {
+        let errors: [LocalLLMError] = [.unavailable, .conversationTooLong, .declined, .generationFailed]
+        for error in errors {
+            let message = error.errorDescription ?? ""
+            let presentation = FriendlyErrorPresentation(message)
+            #expect(presentation.inlineDescription(forRawMessage: message) == message)
+        }
+    }
 }
 
 // MARK: - Doubles

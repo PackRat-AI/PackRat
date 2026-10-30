@@ -45,10 +45,12 @@ struct AppleLanguageModelProvider: LocalLLMProvider {
                         emitted = text
                     }
                     continuation.finish()
+                } catch is CancellationError {
+                    continuation.finish(throwing: CancellationError())
                 } catch let error as LanguageModelSession.GenerationError {
                     continuation.finish(throwing: Self.map(error))
                 } catch {
-                    continuation.finish(throwing: error)
+                    continuation.finish(throwing: LocalLLMError.reporting(error, model: "apple"))
                 }
             }
             continuation.onTermination = { _ in task.cancel() }
@@ -86,7 +88,7 @@ struct AppleLanguageModelProvider: LocalLLMProvider {
         case .assetsUnavailable:
             return .unavailable
         default:
-            return .generationFailed(error.localizedDescription)
+            return .reporting(error, model: "apple")
         }
     }
 }
