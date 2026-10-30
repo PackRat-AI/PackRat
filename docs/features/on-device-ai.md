@@ -4,7 +4,7 @@ Lets a user chat with PackRat's assistant with no signal, keeping everything the
 
 ## The model in one paragraph
 
-The AI chat has two modes: Cloud and On-device. Cloud is the default and the most capable: it can look up the user's packs, the gear catalog, weather and guides. On-device answers from a language model running on the phone, tablet or Mac itself, so it works on a ridge with no coverage and nothing leaves the device. On devices with Apple Intelligence, On-device is ready the moment it is chosen. On other devices that can run it, the user downloads a model once, over Wi-Fi if they like, and from then on it works offline. Devices that cannot run a model well do not offer the mode at all, rather than offering something slow or unreliable.
+The AI chat has two modes: Cloud and On-device. Cloud is the default and the most capable model. On-device answers from a language model running on the phone, tablet or Mac itself, so it works on a ridge with no coverage and the conversation stays on the device. On devices with Apple Intelligence, On-device is ready the moment it is chosen. On other devices that can run it, the user downloads a model once, over Wi-Fi if they like, and from then on it works offline. Devices that cannot run a model well do not offer the mode at all, rather than offering something slow or unreliable.
 
 ## Choosing a mode
 
@@ -20,7 +20,7 @@ On other devices with enough memory, On-device uses Gemma, a compact open model.
 
 ## What an on-device answer is
 
-On-device answers stream in as they are written, the same as Cloud. They draw on the conversation and general outdoor knowledge, plus the pack or gear item the chat was opened from. They do not search the catalog, read other packs, or fetch live data; when a question needs that, the answer says so and suggests Cloud. Long conversations keep their most recent turns in view.
+On-device answers stream in as they are written, the same as Cloud, and can do what Cloud does. They read the user's packs and add items to them, with or without a signal. With a connection they also check the weather, search the gear catalog and PackRat's guides, and search the web; without one, the answer says live data needs a connection and answers from what the model knows. The chat shows each lookup as it happens, as it does in Cloud. Long conversations keep their most recent turns in view.
 
 ## User controls
 
@@ -31,6 +31,5 @@ On-device answers stream in as they are written, the same as Cloud. They draw on
 
 - No choice between several downloadable models; each device gets one.
 - No image, voice or document input on-device.
-- No tool use on-device: catalog search, pack edits, web search and live weather stay Cloud-only.
 - No syncing of on-device conversations to other devices.
 - No automatic switching between modes based on signal.

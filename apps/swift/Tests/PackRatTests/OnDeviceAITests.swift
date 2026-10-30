@@ -98,7 +98,45 @@ struct LocalChatServiceTests {
     func instructionsNamePack() {
         let instructions = LocalChatService.instructions(for: .pack(id: "p1", name: "JMT Thru-hike"))
         #expect(instructions.contains("“JMT Thru-hike”"))
-        #expect(instructions.contains("switching the chat to Cloud"))
+        #expect(instructions.contains("Use the tools"))
+    }
+
+    @Test("reports a tool call as the same chunks the cloud chat sends")
+    func toolEventsBecomeChunks() throws {
+        let started = LocalChatService.chunks(for: .toolStarted(id: "c1", name: "getWeatherForLocation", inputJSON: #"{"location":"Yosemite"}"#))
+        let finished = LocalChatService.chunks(for: .toolFinished(id: "c1", outputJSON: #"{"success":true}"#))
+
+        let decoded = try (started + finished).map {
+            try #require(JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any])
+        }
+        #expect(decoded.map { $0["type"] as? String } == ["tool-input-start", "tool-input-available", "tool-output-available"])
+        #expect(decoded.allSatisfy { $0["toolCallId"] as? String == "c1" })
+        #expect((decoded[1]["input"] as? [String: String]) == ["location": "Yosemite"])
+        #expect((decoded[2]["output"] as? [String: Bool]) == ["success": true])
+    }
+}
+
+@Suite("OnDeviceTool")
+struct OnDeviceToolTests {
+    @Test("a call reports its start and finish with one id and returns the tool's result")
+    func invokeReportsAndReturns() async throws {
+        let tool = OnDeviceTool(name: "echo", description: "", parameters: []) { arguments in
+            ["success": true, "data": arguments["text"] ?? ""]
+        }
+        let events = EventRecorder()
+
+        let output = await tool.invoke(argumentsJSON: #"{"text":"hi"}"#) { events.append($0) }
+
+        let result = try #require(JSONSerialization.jsonObject(with: Data(output.utf8)) as? [String: Any])
+        #expect(result["data"] as? String == "hi")
+        guard case .toolStarted(let startId, "echo", _) = events.all.first,
+              case .toolFinished(let finishId, output) = events.all.last
+        else {
+            Issue.record("Unexpected events: \(events.all)")
+            return
+        }
+        #expect(startId == finishId)
+        #expect(events.all.count == 2)
     }
 }
 
@@ -139,6 +177,30 @@ struct ChatViewModelOnDeviceModeTests {
         #expect(viewModel.messages.map(\.role) == [.assistant, .user])
     }
 
+    @Test("an on-device tool call shows as finished and is not answered again")
+    func toolCallsCompleteInOneTurn() async throws {
+        let provider = ScriptedProvider(events: [
+            .toolStarted(id: "c1", name: "listUserPacks", inputJSON: "{}"),
+            .toolFinished(id: "c1", outputJSON: #"{"success":true,"data":[]}"#),
+            .text("You have no packs yet."),
+        ])
+        let viewModel = ChatViewModel(
+            service: FailingCloudService(),
+            onDeviceService: LocalChatService(makeProvider: { provider }),
+            mode: .onDevice
+        )
+
+        viewModel.inputText = "What packs do I have?"
+        viewModel.sendMessage()
+        try await waitUntil { !viewModel.isStreaming && viewModel.messages.count == 3 }
+
+        let reply = try #require(viewModel.messages.last)
+        #expect(reply.content == "You have no packs yet.")
+        #expect(reply.toolInvocations.map(\.toolName) == ["listUserPacks"])
+        #expect(reply.toolInvocations.allSatisfy { $0.state == .complete })
+        #expect(provider.callCount == 1)
+    }
+
     @Test("every on-device error reads as its own message, never the sign-in prompt")
     func errorsKeepTheirOwnCopy() {
         let errors: [LocalLLMError] = [.unavailable, .conversationTooLong, .declined, .generationFailed]
@@ -153,19 +215,40 @@ struct ChatViewModelOnDeviceModeTests {
 // MARK: - Doubles
 
 private final class ScriptedProvider: LocalLLMProvider, @unchecked Sendable {
-    let deltas: [String]
+    let events: [LocalLLMEvent]
     private(set) var receivedHistory: [LocalLLMMessage]?
+    private(set) var callCount = 0
 
     init(deltas: [String]) {
-        self.deltas = deltas
+        self.events = deltas.map(LocalLLMEvent.text)
     }
 
-    func streamReply(instructions _: String, history: [LocalLLMMessage]) -> AsyncThrowingStream<String, Error> {
+    init(events: [LocalLLMEvent]) {
+        self.events = events
+    }
+
+    func streamReply(
+        instructions _: String,
+        history: [LocalLLMMessage],
+        tools _: [OnDeviceTool]
+    ) -> AsyncThrowingStream<LocalLLMEvent, Error> {
         receivedHistory = history
+        callCount += 1
         return AsyncThrowingStream { continuation in
-            for delta in deltas { continuation.yield(delta) }
+            for event in events { continuation.yield(event) }
             continuation.finish()
         }
+    }
+}
+
+private final class EventRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var events: [LocalLLMEvent] = []
+
+    var all: [LocalLLMEvent] { lock.withLock { events } }
+
+    func append(_ event: LocalLLMEvent) {
+        lock.withLock { events.append(event) }
     }
 }
 

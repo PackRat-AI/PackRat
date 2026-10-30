@@ -16,9 +16,20 @@ struct LocalLLMMessage: Sendable, Equatable {
 /// instructions plus the full history passed in, so switching between Cloud and
 /// On-device mid-conversation needs no session bookkeeping.
 protocol LocalLLMProvider: Sendable {
-    /// Streams the reply to the last user message in `history` as text deltas
-    /// (each element is new text, never a cumulative snapshot).
-    func streamReply(instructions: String, history: [LocalLLMMessage]) -> AsyncThrowingStream<String, Error>
+    /// Streams the reply to the last user message in `history`: text deltas
+    /// (new text, never a cumulative snapshot) and the tool calls made on the way.
+    func streamReply(
+        instructions: String,
+        history: [LocalLLMMessage],
+        tools: [OnDeviceTool]
+    ) -> AsyncThrowingStream<LocalLLMEvent, Error>
+}
+
+/// What an on-device reply streams back.
+enum LocalLLMEvent: Sendable, Equatable {
+    case text(String)
+    case toolStarted(id: String, name: String, inputJSON: String)
+    case toolFinished(id: String, outputJSON: String)
 }
 
 enum LocalLLMError: LocalizedError, Equatable {

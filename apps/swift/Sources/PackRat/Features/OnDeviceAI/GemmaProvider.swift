@@ -14,7 +14,11 @@ struct GemmaProvider: LocalLLMProvider {
 
     let directory: URL
 
-    func streamReply(instructions: String, history: [LocalLLMMessage]) -> AsyncThrowingStream<String, Error> {
+    func streamReply(
+        instructions: String,
+        history: [LocalLLMMessage],
+        tools: [OnDeviceTool]
+    ) -> AsyncThrowingStream<LocalLLMEvent, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 let turns = LocalLLMHistory.trimmed(history, characterBudget: Self.historyCharacterBudget)
@@ -31,10 +35,20 @@ struct GemmaProvider: LocalLLMProvider {
                         history: turns.dropLast().map { turn in
                             turn.role == .user ? .user(turn.content) : .assistant(turn.content)
                         },
-                        generateParameters: GenerateParameters(maxTokens: 1_024, temperature: 0.7)
+                        generateParameters: GenerateParameters(maxTokens: 1_024, temperature: 0.7),
+                        tools: tools.map(Self.toolSpec),
+                        toolDispatch: { call in
+                            guard let tool = tools.first(where: { $0.name == call.function.name }) else {
+                                return #"{"success":false,"error":"Unknown tool"}"#
+                            }
+                            let arguments = call.function.arguments.mapValues(\.anyValue)
+                            let json = (try? JSONSerialization.data(withJSONObject: arguments))
+                                .map { String(decoding: $0, as: UTF8.self) } ?? "{}"
+                            return await tool.invoke(argumentsJSON: json) { continuation.yield($0) }
+                        }
                     )
                     for try await chunk in session.streamResponse(to: last.content) {
-                        continuation.yield(chunk)
+                        continuation.yield(.text(chunk))
                     }
                     continuation.finish()
                 } catch is CancellationError {
@@ -47,6 +61,33 @@ struct GemmaProvider: LocalLLMProvider {
             }
             continuation.onTermination = { _ in task.cancel() }
         }
+    }
+}
+
+extension GemmaProvider {
+    /// The OpenAI-style function schema Gemma's chat template renders.
+    static func toolSpec(_ tool: OnDeviceTool) -> ToolSpec {
+        let properties: [String: any Sendable] = Dictionary(uniqueKeysWithValues: tool.parameters.map { parameter in
+            let type: String = switch parameter.kind {
+            case .string: "string"
+            case .integer: "integer"
+            case .number: "number"
+            case .boolean: "boolean"
+            }
+            return (parameter.name, ["type": type, "description": parameter.description] as [String: any Sendable])
+        })
+        return [
+            "type": "function",
+            "function": [
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": [
+                    "type": "object",
+                    "properties": properties,
+                    "required": tool.parameters.filter(\.isRequired).map(\.name),
+                ] as [String: any Sendable],
+            ] as [String: any Sendable],
+        ]
     }
 }
 
