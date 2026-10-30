@@ -161,6 +161,22 @@ struct ChatViewModelOnDeviceModeTests {
         #expect(provider.receivedHistory == [LocalLLMMessage(role: .user, content: "What should I bring?")])
     }
 
+    @Test("sends the message without blank lines or spaces around it, keeping the inside as typed")
+    func trimsMessageEnds() async throws {
+        let provider = ScriptedProvider(deltas: ["ok"])
+        let viewModel = ChatViewModel(
+            service: FailingCloudService(),
+            onDeviceService: LocalChatService(makeProvider: { provider }),
+            mode: .onDevice
+        )
+
+        viewModel.inputText = "\n  Tent  or\n\ttarp? \n\n"
+        viewModel.sendMessage()
+        try await waitUntil { !viewModel.isStreaming && viewModel.messages.count == 3 }
+
+        #expect(provider.receivedHistory == [LocalLLMMessage(role: .user, content: "Tent  or\n\ttarp?")])
+    }
+
     @Test("an unavailable on-device model surfaces a readable error")
     func surfacesUnavailable() async throws {
         let viewModel = ChatViewModel(

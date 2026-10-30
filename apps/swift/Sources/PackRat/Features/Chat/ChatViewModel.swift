@@ -48,7 +48,7 @@ final class ChatViewModel {
         messages.append(ChatMessage(role: .assistant, content: context.greeting))
     }
 
-    var canSend: Bool { !inputText.trimmingCharacters(in: .whitespaces).isEmpty && !isStreaming }
+    var canSend: Bool { !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isStreaming }
 
     /// On-device mode is offered only with the flag on and a device that can run a model.
     static var isOnDeviceOffered: Bool {
@@ -61,7 +61,7 @@ final class ChatViewModel {
     }
 
     func sendMessage() {
-        let text = inputText.trimmingCharacters(in: .whitespaces)
+        let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isStreaming else { return }
 
         inputText = ""
