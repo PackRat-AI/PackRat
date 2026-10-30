@@ -82,7 +82,7 @@
     "google-auth-library": "catalog:",
     "gray-matter": "catalog:",
     "jose": "^6.2.12",
-    "linkedom": "^0.18.11",
+    "linkedom": "^0.18.14",
     "pg": "catalog:",
     "resend": "^6.10.0",
     "ws": "catalog:",
@@ -102,7 +102,7 @@
     "better-auth": "catalog:",
     "drizzle-orm": "catalog:",
     "drizzle-seed": "^0.3.1",
-    "miniflare": "^4.20260515.0",
+    "miniflare": "^4.20260730.0",
     "typed-htmx": "^0.3.1",
     "vitest": "catalog:",
     "wrangler": "catalog:"

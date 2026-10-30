@@ -34,7 +34,7 @@ export function scopeParams(scope: Scope): ScopeParams {
   };
 }
 
-function useScopeFromParams(): Scope {
+export function useScopeFromParams(): Scope {
   const { year, activity } = useLocalSearchParams<ScopeParams>();
   return useMemo(() => {
     const parsedYear = year ? Number.parseInt(year, 10) : Number.NaN;

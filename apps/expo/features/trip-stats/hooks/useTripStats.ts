@@ -3,6 +3,7 @@ import type { TripGoal, TripStatsEntry } from '@packrat/schemas/tripStats';
 import { useDetailedPacks } from 'expo-app/features/packs/hooks/useDetailedPacks';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { useMemo } from 'react';
+import { getLandscapeGrid } from '../lib/landscapes';
 import { getLongTrails, longTrailCache } from '../lib/longTrails';
 import { getNationalParks } from '../lib/nationalParks';
 import { getPlaceAtlas, localizedCountryName, placesCache } from '../lib/places';
@@ -10,6 +11,7 @@ import { tripStatsEntriesStore } from '../store/entries';
 import { tripGoalsStore } from '../store/goals';
 import { computeGoalProgress, type GoalProgress, sortGoals } from '../utils/goalProgress';
 import { computeIdleGear, type IdleGear } from '../utils/idleGear';
+import { computeTripLandscapes, type LandscapeBucket } from '../utils/landscapes';
 import { computeLongTrailProgress, type LongTrailProgress } from '../utils/longTrails';
 import { computeParksAndPeaks, type ParksAndPeaks } from '../utils/parksAndPeaks';
 import { computeTripPlaces, type TripPlaces } from '../utils/tripPlaces';
@@ -116,6 +118,14 @@ export function useTripPlaces(record: TripStatsRecord): TripPlaces {
       cache: placesCache,
     });
   }, [record.finished, record.allFinished]);
+}
+
+/** Trips by landscape, following the stats screen's filters. */
+export function useTripLandscapes(record: TripStatsRecord): LandscapeBucket[] {
+  return useMemo(
+    () => computeTripLandscapes({ finished: record.finished, grid: getLandscapeGrid() }),
+    [record.finished],
+  );
 }
 
 /** Gear in the user's packs that no finished trip carried in the last twelve months. */
