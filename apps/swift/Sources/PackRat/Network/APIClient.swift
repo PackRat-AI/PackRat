@@ -1,4 +1,5 @@
 import Foundation
+import Sentry
 
 actor APIClient {
     static let shared = APIClient()
@@ -207,6 +208,7 @@ actor APIClient {
     }
 
     private func dataWithTransientRetry(for request: URLRequest) async throws -> (Data, URLResponse) {
+        let startedAt = Date()
         var lastError: Error?
 
         for attempt in 0..<2 {
@@ -229,7 +231,44 @@ actor APIClient {
             }
         }
 
+        if let lastError {
+            Self.reportTransportFailure(lastError, request: request, elapsed: Date().timeIntervalSince(startedAt))
+        }
         throw lastError ?? PackRatError.unknown
+    }
+
+    /// Transport failures (timeouts, DNS, TLS, unreachable host) never get an
+    /// HTTP status, so Sentry's failed-request capture misses them and a user
+    /// stuck on a spinner leaves no trace. Report them here, after the retry,
+    /// so each failed call is one event. Being offline and cancellation are
+    /// expected in an offline-first app and are not reported.
+    private static let unreportedURLErrorCodes: Set<URLError.Code> = [
+        .cancelled,
+        .notConnectedToInternet,
+        .dataNotAllowed,
+        .internationalRoamingOff,
+    ]
+
+    private static func reportTransportFailure(_ error: Error, request: URLRequest, elapsed: TimeInterval) {
+        // Without a DSN the SDK is never started, and the first capture would
+        // build its hub here, off the main thread, where it reads UIKit state.
+        // The Main Thread Checker aborts on that in UI tests.
+        guard SentrySDK.isEnabled,
+              let urlError = error as? URLError,
+              !unreportedURLErrorCodes.contains(urlError.code)
+        else { return }
+        let path = request.url?.path ?? "?"
+        SentrySDK.capture(error: urlError) { scope in
+            scope.setTag(value: "network", key: "feature")
+            scope.setTag(value: path, key: "api_path")
+            scope.setTag(value: String(urlError.code.rawValue), key: "url_error_code")
+            scope.setExtras([
+                "method": request.httpMethod ?? "?",
+                "host": request.url?.host ?? "?",
+                "elapsedSeconds": (elapsed * 10).rounded() / 10,
+                "attempts": 2,
+            ])
+        }
     }
 
     /// Better Auth returns the session token in the `set-auth-token` response
