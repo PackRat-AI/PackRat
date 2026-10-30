@@ -129,7 +129,6 @@ struct ChatView: View {
                 Text(mode.title).tag(mode)
             }
         }
-        .pickerStyle(.inline)
         .disabled(viewModel.isStreaming)
         .accessibilityIdentifier("chat_mode_picker")
     }
@@ -289,16 +288,21 @@ struct ChatView: View {
 // MARK: - Mode title menu
 
 private extension View {
-    /// Tapping the title opens the mode menu. iOS only shows a title menu on an
-    /// inline title, so the title goes inline while the menu is offered.
+    /// Where the mode menu lives. On iOS, tapping the title opens it (the title
+    /// goes inline, since iOS only shows a title menu there). A Mac window
+    /// title is not a menu outside document apps, so the Mac gets a toolbar
+    /// pop-up button instead.
     @ViewBuilder
     func modeTitleMenu<Content: View>(isOffered: Bool, @ViewBuilder content: () -> Content) -> some View {
         if isOffered {
             #if os(iOS)
-            toolbarTitleMenu(content: content)
+            toolbarTitleMenu { content().pickerStyle(.inline) }
                 .navigationBarTitleDisplayMode(.inline)
             #else
-            toolbarTitleMenu(content: content)
+            let menu = content()
+            toolbar {
+                ToolbarItem(placement: .navigation) { menu.pickerStyle(.menu).fixedSize() }
+            }
             #endif
         } else {
             self
