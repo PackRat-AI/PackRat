@@ -377,11 +377,13 @@ struct MessageBubble: View {
                 }
                 if !message.content.isEmpty {
                     Markdown(message.content)
-                        .markdownTheme(.gitHub)
+                        .markdownTheme(.chatBubble)
                         .textSelection(.enabled)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
             }
-            .padding(.vertical, 4)
         }
     }
 
@@ -405,6 +407,15 @@ struct MessageBubble: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+    }
+}
+
+private extension Theme {
+    /// GitHub's markdown styling without its page background, which drew a
+    /// hard-edged rectangle behind every reply instead of letting the bubble show.
+    static let chatBubble = Theme.gitHub.text {
+        ForegroundColor(.primary)
+        FontSize(16)
     }
 }
 
