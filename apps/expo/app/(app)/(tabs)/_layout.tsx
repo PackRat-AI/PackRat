@@ -1,6 +1,6 @@
 import { useFeatureFlags } from 'expo-app/hooks/useFeatureFlags';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { NativeTabs } from 'expo-router/native-tabs';
 
 export default function TabLayout() {
   const { t } = useTranslation();
