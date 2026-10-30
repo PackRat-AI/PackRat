@@ -8,7 +8,7 @@ The AI chat has two modes: Cloud and On-device. Cloud is the default and the mos
 
 ## Choosing a mode
 
-The mode switch sits at the top of the AI chat. Switching is instant and applies to the next message; the conversation so far stays on screen and carries over. The chosen mode is remembered between launches. If On-device is chosen but cannot answer yet (Apple Intelligence turned off or still preparing, or the model not downloaded), the chat shows what to do in place of sending, and Cloud stays one tap away.
+The AI chat's title opens a menu to choose the mode, and the current mode shows under the title. Switching is instant and applies to the next message; the conversation so far stays on screen and carries over. The chosen mode is remembered between launches. If On-device is chosen but cannot answer yet (Apple Intelligence turned off or still preparing, or the model not downloaded), the chat shows what to do in place of sending, and Cloud stays one tap away.
 
 ## Apple Intelligence devices
 
@@ -24,7 +24,7 @@ On-device answers stream in as they are written, the same as Cloud. They draw on
 
 ## User controls
 
-- The Cloud / On-device switch in the AI chat.
+- The Cloud / On-device choice in the AI chat's title menu.
 - In Settings, under On-device AI: which model the device uses, its size on disk, download or delete, and whether downloads may use cellular data.
 
 ## What this feature does not do

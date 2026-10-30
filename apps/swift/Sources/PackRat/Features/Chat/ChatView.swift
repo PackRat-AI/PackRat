@@ -78,9 +78,6 @@ struct ChatView: View {
         Group {
             if authManager.isAuthenticated {
                 VStack(spacing: 0) {
-                    if isOnDeviceOffered {
-                        modePicker
-                    }
                     messageList
                     if isOnDevice && !isOnDeviceReady {
                         OnDeviceAISetupCard(availability: onDeviceAvailability)
@@ -101,6 +98,8 @@ struct ChatView: View {
             }
         }
         .navigationTitle(navigationTitleText)
+        .modeTitleMenu(isOffered: isOnDeviceOffered && authManager.isAuthenticated) { modePicker }
+        .modeSubtitle(isOnDeviceOffered && authManager.isAuthenticated ? viewModel.mode.title : nil)
         .onAppear(perform: refreshOnDeviceAvailability)
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { refreshOnDeviceAvailability() }
@@ -122,17 +121,16 @@ struct ChatView: View {
 
     // MARK: - Mode
 
+    /// Lives in the navigation title's menu, the system place for choosing how
+    /// a screen behaves (a segmented control is for switching views of content).
     private var modePicker: some View {
         Picker("Answers from", selection: $viewModel.mode) {
             ForEach(ChatAIMode.allCases) { mode in
                 Text(mode.title).tag(mode)
             }
         }
-        .pickerStyle(.segmented)
-        .labelsHidden()
+        .pickerStyle(.inline)
         .disabled(viewModel.isStreaming)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
         .accessibilityIdentifier("chat_mode_picker")
     }
 
@@ -285,6 +283,45 @@ struct ChatView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(.background)
+    }
+}
+
+// MARK: - Mode title menu
+
+private extension View {
+    /// Tapping the title opens the mode menu. iOS only shows a title menu on an
+    /// inline title, so the title goes inline while the menu is offered.
+    @ViewBuilder
+    func modeTitleMenu<Content: View>(isOffered: Bool, @ViewBuilder content: () -> Content) -> some View {
+        if isOffered {
+            #if os(iOS)
+            toolbarTitleMenu(content: content)
+                .navigationBarTitleDisplayMode(.inline)
+            #else
+            toolbarTitleMenu(content: content)
+            #endif
+        } else {
+            self
+        }
+    }
+
+    /// The current mode under the title, so the choice is visible without
+    /// opening the menu.
+    @ViewBuilder
+    func modeSubtitle(_ subtitle: String?) -> some View {
+        if let subtitle {
+            #if os(macOS)
+            navigationSubtitle(subtitle)
+            #else
+            if #available(iOS 26.0, *) {
+                navigationSubtitle(subtitle)
+            } else {
+                self
+            }
+            #endif
+        } else {
+            self
+        }
     }
 }
 
