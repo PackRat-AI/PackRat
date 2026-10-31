@@ -87,6 +87,8 @@ struct ToolInvocationRow: View {
         case "catalogVectorSearch":     return "Searched gear database"
         case "getPackDetails":          return "Looked up pack details"
         case "getPackItemDetails":      return "Looked up item details"
+        case "listUserPacks":           return "Looked up your packs"
+        case "addItemToPack":           return "Added item to pack"
         case "searchPackratOutdoorGuidesRAG": return "Searched guides"
         case "webSearchTool":           return "Searched the web"
         case "executeSql":              return "Queried database"
@@ -98,7 +100,8 @@ struct ToolInvocationRow: View {
         switch invocation.toolName {
         case "getWeatherForLocation":   return "cloud.sun"
         case "getCatalogItems", "catalogVectorSearch": return "magnifyingglass"
-        case "getPackDetails", "getPackItemDetails":   return "backpack"
+        case "getPackDetails", "getPackItemDetails", "listUserPacks": return "backpack"
+        case "addItemToPack":           return "plus.circle"
         case "searchPackratOutdoorGuidesRAG": return "book"
         case "webSearchTool":           return "globe"
         case "executeSql":              return "cylinder"
@@ -110,7 +113,7 @@ struct ToolInvocationRow: View {
         switch invocation.toolName {
         case "getWeatherForLocation":   return .cyan
         case "getCatalogItems", "catalogVectorSearch": return .blue
-        case "getPackDetails", "getPackItemDetails":   return .green
+        case "getPackDetails", "getPackItemDetails", "listUserPacks", "addItemToPack": return .green
         case "searchPackratOutdoorGuidesRAG": return .brown
         case "webSearchTool":           return .purple
         case "executeSql":              return .orange
