@@ -1,7 +1,9 @@
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { asyncStorage } from 'expo-app/utils/storage';
 import { atom } from 'jotai';
-import { atomWithStorage, loadable } from 'jotai/utils';
+import { atomWithStorage, createJSONStorage, loadable } from 'jotai/utils';
 import type { WeatherLocation } from '../types';
+import type { SeenAlertIds } from '../utils/alertState';
 
 // Create a base atom for locations
 export const baseLocationsAtom = atomWithStorage<WeatherLocation[]>(
@@ -43,3 +45,11 @@ export const activeLocationAtom = atom(
 
 // Create a search filter atom
 export const searchQueryAtom = atom('');
+
+// Alert ids the user has already looked at, per saved location. Drives the red
+// "new alert" markers on the list, the Home row and nowhere else.
+export const seenAlertIdsAtom = atomWithStorage<SeenAlertIds>(
+  'seenWeatherAlertIds',
+  {},
+  createJSONStorage<SeenAlertIds>(() => AsyncStorage),
+);

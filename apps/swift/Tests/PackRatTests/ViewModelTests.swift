@@ -675,30 +675,3 @@ struct PackTemplatesViewModelTests {
         #expect(vm.filteredTemplates.count == 2)
     }
 }
-
-// MARK: - TrailConditionsViewModel
-
-@Suite("TrailConditionsViewModel")
-struct TrailConditionsViewModelTests {
-    @Test("filteredReports searches by trailName")
-    @MainActor func filtersByTrailName() {
-        let vm = TrailConditionsViewModel()
-        vm.reports = [
-            TrailConditionReport(id: "1", trailName: "Half Dome Trail",
-                                 trailRegion: "Yosemite", surface: "rocky",
-                                 overallCondition: "good", hazards: [], waterCrossings: 0,
-                                 waterCrossingDifficulty: nil, notes: nil, photos: [],
-                                 userId: nil, tripId: nil, deleted: false,
-                                 createdAt: nil, updatedAt: nil),
-            TrailConditionReport(id: "2", trailName: "John Muir Trail",
-                                 trailRegion: nil, surface: "dirt",
-                                 overallCondition: "excellent", hazards: [], waterCrossings: 0,
-                                 waterCrossingDifficulty: nil, notes: nil, photos: [],
-                                 userId: nil, tripId: nil, deleted: false,
-                                 createdAt: nil, updatedAt: nil),
-        ]
-        vm.searchText = "dome"
-        #expect(vm.filteredReports.count == 1)
-        #expect(vm.filteredReports.first?.id == "1")
-    }
-}

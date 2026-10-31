@@ -136,7 +136,7 @@ describe('rearmTripDestinationTimers', () => {
 
   it('arms nothing without the binding', async () => {
     mocks.upcoming = [trip('t1')];
-    const result = await rearmTripDestinationTimers({ env: {} as ValidatedEnv });
+    const result = await rearmTripDestinationTimers({ env: {} as ValidatedEnv, now: NOW });
     expect(result).toEqual({ armed: 0 });
     expect(mocks.arm).toHaveBeenCalledTimes(0);
   });

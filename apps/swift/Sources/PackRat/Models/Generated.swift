@@ -95,6 +95,9 @@ struct Trip: Codable, Identifiable, Sendable {
     /// What happened on the trip, once it's over. See `TripLog`.
     var log: TripLog? = nil
     var excludedFromStats: Bool? = nil
+    /// The trail the trip is for (trail-conditions/trails id), and its name.
+    var trailId: String? = nil
+    var trailName: String? = nil
 }
 
 struct TripChecklistItem: Codable, Identifiable, Hashable, Sendable {
@@ -210,8 +213,11 @@ struct CatalogItem: Codable, Identifiable, Sendable {
 
 struct TrailConditionReport: Codable, Identifiable, Sendable {
     let id: String
+    let trailId: String?
     let trailName: String
     let trailRegion: String?
+    let latitude: Double?
+    let longitude: Double?
     let surface: String
     let overallCondition: String
     let hazards: [String]
@@ -224,6 +230,9 @@ struct TrailConditionReport: Codable, Identifiable, Sendable {
     let deleted: Bool
     let createdAt: String?
     let updatedAt: String?
+    /// When the hiker wrote it, which can be well before `createdAt` for a
+    /// report sent after a stretch with no signal.
+    var localCreatedAt: String? = nil
 }
 
 struct SeasonSuggestionItem: Codable, Sendable {

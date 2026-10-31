@@ -187,6 +187,8 @@ struct CreateTripRequest: Encodable {
     let checklist: [TripChecklistItem]?
     var log: TripLog? = nil
     var excludedFromStats: Bool? = nil
+    var trailId: String? = nil
+    var trailName: String? = nil
     let localCreatedAt: String
     let localUpdatedAt: String
 }
@@ -205,13 +207,16 @@ struct UpdateTripRequest: Encodable {
     var completedAt: String? = nil
     /// Nil leaves the route as is; an empty array clears it.
     var plannedRoute: [TripRoutePoint]? = nil
+    /// Always sent, like `packId`: nil clears the trip's trail.
+    var trailId: String? = nil
+    var trailName: String? = nil
     let log: TripLog?
     let excludedFromStats: Bool
     let localUpdatedAt: String
 
     enum CodingKeys: String, CodingKey {
         case name, description, location, startDate, endDate, notes, packId, checklist, log, excludedFromStats
-        case status, startedAt, completedAt, plannedRoute, localUpdatedAt
+        case status, startedAt, completedAt, plannedRoute, localUpdatedAt, trailId, trailName
     }
 
     /// `packId` is encoded unconditionally — as an explicit `null` when the user
@@ -242,6 +247,8 @@ struct UpdateTripRequest: Encodable {
                 try container.encode(plannedRoute, forKey: .plannedRoute)
             }
         }
+        try container.encode(trailId, forKey: .trailId)
+        try container.encodeIfPresent(trailName, forKey: .trailName)
         try container.encode(log, forKey: .log)
         try container.encode(excludedFromStats, forKey: .excludedFromStats)
         try container.encode(localUpdatedAt, forKey: .localUpdatedAt)

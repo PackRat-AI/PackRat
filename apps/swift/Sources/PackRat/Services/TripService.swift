@@ -24,7 +24,9 @@ final class TripService: Sendable {
         packId: String? = nil,
         checklist: [TripChecklistItem]? = nil,
         log: TripLog? = nil,
-        excludedFromStats: Bool = false
+        excludedFromStats: Bool = false,
+        trailId: String? = nil,
+        trailName: String? = nil
     ) async throws -> Trip {
         let now = Date.iso8601Now()
         let body = CreateTripRequest(
@@ -39,6 +41,8 @@ final class TripService: Sendable {
             checklist: checklist,
             log: log,
             excludedFromStats: excludedFromStats,
+            trailId: trailId,
+            trailName: trailName,
             localCreatedAt: now,
             localUpdatedAt: now
         )
@@ -61,7 +65,9 @@ final class TripService: Sendable {
         completedAt: String? = nil,
         plannedRoute: [TripRoutePoint]? = nil,
         log: TripLog? = nil,
-        excludedFromStats: Bool = false
+        excludedFromStats: Bool = false,
+        trailId: String? = nil,
+        trailName: String? = nil
     ) async throws -> Trip {
         let body = UpdateTripRequest(
             name: name,
@@ -76,6 +82,8 @@ final class TripService: Sendable {
             startedAt: startedAt,
             completedAt: completedAt,
             plannedRoute: plannedRoute,
+            trailId: trailId,
+            trailName: trailName,
             log: log,
             excludedFromStats: excludedFromStats,
             localUpdatedAt: Date.iso8601Now()

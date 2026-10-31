@@ -1,88 +1,68 @@
-import { Card, CardContent, CardTitle } from '@packrat/ui/src/card';
 import { Text } from '@packrat/ui/src/text';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { testIds } from 'expo-app/lib/testIds';
-import { TouchableOpacity, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { guideCategoryLabel } from '../lib/categories';
 import type { Guide } from '../types';
 
 interface GuideCardProps {
   guide: Guide;
   onPress: () => void;
+  testID: string;
+  /** Drops the summary, for the Related guides list under an article. */
+  compact?: boolean;
 }
 
-export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
+/** "By Jamie Rivera · 6 min read", from whichever parts the guide has. */
+export function useGuideByline(guide: Pick<Guide, 'author' | 'readingTime'>): string {
   const { t } = useTranslation();
+  return [
+    guide.author ? t('guides.byAuthor', { author: guide.author }) : null,
+    guide.readingTime ? t('guides.readingTime', { count: guide.readingTime }) : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+export const GuideCard = ({ guide, onPress, testID, compact = false }: GuideCardProps) => {
+  const { t } = useTranslation();
+  const byline = useGuideByline(guide);
+  const topic = guide.categories?.[0] ?? guide.category;
+  const overline = [topic ? guideCategoryLabel({ slug: topic, t }) : null, guide.difficulty]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
-    <TouchableOpacity
+    // A plain RN surface, not `Card`. On Android `Card` is a Compose card whose RN children are
+    // hosted through `RNHostView matchContents`, which reports its size asynchronously after
+    // mount. In a FlatList every row therefore mounts at the wrong height and resizes a frame
+    // later, so cards render blank or clipped and the rows below jump while the list loads and
+    // scrolls (#2767). Elevation 1 on the card colour is M3's elevated card.
+    <Pressable
       onPress={onPress}
-      activeOpacity={0.7}
-      className="pt-4"
-      testID={testIds.guides.card(guide.id)}
+      android_ripple={{ borderless: false }}
+      className="mb-3 overflow-hidden rounded-xl bg-card"
+      style={{ elevation: 1 }}
+      accessibilityRole="button"
+      testID={testID}
     >
-      <Card className="mb-3">
-        <CardContent className="p-4">
-          <View className="flex-row items-start justify-between">
-            <View className="flex-1 pr-3">
-              {guide.difficulty && <Text variant="footnote">{guide.difficulty}</Text>}
-              <CardTitle className="text-lg font-semibold mb-1">{guide.title}</CardTitle>
-              {guide.description && (
-                <Text
-                  className="text-sm text-gray-600 dark:text-gray-400 mb-2"
-                  numberOfLines={2}
-                  wrap
-                >
-                  {guide.description}
-                </Text>
-              )}
-              <View className="flex-col gap-2">
-                {guide.categories && guide.categories.length > 0 ? (
-                  <View className="flex-row flex-wrap gap-1.5">
-                    {guide.categories.slice(0, 2).map((category) => (
-                      <View key={category} className="bg-primary/10 px-2 py-1 rounded-full">
-                        <Text className="text-xs font-medium text-primary">
-                          {category
-                            .split('-')
-                            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                            .join(' ')}
-                        </Text>
-                      </View>
-                    ))}
-                    {guide.categories.length > 2 && (
-                      <View className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
-                        <Text className="text-xs text-gray-600 dark:text-gray-400">
-                          +{guide.categories.length - 2}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                ) : (
-                  <View className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full self-start">
-                    <Text className="text-xs text-gray-700 dark:text-gray-300">
-                      {guide.category}
-                    </Text>
-                  </View>
-                )}
-                <View className="flex-row items-center gap-2">
-                  {guide.author && (
-                    <Text className="text-xs text-gray-600 dark:text-gray-400">
-                      {t('guides.by')} {guide.author}
-                    </Text>
-                  )}
-                  {guide.readingTime && (
-                    <Text className="text-xs text-gray-600 dark:text-gray-400">
-                      • {guide.readingTime}
-                    </Text>
-                  )}
-                  <Text className="text-xs text-gray-500 dark:text-gray-500 self-end">
-                    {new Date(guide.updatedAt).toLocaleDateString()}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </View>
-        </CardContent>
-      </Card>
-    </TouchableOpacity>
+      <View className="gap-1 p-4">
+        {overline ? (
+          <Text className="text-xs font-medium leading-4 text-muted-foreground" numberOfLines={1}>
+            {overline}
+          </Text>
+        ) : null}
+        <Text className="text-lg font-medium leading-6 text-foreground" numberOfLines={2} wrap>
+          {guide.title}
+        </Text>
+        {!compact && guide.description ? (
+          <Text className="text-sm leading-5 text-muted-foreground" numberOfLines={2} wrap>
+            {guide.description}
+          </Text>
+        ) : null}
+        {byline ? (
+          <Text className="mt-1 text-xs font-medium leading-4 text-muted-foreground">{byline}</Text>
+        ) : null}
+      </View>
+    </Pressable>
   );
 };

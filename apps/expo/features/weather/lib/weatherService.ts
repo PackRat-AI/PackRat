@@ -6,6 +6,7 @@ import {
 } from '@packrat/schemas/weather';
 import * as Sentry from '@sentry/react-native';
 import { apiClient } from 'expo-app/lib/api/packrat';
+import type { WeatherLocation } from '../types';
 import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
 /**
@@ -92,7 +93,7 @@ export async function getWeatherData(id: number) {
 /**
  * Format raw weather data into our application's format
  */
-export function formatWeatherData(data: WeatherAPIForecastResponse) {
+export function formatWeatherData(data: WeatherAPIForecastResponse): WeatherLocation {
   // Extract location data
   const location = data.location;
   const current = data.current;
@@ -126,9 +127,10 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
           hour12: true,
         }),
         temp: Math.round(hour.temp_c),
-        icon: getIconNameFromCode({ code: hour.condition.code, isDay: hour.is_day }) as string,
+        icon: getIconNameFromCode({ code: hour.condition.code, isDay: hour.is_day }),
         weatherCode: hour.condition.code,
         isDay: hour.is_day,
+        chanceOfRain: hour.chance_of_rain,
       };
     });
 
@@ -139,8 +141,9 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
       day: date.toLocaleDateString('en-US', { weekday: 'short' }),
       high: Math.round(day.day.maxtemp_c),
       low: Math.round(day.day.mintemp_c),
-      icon: getIconNameFromCode({ code: day.day.condition.code, isDay: 1 }) as string,
+      icon: getIconNameFromCode({ code: day.day.condition.code, isDay: 1 }),
       weatherCode: day.day.condition.code,
+      chanceOfRain: day.day.daily_chance_of_rain,
     };
   });
 
@@ -159,6 +162,10 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
     highTemp: Math.round(todayForecast.day.maxtemp_c),
     lowTemp: Math.round(todayForecast.day.mintemp_c),
     alerts: alertText,
+    alertList: alerts?.alert ?? [],
+    region: location.region,
+    country: location.country,
+    chanceOfRain: todayForecast.day.daily_chance_of_rain,
     lat: location.lat,
     lon: location.lon,
     details: {

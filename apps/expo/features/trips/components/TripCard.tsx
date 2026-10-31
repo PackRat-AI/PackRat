@@ -2,6 +2,7 @@ import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { Button } from '@packrat/ui/src/button';
 import { Icon } from 'expo-app/components/Icon';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -47,6 +48,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
   const { showActionSheetWithOptions } = useActionSheet();
   const alertRef = useRef<AlertMethods>(null);
   const insets = useSafeAreaInsets();
+  const enableTripStats = useFeatureFlag('enableTripStats');
 
   const durationDays = getTripDurationDays({ startDate: trip.startDate, endDate: trip.endDate });
 
@@ -185,6 +187,18 @@ export function TripCard({ trip, onPress }: TripCardProps) {
             )}
           </View>
         )}
+
+        {enableTripStats && trip.excludedFromStats ? (
+          <View
+            className="mt-3 flex-row items-center"
+            testID={testIds.tripStats.notInStatsLabel(trip.id)}
+          >
+            <Icon name="eye-off-outline" size={13} color={colors.grey2} />
+            <Text className="ml-1 text-xs text-muted-foreground">
+              {t('tripStats.log.notInStats')}
+            </Text>
+          </View>
+        ) : null}
 
         {/* Alert */}
         <Alert title="" buttons={[]} ref={alertRef} />

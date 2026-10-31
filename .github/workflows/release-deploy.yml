@@ -4,8 +4,9 @@ name: Release Deploy
 # This is the second half of the release pipeline for the "API changed" path:
 # once the team has reviewed and merged the release PR (which may include API
 # changes whose Cloudflare Worker deployment is handled separately), this
-# workflow queues the EAS production build and store submissions, then creates
-# the Sentry release.
+# workflow queues the EAS production build (Android) and the Apple build
+# (release-apple.yml), submits both to their stores, then creates the Sentry
+# release.
 #
 # For the "API unchanged" path, builds are queued directly by release-cut.yml.
 
@@ -22,6 +23,17 @@ permissions:
   contents: read
 
 jobs:
+  apple:
+    name: Apple Build + Submit
+    if: |
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/release-apple.yml
+    with:
+      ref: ${{ github.event.pull_request.merge_commit_sha }}
+    secrets: inherit
+
   eas-build:
     name: EAS Production Build + Submit
     # Only runs when a release/* branch is merged (not just closed), and only
@@ -62,10 +74,6 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: EAS Build + Submit · iOS
-        working-directory: apps/expo
-        run: eas build --platform ios --profile production --non-interactive --auto-submit
 
       - name: EAS Build + Submit · Android
         working-directory: apps/expo

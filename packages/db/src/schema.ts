@@ -566,8 +566,15 @@ export const trailConditionReports = pgTable(
   'trail_condition_reports',
   {
     id: text('id').primaryKey(),
+    // `trails.id` on the trail database (OSM_DATABASE_URL), so no FK. Null for
+    // a pinned report, where the hiker dropped a pin on an unmapped place.
+    trailId: text('trail_id'),
+    // Display name: the trail's name when picked, the pin's label otherwise.
     trailName: text('trail_name').notNull(),
     trailRegion: text('trail_region'),
+    // Where the report was written; for a pinned report, the pin.
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
     surface: text('surface').notNull(),
     overallCondition: text('overall_condition').notNull(),
     hazards: jsonb('hazards').$type<string[]>().notNull().default([]),
@@ -592,11 +599,84 @@ export const trailConditionReports = pgTable(
       table.createdAt.desc(),
     ),
     trailNameIdx: index('trail_condition_reports_trail_name_idx').on(table.trailName),
+    trailIdCreatedIdx: index('trail_condition_reports_trail_id_created_idx')
+      .on(table.trailId, table.createdAt.desc())
+      .where(sql`${table.trailId} IS NOT NULL AND ${table.deleted} = false`),
     tripIdIdx: index('trail_condition_reports_trip_id_idx')
       .on(table.tripId)
       .where(sql`${table.tripId} IS NOT NULL`),
   }),
 );
+
+export const trailConditionFlagReasonEnum = pgEnum('trail_condition_flag_reason', [
+  'inaccurate',
+  'offensive',
+  'spam',
+]);
+export const trailConditionFlagStatusEnum = pgEnum('trail_condition_flag_status', [
+  'pending',
+  'dismissed',
+  'removed',
+]);
+
+// A hiker flagging someone else's trail report for PackRat to review. The
+// report disappears for the flagger at once; review decides it for everyone.
+export const trailConditionReportFlags = pgTable(
+  'trail_condition_report_flags',
+  {
+    id: serial('id').primaryKey(),
+    reporterId: text('reporter_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    reportId: text('report_id')
+      .references(() => trailConditionReports.id, { onDelete: 'cascade' })
+      .notNull(),
+    reason: trailConditionFlagReasonEnum('reason').notNull(),
+    status: trailConditionFlagStatusEnum('status').default('pending').notNull(),
+    reviewedAt: timestamp('reviewed_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('trail_condition_report_flags_reporter_report_unique').on(
+      table.reporterId,
+      table.reportId,
+    ),
+    index('trail_condition_report_flags_status_idx').on(table.status),
+  ],
+);
+
+// Reports a hiker has opened or seen in a trip's conditions section. What's
+// absent here is unread: it marks the trip and holds back no notification.
+export const trailConditionReportReads = pgTable(
+  'trail_condition_report_reads',
+  {
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    reportId: text('report_id')
+      .references(() => trailConditionReports.id, { onDelete: 'cascade' })
+      .notNull(),
+    readAt: timestamp('read_at').defaultNow().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.reportId] })],
+);
+
+// When a trip last got a trail-conditions notification, so it gets at most one a day.
+export const tripConditionNotificationState = pgTable('trip_condition_notification_state', {
+  tripId: text('trip_id')
+    .primaryKey()
+    .references(() => trips.id, { onDelete: 'cascade' }),
+  lastNotifiedAt: timestamp('last_notified_at').notNull(),
+});
+
+// Per-user notification switches. A missing row means every switch is on.
+export const notificationPreferences = pgTable('notification_preferences', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  trailConditions: boolean('trail_conditions').default(true).notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
 
 /**
  * What actually happened on a finished trip, read back by trip stats. Distances
@@ -646,7 +726,11 @@ export const trips = pgTable('trips', {
     .references(() => users.id)
     .notNull(),
   packId: text('pack_id').references(() => packs.id, { onDelete: 'set null' }),
-  trailOsmId: bigint('trail_osm_id', { mode: 'bigint' }),
+  // The trail the trip is for: `trails.id` on the trail database
+  // (OSM_DATABASE_URL), so no FK. The name is kept so the trip can show it
+  // without a trail-database round trip.
+  trailId: text('trail_id'),
+  trailName: text('trail_name'),
   // Lifecycle: a trip is planned until the user starts it, and complete once
   // they mark themselves safe (or finish it without a safety check-in).
   status: text('status', { enum: ['planned', 'in_progress', 'complete'] })
@@ -957,6 +1041,7 @@ export type NewPackTemplate = InferInsertModel<typeof packTemplates>;
 export type PackTemplateItem = InferSelectModel<typeof packTemplateItems>;
 export type NewPackTemplateItem = InferInsertModel<typeof packTemplateItems>;
 export type TrailConditionReport = InferSelectModel<typeof trailConditionReports>;
+export type TrailConditionReportFlag = InferSelectModel<typeof trailConditionReportFlags>;
 export type NewTrailConditionReport = InferInsertModel<typeof trailConditionReports>;
 export type Trip = InferSelectModel<typeof trips>;
 export type NewTrip = InferInsertModel<typeof trips>;

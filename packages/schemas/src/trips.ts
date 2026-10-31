@@ -88,6 +88,8 @@ export const TripSchema = z.object({
   endDate: nullableDateString.optional(),
   userId: z.string().optional(),
   packId: z.string().nullable().optional(),
+  trailId: z.string().nullable().optional(),
+  trailName: z.string().nullable().optional(),
   checklist: TripChecklistSchema.nullable().optional(),
   status: TripStatusSchema.optional(),
   startedAt: nullableDateString.optional(),
@@ -113,6 +115,8 @@ export const CreateTripBodySchema = z.object({
   startDate: z.string().nullable().optional(),
   endDate: z.string().nullable().optional(),
   packId: z.string().nullable().optional(),
+  trailId: z.string().uuid().nullable().optional().describe('trail-conditions/trails id'),
+  trailName: z.string().max(255).nullable().optional(),
   checklist: TripChecklistSchema.nullable().optional(),
   log: TripLogSchema.nullable().optional(),
   excludedFromStats: z.boolean().optional(),
@@ -128,6 +132,8 @@ export const UpdateTripBodySchema = z.object({
   startDate: z.string().nullable().optional(),
   endDate: z.string().nullable().optional(),
   packId: z.string().nullable().optional(),
+  trailId: z.string().uuid().nullable().optional().describe('trail-conditions/trails id'),
+  trailName: z.string().max(255).nullable().optional(),
   checklist: TripChecklistSchema.nullable().optional(),
   status: TripStatusSchema.optional(),
   startedAt: z.string().datetime().nullable().optional(),
@@ -144,3 +150,5 @@ export type TripStatus = z.infer<typeof TripStatusSchema>;
 export type TripPlannedRoute = z.infer<typeof TripPlannedRouteSchema>;
 export type TripActivity = z.infer<typeof TripActivitySchema>;
 export type TripSummit = z.infer<typeof TripSummitSchema>;
+export type TripTrail = z.infer<typeof TripTrailSchema>;
+export type TripLog = z.infer<typeof TripLogSchema>;

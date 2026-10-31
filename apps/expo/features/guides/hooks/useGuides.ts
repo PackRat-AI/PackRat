@@ -8,9 +8,10 @@ interface UseGuidesParams {
     field: 'title' | 'category' | 'createdAt' | 'updatedAt';
     order: 'asc' | 'desc';
   };
+  enabled?: boolean;
 }
 
-export const useGuides = ({ category, sort }: UseGuidesParams = {}) => {
+export const useGuides = ({ category, sort, enabled = true }: UseGuidesParams = {}) => {
   return useInfiniteQuery({
     queryKey: ['guides', { category, sort }],
     queryFn: async ({ pageParam = 1 }) => {
@@ -44,5 +45,6 @@ export const useGuides = ({ category, sort }: UseGuidesParams = {}) => {
       return undefined;
     },
     initialPageParam: 1,
+    enabled,
   });
 };

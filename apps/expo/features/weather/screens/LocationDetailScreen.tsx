@@ -1,282 +1,227 @@
-import { useActionSheet } from '@expo/react-native-action-sheet';
+import { Snackbar, type SnackbarHandle } from '@packrat/ui/src/snackbar';
 import { Text } from '@packrat/ui/src/text';
+import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
-import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
-import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WeatherForecast } from '../components';
-import { useActiveLocation, useLocationRefresh, useLocations } from '../hooks';
+import { ForecastAlertSection } from '../components/forecast/ForecastAlertSection';
+import {
+  ConditionTiles,
+  DailyForecastList,
+  ForecastHero,
+  HourlyForecastStrip,
+} from '../components/forecast/ForecastSections';
+import { useLocations, useSeenAlerts, useWatchList } from '../hooks';
+import { useWatchFeedback } from '../hooks/useWatchFeedback';
+import {
+  formatWeatherData,
+  getWeatherBackgroundColors,
+  getWeatherData,
+} from '../lib/weatherService';
+import type { WeatherLocation } from '../types';
+import { alertId } from '../utils/alertState';
 
+/** M3 standard icon button: 48dp touch target, 24dp icon, unbounded ripple. */
+function HeaderIconButton({
+  icon,
+  label,
+  onPress,
+  busy,
+  testID,
+}: {
+  icon: string;
+  label: string;
+  onPress: () => void;
+  busy?: boolean;
+  testID: string;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={busy}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ busy: Boolean(busy) }}
+      android_ripple={{ color: 'rgba(255,255,255,0.24)', borderless: true, radius: 24 }}
+      hitSlop={4}
+      className="h-12 w-12 items-center justify-center"
+      testID={testID}
+    >
+      {busy ? <ActivityIndicator color="white" /> : <Icon name={icon} size={24} color="white" />}
+    </Pressable>
+  );
+}
+
+/**
+ * One location's forecast — saved or not. Opened from the list, from search,
+ * and from a tapped alert push, so it fetches by id and never depends on the
+ * location already being saved on this device.
+ */
 export default function LocationDetailScreen() {
-  const { id } = useLocalSearchParams();
-  const { colors, colorScheme } = useColorScheme();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const locationId = Number.parseInt(String(id), 10);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { locationsState } = useLocations();
-  const { setActiveLocation } = useActiveLocation();
-  const { isRefreshing, refreshLocation } = useLocationRefresh();
-  const [error, setError] = useState<string | null>(null);
-  const [gradientColors, setGradientColors] = useState<[string, string, ...string[]]>([
-    '#4c669f',
-    '#3b5998',
-    '#192f6a',
-  ]);
-  const { showActionSheetWithOptions } = useActionSheet();
-  const { removeLocation } = useLocations();
-  const { displayTemperature } = useTemperatureUnit();
+  const snackbar = useRef<SnackbarHandle>(null);
+  const { locationsState, addLocation, updateLocation } = useLocations();
+  const { markSeen } = useSeenAlerts();
+  const { enabled: monitoringEnabled, watchedFor } = useWatchList();
+  const { watchPlace, unwatchPlace, isUpdating } = useWatchFeedback(snackbar);
 
-  const locationId = parseInt(String(id), 10);
-  // Get the locations array safely
-  const locations = locationsState.state === 'hasData' ? locationsState.data : [];
-  const location = locations.find((loc) => loc.id === locationId);
+  const saved =
+    locationsState.state === 'hasData'
+      ? locationsState.data.find((l) => l.id === locationId)
+      : undefined;
+  const [fetched, setFetched] = useState<WeatherLocation | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const location = fetched ?? saved ?? null;
+  const watched = watchedFor(locationId);
 
-  // Refresh weather data for this location
-  const handleRefresh = async () => {
-    if (!location) return;
-
-    setError(null);
-    const success = await refreshLocation(location.id);
-
-    if (!success) {
-      setError(t('weather.failedToRefresh'));
-    } else {
-      // Update gradient colors based on weather condition
-      if (location.details) {
-        const weatherCode = location.details.weatherCode || 1000;
-        const isNight = location.details.isDay === 0;
-        setGradientColors(getWeatherBackgroundColors({ code: weatherCode, isNight }));
-      }
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    setFailed(false);
+    try {
+      const next = formatWeatherData(await getWeatherData(locationId));
+      setFetched(next);
+      if (saved) updateLocation({ locationId, updates: next });
+    } catch (error) {
+      // getWeatherData has already reported API errors; this catches parsing.
+      Sentry.captureException(error, {
+        tags: { feature: 'weather', action: 'loadForecast' },
+        extra: { locationId },
+      });
+      setFailed(true);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [locationId, saved, updateLocation]);
 
-  // Load weather data on initial render
+  // Fetch once per location; `load` changes identity whenever the saved list does.
   useEffect(() => {
-    if (location) {
-      handleRefresh();
-    }
-  }, []);
+    load();
+  }, [locationId]);
 
-  if (!location) {
-    return (
-      <View className="flex-1 items-center justify-center">
-        <Text>{t('weather.locationNotFound')}</Text>
-        <TouchableOpacity
-          className="mt-4 rounded-full bg-primary px-4 py-2"
-          onPress={() => router.back()}
-        >
-          <Text className="text-white">{t('weather.goBack')}</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  // Opening the forecast is reading its alerts: clear the "new alert" marker,
+  // and again if a refresh brings a different set.
+  const alertKey = (location?.alertList ?? []).map(alertId).join('\n');
+  useEffect(() => {
+    if (location) markSeen(locationId, location.alertList ?? []);
+  }, [alertKey, locationId, markSeen]);
 
-  const showOptionsMenu = () => {
-    const options = location.isActive
-      ? [t('weather.refreshWeather'), t('weather.removeLocation'), t('common.cancel')]
-      : [
-          t('weather.setAsActive'),
-          t('weather.refreshWeather'),
-          t('weather.removeLocation'),
-          t('common.cancel'),
-        ];
-
-    const cancelButtonIndex = options.length - 1;
-    const destructiveButtonIndex = options.indexOf(t('weather.removeLocation'));
-    const refreshIndex = options.indexOf(t('weather.refreshWeather'));
-    const setActiveIndex = options.indexOf(t('weather.setAsActive'));
-
-    showActionSheetWithOptions(
-      {
-        options,
-        cancelButtonIndex,
-        destructiveButtonIndex,
-        title: location.name,
-        message: `${displayTemperature(location.temperature)} - ${location.condition}`,
-        containerStyle: {
-          backgroundColor: colorScheme === 'dark' ? colors.card : 'white',
-          paddingBottom: insets.bottom,
-        },
-        textStyle: {
-          color: colors.foreground,
-        },
-        titleTextStyle: {
-          color: colors.foreground,
-          fontWeight: '600',
-        },
-        messageTextStyle: {
-          color: colors.grey2,
-        },
-      },
-      (selectedIndex) => {
-        switch (selectedIndex) {
-          case setActiveIndex:
-            setAsActive();
-            break;
-          case refreshIndex:
-            handleRefresh();
-            break;
-          case destructiveButtonIndex:
-            handleRemoveLocation();
-            break;
-          case cancelButtonIndex:
-            // Canceled
-            break;
-        }
-      },
-    );
+  const handleSave = () => {
+    if (!location) return;
+    addLocation(location);
+    snackbar.current?.show({ message: t('weather.addedToLocations', { name: location.name }) });
   };
 
-  const setAsActive = () => {
-    if (location.isActive) {
-      Alert.alert(
-        t('weather.alreadyActive'),
-        t('weather.alreadyActiveMessage', { name: location.name }),
-        [{ text: t('common.ok') }],
+  const handleToggleWatch = () => {
+    if (!location) return;
+    if (watched) unwatchPlace(watched);
+    else watchPlace(location);
+  };
+
+  const headerRight = () => {
+    if (!location) return null;
+    if (!saved) {
+      return (
+        <HeaderIconButton
+          icon="plus"
+          label={t('weather.addNamedLocationA11y', { name: location.name })}
+          onPress={handleSave}
+          testID={testIds.weather.saveLocationBtn}
+        />
       );
-      return;
     }
-
-    setActiveLocation(location.id);
-    Alert.alert(
-      t('weather.locationSet'),
-      t('weather.locationSetAsActive', { name: location.name }),
-      [{ text: t('common.ok') }],
+    if (!monitoringEnabled) return null;
+    return (
+      <HeaderIconButton
+        icon={watched ? 'bell' : 'bell-outline'}
+        label={watched ? t('weather.stopWatchingA11y') : t('weather.watchLocationA11y')}
+        onPress={handleToggleWatch}
+        busy={isUpdating}
+        testID={testIds.weather.watchToggle}
+      />
     );
   };
 
-  const handleRemoveLocation = () => {
-    Alert.alert(
-      t('weather.removeLocation'),
-      t('weather.removeLocationConfirm', { name: location.name }),
-      [
-        {
-          text: t('common.cancel'),
-          style: 'cancel',
-        },
-        {
-          text: t('weather.remove'),
-          style: 'destructive',
-          onPress: () => {
-            removeLocation(location.id);
-            router.back();
-          },
-        },
-      ],
-    );
-  };
-
-  // Determine if we should use light or dark status bar based on gradient colors
-  const _isDarkGradient =
-    gradientColors[0].toLowerCase().startsWith('#4') ||
-    gradientColors[0].toLowerCase().startsWith('#3') ||
-    gradientColors[0].toLowerCase().startsWith('#2') ||
-    gradientColors[0].toLowerCase().startsWith('#1');
+  const gradient = location?.details
+    ? getWeatherBackgroundColors({
+        code: location.details.weatherCode,
+        isNight: location.details.isDay === 0,
+      })
+    : getWeatherBackgroundColors({ code: 1000, isNight: false });
 
   return (
     <View className="flex-1">
-      <Stack.Screen options={{ headerShown: false }} />
-      {/* Status bar with matching style */}
-      <StatusBar barStyle="light-content" translucent={true} backgroundColor="transparent" />
-
-      <LinearGradient colors={gradientColors} style={{ flex: 1 }}>
-        {/* Fixed header buttons */}
-        <View
-          style={{ paddingTop: insets.top + 10 }}
-          className="absolute left-0 right-0 top-0 z-10 flex-row items-center justify-between px-4"
-        >
-          <TouchableOpacity onPress={() => router.back()}>
-            <View className="rounded-full bg-white/20 p-2">
-              <Icon name="arrow-left" color="white" size={20} />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity className="rounded-full bg-white/20 p-2" onPress={showOptionsMenu}>
-            <Icon name="dots-horizontal" color="white" size={20} />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          contentContainerStyle={{
-            paddingBottom: insets.bottom + 20,
-            paddingTop: insets.top + 50,
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          <View className="px-4">
-            {error ? (
-              <View className="items-center justify-center py-20">
-                <Icon name="exclamation" color="white" size={40} />
-                <Text className="mt-4 text-white">{error}</Text>
-                <TouchableOpacity
-                  className="mt-4 rounded-full bg-white/20 px-4 py-2"
-                  onPress={handleRefresh}
-                >
-                  <Text className="text-white">{t('weather.tryAgain')}</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          headerTransparent: true,
+          headerShadowVisible: false,
+          headerTintColor: 'white',
+          title: '',
+          headerRight,
+        }}
+      />
+      <StatusBar style="light" />
+      <LinearGradient colors={gradient} style={{ flex: 1 }}>
+        {!location ? (
+          <View className="flex-1 items-center justify-center gap-4 px-8">
+            {isLoading ? (
+              <ActivityIndicator size="large" color="white" />
+            ) : failed ? (
               <>
-                {/* Location name and current weather */}
-                <View className="mt-8 items-center">
-                  <View className="flex-row items-center">
-                    <Text className="text-3xl font-semibold text-white">{location.name}</Text>
-                    {location.isActive && (
-                      <View className="ml-2 rounded-full bg-white/30 px-2 py-0.5">
-                        <Text className="text-xs text-white">{t('weather.active')}</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text className="text-lg text-white/80">{location.time}</Text>
-                  <Text className="mt-6 text-8xl font-light text-white">
-                    {displayTemperature(location.temperature)}
-                  </Text>
-                  <Text className="text-xl text-white">{location.condition}</Text>
-                  <Text className="mt-1 text-white/80">
-                    H:{displayTemperature(location.highTemp)} L:
-                    {displayTemperature(location.lowTemp)}
-                  </Text>
-
-                  {!location.isActive && (
-                    <TouchableOpacity
-                      className="mt-4 rounded-full bg-white/20 px-4 py-2"
-                      onPress={setAsActive}
-                    >
-                      <Text className="text-white">{t('weather.setAsActiveLocation')}</Text>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Refresh button */}
-                  <TouchableOpacity
-                    className="mt-4 flex-row items-center rounded-full bg-white/20 px-4 py-2"
-                    onPress={handleRefresh}
-                    disabled={isRefreshing}
-                  >
-                    <View className="mr-2">
-                      <Icon name="restart" color="white" size={20} />
-                    </View>
-                    <Text className="text-white">
-                      {isRefreshing ? t('weather.refreshing') : t('weather.refresh')}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <WeatherForecast
-                  hourlyForecast={location.hourlyForecast}
-                  dailyForecast={location.dailyForecast}
-                  details={location.details}
-                  temperature={location.temperature}
-                />
+                <Text className="text-center text-white">{t('weather.failedToLoadWeather')}</Text>
+                <Pressable
+                  onPress={load}
+                  className="rounded-full bg-white/20 px-6 py-2.5"
+                  android_ripple={{ color: 'rgba(255,255,255,0.24)' }}
+                >
+                  <Text className="font-medium text-white">{t('weather.tryAgain')}</Text>
+                </Pressable>
               </>
-            )}
+            ) : null}
           </View>
-        </ScrollView>
+        ) : (
+          <ScrollView
+            contentContainerStyle={{
+              paddingTop: insets.top + 56,
+              paddingBottom: insets.bottom + 96,
+              paddingHorizontal: 16,
+              gap: 14,
+            }}
+            refreshControl={
+              <RefreshControl
+                refreshing={isLoading && fetched !== null}
+                onRefresh={load}
+                progressViewOffset={insets.top + 56}
+              />
+            }
+          >
+            <ForecastHero location={location} />
+            {(location.alertList?.length ?? 0) > 0 ? (
+              <ForecastAlertSection
+                alerts={location.alertList ?? []}
+                monitoringEnabled={monitoringEnabled}
+                isWatched={Boolean(watched)}
+                isUpdatingWatch={isUpdating}
+                onWatch={handleToggleWatch}
+              />
+            ) : null}
+            <HourlyForecastStrip location={location} />
+            <DailyForecastList location={location} />
+            <ConditionTiles location={location} />
+          </ScrollView>
+        )}
       </LinearGradient>
+      <Snackbar ref={snackbar} testID={testIds.weather.snackbar} bottomOffset={insets.bottom} />
     </View>
   );
 }

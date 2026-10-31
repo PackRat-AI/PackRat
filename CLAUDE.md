@@ -341,6 +341,10 @@ If you find a migration in the repo that was hand-written (no `drizzle-kit` prov
 EAS builds the **Android** app. iOS/watchOS/macOS ship from `apps/swift` via
 Xcode and App Store Connect, not EAS.
 
+## Releases
+
+Cut a release with the **Release Cut** workflow (`release-cut.yml`), never by hand. If a release branch must be made manually, name it exactly `release/vX.Y.Z` with `X.Y.Z` equal to the bumped app versions, and target `main`. `release-deploy.yml` derives the tag it builds from the branch name, so a name like `release/wildlife-beta` makes the post-merge store build fail. `release-branch-guard.yml` fails any release PR into `main` that breaks this.
+
 ## Common Issues
 
 - **Next.js build failures**: `apps/guides` and `apps/landing` may fail without internet (fetches remote data)

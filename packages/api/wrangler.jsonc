@@ -201,6 +201,11 @@
   ],
   "env": {
     "dev": {
+      // The Swift staging build calls api-dev.packratai.com; workers.dev stays
+      // on for clients that still use it. Declaring routes would otherwise
+      // turn workers.dev off by default.
+      "workers_dev": true,
+      "routes": [{ "pattern": "api-dev.packratai.com", "custom_domain": true }],
       "kv_namespaces": [
         {
           "binding": "AUTH_KV",

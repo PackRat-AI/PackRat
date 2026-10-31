@@ -60,6 +60,8 @@ struct PreferencesView: View {
     @State private var notificationsEnabled = false
     @State private var notificationAuthStatus: UNAuthorizationStatus = .notDetermined
     @Bindable private var tripReminders = TripReminderSettings.shared
+    /// The server-side switch; nil until loaded, and the toggle waits for it.
+    @State private var trailReportNotifications: Bool?
 
     var body: some View {
         #if os(macOS)
@@ -105,6 +107,7 @@ struct PreferencesView: View {
         .clearDataConfirmation(isPresented: $showingClearDataConfirm, onConfirm: clearAppData)
         .hostsPaywall(paywallTrigger)
         .onAppear { Task { await refreshNotificationStatus() } }
+        .task { await loadTrailReportNotifications() }
         #endif
     }
 
@@ -220,12 +223,49 @@ struct PreferencesView: View {
                 Toggle("Trip Reminders", isOn: $tripReminders.isEnabled)
                     .accessibilityIdentifier("settings_trip_reminders_toggle")
             }
+            if showsTrailReportToggle, let enabled = trailReportNotifications {
+                Toggle("Trail Reports", isOn: Binding(
+                    get: { enabled },
+                    set: { new in Task { await setTrailReportNotifications(new) } }
+                ))
+                .accessibilityIdentifier("settings_trail_report_notifications_toggle")
+            }
         } header: {
             Text("Notifications")
         } footer: {
-            if FeatureFlagStore.shared.isEnabled(TripReminderPlanner.flagKey) {
-                Text("Trip Reminders help you pack and charge in the week before a trip. Turn them off for a single trip from that trip.")
+            if let footer = notificationFooter {
+                Text(footer)
             }
+        }
+    }
+
+    private var showsTrailReportToggle: Bool {
+        TrailReportUnreadStore.isEnabled && authManager.isAuthenticated
+    }
+
+    private var notificationFooter: String? {
+        var lines: [String] = []
+        if FeatureFlagStore.shared.isEnabled(TripReminderPlanner.flagKey) {
+            lines.append("Trip Reminders help you pack and charge in the week before a trip. Turn them off for a single trip from that trip.")
+        }
+        if showsTrailReportToggle, trailReportNotifications != nil {
+            lines.append("Trail Reports tell you when someone reports on a trail for one of your upcoming trips.")
+        }
+        return lines.isEmpty ? nil : lines.joined(separator: "\n\n")
+    }
+
+    private func loadTrailReportNotifications() async {
+        guard showsTrailReportToggle else { return }
+        trailReportNotifications = try? await TrailConditionsService.shared.notificationsEnabled()
+    }
+
+    private func setTrailReportNotifications(_ enabled: Bool) async {
+        let previous = trailReportNotifications
+        trailReportNotifications = enabled
+        do {
+            try await TrailConditionsService.shared.setNotificationsEnabled(enabled)
+        } catch {
+            trailReportNotifications = previous
         }
     }
 
@@ -269,6 +309,20 @@ struct PreferencesView: View {
                 Text("Community")
             } footer: {
                 Text("Who can tag you, feed notifications, and blocked people.")
+            }
+        } else if FeatureFlagStore.shared.isEnabled("enableTrailConditions") && authManager.isAuthenticated {
+            // Without the feed, trail-report blocks still need undoing somewhere.
+            Section {
+                NavigationLink {
+                    BlockedPeopleScreen()
+                } label: {
+                    Label("Blocked People", systemImage: "hand.raised")
+                }
+                .accessibilityIdentifier("preferences_blocked_people")
+            } header: {
+                Text("Community")
+            } footer: {
+                Text("People whose trail reports you've hidden by blocking them.")
             }
         }
     }

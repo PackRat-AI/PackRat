@@ -94,6 +94,8 @@ struct TripDetailView: View {
                         .padding(.horizontal)
                 }
 
+                TripTrailConditionsSection(trip: trip)
+
                 if let desc = trip.description, !desc.isEmpty {
                     labeledSection("Description") {
                         Text(desc).font(.body)

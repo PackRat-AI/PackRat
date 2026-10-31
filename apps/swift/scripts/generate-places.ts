@@ -24,6 +24,7 @@
  *
  * Output:
  *   apps/swift/Resources/Places.json
+ *   apps/expo/features/trip-stats/data/places.json
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -33,7 +34,10 @@ import { fileURLToPath } from 'node:url';
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const outputPath = resolve(__dir, '../Resources/Places.json');
+const outputPaths = [
+  resolve(__dir, '../Resources/Places.json'),
+  resolve(__dir, '../../expo/features/trip-stats/data/places.json'),
+];
 
 const SOURCE = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson';
 const COUNTRIES_FILE = 'ne_10m_admin_0_countries.geojson';
@@ -240,8 +244,10 @@ for (const [code, count] of perCountry) {
   if (Number(count) < 8) throw new Error(`Only ${count} regions for ${code}`);
 }
 
-writeFileSync(outputPath, `${safeJsonStringify({ countries, regions })}\n`);
-Bun.spawnSync(['bunx', 'biome', 'format', '--write', outputPath]);
-console.log(
-  `Wrote ${countries.length} countries and ${regions.length} regions (${perCountry.map((p) => p.join(' ')).join(', ')}) to ${outputPath}`,
-);
+for (const outputPath of outputPaths) {
+  writeFileSync(outputPath, `${safeJsonStringify({ countries, regions })}\n`);
+  Bun.spawnSync(['bunx', 'biome', 'format', '--write', outputPath]);
+  console.log(
+    `Wrote ${countries.length} countries and ${regions.length} regions (${perCountry.map((p) => p.join(' ')).join(', ')}) to ${outputPath}`,
+  );
+}

@@ -4,6 +4,7 @@ import { Card } from '@packrat/ui/src/card';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
+import { TripLogSection } from 'expo-app/features/trip-stats/components/TripLogSection';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -188,6 +189,8 @@ export function TripDetailScreen() {
               </Card>
             </View>
           )}
+
+          <TripLogSection trip={trip} />
 
           {/* Trail Condition Report Prompt */}
           {enableTrailConditions && trip.endDate && new Date(trip.endDate) < new Date() && (

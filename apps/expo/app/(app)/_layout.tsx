@@ -9,6 +9,7 @@ import {
 } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
 import { isAuthed } from 'expo-app/features/auth/store';
+import { useNotificationSetup } from 'expo-app/features/notifications/hooks/useNotificationSetup';
 import { getPackTemplateDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateDetailOptions';
 import { getPackTemplateItemDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateItemDetailOptions';
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
@@ -16,6 +17,7 @@ import { getPackDetailOptions } from 'expo-app/features/packs/utils/getPackDetai
 import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackItemDetailOptions';
 import { useRevenueCatUser } from 'expo-app/features/purchases';
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
+import { useWeatherAlertRefresh } from 'expo-app/features/weather/hooks/useWeatherAlertRefresh';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import 'expo-app/lib/devClient';
@@ -35,6 +37,8 @@ export default function AppLayout() {
   const isLoading = useAuthInit();
   const isAuthedValue = use$(isAuthed);
   useRevenueCatUser();
+  useWeatherAlertRefresh({ enabled: isAuthedValue });
+  useNotificationSetup({ isAuthed: isAuthedValue });
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const isLoadingGlobal = useAtomValue(isLoadingAtom);
@@ -133,13 +137,13 @@ export default function AppLayout() {
             animation: 'slide_from_bottom',
           }}
         />
-        <Stack.Screen name="weather/preview" />
         <Stack.Screen
           name="weather/[id]"
           options={{
             headerShown: false,
           }}
         />
+        <Stack.Screen name="weather/watch-list" />
         <Stack.Screen
           name="weather/geo"
           options={{
@@ -170,6 +174,21 @@ export default function AppLayout() {
             animation: 'slide_from_bottom',
           }}
         />
+        {/* Trip Stats editors are Material full-screen dialogs: they rise from the bottom and
+            close with an X, not a back arrow. */}
+        {[
+          'trip-stats/goal',
+          'trip-stats/add-summit',
+          'trip-stats/share',
+          'trip-stats/year-in-review',
+          'trip/[id]/log',
+        ].map((name) => (
+          <Stack.Screen
+            key={name}
+            name={name}
+            options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+          />
+        ))}
         <Stack.Screen
           name="weight-analysis/[id]"
           options={{
@@ -180,26 +199,6 @@ export default function AppLayout() {
           name="pack-categories/[id]"
           options={{
             presentation: 'card',
-          }}
-        />
-        <Stack.Screen
-          name="weather-alerts"
-          options={{
-            ...getAppBarOptions(),
-            // Navigator-level header default so early loading states still show
-            // the proper large-title header. The screen's own <Stack.Screen>
-            // overrides this with the translated title once content mounts.
-            title: 'Weather Alerts',
-            presentation: 'card',
-            animation: 'default',
-          }}
-        />
-        <Stack.Screen
-          name="weather-alert-preferences"
-          options={{
-            ...getAppBarOptions(),
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
           }}
         />
         <Stack.Screen

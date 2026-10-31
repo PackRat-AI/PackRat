@@ -251,7 +251,6 @@ class AppUITestCase: XCTestCase {
             "Guides": "nav_guides",
             "Gear Inventory": "nav_gearInventory",
             "Wildlife": "nav_wildlife",
-            "AI Packs": "nav_aiPacks",
         ]
         if let identifier = identifierByLabel[label] {
             let identifiedButton = app.buttons[identifier]

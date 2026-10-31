@@ -13,6 +13,7 @@
  *
  * Output:
  *   apps/swift/Resources/LongTrails.json
+ *   apps/expo/features/trip-stats/data/longTrails.json
  */
 
 import { writeFileSync } from 'node:fs';
@@ -21,7 +22,10 @@ import { fileURLToPath } from 'node:url';
 import { safeJsonStringify } from '@packrat/utils';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const outputPath = resolve(__dir, '../Resources/LongTrails.json');
+const outputPaths = [
+  resolve(__dir, '../Resources/LongTrails.json'),
+  resolve(__dir, '../../expo/features/trip-stats/data/longTrails.json'),
+];
 
 interface Source {
   code: string;
@@ -172,7 +176,9 @@ for (const source of SOURCES) {
   });
 }
 
-writeFileSync(outputPath, `${safeJsonStringify(trails)}\n`);
-// Biome checks this file in the pre-commit hook; write it the way Biome would.
-Bun.spawnSync(['bunx', 'biome', 'format', '--write', outputPath]);
-console.log(`Wrote ${trails.length} trails to ${outputPath}`);
+for (const outputPath of outputPaths) {
+  writeFileSync(outputPath, `${safeJsonStringify(trails)}\n`);
+  // Biome checks this file in the pre-commit hook; write it the way Biome would.
+  Bun.spawnSync(['bunx', 'biome', 'format', '--write', outputPath]);
+  console.log(`Wrote ${trails.length} trails to ${outputPath}`);
+}

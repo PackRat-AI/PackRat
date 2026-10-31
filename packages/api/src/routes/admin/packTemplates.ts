@@ -1,4 +1,5 @@
 import {
+  createCuratedPackTemplateItem,
   deleteCuratedPackTemplate,
   deleteCuratedPackTemplateItem,
   getCuratedPackTemplate,
@@ -17,6 +18,7 @@ import {
   AdminPackTemplateDetailSchema,
   AdminPackTemplateIdParamSchema,
   AdminPackTemplateImportBodySchema,
+  AdminPackTemplateItemCreateBodySchema,
   AdminPackTemplateItemSchema,
   AdminPackTemplateItemUpdateBodySchema,
   AdminPackTemplateListSchema,
@@ -121,6 +123,19 @@ export const adminPackTemplatesRoutes = new Elysia({ prefix: '/pack-templates' }
       params: AdminPackTemplateIdParamSchema,
       response: { 200: SuccessSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Soft-delete a featured pack' },
+    },
+  )
+  .post(
+    '/:id/items',
+    async ({ params, body }) => {
+      const item = await createCuratedPackTemplateItem({ templateId: params.id, item: body });
+      return item ?? status(404, { error: 'Template not found' });
+    },
+    {
+      params: AdminPackTemplateIdParamSchema,
+      body: AdminPackTemplateItemCreateBodySchema,
+      response: { 200: AdminPackTemplateItemSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Add an item to a featured pack' },
     },
   )
   .patch(

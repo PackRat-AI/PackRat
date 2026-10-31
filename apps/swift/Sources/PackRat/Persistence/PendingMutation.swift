@@ -217,20 +217,31 @@ struct PackTemplateItemMutationPayload: Codable, Sendable {
 
 /// Field set for a queued trail-condition-report create/update.
 struct TrailConditionReportMutationPayload: Codable, Sendable {
+    var trailId: String?
     var trailName: String
     var trailRegion: String?
+    var latitude: Double?
+    var longitude: Double?
     var surface: String?
     var overallCondition: String
     var hazards: [String]?
     var waterCrossings: Bool?
     var waterCrossingDifficulty: String?
     var notes: String?
+    /// Uploaded keys, and `pending-photo:` entries for photos still on the
+    /// device (see `PendingReportPhotos`), in the order the hiker added them.
     var photos: [String]?
     var tripId: String?
+    /// Who owns the pending photos. Upload keys must start with it, and the
+    /// outbox has no signed-in user of its own to ask.
+    var photoOwnerId: String? = nil
 
     init(
+        trailId: String? = nil,
         trailName: String,
         trailRegion: String? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
         surface: String? = nil,
         overallCondition: String,
         hazards: [String]? = nil,
@@ -238,10 +249,15 @@ struct TrailConditionReportMutationPayload: Codable, Sendable {
         waterCrossingDifficulty: String? = nil,
         notes: String? = nil,
         photos: [String]? = nil,
-        tripId: String? = nil
+        tripId: String? = nil,
+        photoOwnerId: String? = nil
     ) {
+        self.photoOwnerId = photoOwnerId
+        self.trailId = trailId
         self.trailName = trailName
         self.trailRegion = trailRegion
+        self.latitude = latitude
+        self.longitude = longitude
         self.surface = surface
         self.overallCondition = overallCondition
         self.hazards = hazards
@@ -285,6 +301,9 @@ struct TripMutationPayload: Codable, Sendable {
     }
     var log: TripLog? = nil
     var excludedFromStats: Bool? = nil
+    /// Optional so payloads queued before trips named a trail still decode.
+    var trailId: String? = nil
+    var trailName: String? = nil
 
     var location: TripLocationBody? {
         guard let latitude, let longitude else { return nil }

@@ -22,8 +22,8 @@ actor APIClient {
     static let environments: [String: String] = [
         "local":      "http://localhost:8787",
         "dev-local":  "http://localhost:8791",
-        "dev":        "https://packrat-api-dev.orange-frost-d665.workers.dev",
-        "production": "https://packrat-api.orange-frost-d665.workers.dev",
+        "dev":        "https://api-dev.packratai.com",
+        "production": "https://api.packratai.com",
     ]
 
     /// Public R2 bucket URL for user-uploaded images (avatars, pack photos), per
@@ -48,6 +48,8 @@ actor APIClient {
     static func resolvedImageURL(_ value: String?) -> URL? {
         guard let value, !value.isEmpty else { return nil }
         if value.hasPrefix("http") { return URL(string: value) }
+        // Photos of a report still waiting to send live on the device.
+        if value.hasPrefix("file:") { return URL(string: value) }
         return URL(string: "\(r2PublicURL)/\(value)")
     }
 
@@ -88,7 +90,7 @@ actor APIClient {
         #if DEBUG
         return URL(string: "http://localhost:8787")!
         #else
-        return URL(string: "https://packrat-api.orange-frost-d665.workers.dev")!
+        return URL(string: "https://api.packratai.com")!
         #endif
     }
 

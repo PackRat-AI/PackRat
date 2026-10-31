@@ -1,11 +1,9 @@
 import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 
+/** Category slugs as the API returns them; labels come from `guideCategoryLabel`. */
 export const useGuideCategories = () => {
-  const { t } = useTranslation();
-
   return useQuery({
     queryKey: ['guide-categories'],
     queryFn: async () => {
@@ -18,16 +16,7 @@ export const useGuideCategories = () => {
         });
         throw err;
       }
-
-      return [
-        t('guides.all'),
-        ...(data?.categories.map((category: string) =>
-          category
-            .split('-')
-            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' '),
-        ) || []),
-      ];
+      return data?.categories ?? [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnMount: false,

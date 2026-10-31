@@ -74,7 +74,7 @@ final class AuthManager {
             body: LoginBody(email: email, password: password),
             requiresAuth: false
         )
-        let response: LoginResponse = try await apiClient.send(endpoint)
+        let response: LoginResponse = try await sendSignIn(endpoint, path: "sign-in/email")
 
         if let token = response.token, !token.isEmpty {
             KeychainService.shared.saveSessionToken(token)
@@ -143,7 +143,7 @@ final class AuthManager {
             ),
             requiresAuth: false
         )
-        let response: SocialResponse = try await apiClient.send(endpoint)
+        let response: SocialResponse = try await sendSignIn(endpoint, path: "sign-in/social/\(provider.rawValue)")
 
         if let token = response.token, !token.isEmpty {
             KeychainService.shared.saveSessionToken(token)
@@ -235,7 +235,7 @@ final class AuthManager {
             ),
             requiresAuth: false
         )
-        let response: RegisterResponse = try await apiClient.send(endpoint)
+        let response: RegisterResponse = try await sendSignIn(endpoint, path: "sign-up/email")
 
         if let token = response.token, !token.isEmpty {
             KeychainService.shared.saveSessionToken(token)
@@ -428,6 +428,35 @@ final class AuthManager {
     private func persistUser(_ user: User) {
         if let data = try? JSONEncoder().encode(user) {
             UserDefaults.standard.set(data, forKey: "current_user")
+        }
+    }
+
+    /// Sends a sign-in or sign-up request and reports failures the user could
+    /// not have caused. Wrong credentials and other 4xx answers are the user's
+    /// to fix and stay out of Sentry; timeouts and other transport errors are
+    /// already reported by `APIClient`. What is left (5xx, 429, a response we
+    /// could not decode) means sign-in is broken for this person.
+    private func sendSignIn<T: Decodable>(_ endpoint: Endpoint, path: String) async throws -> T {
+        do {
+            return try await apiClient.send(endpoint)
+        } catch {
+            reportSignInFailure(error, path: path)
+            throw error
+        }
+    }
+
+    private func reportSignInFailure(_ error: Error, path: String) {
+        if error is URLError || error is CancellationError { return }
+        if case let PackRatError.httpError(statusCode, _) = error,
+           (400...499).contains(statusCode), statusCode != 429 { return }
+        if case PackRatError.unauthorized = error { return }
+        if case PackRatError.notFound = error { return }
+        SentrySDK.capture(error: error) { scope in
+            scope.setTag(value: "auth", key: "subsystem")
+            scope.setTag(value: path, key: "auth_path")
+            if case let PackRatError.httpError(statusCode, _) = error {
+                scope.setExtra(value: statusCode, key: "httpStatus")
+            }
         }
     }
 

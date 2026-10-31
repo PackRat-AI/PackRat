@@ -388,7 +388,6 @@ final class VisualScreenshotTests: XCTestCase {
 
     private var primaryPhoneHomeActions: [PhoneHomeActionScreenshot] {
         [
-            ("AI Packs", "ai-packs"),
             ("Gear Inventory", "gear-inventory"),
             ("Season Suggestions", "season-suggestions"),
             ("Pack Templates", "pack-templates"),
@@ -573,15 +572,6 @@ final class VisualScreenshotTests: XCTestCase {
             )
             tapElementAndCapture(identifier: "feed_comments_button_9001", name: "94-data-feed-comments-sheet")
         }
-
-        captureHomeAction(
-            "AI Packs",
-            name: "home-before-95-data-ai-packs-expanded",
-            dismissAfterCapture: false,
-            destinationIdentifier: "ai_packs_generate_button"
-        )
-        scrollToElement(identifier: "ai_packs_view_results_button", maxSwipes: 3)
-        tapAndCapture(identifier: "ai_packs_view_results_button", fallbackButton: "View", name: "95-data-ai-packs-results-sheet")
     }
 
     private func resetPhoneModalState(_ mode: VisualMode) {
@@ -661,7 +651,6 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func prefersHomeSearch(for title: String) -> Bool {
         [
-            "AI Packs",
             "Community Feed",
             "Gear Inventory",
             "Pack Templates",
@@ -869,7 +858,6 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func capturePhoneGuestAccountLimits() {
         captureGuestLimitedTab("Assistant", name: "50-guest-limit-assistant")
-        captureGuestLimitedHomeAction("AI Packs", name: "50-guest-limit-ai-packs")
         captureGuestLimitedHomeAction("Catalog", name: "50-guest-limit-catalog")
         captureGuestLimitedHomeAction("Weather", name: "50-guest-limit-weather")
 
@@ -907,7 +895,6 @@ final class VisualScreenshotTests: XCTestCase {
             ("Trail Conditions", "\(prefix)-trail-conditions\(suffix)"),
             ("Guides", "\(prefix)-guides\(suffix)"),
             ("Gear Inventory", "\(prefix)-gear-inventory\(suffix)"),
-            ("AI Packs", "\(prefix)-ai-packs\(suffix)"),
         ]
         if UITestFeatureFlags.enableFeed {
             secondaryEntries.append(("Feed", "\(prefix)-feed\(suffix)"))
@@ -954,10 +941,6 @@ final class VisualScreenshotTests: XCTestCase {
 
         selectSidebar("Trail Conditions")
         capture("74-data-trail-condition-detail")
-
-        selectSidebar("AI Packs")
-        capture("76-data-ai-packs-results")
-        tapAndCapture(identifier: "ai_packs_generate_button", fallbackButton: "Generate 3 Packs", name: "77-data-ai-packs-confirm")
     }
 
     private func captureMacModalSurface(mode: VisualMode) {
@@ -1000,7 +983,6 @@ final class VisualScreenshotTests: XCTestCase {
             ("Assistant", "50-guest-limit-assistant"),
             ("Weather", "50-guest-limit-weather"),
             ("Catalog", "50-guest-limit-catalog"),
-            ("AI Packs", "50-guest-limit-ai-packs"),
         ]
 
         for (label, name) in entries {
@@ -1078,9 +1060,6 @@ final class VisualScreenshotTests: XCTestCase {
             tapElementAndCapture(identifier: "feed_comments_button_9001", name: "94-data-feed-comments-sheet")
         }
 
-        resetMacSampleDataSidebar("AI Packs")
-        scrollToElement(identifier: "ai_packs_view_results_button", maxSwipes: 3)
-        tapAndCapture(identifier: "ai_packs_view_results_button", fallbackButton: "View", name: "95-data-ai-packs-results-sheet")
 
         if UITestFeatureFlags.enableShoppingList {
             captureMacHomeAction("Shopping List", name: "96-data-shopping-list", dismissAfterCapture: false)
@@ -1108,7 +1087,6 @@ final class VisualScreenshotTests: XCTestCase {
             "Guides": "nav_guides",
             "Gear Inventory": "nav_gearInventory",
             "Wildlife": "nav_wildlife",
-            "AI Packs": "nav_aiPacks",
         ]
 
         if let identifier = identifierByLabel[label] {

@@ -1,12 +1,14 @@
+import { BadgeDot } from '@packrat/ui/src/badge-dot';
 import { ListItem } from '@packrat/ui/src/list';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { router } from 'expo-router';
 import { Platform, View } from 'react-native';
-import { useActiveLocation } from '../hooks';
+import { useActiveLocation, useHasAnyUnseenAlert, useLocations } from '../hooks';
 import { WeatherIcon } from './WeatherIcon';
 
 export function WeatherTile() {
@@ -14,6 +16,10 @@ export function WeatherTile() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
   const { displayTemperature } = useTemperatureUnit();
+  const { locationsState } = useLocations();
+  const hasNewAlert = useHasAnyUnseenAlert(
+    locationsState.state === 'hasData' ? locationsState.data : [],
+  );
 
   const handlePress = () => {
     router.push('/weather');
@@ -44,6 +50,7 @@ export function WeatherTile() {
                 {displayTemperature(activeLocation.temperature)} • {activeLocation.condition}
               </Text>
             )}
+            {hasNewAlert ? <BadgeDot testID={testIds.weather.homeNewAlertDot} /> : null}
             <Icon name="chevron-right" size={17} color={colors.grey} />
           </View>
         }
@@ -52,6 +59,7 @@ export function WeatherTile() {
           subTitle: activeLocation ? activeLocation.name : t('weather.seeWeatherUpdates'),
         }}
         onPress={handlePress}
+        accessibilityLabel={hasNewAlert ? t('weather.weatherWithNewAlert') : undefined}
         target="Cell"
         index={0}
         removeSeparator={Platform.OS === 'ios'}

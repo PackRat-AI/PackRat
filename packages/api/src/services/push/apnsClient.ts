@@ -1,5 +1,6 @@
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import { safeJsonStringify } from '@packrat/utils';
+import type { PushPayload } from './pushPayload';
 
 const PRODUCTION_HOST = 'https://api.push.apple.com';
 const SANDBOX_HOST = 'https://api.sandbox.push.apple.com';
@@ -99,11 +100,7 @@ export async function sendApnsPush({
 }: {
   env: ValidatedEnv;
   deviceToken: string;
-  payload: {
-    alert: { title: string; body: string };
-    sound?: string;
-    badge?: number;
-  } & ({ weatherLocationId: number } | { tripId: string } | { postId: number });
+  payload: PushPayload;
 }): Promise<ApnsSendResult> {
   const { APNS_BUNDLE_ID, APNS_ENVIRONMENT } = env;
   if (!APNS_BUNDLE_ID) throw new Error('APNs is not configured (APNS_BUNDLE_ID unset)');
@@ -129,7 +126,7 @@ export async function sendApnsPush({
       ...('weatherLocationId' in payload
         ? { weatherLocationId: payload.weatherLocationId }
         : 'tripId' in payload
-          ? { tripId: payload.tripId }
+          ? { tripId: payload.tripId, ...(payload.reportId ? { reportId: payload.reportId } : {}) }
           : { postId: payload.postId }),
     }),
   });

@@ -68,6 +68,8 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
             endDate: data.endDate ? new Date(data.endDate) : null,
             notes: data.notes ?? null,
             packId: data.packId ?? null,
+            trailId: data.trailId ?? null,
+            trailName: data.trailId ? (data.trailName ?? null) : null,
             checklist: data.checklist ?? null,
             log: data.log ?? null,
             excludedFromStats: data.excludedFromStats ?? false,
@@ -142,6 +144,10 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
         if ('endDate' in data) updateData.endDate = data.endDate ? new Date(data.endDate) : null;
         if ('notes' in data) updateData.notes = data.notes ?? null;
         if ('packId' in data) updateData.packId = data.packId ?? null;
+        if ('trailId' in data) {
+          updateData.trailId = data.trailId ?? null;
+          updateData.trailName = data.trailId ? (data.trailName ?? null) : null;
+        }
         if ('checklist' in data) updateData.checklist = data.checklist ?? null;
         if (data.status) updateData.status = data.status;
         if ('startedAt' in data)

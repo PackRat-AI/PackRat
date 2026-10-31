@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => {
     tokensWhere,
     deleteWhere,
     env: { APNS_KEY_ID: 'k' },
-    sendApnsPush: vi.fn(),
+    sendPush: vi.fn(),
     captureApiException: vi.fn(),
     waitUntil: vi.fn(),
     cloudflare: { mode: 'stub' as 'stub' | 'waitUntil' | 'throws' },
@@ -39,7 +39,10 @@ const mocks = vi.hoisted(() => {
 vi.mock('@packrat/api/db', () => ({ createDb: mocks.createDb }));
 vi.mock('@packrat/api/utils/env-validation', () => ({ getEnv: () => mocks.env }));
 vi.mock('@packrat/api/utils/sentry', () => ({ captureApiException: mocks.captureApiException }));
-vi.mock('../apnsClient', () => ({ sendApnsPush: mocks.sendApnsPush }));
+vi.mock('../sendPush', () => ({
+  sendPush: mocks.sendPush,
+  pushGateway: (platform: string) => (platform === 'android' ? 'FCM' : 'APNs'),
+}));
 vi.mock('@packrat/db/schema', () => ({
   socialSettings: {
     ...mocks.tables.socialSettings,
@@ -72,8 +75,8 @@ describe('notifyFeedRecipients', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.settingsWhere.mockResolvedValue([]);
-    mocks.tokensWhere.mockResolvedValue([{ id: 't1', deviceToken: 'device-1' }]);
-    mocks.sendApnsPush.mockResolvedValue({ outcome: 'sent' });
+    mocks.tokensWhere.mockResolvedValue([{ id: 't1', platform: 'ios', deviceToken: 'device-1' }]);
+    mocks.sendPush.mockResolvedValue({ outcome: 'sent' });
     mocks.deleteWhere.mockResolvedValue(undefined);
   });
 
@@ -81,7 +84,7 @@ describe('notifyFeedRecipients', () => {
     await notifyFeedRecipients({ ...base, recipientIds: [] });
 
     expect(mocks.createDb).toHaveBeenCalledTimes(0);
-    expect(mocks.sendApnsPush).toHaveBeenCalledTimes(0);
+    expect(mocks.sendPush).toHaveBeenCalledTimes(0);
   });
 
   it('dedupes recipients before querying', async () => {
@@ -97,8 +100,9 @@ describe('notifyFeedRecipients', () => {
   it('pushes the title, body and post id to each device', async () => {
     await notifyFeedRecipients({ ...base, recipientIds: ['u1'] });
 
-    expect(mocks.sendApnsPush).toHaveBeenCalledWith({
+    expect(mocks.sendPush).toHaveBeenCalledWith({
       env: mocks.env,
+      platform: 'ios',
       deviceToken: 'device-1',
       payload: { alert: { title: 'Ana commented', body: 'Nice' }, postId: 7 },
     });
@@ -136,11 +140,11 @@ describe('notifyFeedRecipients', () => {
     await notifyFeedRecipients({ ...base, recipientIds: ['u1'] });
 
     expect(mocks.tokensWhere).toHaveBeenCalledTimes(0);
-    expect(mocks.sendApnsPush).toHaveBeenCalledTimes(0);
+    expect(mocks.sendPush).toHaveBeenCalledTimes(0);
   });
 
   it('deletes a token APNs reports as invalid', async () => {
-    mocks.sendApnsPush.mockResolvedValue({ outcome: 'invalid-token' });
+    mocks.sendPush.mockResolvedValue({ outcome: 'invalid-token' });
 
     await notifyFeedRecipients({ ...base, recipientIds: ['u1'] });
 
@@ -149,7 +153,7 @@ describe('notifyFeedRecipients', () => {
   });
 
   it('reports an APNs error with its status, keeping the token', async () => {
-    mocks.sendApnsPush.mockResolvedValue({ outcome: 'error', status: 500, body: 'boom' });
+    mocks.sendPush.mockResolvedValue({ outcome: 'error', status: 500, body: 'boom' });
 
     await notifyFeedRecipients({ ...base, recipientIds: ['u1'] });
 
@@ -165,17 +169,17 @@ describe('notifyFeedRecipients', () => {
   it('captures a thrown send and keeps delivering to the other devices', async () => {
     const failure = new Error('network down');
     mocks.tokensWhere.mockResolvedValue([
-      { id: 't1', deviceToken: 'device-1' },
-      { id: 't2', deviceToken: 'device-2' },
+      { id: 't1', platform: 'ios', deviceToken: 'device-1' },
+      { id: 't2', platform: 'ios', deviceToken: 'device-2' },
     ]);
-    mocks.sendApnsPush.mockRejectedValueOnce(failure).mockResolvedValueOnce({ outcome: 'sent' });
+    mocks.sendPush.mockRejectedValueOnce(failure).mockResolvedValueOnce({ outcome: 'sent' });
 
     await notifyFeedRecipients({ ...base, recipientIds: ['u1'] });
 
     expect(mocks.captureApiException).toHaveBeenCalledWith(
       expect.objectContaining({ error: failure, extra: { postId: 7, kind: 'comment' } }),
     );
-    expect(mocks.sendApnsPush.mock.calls[1]?.[0]).toMatchObject({ deviceToken: 'device-2' });
+    expect(mocks.sendPush.mock.calls[1]?.[0]).toMatchObject({ deviceToken: 'device-2' });
   });
 
   it('captures a database failure instead of throwing', async () => {

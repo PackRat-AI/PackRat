@@ -22,6 +22,8 @@ import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { uploadImage } from 'expo-app/features/packs/utils/uploadImage';
 import { ProfileAuthWall } from 'expo-app/features/profile/components';
 import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
+import { useTripStatsRecord } from 'expo-app/features/trip-stats/hooks/useTripStats';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { cn } from 'expo-app/lib/cn';
 import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
@@ -88,6 +90,9 @@ function Profile() {
     ),
   } as const;
 
+  const enableTripStats = useFeatureFlag('enableTripStats');
+  const tripStats = useTripStatsRecord();
+
   // Generate display data based on user information
   const displayName =
     user?.firstName && user?.lastName
@@ -111,6 +116,16 @@ function Profile() {
       title: t('common.email'),
       ...(Platform.OS === 'ios' ? { value: email } : { subTitle: email }),
     },
+    ...(enableTripStats && tripStats.hasTrips
+      ? [
+          {
+            id: 'trip-stats',
+            title: t('tripStats.title'),
+            testID: testIds.tripStats.profileRow,
+            onPress: () => router.push('/trip-stats'),
+          },
+        ]
+      : []),
   ];
 
   return (

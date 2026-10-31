@@ -10,6 +10,7 @@ struct TripsListView: View {
     /// iOS, where rows push through their own `NavigationLink` and the list
     /// keeps no selection — so an outside selection has to push by itself.
     @State private var linkedTripId: String?
+    @State private var unread = TrailReportUnreadStore.shared
     @Environment(\.modelContext) private var modelContext
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -49,7 +50,11 @@ struct TripsListView: View {
             }
         }
         .task { await viewModel.load(context: modelContext) }
-        .refreshable { await viewModel.load(context: modelContext) }
+        .task { await unread.refresh() }
+        .refreshable {
+            await viewModel.load(context: modelContext)
+            await unread.refresh()
+        }
         .sheet(isPresented: $showingCreateSheet) {
             TripFormView(viewModel: viewModel)
         }
@@ -115,10 +120,10 @@ struct TripsListView: View {
                 NavigationLink {
                     TripDetailView(trip: trip, viewModel: viewModel)
                 } label: {
-                    TripRowView(trip: trip)
+                    TripRowView(trip: trip, hasUnreadReport: unread.tripIds.contains(trip.id))
                 }
             } else {
-                TripRowView(trip: trip)
+                TripRowView(trip: trip, hasUnreadReport: unread.tripIds.contains(trip.id))
             }
         }
         .tag(trip.id)
@@ -150,6 +155,7 @@ private struct TripRowView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     let trip: Trip
+    let hasUnreadReport: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -179,6 +185,12 @@ private struct TripRowView: View {
 
     @ViewBuilder
     private var metadataItems: some View {
+        if hasUnreadReport {
+            Label("New trail report", systemImage: "figure.hiking")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tint)
+                .accessibilityIdentifier("trip_row_new_trail_report")
+        }
         if let loc = trip.location?.name {
             Label(loc, systemImage: "mappin")
                 .font(.caption)

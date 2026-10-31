@@ -47,6 +47,23 @@ describe('parseTestFlightUploadConfig', () => {
     ]);
   });
 
+  it('passes the Sentry DSN to the archive only when one is set', () => {
+    const config = parseTestFlightUploadConfig({ argv: [], env: { BUILD_NUMBER: '456' } });
+
+    expect(
+      xcodeArchiveOverrides({
+        config,
+        teamId: 'TEAM123',
+        sentryDsn: 'https://key@o1.ingest.sentry.io/2',
+      }),
+    ).toContain('SENTRY_DSN=https://key@o1.ingest.sentry.io/2');
+    expect(
+      xcodeArchiveOverrides({ config, teamId: 'TEAM123' }).some((arg) =>
+        arg.startsWith('SENTRY_DSN='),
+      ),
+    ).toBe(false);
+  });
+
   it('uses the staging scheme without changing the app identity', () => {
     expect(
       parseTestFlightUploadConfig({
@@ -137,6 +154,21 @@ describe('parseTestFlightUploadConfig', () => {
     expect(readiness.errors).toContain(
       'Expected iOS bundle id com.andrewbierman.packrat, got com.andrewbierman.packrat.swift.',
     );
+  });
+
+  it('rejects a staging archive unless the upload opts in by name', () => {
+    const env = { BUILD_NUMBER: '2026071802' };
+    const blocked = verifyTestFlightReplacementReadiness({
+      config: parseTestFlightUploadConfig({ argv: ['--staging'], env }),
+      currentAppStoreBuildNumber: '2026071801',
+    });
+    const allowed = verifyTestFlightReplacementReadiness({
+      config: parseTestFlightUploadConfig({ argv: ['--staging', '--allow-staging-upload'], env }),
+      currentAppStoreBuildNumber: '2026071801',
+    });
+
+    expect(blocked.ok).toBe(false);
+    expect(allowed).toEqual({ ok: true, errors: [], warnings: [] });
   });
 
   it('rejects stale replacement build numbers', () => {

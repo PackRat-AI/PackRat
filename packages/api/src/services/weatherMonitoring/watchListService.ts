@@ -1,8 +1,10 @@
 import { createDb } from '@packrat/api/db';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { weatherWatchedLocations } from '@packrat/db/schema';
 import type { AddWatchedLocationRequest } from '@packrat/schemas/weatherMonitoring';
 import { and, eq } from 'drizzle-orm';
+import { announceActiveAlertsToNewWatcher } from './announceToNewWatcher';
 import { armWatchedPlaceTimer, disarmWatchedPlaceTimer } from './watchedPlaceTimer';
 
 export type WatchedLocationRow = {
@@ -92,6 +94,11 @@ export async function addWatchedLocation({
 
     if (!row) throw new Error('Failed to add watched location');
     await armWatchedPlaceTimer({ weatherLocationId: row.weatherLocationId });
+    // Both timestamps default to the same now() on insert; a re-add bumps
+    // updatedAt, so equal means this user just started watching.
+    if (row.createdAt.getTime() === row.updatedAt.getTime()) {
+      await announceToNewWatcher({ userId, weatherLocationId: row.weatherLocationId });
+    }
     return row;
   } catch (error) {
     captureApiException({
@@ -102,6 +109,30 @@ export async function addWatchedLocation({
       extra: { weatherLocationId: request.weatherLocationId },
     });
     throw error;
+  }
+}
+
+/**
+ * Best effort: the watch has already been saved, and failing to catch the new
+ * watcher up must not fail the request.
+ */
+async function announceToNewWatcher({
+  userId,
+  weatherLocationId,
+}: {
+  userId: string;
+  weatherLocationId: number;
+}): Promise<void> {
+  try {
+    await announceActiveAlertsToNewWatcher({ env: getEnv(), userId, weatherLocationId });
+  } catch (error) {
+    captureApiException({
+      error,
+      operation: 'weatherMonitoring.announceToNewWatcher',
+      userId,
+      tags: { feature: 'weatherMonitoring' },
+      extra: { weatherLocationId },
+    });
   }
 }
 

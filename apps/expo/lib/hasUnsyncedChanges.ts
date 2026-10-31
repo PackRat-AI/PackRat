@@ -6,6 +6,9 @@ import {
 } from 'expo-app/features/pack-templates/store';
 import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/store';
 import { packWeigthHistorySyncState } from 'expo-app/features/packs/store/packWeightHistory';
+import { tripStatsEntriesSyncState } from 'expo-app/features/trip-stats/store/entries';
+import { tripGoalsSyncState } from 'expo-app/features/trip-stats/store/goals';
+import { tripStatsSettingsSyncState } from 'expo-app/features/trip-stats/store/settings';
 import { tripsSyncState } from 'expo-app/features/trips/store/trips';
 
 const hasPendingChanges = (syncState: Observable<ObservableSyncState>): boolean =>
@@ -19,6 +22,9 @@ export function hasUnsyncedChanges() {
     hasPendingChanges(packWeigthHistorySyncState) ||
     hasPendingChanges(packTemplatesSyncState) ||
     hasPendingChanges(packTemplateItemsSyncState) ||
-    hasPendingChanges(tripsSyncState)
+    hasPendingChanges(tripsSyncState) ||
+    hasPendingChanges(tripGoalsSyncState) ||
+    hasPendingChanges(tripStatsEntriesSyncState) ||
+    hasPendingChanges(tripStatsSettingsSyncState)
   );
 }
