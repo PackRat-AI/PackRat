@@ -26,6 +26,7 @@
       }
     },
     {
+      "skippedTests" : ["ChatAcceptanceTests"],
       "target" : {
         "containerPath" : "container:PackRat.xcodeproj",
         "identifier" : "PackRatUITests",

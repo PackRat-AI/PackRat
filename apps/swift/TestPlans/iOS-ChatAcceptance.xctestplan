@@ -1,0 +1,39 @@
+{
+  "configurations": [
+    {
+      "id": "5E1A1F00-0004-4001-A000-000000000001",
+      "name": "Default",
+      "options": {}
+    }
+  ],
+  "defaultOptions": {
+    "areLocalizationScreenshotsEnabled": false,
+    "codeCoverage": false,
+    "diagnosticCollectionPolicy": "Never",
+    "language": "en",
+    "region": "US",
+    "testTimeoutsEnabled": true,
+    "maximumTestExecutionTimeAllowance": 120,
+    "environmentVariableEntries": [
+      {
+        "key": "PACKRAT_CHAT_FIXTURE_URL",
+        "value": "http://127.0.0.1:18793",
+        "enabled": true
+      }
+    ]
+  },
+  "testTargets": [
+    {
+      "target": {
+        "containerPath": "container:PackRat.xcodeproj",
+        "identifier": "PackRatUITests",
+        "name": "PackRatUITests"
+      },
+      "selectedTests": [
+        "ChatAcceptanceTests"
+      ],
+      "parallelizable": false
+    }
+  ],
+  "version": 1
+}

@@ -48,7 +48,7 @@ function trip(id: string, patch: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   mocks.env = {};
   mocks.upcoming = [];
 });
