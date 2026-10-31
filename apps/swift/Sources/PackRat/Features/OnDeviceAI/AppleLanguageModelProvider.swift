@@ -44,10 +44,10 @@ struct AppleLanguageModelProvider: LocalLLMProvider {
                     // Snapshots are cumulative; forward only the new suffix.
                     var emitted = ""
                     for try await snapshot in session.streamResponse(to: last.content) {
-                        // After a tool call the stream opens with an empty
-                        // value whose text form is "null"; it is not reply text.
-                        if case .null = snapshot.rawContent.kind { continue }
                         let text = snapshot.content
+                        // After a tool call the stream opens with the literal
+                        // text "null", then restarts with the real reply.
+                        if emitted.isEmpty, text == "null" { continue }
                         guard text.count > emitted.count, text.hasPrefix(emitted) else {
                             emitted = text
                             continue
