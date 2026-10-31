@@ -288,44 +288,49 @@ struct ChatView: View {
 // MARK: - Mode title menu
 
 private extension View {
-    /// Where the mode menu lives. On iOS, tapping the title opens it (the title
-    /// goes inline, since iOS only shows a title menu there). A Mac window
-    /// title is not a menu outside document apps, so the Mac gets a toolbar
-    /// pop-up button instead.
+    /// Where the mode menu lives. On iPhone, tapping the title opens it (the
+    /// title goes inline, since iOS only shows a title menu there) and the
+    /// current mode sits under the title. iPad and the iPhone app on a Mac
+    /// show no title subtitle, and a Mac window title is not a menu outside
+    /// document apps, so those get a toolbar pop-up that names the mode itself.
     @ViewBuilder
     func modeTitleMenu<Content: View>(isOffered: Bool, @ViewBuilder content: () -> Content) -> some View {
         if isOffered {
             #if os(iOS)
-            toolbarTitleMenu { content().pickerStyle(.inline) }
-                .navigationBarTitleDisplayMode(.inline)
-            #else
-            let menu = content()
-            toolbar {
-                ToolbarItem(placement: .navigation) { menu.pickerStyle(.menu).fixedSize() }
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                toolbarTitleMenu { content().pickerStyle(.inline) }
+                    .navigationBarTitleDisplayMode(.inline)
+            } else {
+                modeToolbarPopUp(content())
             }
+            #else
+            modeToolbarPopUp(content())
             #endif
         } else {
             self
         }
     }
 
+    func modeToolbarPopUp<Menu: View>(_ menu: Menu) -> some View {
+        toolbar {
+            ToolbarItem(placement: .navigation) { menu.pickerStyle(.menu).fixedSize() }
+        }
+    }
+
     /// The current mode under the title, so the choice is visible without
-    /// opening the menu.
+    /// opening the menu. iPad and the iPhone app on a Mac do not show a title
+    /// subtitle; their pop-up names the mode instead.
     @ViewBuilder
     func modeSubtitle(_ subtitle: String?) -> some View {
-        if let subtitle {
-            #if os(macOS)
+        #if os(iOS)
+        if let subtitle, UIDevice.current.userInterfaceIdiom == .phone, #available(iOS 26.0, *) {
             navigationSubtitle(subtitle)
-            #else
-            if #available(iOS 26.0, *) {
-                navigationSubtitle(subtitle)
-            } else {
-                self
-            }
-            #endif
         } else {
             self
         }
+        #else
+        if let subtitle { navigationSubtitle(subtitle) } else { self }
+        #endif
     }
 }
 
