@@ -1015,7 +1015,10 @@
       "removeTask": "Remove {{title}}",
       "suggestions": "Suggestions",
       "offInSettings": "Trip Reminders are off in Settings.",
-      "nextReminder": "Next reminder {{when}}."
+      "nextReminder": "Next reminder {{when}}.",
+      "startPacking": "Start Packing",
+      "continuePacking": "Continue Packing",
+      "reviewPacking": "Review Packing"
     }
   },
   "catalog": {

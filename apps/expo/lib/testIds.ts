@@ -219,6 +219,8 @@ export const testIds = Object.freeze({
     checklistItem: (id: string) => `trips:checklist-item-${id}`,
     checklistSuggestion: (title: string) => `trips:checklist-suggestion-${title}`,
     remindersToggle: 'trips:reminders-toggle',
+    startPackingBtn: 'trips:start-packing',
+    packAllPacked: 'trips:pack-all-packed',
   }),
 
   // ── Catalog ───────────────────────────────────────────────────────────────

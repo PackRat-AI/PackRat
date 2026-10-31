@@ -42,7 +42,8 @@ export function PackDetailScreen() {
 
   const DEFAULT_TAB = 'all';
   const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
-  const [isPackingMode, setIsPackingMode] = useState(false);
+  // `?packing=1` opens straight into packing mode, e.g. from a trip's Start Packing button.
+  const [isPackingMode, setIsPackingMode] = useState(() => params.packing === '1' && isOwnedByUser);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
     obs({ store: packingModeStore, id: id }).get() || {},
   );

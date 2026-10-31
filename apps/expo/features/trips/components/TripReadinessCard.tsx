@@ -90,7 +90,8 @@ export function TripReadinessCard({ trip }: { trip: Trip }) {
   const tip = fieldChargingTip({ trip, state });
   const todo = openChecklistTitles(trip);
   const { progress } = state;
-  const openPack = () => trip.packId && router.push(`/pack/${trip.packId}`);
+  // Lands in packing mode: the card is about what's left to pack.
+  const openPack = () => trip.packId && router.push(`/pack/${trip.packId}?packing=1`);
 
   const rows = [
     progress.kind === 'noPack' && (
