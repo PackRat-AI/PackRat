@@ -22,17 +22,21 @@ Notifications.setNotificationHandler({
  * one that cold-started the app.
  */
 export function useNotificationSetup({ isAuthed }: { isAuthed: boolean }) {
+  // Both features receive server pushes: weather alerts at watched places, and
+  // at an upcoming trip's destination.
   const monitoringEnabled = useFeatureFlag('enableWeatherMonitoring');
+  const tripRemindersEnabled = useFeatureFlag('enableTripReminders');
+  const pushEnabled = monitoringEnabled || tripRemindersEnabled;
   const lastResponse = Notifications.useLastNotificationResponse();
 
   useEffect(() => {
-    if (!isAuthed || !monitoringEnabled) return;
+    if (!isAuthed || !pushEnabled) return;
     refreshPushRegistration();
     const subscription = Notifications.addPushTokenListener(() => {
       refreshPushRegistration();
     });
     return () => subscription.remove();
-  }, [isAuthed, monitoringEnabled]);
+  }, [isAuthed, pushEnabled]);
 
   useEffect(() => {
     if (!isAuthed || !lastResponse) return;

@@ -15,8 +15,12 @@ import { ScrollView, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
+import { TripChecklistSection } from '../components/TripChecklistSection';
+import { TripReadinessCard } from '../components/TripReadinessCard';
+import { TripRemindersRow } from '../components/TripRemindersRow';
 import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
 import type { Trip } from '../types';
+import { isDepartureNear } from '../utils/tripReminderPlanner';
 
 export function TripDetailScreen() {
   const router = useRouter();
@@ -25,6 +29,7 @@ export function TripDetailScreen() {
   const { t } = useTranslation();
 
   const enableTrailConditions = useFeatureFlag('enableTrailConditions');
+  const enableTripReminders = useFeatureFlag('enableTripReminders');
 
   // safe-cast: trip may be undefined before the store is hydrated; the guard at line ~38 handles
   // the undefined case and returns early, ensuring trip is non-null at render time below.
@@ -76,6 +81,10 @@ export function TripDetailScreen() {
         <View className="p-4">
           {/* Trip name */}
           <Text className="mb-3 text-3xl font-bold text-foreground">{trip.name}</Text>
+
+          {enableTripReminders && isDepartureNear({ trip, now: new Date() }) && (
+            <TripReadinessCard trip={trip} />
+          )}
 
           {/* Dates */}
           <View className="mb-6" testID={testIds.trips.datesSection}>
@@ -189,6 +198,10 @@ export function TripDetailScreen() {
               </Card>
             </View>
           )}
+
+          {enableTripReminders && <TripChecklistSection trip={trip} />}
+
+          {enableTripReminders && <TripRemindersRow trip={trip} />}
 
           <TripLogSection trip={trip} />
 

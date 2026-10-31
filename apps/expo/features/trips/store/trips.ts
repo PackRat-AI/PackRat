@@ -25,6 +25,7 @@ const createTrip = async (tripData: TripInStore) => {
     startDate: tripData.startDate ?? null,
     endDate: tripData.endDate ?? null,
     log: tripData.log ?? null,
+    checklist: tripData.checklist ?? null,
     ...(tripData.excludedFromStats !== undefined
       ? { excludedFromStats: tripData.excludedFromStats }
       : {}),
@@ -45,6 +46,7 @@ const updateTrip = async ({ id, ...data }: Partial<TripInStore>) => {
     ...(data.startDate !== undefined ? { startDate: data.startDate ?? null } : {}),
     ...(data.endDate !== undefined ? { endDate: data.endDate ?? null } : {}),
     ...(data.log !== undefined ? { log: data.log ?? null } : {}),
+    ...(data.checklist !== undefined ? { checklist: data.checklist ?? null } : {}),
     ...(data.excludedFromStats !== undefined ? { excludedFromStats: data.excludedFromStats } : {}),
     ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
     ...(data.deleted !== undefined ? { deleted: data.deleted } : {}),

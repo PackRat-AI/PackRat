@@ -986,7 +986,37 @@
     "inDays_one": "In {{count}} day",
     "inDays_other": "In {{count}} days",
     "planATrip": "Plan a Trip",
-    "noUpcomingTripsDesc": "You have no trips scheduled. Plan your next adventure and it will appear here."
+    "noUpcomingTripsDesc": "You have no trips scheduled. Plan your next adventure and it will appear here.",
+    "reminders": {
+      "title": "Trip Reminders",
+      "leavesToday": "Leaves today",
+      "leavesTomorrow": "Leaves tomorrow",
+      "leavesInDays_one": "Leaves in {{count}} day",
+      "leavesInDays_other": "Leaves in {{count}} days",
+      "allPacked": "All packed",
+      "noPack": "No pack linked",
+      "linkPack": "Link a pack",
+      "packEmpty": "Your pack is empty",
+      "packEmptyDetail": "Add what you're bringing.",
+      "packedCount": "{{packed}} of {{total}} packed",
+      "stillToPack": "Still to pack: {{items}}",
+      "chargeTitle": "Charge before you go",
+      "forecast": "Forecast",
+      "forecastPending": "Not out yet for your dates. It shows here once it is.",
+      "chanceOfRain": "{{percent}}% chance of rain",
+      "forecastCoverage": "Forecast covers {{covered}} of {{total}} days so far.",
+      "alertDetail": "Issued for the destination. Check the forecast before you go.",
+      "fieldCharging": "Charging on the trail",
+      "beforeYouGo": "Before you go",
+      "allDone": "All done",
+      "toDo_one": "{{count}} to do",
+      "toDo_other": "{{count}} to do",
+      "addTaskPlaceholder": "Add a permit, pass or booking",
+      "removeTask": "Remove {{title}}",
+      "suggestions": "Suggestions",
+      "offInSettings": "Trip Reminders are off in Settings.",
+      "nextReminder": "Next reminder {{when}}."
+    }
   },
   "catalog": {
     "itemsCatalog": "Items Catalog",
@@ -1200,7 +1230,9 @@
     "displayUnits": "Display Units",
     "weightSubtitle": "For gear and pack weights",
     "temperatureSubtitle": "For weather and forecasts",
-    "windDistanceSubtitle": "For routes and weather data"
+    "windDistanceSubtitle": "For routes and weather data",
+    "notifications": "Notifications",
+    "tripRemindersSubtitle": "Trip Reminders help you pack and charge in the week before a trip. Turn them off for a single trip from that trip."
   },
   "weather": {
     "weather": "Weather",
