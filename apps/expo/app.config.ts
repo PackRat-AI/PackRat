@@ -184,6 +184,7 @@ export default (): ExpoConfig =>
           'expo-sqlite',
           'expo-font',
           'expo-image',
+          'expo-background-task',
           'react-native-fast-tflite',
           [
             '@react-native-google-signin/google-signin',

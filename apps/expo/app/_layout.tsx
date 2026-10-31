@@ -11,6 +11,8 @@ import { clientEnvs } from '@packrat/env/expo-client';
 import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import * as Sentry from '@sentry/react-native';
 import { configureRevenueCat } from 'expo-app/features/purchases';
+// Registers the background task definition; must load before any UI for headless launches.
+import 'expo-app/features/trips/lib/tripConditionsBackgroundRefresh';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';

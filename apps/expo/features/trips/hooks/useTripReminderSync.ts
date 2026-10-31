@@ -6,6 +6,7 @@ import { packingModeStore } from 'expo-app/features/packs/store/packingMode';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
+import { setTripConditionsRefreshEnabled } from '../lib/tripConditionsBackgroundRefresh';
 import { refreshTripConditions, syncTripReminders } from '../lib/tripReminderScheduler';
 import { tripConditionsStore, tripReminderSettingsStore } from '../store/tripReminders';
 import { tripsStore } from '../store/trips';
@@ -71,6 +72,10 @@ export function useTripReminderSync({ isAuthed }: { isAuthed: boolean }) {
       }
     });
   };
+
+  useEffect(() => {
+    setTripConditionsRefreshEnabled(isAuthed && featureEnabled);
+  }, [isAuthed, featureEnabled]);
 
   useEffect(() => {
     if (!isAuthed) return;

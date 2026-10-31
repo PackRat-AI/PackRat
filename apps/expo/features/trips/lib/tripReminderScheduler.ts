@@ -48,9 +48,12 @@ function itemsForTrip(trip: Trip) {
  */
 export async function refreshTripConditions({
   trips,
+  force = false,
   now = new Date(),
 }: {
   trips: Trip[];
+  /** Ignore the hour-long reuse window (background refresh). */
+  force?: boolean;
   now?: Date;
 }): Promise<void> {
   const due = trips.filter((trip) => needsForecast({ trip, now }));
@@ -61,7 +64,7 @@ export async function refreshTripConditions({
 
   for (const trip of due) {
     const existing = tripConditionsStore.peek()[trip.id];
-    if (isConditionsFresh({ existing, trip, now }) || !trip.location) continue;
+    if ((!force && isConditionsFresh({ existing, trip, now })) || !trip.location) continue;
     const { latitude, longitude } = trip.location;
     try {
       const { data, error } = await apiClient.weather['by-name'].get({
