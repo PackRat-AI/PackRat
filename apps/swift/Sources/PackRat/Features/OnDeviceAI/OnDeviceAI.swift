@@ -42,6 +42,12 @@ enum OnDeviceAIAvailability: Equatable {
     /// Resolved fresh on every call: Apple Intelligence can be switched on or
     /// off while the app is running.
     static var current: OnDeviceAIAvailability {
+        #if DEBUG
+        // `-forceGemma YES` tests Gemma on a device that has Apple Intelligence.
+        if UserDefaults.standard.bool(forKey: "forceGemma") {
+            return deviceCanRunGemma ? .gemma : .unsupported
+        }
+        #endif
         #if canImport(FoundationModels)
         if #available(iOS 26.0, macOS 26.0, *) {
             switch SystemLanguageModel.default.availability {
