@@ -42,7 +42,8 @@
       "weeks_other": "{{count}} weeks ago",
       "months_one": "{{count}} month ago",
       "months_other": "{{count}} months ago"
-    }
+    },
+    "more": "More"
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
@@ -1806,7 +1807,9 @@
     "writtenAgo": "Written {{when}}. Conditions may have changed since.",
     "hazardsNone": "None reported",
     "onTheTrail": "On the Trail",
-    "waterCrossingsNone": "None"
+    "waterCrossingsNone": "None",
+    "reportCount_one": "{{count}} report",
+    "reportCount_other": "{{count}} reports"
   },
   "feed": {
     "feed": "Feed",

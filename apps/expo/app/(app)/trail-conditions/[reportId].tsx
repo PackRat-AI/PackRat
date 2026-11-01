@@ -2,58 +2,33 @@ import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
-import { useAuthState } from 'expo-app/features/auth/hooks/useAuthState';
 import { TrailConditionDetail } from 'expo-app/features/trail-conditions/components/TrailConditionDetail';
+import { useReportActions } from 'expo-app/features/trail-conditions/hooks/useReportActions';
 import {
-  useDeleteTrailConditionReport,
+  useCachedReport,
+  usePendingReportIds,
   useTrailConditions,
 } from 'expo-app/features/trail-conditions/hooks/useTrailConditions';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 /**
- * A single report — `TrailConditionDetailView` in `TrailConditionsView.swift`.
- *
- * Reads from the list cache rather than fetching by id: the API has no single-report GET, and
- * the user always arrives here from the list, so the report is already loaded. Matches the Swift
- * detail view, which is handed a `TrailConditionReport` value rather than an id.
+ * A single report — `TrailConditionDetailView` in `TrailConditionsView.swift`. Reached from the
+ * feed, a trail page or a trip, all of which have the report loaded already.
  */
 export default function TrailConditionDetailScreen() {
   const { reportId } = useLocalSearchParams<{ reportId: string }>();
   const router = useRouter();
   const { t } = useTranslation();
   const { colors } = useColorScheme();
-  const { user } = useAuthState();
-  const { reports, isLoading } = useTrailConditions();
-  const { mutate: deleteReport, isPending: isDeleting } = useDeleteTrailConditionReport();
-
-  const report = reports.find((item) => item.id === reportId);
-
-  // Only the author may delete: the API scopes DELETE to the owner and 403s otherwise, so
-  // showing the action to anyone else would offer a button that cannot work.
-  const canDelete = report != null && user?.id != null && String(user.id) === report.userId;
-
-  const confirmDelete = () => {
-    Alert.alert(t('trailConditions.deleteReportTitle'), t('trailConditions.deleteReportMessage'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.delete'),
-        style: 'destructive',
-        onPress: () =>
-          deleteReport(reportId, {
-            onSuccess: () => router.back(),
-            onError: (error) =>
-              Alert.alert(
-                t('common.error'),
-                error instanceof Error ? error.message : String(error),
-              ),
-          }),
-      },
-    ]);
-  };
+  const { isLoading } = useTrailConditions();
+  const report = useCachedReport(reportId);
+  const pendingIds = usePendingReportIds();
+  const actions = useReportActions({ report, onHidden: () => router.back() });
+  const { open } = actions;
 
   if (!report) {
     return (
@@ -70,29 +45,51 @@ export default function TrailConditionDetailScreen() {
     );
   }
 
+  const trailId = report.trailId;
+
   return (
     <View className="flex-1 bg-background">
       <Stack.Screen
         options={{
           ...getAppBarOptions(),
           title: report.trailName,
-          headerRight: canDelete
+          headerRight: open
             ? () => (
                 <Pressable
-                  onPress={confirmDelete}
-                  disabled={isDeleting}
-                  testID={testIds.trailConditions.deleteReportBtn(report.id)}
+                  onPress={open}
+                  disabled={actions.isBusy}
+                  testID={
+                    actions.isOwn
+                      ? testIds.trailConditions.deleteReportBtn(report.id)
+                      : testIds.trailConditions.reportMenuBtn
+                  }
                   accessibilityRole="button"
-                  accessibilityLabel={t('common.delete')}
+                  accessibilityLabel={actions.isOwn ? t('common.delete') : t('common.more')}
                   className="mr-2 p-2"
                 >
-                  <Icon name="trash-can-outline" size={22} color={colors.destructive} />
+                  <Icon
+                    name={actions.isOwn ? 'trash-can-outline' : 'dots-vertical'}
+                    size={22}
+                    color={actions.isOwn ? colors.destructive : colors.foreground}
+                  />
                 </Pressable>
               )
             : undefined,
         }}
       />
-      <TrailConditionDetail report={report} />
+      <TrailConditionDetail
+        report={report}
+        isPending={pendingIds.has(report.id)}
+        onOpenTrail={
+          trailId
+            ? () =>
+                router.push({
+                  pathname: '/trail-conditions/trail/[trailId]',
+                  params: { trailId, name: report.trailName },
+                })
+            : undefined
+        }
+      />
     </View>
   );
 }

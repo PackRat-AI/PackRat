@@ -29,9 +29,10 @@ import {
   filterReports,
   isRetryableSendError,
   mergeQueuedIntoFeed,
+  pendingReport,
   type QueuedReport,
 } from '../utils/outbox';
-import type { Coordinate } from '../utils/trails';
+import type { Coordinate, SignedReport, TripConditions } from '../utils/trails';
 
 export const trailConditionsQueryKey = ['trailConditionReports'] as const;
 const trailQueryKey = (trailId: string) => ['trailConditionTrail', trailId] as const;
@@ -252,4 +253,29 @@ export function useBlockReportAuthor() {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
     },
   });
+}
+
+/**
+ * A report from any list already loaded — the feed, a trail page, a trip section — or the outbox.
+ * There is no single-report endpoint, and the hiker always arrives at a report from one of those.
+ */
+export function useCachedReport(reportId: string): SignedReport | undefined {
+  const queryClient = useQueryClient();
+  const queued = useQueuedReports();
+  const feed = useTrailConditions();
+  return useMemo(() => {
+    const fromQueue = queued.find((report) => report.id === reportId);
+    if (fromQueue) return pendingReport(fromQueue);
+    const fromFeed = feed.reports.find((report) => report.id === reportId);
+    if (fromFeed) return fromFeed;
+    for (const [, data] of queryClient.getQueriesData<SignedReport[] | TripConditions>({
+      predicate: ({ queryKey }) =>
+        queryKey[0] === 'trailConditionTrailReports' || queryKey[0] === 'trailConditionTripReports',
+    })) {
+      const reports = Array.isArray(data) ? data : data?.reports;
+      const found = reports?.find((report) => report.id === reportId);
+      if (found) return found;
+    }
+    return undefined;
+  }, [feed.reports, queryClient, queued, reportId]);
 }
