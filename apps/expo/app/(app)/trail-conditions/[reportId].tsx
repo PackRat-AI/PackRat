@@ -66,16 +66,22 @@ export default function TrailConditionDetailScreen() {
                 <Icon name="trash-can-outline" size={22} color={colors.destructive} />
               </Pressable>
             ) : (
-              <DropdownMenu items={actions.menuItems} onItemPress={actions.onMenuItemPress}>
-                <Pressable
-                  disabled={actions.isBusy}
-                  testID={testIds.trailConditions.reportMenuBtn}
+              <DropdownMenu
+                items={actions.menuItems}
+                onItemPress={actions.onMenuItemPress}
+                enabled={!actions.isBusy}
+                testID={testIds.trailConditions.reportMenuBtn}
+              >
+                {/* A plain View: the menu's own trigger owns the tap, and a Pressable here would
+                    claim it first and the menu would never open. */}
+                <View
+                  accessible
                   accessibilityRole="button"
                   accessibilityLabel={t('common.more')}
                   className="mr-2 p-2"
                 >
                   <Icon name="dots-vertical" size={22} color={colors.foreground} />
-                </Pressable>
+                </View>
               </DropdownMenu>
             ),
         }}
