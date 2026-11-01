@@ -2,7 +2,7 @@ import { Portal } from '@rn-primitives/portal';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack, useNavigation } from 'expo-router';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { BackHandler, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, {
   FadeIn,
@@ -38,21 +38,29 @@ export function SearchOverlay({
   }, [onChangeText]);
 
   // The overlay lives in a root Portal above the navigator, so a screen pushed from a result
-  // would open underneath it. Close it whenever this screen loses focus.
-  const closeRef = useRef(close);
-  closeRef.current = close;
-  useEffect(() => navigation.addListener('blur', () => closeRef.current()), [navigation]);
+  // would open underneath it. Hide it while this screen is out of focus and bring it back,
+  // query and results intact, when the user returns.
+  const [isFocused, setIsFocused] = useState(() => navigation.isFocused());
+  useEffect(() => {
+    const unsubscribeFocus = navigation.addListener('focus', () => setIsFocused(true));
+    const unsubscribeBlur = navigation.addListener('blur', () => setIsFocused(false));
+    return () => {
+      unsubscribeFocus();
+      unsubscribeBlur();
+    };
+  }, [navigation]);
+  const isVisible = isOpen && isFocused;
 
   useEffect(() => {
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (isOpen) {
+      if (isVisible) {
         close();
         return true;
       }
       return false;
     });
     return () => handler.remove();
-  }, [isOpen, close]);
+  }, [isVisible, close]);
 
   return (
     <>
@@ -68,7 +76,7 @@ export function SearchOverlay({
           ),
         }}
       />
-      {isOpen && (
+      {isVisible && (
         <Portal name={`search-overlay:${id}`}>
           <Animated.View exiting={FadeOut} style={[StyleSheet.absoluteFill, styles.portal]}>
             <View
@@ -86,7 +94,7 @@ export function SearchOverlay({
                   style={styles.inputFlex}
                 >
                   <TextInput
-                    autoFocus
+                    autoFocus={value.length === 0}
                     placeholder={placeholder ?? 'Search...'}
                     value={value}
                     onChangeText={onChangeText}
