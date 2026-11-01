@@ -493,8 +493,7 @@ function ChatBubble({
                 <Pressable>
                   <Image
                     source={{ uri: item.attachments[0].url }}
-                    style={{ width: 200, height: 200, resizeMode: 'cover' }}
-                    borderRadius={12}
+                    style={{ width: 200, height: 200, resizeMode: 'cover', borderRadius: 12 }}
                   />
                 </Pressable>
               </ContextMenu>

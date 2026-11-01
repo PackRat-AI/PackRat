@@ -5,6 +5,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  type ListViewToken,
   Modal,
   Platform,
   ScrollView,
@@ -64,7 +65,7 @@ export function ImageViewerModal({ visible, images, initialIndex = 0, onClose }:
   }, [visible, initialIndex]);
 
   const handleViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: { index: number | null }[] }) => {
+    ({ viewableItems }: { viewableItems: ListViewToken[] }) => {
       if (viewableItems[0]?.index != null) {
         setCurrentIndex(viewableItems[0].index);
       }

@@ -18,7 +18,7 @@ import {
   Keyboard,
   Platform,
   Pressable,
-  type TextInput,
+  type TextInputInstance,
   type TextInputKeyPressEvent,
   View,
 } from 'react-native';
@@ -259,7 +259,7 @@ function OTPField({
   hasError,
 }: OTPFieldProps) {
   const { colors } = useColorScheme();
-  const inputRef = React.useRef<TextInput>(null);
+  const inputRef = React.useRef<TextInputInstance>(null);
 
   // Apply keyboard hide blur fix
   useKeyboardHideBlur({ textInputRef: asNonNullableRef(inputRef) });

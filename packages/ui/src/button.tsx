@@ -5,7 +5,7 @@ import {
   type LayoutChangeEvent,
   Pressable,
   type StyleProp,
-  type View,
+  type ViewInstance,
   type ViewProps,
   type ViewStyle,
 } from 'react-native';
@@ -146,7 +146,7 @@ type ButtonProps = {
    * call `.measure()` on it to position their portal. Dropping it left `triggerPosition` null and
    * the portal never rendered — that is why the Android category DropdownMenu never opened.
    */
-  ref?: React.Ref<View>;
+  ref?: React.Ref<ViewInstance>;
   /**
    * Every other RN View prop (role, nativeID, accessibility*, aria-*, ...). `asChild` primitives
    * inject role/accessibilityState/nativeID here, so these must reach the underlying view or

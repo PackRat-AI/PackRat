@@ -119,7 +119,9 @@ export default function TrailConditionsScreen() {
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={refetch}
+            onRefresh={() => {
+              refetch();
+            }}
             colors={[colors.primary]}
             tintColor={colors.primary}
           />

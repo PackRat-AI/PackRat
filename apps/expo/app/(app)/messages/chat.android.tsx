@@ -412,11 +412,14 @@ function ChatBubble({
                       height: 300,
                       resizeMode: 'cover',
                       opacity: isSelected ? 0.5 : 1,
+                      borderTopLeftRadius:
+                        item.sender !== ME ? (isSamePreviousSender ? 6 : 12) : 12,
+                      borderTopRightRadius:
+                        item.sender === ME ? (isSamePreviousSender ? 6 : 12) : 12,
+                      borderBottomLeftRadius: item.sender !== ME ? (isSameNextSender ? 6 : 12) : 12,
+                      borderBottomRightRadius:
+                        item.sender === ME ? (isSameNextSender ? 6 : 12) : 12,
                     }}
-                    borderTopLeftRadius={item.sender !== ME ? (isSamePreviousSender ? 6 : 12) : 12}
-                    borderTopRightRadius={item.sender === ME ? (isSamePreviousSender ? 6 : 12) : 12}
-                    borderBottomLeftRadius={item.sender !== ME ? (isSameNextSender ? 6 : 12) : 12}
-                    borderBottomRightRadius={item.sender === ME ? (isSameNextSender ? 6 : 12) : 12}
                   />
                 </Pressable>
               </ContextMenu>

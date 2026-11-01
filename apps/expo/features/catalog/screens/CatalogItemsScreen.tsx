@@ -102,7 +102,7 @@ function CatalogItemsScreen() {
   const ItemSeparatorComponent = useMemo(() => () => <View className="h-2" />, []);
 
   const listHeader = useMemo(() => {
-    if (isSearching) return null;
+    if (isSearching) return undefined;
 
     return (
       <>

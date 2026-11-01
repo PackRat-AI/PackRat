@@ -86,7 +86,7 @@ export function TrailsScreen() {
                 />
               ) : null}
             </View>
-          ) : null
+          ) : undefined
         }
         ListEmptyComponent={
           <View className="items-center gap-2 px-8 py-16">
@@ -104,7 +104,7 @@ export function TrailsScreen() {
             <Text variant="footnote" className="px-4 pt-2 text-muted-foreground">
               {t('tripStats.trails.listFooter')}
             </Text>
-          ) : null
+          ) : undefined
         }
         renderItem={({ item }) => (
           <StatsRow

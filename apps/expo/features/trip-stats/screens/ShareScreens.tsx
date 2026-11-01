@@ -11,7 +11,14 @@ import { File, Paths } from 'expo-file-system';
 import { Stack, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  useWindowDimensions,
+  View,
+  type ViewInstance,
+} from 'react-native';
 import { Marker, Polyline } from 'react-native-maps';
 import PagerView from 'react-native-pager-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -75,7 +82,7 @@ function ShareCardEditor({ content }: { content: ShareContent }) {
   const [options, setOptions] = useState<ShareOptions>({ showNames: false, zoomClose: false });
   const [cardSize, setCardSize] = useState<{ width: number; height: number } | null>(null);
   const [sharing, setSharing] = useState(false);
-  const cardRef = useRef<View>(null);
+  const cardRef = useRef<ViewInstance>(null);
   const map = useShareMap({ content, format, zoomClose: options.zoomClose });
 
   const height = cardHeight(format) ?? cardSize?.height ?? CARD_WIDTH;

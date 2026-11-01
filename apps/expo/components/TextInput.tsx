@@ -2,14 +2,18 @@ import { assertPresent } from '@packrat/guards';
 import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { forwardRef, useImperativeHandle, useRef } from 'react';
-import { TextInput as RNTextInput, type TextInputProps } from 'react-native';
+import {
+  TextInput as RNTextInput,
+  type TextInputInstance,
+  type TextInputProps,
+} from 'react-native';
 
 /**
  * Enhanced TextInput component that automatically handles keyboard hide blur fix.
  * Drop-in replacement for React Native's TextInput with built-in Android keyboard behavior fix.
  */
-export const TextInput = forwardRef<RNTextInput, TextInputProps>((props, ref) => {
-  const textInputRef = useRef<RNTextInput>(null);
+export const TextInput = forwardRef<TextInputInstance, TextInputProps>((props, ref) => {
+  const textInputRef = useRef<TextInputInstance>(null);
 
   // Apply keyboard hide blur fix
   useKeyboardHideBlur({ textInputRef: asNonNullableRef(textInputRef) });

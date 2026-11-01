@@ -18,7 +18,7 @@ import { testIds } from 'expo-app/lib/testIds';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, type TextInput as RNTextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, type TextInputInstance, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatalogItemImage } from '../components/CatalogItemImage';
@@ -51,7 +51,7 @@ export function AddCatalogItemDetailsScreen() {
 
   const { colors } = useColorScheme();
   const insets = useSafeAreaInsets();
-  const notesRef = useRef<RNTextInput>(null);
+  const notesRef = useRef<TextInputInstance>(null);
   const quantityValue = Math.max(1, Number.parseInt(quantity, 10) || 1);
 
   const contentContainerStyle = useMemo(
