@@ -147,6 +147,11 @@ jobs:
         with:
           xcode-version: ${{ env.XCODE_VERSION }}
 
+      # mlx-swift (on-device AI) compiles Metal shaders, and Xcode 26 ships the
+      # Metal toolchain as a separate component.
+      - name: Install Metal toolchain
+        run: xcodebuild -downloadComponent MetalToolchain
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -196,6 +201,11 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: ${{ env.XCODE_VERSION }}
+
+      # mlx-swift (on-device AI) compiles Metal shaders, and Xcode 26 ships the
+      # Metal toolchain as a separate component.
+      - name: Install Metal toolchain
+        run: xcodebuild -downloadComponent MetalToolchain
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -324,7 +334,7 @@ jobs:
 
   ios-ui:
     name: iOS Swift UI E2E (Exploratory)
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     if: >
       github.event_name == 'schedule' ||
@@ -339,6 +349,11 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: ${{ env.XCODE_VERSION }}
+
+      # mlx-swift (on-device AI) compiles Metal shaders, and Xcode 26 ships the
+      # Metal toolchain as a separate component.
+      - name: Install Metal toolchain
+        run: xcodebuild -downloadComponent MetalToolchain
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2

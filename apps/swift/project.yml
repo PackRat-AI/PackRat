@@ -60,6 +60,16 @@ packages:
   RevenueCat:
     url: https://github.com/RevenueCat/purchases-ios
     from: "5.14.0"
+  # On-device AI on devices without Apple Intelligence: runs Qwen3 through
+  # MLX. Linked by iOS and macOS only — the watch has neither the memory nor
+  # the GPU for a language model. Tokenizers is the tokenizer half that
+  # mlx-swift-lm 3.x deliberately leaves to the app.
+  MLXSwiftLM:
+    url: https://github.com/ml-explore/mlx-swift-lm
+    from: "3.32.3"
+  SwiftTransformers:
+    url: https://github.com/huggingface/swift-transformers
+    from: "1.3.0"
 
 targets:
   PackRat-iOS:
@@ -104,6 +114,10 @@ targets:
         # in the app. The site serves the matching apple-app-site-association.
         com.apple.developer.associated-domains:
           - applinks:packratai.com
+        # On-device AI keeps a ~2.6 GB language model resident. Without this
+        # the default per-app memory limit on 6 GB iPhones kills the app the
+        # moment the model loads.
+        com.apple.developer.kernel.increased-memory-limit: true
     info:
       path: Resources/Info-iOS.plist
       properties:
@@ -182,6 +196,12 @@ targets:
         product: RevenueCat
       - package: RevenueCat
         product: RevenueCatUI
+      - package: MLXSwiftLM
+        product: MLXLLM
+      - package: MLXSwiftLM
+        product: MLXLMCommon
+      - package: SwiftTransformers
+        product: Tokenizers
       # The watch app ships from 2.2.1 on, so it is embedded in the iOS app.
       # WKCompanionAppBundleIdentifier must resolve to the iOS bundle id or
       # installs fail with "Unable to Install PackRat".
@@ -327,6 +347,12 @@ targets:
         product: RevenueCat
       - package: RevenueCat
         product: RevenueCatUI
+      - package: MLXSwiftLM
+        product: MLXLLM
+      - package: MLXSwiftLM
+        product: MLXLMCommon
+      - package: SwiftTransformers
+        product: Tokenizers
     settings:
       base:
         SWIFT_VERSION: "5.9"

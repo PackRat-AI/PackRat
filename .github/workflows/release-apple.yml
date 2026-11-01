@@ -57,6 +57,9 @@ jobs:
         run: |
           sudo xcode-select -switch /Applications/Xcode.app
           xcodebuild -version
+          # mlx-swift (on-device AI) compiles Metal shaders, and Xcode 26 ships
+          # the Metal toolchain as a separate component.
+          xcodebuild -downloadComponent MetalToolchain
 
       - uses: oven-sh/setup-bun@v2
         with:

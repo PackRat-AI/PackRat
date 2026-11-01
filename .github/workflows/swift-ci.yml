@@ -26,7 +26,7 @@ jobs:
   # ─── Unit + UI test bundles compile + run on macOS ────────────────────────────
   build-and-smoke:
     name: ${{ matrix.scheme }} (smoke)
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -46,6 +46,9 @@ jobs:
         run: |
           sudo xcode-select -switch /Applications/Xcode.app
           xcodebuild -version
+          # mlx-swift (on-device AI) needs Xcode 26 (macos-26 runner) and compiles
+          # Metal shaders; Xcode 26 ships the Metal toolchain separately.
+          xcodebuild -downloadComponent MetalToolchain
           xcrun --show-sdk-version
 
       - uses: oven-sh/setup-bun@v2
