@@ -10,7 +10,7 @@ struct ChatView: View {
     /// be switched on in Settings while PackRat is in the background.
     @State private var onDeviceAvailability = OnDeviceAIAvailability.current
     @State private var isOnDeviceOffered = ChatViewModel.isOnDeviceOffered
-    private var gemmaStore = GemmaModelStore.shared
+    private var qwenStore = QwenModelStore.shared
 
     init(viewModel: ChatViewModel) {
         self.viewModel = viewModel
@@ -21,7 +21,7 @@ struct ChatView: View {
     private var isOnDeviceReady: Bool {
         switch onDeviceAvailability {
         case .apple: return true
-        case .gemma: return gemmaStore.isDownloaded
+        case .qwen: return qwenStore.isDownloaded
         default: return false
         }
     }

@@ -3,12 +3,12 @@ import MLXLLM
 import MLXLMCommon
 import Tokenizers
 
-/// On-device replies from Gemma 4, for devices without Apple Intelligence.
+/// On-device replies from Qwen3, for devices without Apple Intelligence.
 ///
-/// Reads the weights `GemmaModelStore` downloaded. The model is loaded once,
+/// Reads the weights `QwenModelStore` downloaded. The model is loaded once,
 /// on the first reply, and stays resident until the download is deleted.
-struct GemmaProvider: LocalLLMProvider {
-    /// Gemma 4 E2B has a 128K window, but every token of history costs prefill
+struct QwenProvider: LocalLLMProvider {
+    /// Qwen3 4B has a 256K window, but every token of history costs prefill
     /// time on a phone. ~12K characters keeps a reply starting in seconds.
     private static let historyCharacterBudget = 12_000
 
@@ -28,7 +28,7 @@ struct GemmaProvider: LocalLLMProvider {
                 }
 
                 do {
-                    let container = try await GemmaRuntime.shared.container(at: directory)
+                    let container = try await QwenRuntime.shared.container(at: directory)
                     let session = ChatSession(
                         container,
                         instructions: instructions,
@@ -56,7 +56,7 @@ struct GemmaProvider: LocalLLMProvider {
                 } catch let error as LocalLLMError {
                     continuation.finish(throwing: error)
                 } catch {
-                    continuation.finish(throwing: LocalLLMError.reporting(error, model: "gemma"))
+                    continuation.finish(throwing: LocalLLMError.reporting(error, model: "qwen"))
                 }
             }
             continuation.onTermination = { _ in task.cancel() }
@@ -64,8 +64,8 @@ struct GemmaProvider: LocalLLMProvider {
     }
 }
 
-extension GemmaProvider {
-    /// The OpenAI-style function schema Gemma's chat template renders.
+extension QwenProvider {
+    /// The OpenAI-style function schema Qwen3's chat template renders.
     static func toolSpec(_ tool: OnDeviceTool) -> ToolSpec {
         let properties: [String: any Sendable] = Dictionary(uniqueKeysWithValues: tool.parameters.map { parameter in
             let type: String = switch parameter.kind {
@@ -92,14 +92,14 @@ extension GemmaProvider {
 }
 
 /// Holds the loaded model so it is read from disk once per launch, not per reply.
-actor GemmaRuntime {
-    static let shared = GemmaRuntime()
+actor QwenRuntime {
+    static let shared = QwenRuntime()
 
     private var loaded: (directory: URL, container: ModelContainer)?
 
     func container(at directory: URL) async throws -> ModelContainer {
         if let loaded, loaded.directory == directory { return loaded.container }
-        guard GemmaModelStore.isComplete(at: directory) else { throw LocalLLMError.unavailable }
+        guard QwenModelStore.isComplete(at: directory) else { throw LocalLLMError.unavailable }
 
         let container = try await loadModelContainer(from: directory, using: TransformersTokenizerLoader())
         loaded = (directory, container)

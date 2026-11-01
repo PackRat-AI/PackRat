@@ -60,7 +60,7 @@ packages:
   RevenueCat:
     url: https://github.com/RevenueCat/purchases-ios
     from: "5.14.0"
-  # On-device AI on devices without Apple Intelligence: runs Gemma 4 through
+  # On-device AI on devices without Apple Intelligence: runs Qwen3 through
   # MLX. Linked by iOS and macOS only — the watch has neither the memory nor
   # the GPU for a language model. Tokenizers is the tokenizer half that
   # mlx-swift-lm 3.x deliberately leaves to the app.

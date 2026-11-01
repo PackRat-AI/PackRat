@@ -5,7 +5,7 @@ import SwiftUI
 /// the downloaded one.
 struct OnDeviceAISettingsView: View {
     @State private var availability = OnDeviceAIAvailability.current
-    @Bindable private var store = GemmaModelStore.shared
+    @Bindable private var store = QwenModelStore.shared
     @Default(.onDeviceAIAllowsCellular) private var allowsCellular
     @State private var confirmingDelete = false
 
@@ -14,8 +14,8 @@ struct OnDeviceAISettingsView: View {
             switch availability {
             case .apple, .appleIntelligenceOff, .appleModelPreparing:
                 appleSection
-            case .gemma:
-                gemmaSection
+            case .qwen:
+                qwenSection
                 cellularSection
             case .unsupported:
                 Section {
@@ -50,12 +50,12 @@ struct OnDeviceAISettingsView: View {
     }
 
     @ViewBuilder
-    private var gemmaSection: some View {
+    private var qwenSection: some View {
         Section {
-            LabeledContent("Model", value: GemmaModelStore.displayName)
+            LabeledContent("Model", value: QwenModelStore.displayName)
             switch store.state {
             case .downloaded:
-                LabeledContent("Size on device", value: GemmaModelSize.formatted)
+                LabeledContent("Size on device", value: QwenModelSize.formatted)
                 Button("Delete Model", role: .destructive) { confirmingDelete = true }
                     .confirmationDialog(
                         "Delete the on-device model?",
@@ -64,7 +64,7 @@ struct OnDeviceAISettingsView: View {
                     ) {
                         Button("Delete", role: .destructive) { store.delete() }
                     } message: {
-                        Text("Frees \(GemmaModelSize.formatted). On-device chat stops working until you download it again.")
+                        Text("Frees \(QwenModelSize.formatted). On-device chat stops working until you download it again.")
                     }
             case .downloading(let fraction):
                 ProgressView(value: fraction) {
@@ -80,7 +80,7 @@ struct OnDeviceAISettingsView: View {
                 if case .failed(let message) = store.state {
                     Text(message).foregroundStyle(.red)
                 }
-                Button("Download (\(GemmaModelSize.formatted))") { store.download() }
+                Button("Download (\(QwenModelSize.formatted))") { store.download() }
             }
         } footer: {
             Text("Answers on-device chats with no signal. What you type stays on this device.")

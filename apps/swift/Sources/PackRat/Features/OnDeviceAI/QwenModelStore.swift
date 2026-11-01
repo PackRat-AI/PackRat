@@ -8,7 +8,7 @@ extension Defaults.Keys {
     static let onDeviceAIAllowsCellular = Key<Bool>("onDeviceAIAllowsCellular", default: false)
 }
 
-/// Downloads, verifies and deletes the Gemma weights.
+/// Downloads, verifies and deletes the Qwen3 weights.
 ///
 /// Files come from a pinned Hugging Face revision and are checked against
 /// known sizes, so a truncated or swapped file is never handed to the runtime.
@@ -16,7 +16,7 @@ extension Defaults.Keys {
 /// stopped.
 @MainActor
 @Observable
-final class GemmaModelStore {
+final class QwenModelStore {
     enum State: Equatable {
         case notDownloaded
         case waitingForWiFi
@@ -25,21 +25,22 @@ final class GemmaModelStore {
         case failed(String)
     }
 
-    static let shared = GemmaModelStore()
+    static let shared = QwenModelStore()
 
-    /// Gemma 4 E2B instruction-tuned, text only, 4-bit. Apache 2.0.
-    nonisolated static let repository = "mlx-community/Gemma4-E2B-IT-Text-int4"
-    nonisolated static let revision = "61d85e83c959ac93109dc5be7104c8de9942ef66"
-    nonisolated static let displayName = "Gemma 4"
+    /// Qwen3 4B Instruct 2507, 4-bit. Apache 2.0. Non-thinking, so tool
+    /// calls come straight away instead of after a reasoning pass.
+    nonisolated static let repository = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
+    nonisolated static let revision = "50d427756c6b1b2fe0c0a10f67fbda1fc8e82c1b"
+    nonisolated static let displayName = "Qwen3"
 
     nonisolated static let files: [(name: String, size: Int64)] = [
-        ("config.json", 2_774),
-        ("generation_config.json", 207),
-        ("chat_template.jinja", 17_336),
-        ("tokenizer_config.json", 1_837),
-        ("tokenizer.json", 36_459_693),
-        ("model.safetensors.index.json", 84_084),
-        ("model.safetensors", 2_634_535_262),
+        ("config.json", 938),
+        ("generation_config.json", 238),
+        ("chat_template.jinja", 4_040),
+        ("tokenizer_config.json", 5_440),
+        ("tokenizer.json", 11_422_654),
+        ("model.safetensors.index.json", 63_964),
+        ("model.safetensors", 2_263_022_417),
     ]
 
     nonisolated static var downloadSize: Int64 { files.reduce(0) { $0 + $1.size } }
@@ -73,7 +74,7 @@ final class GemmaModelStore {
         state = .downloading(fractionCompleted: 0)
         downloadTask = Task { [weak self] in
             do {
-                try await GemmaDownloader(
+                try await QwenDownloader(
                     allowsCellular: Defaults[.onDeviceAIAllowsCellular],
                     onWaitingForWiFi: { self?.state = .waitingForWiFi },
                     onProgress: { self?.state = .downloading(fractionCompleted: $0) }
@@ -97,7 +98,7 @@ final class GemmaModelStore {
     func delete() {
         cancel()
         Task {
-            await GemmaRuntime.shared.unload()
+            await QwenRuntime.shared.unload()
             try? FileManager.default.removeItem(at: Self.directory.deletingLastPathComponent())
             state = .notDownloaded
         }
@@ -122,12 +123,12 @@ final class GemmaModelStore {
 // MARK: - Downloader
 
 /// Fetches each missing file in turn, resuming a partial one from saved resume data.
-private struct GemmaDownloader {
+private struct QwenDownloader {
     let allowsCellular: Bool
     let onWaitingForWiFi: @MainActor () -> Void
     let onProgress: @MainActor (Double) -> Void
 
-    private var directory: URL { GemmaModelStore.directory }
+    private var directory: URL { QwenModelStore.directory }
     private var resumeDataURL: URL { directory.appending(path: ".resume-data") }
 
     func run() async throws {
@@ -142,10 +143,10 @@ private struct GemmaDownloader {
         configuration.waitsForConnectivity = true
         configuration.timeoutIntervalForResource = 60 * 60 * 6
 
-        let total = Double(GemmaModelStore.downloadSize)
+        let total = Double(QwenModelStore.downloadSize)
         var finishedBytes: Int64 = 0
 
-        for file in GemmaModelStore.files {
+        for file in QwenModelStore.files {
             try Task.checkCancellation()
             let destination = directory.appending(path: file.name)
             if Self.size(of: destination) == file.size {
@@ -190,7 +191,7 @@ private struct GemmaDownloader {
     }
 
     private static func url(for name: String) -> URL {
-        URL(string: "https://huggingface.co/\(GemmaModelStore.repository)/resolve/\(GemmaModelStore.revision)/\(name)")!
+        URL(string: "https://huggingface.co/\(QwenModelStore.repository)/resolve/\(QwenModelStore.revision)/\(name)")!
     }
 
     private static func size(of url: URL) -> Int64? {

@@ -16,7 +16,7 @@ On iPhone 15 Pro and newer, and on iPads and Macs with Apple silicon, running a 
 
 ## Downloaded model
 
-On other devices with enough memory, On-device uses Gemma, a compact open model. Choosing On-device the first time shows the download size and asks before starting. The download shows progress, can be cancelled, picks up where it stopped after an interruption, and waits for Wi-Fi unless the user allows cellular data. Once downloaded, the model loads in a few seconds the first time a chat uses it. The model can be deleted from Settings to free space, and downloaded again later.
+On other devices with enough memory, On-device uses Qwen3, a compact open model. Choosing On-device the first time shows the download size and asks before starting. The download shows progress, can be cancelled, picks up where it stopped after an interruption, and waits for Wi-Fi unless the user allows cellular data. Once downloaded, the model loads in a few seconds the first time a chat uses it. The model can be deleted from Settings to free space, and downloaded again later.
 
 ## What an on-device answer is
 

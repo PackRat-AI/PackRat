@@ -32,8 +32,8 @@ enum OnDeviceAIAvailability: Equatable {
     case appleIntelligenceOff
     /// Apple Intelligence is on and still downloading its model.
     case appleModelPreparing
-    /// No Apple Intelligence; Gemma runs here once downloaded.
-    case gemma
+    /// No Apple Intelligence; Qwen runs here once downloaded.
+    case qwen
     /// Neither model runs well enough to offer.
     case unsupported
 
@@ -43,9 +43,9 @@ enum OnDeviceAIAvailability: Equatable {
     /// off while the app is running.
     static var current: OnDeviceAIAvailability {
         #if DEBUG
-        // `-forceGemma YES` tests Gemma on a device that has Apple Intelligence.
-        if UserDefaults.standard.bool(forKey: "forceGemma") {
-            return deviceCanRunGemma ? .gemma : .unsupported
+        // `-forceQwen YES` tests Qwen on a device that has Apple Intelligence.
+        if UserDefaults.standard.bool(forKey: "forceQwen") {
+            return deviceCanRunQwen ? .qwen : .unsupported
         }
         #endif
         #if canImport(FoundationModels)
@@ -62,13 +62,13 @@ enum OnDeviceAIAvailability: Equatable {
             }
         }
         #endif
-        return deviceCanRunGemma ? .gemma : .unsupported
+        return deviceCanRunQwen ? .qwen : .unsupported
     }
 
-    /// Gemma keeps ~2.6 GB resident, so it needs a 6 GB device (iPhone 12 Pro
+    /// Qwen3 keeps ~2.3 GB resident, so it needs a 6 GB device (iPhone 12 Pro
     /// and later Pro models, iPhone 15, M-series iPads and Macs). The simulator
     /// is excluded: MLX needs a real GPU.
-    static var deviceCanRunGemma: Bool {
+    static var deviceCanRunQwen: Bool {
         #if targetEnvironment(simulator) || !arch(arm64)
         return false
         #else
@@ -86,9 +86,9 @@ enum OnDeviceAIAvailability: Equatable {
             if #available(iOS 26.0, macOS 26.0, *) { return AppleLanguageModelProvider() }
             #endif
             return nil
-        case .gemma:
-            guard GemmaModelStore.shared.isDownloaded else { return nil }
-            return GemmaProvider(directory: GemmaModelStore.directory)
+        case .qwen:
+            guard QwenModelStore.shared.isDownloaded else { return nil }
+            return QwenProvider(directory: QwenModelStore.directory)
         case .appleIntelligenceOff, .appleModelPreparing, .unsupported:
             return nil
         }

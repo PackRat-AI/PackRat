@@ -1,10 +1,10 @@
 import SwiftUI
 
 /// Shown in the chat when On-device is chosen but can't answer yet: the
-/// Gemma download, or the way to turn on Apple Intelligence.
+/// Qwen download, or the way to turn on Apple Intelligence.
 struct OnDeviceAISetupCard: View {
     let availability: OnDeviceAIAvailability
-    @Bindable private var store = GemmaModelStore.shared
+    @Bindable private var store = QwenModelStore.shared
     @State private var confirmingDownload = false
 
     var body: some View {
@@ -23,8 +23,8 @@ struct OnDeviceAISetupCard: View {
                     systemImage: "hourglass",
                     detail: "Your device is still downloading Apple Intelligence. On-device chat is ready once it finishes."
                 )
-            case .gemma:
-                gemmaContent
+            case .qwen:
+                qwenContent
             case .apple, .unsupported:
                 EmptyView()
             }
@@ -37,13 +37,13 @@ struct OnDeviceAISetupCard: View {
     }
 
     @ViewBuilder
-    private var gemmaContent: some View {
+    private var qwenContent: some View {
         switch store.state {
         case .notDownloaded, .failed:
             header(
                 "Download the on-device model",
                 systemImage: "arrow.down.circle",
-                detail: "Chat with no signal, and keep what you type on this device. One-time download of \(GemmaModelSize.formatted)."
+                detail: "Chat with no signal, and keep what you type on this device. One-time download of \(QwenModelSize.formatted)."
             )
             if case .failed(let message) = store.state {
                 Text(message)
@@ -54,7 +54,7 @@ struct OnDeviceAISetupCard: View {
                 .buttonStyle(.borderedProminent)
                 .accessibilityIdentifier("on_device_ai_download")
                 .confirmationDialog(
-                    "Download \(GemmaModelSize.formatted)?",
+                    "Download \(QwenModelSize.formatted)?",
                     isPresented: $confirmingDownload,
                     titleVisibility: .visible
                 ) {
@@ -104,9 +104,9 @@ struct OnDeviceAISetupCard: View {
     }
 }
 
-enum GemmaModelSize {
+enum QwenModelSize {
     static var formatted: String {
-        ByteCountFormatter.string(fromByteCount: GemmaModelStore.downloadSize, countStyle: .file)
+        ByteCountFormatter.string(fromByteCount: QwenModelStore.downloadSize, countStyle: .file)
     }
 }
 
