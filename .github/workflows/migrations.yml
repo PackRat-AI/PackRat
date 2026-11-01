@@ -41,10 +41,14 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Setup Node LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.22.1"
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: package.json
 
       - name: Install dependencies
         env:
