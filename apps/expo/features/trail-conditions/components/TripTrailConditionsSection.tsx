@@ -25,7 +25,7 @@ export function TripTrailConditionsSection({ trip }: { trip: Trip }) {
   const { isAuthenticated } = useAuthState();
   const enabled = useFeatureFlag('enableTrailConditions');
   const hasPlace = trip.trailId != null || trip.location != null;
-  const query = useTripConditions(trip.id, { enabled: enabled && hasPlace });
+  const query = useTripConditions({ tripId: trip.id, enabled: enabled && hasPlace });
 
   if (!enabled || !isAuthenticated || !hasPlace) return null;
 

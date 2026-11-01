@@ -44,7 +44,7 @@ export function isQueuedReport(value: unknown): value is QueuedReport {
 export class TrailConditionsRequestError extends Error {
   readonly status: number | null;
 
-  constructor(message: string, status: number | null) {
+  constructor({ message, status }: { message: string; status: number | null }) {
     super(message);
     this.name = 'TrailConditionsRequestError';
     this.status = status;
@@ -74,7 +74,10 @@ export function photoKeys(photos: QueuedPhoto[]): string[] | null {
 
 /** A queued report as the feed shows it before the server has it. */
 export function pendingReport(queued: QueuedReport): SignedReport {
-  const coordinate = reportCoordinate(queued.input.place, queued.input.writtenFrom ?? null);
+  const coordinate = reportCoordinate({
+    place: queued.input.place,
+    writtenFrom: queued.input.writtenFrom ?? null,
+  });
   return {
     id: queued.id,
     trailId: placeTrailId(queued.input.place),
@@ -103,7 +106,13 @@ export function pendingReport(queued: QueuedReport): SignedReport {
  * The feed with the hiker's unsent reports on top, newest first. A queued report the server
  * already has comes back in the feed, so it shows once.
  */
-export function mergeQueuedIntoFeed(queued: QueuedReport[], feed: SignedReport[]): SignedReport[] {
+export function mergeQueuedIntoFeed({
+  queued,
+  feed,
+}: {
+  queued: QueuedReport[];
+  feed: SignedReport[];
+}): SignedReport[] {
   const sent = new Set(feed.map((report) => report.id));
   const unsent = queued
     .filter((report) => !sent.has(report.id))
@@ -116,10 +125,13 @@ export function mergeQueuedIntoFeed(queued: QueuedReport[], feed: SignedReport[]
  * The feed's search: trail or pin name, region and notes, case-insensitive. Searching notes is
  * how someone finds "the trail with the washed out bridge" when they can't recall its name.
  */
-export function filterReports<T extends Pick<SignedReport, 'trailName' | 'trailRegion' | 'notes'>>(
-  reports: T[],
-  searchText: string,
-): T[] {
+export function filterReports<T extends Pick<SignedReport, 'trailName' | 'trailRegion' | 'notes'>>({
+  reports,
+  searchText,
+}: {
+  reports: T[];
+  searchText: string;
+}): T[] {
   const needle = searchText.trim().toLowerCase();
   if (!needle) return reports;
   return reports.filter((report) =>

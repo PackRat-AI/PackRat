@@ -114,12 +114,15 @@ export function makePin({
  * The coordinate a report records. For a trail it is where the device was when the hiker wrote
  * it; for a pin the pin itself is the place.
  */
-export function reportCoordinate(
-  place: ReportPlace,
-  writtenAt: Coordinate | null,
-): Coordinate | null {
+export function reportCoordinate({
+  place,
+  writtenFrom,
+}: {
+  place: ReportPlace;
+  writtenFrom: Coordinate | null;
+}): Coordinate | null {
   if (place.kind === 'pin') return { latitude: place.latitude, longitude: place.longitude };
-  return writtenAt;
+  return writtenFrom;
 }
 
 /** A report on a dropped pin rather than a picked trail. */
@@ -137,7 +140,13 @@ const METERS_PER_FOOT = 0.3048;
  * A length or distance in the hiker's units: tenths below ten, whole numbers above, and feet or
  * metres when it is under a tenth — the precision a trail sign uses.
  */
-export function formatTrailDistance(meters: number, imperial: boolean): string {
+export function formatTrailDistance({
+  meters,
+  imperial,
+}: {
+  meters: number;
+  imperial: boolean;
+}): string {
   if (imperial) {
     const miles = meters / METERS_PER_MILE;
     if (miles < 0.1) return `${Math.round(meters / METERS_PER_FOOT)} ft`;
@@ -149,8 +158,14 @@ export function formatTrailDistance(meters: number, imperial: boolean): string {
 }
 
 /** The picker row's second line: length, then how far away when the search had a centre. */
-export function trailSubtitle(trail: TrailSummary, imperial: boolean): string {
-  const length = formatTrailDistance(trail.lengthM, imperial);
+export function trailSubtitle({
+  trail,
+  imperial,
+}: {
+  trail: TrailSummary;
+  imperial: boolean;
+}): string {
+  const length = formatTrailDistance({ meters: trail.lengthM, imperial });
   if (trail.distanceM == null) return length;
-  return `${length} · ${formatTrailDistance(trail.distanceM, imperial)} away`;
+  return `${length} · ${formatTrailDistance({ meters: trail.distanceM, imperial })} away`;
 }

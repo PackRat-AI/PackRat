@@ -93,10 +93,13 @@ export function useTrailConditions() {
   });
 
   const reports = useMemo(
-    () => mergeQueuedIntoFeed(queued, query.data ?? []),
+    () => mergeQueuedIntoFeed({ queued, feed: query.data ?? [] }),
     [queued, query.data],
   );
-  const filteredReports = useMemo(() => filterReports(reports, searchText), [reports, searchText]);
+  const filteredReports = useMemo(
+    () => filterReports({ reports, searchText }),
+    [reports, searchText],
+  );
 
   return {
     reports,
@@ -146,20 +149,26 @@ export function useTrailReports(trailId: string) {
   });
   const reports = useMemo(
     () =>
-      mergeQueuedIntoFeed(
-        queued.filter(
+      mergeQueuedIntoFeed({
+        queued: queued.filter(
           (report) =>
             report.input.place.kind === 'trail' && report.input.place.trail.id === trailId,
         ),
-        query.data ?? [],
-      ),
+        feed: query.data ?? [],
+      }),
     [queued, query.data, trailId],
   );
   return { ...query, reports };
 }
 
 /** A trip's conditions section: its trail's reports, or those near its destination. */
-export function useTripConditions(tripId: string, { enabled = true } = {}) {
+export function useTripConditions({
+  tripId,
+  enabled = true,
+}: {
+  tripId: string;
+  enabled?: boolean;
+}) {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
   return useQuery({
     queryKey: tripConditionsQueryKey(tripId),
@@ -172,7 +181,7 @@ export interface SubmitReportArgs extends Omit<TrailConditionReportInput, 'photo
   /** Picked photos as local file URIs. */
   photoUris: string[];
   /** Uploads one picked photo, reporting progress. Absent when there are none. */
-  upload: (uri: string, index: number) => Promise<string>;
+  upload: (photo: { uri: string; index: number }) => Promise<string>;
 }
 
 /**
@@ -193,7 +202,7 @@ export function useSubmitTrailConditionReport() {
       let uploaded: string[] = [];
       if (online) {
         try {
-          uploaded = await Promise.all(photoUris.map((uri, index) => upload(uri, index)));
+          uploaded = await Promise.all(photoUris.map((uri, index) => upload({ uri, index })));
           await createReport({ id, input: { ...input, photos: uploaded }, writtenAt });
           return { queued: false };
         } catch (error) {
@@ -251,7 +260,7 @@ export function useFlagTrailConditionReport() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: TrailConditionFlagReason }) =>
-      flagReport(id, reason),
+      flagReport({ id, reason }),
     onSuccess: () => invalidateReportLists(queryClient),
   });
 }

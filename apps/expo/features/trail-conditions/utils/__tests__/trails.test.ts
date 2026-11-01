@@ -111,9 +111,12 @@ describe('places', () => {
 
   it('records the device position for a trail and the pin itself for a pin', () => {
     const here = { latitude: 9, longitude: 8 };
-    expect(reportCoordinate(trail, here)).toEqual(here);
-    expect(reportCoordinate(trail, null)).toBeNull();
-    expect(reportCoordinate(pin, here)).toEqual({ latitude: 1, longitude: 2 });
+    expect(reportCoordinate({ place: trail, writtenFrom: here })).toEqual(here);
+    expect(reportCoordinate({ place: trail, writtenFrom: null })).toBeNull();
+    expect(reportCoordinate({ place: pin, writtenFrom: here })).toEqual({
+      latitude: 1,
+      longitude: 2,
+    });
   });
 
   it('recognises a pinned report', () => {
@@ -132,16 +135,18 @@ describe('formatTrailDistance', () => {
     { meters: 4200, imperial: true, expected: '2.6 mi' },
     { meters: 20_000, imperial: true, expected: '12 mi' },
   ])('$meters m (imperial $imperial) reads $expected', ({ meters, imperial, expected }) => {
-    expect(formatTrailDistance(meters, imperial)).toBe(expected);
+    expect(formatTrailDistance({ meters, imperial })).toBe(expected);
   });
 });
 
 describe('trailSubtitle', () => {
   it('shows length alone without a search centre', () => {
-    expect(trailSubtitle(summary, false)).toBe('4.2 km');
+    expect(trailSubtitle({ trail: summary, imperial: false })).toBe('4.2 km');
   });
 
   it('adds how far away when there is one', () => {
-    expect(trailSubtitle({ ...summary, distanceM: 1500 }, false)).toBe('4.2 km · 1.5 km away');
+    expect(trailSubtitle({ trail: { ...summary, distanceM: 1500 }, imperial: false })).toBe(
+      '4.2 km · 1.5 km away',
+    );
   });
 });

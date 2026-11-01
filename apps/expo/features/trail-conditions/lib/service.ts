@@ -64,10 +64,10 @@ function failed({
   extra?: Record<string, unknown>;
 }): never {
   throw reportError({
-    error: new TrailConditionsRequestError(
-      `trailConditions.${action} failed: ${String(error.value)}`,
-      isNumber(error.status) ? error.status : null,
-    ),
+    error: new TrailConditionsRequestError({
+      message: `trailConditions.${action} failed: ${String(error.value)}`,
+      status: isNumber(error.status) ? error.status : null,
+    }),
     action,
     extra: { ...extra, httpStatus: error.status, apiError: error.value },
   });
@@ -140,7 +140,10 @@ export async function createReport({
   writtenAt?: string;
 }): Promise<TrailConditionReport> {
   const written = writtenAt ?? new Date().toISOString();
-  const coordinate = reportCoordinate(input.place, input.writtenFrom ?? null);
+  const coordinate = reportCoordinate({
+    place: input.place,
+    writtenFrom: input.writtenFrom ?? null,
+  });
   const { data, error } = await apiClient['trail-conditions'].post({
     id,
     trailId: placeTrailId(input.place),
@@ -169,7 +172,13 @@ export async function deleteReport(id: string): Promise<void> {
 }
 
 /** Flags someone else's report for review. The server hides it from the flagger at once. */
-export async function flagReport(id: string, reason: TrailConditionFlagReason): Promise<void> {
+export async function flagReport({
+  id,
+  reason,
+}: {
+  id: string;
+  reason: TrailConditionFlagReason;
+}): Promise<void> {
   const { error } = await apiClient['trail-conditions']({ reportId: id }).flag.post({ reason });
   if (error) failed({ action: 'flagReport', error, extra: { reportId: id, reason } });
 }

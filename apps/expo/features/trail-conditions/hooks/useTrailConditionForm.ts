@@ -85,7 +85,7 @@ export function useTrailConditionForm({
         notes: notes.trim() || null,
         tripId: tripId ?? null,
         photoUris,
-        upload: async (uri, index) => {
+        upload: async ({ uri, index }) => {
           setUploadProgress({ completed, total: photoUris.length });
           const key = await uploadImage({ fileName: `trail-report-${batch}-${index}.jpg`, uri });
           if (!key) throw new Error('Photo upload returned no key');

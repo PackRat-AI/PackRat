@@ -63,7 +63,7 @@ export default function TrailPageScreen() {
   const lengthM = trail.data?.summary.lengthM ?? 0;
   const count = reports.reports.length;
   const subtitle = [
-    lengthM > 0 ? formatTrailDistance(lengthM, unit === 'mph') : null,
+    lengthM > 0 ? formatTrailDistance({ meters: lengthM, imperial: unit === 'mph' }) : null,
     count > 0 ? t('trailConditions.reportCount', { count }) : null,
   ]
     .filter(Boolean)

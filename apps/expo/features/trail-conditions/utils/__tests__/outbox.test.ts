@@ -32,14 +32,14 @@ const queued = (overrides: Partial<QueuedReport> = {}): QueuedReport => ({
 describe('isRetryableSendError', () => {
   it.each([
     [new Error('Network request failed'), true],
-    [new TrailConditionsRequestError('x', null), true],
-    [new TrailConditionsRequestError('x', 500), true],
-    [new TrailConditionsRequestError('x', 503), true],
-    [new TrailConditionsRequestError('x', 408), true],
-    [new TrailConditionsRequestError('x', 429), true],
-    [new TrailConditionsRequestError('x', 400), false],
-    [new TrailConditionsRequestError('x', 422), false],
-    [new TrailConditionsRequestError('x', 403), false],
+    [new TrailConditionsRequestError({ message: 'x', status: null }), true],
+    [new TrailConditionsRequestError({ message: 'x', status: 500 }), true],
+    [new TrailConditionsRequestError({ message: 'x', status: 503 }), true],
+    [new TrailConditionsRequestError({ message: 'x', status: 408 }), true],
+    [new TrailConditionsRequestError({ message: 'x', status: 429 }), true],
+    [new TrailConditionsRequestError({ message: 'x', status: 400 }), false],
+    [new TrailConditionsRequestError({ message: 'x', status: 422 }), false],
+    [new TrailConditionsRequestError({ message: 'x', status: 403 }), false],
   ])('%s retries: %s', (error, expected) => {
     expect(isRetryableSendError(error)).toBe(expected);
   });
@@ -108,14 +108,14 @@ describe('mergeQueuedIntoFeed', () => {
   const sent = { ...pendingReport(queued({ id: 'sent' })), authorName: 'Ana' } as SignedReport;
 
   it('puts unsent reports first, newest first, and drops ones the server already has', () => {
-    const merged = mergeQueuedIntoFeed(
-      [
+    const merged = mergeQueuedIntoFeed({
+      queued: [
         queued({ id: 'old', writtenAt: '2026-10-01T00:00:00.000Z' }),
         queued({ id: 'sent' }),
         queued({ id: 'new', writtenAt: '2026-10-02T00:00:00.000Z' }),
       ],
-      [sent],
-    );
+      feed: [sent],
+    });
     expect(merged.map((r) => r.id)).toEqual(['new', 'old', 'sent']);
     expect(merged[2]?.authorName).toBe('Ana');
   });
@@ -128,13 +128,13 @@ describe('filterReports', () => {
   ];
 
   it('returns everything for a blank search', () => {
-    expect(filterReports(reports, '  ')).toBe(reports);
+    expect(filterReports({ reports, searchText: '  ' })).toBe(reports);
   });
 
   it('matches name, region and notes case-insensitively', () => {
-    expect(filterReports(reports, 'lake')).toEqual([reports[0]]);
-    expect(filterReports(reports, 'wa')).toEqual(reports);
-    expect(filterReports(reports, 'BRIDGE')).toEqual([reports[1]]);
+    expect(filterReports({ reports, searchText: 'lake' })).toEqual([reports[0]]);
+    expect(filterReports({ reports, searchText: 'wa' })).toEqual(reports);
+    expect(filterReports({ reports, searchText: 'BRIDGE' })).toEqual([reports[1]]);
   });
 });
 

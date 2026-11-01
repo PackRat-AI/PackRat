@@ -305,7 +305,7 @@ function TrailRow({
           {trail.name}
         </Text>
         <Text variant="caption1" className="text-muted-foreground">
-          {trailSubtitle(trail, imperial)}
+          {trailSubtitle({ trail, imperial })}
         </Text>
       </View>
       {isSelected ? (

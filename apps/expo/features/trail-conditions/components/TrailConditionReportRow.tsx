@@ -43,7 +43,7 @@ export function TrailConditionReportRow({
     isPending ? t('trailConditions.waitingToSend') : when,
     report.distanceM != null
       ? t('trailConditions.distanceAway', {
-          distance: formatTrailDistance(report.distanceM, unit === 'mph'),
+          distance: formatTrailDistance({ meters: report.distanceM, imperial: unit === 'mph' }),
         })
       : null,
   ]
