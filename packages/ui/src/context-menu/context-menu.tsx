@@ -142,9 +142,7 @@ function ContextMenu({
   return (
     <View>
       <ContextMenuPrimitive.Root
-        // Same useAugmentedRef typing gap as alert.tsx/dropdown-menu.tsx — methods are merged
-        // onto the forwarded View ref at runtime, but the return type doesn't reflect that.
-        ref={rootRef as unknown as React.RefObject<ContextMenuPrimitive.RootRef>}
+        ref={rootRef}
         relativeTo="trigger"
         onOpenChange={onOpenChange}
         {...props}
@@ -384,7 +382,7 @@ function ContextMenuSubMenu({ title, subTitle, items }: Omit<ContextSubMenu, 'lo
       onItemPress={onItemPress}
       materialMinWidth={48}
       materialIsSubMenu
-      ref={addSubMenuRef as unknown as React.Ref<ContextMenuMethods>}
+      ref={addSubMenuRef}
     >
       <Button
         variant="plain"

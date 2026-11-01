@@ -6,7 +6,12 @@ import type { MaterialIconName } from 'expo-app/components/Icon/types';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as React from 'react';
-import { type KeyboardTypeOptions, type TextInput, View } from 'react-native';
+import {
+  type KeyboardTypeOptions,
+  type TextInputInstance,
+  View,
+  type ViewInstance,
+} from 'react-native';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import Animated, {
   FadeIn,
@@ -81,9 +86,10 @@ function Alert({
   const [text, setText] = React.useState(promptProp?.defaultValue ?? '');
   const [password, setPassword] = React.useState('');
   const { colors } = useColorScheme();
-  const passwordRef = React.useRef<TextInput>(null);
+  const passwordRef = React.useRef<TextInputInstance>(null);
   const augmentedRef = useAugmentedRef({
-    ref: ref as React.Ref<AlertMethods>,
+    // Methods are merged onto Root's View ref at runtime.
+    ref: ref as React.Ref<ViewInstance & AlertMethods>,
     methods: {
       show: () => setOpen(true),
       alert,
@@ -122,14 +128,7 @@ function Alert({
   }
 
   return (
-    <AlertDialogPrimitive.Root
-      // @rn-primitives/hooks' useAugmentedRef merges imperative `methods` onto the forwarded
-      // View ref at runtime (documented pattern), but its return type is RefObject<T|null> for
-      // the *methods* type param, not the underlying View — Root's `ref` prop wants Ref<View>.
-      ref={augmentedRef as unknown as React.Ref<View>}
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <AlertDialogPrimitive.Root ref={augmentedRef} open={open} onOpenChange={onOpenChange}>
       <AlertDialogPrimitive.Trigger asChild={!!children}>{children}</AlertDialogPrimitive.Trigger>
       <AlertDialogPrimitive.Portal hostName={materialPortalHost}>
         <AlertDialogPrimitive.Overlay asChild>

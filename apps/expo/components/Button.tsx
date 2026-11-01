@@ -4,14 +4,14 @@ import {
   Text,
   TouchableOpacity,
   type TouchableOpacityProps,
-  type View,
+  type ViewInstance,
 } from 'react-native';
 
 type ButtonProps = {
   title?: string;
 } & TouchableOpacityProps;
 
-export const Button = forwardRef<View, ButtonProps>(({ title, ...touchableProps }, ref) => {
+export const Button = forwardRef<ViewInstance, ButtonProps>(({ title, ...touchableProps }, ref) => {
   return (
     <TouchableOpacity ref={ref} {...touchableProps} style={[styles.button, touchableProps.style]}>
       <Text style={styles.buttonText}>{title}</Text>

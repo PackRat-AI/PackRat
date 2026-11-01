@@ -1,14 +1,20 @@
 import { useAugmentedRef, useControllableState } from '@rn-primitives/hooks';
 import { cn } from 'expo-app/lib/cn';
 import type * as React from 'react';
-import { Pressable, TextInput, type TextInputProps, View } from 'react-native';
+import {
+  Pressable,
+  TextInput,
+  type TextInputInstance,
+  type TextInputProps,
+  View,
+} from 'react-native';
 import { Text } from './text';
 
 // Plain RN composition — TextField never needed a native Host bridge. iOS keeps the old
 // package's simple (non-Material, no floating-label animation) design — matches
 // text-field.tsx's prop surface so callers see one API regardless of platform.
 
-type TextFieldRef = React.Ref<TextInput>;
+type TextFieldRef = React.Ref<TextInputInstance>;
 
 type TextFieldProps = TextInputProps & {
   ref?: TextFieldRef;

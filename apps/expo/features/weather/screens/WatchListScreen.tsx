@@ -109,7 +109,14 @@ export default function WatchListScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 96 }}
-          refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={false}
+              onRefresh={() => {
+                refetch();
+              }}
+            />
+          }
           ListEmptyComponent={
             <View className="flex-1 items-center justify-center gap-3 px-8 pb-24">
               <Icon name="bell-off-outline" size={56} color={colors.grey} />

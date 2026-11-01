@@ -507,10 +507,10 @@ export function CatalogBrowserModal({
   const ItemSeparatorComponent = useMemo(() => () => <View className="h-2" />, []);
 
   const ListHeaderComponent = useMemo(() => {
-    if (!isDefaultView) return null;
+    if (!isDefaultView) return undefined;
     const showPopular = popularItems.length > 0 || isPopularLoading;
     const showRecent = recentItems.length > 0;
-    if (!showPopular && !showRecent) return null;
+    if (!showPopular && !showRecent) return undefined;
     return (
       <View className="pb-2">
         {showRecent && (
@@ -632,7 +632,7 @@ export function CatalogBrowserModal({
                   <View className="py-4">
                     <ActivityIndicator color={colors.primary} />
                   </View>
-                ) : null
+                ) : undefined
               }
             />
           )}

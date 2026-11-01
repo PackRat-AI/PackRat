@@ -245,7 +245,9 @@ export function PackListScreen() {
             selectedTypeIndex === ALL_PACKS_INDEX ? (
               <RefreshControl
                 refreshing={allPacksQuery.isRefetching}
-                onRefresh={allPacksQuery.refetch}
+                onRefresh={() => {
+                  allPacksQuery.refetch();
+                }}
                 tintColor={colors.primary}
               />
             ) : undefined

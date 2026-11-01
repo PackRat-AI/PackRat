@@ -11,9 +11,9 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  type TextInput as RNTextInput,
   ScrollView,
   StyleSheet,
+  type TextInputInstance,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -37,7 +37,7 @@ export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps)
   const { t } = useTranslation();
   const { colors } = useColorScheme();
   const [commentText, setCommentText] = useState('');
-  const inputRef = useRef<RNTextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
 
   const {
     data: commentsData,

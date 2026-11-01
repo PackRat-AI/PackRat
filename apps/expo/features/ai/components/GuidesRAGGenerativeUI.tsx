@@ -10,6 +10,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   ScrollView,
+  type ScrollViewInstance,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -71,7 +72,7 @@ const CARD_SPACING = 16;
 export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIProps) {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ScrollViewInstance>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const formatGuideTitle = (filename: string) => {

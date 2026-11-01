@@ -62,6 +62,7 @@ import {
   Dimensions,
   Platform,
   ScrollView,
+  type ScrollViewInstance,
   type TextInputContentSizeChangeEvent,
   type TextStyle,
   TouchableOpacity,
@@ -97,7 +98,7 @@ export default function AIChat() {
   const params = useLocalSearchParams();
   const { activeLocation } = useActiveLocation();
   const [location, setLocation] = React.useState<WeatherLocation | null>(activeLocation);
-  const scrollViewRef = React.useRef<ScrollView>(null);
+  const scrollViewRef = React.useRef<ScrollViewInstance>(null);
   const { t } = useTranslation();
 
   const aiMode = useAtomValue(aiModeAtom);

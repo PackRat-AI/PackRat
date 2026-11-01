@@ -85,13 +85,7 @@ function DropdownMenu({
   }
 
   return (
-    <DropdownMenuPrimitive.Root
-      // @rn-primitives/hooks' useAugmentedRef merges imperative `methods` onto the forwarded
-      // View ref at runtime; the return type doesn't reflect that (documented pattern, same
-      // gap as alert.tsx's AlertDialogPrimitive.Root ref).
-      ref={rootRef as unknown as React.RefObject<DropdownMenuPrimitive.RootRef>}
-      {...rootProps}
-    >
+    <DropdownMenuPrimitive.Root ref={rootRef} {...rootProps}>
       <DropdownMenuPrimitive.Trigger ref={triggerRef} asChild>
         {children}
       </DropdownMenuPrimitive.Trigger>
@@ -315,7 +309,7 @@ function DropdownMenuSubMenu({ title, subTitle, items }: Omit<DropdownSubMenu, '
       onItemPress={onItemPress}
       materialMinWidth={48}
       materialIsSubMenu
-      ref={addSubMenuRef as unknown as React.Ref<DropdownMenuMethods>}
+      ref={addSubMenuRef}
     >
       <Button
         variant="plain"

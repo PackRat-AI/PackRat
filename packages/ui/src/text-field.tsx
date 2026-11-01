@@ -9,6 +9,7 @@ import {
   type FocusEvent,
   Pressable,
   TextInput,
+  type TextInputInstance,
   type TextInputProps,
   View,
   type ViewProps,
@@ -29,7 +30,7 @@ import Animated, {
 // This file's Material-style floating label (materialVariant/materialRingColor/
 // materialHideActionIcons) only ever applied here, never on iOS.
 
-type TextFieldRef = React.Ref<TextInput>;
+type TextFieldRef = React.Ref<TextInputInstance>;
 
 type TextFieldProps = TextInputProps & {
   ref?: TextFieldRef;
@@ -234,36 +235,42 @@ function MaterialLabel(props: MaterialLabelProps) {
   const hasLeftViewDerived = useDerivedValue(() => props.hasLeftView);
   const variantDerived = useDerivedValue(() => props.materialVariant);
   const animatedRootStyle = useAnimatedStyle(() => {
-    const style: ViewStyle = { position: 'absolute', alignSelf: 'center' };
+    const base: ViewStyle = { position: 'absolute', alignSelf: 'center' };
     if (variantDerived.value === 'outlined') {
-      style.paddingLeft = withTiming(hasLeftViewDerived.value && isLiftedDerived.value ? 0 : 12, {
-        duration: 200,
-      });
-      style.transform = [
-        {
-          translateY: withTiming(isLiftedDerived.value ? -DEFAULT_TEXT_FIELD_HEIGHT / 2.2 : 0, {
-            duration: 200,
-          }),
-        },
-        {
-          translateX: withTiming(hasLeftViewDerived.value && isLiftedDerived.value ? -12 : 0, {
-            duration: 200,
-          }),
-        },
-      ];
+      return {
+        ...base,
+        paddingLeft: withTiming(hasLeftViewDerived.value && isLiftedDerived.value ? 0 : 12, {
+          duration: 200,
+        }),
+        transform: [
+          {
+            translateY: withTiming(isLiftedDerived.value ? -DEFAULT_TEXT_FIELD_HEIGHT / 2.2 : 0, {
+              duration: 200,
+            }),
+          },
+          {
+            translateX: withTiming(hasLeftViewDerived.value && isLiftedDerived.value ? -12 : 0, {
+              duration: 200,
+            }),
+          },
+        ],
+      };
     }
     if (variantDerived.value === 'filled') {
-      style.paddingLeft = 8;
-      style.transform = [
-        {
-          translateY: withTiming(isLiftedDerived.value ? -DEFAULT_TEXT_FIELD_HEIGHT / 3.75 : 0, {
-            duration: 200,
-          }),
-        },
-        { translateX: 0 },
-      ];
+      return {
+        ...base,
+        paddingLeft: 8,
+        transform: [
+          {
+            translateY: withTiming(isLiftedDerived.value ? -DEFAULT_TEXT_FIELD_HEIGHT / 3.75 : 0, {
+              duration: 200,
+            }),
+          },
+          { translateX: 0 },
+        ],
+      };
     }
-    return style;
+    return base;
   });
   const animatedTextStyle = useAnimatedStyle(() => {
     return {

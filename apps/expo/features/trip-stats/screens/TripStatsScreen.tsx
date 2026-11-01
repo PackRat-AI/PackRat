@@ -9,7 +9,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
 import { Fragment, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, type ScrollViewInstance, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CollectionCards } from '../components/CollectionCards';
 import { ComebackCard, GoalsCard } from '../components/GoalCards';
@@ -54,7 +54,7 @@ export function TripStatsScreen() {
   const { colors } = useColorScheme();
   const unit = useDistanceUnit();
   const [scope, setScopeState] = useState<Scope>(ALL_SCOPE);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   // Back to the top on every change: the cards above the reader change with the filter, so the
   // top of the narrowed record is the only stable place to land.
   const setScope = (next: Scope) => {
