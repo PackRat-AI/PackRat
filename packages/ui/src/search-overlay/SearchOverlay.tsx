@@ -1,7 +1,7 @@
 import { Portal } from '@rn-primitives/portal';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { Stack, useNavigation } from 'expo-router';
+import { Stack, useIsFocused } from 'expo-router';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { BackHandler, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, {
@@ -26,7 +26,6 @@ export function SearchOverlay({
   const { colors, isDarkColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
   const id = useId();
-  const navigation = useNavigation();
 
   const headerBg = isDarkColorScheme ? colors.card : colors.background;
   const contentBg = isDarkColorScheme ? colors.background : colors.card;
@@ -40,15 +39,7 @@ export function SearchOverlay({
   // The overlay lives in a root Portal above the navigator, so a screen pushed from a result
   // would open underneath it. Hide it while this screen is out of focus and bring it back,
   // query and results intact, when the user returns.
-  const [isFocused, setIsFocused] = useState(() => navigation.isFocused());
-  useEffect(() => {
-    const unsubscribeFocus = navigation.addListener('focus', () => setIsFocused(true));
-    const unsubscribeBlur = navigation.addListener('blur', () => setIsFocused(false));
-    return () => {
-      unsubscribeFocus();
-      unsubscribeBlur();
-    };
-  }, [navigation]);
+  const isFocused = useIsFocused();
   const isVisible = isOpen && isFocused;
 
   useEffect(() => {
