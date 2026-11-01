@@ -7,6 +7,7 @@ import { useForm } from '@tanstack/react-form';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Picker } from 'expo-app/lib/Picker';
@@ -18,6 +19,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
+import { requestTripReminderPermission } from '../lib/tripReminderScheduler';
 import { tripLocationStore, useTripLocation } from '../store/tripLocationStore';
 import type { Trip } from '../types';
 
@@ -99,6 +101,8 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     return '';
   };
 
+  const enableTripReminders = useFeatureFlag('enableTripReminders');
+
   const form = useForm({
     defaultValues: {
       name: trip?.name || '',
@@ -147,6 +151,8 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
           });
         }
         router.back();
+        // The trip now has a date: the moment a reminder permission prompt makes sense.
+        if (enableTripReminders) requestTripReminderPermission();
       } catch (_e) {
         Sentry.captureException(_e, {
           tags: { feature: 'trips', action: isEditingExistingTrip ? 'updateTrip' : 'createTrip' },
