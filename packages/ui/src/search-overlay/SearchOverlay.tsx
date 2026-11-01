@@ -1,7 +1,7 @@
 import { Portal } from '@rn-primitives/portal';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { Stack } from 'expo-router';
+import { Stack, useIsFocused } from 'expo-router';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { BackHandler, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, {
@@ -36,16 +36,22 @@ export function SearchOverlay({
     onChangeText('');
   }, [onChangeText]);
 
+  // The overlay lives in a root Portal above the navigator, so a screen pushed from a result
+  // would open underneath it. Hide it while this screen is out of focus and bring it back,
+  // query and results intact, when the user returns.
+  const isFocused = useIsFocused();
+  const isVisible = isOpen && isFocused;
+
   useEffect(() => {
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (isOpen) {
+      if (isVisible) {
         close();
         return true;
       }
       return false;
     });
     return () => handler.remove();
-  }, [isOpen, close]);
+  }, [isVisible, close]);
 
   return (
     <>
@@ -61,7 +67,7 @@ export function SearchOverlay({
           ),
         }}
       />
-      {isOpen && (
+      {isVisible && (
         <Portal name={`search-overlay:${id}`}>
           <Animated.View exiting={FadeOut} style={[StyleSheet.absoluteFill, styles.portal]}>
             <View
@@ -79,7 +85,7 @@ export function SearchOverlay({
                   style={styles.inputFlex}
                 >
                   <TextInput
-                    autoFocus
+                    autoFocus={value.length === 0}
                     placeholder={placeholder ?? 'Search...'}
                     value={value}
                     onChangeText={onChangeText}
