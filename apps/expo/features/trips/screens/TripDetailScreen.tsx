@@ -4,7 +4,7 @@ import { Button } from '@packrat/ui/src/button';
 import { Card } from '@packrat/ui/src/card';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
-import { Icon } from 'expo-app/components/Icon';
+import { TripTrailConditionsSection } from 'expo-app/features/trail-conditions/components/TripTrailConditionsSection';
 import { TripLogSection } from 'expo-app/features/trip-stats/components/TripLogSection';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -31,7 +31,6 @@ export function TripDetailScreen() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
 
-  const enableTrailConditions = useFeatureFlag('enableTrailConditions');
   const enableTripReminders = useFeatureFlag('enableTripReminders');
 
   // safe-cast: trip may be undefined before the store is hydrated; the guard at line ~38 handles
@@ -244,40 +243,7 @@ export function TripDetailScreen() {
 
           <TripLogSection trip={trip} />
 
-          {/* Trail Condition Report Prompt */}
-          {enableTrailConditions && trip.endDate && new Date(trip.endDate) < new Date() && (
-            <View className="mb-6">
-              <Card className="rounded-xl bg-card border border-border overflow-hidden">
-                <View className="p-4">
-                  <View className="flex-row items-center mb-2 gap-2">
-                    <Icon name="map-marker-outline" size={20} color={colors.primary} />
-                    <Text className="text-base font-semibold text-foreground">
-                      {t('trailConditions.reportConditionsTitle')}
-                    </Text>
-                  </View>
-                  <Text className="text-sm text-muted-foreground mb-3" wrap>
-                    {t('trailConditions.reportConditionsPrompt')}
-                  </Text>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onPress={() =>
-                      router.push({
-                        pathname: '/trail-conditions/submit',
-                        params: {
-                          tripId: trip.id,
-                          trailName: trip.location?.name ?? trip.name,
-                        },
-                      })
-                    }
-                    className="flex-row items-center gap-2"
-                  >
-                    <Text className="text-sm">{t('trailConditions.submitReport')}</Text>
-                  </Button>
-                </View>
-              </Card>
-            </View>
-          )}
+          <TripTrailConditionsSection trip={trip} />
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -14,6 +14,7 @@ import {
   formatTrailDistance,
   type TrailLine,
 } from 'expo-app/features/trail-conditions/utils/trails';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -54,6 +55,7 @@ export default function TrailPageScreen() {
   const trail = useTrail(trailId);
   const reports = useTrailReports(trailId);
   const pendingIds = usePendingReportIds();
+  const enableTrips = useFeatureFlag('enableTrips');
 
   const lines = trail.data?.lines ?? [];
   const region = useMemo(() => (lines.length > 0 ? regionFor(lines) : null), [lines]);
@@ -186,18 +188,44 @@ export default function TrailPageScreen() {
           ) : null}
         </View>
 
-        <Button
-          onPress={() =>
-            router.push({
-              pathname: '/trail-conditions/submit',
-              params: { trailId, trailName },
-            })
-          }
-          testID={testIds.trailConditions.trailPageWriteReportBtn}
-        >
-          <Icon name="pencil-outline" size={18} color="white" />
-          <Text>{t('trailConditions.writeReport')}</Text>
-        </Button>
+        <View className="flex-row gap-3">
+          <Button
+            className="flex-1"
+            onPress={() =>
+              router.push({
+                pathname: '/trail-conditions/submit',
+                params: { trailId, trailName },
+              })
+            }
+            testID={testIds.trailConditions.trailPageWriteReportBtn}
+          >
+            <Icon name="pencil-outline" size={18} color="white" />
+            <Text>{t('trailConditions.writeReport')}</Text>
+          </Button>
+          {enableTrips ? (
+            <Button
+              className="flex-1"
+              variant="secondary"
+              onPress={() => {
+                const center = trail.data?.summary.center;
+                router.push({
+                  pathname: '/trip/new',
+                  params: {
+                    trailId,
+                    trailName,
+                    ...(center
+                      ? { lat: String(center.latitude), lon: String(center.longitude) }
+                      : {}),
+                  },
+                });
+              }}
+              testID={testIds.trailConditions.trailPagePlanTripBtn}
+            >
+              <Icon name="map-outline" size={18} color={colors.primary} />
+              <Text>{t('trailConditions.planTrip')}</Text>
+            </Button>
+          ) : null}
+        </View>
 
         {renderReports()}
       </ScrollView>

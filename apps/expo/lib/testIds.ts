@@ -193,6 +193,7 @@ export const testIds = Object.freeze({
     createBtn: 'create-trip-button', // keep Maestro value
     emptyCreateBtn: 'create-trip-empty-button',
     cancelBtn: 'cancel-trip-form-button', // keep Maestro value
+    trailButton: 'trip-trail-button',
     nameInput: 'trips:name-input',
     nameInputContainer: 'trips:name-input-container',
     descriptionInput: 'trips:description-input',
@@ -361,6 +362,7 @@ export const testIds = Object.freeze({
     blockAuthorBtn: 'trail-conditions:block-author',
     trailPageLink: 'trail-conditions:trail-page-link',
     trailPageWriteReportBtn: 'trail-conditions:trail-page-write-report',
+    trailPagePlanTripBtn: 'trail-conditions:trail-page-plan-trip',
     // Trip section
     tripSection: 'trail-conditions:trip-section',
     tripSectionWriteReportBtn: 'trail-conditions:trip-section-write-report',

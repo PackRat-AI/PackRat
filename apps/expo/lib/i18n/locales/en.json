@@ -1020,7 +1020,10 @@
       "startPacking": "Start Packing",
       "continuePacking": "Continue Packing",
       "reviewPacking": "Review Packing"
-    }
+    },
+    "chooseTrail": "Choose a trail",
+    "trailFooter": "Optional. Without a trail, the trip shows conditions from trails near its destination.",
+    "trailFooterChosen": "The trip shows conditions reported on this trail."
   },
   "catalog": {
     "itemsCatalog": "Items Catalog",
@@ -1802,14 +1805,15 @@
     "tripSectionLoading": "Checking recent reports…",
     "tripNoReportsTrail": "Nobody has reported on this trail. Be the first once you're out there.",
     "tripNoReportsNearby": "No reports from trails near here. Be the first once you're out there.",
-    "tripNearbyHeader": "From trails near your destination",
     "distanceAway": "{{distance}} away",
     "writtenAgo": "Written {{when}}. Conditions may have changed since.",
     "hazardsNone": "None reported",
     "onTheTrail": "On the Trail",
     "waterCrossingsNone": "None",
     "reportCount_one": "{{count}} report",
-    "reportCount_other": "{{count}} reports"
+    "reportCount_other": "{{count}} reports",
+    "planTrip": "Plan a Trip",
+    "tripNearbySubtitle": "Trails near {{place}}"
   },
   "feed": {
     "feed": "Feed",
