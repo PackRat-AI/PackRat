@@ -70,7 +70,7 @@ jobs:
     name: Swift visual suite
     needs: visual-gate
     if: needs.visual-gate.outputs.ready == 'true'
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 90
 
     steps:
