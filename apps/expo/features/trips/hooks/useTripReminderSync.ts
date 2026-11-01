@@ -1,4 +1,5 @@
 import { use$ } from '@legendapp/state/react';
+import { safeJsonStringify } from '@packrat/utils';
 import * as Sentry from '@sentry/react-native';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { getPackItems } from 'expo-app/features/packs/store/packItems';
@@ -24,7 +25,7 @@ function useReminderSignature(): string {
     const packing = packingModeStore.get();
     const conditions = tripConditionsStore.get();
     const trips = Object.values(tripsStore.get()).filter((trip) => !trip.deleted);
-    return JSON.stringify([
+    return safeJsonStringify([
       settings,
       trips.map((trip) => [
         trip.id,
