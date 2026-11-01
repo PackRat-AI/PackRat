@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   filterReports,
+  isQueuedReport,
   isRetryableSendError,
   mergeQueuedIntoFeed,
   pendingReport,
@@ -134,5 +135,23 @@ describe('filterReports', () => {
     expect(filterReports(reports, 'lake')).toEqual([reports[0]]);
     expect(filterReports(reports, 'wa')).toEqual(reports);
     expect(filterReports(reports, 'BRIDGE')).toEqual([reports[1]]);
+  });
+});
+
+describe('isQueuedReport', () => {
+  it('accepts a whole queued report', () => {
+    expect(isQueuedReport(queued())).toBe(true);
+  });
+
+  it.each([
+    { label: 'null', value: null },
+    { label: 'a string', value: 'q1' },
+    { label: 'a leftover with only attempts', value: { attempts: 1 } },
+    { label: 'no timestamp', value: { ...queued(), writtenAt: undefined } },
+    { label: 'no photos list', value: { ...queued(), photos: undefined } },
+    { label: 'no input', value: { ...queued(), input: undefined } },
+    { label: 'no place', value: { ...queued(), input: { ...queued().input, place: null } } },
+  ])('rejects $label', ({ value }) => {
+    expect(isQueuedReport(value)).toBe(false);
   });
 });

@@ -23,6 +23,26 @@ export interface QueuedReport {
   attempts: number;
 }
 
+/**
+ * Whether a stored entry is a whole queued report. The cache can hold a partial one — a field set
+ * on an entry after it was removed recreates it with only that field — and those must be skipped
+ * and cleared, never rendered or sent.
+ */
+export function isQueuedReport(value: unknown): value is QueuedReport {
+  if (typeof value !== 'object' || value === null) return false;
+  const entry = value as Partial<Record<keyof QueuedReport, unknown>>;
+  const input = entry.input as { place?: unknown } | undefined;
+  return (
+    typeof entry.id === 'string' &&
+    typeof entry.writtenAt === 'string' &&
+    Array.isArray(entry.photos) &&
+    typeof input === 'object' &&
+    input !== null &&
+    typeof input.place === 'object' &&
+    input.place !== null
+  );
+}
+
 /** An API failure carrying the HTTP status, so the outbox can tell retryable from not. */
 export class TrailConditionsRequestError extends Error {
   readonly status: number | null;

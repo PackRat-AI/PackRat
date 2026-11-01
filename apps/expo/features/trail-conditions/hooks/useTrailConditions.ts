@@ -27,6 +27,7 @@ import {
 import type { TrailConditionFlagReason, TrailConditionReportInput } from '../types';
 import {
   filterReports,
+  isQueuedReport,
   isRetryableSendError,
   mergeQueuedIntoFeed,
   pendingReport,
@@ -52,10 +53,7 @@ export function useQueuedReports(): QueuedReport[] {
   // Legend mutates the record in place, so a plain `use$(store)` kept returning the same reference
   // and the list stayed stale until remount. A serialised snapshot changes on every enqueue or send.
   const snapshot = use$(() => JSON.stringify(reportOutboxStore.get() ?? {}));
-  return useMemo(
-    () => Object.values(JSON.parse(snapshot) as Record<string, QueuedReport>),
-    [snapshot],
-  );
+  return useMemo(() => Object.values(JSON.parse(snapshot)).filter(isQueuedReport), [snapshot]);
 }
 
 /** Ids of the hiker's reports still waiting to send. */

@@ -7,7 +7,12 @@ import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import { obs } from 'expo-app/lib/store';
 import * as FileSystem from 'expo-file-system/legacy';
 import { createReport } from '../lib/service';
-import { isRetryableSendError, type QueuedPhoto, type QueuedReport } from '../utils/outbox';
+import {
+  isQueuedReport,
+  isRetryableSendError,
+  type QueuedPhoto,
+  type QueuedReport,
+} from '../utils/outbox';
 
 /**
  * Reports waiting to send, by id — the counterpart of the trail-report `PendingMutation` rows the
@@ -74,7 +79,9 @@ async function uploadQueuedPhotos(report: QueuedReport): Promise<string[]> {
       uri: photo.uri,
     });
     if (!key) throw new Error('Photo upload returned no key');
-    obs({ store: reportOutboxStore, id: report.id }).photos[index]?.set({ key });
+    if (reportOutboxStore.peek()[report.id]) {
+      obs({ store: reportOutboxStore, id: report.id }).photos[index]?.set({ key });
+    }
     keys.push(key);
   }
   return keys;
@@ -91,7 +98,10 @@ async function sendQueuedReport(report: QueuedReport): Promise<void> {
     await discardQueuedReport(report.id);
   } catch (error) {
     if (isRetryableSendError(error)) {
-      obs({ store: reportOutboxStore, id: report.id }).attempts.set(report.attempts + 1);
+      // Only while it is still queued: setting a field on a removed entry recreates a partial one.
+      if (reportOutboxStore.peek()[report.id]) {
+        obs({ store: reportOutboxStore, id: report.id }).attempts.set(report.attempts + 1);
+      }
       return;
     }
     // The server rejected the report itself; resending the same body can never succeed.
@@ -112,9 +122,12 @@ let flushing: Promise<number> | null = null;
 export function flushReportOutbox(): Promise<number> {
   if (flushing) return flushing;
   flushing = (async () => {
-    const queued = Object.values(reportOutboxStore.peek()).sort((a, b) =>
-      a.writtenAt.localeCompare(b.writtenAt),
-    );
+    for (const [id, entry] of Object.entries(reportOutboxStore.peek())) {
+      if (!isQueuedReport(entry)) obs({ store: reportOutboxStore, id }).delete();
+    }
+    const queued = Object.values(reportOutboxStore.peek())
+      .filter(isQueuedReport)
+      .sort((a, b) => a.writtenAt.localeCompare(b.writtenAt));
     for (const report of queued) {
       try {
         await sendQueuedReport(report);
