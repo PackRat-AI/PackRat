@@ -1,8 +1,8 @@
 import { Portal } from '@rn-primitives/portal';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { Stack } from 'expo-router';
-import { useCallback, useEffect, useId, useState } from 'react';
+import { Stack, useNavigation } from 'expo-router';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { BackHandler, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, {
   FadeIn,
@@ -26,6 +26,7 @@ export function SearchOverlay({
   const { colors, isDarkColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
   const id = useId();
+  const navigation = useNavigation();
 
   const headerBg = isDarkColorScheme ? colors.card : colors.background;
   const contentBg = isDarkColorScheme ? colors.background : colors.card;
@@ -35,6 +36,12 @@ export function SearchOverlay({
     setIsOpen(false);
     onChangeText('');
   }, [onChangeText]);
+
+  // The overlay lives in a root Portal above the navigator, so a screen pushed from a result
+  // would open underneath it. Close it whenever this screen loses focus.
+  const closeRef = useRef(close);
+  closeRef.current = close;
+  useEffect(() => navigation.addListener('blur', () => closeRef.current()), [navigation]);
 
   useEffect(() => {
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
