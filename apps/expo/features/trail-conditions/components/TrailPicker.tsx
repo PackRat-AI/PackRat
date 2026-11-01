@@ -77,7 +77,7 @@ export function TrailPicker({
     onClose();
   };
 
-  const pick = (place: ReportPlace) => {
+  const choosePlace = (place: ReportPlace) => {
     setDroppingPin(false);
     onPick(place);
   };
@@ -164,7 +164,7 @@ export function TrailPicker({
           <PinDrop
             start={location.coordinate}
             onBack={() => setDroppingPin(false)}
-            onConfirm={pick}
+            onConfirm={choosePlace}
           />
         ) : (
           <>
@@ -219,7 +219,9 @@ export function TrailPicker({
                   trail={item}
                   imperial={imperial}
                   isSelected={item.id === selectedTrailId}
-                  onPress={() => pick({ kind: 'trail', trail: { id: item.id, name: item.name } })}
+                  onPress={() =>
+                    choosePlace({ kind: 'trail', trail: { id: item.id, name: item.name } })
+                  }
                 />
               )}
             />

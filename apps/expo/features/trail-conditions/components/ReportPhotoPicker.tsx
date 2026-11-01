@@ -49,7 +49,7 @@ export function ReportPhotoPicker({
   const [isPreparing, setIsPreparing] = useState(false);
   const remaining = MAX_REPORT_PHOTOS - photoUris.length;
 
-  const pick = async () => {
+  const choosePhotos = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
@@ -103,7 +103,7 @@ export function ReportPhotoPicker({
         ))}
         {remaining > 0 && !isLocked ? (
           <Pressable
-            onPress={pick}
+            onPress={choosePhotos}
             disabled={isPreparing}
             testID={testIds.trailConditions.addPhotosBtn}
             accessibilityRole="button"

@@ -1,3 +1,4 @@
+import { isNumber } from '@packrat/guards';
 import { TrailConditionReportSchema } from '@packrat/schemas/trailConditions';
 import * as Sentry from '@sentry/react-native';
 import { apiClient } from 'expo-app/lib/api/packrat';
@@ -65,7 +66,7 @@ function failed({
   throw reportError({
     error: new TrailConditionsRequestError(
       `trailConditions.${action} failed: ${String(error.value)}`,
-      typeof error.status === 'number' ? error.status : null,
+      isNumber(error.status) ? error.status : null,
     ),
     action,
     extra: { ...extra, httpStatus: error.status, apiError: error.value },

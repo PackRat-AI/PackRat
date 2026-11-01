@@ -1,3 +1,4 @@
+import { isArray, isString, toRecord } from '@packrat/guards';
 import type { TrailConditionReportInput } from '../types';
 import { placeDisplayName, placeTrailId, reportCoordinate, type SignedReport } from './trails';
 
@@ -29,17 +30,13 @@ export interface QueuedReport {
  * and cleared, never rendered or sent.
  */
 export function isQueuedReport(value: unknown): value is QueuedReport {
-  if (typeof value !== 'object' || value === null) return false;
-  const entry = value as Partial<Record<keyof QueuedReport, unknown>>;
-  const input = entry.input as { place?: unknown } | undefined;
+  const entry = toRecord(value);
+  const place = toRecord(entry.input).place;
   return (
-    typeof entry.id === 'string' &&
-    typeof entry.writtenAt === 'string' &&
-    Array.isArray(entry.photos) &&
-    typeof input === 'object' &&
-    input !== null &&
-    typeof input.place === 'object' &&
-    input.place !== null
+    isString(entry.id) &&
+    isString(entry.writtenAt) &&
+    isArray(entry.photos) &&
+    Object.keys(toRecord(place)).length > 0
   );
 }
 

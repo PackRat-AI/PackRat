@@ -1,4 +1,6 @@
 import { use$ } from '@legendapp/state/react';
+import { toRecord } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import * as Sentry from '@sentry/react-native';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userStore } from 'expo-app/features/auth/store';
@@ -52,8 +54,11 @@ function invalidateReportLists(queryClient: ReturnType<typeof useQueryClient>) {
 export function useQueuedReports(): QueuedReport[] {
   // Legend mutates the record in place, so a plain `use$(store)` kept returning the same reference
   // and the list stayed stale until remount. A serialised snapshot changes on every enqueue or send.
-  const snapshot = use$(() => JSON.stringify(reportOutboxStore.get() ?? {}));
-  return useMemo(() => Object.values(JSON.parse(snapshot)).filter(isQueuedReport), [snapshot]);
+  const snapshot = use$(() => safeJsonStringify(reportOutboxStore.get() ?? {}));
+  return useMemo(
+    () => Object.values(toRecord(safeJsonParse(snapshot))).filter(isQueuedReport),
+    [snapshot],
+  );
 }
 
 /** Ids of the hiker's reports still waiting to send. */
