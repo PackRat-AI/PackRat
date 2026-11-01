@@ -77,7 +77,12 @@ export function useTrailConditions() {
   const query = useQuery({
     queryKey: trailConditionsQueryKey,
     queryFn: async () => {
-      await flushReportOutbox();
+      // The feed loads whether or not the queue sends; a failed flush is reported, not thrown.
+      await flushReportOutbox().catch((error) =>
+        Sentry.captureException(error, {
+          tags: { feature: 'trailConditions', action: 'flushBeforeFeed' },
+        }),
+      );
       return listReports();
     },
     enabled: isQueryEnabledWithAccessToken,

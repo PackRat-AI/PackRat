@@ -2,6 +2,7 @@ import { observable } from '@legendapp/state';
 import { syncObservable } from '@legendapp/state/sync';
 import * as Sentry from '@sentry/react-native';
 import { uploadImage } from 'expo-app/features/packs/utils';
+import { restoreTripDateStrings } from 'expo-app/features/trips/utils/tripStoreDates';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import { obs } from 'expo-app/lib/store';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -16,7 +17,12 @@ import { isRetryableSendError, type QueuedPhoto, type QueuedReport } from '../ut
 export const reportOutboxStore = observable<Record<string, QueuedReport>>({});
 
 syncObservable(reportOutboxStore, {
-  persist: { plugin: persistPlugin, name: 'trailReportOutbox' },
+  persist: {
+    plugin: persistPlugin,
+    name: 'trailReportOutbox',
+    // The cache revives ISO timestamps as `Date`s on load; `writtenAt` must stay a string.
+    transform: { load: restoreTripDateStrings },
+  },
 });
 
 const PHOTO_DIR = `${FileSystem.documentDirectory ?? ''}trail-report-photos/`;
@@ -109,7 +115,17 @@ export function flushReportOutbox(): Promise<number> {
     const queued = Object.values(reportOutboxStore.peek()).sort((a, b) =>
       a.writtenAt.localeCompare(b.writtenAt),
     );
-    for (const report of queued) await sendQueuedReport(report);
+    for (const report of queued) {
+      try {
+        await sendQueuedReport(report);
+      } catch (error) {
+        // One bad entry must not hold up the rest of the queue.
+        Sentry.captureException(error, {
+          tags: { feature: 'trailConditions', action: 'flushReportOutbox' },
+          extra: { reportId: report.id },
+        });
+      }
+    }
     return queued.length - Object.keys(reportOutboxStore.peek()).length;
   })().finally(() => {
     flushing = null;
