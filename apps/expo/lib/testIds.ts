@@ -345,6 +345,25 @@ export const testIds = Object.freeze({
     hazardChip: (hazard: string) => `trail-conditions:hazard-${hazard.split(' ').join('-')}`,
     formSubmitBtn: 'trail-conditions:form-submit',
     formCancelBtn: 'trail-conditions:form-cancel',
+    chooseTrailBtn: 'trail-conditions:choose-trail',
+    addPhotosBtn: 'trail-conditions:add-photos',
+    removePhotoBtn: (index: number) => `trail-conditions:remove-photo-${index}`,
+    // Trail picker and pin drop
+    trailSearchInput: 'trail-conditions:trail-search-input',
+    trailPickerRow: (trailId: string) => `trail-conditions:trail-${trailId}`,
+    dropPinBtn: 'trail-conditions:drop-pin',
+    pinMap: 'trail-conditions:pin-map',
+    pinLabelInput: 'trail-conditions:pin-label',
+    confirmPinBtn: 'trail-conditions:confirm-pin',
+    // Report detail, trail page and moderation
+    reportMenuBtn: 'trail-conditions:report-menu',
+    flagReportBtn: 'trail-conditions:flag-report',
+    blockAuthorBtn: 'trail-conditions:block-author',
+    trailPageLink: 'trail-conditions:trail-page-link',
+    trailPageWriteReportBtn: 'trail-conditions:trail-page-write-report',
+    // Trip section
+    tripSection: 'trail-conditions:trip-section',
+    tripSectionWriteReportBtn: 'trail-conditions:trip-section-write-report',
   }),
 
   // ── Wildlife ──────────────────────────────────────────────────────────────

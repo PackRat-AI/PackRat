@@ -1,14 +1,18 @@
 import { Text } from '@packrat/ui/src/text';
+import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import type { TrailConditionFormState } from '../hooks/useTrailConditionForm';
 import { capitalizeFirst } from '../lib/display';
 import { HAZARD_OPTIONS, OVERALL_CONDITIONS, TRAIL_SURFACES } from '../types';
 import { HazardChips } from './HazardChips';
 import { OptionSegmentedControl } from './OptionSegmentedControl';
+import { ReportPhotoPicker } from './ReportPhotoPicker';
+import { TrailPicker } from './TrailPicker';
 
 interface SubmitTrailConditionFormProps {
   form: TrailConditionFormState;
@@ -16,7 +20,8 @@ interface SubmitTrailConditionFormProps {
 
 /**
  * The report form body, mirroring `SubmitTrailConditionView`'s `Form` in
- * `TrailConditionsView.swift`: trail and region, then condition, surface, hazards and notes.
+ * `TrailConditionsView.swift`: the trail (picked, or a dropped pin), then condition, surface,
+ * hazards, notes and photos.
  *
  * Cancel and Submit are not here — they live in the native header, driven by the same
  * `useTrailConditionForm` state, matching the Swift form's toolbar placement.
@@ -28,6 +33,8 @@ interface SubmitTrailConditionFormProps {
 export function SubmitTrailConditionForm({ form }: SubmitTrailConditionFormProps) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
+  const [pickingTrail, setPickingTrail] = useState(false);
+  const { place } = form;
 
   return (
     <KeyboardAvoidingView
@@ -42,28 +49,40 @@ export function SubmitTrailConditionForm({ form }: SubmitTrailConditionFormProps
       >
         <View className="gap-3">
           <Text variant="caption1" className="uppercase tracking-wide text-muted-foreground">
-            {t('trailConditions.trailName')}
+            {t('trailConditions.trail')}
           </Text>
-          <TextInput
-            value={form.trailName}
-            onChangeText={form.setTrailName}
-            placeholder={t('trailConditions.trailNamePlaceholder')}
-            placeholderTextColor={colors.grey}
-            testID={testIds.trailConditions.trailNameInput}
-            accessibilityLabel={t('trailConditions.trailName')}
-            returnKeyType="next"
-            className="rounded-xl bg-card px-4 py-3 text-foreground"
-          />
-          <TextInput
-            value={form.trailRegion}
-            onChangeText={form.setTrailRegion}
-            placeholder={t('trailConditions.trailRegionPlaceholder')}
-            placeholderTextColor={colors.grey}
-            testID={testIds.trailConditions.trailRegionInput}
-            accessibilityLabel={t('trailConditions.trailRegion')}
-            returnKeyType="done"
-            className="rounded-xl bg-card px-4 py-3 text-foreground"
-          />
+          <Pressable
+            onPress={() => setPickingTrail(true)}
+            disabled={form.isSubmitting}
+            testID={testIds.trailConditions.chooseTrailBtn}
+            accessibilityRole="button"
+            className="flex-row items-center gap-3 rounded-xl bg-card px-4 py-3 active:opacity-80"
+          >
+            <Icon
+              name={place?.kind === 'pin' ? 'map-marker' : 'hiking'}
+              size={20}
+              color={colors.primary}
+            />
+            <View className="flex-1">
+              <Text
+                variant="body"
+                className={place ? 'text-foreground' : 'text-primary'}
+                numberOfLines={1}
+              >
+                {place
+                  ? place.kind === 'trail'
+                    ? place.trail.name
+                    : place.label
+                  : t('trailConditions.chooseTrail')}
+              </Text>
+              {place?.kind === 'pin' ? (
+                <Text variant="caption1" className="text-muted-foreground">
+                  {t('trailConditions.pinnedLocation')}
+                </Text>
+              ) : null}
+            </View>
+            <Icon name="chevron-right" size={18} color={colors.grey} />
+          </Pressable>
         </View>
 
         <OptionSegmentedControl
@@ -109,6 +128,22 @@ export function SubmitTrailConditionForm({ form }: SubmitTrailConditionFormProps
           />
         </View>
 
+        <ReportPhotoPicker
+          photoUris={form.photoUris}
+          onAdd={form.addPhotos}
+          onRemove={form.removePhoto}
+          isLocked={form.isSubmitting}
+        />
+
+        {form.uploadProgress ? (
+          <Text variant="footnote" className="text-muted-foreground">
+            {t('trailConditions.uploadingPhoto', {
+              current: Math.min(form.uploadProgress.completed + 1, form.uploadProgress.total),
+              total: form.uploadProgress.total,
+            })}
+          </Text>
+        ) : null}
+
         {form.error ? (
           <View className="rounded-xl bg-destructive/10 p-4">
             <Text variant="footnote" className="text-destructive" wrap>
@@ -117,6 +152,15 @@ export function SubmitTrailConditionForm({ form }: SubmitTrailConditionFormProps
           </View>
         ) : null}
       </ScrollView>
+      <TrailPicker
+        visible={pickingTrail}
+        selectedTrailId={place?.kind === 'trail' ? place.trail.id : null}
+        onPick={(picked) => {
+          form.setPlace(picked);
+          setPickingTrail(false);
+        }}
+        onClose={() => setPickingTrail(false)}
+      />
     </KeyboardAvoidingView>
   );
 }
