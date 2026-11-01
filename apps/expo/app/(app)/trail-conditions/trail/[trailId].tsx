@@ -79,8 +79,8 @@ export default function TrailPageScreen() {
           <Text variant="callout" className="text-muted-foreground">
             {t('trailConditions.trailReportsLoadError')}
           </Text>
-          <Button variant="secondary" size="sm" onPress={() => reports.refetch()}>
-            <Text>{t('trailConditions.tryAgain')}</Text>
+          <Button variant="outlined" className="h-10 px-6" onPress={() => reports.refetch()}>
+            {t('trailConditions.tryAgain')}
           </Button>
         </View>
       );
@@ -190,7 +190,7 @@ export default function TrailPageScreen() {
 
         <View className="flex-row gap-3">
           <Button
-            className="flex-1"
+            className="h-10 flex-1 gap-2 pl-4 pr-6"
             onPress={() =>
               router.push({
                 pathname: '/trail-conditions/submit',
@@ -200,12 +200,14 @@ export default function TrailPageScreen() {
             testID={testIds.trailConditions.trailPageWriteReportBtn}
           >
             <Icon name="pencil-outline" size={18} color="white" />
-            <Text>{t('trailConditions.writeReport')}</Text>
+            <Text className="font-medium text-primary-foreground">
+              {t('trailConditions.writeReport')}
+            </Text>
           </Button>
           {enableTrips ? (
             <Button
-              className="flex-1"
-              variant="secondary"
+              className="h-10 flex-1 gap-2 pl-4 pr-6"
+              variant="outlined"
               onPress={() => {
                 const center = trail.data?.summary.center;
                 router.push({
@@ -222,7 +224,7 @@ export default function TrailPageScreen() {
               testID={testIds.trailConditions.trailPagePlanTripBtn}
             >
               <Icon name="map-outline" size={18} color={colors.primary} />
-              <Text>{t('trailConditions.planTrip')}</Text>
+              <Text className="font-medium text-primary">{t('trailConditions.planTrip')}</Text>
             </Button>
           ) : null}
         </View>

@@ -1,3 +1,4 @@
+import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { SearchInput } from '@packrat/ui/src/search-input';
 import { Text } from '@packrat/ui/src/text';
@@ -9,6 +10,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { useEffect, useState } from 'react';
 import { FlatList, Modal, Pressable, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useReportLocation } from '../hooks/useReportLocation';
@@ -90,15 +92,13 @@ export function TrailPicker({
               ? t('trailConditions.trailsLoadErrorWithPin')
               : t('trailConditions.trailsLoadError')}
           </Text>
-          <Pressable
+          <Button
+            variant="outlined"
+            className="mt-1 h-10 self-start px-6"
             onPress={() => search.refetch()}
-            accessibilityRole="button"
-            className="mt-1 self-start rounded-lg bg-muted px-4 py-2"
           >
-            <Text variant="body" className="text-primary">
-              {t('trailConditions.tryAgain')}
-            </Text>
-          </Pressable>
+            {t('trailConditions.tryAgain')}
+          </Button>
         </View>
       );
     }
@@ -151,7 +151,14 @@ export function TrailPicker({
   }
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={close}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      onRequestClose={close}
+      // Edge-to-edge, so the keyboard controller can see the keyboard inside the modal window.
+      statusBarTranslucent
+      navigationBarTranslucent
+    >
       <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
         {droppingPin ? (
           <PinDrop
@@ -329,7 +336,7 @@ function PinDrop({
   const [label, setLabel] = useState('');
 
   return (
-    <View className="flex-1">
+    <KeyboardAvoidingView behavior="padding" className="flex-1">
       <ModalHeader
         title={t('trailConditions.dropPin')}
         onBack={onBack}
@@ -392,6 +399,6 @@ function PinDrop({
           {t('trailConditions.pinLabelHint')}
         </Text>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

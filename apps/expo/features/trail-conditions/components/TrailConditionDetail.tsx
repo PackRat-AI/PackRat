@@ -79,7 +79,7 @@ export function TrailConditionDetail({
             </View>
           ) : null}
         </View>
-        <View className="flex-row items-start gap-2 rounded-xl bg-muted p-3">
+        <View className="flex-row items-start gap-2 rounded-xl border border-border bg-card p-3">
           <Icon name="history" size={16} color={colors.grey} />
           <Text variant="footnote" className="flex-1 text-muted-foreground" wrap>
             {t('trailConditions.writtenAgo', {
@@ -103,7 +103,7 @@ export function TrailConditionDetail({
               key={key}
               source={{ uri: buildPostImageUrl(key) }}
               style={{ width: photoWidth, height: photoWidth * 0.75 }}
-              className="rounded-xl bg-muted"
+              className="rounded-xl bg-card"
               resizeMode="cover"
               accessibilityLabel={`${t('trailConditions.photos')} ${index + 1}/${report.photos.length}`}
             />

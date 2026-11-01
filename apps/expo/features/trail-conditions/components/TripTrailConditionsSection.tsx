@@ -63,13 +63,12 @@ export function TripTrailConditionsSection({ trip }: { trip: Trip }) {
                   : t('trailConditions.tripNoReportsNearby')}
               </Text>
               <Button
-                variant="secondary"
-                size="sm"
+                variant="outlined"
                 onPress={writeReport}
                 testID={testIds.trailConditions.tripSectionWriteReportBtn}
-                className="mt-1"
+                className="mt-1 h-10 px-6"
               >
-                <Text>{t('trailConditions.writeReport')}</Text>
+                {t('trailConditions.writeReport')}
               </Button>
             </View>
           </View>
@@ -94,8 +93,8 @@ export function TripTrailConditionsSection({ trip }: { trip: Trip }) {
           <Text variant="callout" className="flex-1 text-muted-foreground">
             {t('trailConditions.tripSectionLoadError')}
           </Text>
-          <Button variant="secondary" size="sm" onPress={() => query.refetch()}>
-            <Text>{t('trailConditions.tryAgain')}</Text>
+          <Button variant="outlined" className="h-10 px-6" onPress={() => query.refetch()}>
+            {t('trailConditions.tryAgain')}
           </Button>
         </View>
       );

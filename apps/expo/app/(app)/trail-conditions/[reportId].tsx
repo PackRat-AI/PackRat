@@ -1,4 +1,5 @@
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { DropdownMenu } from '@packrat/ui/src/dropdown-menu';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
@@ -28,7 +29,6 @@ export default function TrailConditionDetailScreen() {
   const report = useCachedReport(reportId);
   const pendingIds = usePendingReportIds();
   const actions = useReportActions({ report, onHidden: () => router.back() });
-  const { open } = actions;
 
   if (!report) {
     return (
@@ -53,30 +53,34 @@ export default function TrailConditionDetailScreen() {
         options={{
           ...getAppBarOptions(),
           title: report.trailName,
-          headerRight: open
-            ? () => (
+          headerRight: () =>
+            actions.isOwn ? (
+              <Pressable
+                onPress={actions.confirmDelete}
+                disabled={actions.isBusy}
+                testID={testIds.trailConditions.deleteReportBtn(report.id)}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.delete')}
+                className="mr-2 p-2"
+              >
+                <Icon name="trash-can-outline" size={22} color={colors.destructive} />
+              </Pressable>
+            ) : (
+              <DropdownMenu items={actions.menuItems} onItemPress={actions.onMenuItemPress}>
                 <Pressable
-                  onPress={open}
                   disabled={actions.isBusy}
-                  testID={
-                    actions.isOwn
-                      ? testIds.trailConditions.deleteReportBtn(report.id)
-                      : testIds.trailConditions.reportMenuBtn
-                  }
+                  testID={testIds.trailConditions.reportMenuBtn}
                   accessibilityRole="button"
-                  accessibilityLabel={actions.isOwn ? t('common.delete') : t('common.more')}
+                  accessibilityLabel={t('common.more')}
                   className="mr-2 p-2"
                 >
-                  <Icon
-                    name={actions.isOwn ? 'trash-can-outline' : 'dots-vertical'}
-                    size={22}
-                    color={actions.isOwn ? colors.destructive : colors.foreground}
-                  />
+                  <Icon name="dots-vertical" size={22} color={colors.foreground} />
                 </Pressable>
-              )
-            : undefined,
+              </DropdownMenu>
+            ),
         }}
       />
+      {actions.dialogs}
       <TrailConditionDetail
         report={report}
         isPending={pendingIds.has(report.id)}

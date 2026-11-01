@@ -9,6 +9,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'rea
 import type { TrailConditionFormState } from '../hooks/useTrailConditionForm';
 import { capitalizeFirst } from '../lib/display';
 import { HAZARD_OPTIONS, OVERALL_CONDITIONS, TRAIL_SURFACES } from '../types';
+import { ChoiceChips } from './ChoiceChips';
 import { HazardChips } from './HazardChips';
 import { OptionSegmentedControl } from './OptionSegmentedControl';
 import { ReportPhotoPicker } from './ReportPhotoPicker';
@@ -94,7 +95,7 @@ export function SubmitTrailConditionForm({ form }: SubmitTrailConditionFormProps
           testIDForOption={testIds.trailConditions.conditionOption}
         />
 
-        <OptionSegmentedControl
+        <ChoiceChips
           label={t('trailConditions.surface')}
           options={TRAIL_SURFACES}
           value={form.surface}

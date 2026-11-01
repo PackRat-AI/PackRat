@@ -1813,7 +1813,8 @@
     "reportCount_one": "{{count}} report",
     "reportCount_other": "{{count}} reports",
     "planTrip": "Plan a Trip",
-    "tripNearbySubtitle": "Trails near {{place}}"
+    "tripNearbySubtitle": "Trails near {{place}}",
+    "flagConfirm": "Flag"
   },
   "feed": {
     "feed": "Feed",

@@ -359,6 +359,7 @@ export const testIds = Object.freeze({
     // Report detail, trail page and moderation
     reportMenuBtn: 'trail-conditions:report-menu',
     flagReportBtn: 'trail-conditions:flag-report',
+    flagReason: (reason: string) => `trail-conditions:flag-reason-${reason}`,
     blockAuthorBtn: 'trail-conditions:block-author',
     trailPageLink: 'trail-conditions:trail-page-link',
     trailPageWriteReportBtn: 'trail-conditions:trail-page-write-report',
