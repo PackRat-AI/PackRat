@@ -193,6 +193,7 @@ export const testIds = Object.freeze({
     createBtn: 'create-trip-button', // keep Maestro value
     emptyCreateBtn: 'create-trip-empty-button',
     cancelBtn: 'cancel-trip-form-button', // keep Maestro value
+    trailButton: 'trip-trail-button',
     nameInput: 'trips:name-input',
     nameInputContainer: 'trips:name-input-container',
     descriptionInput: 'trips:description-input',
@@ -345,6 +346,27 @@ export const testIds = Object.freeze({
     hazardChip: (hazard: string) => `trail-conditions:hazard-${hazard.split(' ').join('-')}`,
     formSubmitBtn: 'trail-conditions:form-submit',
     formCancelBtn: 'trail-conditions:form-cancel',
+    chooseTrailBtn: 'trail-conditions:choose-trail',
+    addPhotosBtn: 'trail-conditions:add-photos',
+    removePhotoBtn: (index: number) => `trail-conditions:remove-photo-${index}`,
+    // Trail picker and pin drop
+    trailSearchInput: 'trail-conditions:trail-search-input',
+    trailPickerRow: (trailId: string) => `trail-conditions:trail-${trailId}`,
+    dropPinBtn: 'trail-conditions:drop-pin',
+    pinMap: 'trail-conditions:pin-map',
+    pinLabelInput: 'trail-conditions:pin-label',
+    confirmPinBtn: 'trail-conditions:confirm-pin',
+    // Report detail, trail page and moderation
+    reportMenuBtn: 'trail-conditions:report-menu',
+    flagReportBtn: 'trail-conditions:flag-report',
+    flagReason: (reason: string) => `trail-conditions:flag-reason-${reason}`,
+    blockAuthorBtn: 'trail-conditions:block-author',
+    trailPageLink: 'trail-conditions:trail-page-link',
+    trailPageWriteReportBtn: 'trail-conditions:trail-page-write-report',
+    trailPagePlanTripBtn: 'trail-conditions:trail-page-plan-trip',
+    // Trip section
+    tripSection: 'trail-conditions:trip-section',
+    tripSectionWriteReportBtn: 'trail-conditions:trip-section-write-report',
   }),
 
   // ── Wildlife ──────────────────────────────────────────────────────────────

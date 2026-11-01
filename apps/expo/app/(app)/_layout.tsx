@@ -18,6 +18,7 @@ import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { getPackDetailOptions } from 'expo-app/features/packs/utils/getPackDetailOptions';
 import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackItemDetailOptions';
 import { useRevenueCatUser } from 'expo-app/features/purchases';
+import { useReportOutboxSync } from 'expo-app/features/trail-conditions/hooks/useReportOutboxSync';
 import { useTripReminderSync } from 'expo-app/features/trips/hooks/useTripReminderSync';
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
 import { useWeatherAlertRefresh } from 'expo-app/features/weather/hooks/useWeatherAlertRefresh';
@@ -43,6 +44,7 @@ export default function AppLayout() {
   useWeatherAlertRefresh({ enabled: isAuthedValue });
   useNotificationSetup({ isAuthed: isAuthedValue });
   useTripReminderSync({ isAuthed: isAuthedValue });
+  useReportOutboxSync({ isAuthed: isAuthedValue });
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const isLoadingGlobal = useAtomValue(isLoadingAtom);

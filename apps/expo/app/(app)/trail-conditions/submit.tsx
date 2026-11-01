@@ -22,11 +22,17 @@ import { Pressable, View } from 'react-native';
 export default function SubmitTrailConditionScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { tripId, trailName } = useLocalSearchParams<{ tripId?: string; trailName?: string }>();
+  const { tripId, trailId, trailName } = useLocalSearchParams<{
+    tripId?: string;
+    trailId?: string;
+    trailName?: string;
+  }>();
 
   const form = useTrailConditionForm({
     tripId,
-    initialTrailName: trailName,
+    // Opened from a trail page or a trip with a trail: the report starts on that trail.
+    initialPlace:
+      trailId && trailName ? { kind: 'trail', trail: { id: trailId, name: trailName } } : null,
     onSubmitted: () => router.back(),
   });
 
