@@ -7,7 +7,7 @@ import { isNumber, isString } from '@packrat/guards';
  */
 export type NotificationRoute =
   | { pathname: '/weather/[id]'; params: { id: string } }
-  | { pathname: '/trip/[id]'; params: { id: string } }
+  | { pathname: '/trip/[id]'; params: { id: string; reportId?: string } }
   | { pathname: '/feed/[id]'; params: { id: string } };
 
 function idFrom(value: unknown): string | null {
@@ -23,7 +23,11 @@ export function notificationRoute(
   const postId = idFrom(data.postId);
   if (postId) return { pathname: '/feed/[id]', params: { id: postId } };
   const tripId = idFrom(data.tripId);
-  if (tripId) return { pathname: '/trip/[id]', params: { id: tripId } };
+  if (tripId) {
+    // A trail-report push also names the report, opened over its trip.
+    const reportId = idFrom(data.reportId);
+    return { pathname: '/trip/[id]', params: reportId ? { id: tripId, reportId } : { id: tripId } };
+  }
   const weatherLocationId = idFrom(data.weatherLocationId);
   if (weatherLocationId) return { pathname: '/weather/[id]', params: { id: weatherLocationId } };
   return null;

@@ -1239,7 +1239,9 @@
     "temperatureSubtitle": "For weather and forecasts",
     "windDistanceSubtitle": "For routes and weather data",
     "notifications": "Notifications",
-    "tripRemindersSubtitle": "Trip Reminders help you pack and charge in the week before a trip. Turn them off for a single trip from that trip."
+    "tripRemindersSubtitle": "Trip Reminders help you pack and charge in the week before a trip. Turn them off for a single trip from that trip.",
+    "trailReports": "Trail Reports",
+    "trailReportsSubtitle": "Trail Reports tell you when someone reports on a trail for one of your upcoming trips."
   },
   "weather": {
     "weather": "Weather",
@@ -1648,6 +1650,7 @@
   },
   "trailConditions": {
     "title": "Trail Conditions",
+    "newTrailReport": "New trail report",
     "subtitle": "Current trail conditions from recent hiker reports",
     "report": "Report",
     "reportCondition": "Report Condition",
