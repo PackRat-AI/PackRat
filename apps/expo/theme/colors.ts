@@ -18,6 +18,8 @@ const IOS_SYSTEM_COLORS = {
     card: 'rgb(255, 255, 255)',
     destructive: 'rgb(255, 56, 43)',
     primary: 'rgb(0, 123, 254)',
+    primaryForeground: 'rgb(255, 255, 255)',
+    secondaryForeground: 'rgb(255, 255, 255)',
   },
   dark: {
     grey6: 'rgb(21, 21, 24)',
@@ -34,6 +36,8 @@ const IOS_SYSTEM_COLORS = {
     card: 'rgb(28, 28, 30)',
     destructive: 'rgb(254, 67, 54)',
     primary: 'rgb(3, 133, 255)',
+    primaryForeground: 'rgb(255, 255, 255)',
+    secondaryForeground: 'rgb(255, 255, 255)',
   },
 } as const;
 
@@ -56,6 +60,8 @@ const ANDROID_COLORS = {
     card: 'rgb(242, 243, 254)', // surfaceContainerLow
     destructive: 'rgb(186, 26, 26)', // error
     primary: 'rgb(0, 88, 186)', // primary
+    primaryForeground: 'rgb(255, 255, 255)', // onPrimary
+    secondaryForeground: 'rgb(57, 82, 130)', // onSecondaryContainer
   },
   dark: {
     grey6: 'rgb(24, 28, 35)', // surfaceContainerLow
@@ -72,6 +78,8 @@ const ANDROID_COLORS = {
     card: 'rgb(24, 28, 35)', // surfaceContainerLow
     destructive: 'rgb(255, 180, 171)', // error
     primary: 'rgb(173, 199, 255)', // primary
+    primaryForeground: 'rgb(0, 46, 104)', // onPrimary
+    secondaryForeground: 'rgb(159, 184, 239)', // onSecondaryContainer
   },
 } as const;
 
