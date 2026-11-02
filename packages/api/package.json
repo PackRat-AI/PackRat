@@ -81,7 +81,7 @@
     "elysia": "catalog:",
     "google-auth-library": "catalog:",
     "gray-matter": "catalog:",
-    "jose": "^6.2.12",
+    "jose": "^6.2.14",
     "linkedom": "^0.18.11",
     "pg": "catalog:",
     "resend": "^6.10.0",
