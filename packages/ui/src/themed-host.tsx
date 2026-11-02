@@ -116,8 +116,15 @@ const MATERIAL_COLORS: Readonly<Record<'light' | 'dark', MaterialColors>> = Obje
  */
 function ThemedHost(props: HostProps) {
   const { colorScheme } = useColorScheme();
+  // Keyed by scheme: the native Host keeps the palette it mounted with, so switching the app to
+  // dark left Compose content on the light roles until it remounted.
   return (
-    <Host colorScheme={colorScheme} colorOverrides={MATERIAL_COLORS[colorScheme]} {...props} />
+    <Host
+      key={colorScheme}
+      colorScheme={colorScheme}
+      colorOverrides={MATERIAL_COLORS[colorScheme]}
+      {...props}
+    />
   );
 }
 
