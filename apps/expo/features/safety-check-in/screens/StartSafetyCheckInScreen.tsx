@@ -17,7 +17,7 @@ import { useTripDetailsFromStore } from 'expo-app/features/trips/hooks/useTripDe
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -160,13 +160,20 @@ export function StartSafetyCheckInScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <FullScreenDialogHeader
-        title={t('safetyCheckIn.start.title')}
-        onClose={() => router.back()}
-        onSave={confirmSend}
-        canSave={chosen.length > 0}
-        saveLabel={t('safetyCheckIn.start.send')}
-        saveTestID={testIds.safetyCheckIn.sendBtn}
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          header: () => (
+            <FullScreenDialogHeader
+              title={t('safetyCheckIn.start.title')}
+              onClose={() => router.back()}
+              onSave={confirmSend}
+              canSave={chosen.length > 0}
+              saveLabel={t('safetyCheckIn.start.send')}
+              saveTestID={testIds.safetyCheckIn.sendBtn}
+            />
+          ),
+        }}
       />
       <KeyboardAvoidingView behavior="height" className="flex-1">
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="pb-10">
@@ -281,14 +288,14 @@ export function StartSafetyCheckInScreen() {
             ))}
             <Button
               variant="text"
-              className="ml-2 self-start"
+              className="ml-2 gap-2 self-start"
               onPress={() =>
                 setGear((current) => [...current, { name: '', note: null, key: nextKey.current++ }])
               }
               testID={testIds.safetyCheckIn.addGearBtn}
             >
               <Icon name="plus" size={18} color={colors.primary} />
-              <Text>{t('safetyCheckIn.start.addItem')}</Text>
+              <Text className="font-medium text-primary">{t('safetyCheckIn.start.addItem')}</Text>
             </Button>
             <Text variant="footnote" className="px-4 text-muted-foreground" wrap>
               {t('safetyCheckIn.start.lookLikeHint')}

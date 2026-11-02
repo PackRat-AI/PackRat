@@ -35,33 +35,37 @@ export function DateTimeField({
   };
 
   return (
-    <View className="min-h-14 flex-row items-center gap-2 px-4" testID={testID}>
+    <View className="min-h-14 flex-row items-center gap-4 px-4 py-1" testID={testID}>
       <Icon name="clock-outline" size={24} color={colors.grey} />
-      <Text variant="body" className="ml-2 flex-1">
-        {label}
-      </Text>
-      <Pressable
-        onPress={() => setOpen('date')}
-        accessibilityRole="button"
-        android_ripple={{ color: colors.grey5 }}
-        className="rounded-lg px-2 py-2"
-        testID={testID ? `${testID}-date` : undefined}
-      >
-        <Text variant="body" className="text-primary">
-          {format(value, 'EEE d MMM')}
+      <View className="flex-1">
+        <Text variant="body" numberOfLines={1}>
+          {label}
         </Text>
-      </Pressable>
-      <Pressable
-        onPress={() => setOpen('time')}
-        accessibilityRole="button"
-        android_ripple={{ color: colors.grey5 }}
-        className="rounded-lg px-2 py-2"
-        testID={testID ? `${testID}-time` : undefined}
-      >
-        <Text variant="body" className="text-primary">
-          {format(value, 'p')}
-        </Text>
-      </Pressable>
+        <View className="-ml-2 flex-row">
+          <Pressable
+            onPress={() => setOpen('date')}
+            accessibilityRole="button"
+            android_ripple={{ color: colors.grey5 }}
+            className="rounded-lg px-2 py-1.5"
+            testID={testID ? `${testID}-date` : undefined}
+          >
+            <Text variant="body" className="text-primary">
+              {format(value, 'EEE d MMM')}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setOpen('time')}
+            accessibilityRole="button"
+            android_ripple={{ color: colors.grey5 }}
+            className="rounded-lg px-2 py-1.5"
+            testID={testID ? `${testID}-time` : undefined}
+          >
+            <Text variant="body" className="text-primary">
+              {format(value, 'p')}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
       {open ? (
         <DateTimePicker
           value={value}

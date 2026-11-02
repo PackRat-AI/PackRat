@@ -4,7 +4,7 @@ import { Text } from '@packrat/ui/src/text';
 import { FullScreenDialogHeader } from 'expo-app/features/trip-stats/components/DialogParts';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,13 +33,20 @@ export function RunningLateScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <FullScreenDialogHeader
-        title={t('safetyCheckIn.late.title')}
-        onClose={() => router.back()}
-        onSave={save}
-        canSave={Boolean(checkIn) && newReturn > new Date()}
-        saveLabel={t('safetyCheckIn.late.update')}
-        saveTestID={testIds.safetyCheckIn.runningLateSaveBtn}
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          header: () => (
+            <FullScreenDialogHeader
+              title={t('safetyCheckIn.late.title')}
+              onClose={() => router.back()}
+              onSave={save}
+              canSave={Boolean(checkIn) && newReturn > new Date()}
+              saveLabel={t('safetyCheckIn.late.update')}
+              saveTestID={testIds.safetyCheckIn.runningLateSaveBtn}
+            />
+          ),
+        }}
       />
       <SafeAreaView edges={['bottom']} className="gap-2 pt-2">
         <DateTimeField
@@ -58,7 +65,9 @@ export function RunningLateScreen() {
               onPress={() => setNewReturn(extendedReturn({ current, now: new Date(), hours }))}
               testID={testIds.safetyCheckIn.runningLateQuick(hours)}
             >
-              <Text>{t('safetyCheckIn.late.plusHours', { count: hours })}</Text>
+              <Text className="font-medium text-primary">
+                {t('safetyCheckIn.late.plusHours', { count: hours })}
+              </Text>
             </Button>
           ))}
         </View>

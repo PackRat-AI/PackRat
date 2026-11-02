@@ -11,7 +11,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Contact, requestPermissionsAsync } from 'expo-contacts';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -81,12 +81,21 @@ export function EmergencyContactFormScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <FullScreenDialogHeader
-        title={existing ? t('safetyCheckIn.form.editTitle') : t('safetyCheckIn.form.newTitle')}
-        onClose={() => router.back()}
-        onSave={save}
-        canSave={canSave}
-        saveTestID={testIds.safetyCheckIn.contactSaveBtn}
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          header: () => (
+            <FullScreenDialogHeader
+              title={
+                existing ? t('safetyCheckIn.form.editTitle') : t('safetyCheckIn.form.newTitle')
+              }
+              onClose={() => router.back()}
+              onSave={save}
+              canSave={canSave}
+              saveTestID={testIds.safetyCheckIn.contactSaveBtn}
+            />
+          ),
+        }}
       />
       <KeyboardAvoidingView behavior="height" className="flex-1">
         <ScrollView keyboardShouldPersistTaps="handled">

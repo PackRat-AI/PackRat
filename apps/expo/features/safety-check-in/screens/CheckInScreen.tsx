@@ -9,7 +9,7 @@ import {
 } from 'expo-app/features/trip-stats/components/DialogParts';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -53,9 +53,16 @@ export function CheckInScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <FullScreenDialogHeader
-        title={t('safetyCheckIn.checkIn.title')}
-        onClose={() => router.back()}
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          header: () => (
+            <FullScreenDialogHeader
+              title={t('safetyCheckIn.checkIn.title')}
+              onClose={() => router.back()}
+            />
+          ),
+        }}
       />
       <KeyboardAvoidingView behavior="height" className="flex-1">
         <SafeAreaView edges={['bottom']} className="flex-1 justify-between">
@@ -81,6 +88,7 @@ export function CheckInScreen() {
             <Button
               variant="filled"
               size="lg"
+              className="gap-2"
               disabled={locating}
               onPress={checkIn}
               testID={testIds.safetyCheckIn.checkInSendBtn}
@@ -88,12 +96,16 @@ export function CheckInScreen() {
               {locating ? (
                 <>
                   <ActivityIndicator size="small" color="white" />
-                  <Text>{t('safetyCheckIn.checkIn.locating')}</Text>
+                  <Text className="font-medium text-primary-foreground">
+                    {t('safetyCheckIn.checkIn.locating')}
+                  </Text>
                 </>
               ) : (
                 <>
                   <Icon name="map-marker-check" size={18} color="white" />
-                  <Text>{t('safetyCheckIn.checkIn.send')}</Text>
+                  <Text className="font-medium text-primary-foreground">
+                    {t('safetyCheckIn.checkIn.send')}
+                  </Text>
                 </>
               )}
             </Button>

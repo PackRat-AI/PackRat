@@ -96,12 +96,14 @@ export function EmergencyContactsScreen() {
             </Text>
             <Button
               variant="filled"
-              className="mt-2"
+              className="mt-2 gap-2"
               onPress={() => edit()}
               testID={testIds.safetyCheckIn.contactsAddEmptyBtn}
             >
               <Icon name="account-plus-outline" size={18} color="white" />
-              <Text>{t('safetyCheckIn.contacts.add')}</Text>
+              <Text className="font-medium text-primary-foreground">
+                {t('safetyCheckIn.contacts.add')}
+              </Text>
             </Button>
           </View>
         ) : (

@@ -97,8 +97,9 @@ export function TripSafetySection({ trip }: { trip: Trip }) {
             onPress={openSetup}
             testID={testIds.safetyCheckIn.notifyContactsBtn}
           >
-            <Icon name="shield-outline" size={18} color="white" />
-            <Text>{t('safetyCheckIn.start.notify')}</Text>
+            <Text className="font-medium text-primary-foreground" numberOfLines={1}>
+              {t('safetyCheckIn.start.notify')}
+            </Text>
           </Button>
           <Button
             variant="outlined"
@@ -106,7 +107,9 @@ export function TripSafetySection({ trip }: { trip: Trip }) {
             onPress={() => setTripLifecycle({ tripId: trip.id, status: 'complete' })}
             testID={testIds.safetyCheckIn.finishTripBtn}
           >
-            <Text>{t('safetyCheckIn.trail.finish')}</Text>
+            <Text className="font-medium text-primary" numberOfLines={1}>
+              {t('safetyCheckIn.trail.finish')}
+            </Text>
           </Button>
         </View>
       </Card>
@@ -123,11 +126,14 @@ export function TripSafetySection({ trip }: { trip: Trip }) {
         <Button
           variant="filled"
           size="lg"
+          className="gap-2"
           onPress={startTrip}
           testID={testIds.safetyCheckIn.startTripBtn}
         >
           <Icon name="play" size={18} color="white" />
-          <Text>{t('safetyCheckIn.start.startTrip')}</Text>
+          <Text className="font-medium text-primary-foreground">
+            {t('safetyCheckIn.start.startTrip')}
+          </Text>
         </Button>
       </Card>
     );
@@ -268,7 +274,7 @@ function SafetyCheckInCard({
               onRetry();
             }}
           >
-            <Text>{t('safetyCheckIn.card.setUpAgain')}</Text>
+            <Text className="font-medium text-primary">{t('safetyCheckIn.card.setUpAgain')}</Text>
           </Button>
         </View>
       ) : overdue ? (
@@ -307,8 +313,9 @@ function SafetyCheckInCard({
           onPress={() => router.push(`/trip/${trip.id}/check-in`)}
           testID={testIds.safetyCheckIn.checkInBtn}
         >
-          <Icon name="map-marker-check-outline" size={18} color={colors.primary} />
-          <Text>{t('safetyCheckIn.card.checkIn')}</Text>
+          <Text className="font-medium text-primary" numberOfLines={1}>
+            {t('safetyCheckIn.card.checkIn')}
+          </Text>
         </Button>
         <Button
           variant="outlined"
@@ -316,20 +323,21 @@ function SafetyCheckInCard({
           onPress={() => router.push(`/trip/${trip.id}/running-late`)}
           testID={testIds.safetyCheckIn.runningLateBtn}
         >
-          <Icon name="clock-plus-outline" size={18} color={colors.primary} />
-          <Text>{t('safetyCheckIn.card.runningLate')}</Text>
+          <Text className="font-medium text-primary" numberOfLines={1}>
+            {t('safetyCheckIn.card.runningLate')}
+          </Text>
         </Button>
       </View>
 
       <Button
         variant="filled"
         size="lg"
-        className="bg-destructive py-4"
+        className="gap-2 bg-destructive py-4"
         onPress={confirmSafe}
         testID={testIds.safetyCheckIn.imSafeBtn}
       >
         <Icon name="shield-check" size={22} color="white" />
-        <Text className="text-lg font-bold">{t('safetyCheckIn.card.imSafe')}</Text>
+        <Text className="text-lg font-bold text-white">{t('safetyCheckIn.card.imSafe')}</Text>
       </Button>
 
       {footer.length > 0 ? (

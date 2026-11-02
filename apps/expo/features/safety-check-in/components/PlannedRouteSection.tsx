@@ -112,12 +112,12 @@ export function PlannedRouteSection({ trip }: { trip: Trip }) {
       ) : (
         <Button
           variant="outlined"
-          className="self-start"
+          className="gap-2 self-start"
           onPress={importRoute}
           testID={testIds.safetyCheckIn.importRouteBtn}
         >
           <Icon name="file-import-outline" size={18} color={colors.primary} />
-          <Text>{t('safetyCheckIn.route.import')}</Text>
+          <Text className="font-medium text-primary">{t('safetyCheckIn.route.import')}</Text>
         </Button>
       )}
       <Alert title="" buttons={[]} ref={alertRef} />
