@@ -39,6 +39,7 @@ const SCREEN_OPTIONS = {
 export default function OneTimePasswordScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const { colors } = useColorScheme();
   const [countdown, setCountdown] = React.useState(COUNTDOWN_SECONDS_TO_RESEND_CODE);
   const [codeValues, setCodeValues] = React.useState(Array(NUM_OF_CODE_CHARACTERS).fill(''));
   const [errorIndexes, setErrorIndexes] = React.useState<number[]>([]);
@@ -225,7 +226,7 @@ export default function OneTimePasswordScreen() {
         <Button size="lg" onPress={onSubmit} disabled={isLoading}>
           {isLoading ? (
             <View className="py-1">
-              <ActivityIndicator color="white" />
+              <ActivityIndicator color={colors.primaryForeground} />
             </View>
           ) : (
             <Text>{t('auth.continue')}</Text>

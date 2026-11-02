@@ -630,7 +630,7 @@ export function GapAnalysisModal({
               disabled={selectedCount === 0 || isAdding}
               className="w-full"
             >
-              {isAdding && <ActivityIndicator size="small" color="#fff" />}
+              {isAdding && <ActivityIndicator size="small" color={colors.primaryForeground} />}
               <Text>
                 {isAdding
                   ? 'Adding...'

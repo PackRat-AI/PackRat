@@ -322,7 +322,7 @@ export function AddCatalogItemDetailsScreen() {
             disabled={isAdding}
           >
             {isAdding ? (
-              <ActivityIndicator color={colors.background} />
+              <ActivityIndicator color={colors.primaryForeground} />
             ) : (
               <Text>{t('catalog.addToPack')}</Text>
             )}

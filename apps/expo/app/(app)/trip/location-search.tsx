@@ -132,9 +132,7 @@ export default function LocationSearchScreen() {
         {isLoading && <ActivityIndicator />}
         {selectedLocation && (
           <Button onPress={handleConfirm}>
-            <Text className="text-primary-foreground font-semibold">
-              {t('location.confirmLocation')}
-            </Text>
+            <Text>{t('location.confirmLocation')}</Text>
           </Button>
         )}
       </View>

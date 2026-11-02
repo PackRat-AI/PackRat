@@ -322,9 +322,8 @@ function StartChatButton() {
   return (
     <View style={{ bottom: insets.bottom + 12 }} className="absolute bottom-24 right-4 z-50">
       <View className="rounded-xl bg-background shadow-xl">
-        <Button size="lg">
-          <Icon color="white" size={24} name="message-outline" />
-          <Text className="py-1 text-[15px]">Start chat</Text>
+        <Button icon="message-outline">
+          <Text>Start chat</Text>
         </Button>
       </View>
     </View>

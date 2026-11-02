@@ -48,8 +48,6 @@ import { type ReviewPage, reviewPages, type YearInReview } from '../utils/yearIn
 
 const PREVIEW_HEIGHT = 420;
 /** Long enough for slow tiles on mobile data; past it the card shares without the map. */
-// The filled button's label colour (`--primary-foreground`), white in both themes.
-const ON_PRIMARY = '#FFFFFF';
 
 /**
  * A card on its way out: pick a shape, see exactly what will be shared, send it through the
@@ -232,10 +230,9 @@ function ShareCardEditor({ content }: { content: ShareContent }) {
           disabled={!ready || !cardSize || sharing}
           testID={testIds.tripStats.shareSendBtn}
           // M3 buttons with an icon: 18dp icon in the label's colour, 8dp before the label.
-          className="gap-2"
+          icon="share-variant"
         >
-          <Icon name="share-variant" size={18} color={ON_PRIMARY} />
-          <Text className="font-medium text-primary-foreground">{t('tripStats.share.send')}</Text>
+          <Text>{t('tripStats.share.send')}</Text>
         </Button>
       </View>
     </SafeAreaView>

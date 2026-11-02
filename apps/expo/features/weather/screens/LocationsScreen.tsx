@@ -207,11 +207,8 @@ function LocationsScreen() {
               <Text className="text-center text-muted-foreground">
                 {t('weather.noSavedLocationsBody')}
               </Text>
-              <Button className="mt-2" onPress={openSearch}>
-                <Icon name="plus" size={18} color="white" />
-                <Text className="font-medium text-primary-foreground">
-                  {t('weather.addLocation')}
-                </Text>
+              <Button className="mt-2" icon="plus" onPress={openSearch}>
+                <Text>{t('weather.addLocation')}</Text>
               </Button>
             </View>
           }

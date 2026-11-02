@@ -8,6 +8,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { LocationSearchSheet } from 'expo-app/features/packs/components/LocationSearchSheet';
 import { LocationSourceSheet } from 'expo-app/features/packs/components/LocationSourceSheet';
 import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import * as Location from 'expo-location';
 import { Stack, useRouter } from 'expo-router';
@@ -17,6 +18,7 @@ import { ActivityIndicator, Alert, Linking, Platform, ScrollView, View } from 'r
 export default function SeasonSuggestionsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { colors } = useColorScheme();
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const locationSourceSheetRef = useRef<BottomSheetModal>(null);
   const locationSearchSheetRef = useRef<BottomSheetModal>(null);
@@ -127,8 +129,8 @@ export default function SeasonSuggestionsScreen() {
           <Button onPress={handleGeneratePress} disabled={isGettingLocation} className="w-full">
             {isGettingLocation ? (
               <View className="flex-row items-center">
-                <ActivityIndicator size="small" color="white" />
-                <Text className="ml-2 text-white">{t('weather.gettingLocation')}</Text>
+                <ActivityIndicator size="small" color={colors.primaryForeground} />
+                <Text className="ml-2">{t('weather.gettingLocation')}</Text>
               </View>
             ) : (
               <View className="flex-row items-center">
@@ -137,9 +139,8 @@ export default function SeasonSuggestionsScreen() {
                   name="sparkles"
                   materialIcon={{ type: 'MaterialIcons', name: 'auto-awesome' }}
                   size={18}
-                  color="white"
                 />
-                <Text className="ml-2 text-white">{t('seasons.generateSuggestions')}</Text>
+                <Text className="ml-2">{t('seasons.generateSuggestions')}</Text>
               </View>
             )}
           </Button>

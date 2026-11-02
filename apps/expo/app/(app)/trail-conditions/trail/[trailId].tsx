@@ -190,7 +190,8 @@ export default function TrailPageScreen() {
 
         <View className="flex-row gap-3">
           <Button
-            className="h-10 flex-1 gap-2 pl-4 pr-6"
+            className="flex-1"
+            icon="pencil-outline"
             onPress={() =>
               router.push({
                 pathname: '/trail-conditions/submit',
@@ -199,10 +200,7 @@ export default function TrailPageScreen() {
             }
             testID={testIds.trailConditions.trailPageWriteReportBtn}
           >
-            <Icon name="pencil-outline" size={18} color="white" />
-            <Text className="font-medium text-primary-foreground">
-              {t('trailConditions.writeReport')}
-            </Text>
+            <Text>{t('trailConditions.writeReport')}</Text>
           </Button>
           {enableTrips ? (
             <Button
