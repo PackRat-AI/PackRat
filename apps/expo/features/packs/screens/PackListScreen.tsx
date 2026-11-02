@@ -280,7 +280,7 @@ export function PackListScreen() {
             ) : (
               <View className="flex-1 items-center justify-center p-8">
                 <View className="mb-4 rounded-full bg-muted p-4">
-                  <Icon name="cog-outline" size={32} color="text-muted-foreground" />
+                  <Icon name="backpack" size={32} color="text-muted-foreground" />
                 </View>
                 <Text className="mb-1 text-lg font-medium text-foreground">
                   {t('packs.noPacksFound')}
