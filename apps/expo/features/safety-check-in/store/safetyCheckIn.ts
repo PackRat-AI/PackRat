@@ -1,0 +1,86 @@
+import { observable, syncState } from '@legendapp/state';
+import { syncObservable } from '@legendapp/state/sync';
+import * as Sentry from '@sentry/react-native';
+import { persistPlugin } from 'expo-app/lib/persist-plugin';
+import { nanoid } from 'nanoid';
+import { performOperation, SafetyApiError } from '../lib/safetyApi';
+import type { SafetyLocationFix } from '../types';
+import {
+  confirmStart,
+  dropRefused,
+  EMPTY_SAFETY_STATE,
+  isRetryable,
+  recordTrackPoints,
+  type SafetyState,
+} from '../utils/safetyQueue';
+
+/**
+ * Emergency contacts, active check-ins and the queue of writes waiting for signal, persisted on
+ * the device so a check-in survives the app being killed on the trail.
+ */
+export const safetyStore = observable<SafetyState>({ ...EMPTY_SAFETY_STATE });
+
+syncObservable(safetyStore, {
+  persist: { plugin: persistPlugin, name: 'safetyCheckIn' },
+});
+
+export const safetySyncState = syncState(safetyStore);
+
+/** Applies a pure transition from `utils/safetyQueue`. */
+export function updateSafety(transition: (state: SafetyState) => SafetyState): void {
+  safetyStore.set(transition(safetyStore.peek()));
+}
+
+/** Queues background positions for every check-in that allowed tracking, then tries to send. */
+export function addTrackPoints(fixes: readonly SafetyLocationFix[]): void {
+  updateSafety((state) => recordTrackPoints({ state, fixes, makeId: nanoid }));
+  void flushSafetyQueue();
+}
+
+let flushing: Promise<void> | null = null;
+
+/**
+ * Replays queued writes in order. Stops at the first that fails for lack of signal so later
+ * writes can't overtake it; a write the server refuses outright is dropped so it can't block the
+ * queue forever. Concurrent calls share one run.
+ */
+export function flushSafetyQueue(): Promise<void> {
+  flushing ??= drain().finally(() => {
+    flushing = null;
+  });
+  return flushing;
+}
+
+async function drain(): Promise<void> {
+  for (;;) {
+    const operation = safetyStore.queue.peek()[0];
+    if (!operation) return;
+    try {
+      const remote = await performOperation(operation);
+      updateSafety((state) => {
+        // Ending a check-in can prune queued track points mid-send, so remove the operation
+        // just sent by value rather than assuming it is still at the head.
+        const sent = JSON.stringify(operation);
+        const index = state.queue.findIndex((op) => JSON.stringify(op) === sent);
+        const next =
+          index === -1 ? state : { ...state, queue: state.queue.filter((_, i) => i !== index) };
+        return operation.kind === 'start' && remote
+          ? confirmStart({ state: next, tripId: operation.tripId, remote })
+          : next;
+      });
+    } catch (error) {
+      const httpStatus = error instanceof SafetyApiError ? error.httpStatus : null;
+      if (isRetryable(httpStatus)) return;
+      Sentry.captureException(error, {
+        tags: { feature: 'safetyCheckIn', action: `flush.${operation.kind}` },
+        extra: { checkInId: operation.checkInId, httpStatus },
+      });
+      updateSafety((state) =>
+        dropRefused({
+          state,
+          errorMessage: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    }
+  }
+}

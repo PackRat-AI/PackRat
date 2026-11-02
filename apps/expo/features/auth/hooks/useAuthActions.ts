@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/react-native';
 import { AuthClientError, toAuthError } from 'expo-app/features/auth/lib/authErrors';
 import { userStore } from 'expo-app/features/auth/store';
 import type { User } from 'expo-app/features/profile/types';
+import { resetSafetyCheckIn } from 'expo-app/features/safety-check-in';
 import * as AppleAuthentication from 'expo-app/lib/appleAuthentication';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { authClient } from 'expo-app/lib/auth-client';
@@ -285,6 +286,7 @@ export function useAuthActions() {
       console.error('Sign out error:', error);
     } finally {
       userStore.set(null);
+      await resetSafetyCheckIn();
       await clearLocalData();
       setNeedsReauth(false);
       // isLoadingAtom intentionally left true — the caller (profile/handleSignOut)
@@ -396,6 +398,7 @@ export function useAuthActions() {
       if (error) throw toAuthError({ source: error, fallback: 'Delete account failed' });
       Sentry.setUser(null);
       userStore.set(null);
+      await resetSafetyCheckIn();
       await clearLocalData();
       await Updates.reloadAsync();
     } catch (error) {

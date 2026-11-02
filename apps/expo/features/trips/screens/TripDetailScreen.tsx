@@ -5,6 +5,7 @@ import { Card } from '@packrat/ui/src/card';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
+import { PlannedRouteSection, TripSafetySection } from 'expo-app/features/safety-check-in';
 import { TripLogSection } from 'expo-app/features/trip-stats/components/TripLogSection';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -33,6 +34,7 @@ export function TripDetailScreen() {
 
   const enableTrailConditions = useFeatureFlag('enableTrailConditions');
   const enableTripReminders = useFeatureFlag('enableTripReminders');
+  const enableSafetyCheckIn = useFeatureFlag('enableSafetyCheckIn');
 
   // safe-cast: trip may be undefined before the store is hydrated; the guard at line ~38 handles
   // the undefined case and returns early, ensuring trip is non-null at render time below.
@@ -91,6 +93,8 @@ export function TripDetailScreen() {
         <View className="p-4">
           {/* Trip name */}
           <Text className="mb-3 text-3xl font-bold text-foreground">{trip.name}</Text>
+
+          {enableSafetyCheckIn && <TripSafetySection trip={trip} />}
 
           {enableTripReminders && isDepartureNear({ trip, now: new Date() }) && (
             <TripReadinessCard trip={trip} />
@@ -237,6 +241,8 @@ export function TripDetailScreen() {
               </Card>
             </View>
           )}
+
+          {enableSafetyCheckIn && <PlannedRouteSection trip={trip} />}
 
           {enableTripReminders && <TripChecklistSection trip={trip} />}
 
