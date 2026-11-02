@@ -39,6 +39,25 @@ export function addTrackPoints(fixes: readonly SafetyLocationFix[]): void {
 
 let flushing: Promise<void> | null = null;
 
+/** How long one queued write may take before the run gives up and waits for the next retry. */
+const SEND_TIMEOUT_MS = 30_000;
+
+/**
+ * A request on a dropping connection can stay pending forever, and every later flush shares the
+ * run it is stuck in, so the queue would never drain. Timing out counts as no signal: the write
+ * stays queued and is sent again on the next retry.
+ */
+function withTimeout<T>(promise: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new SafetyApiError('Request timed out', null)),
+      SEND_TIMEOUT_MS,
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 /**
  * Replays queued writes in order. Stops at the first that fails for lack of signal so later
  * writes can't overtake it; a write the server refuses outright is dropped so it can't block the
@@ -56,7 +75,7 @@ async function drain(): Promise<void> {
     const operation = safetyStore.queue.peek()[0];
     if (!operation) return;
     try {
-      const remote = await performOperation(operation);
+      const remote = await withTimeout(performOperation(operation));
       updateSafety((state) => {
         // Ending a check-in can prune queued track points mid-send, so remove the operation
         // just sent by value rather than assuming it is still at the head.
