@@ -20,7 +20,7 @@ function SegmentedControl({
   tintColor,
   testID,
 }: SegmentedControlProps) {
-  const { colors, colorScheme } = useColorScheme();
+  const { colors } = useColorScheme();
   // This is one of the two components still backed by @expo/ui, so it paints from the *platform*
   // palette rather than the app's. Left untinted on Android it picks up Material You's dynamic
   // colour, which on a device themed brown rendered a brown selected segment in an app whose
@@ -32,9 +32,6 @@ function SegmentedControl({
       selectedIndex={selectedIndex}
       enabled={enabled}
       tintColor={tintColor ?? colors.primary}
-      // Follow the app's light/dark, not the device's; otherwise unselected labels keep the
-      // light theme's near-black on a dark screen.
-      appearance={colorScheme}
       testID={testID}
       onChange={(event) => onIndexChange?.(event.nativeEvent.selectedSegmentIndex)}
       onValueChange={onValueChange}
