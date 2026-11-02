@@ -1,7 +1,6 @@
 import type { ActionSheetOptions } from '@expo/react-native-action-sheet';
 import {
   Column as JCColumn,
-  Host as JCHost,
   ListItem as JCListItem,
   ModalBottomSheet as JCModalBottomSheet,
   Text as JCText,
@@ -9,6 +8,7 @@ import {
 import { clickable, padding } from '@expo/ui/jetpack-compose/modifiers';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as React from 'react';
+import { ThemedHost as JCHost } from './themed-host';
 
 type Callback = (index?: number) => void;
 type Request = { options: ActionSheetOptions; callback: Callback };

@@ -1,9 +1,10 @@
-import { FilterChip, FlowRow, Host, Text as JCText } from '@expo/ui/jetpack-compose';
+import { FilterChip, FlowRow, Text as JCText } from '@expo/ui/jetpack-compose';
 import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
 import { assertDefined } from '@packrat/guards';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { TextField } from '@packrat/ui/src/text-field';
+import { ThemedHost as Host } from '@packrat/ui/src/themed-host';
 import { Toggle } from '@packrat/ui/src/toggle';
 import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 import { useQueryClient } from '@tanstack/react-query';

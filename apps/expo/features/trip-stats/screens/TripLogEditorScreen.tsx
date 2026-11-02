@@ -1,4 +1,4 @@
-import { FilterChip, FlowRow, Host, Text as JCText } from '@expo/ui/jetpack-compose';
+import { FilterChip, FlowRow, Text as JCText } from '@expo/ui/jetpack-compose';
 import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
 import type {
   TripActivity,
@@ -10,6 +10,7 @@ import type {
 import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
+import { ThemedHost as Host } from '@packrat/ui/src/themed-host';
 import * as Sentry from '@sentry/react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { Icon } from 'expo-app/components/Icon';

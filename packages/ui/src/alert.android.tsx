@@ -1,6 +1,5 @@
 import {
   AlertDialog as JCAlertDialog,
-  Host as JCHost,
   Row as JCRow,
   Text as JCText,
   TextButton as JCTextButton,
@@ -9,6 +8,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as React from 'react';
 import type { AlertButtonDef, AlertMethods, AlertProps } from './alert.rn';
 import { Alert as RNAlertFallback } from './alert.rn';
+import { ThemedHost as JCHost } from './themed-host';
 
 /**
  * Material 3 `AlertDialog` for Android, replacing the `@rn-primitives/alert-dialog` composition.
