@@ -1,4 +1,3 @@
-import DateTimePicker from '@expo/ui/community/datetime-picker';
 import { assertDefined, isString } from '@packrat/guards';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { TextField } from '@packrat/ui/src/text-field';
@@ -9,6 +8,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { TrailPicker } from 'expo-app/features/trail-conditions/components/TrailPicker';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
+import { DateTimePicker } from 'expo-app/lib/DateTimePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Picker } from 'expo-app/lib/Picker';
