@@ -1829,7 +1829,7 @@
   "safetyCheckIn": {
     "settings": {
       "section": "Safety",
-      "subtitle": "Told when you start a trip, and alerted if you are late back"
+      "subtitle": "Choose who we tell when you head out, and who gets an alert if you're late back."
     },
     "contacts": {
       "title": "Emergency contacts",
@@ -1839,16 +1839,16 @@
       "many_other": "{{first}} and {{count}} others",
       "add": "Add contact",
       "addFirst": "Add an emergency contact",
-      "emptyTitle": "No emergency contacts",
-      "emptyHint": "Add someone who should know where you've gone and when you'll be back. They don't need PackRat.",
-      "noEmail": "No email address",
+      "emptyTitle": "You haven't added any emergency contacts yet",
+      "emptyHint": "Add someone who should know where you've gone and when you'll be back. They don't need PackRat to get your updates.",
+      "noEmail": "There's no email address for this contact yet",
       "default": "Default",
-      "footer": "Contacts get an email from PackRat, never from your own address. The first one explains who added them and why.",
+      "footer": "Your contacts get their updates by email from PackRat. The first one tells them who added them and why.",
       "options": "Options for {{name}}",
       "remove": "Remove",
       "removeTitle": "Remove {{name}}?",
-      "removeMessage": "They won't be told about your future trips.",
-      "removeFailed": "Couldn't remove contact",
+      "removeMessage": "They won't hear about any of your future trips.",
+      "removeFailed": "We couldn't remove this contact",
       "checkConnection": "Check your connection and try again."
     },
     "form": {
@@ -1857,13 +1857,13 @@
       "chooseFromContacts": "Choose from contacts",
       "name": "Name",
       "email": "Email",
-      "emailHint": "They'll get an email when you start a trip, when you check in, and if you're overdue.",
-      "emailInvalid": "That email address doesn't look right.",
+      "emailHint": "They'll get an email when you start a trip, each time you check in, and if you're overdue.",
+      "emailInvalid": "That email address doesn't look quite right. Check it and try again.",
       "default": "Default contact",
-      "defaultHint": "Selected each time you start a trip.",
-      "contactsDenied": "Allow access to contacts in Settings to choose one, or type their details in.",
-      "pickedNoEmail": "That contact has no email address. Add one below.",
-      "saveFailed": "Couldn't save. Check your connection and try again."
+      "defaultHint": "Default contacts are already selected each time you start a trip.",
+      "contactsDenied": "To choose someone from your contacts, allow PackRat to see them in Settings. You can also type their details in yourself.",
+      "pickedNoEmail": "That contact doesn't have an email address. Add one below so they can get your updates.",
+      "saveFailed": "We couldn't save this contact. Check your connection and try again."
     },
     "start": {
       "ready": "Ready to head out?",
@@ -1876,22 +1876,22 @@
       "send": "Send",
       "you": "You",
       "whoToTell": "Who to tell",
-      "needsEmail": "Contacts without an email address can’t be notified. Add one in Settings › Emergency contacts.",
+      "needsEmail": "Contacts without an email address can't be told about your trip. You can add one in Settings, under Emergency contacts.",
       "whenBack": "When you'll be back",
       "expectedBack": "Expected back",
       "alertAfter": "Alert after",
       "graceHours_one": "{{count}} hour",
       "graceHours_other": "{{count}} hours",
-      "alertExplainer": "If you haven't tapped I'm Safe by {{time}}, your contacts get an overdue alert with your last known location and gear list.",
+      "alertExplainer": "If you haven't tapped I'm Safe by {{time}}, your contacts will get an overdue alert with your last known location and what you're carrying.",
       "lookLike": "What you'll look like",
       "colour": "Colour",
       "item": "Item",
       "removeItem": "Remove item",
       "addItem": "Add item",
-      "lookLikeHint": "Shelter, outer layer, pack: what would help someone spot you. Add a colour to each.",
+      "lookLikeHint": "Add the things that would help someone spot you, like your shelter, outer layer and pack, along with the colour of each.",
       "followProgress": "Follow my progress",
-      "followProgressHint": "Shares your location in the background until you're home, using little battery. Only while this trip is in progress.",
-      "followProgressRoute": "Shares your location in the background until you're home, using little battery. Your contacts are told if you go well off your planned route.",
+      "followProgressHint": "Your contacts can follow your location until you're home. It only shares while this trip is in progress, and it's light on battery.",
+      "followProgressRoute": "Your contacts can follow your location until you're home, and they'll be told if you go well off your planned route. It's light on battery.",
       "theyReceive": "They'll receive"
     },
     "preview": {
@@ -1901,7 +1901,7 @@
     },
     "tracking": {
       "disclosureTitle": "Share your location in the background?",
-      "disclosureMessage": "PackRat collects your location while this trip is in progress, even when the app is closed or not in use, so your emergency contacts can see where you are. It stops when you tap I'm Safe, and the location history is deleted. On the next screen, choose \"Allow all the time\".",
+      "disclosureMessage": "While this trip is in progress, PackRat collects your location, even when the app is closed or not in use, so your emergency contacts can see where you are. Sharing stops when you tap I'm Safe, and your location history for the trip is deleted. On the next screen, choose \"Allow all the time\".",
       "disclosureAccept": "Continue",
       "disclosureDecline": "Not now",
       "serviceTitle": "Sharing your progress",
@@ -1909,8 +1909,8 @@
     },
     "trail": {
       "title": "On the trail",
-      "since": "Since {{time}}",
-      "noOneTold": "No one's been told about this trip. Start a safety check-in so someone at home knows when to expect you.",
+      "since": "You started this trip at {{time}}",
+      "noOneTold": "No one has been told about this trip yet. Start a safety check-in so someone at home knows when to expect you back.",
       "finish": "Finish trip"
     },
     "card": {
@@ -1921,35 +1921,35 @@
       "endCheckIn": "End check-in",
       "keepCheckIn": "Keep it",
       "endConfirmTitle": "End the check-in?",
-      "endConfirmMessage": "{{who}} will be told it's been called off, and won't get an overdue alert.",
+      "endConfirmMessage": "We'll let {{who}} know the check-in has been called off, so they won't get an overdue alert.",
       "safeConfirmTitle": "Mark yourself safe?",
-      "safeConfirmMessage": "{{who}} will be told you're back. Location sharing stops and this trip's location history is deleted.",
+      "safeConfirmMessage": "We'll let {{who}} know you're back safely. Location sharing stops and your location history for this trip is deleted.",
       "imSafe": "I'm Safe",
-      "notNotifiedTitle": "Your contacts weren't notified",
+      "notNotifiedTitle": "Your contacts weren't told about this trip",
       "setUpAgain": "Set up again",
-      "overdueTitle": "Overdue alert sent",
-      "overdueBody_one": "{{who}} has been asked to check on you. Tap I'm Safe as soon as you can.",
-      "overdueBody_other": "{{who}} have been asked to check on you. Tap I'm Safe as soon as you can.",
+      "overdueTitle": "We've sent an overdue alert",
+      "overdueBody_one": "We've asked {{who}} to check on you. Tap I'm Safe as soon as you can.",
+      "overdueBody_other": "We've asked {{who}} to check on you. Tap I'm Safe as soon as you can.",
       "underMinute": "Under a minute",
-      "untilAlerted_one": "until {{who}} is alerted · back by {{time}}",
-      "untilAlerted_other": "until {{who}} are alerted · back by {{time}}",
+      "untilAlerted_one": "left before {{who}} gets an overdue alert. You're due back on {{time}}.",
+      "untilAlerted_other": "left before {{who}} get an overdue alert. You're due back on {{time}}.",
       "checkIn": "Check in",
       "runningLate": "Running late",
-      "waitingForSignal_one": "Waiting for signal. {{who}} hasn't been told yet; the countdown starts once they are.",
-      "waitingForSignal_other": "Waiting for signal. {{who}} haven't been told yet; the countdown starts once they are.",
-      "lastCheckIn": "Last check-in {{time}}",
-      "pendingUpdates_one": "{{count}} update waiting for signal",
-      "pendingUpdates_other": "{{count}} updates waiting for signal",
-      "sharingProgress": "Sharing your progress in the background"
+      "waitingForSignal_one": "We're waiting for signal before we can tell {{who}} about your trip. The countdown starts as soon as they've been told.",
+      "waitingForSignal_other": "We're waiting for signal before we can tell {{who}} about your trip. The countdown starts as soon as they've been told.",
+      "lastCheckIn": "You last checked in at {{time}}",
+      "pendingUpdates_one": "{{count}} update will be sent as soon as you have signal",
+      "pendingUpdates_other": "{{count}} updates will be sent as soon as you have signal",
+      "sharingProgress": "Your location is being shared with your contacts"
     },
     "checkIn": {
       "title": "Check in",
-      "explainer": "Sends your location and the time to your contacts. With no signal it's saved and sent as soon as you have some.",
-      "note": "Add a note (optional)",
+      "explainer": "This sends your location and the time to your contacts. If you don't have signal, we'll save it and send it as soon as you do.",
+      "note": "Add a note if you like",
       "send": "Check in",
       "locating": "Getting your location…",
-      "locationDenied": "Allow PackRat to use your location in Settings to check in.",
-      "noFix": "Couldn't get a fix. Move to open sky and try again."
+      "locationDenied": "To check in, allow PackRat to use your location in Settings.",
+      "noFix": "We couldn't find your location. Move somewhere with a clear view of the sky and try again."
     },
     "late": {
       "title": "Running late",
@@ -1957,28 +1957,28 @@
       "backBy": "Back by",
       "plusHours_one": "+{{count}} hour",
       "plusHours_other": "+{{count}} hours",
-      "explainer": "Your contacts get the new time, and the overdue alert moves with it."
+      "explainer": "Your contacts will get your new return time, and the overdue alert moves back to match it."
     },
     "route": {
       "title": "Planned route",
       "import": "Import GPX route",
-      "length": "{{distance}} route",
-      "caption": "Contacts are told if you go well off it during a check-in.",
+      "length": "This route is {{distance}} long",
+      "caption": "While a check-in is running, your contacts are told if you go well off this route.",
       "options": "Route options",
       "replace": "Replace",
       "remove": "Remove",
-      "importFailed": "Couldn't import route",
-      "noTrack": "That file has no track or route in it. Export a GPX track from your mapping app and try again.",
-      "unreadable": "Couldn't open that file."
+      "importFailed": "We couldn't import that route",
+      "noTrack": "That file doesn't have a track or route in it. Export a GPX track from your mapping app and try again.",
+      "unreadable": "We couldn't open that file."
     },
     "notifications": {
       "channelName": "Safety check-ins",
-      "channelDescription": "Reminders when your contacts are expecting you back",
+      "channelDescription": "Reminders when your emergency contacts are expecting you back",
       "reminderTitle": "Your contacts are expecting you",
-      "reminderBody": "You're due back from {{trip}} at {{time}}. Mark yourself safe, or push your return time back.",
-      "overdueTitle": "Overdue alert sent",
-      "overdueBody_one": "{{who}} has been told you're overdue on {{trip}}. Tap I'm Safe as soon as you can.",
-      "overdueBody_other": "{{who}} have been told you're overdue on {{trip}}. Tap I'm Safe as soon as you can."
+      "reminderBody": "You're due back from {{trip}} at {{time}}. Tap I'm Safe if you're back, or push your return time later.",
+      "overdueTitle": "We've sent an overdue alert",
+      "overdueBody_one": "We've told {{who}} that you're overdue from {{trip}}. Tap I'm Safe as soon as you can.",
+      "overdueBody_other": "We've told {{who}} that you're overdue from {{trip}}. Tap I'm Safe as soon as you can."
     }
   }
 }
