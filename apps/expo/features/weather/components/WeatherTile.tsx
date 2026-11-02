@@ -14,7 +14,7 @@ import { useActiveLocation, useHasAnyUnseenAlert, useLocations } from '../hooks'
 import { WeatherIcon } from './WeatherIcon';
 
 export function WeatherTile() {
-  const { activeLocation } = useActiveLocation();
+  const { activeLocation: lastActiveLocation } = useActiveLocation();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
   const { displayTemperature } = useTemperatureUnit();
@@ -23,7 +23,9 @@ export function WeatherTile() {
   const hasUnseenAlert = useHasAnyUnseenAlert(
     locationsState.state === 'hasData' ? locationsState.data : [],
   );
-  // Weather is sign-in only, so alerts cached from an earlier session point at nothing to open.
+  // Weather is sign-in only, so a location or alert cached from an earlier session points at
+  // nothing to open.
+  const activeLocation = isAuthenticated ? lastActiveLocation : null;
   const hasNewAlert = isAuthenticated && hasUnseenAlert;
 
   const handlePress = () => {
