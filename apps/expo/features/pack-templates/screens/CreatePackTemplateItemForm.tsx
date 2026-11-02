@@ -1,9 +1,10 @@
 import { showAlert } from '@packrat/ui/src/alert-host';
+
 // CreatePackTemplateItemForm.tsx
 
-import { useActionSheet } from '@expo/react-native-action-sheet';
 import type { WeightUnit } from '@packrat/constants';
 import { safeIndexOf } from '@packrat/guards';
+import { useActionSheet } from '@packrat/ui/src/action-sheet';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { SegmentedControl } from '@packrat/ui/src/segmented-control';
 import { TextField } from '@packrat/ui/src/text-field';

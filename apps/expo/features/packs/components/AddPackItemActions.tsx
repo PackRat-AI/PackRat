@@ -1,6 +1,6 @@
-import { useActionSheet } from '@expo/react-native-action-sheet';
 import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { isFunction } from '@packrat/guards';
+import { useActionSheet } from '@packrat/ui/src/action-sheet';
 import { showAlert } from '@packrat/ui/src/alert-host';
 import { Sheet, SheetView } from '@packrat/ui/src/bottom-sheet';
 import { Text } from '@packrat/ui/src/text';

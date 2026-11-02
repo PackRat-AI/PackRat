@@ -1,5 +1,5 @@
-import { useActionSheet } from '@expo/react-native-action-sheet';
 import { assertDefined } from '@packrat/guards';
+import { useActionSheet } from '@packrat/ui/src/action-sheet';
 import { showAlert } from '@packrat/ui/src/alert-host';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';

@@ -1,5 +1,6 @@
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { BottomSheetModalProvider } from '@expo/ui/community/bottom-sheet';
+import { ActionSheetHost } from '@packrat/ui/src/action-sheet';
 import { AlertHost } from '@packrat/ui/src/alert-host';
 import { PortalHost } from '@rn-primitives/portal';
 import { ErrorBoundary } from 'expo-app/components/initial/ErrorBoundary';
@@ -23,6 +24,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                 </ActionSheetProvider>
                 <PortalHost />
                 <AlertHost />
+                <ActionSheetHost />
               </KeyboardProvider>
             </GestureHandlerRootView>
           </SafeAreaProvider>
