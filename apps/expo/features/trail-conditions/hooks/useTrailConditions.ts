@@ -44,7 +44,7 @@ export const tripConditionsQueryKey = (tripId: string) =>
   ['trailConditionTripReports', tripId] as const;
 
 /** Every query that lists reports, so a write refreshes each screen that might show it. */
-function invalidateReportLists(queryClient: ReturnType<typeof useQueryClient>) {
+export function invalidateReportLists(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: trailConditionsQueryKey });
   queryClient.invalidateQueries({ queryKey: ['trailConditionTrailReports'] });
   queryClient.invalidateQueries({ queryKey: ['trailConditionTripReports'] });

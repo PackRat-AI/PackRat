@@ -315,6 +315,20 @@ export default (): ExpoConfig =>
           },
           package: getAndroidPackage(),
           googleServicesFile: getGoogleServicesFile(),
+          // Shared post links open the post in the app. `autoVerify` checks
+          // packratai.com/.well-known/assetlinks.json; until that lists this build's
+          // signing key, Android offers the app from the link's disambiguation sheet.
+          intentFilters: [
+            {
+              action: 'VIEW',
+              autoVerify: true,
+              data: [
+                { scheme: 'https', host: 'packratai.com', pathPrefix: '/p/' },
+                { scheme: 'https', host: 'www.packratai.com', pathPrefix: '/p/' },
+              ],
+              category: ['BROWSABLE', 'DEFAULT'],
+            },
+          ],
           config: {
             googleMaps: {
               apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
