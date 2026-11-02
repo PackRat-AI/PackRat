@@ -70,7 +70,7 @@ export default function TrailConditionsScreen() {
             accessibilityRole="button"
             className="mt-2 rounded-xl bg-primary px-5 py-3 active:opacity-90"
           >
-            <Text variant="body" className="font-semibold text-white">
+            <Text variant="body" className="font-semibold text-primary-foreground">
               {t('auth.signIn')}
             </Text>
           </Pressable>
@@ -192,7 +192,7 @@ function EmptyState({ isSearching, onSubmit }: { isSearching: boolean; onSubmit:
           accessibilityRole="button"
           className="mt-2 rounded-xl bg-primary px-5 py-3 active:opacity-90"
         >
-          <Text variant="body" className="font-semibold text-white">
+          <Text variant="body" className="font-semibold text-primary-foreground">
             {t('trailConditions.submitReport')}
           </Text>
         </Pressable>

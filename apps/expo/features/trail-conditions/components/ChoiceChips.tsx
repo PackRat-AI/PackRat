@@ -1,6 +1,7 @@
-import { FilterChip, FlowRow, Host, Text as JCText } from '@expo/ui/jetpack-compose';
+import { FilterChip, FlowRow, Text as JCText } from '@expo/ui/jetpack-compose';
 import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
 import { Text } from '@packrat/ui/src/text';
+import { ThemedHost as Host } from '@packrat/ui/src/themed-host';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { View } from 'react-native';
 

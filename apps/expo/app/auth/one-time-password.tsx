@@ -1,5 +1,6 @@
 import type { AlertMethods } from '@packrat/ui/src/alert';
 import { AlertAnchor } from '@packrat/ui/src/alert';
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
@@ -13,7 +14,6 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 import * as React from 'react';
 import {
-  Alert,
   Image,
   Keyboard,
   Platform,
@@ -39,6 +39,7 @@ const SCREEN_OPTIONS = {
 export default function OneTimePasswordScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const { colors } = useColorScheme();
   const [countdown, setCountdown] = React.useState(COUNTDOWN_SECONDS_TO_RESEND_CODE);
   const [codeValues, setCodeValues] = React.useState(Array(NUM_OF_CODE_CHARACTERS).fill(''));
   const [errorIndexes, setErrorIndexes] = React.useState<number[]>([]);
@@ -98,12 +99,12 @@ export default function OneTimePasswordScreen() {
       setCodeValues(Array(NUM_OF_CODE_CHARACTERS).fill(''));
       setErrorIndexes([]);
 
-      Alert.alert(t('common.success'), t('auth.verificationCodeResent'));
+      showAlert({ title: t('common.success'), message: t('auth.verificationCodeResent') });
     } catch (error) {
-      Alert.alert(
-        t('common.error'),
-        error instanceof Error ? error.message : t('auth.failedToResendCode'),
-      );
+      showAlert({
+        title: t('common.error'),
+        message: error instanceof Error ? error.message : t('auth.failedToResendCode'),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -141,10 +142,10 @@ export default function OneTimePasswordScreen() {
         await verifyEmail({ _email: email, token: code }); // Navigation is handled in the function
       }
     } catch (error) {
-      Alert.alert(
-        t('common.error'),
-        error instanceof Error ? error.message : t('auth.invalidVerificationCode'),
-      );
+      showAlert({
+        title: t('common.error'),
+        message: error instanceof Error ? error.message : t('auth.invalidVerificationCode'),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -225,7 +226,7 @@ export default function OneTimePasswordScreen() {
         <Button size="lg" onPress={onSubmit} disabled={isLoading}>
           {isLoading ? (
             <View className="py-1">
-              <ActivityIndicator color="white" />
+              <ActivityIndicator color={colors.primaryForeground} />
             </View>
           ) : (
             <Text>{t('auth.continue')}</Text>

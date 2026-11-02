@@ -1,4 +1,4 @@
-import { useActionSheet } from '@expo/react-native-action-sheet';
+import { useActionSheet } from '@packrat/ui/src/action-sheet';
 import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { Button } from '@packrat/ui/src/button';
 import { Icon } from 'expo-app/components/Icon';

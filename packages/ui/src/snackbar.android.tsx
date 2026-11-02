@@ -1,5 +1,4 @@
 import {
-  Host,
   Snackbar as JCSnackbar,
   SnackbarHost as JCSnackbarHost,
   type SnackbarHostRef,
@@ -8,6 +7,7 @@ import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
 import { useImperativeHandle, useRef, useState } from 'react';
 import { View } from 'react-native';
 import type { SnackbarHandle, SnackbarProps } from './snackbar-props';
+import { ThemedHost as Host } from './themed-host';
 
 // Tall enough for a one-line M3 snackbar plus its 12dp margins.
 const SNACKBAR_SLOT_HEIGHT = 80;

@@ -44,7 +44,7 @@ export function CatalogItemSelectCard({ item, isSelected, onToggle }: CatalogIte
                 isSelected ? 'border-primary bg-primary' : 'border-white bg-white/80',
               )}
             >
-              {isSelected && <Icon name="check" size={14} color="white" />}
+              {isSelected && <Icon name="check" size={14} color={colors.primaryForeground} />}
             </View>
           </View>
 

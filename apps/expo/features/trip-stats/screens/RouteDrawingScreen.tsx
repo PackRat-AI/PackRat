@@ -1,6 +1,5 @@
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
-import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -136,8 +135,8 @@ export function RouteDrawingScreen() {
             disabled={points.length === 0}
             onPress={() => setPoints((current) => current.slice(0, -1))}
             testID={testIds.tripStats.drawRouteUndo}
+            icon="undo"
           >
-            <Icon name="undo" size={18} color={colors.foreground} />
             <Text>{t('tripStats.log.undo')}</Text>
           </Button>
           <Button
@@ -145,8 +144,8 @@ export function RouteDrawingScreen() {
             disabled={!hasLine}
             onPress={() => setPoints((current) => outAndBack(current))}
             testID={testIds.tripStats.drawRouteOutAndBack}
+            icon="swap-horizontal"
           >
-            <Icon name="swap-horizontal" size={18} color={colors.foreground} />
             <Text>{t('tripStats.log.outAndBack')}</Text>
           </Button>
           <Button
@@ -154,8 +153,8 @@ export function RouteDrawingScreen() {
             disabled={points.length === 0}
             onPress={() => setPoints([])}
             testID={testIds.tripStats.drawRouteClear}
+            icon="delete-outline"
           >
-            <Icon name="delete-outline" size={18} color={colors.foreground} />
             <Text>{t('tripStats.log.clear')}</Text>
           </Button>
         </View>

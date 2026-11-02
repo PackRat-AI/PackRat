@@ -1,7 +1,6 @@
 import {
   AlertDialog,
   Column as JCColumn,
-  Host as JCHost,
   RadioButton as JCRadioButton,
   Row as JCRow,
   Text as JCText,
@@ -14,6 +13,7 @@ import {
   selectableGroup,
   testID as testIDModifier,
 } from '@expo/ui/jetpack-compose/modifiers';
+import { ThemedHost as JCHost } from '@packrat/ui/src/themed-host';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { useState } from 'react';

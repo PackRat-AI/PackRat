@@ -335,8 +335,8 @@ export function CatalogItemDetailScreen() {
                 variant="secondary"
                 onPress={() => Linking.openURL(item.productUrl as string)}
               >
-                <Text className="text-foreground">{t('catalog.viewOnRetailerSite')}</Text>
-                <Icon name="open-in-new" size={14} color={colors.foreground} />
+                <Text>{t('catalog.viewOnRetailerSite')}</Text>
+                <Icon name="open-in-new" size={14} />
               </Button>
             </View>
           </View>
