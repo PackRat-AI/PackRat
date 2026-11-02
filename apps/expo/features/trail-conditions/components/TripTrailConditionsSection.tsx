@@ -8,9 +8,11 @@ import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTripConditions } from '../hooks/useTrailConditions';
+import { useMarkReportsRead } from '../hooks/useTrailReportAlerts';
 import { TrailConditionReportRow } from './TrailConditionReportRow';
 
 /**
@@ -26,6 +28,28 @@ export function TripTrailConditionsSection({ trip }: { trip: Trip }) {
   const enabled = useFeatureFlag('enableTrailConditions');
   const hasPlace = trip.trailId != null || trip.location != null;
   const query = useTripConditions({ tripId: trip.id, enabled: enabled && hasPlace });
+  const markRead = useMarkReportsRead();
+  // A trail-report notification tap names the report to open over the trip.
+  const { reportId: linkedReportId } = useLocalSearchParams<{ reportId?: string }>();
+
+  // Seen now, so read: the unread dots stay for this visit only.
+  useEffect(() => {
+    if (!query.data) return;
+    markRead({
+      reportIds: query.data.reports.filter((report) => report.unread).map((report) => report.id),
+      tripId: trip.id,
+    });
+  }, [query.data, markRead, trip.id]);
+
+  // Opens the linked report once it's among this trip's reports. One no longer shown (hidden,
+  // removed) leaves the trip open.
+  useEffect(() => {
+    if (!linkedReportId || !query.data) return;
+    router.setParams({ reportId: undefined });
+    if (query.data.reports.some((report) => report.id === linkedReportId)) {
+      router.push(`/trail-conditions/${linkedReportId}`);
+    }
+  }, [linkedReportId, query.data, router]);
 
   if (!enabled || !isAuthenticated || !hasPlace) return null;
 

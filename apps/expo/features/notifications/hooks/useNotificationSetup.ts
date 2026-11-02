@@ -1,3 +1,4 @@
+import { useTrailReportAlertsEnabled } from 'expo-app/features/trail-conditions/hooks/useTrailReportAlerts';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
@@ -22,11 +23,12 @@ Notifications.setNotificationHandler({
  * one that cold-started the app.
  */
 export function useNotificationSetup({ isAuthed }: { isAuthed: boolean }) {
-  // Both features receive server pushes: weather alerts at watched places, and
-  // at an upcoming trip's destination.
+  // These features receive server pushes: weather alerts at watched places and
+  // at an upcoming trip's destination, and new trail reports for a trip.
   const monitoringEnabled = useFeatureFlag('enableWeatherMonitoring');
   const tripRemindersEnabled = useFeatureFlag('enableTripReminders');
-  const pushEnabled = monitoringEnabled || tripRemindersEnabled;
+  const trailReportsEnabled = useTrailReportAlertsEnabled();
+  const pushEnabled = monitoringEnabled || tripRemindersEnabled || trailReportsEnabled;
   const lastResponse = Notifications.useLastNotificationResponse();
 
   useEffect(() => {

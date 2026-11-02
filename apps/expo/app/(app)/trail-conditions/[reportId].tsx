@@ -10,10 +10,12 @@ import {
   usePendingReportIds,
   useTrailConditions,
 } from 'expo-app/features/trail-conditions/hooks/useTrailConditions';
+import { useMarkReportsRead } from 'expo-app/features/trail-conditions/hooks/useTrailReportAlerts';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, View } from 'react-native';
 
 /**
@@ -29,6 +31,14 @@ export default function TrailConditionDetailScreen() {
   const report = useCachedReport(reportId);
   const pendingIds = usePendingReportIds();
   const actions = useReportActions({ report, onHidden: () => router.back() });
+  const markRead = useMarkReportsRead();
+  const isUnsent = pendingIds.has(reportId);
+  const found = report !== undefined;
+
+  // Opened from anywhere counts as read, so the trip it's on loses its marker.
+  useEffect(() => {
+    if (found && !isUnsent) markRead({ reportIds: [reportId] });
+  }, [found, isUnsent, markRead, reportId]);
 
   if (!report) {
     return (
