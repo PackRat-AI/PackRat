@@ -1,3 +1,4 @@
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
@@ -10,7 +11,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import * as ImagePicker from 'expo-image-picker';
 import { nanoid } from 'nanoid';
 import { useCallback, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Image, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useCreatePost } from '../hooks';
 
 interface SelectedPhoto {
@@ -31,7 +32,7 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert(t('feed.permissionRequired'), t('feed.galleryPermission'));
+        showAlert({ title: t('feed.permissionRequired'), message: t('feed.galleryPermission') });
         return;
       }
 
@@ -62,7 +63,7 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert(t('feed.permissionRequired'), t('feed.cameraPermission'));
+        showAlert({ title: t('feed.permissionRequired'), message: t('feed.cameraPermission') });
         return;
       }
 
@@ -93,7 +94,7 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
 
   const handleSubmit = useCallback(async () => {
     if (photos.length === 0) {
-      Alert.alert(t('feed.noPhotos'), t('feed.addAtLeastOnePhoto'));
+      showAlert({ title: t('feed.noPhotos'), message: t('feed.addAtLeastOnePhoto') });
       return;
     }
 
@@ -128,13 +129,13 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
           },
           onError: (err) => {
             console.error('Failed to create post:', err);
-            Alert.alert(t('common.error'), t('feed.postFailed'));
+            showAlert({ title: t('common.error'), message: t('feed.postFailed') });
           },
         },
       );
     } catch (err) {
       console.error('Upload error:', err);
-      Alert.alert(t('common.error'), t('feed.uploadFailed'));
+      showAlert({ title: t('common.error'), message: t('feed.uploadFailed') });
     } finally {
       setUploading(false);
     }

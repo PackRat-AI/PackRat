@@ -1,5 +1,6 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { isArray } from '@packrat/guards';
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
@@ -7,7 +8,7 @@ import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { testIds } from 'expo-app/lib/testIds';
 import { router } from 'expo-router';
-import { ActivityIndicator, Alert, Image, Platform, Pressable, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeletePack, useDuplicatePack, usePackDetailsFromStore } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
@@ -79,14 +80,14 @@ export function PackCard({
             router.push({ pathname: '/pack/[id]/edit', params: { id: pack.id } });
             break;
           case destructiveButtonIndex:
-            Alert.alert(
-              'Delete pack?',
-              'Are you sure you want to delete this pack? This action cannot be undone.',
-              [
+            showAlert({
+              title: 'Delete pack?',
+              message: 'Are you sure you want to delete this pack? This action cannot be undone.',
+              buttons: [
                 { text: 'Cancel', style: 'cancel' },
                 { text: 'OK', style: 'destructive', onPress: () => deletePack(pack.id) },
               ],
-            );
+            });
             break;
         }
       },
@@ -163,14 +164,14 @@ export function PackCard({
                 size="icon"
                 disabled={isDuplicating}
                 onPress={() =>
-                  Alert.alert(
-                    'Duplicate pack?',
-                    'This will create a copy of this pack in your collection.',
-                    [
+                  showAlert({
+                    title: 'Duplicate pack?',
+                    message: 'This will create a copy of this pack in your collection.',
+                    buttons: [
                       { text: 'Cancel', style: 'cancel' },
                       { text: 'Duplicate', onPress: () => duplicatePack(pack.id) },
                     ],
-                  )
+                  })
                 }
               >
                 {isDuplicating ? (

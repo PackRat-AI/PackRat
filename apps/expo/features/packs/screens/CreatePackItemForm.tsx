@@ -1,6 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import type { WeightUnit } from '@packrat/constants';
 import { safeIndexOf } from '@packrat/guards';
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { SegmentedControl } from '@packrat/ui/src/segmented-control';
 import { TextField } from '@packrat/ui/src/text-field';
@@ -14,7 +15,7 @@ import { testIds } from 'expo-app/lib/testIds';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Image, Pressable, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Pressable, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
@@ -124,7 +125,7 @@ export const CreatePackItemForm = ({
         if (selectedImage) {
           imageUrl = await permanentlyPersistImageLocally();
           if (!imageUrl) {
-            Alert.alert('Error', 'Failed to save item image. Please try again.');
+            showAlert({ title: 'Error', message: 'Failed to save item image. Please try again.' });
             return;
           }
           validatedData.image = imageUrl;
@@ -149,7 +150,7 @@ export const CreatePackItemForm = ({
           tags: { feature: 'packs', action: 'createPackItem' },
           extra: { packId, isEditing },
         });
-        Alert.alert('Error', 'Failed to save item. Please try again.');
+        showAlert({ title: 'Error', message: 'Failed to save item. Please try again.' });
       }
     },
   });
@@ -190,7 +191,7 @@ export const CreatePackItemForm = ({
           Sentry.captureException(err, {
             tags: { feature: 'packs', action: 'handleAddImage' },
           });
-          Alert.alert('Error', 'Failed to process image. Please try again.');
+          showAlert({ title: 'Error', message: 'Failed to process image. Please try again.' });
         }
       },
     );

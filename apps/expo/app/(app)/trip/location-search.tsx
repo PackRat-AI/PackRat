@@ -1,4 +1,5 @@
 import { clientEnvs } from '@packrat/env/expo-client';
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { SearchInput } from 'expo-app/components/SearchInput';
@@ -6,7 +7,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTripLocation } from '../../../features/trips/store/tripLocationStore';
@@ -34,7 +35,10 @@ export default function LocationSearchScreen() {
 
     try {
       if (!GOOGLE_MAPS_API_KEY) {
-        Alert.alert(t('location.missingApiKey'), t('location.apiKeyNotConfigured'));
+        showAlert({
+          title: t('location.missingApiKey'),
+          message: t('location.apiKeyNotConfigured'),
+        });
         setIsLoading(false);
         return;
       }
@@ -71,11 +75,11 @@ export default function LocationSearchScreen() {
           800,
         );
       } else {
-        Alert.alert(t('location.notFound'), t('location.noLocationFound'));
+        showAlert({ title: t('location.notFound'), message: t('location.noLocationFound') });
         setSelectedLocation(null);
       }
     } catch (_error) {
-      Alert.alert(t('location.searchError'), t('location.somethingWentWrong'));
+      showAlert({ title: t('location.searchError'), message: t('location.somethingWentWrong') });
       setSelectedLocation(null);
     } finally {
       setIsLoading(false);

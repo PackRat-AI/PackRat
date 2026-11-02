@@ -1,3 +1,4 @@
+import { showAlert } from '@packrat/ui/src/alert-host';
 // CreatePackTemplateItemForm.tsx
 
 import { useActionSheet } from '@expo/react-native-action-sheet';
@@ -14,7 +15,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { Alert, Image, Pressable, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Pressable, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
@@ -109,7 +110,10 @@ export const CreatePackTemplateItemForm = ({
         if (selectedImage) {
           imageUrl = await permanentlyPersistImageLocally();
           if (!imageUrl) {
-            Alert.alert(t('packTemplates.error'), t('packTemplates.failedToSaveImage'));
+            showAlert({
+              title: t('packTemplates.error'),
+              message: t('packTemplates.failedToSaveImage'),
+            });
             return;
           }
           validatedData.image = imageUrl;
@@ -133,7 +137,10 @@ export const CreatePackTemplateItemForm = ({
         router.back();
       } catch (err) {
         console.error('Error submitting form:', err);
-        Alert.alert(t('packTemplates.error'), t('packTemplates.failedToSaveItem'));
+        showAlert({
+          title: t('packTemplates.error'),
+          message: t('packTemplates.failedToSaveItem'),
+        });
       }
     },
   });
@@ -163,7 +170,10 @@ export const CreatePackTemplateItemForm = ({
           if (selectedIndex === 0 || selectedIndex === 1) setImageChanged(true);
         } catch (err) {
           console.error('Image error:', err);
-          Alert.alert(t('packTemplates.error'), t('packTemplates.failedToProcessImage'));
+          showAlert({
+            title: t('packTemplates.error'),
+            message: t('packTemplates.failedToProcessImage'),
+          });
         }
       },
     );

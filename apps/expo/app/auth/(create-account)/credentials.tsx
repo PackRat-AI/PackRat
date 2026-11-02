@@ -1,5 +1,6 @@
 import type { AlertMethods } from '@packrat/ui/src/alert';
 import { AlertAnchor } from '@packrat/ui/src/alert';
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Button } from '@packrat/ui/src/button';
 import { Checkbox } from '@packrat/ui/src/checkbox';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
@@ -13,7 +14,7 @@ import type { TranslationKeys } from 'expo-app/lib/i18n/types';
 import { testIds } from 'expo-app/lib/testIds';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
-import { Alert, Image, Platform, View } from 'react-native';
+import { Image, Platform, View } from 'react-native';
 import {
   KeyboardAwareScrollView,
   KeyboardController,
@@ -159,10 +160,10 @@ export default function CredentialsScreen() {
         });
       } catch (error) {
         setIsLoading(false);
-        Alert.alert(
-          t('auth.registrationFailed'),
-          error instanceof Error ? error.message : t('auth.checkInformationAndTryAgain'),
-        );
+        showAlert({
+          title: t('auth.registrationFailed'),
+          message: error instanceof Error ? error.message : t('auth.checkInformationAndTryAgain'),
+        });
       } finally {
         setIsLoading(false);
       }

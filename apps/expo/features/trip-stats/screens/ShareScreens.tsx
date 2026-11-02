@@ -1,4 +1,5 @@
 import { use$ } from '@legendapp/state/react';
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { Toggle } from '@packrat/ui/src/toggle';
@@ -11,14 +12,7 @@ import { File, Paths } from 'expo-file-system';
 import { Stack, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useRef, useState } from 'react';
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  useWindowDimensions,
-  View,
-  type ViewInstance,
-} from 'react-native';
+import { Pressable, ScrollView, useWindowDimensions, View, type ViewInstance } from 'react-native';
 import { Marker, Polyline } from 'react-native-maps';
 import PagerView from 'react-native-pager-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -127,7 +121,7 @@ function ShareCardEditor({ content }: { content: ShareContent }) {
         tags: { feature: 'tripStats', action: 'shareCard' },
         extra: { kind: content.kind, format },
       });
-      Alert.alert(t('tripStats.share.failed'));
+      showAlert({ title: t('tripStats.share.failed') });
     } finally {
       setSharing(false);
     }

@@ -1,5 +1,6 @@
 import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { assertDefined } from '@packrat/guards';
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
@@ -13,7 +14,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import * as Location from 'expo-location';
 import { Stack, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Platform, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, ScrollView, View } from 'react-native';
 
 export default function SeasonSuggestionsScreen() {
   const router = useRouter();
@@ -59,7 +60,7 @@ export default function SeasonSuggestionsScreen() {
       Sentry.captureException(err, {
         tags: { feature: 'seasons', action: 'fetchLocationAndNavigate' },
       });
-      Alert.alert(t('weather.locationError'), t('weather.locationErrorMessage'));
+      showAlert({ title: t('weather.locationError'), message: t('weather.locationErrorMessage') });
     } finally {
       setIsGettingLocation(false);
     }
@@ -70,19 +71,23 @@ export default function SeasonSuggestionsScreen() {
     if (status === 'granted') {
       await fetchLocationAndNavigate();
     } else {
-      Alert.alert(t('weather.permissionDenied'), t('weather.permissionDeniedMessage'), [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('weather.openSettings'),
-          onPress: () => {
-            if (Platform.OS === 'ios') {
-              Linking.openURL('app-settings:');
-            } else {
-              Linking.openSettings();
-            }
+      showAlert({
+        title: t('weather.permissionDenied'),
+        message: t('weather.permissionDeniedMessage'),
+        buttons: [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('weather.openSettings'),
+            onPress: () => {
+              if (Platform.OS === 'ios') {
+                Linking.openURL('app-settings:');
+              } else {
+                Linking.openSettings();
+              }
+            },
           },
-        },
-      ]);
+        ],
+      });
     }
   };
 

@@ -1,6 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import type { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { isFunction } from '@packrat/guards';
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Sheet, SheetView } from '@packrat/ui/src/bottom-sheet';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
@@ -13,7 +14,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { router } from 'expo-router';
 import React from 'react';
-import { Alert, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBulkAddCatalogItems, useImagePicker } from '../hooks';
 
@@ -115,7 +116,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
           await addItemsToPack({ packId, catalogItems });
         } catch (error) {
           console.error('Error adding catalog items to pack:', error);
-          Alert.alert(t('common.error'), t('catalog.somethingWentWrong'));
+          showAlert({ title: t('common.error'), message: t('catalog.somethingWentWrong') });
         }
       }
     };
