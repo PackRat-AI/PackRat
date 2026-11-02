@@ -1,7 +1,11 @@
 import { isNumber } from '@packrat/guards';
-import { TrailConditionReportSchema } from '@packrat/schemas/trailConditions';
+import {
+  TrailConditionNotificationSettingsSchema,
+  TrailConditionReportSchema,
+} from '@packrat/schemas/trailConditions';
 import * as Sentry from '@sentry/react-native';
 import { apiClient } from 'expo-app/lib/api/packrat';
+import { z } from 'zod';
 import type {
   TrailConditionFlagReason,
   TrailConditionReport,
@@ -35,6 +39,8 @@ import {
  */
 
 const DEFAULT_LIMIT = 50;
+
+const UnreadTripsResponseSchema = z.object({ tripIds: z.array(z.string()) });
 
 function reportError({
   error,
@@ -187,4 +193,31 @@ export async function flagReport({
 export async function blockAuthor(userId: string): Promise<void> {
   const { error } = await apiClient.feed.blocks.post({ userId });
   if (error) failed({ action: 'blockAuthor', error, extra: { userId } });
+}
+
+/** The hiker's upcoming and in-progress trips with a trail report they haven't read. */
+export async function unreadTripIds(): Promise<string[]> {
+  const { data, error } = await apiClient['trail-conditions']['unread-trips'].get();
+  if (error) failed({ action: 'unreadTripIds', error });
+  return UnreadTripsResponseSchema.parse(data).tripIds;
+}
+
+/** Records reports as read, so the trips they're on lose their marker. */
+export async function markReportsRead(reportIds: string[]): Promise<void> {
+  const { error } = await apiClient['trail-conditions'].reads.post({ reportIds });
+  if (error) failed({ action: 'markReportsRead', error, extra: { count: reportIds.length } });
+}
+
+/** Whether the hiker is told about new reports on their upcoming trips. */
+export async function trailReportNotificationsEnabled(): Promise<boolean> {
+  const { data, error } = await apiClient['trail-conditions']['notification-settings'].get();
+  if (error) failed({ action: 'notificationSettings', error });
+  return TrailConditionNotificationSettingsSchema.parse(data).trailConditions;
+}
+
+export async function setTrailReportNotificationsEnabled(enabled: boolean): Promise<void> {
+  const { error } = await apiClient['trail-conditions']['notification-settings'].put({
+    trailConditions: enabled,
+  });
+  if (error) failed({ action: 'setNotificationSettings', error, extra: { enabled } });
 }
