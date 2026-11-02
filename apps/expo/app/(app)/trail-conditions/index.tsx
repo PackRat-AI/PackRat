@@ -6,7 +6,10 @@ import { ErrorState } from 'expo-app/components/ErrorState';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuthState } from 'expo-app/features/auth/hooks/useAuthState';
 import { TrailConditionReportRow } from 'expo-app/features/trail-conditions/components/TrailConditionReportRow';
-import { useTrailConditions } from 'expo-app/features/trail-conditions/hooks/useTrailConditions';
+import {
+  usePendingReportIds,
+  useTrailConditions,
+} from 'expo-app/features/trail-conditions/hooks/useTrailConditions';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -41,6 +44,7 @@ export default function TrailConditionsScreen() {
     error,
     refetch,
   } = useTrailConditions();
+  const pendingIds = usePendingReportIds();
 
   if (!enableTrailConditions) return null;
 
@@ -100,6 +104,7 @@ export default function TrailConditionsScreen() {
         renderItem={({ item }) => (
           <TrailConditionReportRow
             report={item}
+            isPending={pendingIds.has(item.id)}
             onPress={() => router.push(`/trail-conditions/${item.id}`)}
           />
         )}

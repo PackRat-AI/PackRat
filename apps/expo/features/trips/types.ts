@@ -20,6 +20,9 @@ export interface Trip {
   endDate?: string;
   userId?: string;
   packId?: Pack['id'];
+  /** The trail the trip is on, from PackRat's trails. Its conditions show on the trip. */
+  trailId?: string | null;
+  trailName?: string | null;
   log?: TripLog | null;
   /** The trip's Before-you-go list: permits, passes and bookings. */
   checklist?: TripChecklistItem[] | null;

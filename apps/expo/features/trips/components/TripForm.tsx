@@ -7,6 +7,7 @@ import { useForm } from '@tanstack/react-form';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
+import { TrailPicker } from 'expo-app/features/trail-conditions/components/TrailPicker';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -49,7 +50,20 @@ const tripFormSchema = z
 
 type TripFormValues = z.infer<typeof tripFormSchema>;
 
-export const TripForm = ({ trip }: { trip?: Trip }) => {
+/** A trail a new trip starts on, when planned from a trail's page. */
+export interface StartingTrail {
+  id: string;
+  name: string;
+  center?: { latitude: number; longitude: number } | null;
+}
+
+export const TripForm = ({
+  trip,
+  startingTrail,
+}: {
+  trip?: Trip;
+  startingTrail?: StartingTrail;
+}) => {
   const router = useRouter();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
@@ -76,6 +90,13 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     };
   }, [trip?.id, setLocation]);
 
+  const enableTrailConditions = useFeatureFlag('enableTrailConditions');
+  const [trail, setTrail] = useState<{ id: string; name: string } | null>(() => {
+    if (trip?.trailId) return { id: trip.trailId, name: trip.trailName ?? '' };
+    return startingTrail ? { id: startingTrail.id, name: startingTrail.name } : null;
+  });
+  const [showTrailPicker, setShowTrailPicker] = useState(false);
+
   const [showPackModal, setShowPackModal] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
@@ -84,7 +105,11 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   // previous edit session) and on unmount (to clean up for future forms), so
   // that a location selected in one edit session never leaks into the next.
   useEffect(() => {
-    tripLocationStore.set(null);
+    // Planned from a trail's page: the trail is the destination until the hiker picks another.
+    const center = startingTrail?.center;
+    tripLocationStore.set(
+      !trip && startingTrail && center ? { ...center, name: startingTrail.name } : null,
+    );
     return () => {
       tripLocationStore.set(null);
     };
@@ -105,7 +130,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
 
   const form = useForm({
     defaultValues: {
-      name: trip?.name || '',
+      name: trip?.name || startingTrail?.name || '',
       description: trip?.description || '',
       notes: trip?.notes || '',
       // Use the trip's own location as the form default, not the global location
@@ -124,6 +149,8 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
         ...value,
         location: location ?? value.location,
         packId: value.packId === '' ? undefined : (value.packId ?? undefined),
+        trailId: trail?.id ?? null,
+        trailName: trail?.name ?? null,
       };
       try {
         if (isEditingExistingTrip) {
@@ -277,6 +304,47 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 )}
               </View>
             </FormItem>
+
+            {/* Trail */}
+            {enableTrailConditions ? (
+              <FormItem>
+                <View className="flex-row items-center justify-between">
+                  <Pressable
+                    onPress={() => setShowTrailPicker(true)}
+                    testID={testIds.trips.trailButton}
+                    accessibilityRole="button"
+                    className="mr-2 flex-1 flex-row items-center gap-2 rounded-lg border border-border bg-card p-3"
+                  >
+                    <Icon name="hiking" size={16} color={trail ? colors.primary : colors.grey3} />
+                    <Text
+                      className={trail ? 'text-foreground' : 'font-medium text-muted-foreground'}
+                      numberOfLines={1}
+                    >
+                      {trail?.name || t('trips.chooseTrail')}
+                    </Text>
+                  </Pressable>
+                  {trail ? (
+                    <Pressable onPress={() => setTrail(null)} accessibilityRole="button">
+                      <Text className="px-2 font-semibold text-red-500">{t('common.clear')}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+                <Text className="mt-1 text-xs text-muted-foreground">
+                  {trail ? t('trips.trailFooterChosen') : t('trips.trailFooter')}
+                </Text>
+                <TrailPicker
+                  visible={showTrailPicker}
+                  selectedTrailId={trail?.id ?? null}
+                  origin={location ?? trip?.location ?? null}
+                  allowsPin={false}
+                  onPick={(picked) => {
+                    if (picked.kind === 'trail') setTrail(picked.trail);
+                    setShowTrailPicker(false);
+                  }}
+                  onClose={() => setShowTrailPicker(false)}
+                />
+              </FormItem>
+            ) : null}
 
             {/* Pack Picker */}
             <form.Field name="packId">
