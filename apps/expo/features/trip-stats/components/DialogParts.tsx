@@ -1,6 +1,6 @@
-import DateTimePicker from '@expo/ui/community/datetime-picker';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
+import { DateTimePicker } from 'expo-app/lib/DateTimePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';

@@ -1,9 +1,9 @@
-import DateTimePicker from '@expo/ui/community/datetime-picker';
 import { use$ } from '@legendapp/state/react';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
+import { DateTimePicker } from 'expo-app/lib/DateTimePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { obs } from 'expo-app/lib/store';
