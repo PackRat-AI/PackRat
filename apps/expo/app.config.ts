@@ -231,6 +231,22 @@ export default (): ExpoConfig =>
           ],
           'expo-status-bar',
           ['expo-splash-screen', { image: './assets/splash.png' }],
+          // Safety check-in: follows a trip in progress, with the user's permission, so their
+          // emergency contacts see where they are.
+          [
+            'expo-location',
+            {
+              locationAlwaysAndWhenInUsePermission:
+                'PackRat shares your location with your emergency contacts while a trip is in progress.',
+              isAndroidBackgroundLocationEnabled: true,
+              isAndroidForegroundServiceEnabled: true,
+            },
+          ],
+          // Safety check-in: fills an emergency contact from the phone's contacts.
+          [
+            'expo-contacts',
+            { contactsPermission: 'PackRat uses a contact you choose as an emergency contact.' },
+          ],
         ],
         experiments: {
           typedRoutes: true,
@@ -314,6 +330,8 @@ export default (): ExpoConfig =>
             backgroundColor: '#026A9F',
           },
           package: getAndroidPackage(),
+          // expo-contacts adds write access; choosing an emergency contact only reads one.
+          blockedPermissions: ['android.permission.WRITE_CONTACTS'],
           googleServicesFile: getGoogleServicesFile(),
           config: {
             googleMaps: {

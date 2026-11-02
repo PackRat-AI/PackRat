@@ -48,6 +48,10 @@ const updateTrip = async ({ id, ...data }: Partial<TripInStore>) => {
     ...(data.log !== undefined ? { log: data.log ?? null } : {}),
     ...(data.checklist !== undefined ? { checklist: data.checklist ?? null } : {}),
     ...(data.excludedFromStats !== undefined ? { excludedFromStats: data.excludedFromStats } : {}),
+    ...(data.status !== undefined ? { status: data.status } : {}),
+    ...(data.startedAt !== undefined ? { startedAt: data.startedAt ?? null } : {}),
+    ...(data.completedAt !== undefined ? { completedAt: data.completedAt ?? null } : {}),
+    ...(data.plannedRoute !== undefined ? { plannedRoute: data.plannedRoute ?? null } : {}),
     ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
     ...(data.deleted !== undefined ? { deleted: data.deleted } : {}),
   });

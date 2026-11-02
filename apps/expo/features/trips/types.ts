@@ -1,4 +1,9 @@
-import type { TripChecklistItem, TripLog } from '@packrat/schemas/trips';
+import type {
+  TripChecklistItem,
+  TripStatus as TripLifecycle,
+  TripLog,
+  TripPlannedRoute,
+} from '@packrat/schemas/trips';
 import type { Pack } from 'expo-app/features/packs/types';
 
 export type TripStatus = 'planned' | 'ongoing' | 'completed' | 'cancelled';
@@ -24,6 +29,12 @@ export interface Trip {
   /** The trip's Before-you-go list: permits, passes and bookings. */
   checklist?: TripChecklistItem[] | null;
   excludedFromStats?: boolean;
+  /** Planned until Start Trip, in progress on the trail, complete once home. */
+  status?: TripLifecycle;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  /** The route the user means to follow, e.g. an imported GPX track. */
+  plannedRoute?: TripPlannedRoute | null;
   deleted: boolean;
   createdAt?: string;
   updatedAt?: string;
