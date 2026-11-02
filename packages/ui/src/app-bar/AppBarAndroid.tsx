@@ -21,9 +21,9 @@ export function AppBarAndroid({ back, options, navigation }: AppBarAndroidProps)
   const canGoBack = !!back;
 
   return (
-    <View
-      style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}
-    >
+    // bg-background, not colors.background: screen content paints with the class, and the two
+    // resolve to different tones on Android, which split every screen into a header band.
+    <View className="bg-background" style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.actionRow}>
         {canGoBack && (
           <Pressable onPress={() => navigation.goBack()} hitSlop={8} style={styles.navButton}>
