@@ -70,7 +70,7 @@
     "@packrat/types": "workspace:*",
     "@packrat/units": "workspace:*",
     "@packrat/utils": "workspace:*",
-    "@sentry/cloudflare": "^10.37.0",
+    "@sentry/cloudflare": "^11.10.0",
     "@sinclair/typebox": "^0.34.15",
     "ai": "catalog:",
     "bcryptjs": "^3.0.2",
