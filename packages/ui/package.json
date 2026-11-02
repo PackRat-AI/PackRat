@@ -6,7 +6,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@expo/ui": "~57.0.9",
+    "@expo/ui": "~58.0.25",
     "@packrat/guards": "workspace:*",
     "@rn-primitives/alert-dialog": "^1.1.0",
     "@rn-primitives/avatar": "^1.5.2",
