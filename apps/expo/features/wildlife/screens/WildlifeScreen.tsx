@@ -81,8 +81,8 @@ export function WildlifeScreen() {
           className="flex-row items-center justify-center gap-3 bg-primary rounded-xl py-4 px-6"
           style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
         >
-          <Icon name="camera-outline" size={24} color="#ffffff" />
-          <Text className="text-white text-base font-semibold">
+          <Icon name="camera-outline" size={24} color={colors.primaryForeground} />
+          <Text className="text-primary-foreground text-base font-semibold">
             {t('wildlife.identifySpecies')}
           </Text>
         </Pressable>

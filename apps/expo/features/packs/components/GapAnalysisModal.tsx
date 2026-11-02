@@ -218,7 +218,7 @@ function SwapSheet({
                       }}
                       className="rounded-full bg-primary px-3 py-1.5"
                     >
-                      <Text className="text-xs font-semibold text-white">Select</Text>
+                      <Text className="text-xs font-semibold text-primary-foreground">Select</Text>
                     </TouchableOpacity>
                   )}
                 </View>

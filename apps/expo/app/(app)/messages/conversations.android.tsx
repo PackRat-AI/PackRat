@@ -257,7 +257,7 @@ function MessageRow({
                       <Icon
                         size={Platform.select({ ios: 24, default: 27 })}
                         name="check"
-                        color="white"
+                        color={colors.primaryForeground}
                       />
                     </AvatarFallback>
                   ) : (
@@ -525,7 +525,7 @@ function Swipeable({ children }: { children: React.ReactNode }) {
               style={ACTION_BUTTON_STYLE}
               className="absolute bottom-0 right-0 top-0 items-center justify-center"
             >
-              <Icon name="archive-arrow-up-outline" size={24} color="white" />
+              <Icon name="archive-arrow-up-outline" size={24} color={colors.primaryForeground} />
             </View>
           </Animated.View>
         </Animated.View>
@@ -535,7 +535,7 @@ function Swipeable({ children }: { children: React.ReactNode }) {
               style={ACTION_BUTTON_STYLE}
               className="absolute bottom-0 right-0 top-0 items-center justify-center"
             >
-              <Icon name="archive-arrow-up-outline" size={24} color="white" />
+              <Icon name="archive-arrow-up-outline" size={24} color={colors.primaryForeground} />
             </View>
           </Animated.View>
         </Animated.View>

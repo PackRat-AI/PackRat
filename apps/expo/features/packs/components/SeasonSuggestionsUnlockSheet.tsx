@@ -48,7 +48,7 @@ export const SeasonSuggestionsUnlockSheet = React.forwardRef<
               namingScheme="sfSymbol"
               materialIcon={{ type: 'MaterialIcons', name: 'eco' }}
               size={32}
-              color="white"
+              color={colors.primaryForeground}
             />
           </View>
         </View>

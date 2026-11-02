@@ -331,7 +331,7 @@ export default function LocationSearchScreen() {
             className="mt-6 rounded-full bg-primary px-4 py-2"
             onPress={() => (query.length > 0 ? debouncedSearch(query) : handleUseDeviceLocation())}
           >
-            <Text className="text-white">{t('weather.tryAgain')}</Text>
+            <Text className="text-primary-foreground">{t('weather.tryAgain')}</Text>
           </TouchableOpacity>
         </View>
       );
