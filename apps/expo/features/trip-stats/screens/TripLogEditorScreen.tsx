@@ -398,13 +398,21 @@ export function TripLogEditorScreen() {
             />
           ) : null}
           <View className="flex-row flex-wrap gap-2 px-4 py-2">
-            <Button variant="tonal" onPress={importGpx} testID={testIds.tripStats.importGpxBtn}>
-              <Icon name="file-upload-outline" size={18} color={colors.foreground} />
+            <Button
+              variant="tonal"
+              onPress={importGpx}
+              testID={testIds.tripStats.importGpxBtn}
+              icon="file-upload-outline"
+            >
               <Text>{route ? t('tripStats.log.replaceRoute') : t('tripStats.log.importGpx')}</Text>
             </Button>
             {!route || source === 'manual' ? (
-              <Button variant="tonal" onPress={drawRoute} testID={testIds.tripStats.drawRouteBtn}>
-                <Icon name="draw" size={18} color={colors.foreground} />
+              <Button
+                variant="tonal"
+                onPress={drawRoute}
+                testID={testIds.tripStats.drawRouteBtn}
+                icon="draw"
+              >
                 <Text>{route ? t('tripStats.log.editRoute') : t('tripStats.log.drawRoute')}</Text>
               </Button>
             ) : null}

@@ -69,7 +69,7 @@ export function ErrorScreen({
 
           {showHomeButton && (
             <Button onPress={handleGoHome} variant="secondary" className="h-12 w-full">
-              <Text className="font-medium text-foreground">{t('errors.goHome')}</Text>
+              <Text>{t('errors.goHome')}</Text>
             </Button>
           )}
         </View>

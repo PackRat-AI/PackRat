@@ -209,6 +209,7 @@ function MessageRow({
   selectedMessages: string[];
   setSelectedMessages: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
+  const { colors } = useColorScheme();
   function onListItemPress() {
     if (selectedMessages.length > 0) {
       setSelectedMessages((prev) => {
@@ -404,6 +405,7 @@ const ACTION_BUTTON_STYLE: ViewStyle = {
 };
 
 function Swipeable({ children }: { children: React.ReactNode }) {
+  const { colors } = useColorScheme();
   const translateX = useSharedValue(0);
   const previousTranslateX = useSharedValue(0);
   const initialTouchLocation = useSharedValue<{ x: number; y: number } | null>(null);

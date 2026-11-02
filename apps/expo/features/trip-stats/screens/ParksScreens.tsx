@@ -210,8 +210,8 @@ export function ParkDetailScreen() {
           className="mx-4 mt-4 self-start"
           onPress={() => setPicking(true)}
           testID={testIds.tripStats.addPastVisitBtn}
+          icon="plus"
         >
-          <Icon name="plus" size={18} color={colors.foreground} />
           <Text>{t('tripStats.parks.addPastVisit')}</Text>
         </Button>
       </ScrollView>

@@ -204,7 +204,7 @@ export default function TrailPageScreen() {
           </Button>
           {enableTrips ? (
             <Button
-              className="h-10 flex-1 gap-2 pl-4 pr-6"
+              className="flex-1"
               variant="outlined"
               onPress={() => {
                 const center = trail.data?.summary.center;
@@ -220,9 +220,9 @@ export default function TrailPageScreen() {
                 });
               }}
               testID={testIds.trailConditions.trailPagePlanTripBtn}
+              icon="map-outline"
             >
-              <Icon name="map-outline" size={18} color={colors.primary} />
-              <Text className="font-medium text-primary">{t('trailConditions.planTrip')}</Text>
+              <Text>{t('trailConditions.planTrip')}</Text>
             </Button>
           ) : null}
         </View>

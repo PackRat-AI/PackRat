@@ -176,7 +176,7 @@ export function TripDetailScreen() {
                   </Button>
 
                   {/* Weather */}
-                  <Button variant="secondary" size="sm" onPress={handleWeatherPress}>
+                  <Button variant="secondary" onPress={handleWeatherPress}>
                     <Text>{t('trips.viewWeather')}</Text>
                   </Button>
                 </View>

@@ -100,8 +100,8 @@ export default function LocationSearchScreen() {
             onSubmitEditing={handleSearch}
           />
         </View>
-        <Button onPress={handleSearch} variant="secondary" size="sm">
-          <Text className="text-foreground font-medium">{t('location.searchButton')}</Text>
+        <Button onPress={handleSearch} variant="secondary">
+          <Text>{t('location.searchButton')}</Text>
         </Button>
       </View>
 
