@@ -35,7 +35,7 @@ function useActionSheet() {
   return { showActionSheetWithOptions };
 }
 
-function isDestructive(options: ActionSheetOptions, index: number) {
+function isDestructive({ options, index }: { options: ActionSheetOptions; index: number }) {
   const destructive = options.destructiveButtonIndex;
   return Array.isArray(destructive) ? destructive.includes(index) : destructive === index;
 }
@@ -90,7 +90,7 @@ function ActionSheetHost() {
                 key={`${index}-${label}`}
                 colors={{
                   containerColor: colors.card,
-                  contentColor: isDestructive(options, index)
+                  contentColor: isDestructive({ options, index })
                     ? colors.destructive
                     : colors.foreground,
                 }}
@@ -98,7 +98,9 @@ function ActionSheetHost() {
               >
                 <JCListItem.HeadlineContent>
                   <JCText
-                    color={isDestructive(options, index) ? colors.destructive : colors.foreground}
+                    color={
+                      isDestructive({ options, index }) ? colors.destructive : colors.foreground
+                    }
                   >
                     {label}
                   </JCText>

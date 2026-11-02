@@ -80,7 +80,13 @@ function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<Alert
     setOpen(false);
   }
 
-  function renderAction(button: AlertButtonDef, fallbackText: string) {
+  function renderAction({
+    button,
+    fallbackText,
+  }: {
+    button: AlertButtonDef;
+    fallbackText: string;
+  }) {
     return (
       <JCTextButton
         key={button.text ?? fallbackText}
@@ -121,12 +127,14 @@ function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<Alert
             )}
             {confirmButtons.length > 0 && (
               <JCAlertDialog.ConfirmButton>
-                <JCRow>{confirmButtons.map((button) => renderAction(button, 'OK'))}</JCRow>
+                <JCRow>
+                  {confirmButtons.map((button) => renderAction({ button, fallbackText: 'OK' }))}
+                </JCRow>
               </JCAlertDialog.ConfirmButton>
             )}
             {!!cancelButton && (
               <JCAlertDialog.DismissButton>
-                {renderAction(cancelButton, 'Cancel')}
+                {renderAction({ button: cancelButton, fallbackText: 'Cancel' })}
               </JCAlertDialog.DismissButton>
             )}
           </JCAlertDialog>
