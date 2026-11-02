@@ -1,3 +1,4 @@
+import { isNumber, isString } from '@packrat/guards';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -115,7 +116,7 @@ function useContentColor(resolved: ResolvedVariant) {
 /** Bare strings and numbers become label `Text`; RN cannot render them directly in a view. */
 function wrapTextChildren(children: ReactNode) {
   return Children.map(children, (child) =>
-    typeof child === 'string' || typeof child === 'number' ? <Text>{child}</Text> : child,
+    isString(child) || isNumber(child) ? <Text>{child}</Text> : child,
   );
 }
 
