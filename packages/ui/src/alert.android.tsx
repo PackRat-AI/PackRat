@@ -1,11 +1,16 @@
 import {
   AlertDialog as JCAlertDialog,
+  Column as JCColumn,
+  OutlinedTextField as JCOutlinedTextField,
   Row as JCRow,
   Text as JCText,
   TextButton as JCTextButton,
+  type TextFieldKeyboardType,
 } from '@expo/ui/jetpack-compose';
+import { fillMaxWidth } from '@expo/ui/jetpack-compose/modifiers';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as React from 'react';
+import type { KeyboardTypeOptions } from 'react-native';
 import type { AlertButtonDef, AlertMethods, AlertProps } from './alert.rn';
 import { Alert as RNAlertFallback } from './alert.rn';
 import { ThemedHost as JCHost } from './themed-host';
@@ -31,17 +36,19 @@ import { ThemedHost as JCHost } from './themed-host';
  * The confirm slot holds a `Row`, so an alert with more than two buttons renders every non-cancel
  * action there, after the dismiss action, as Material lays out stacked dialog actions.
  *
- * **One delegation.** `AlertDialog` has no text-input slot, so a `prompt()` (one call site
- * app-wide — the typed delete-account confirmation) falls back to the RN implementation.
+ * A `prompt()` puts an outlined text field under the message in the `Text` slot, and every button
+ * receives what was typed. Only `login-password` (two fields, no call site) falls back to the RN
+ * implementation.
  */
 function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<AlertMethods> }) {
   const [open, setOpen] = React.useState(false);
   const [current, setCurrent] = React.useState<AlertProps>(props);
   const fallbackRef = React.useRef<AlertMethods>(null);
+  const [text, setText] = React.useState('');
   const { colors } = useColorScheme();
 
-  // A prompt needs a text field, which AlertDialog has no slot for.
-  const needsFallback = (args: AlertProps) => !!args.prompt;
+  // A login-password prompt needs two fields; the dialog builds only the single-field kinds.
+  const needsFallback = (args: AlertProps) => args.prompt?.type === 'login-password';
 
   // useImperativeHandle rather than @rn-primitives' useAugmentedRef: that helper augments a real RN
   // node's ref, and this component's root is a Compose Host with no RN node to attach to.
@@ -53,6 +60,7 @@ function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<Alert
           fallbackRef.current?.show();
           return;
         }
+        setText(current.prompt?.defaultValue ?? '');
         setOpen(true);
       },
       alert: (args: AlertProps) => {
@@ -61,11 +69,17 @@ function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<Alert
           return;
         }
         setCurrent(args);
+        setText(args.prompt?.defaultValue ?? '');
         setOpen(true);
       },
       prompt: (args: AlertProps & { prompt: NonNullable<AlertProps['prompt']> }) => {
-        // Always RN: there is no text-input slot on AlertDialog.
-        fallbackRef.current?.prompt(args);
+        if (needsFallback(args)) {
+          fallbackRef.current?.prompt(args);
+          return;
+        }
+        setCurrent(args);
+        setText(args.prompt.defaultValue ?? '');
+        setOpen(true);
       },
     }),
     [current],
@@ -93,7 +107,7 @@ function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<Alert
         colors={button.style === 'destructive' ? { contentColor: colors.destructive } : undefined}
         onClick={() => {
           close();
-          button.onPress?.('');
+          button.onPress?.(text);
         }}
       >
         <JCText>{button.text ?? fallbackText}</JCText>
@@ -114,16 +128,39 @@ function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<Alert
             onDismissRequest={() => {
               close();
               // Back button / scrim tap is a cancellation, matching the RN version's onOpenChange.
-              cancelButton?.onPress?.('');
+              cancelButton?.onPress?.(text);
             }}
           >
             <JCAlertDialog.Title>
               <JCText style={{ typography: 'headlineSmall' }}>{current.title}</JCText>
             </JCAlertDialog.Title>
-            {!!current.message && (
+            {current.prompt ? (
               <JCAlertDialog.Text>
-                <JCText style={{ typography: 'bodyMedium' }}>{current.message}</JCText>
+                <JCColumn verticalArrangement={{ spacedBy: 16 }}>
+                  {!!current.message && (
+                    <JCText style={{ typography: 'bodyMedium' }}>{current.message}</JCText>
+                  )}
+                  <JCOutlinedTextField
+                    autoFocus
+                    singleLine
+                    onValueChange={setText}
+                    visualTransformation={
+                      current.prompt.type === 'secure-text' ? 'password' : 'none'
+                    }
+                    keyboardOptions={{
+                      keyboardType: toComposeKeyboardType(current.prompt.keyboardType),
+                      autoCorrectEnabled: false,
+                    }}
+                    modifiers={[fillMaxWidth()]}
+                  />
+                </JCColumn>
               </JCAlertDialog.Text>
+            ) : (
+              !!current.message && (
+                <JCAlertDialog.Text>
+                  <JCText style={{ typography: 'bodyMedium' }}>{current.message}</JCText>
+                </JCAlertDialog.Text>
+              )
             )}
             {confirmButtons.length > 0 && (
               <JCAlertDialog.ConfirmButton>
@@ -142,6 +179,24 @@ function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<Alert
       )}
     </>
   );
+}
+
+function toComposeKeyboardType(keyboardType?: KeyboardTypeOptions): TextFieldKeyboardType {
+  switch (keyboardType) {
+    case 'email-address':
+      return 'email';
+    case 'numeric':
+    case 'number-pad':
+      return 'number';
+    case 'decimal-pad':
+      return 'decimal';
+    case 'phone-pad':
+      return 'phone';
+    case 'url':
+      return 'uri';
+    default:
+      return 'text';
+  }
 }
 
 function AlertAnchor({ ref }: { ref: React.Ref<AlertMethods> }) {
