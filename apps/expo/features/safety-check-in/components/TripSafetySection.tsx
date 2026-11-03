@@ -16,7 +16,7 @@ import { Share, View } from 'react-native';
 import { capitalizeFirst, contactSummary } from '../lib/copy';
 import { endSafetyCheckIn, refreshSafetyCheckIn } from '../lib/safetyActions';
 import { setTripLifecycle } from '../lib/tripLifecycle';
-import { safetyStore } from '../store/safetyCheckIn';
+import { safetySendBlocked, safetyStore } from '../store/safetyCheckIn';
 import type { LocalSafetyCheckIn } from '../types';
 import {
   canStartTrip,
@@ -163,6 +163,7 @@ function SafetyCheckInCard({
   const { colors } = useColorScheme();
   const alertRef = useRef<AlertMethods>(null);
   const pending = use$(() => pendingCount({ state: safetyStore.get(), tripId: trip.id }));
+  const sendBlocked = use$(safetySendBlocked);
 
   const overdue = isOverdue({ checkIn, now });
   const tint = overdue ? colors.destructive : colors.primary;
@@ -202,13 +203,15 @@ function SafetyCheckInCard({
     });
 
   const footer = [
-    notified || checkIn.startError
+    notified || checkIn.startError || !sendBlocked
       ? null
       : t('safetyCheckIn.card.waitingForSignal', { who: capitalizeFirst(who), count }),
     checkIn.lastCheckInAt
       ? t('safetyCheckIn.card.lastCheckIn', { time: format(new Date(checkIn.lastCheckInAt), 'p') })
       : null,
-    pending > 0 && notified ? t('safetyCheckIn.card.pendingUpdates', { count: pending }) : null,
+    pending > 0 && notified && sendBlocked
+      ? t('safetyCheckIn.card.pendingUpdates', { count: pending })
+      : null,
     checkIn.trackingEnabled ? t('safetyCheckIn.card.sharingProgress') : null,
   ].filter((line): line is string => line !== null);
 

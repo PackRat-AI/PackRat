@@ -26,6 +26,12 @@ syncObservable(safetyStore, {
 
 export const safetySyncState = syncState(safetyStore);
 
+/**
+ * True while queued writes are held back because the last send couldn't reach the server. The
+ * card only mentions waiting updates then, so a queue that is draining normally stays quiet.
+ */
+export const safetySendBlocked = observable(false);
+
 /** Applies a pure transition from `utils/safetyQueue`. */
 export function updateSafety(transition: (state: SafetyState) => SafetyState): void {
   safetyStore.set(transition(safetyStore.peek()));
@@ -73,9 +79,13 @@ export function flushSafetyQueue(): Promise<void> {
 async function drain(): Promise<void> {
   for (;;) {
     const operation = safetyStore.queue.peek()[0];
-    if (!operation) return;
+    if (!operation) {
+      safetySendBlocked.set(false);
+      return;
+    }
     try {
       const remote = await withTimeout(performOperation(operation));
+      safetySendBlocked.set(false);
       updateSafety((state) => {
         // Ending a check-in can prune queued track points mid-send, so remove the operation
         // just sent by value rather than assuming it is still at the head.
@@ -89,7 +99,10 @@ async function drain(): Promise<void> {
       });
     } catch (error) {
       const httpStatus = error instanceof SafetyApiError ? error.httpStatus : null;
-      if (isRetryable(httpStatus)) return;
+      if (isRetryable(httpStatus)) {
+        safetySendBlocked.set(true);
+        return;
+      }
       Sentry.captureException(error, {
         tags: { feature: 'safetyCheckIn', action: `flush.${operation.kind}` },
         extra: { checkInId: operation.checkInId, httpStatus },
