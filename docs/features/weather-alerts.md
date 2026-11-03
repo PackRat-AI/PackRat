@@ -105,7 +105,7 @@ The wrist is where an alert matters most: the person it is for is outdoors with 
 
 **On the watch face.** The PackRat weather complication shows current temperature and conditions for the weather location the phone last showed. While any saved location has an unread alert, the alert takes over the complication in every size: a warning symbol and the hazard's name, with the affected location and the count of others where there is room. The alert outranks the temperature because a hazard is the reason to raise a wrist outdoors. It is marked by the symbol as well as by colour, so it still reads on watch faces tinted to a single colour. Tapping the complication opens the watch's Weather page. While an alert is waiting, the large rectangular version also rises to the top of the Smart Stack.
 
-When more than one location has an unread alert, the card and the complication show the most severe and say how many others are waiting. Neither the card nor the complication shows an alert the phone has already marked as read, and never shows one for a hazard that has passed (ADR-013).
+When more than one location has an unread alert, the card and the complication show the most severe and say how many others are waiting. Neither the card nor the complication shows an alert the phone has already marked as read, or one for a hazard that has passed (ADR-013).
 
 ## Staying current
 
