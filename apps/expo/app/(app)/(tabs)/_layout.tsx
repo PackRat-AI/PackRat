@@ -23,7 +23,7 @@ export default function TabLayout() {
         <NativeTabs.Trigger.Label>{t('navigation.feed')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf="photo.on.rectangle.angled"
-          src={require('../../../assets/tab-icons/photo-library.png')}
+          src={require('../../../assets/tab-icons/community.png')}
         />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="trips" hidden={!featureFlags.enableTrips}>
