@@ -1,7 +1,6 @@
 import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { createDropdownItem, DropdownMenu } from '@packrat/ui/src/dropdown-menu';
 import { Text } from '@packrat/ui/src/text';
-import { usePreventRemove } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { userStore } from 'expo-app/features/auth/store';
@@ -12,7 +11,7 @@ import { testIds } from 'expo-app/lib/testIds';
 import { Image } from 'expo-image';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { Stack, useNavigation, useRouter } from 'expo-router';
+import { Stack, useNavigation, usePreventRemove, useRouter } from 'expo-router';
 import { nanoid } from 'nanoid';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from 'react-native';
