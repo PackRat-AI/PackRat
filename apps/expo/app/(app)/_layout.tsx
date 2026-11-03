@@ -356,6 +356,9 @@ export default function AppLayout() {
 
 const SCREEN_OPTIONS = {
   animation: 'ios_from_right', // for android
+  // Screens set their own titles, some only once their data loads; until then the header stays
+  // blank rather than showing the route's file name.
+  title: '',
 } as const;
 
 const TABS_OPTIONS = {

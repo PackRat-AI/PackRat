@@ -32,8 +32,10 @@ function Unavailable() {
 }
 
 function Loading() {
+  const { t } = useTranslation();
   return (
     <View className="flex-1 items-center justify-center bg-background">
+      <Stack.Screen options={{ title: t('feed.postTitle') }} />
       <ActivityIndicator size="large" />
     </View>
   );
