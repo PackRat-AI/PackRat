@@ -1971,7 +1971,9 @@
     "feedAndSharing": "Feed & Sharing",
     "feedAndSharingBody": "Who can tag you, feed notifications, and blocked people.",
     "ok": "OK",
-    "captionSaveFailedTitle": "Couldn't Save Caption"
+    "captionSaveFailedTitle": "Couldn't Save Caption",
+    "photoFileName": "Photo by {{name}} on PackRat",
+    "photoFileNameNoAuthor": "Photo from PackRat"
   },
   "wildlife": {
     "wildlife": "Wildlife",

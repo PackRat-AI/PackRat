@@ -8,7 +8,7 @@ import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, TextInput, type TextInputInstance, View } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView, KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type CommentAction, CommentRow } from '../components/CommentRow';
 import { MentionSuggestionList } from '../components/MentionSuggestionList';
@@ -220,90 +220,95 @@ export function PostDetailScreen({ post }: { post: Post }) {
   const canSend = draft.trim().length > 0 && draft.length <= MAX_COMMENT && !isSending;
 
   return (
-    <KeyboardAvoidingView behavior="padding" className="flex-1 bg-background">
+    <View className="flex-1 bg-background">
       <Stack.Screen options={{ title: t('feed.postTitle') }} />
-      <FlatList
-        ref={listRef}
-        data={rows}
-        keyExtractor={(row) => (row.kind === 'comment' ? String(row.comment.id) : row.kind)}
-        renderItem={renderRow}
-        ListHeaderComponent={
-          <View className="gap-4 pb-4">
-            <PostCard
-              post={post}
-              actions={actions}
-              onOpenComments={() => inputRef.current?.focus()}
-              showCommentsLink={false}
-            />
-            <Text variant="subhead" className="px-1 font-semibold">
-              {t('feed.comments')}
-            </Text>
-          </View>
-        }
-        ItemSeparatorComponent={() => <View className="h-3" />}
-        contentContainerStyle={{ padding: 12, paddingBottom: 24 }}
-        keyboardShouldPersistTaps="handled"
-        testID={testIds.feed.postDetail(post.id)}
-      />
-
-      <View
-        className="gap-2 border-t border-border bg-background px-3 pt-2"
-        style={{ paddingBottom: Math.max(insets.bottom, 8) }}
-      >
-        <MentionSuggestionList
-          suggestions={mentions.suggestions}
-          onSelect={(person) => setDraft(mentions.accept(person))}
+      <KeyboardAvoidingView behavior="padding" className="flex-1">
+        <FlatList
+          ref={listRef}
+          data={rows}
+          keyExtractor={(row) => (row.kind === 'comment' ? String(row.comment.id) : row.kind)}
+          renderItem={renderRow}
+          ListHeaderComponent={
+            <View className="gap-4 pb-4">
+              <PostCard
+                post={post}
+                actions={actions}
+                onOpenComments={() => inputRef.current?.focus()}
+                showCommentsLink={false}
+              />
+              <Text variant="subhead" className="px-1 font-semibold">
+                {t('feed.comments')}
+              </Text>
+            </View>
+          }
+          ItemSeparatorComponent={() => <View className="h-3" />}
+          contentContainerStyle={{ padding: 12, paddingBottom: 24 }}
+          keyboardShouldPersistTaps="handled"
+          testID={testIds.feed.postDetail(post.id)}
         />
-        {composerHint ? (
-          <View className="flex-row items-center gap-2 pl-2">
-            <Text variant="footnote" className="flex-1 text-muted-foreground" numberOfLines={1}>
-              {composerHint}
-            </Text>
+      </KeyboardAvoidingView>
+
+      {/* Rides on top of the keyboard, the same way the PackRat AI composer does. */}
+      <KeyboardStickyView offset={{ opened: insets.bottom }}>
+        <View
+          className="gap-2 border-t border-border bg-background px-3 pt-2"
+          style={{ paddingBottom: Math.max(insets.bottom, 8) }}
+        >
+          <MentionSuggestionList
+            suggestions={mentions.suggestions}
+            onSelect={(person) => setDraft(mentions.accept(person))}
+          />
+          {composerHint ? (
+            <View className="flex-row items-center gap-2 pl-2">
+              <Text variant="footnote" className="flex-1 text-muted-foreground" numberOfLines={1}>
+                {composerHint}
+              </Text>
+              <Pressable
+                onPress={clearComposer}
+                className="h-8 w-8 items-center justify-center"
+                accessibilityRole="button"
+                accessibilityLabel={t('feed.cancel')}
+                testID={testIds.feed.commentCancel}
+              >
+                <Icon name="close" size={18} color={colors.grey} />
+              </Pressable>
+            </View>
+          ) : null}
+          <View className="flex-row items-end gap-2">
+            <TextInput
+              ref={inputRef}
+              value={draft}
+              onChangeText={setDraft}
+              placeholder={placeholder}
+              placeholderTextColor={colors.grey}
+              multiline
+              maxLength={MAX_COMMENT}
+              className="max-h-32 min-h-[40px] flex-1 rounded-3xl border border-border bg-card px-4 py-2 text-base"
+              style={{ color: colors.foreground }}
+              testID={testIds.feed.commentInput}
+            />
             <Pressable
-              onPress={clearComposer}
-              className="h-8 w-8 items-center justify-center"
+              onPress={send}
+              disabled={!canSend}
+              className="h-10 w-10 items-center justify-center rounded-full"
+              style={{ backgroundColor: canSend ? colors.primary : colors.grey5 }}
               accessibilityRole="button"
-              accessibilityLabel={t('feed.cancel')}
-              testID={testIds.feed.commentCancel}
+              accessibilityLabel={editing ? t('feed.save') : t('feed.send')}
+              testID={testIds.feed.commentSend}
             >
-              <Icon name="close" size={18} color={colors.grey} />
+              {isSending ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Icon
+                  name={editing ? 'check' : 'send'}
+                  size={18}
+                  color={canSend ? 'white' : colors.grey}
+                />
+              )}
             </Pressable>
           </View>
-        ) : null}
-        <View className="flex-row items-end gap-2">
-          <TextInput
-            ref={inputRef}
-            value={draft}
-            onChangeText={setDraft}
-            placeholder={placeholder}
-            placeholderTextColor={colors.grey}
-            multiline
-            maxLength={MAX_COMMENT}
-            className="max-h-32 min-h-[40px] flex-1 rounded-3xl border border-border bg-card px-4 py-2 text-base"
-            style={{ color: colors.foreground }}
-            testID={testIds.feed.commentInput}
-          />
-          <Pressable
-            onPress={send}
-            disabled={!canSend}
-            className="h-10 w-10 items-center justify-center rounded-full"
-            style={{ backgroundColor: canSend ? colors.primary : colors.grey5 }}
-            accessibilityRole="button"
-            accessibilityLabel={editing ? t('feed.save') : t('feed.send')}
-            testID={testIds.feed.commentSend}
-          >
-            {isSending ? (
-              <ActivityIndicator size="small" color="white" />
-            ) : (
-              <Icon
-                name={editing ? 'check' : 'send'}
-                size={18}
-                color={canSend ? 'white' : colors.grey}
-              />
-            )}
-          </Pressable>
         </View>
-      </View>
+      </KeyboardStickyView>
 
       {actions.dialogs}
       <Alert ref={alertRef} title="" buttons={[]} />
@@ -329,6 +334,6 @@ export function PostDetailScreen({ post }: { post: Post }) {
           );
         }}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 }

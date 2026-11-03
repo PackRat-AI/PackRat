@@ -1,5 +1,4 @@
 import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
-import { createDropdownItem, DropdownMenu } from '@packrat/ui/src/dropdown-menu';
 import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
@@ -295,56 +294,25 @@ export function CreatePostScreen() {
             contentContainerClassName="gap-2.5"
           >
             {photos.map((photo, index) => (
-              <DropdownMenu
+              <View
                 key={photo.id}
-                enabled={isEditing}
-                items={[
-                  ...(index > 0
-                    ? [
-                        createDropdownItem({
-                          actionKey: 'earlier',
-                          title: t('feed.moveEarlier'),
-                          icon: { name: 'arrow-left' },
-                        }),
-                      ]
-                    : []),
-                  ...(index < photos.length - 1
-                    ? [
-                        createDropdownItem({
-                          actionKey: 'later',
-                          title: t('feed.moveLater'),
-                          icon: { name: 'arrow-right' },
-                        }),
-                      ]
-                    : []),
-                  createDropdownItem({
-                    actionKey: 'remove',
-                    title: t('feed.removePhoto'),
-                    icon: { name: 'trash-can-outline' },
-                    destructive: true,
-                  }),
-                ]}
-                onItemPress={({ actionKey }) => {
-                  if (actionKey === 'earlier') move({ id: photo.id, by: -1 });
-                  else if (actionKey === 'later') move({ id: photo.id, by: 1 });
-                  else if (actionKey === 'remove') remove(photo.id);
-                }}
+                className="h-[88px] w-[88px] overflow-hidden rounded-xl bg-muted"
                 testID={testIds.feed.composerPhoto(index)}
               >
-                <View className="h-[88px] w-[88px] overflow-hidden rounded-xl bg-muted">
-                  <Image
-                    source={{ uri: photo.uri }}
-                    style={{ width: 88, height: 88 }}
-                    contentFit="cover"
-                  />
-                  {index === 0 ? (
-                    <View className="absolute bottom-1.5 left-1.5 rounded-full bg-black/55 px-1.5 py-0.5">
-                      <Text variant="caption2" className="font-semibold text-white">
-                        {t('feed.cover')}
-                      </Text>
-                    </View>
-                  ) : null}
-                  {isEditing ? (
+                <Image
+                  source={{ uri: photo.uri }}
+                  style={{ width: 88, height: 88 }}
+                  contentFit="cover"
+                />
+                {index === 0 ? (
+                  <View className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 py-0.5">
+                    <Text variant="caption2" className="font-semibold text-white">
+                      {t('feed.cover')}
+                    </Text>
+                  </View>
+                ) : null}
+                {isEditing ? (
+                  <>
                     <Pressable
                       onPress={() => remove(photo.id)}
                       hitSlop={8}
@@ -355,13 +323,37 @@ export function CreatePostScreen() {
                     >
                       <Icon name="close" size={14} color="white" />
                     </Pressable>
-                  ) : photo.uploadedKey ? (
-                    <View className="absolute inset-0 items-center justify-center bg-black/20">
-                      <Icon name="check-circle" size={28} color="#22c55e" />
-                    </View>
-                  ) : null}
-                </View>
-              </DropdownMenu>
+                    {index > 0 ? (
+                      <Pressable
+                        onPress={() => move({ id: photo.id, by: -1 })}
+                        hitSlop={6}
+                        className="absolute bottom-1 left-1 h-7 w-7 items-center justify-center rounded-full bg-black/60"
+                        accessibilityRole="button"
+                        accessibilityLabel={t('feed.moveEarlier')}
+                        testID={testIds.feed.composerMoveEarlier(index)}
+                      >
+                        <Icon name="chevron-left" size={18} color="white" />
+                      </Pressable>
+                    ) : null}
+                    {index < photos.length - 1 ? (
+                      <Pressable
+                        onPress={() => move({ id: photo.id, by: 1 })}
+                        hitSlop={6}
+                        className="absolute bottom-1 right-1 h-7 w-7 items-center justify-center rounded-full bg-black/60"
+                        accessibilityRole="button"
+                        accessibilityLabel={t('feed.moveLater')}
+                        testID={testIds.feed.composerMoveLater(index)}
+                      >
+                        <Icon name="chevron-right" size={18} color="white" />
+                      </Pressable>
+                    ) : null}
+                  </>
+                ) : photo.uploadedKey ? (
+                  <View className="absolute inset-0 items-center justify-center bg-black/20">
+                    <Icon name="check-circle" size={28} color="#22c55e" />
+                  </View>
+                ) : null}
+              </View>
             ))}
             {isImporting ? (
               <View className="h-[88px] w-[88px] items-center justify-center rounded-xl border border-border bg-card">

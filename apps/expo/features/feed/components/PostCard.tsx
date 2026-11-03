@@ -205,7 +205,8 @@ export function PostCard({
             onItemPress={({ actionKey }) => {
               if (actionKey === 'link') actions.share.shareLink(post);
               const image = post.images[photoIndex];
-              if (actionKey === 'photo' && image) actions.share.sharePhoto(image);
+              if (actionKey === 'photo' && image)
+                actions.share.sharePhoto({ post, imageKey: image });
             }}
             enabled={!actions.share.isPreparingPhoto}
             testID={testIds.feed.shareButton(post.id)}

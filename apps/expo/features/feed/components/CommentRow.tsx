@@ -86,33 +86,48 @@ export function CommentRow({
 
   return (
     <View
-      className={`flex-row gap-3 ${isReply ? 'pl-[60px] pr-1' : 'pl-4 pr-1'}`}
+      className={`flex-row gap-3 ${isReply ? 'pl-[52px]' : ''}`}
       testID={testIds.feed.comment(comment.id)}
     >
       <View className="pt-1">
         <PersonAvatar person={comment.author} size={isReply ? 28 : 32} />
       </View>
       <View className="flex-1">
-        <View className="flex-row flex-wrap items-center gap-x-1.5">
-          <Text variant="subhead" className="font-semibold">
-            {name}
-          </Text>
-          {isPostAuthor ? (
-            <View className="rounded-full bg-primary/15 px-2 py-0.5">
-              <Text variant="caption2" className="font-semibold text-primary">
-                {t('feed.author')}
-              </Text>
+        <View className="flex-row items-center gap-1.5">
+          <View className="flex-1 flex-row flex-wrap items-center gap-x-1.5">
+            <Text variant="subhead" className="font-semibold">
+              {name}
+            </Text>
+            {isPostAuthor ? (
+              <View className="rounded-full bg-primary/15 px-2 py-0.5">
+                <Text variant="caption2" className="font-semibold text-primary">
+                  {t('feed.author')}
+                </Text>
+              </View>
+            ) : null}
+            <Text variant="caption1" className="text-muted-foreground">
+              {getRelativeTime({ dateValue: comment.createdAt })}
+            </Text>
+          </View>
+          <DropdownMenu
+            items={items}
+            onItemPress={({ actionKey }) => onAction(comment, actionKey as CommentAction)}
+            testID={testIds.feed.commentMenu(comment.id)}
+          >
+            <View
+              accessibilityRole="button"
+              accessibilityLabel={t('feed.more')}
+              className="-my-2 h-10 w-10 items-center justify-center"
+            >
+              <Icon name="dots-vertical" size={20} color={colors.grey} />
             </View>
-          ) : null}
-          <Text variant="caption1" className="text-muted-foreground">
-            {getRelativeTime({ dateValue: comment.createdAt })}
-          </Text>
+          </DropdownMenu>
         </View>
         <MentionText text={comment.content} people={taggedPeople} variant="subhead" selectable />
-        <View className="flex-row items-center gap-4">
+        <View className="flex-row items-center gap-1">
           <Pressable
             onPress={() => onAction(comment, 'reply')}
-            className="min-h-[36px] justify-center"
+            className="min-h-[40px] justify-center pr-3"
             accessibilityRole="button"
             testID={testIds.feed.commentReply(comment.id)}
           >
@@ -120,47 +135,32 @@ export function CommentRow({
               {t('feed.reply')}
             </Text>
           </Pressable>
+          <Pressable
+            onPress={() => onLike(comment)}
+            className="min-h-[40px] flex-row items-center gap-1 px-2"
+            accessibilityRole="button"
+            accessibilityLabel={comment.likedByMe ? t('feed.unlikeComment') : t('feed.likeComment')}
+            android_ripple={{ color: colors.grey5, borderless: true }}
+            testID={testIds.feed.commentLike(comment.id)}
+          >
+            <Icon
+              name={comment.likedByMe ? 'heart' : 'heart-outline'}
+              size={16}
+              color={comment.likedByMe ? colors.destructive : colors.grey}
+            />
+            {comment.likeCount > 0 ? (
+              <Text variant="footnote" className="text-muted-foreground">
+                {comment.likeCount}
+              </Text>
+            ) : null}
+          </Pressable>
           {comment.editedAt ? (
-            <Text variant="footnote" className="text-muted-foreground">
+            <Text variant="footnote" className="pl-2 text-muted-foreground">
               {t('feed.edited')}
             </Text>
           ) : null}
         </View>
       </View>
-      <View className="items-center">
-        <Pressable
-          onPress={() => onLike(comment)}
-          className="h-10 w-10 items-center justify-center"
-          accessibilityRole="button"
-          accessibilityLabel={comment.likedByMe ? t('feed.unlikeComment') : t('feed.likeComment')}
-          android_ripple={{ color: colors.grey5, borderless: true }}
-          testID={testIds.feed.commentLike(comment.id)}
-        >
-          <Icon
-            name={comment.likedByMe ? 'heart' : 'heart-outline'}
-            size={18}
-            color={comment.likedByMe ? colors.destructive : colors.grey}
-          />
-          {comment.likeCount > 0 ? (
-            <Text variant="caption2" className="text-muted-foreground">
-              {comment.likeCount}
-            </Text>
-          ) : null}
-        </Pressable>
-      </View>
-      <DropdownMenu
-        items={items}
-        onItemPress={({ actionKey }) => onAction(comment, actionKey as CommentAction)}
-        testID={testIds.feed.commentMenu(comment.id)}
-      >
-        <View
-          accessibilityRole="button"
-          accessibilityLabel={t('feed.more')}
-          className="h-10 w-10 items-center justify-center"
-        >
-          <Icon name="dots-vertical" size={20} color={colors.grey} />
-        </View>
-      </DropdownMenu>
     </View>
   );
 }

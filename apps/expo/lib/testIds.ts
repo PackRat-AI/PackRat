@@ -69,6 +69,8 @@ export const testIds = Object.freeze({
     composerPhotoCount: 'feed:composer-photo-count',
     composerPhoto: (index: number) => `feed:composer-photo-${index}`,
     composerRemovePhoto: (index: number) => `feed:composer-remove-photo-${index}`,
+    composerMoveEarlier: (index: number) => `feed:composer-move-earlier-${index}`,
+    composerMoveLater: (index: number) => `feed:composer-move-later-${index}`,
     composerLibrary: 'feed:composer-library',
     composerCamera: 'feed:composer-camera',
     composerTagged: (id: string) => `feed:composer-tagged-${id}`,

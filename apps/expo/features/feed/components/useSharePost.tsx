@@ -17,7 +17,20 @@ const appIcon = require('expo-app/assets/packrat-app-icon-gradient.png');
 /** Longest edge of a shared photo: the same size posts are uploaded at. */
 const MAX_SHARE_EDGE = 2048;
 
-type Pending = { imageKey: string; size: { width: number; height: number } | null };
+type Pending = {
+  imageKey: string;
+  fileName: string;
+  size: { width: number; height: number } | null;
+};
+
+const UNSAFE_FILE_CHARACTERS = /[\\/:*?"<>|\n\r\t]+/g;
+const RUNS_OF_SPACE = /\s+/g;
+
+/** What the receiver sees first: whose photo it is and where it came from. */
+function sharedPhotoFileName(title: string): string {
+  const name = title.replace(UNSAFE_FILE_CHARACTERS, ' ').replace(RUNS_OF_SPACE, ' ').trim();
+  return `${name.slice(0, 80).trim() || 'PackRat photo'}.jpg`;
+}
 
 /**
  * Sends a post out through the Android share sheet — its link, or the current photo with a small
@@ -31,6 +44,8 @@ export function useSharePost({ onPhotoFailed }: { onPhotoFailed: () => void }) {
   const { width: windowWidth } = useWindowDimensions();
   const [pending, setPending] = useState<Pending | null>(null);
   const markRef = useRef<ViewInstance>(null);
+  // expo-image can report a load more than once; only the first one shares.
+  const captureStarted = useRef(false);
 
   const shareLink = async (post: Post) => {
     const url = postShareUrl(post);
@@ -43,9 +58,21 @@ export function useSharePost({ onPhotoFailed }: { onPhotoFailed: () => void }) {
     }
   };
 
-  const sharePhoto = (imageKey: string) => setPending({ imageKey, size: null });
+  const sharePhoto = ({ post, imageKey }: { post: Post; imageKey: string }) => {
+    captureStarted.current = false;
+    const title = post.author
+      ? t('feed.photoFileName', { name: displayName(post.author) })
+      : t('feed.photoFileNameNoAuthor');
+    setPending({ imageKey, fileName: sharedPhotoFileName(title), size: null });
+  };
 
-  const capture = async (size: { width: number; height: number }) => {
+  const capture = async ({
+    size,
+    fileName,
+  }: {
+    size: { width: number; height: number };
+    fileName: string;
+  }) => {
     try {
       const scale = Math.min(1, MAX_SHARE_EDGE / Math.max(size.width, size.height));
       const uri = await captureRef(markRef, {
@@ -55,7 +82,7 @@ export function useSharePost({ onPhotoFailed }: { onPhotoFailed: () => void }) {
         width: Math.round(size.width * scale),
         height: Math.round(size.height * scale),
       });
-      const named = new File(Paths.cache, 'PackRat.jpg');
+      const named = new File(Paths.cache, fileName);
       await new File(uri).move(named, { overwrite: true });
       await Sharing.shareAsync(named.uri, { mimeType: 'image/jpeg' });
     } catch (error) {
@@ -67,10 +94,13 @@ export function useSharePost({ onPhotoFailed }: { onPhotoFailed: () => void }) {
   };
 
   const onLoad = (event: ImageLoadEventData) => {
+    if (captureStarted.current || !pending) return;
+    captureStarted.current = true;
     const size = { width: event.source.width, height: event.source.height };
+    const { fileName } = pending;
     setPending((current) => (current ? { ...current, size } : current));
     // Let the mark lay out over the loaded photo before capturing.
-    requestAnimationFrame(() => requestAnimationFrame(() => capture(size)));
+    requestAnimationFrame(() => requestAnimationFrame(() => capture({ size, fileName })));
   };
 
   let renderer: React.ReactNode = null;
@@ -93,6 +123,7 @@ export function useSharePost({ onPhotoFailed }: { onPhotoFailed: () => void }) {
             contentFit="cover"
             onLoad={onLoad}
             onError={() => {
+              if (captureStarted.current) return;
               setPending(null);
               onPhotoFailed();
             }}
