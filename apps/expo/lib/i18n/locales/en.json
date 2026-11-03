@@ -1988,7 +1988,7 @@
     },
     "tracking": {
       "disclosureTitle": "Share your location in the background?",
-      "disclosureMessage": "While this trip is in progress, PackRat collects your location, even when the app is closed or not in use, so your emergency contacts can see where you are. Sharing stops when you tap I'm Safe, and your location history for the trip is deleted. On the next screen, choose \"Allow all the time\".",
+      "disclosureMessage": "While this trip is in progress, PackRat collects your location, even when the app is closed or not in use, so your emergency contacts can see where you are. Sharing stops when you tap I'm Safe, and your location history for the trip is deleted. On the next screens, choose \"While using the app\" and then \"Allow all the time\".",
       "disclosureAccept": "Continue",
       "disclosureDecline": "Not now",
       "serviceTitle": "Sharing your progress",

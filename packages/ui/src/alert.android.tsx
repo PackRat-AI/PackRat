@@ -111,6 +111,7 @@ function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<Alert
       {open && (
         <JCHost matchContents>
           <JCAlertDialog
+            properties={{ dismissOnClickOutside: current.dismissOnClickOutside ?? true }}
             onDismissRequest={() => {
               close();
               // Back button / scrim tap is a cancellation, matching the RN version's onOpenChange.

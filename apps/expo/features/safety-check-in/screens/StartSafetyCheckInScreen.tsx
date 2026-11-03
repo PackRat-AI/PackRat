@@ -147,6 +147,7 @@ export function StartSafetyCheckInScreen() {
       title: t('safetyCheckIn.tracking.disclosureTitle'),
       message: t('safetyCheckIn.tracking.disclosureMessage'),
       materialIcon: { name: 'map-marker-radius-outline' },
+      dismissOnClickOutside: false,
       buttons: [
         {
           text: t('safetyCheckIn.tracking.disclosureDecline'),

@@ -51,6 +51,11 @@ type AlertProps = {
     keyboardType?: KeyboardTypeOptions;
   };
   materialIcon?: { name: MaterialIconName; color?: string };
+  /**
+   * False for a decision the user must make with a button, so a stray tap outside can't pick one.
+   * Android only; the back button still counts as the cancel action.
+   */
+  dismissOnClickOutside?: boolean;
   materialWidth?: number;
   materialPortalHost?: string;
 };
