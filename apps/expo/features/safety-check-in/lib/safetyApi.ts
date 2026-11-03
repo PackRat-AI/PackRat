@@ -1,3 +1,4 @@
+import { isNumber, isObject, isString } from '@packrat/guards';
 import type {
   CreateEmergencyContactRequest,
   EmergencyContact,
@@ -20,10 +21,8 @@ export class SafetyApiError extends Error {
 
 /** The server's `{ error }` message when it sent one, else a fallback. */
 function messageOf(value: unknown, fallback: string): string {
-  if (value && typeof value === 'object' && 'error' in value && typeof value.error === 'string') {
-    return value.error;
-  }
-  return fallback;
+  const error = isObject(value) && 'error' in value ? value.error : undefined;
+  return isString(error) ? error : fallback;
 }
 
 function unwrap<T>(
@@ -31,7 +30,7 @@ function unwrap<T>(
   fallback: string,
 ): T {
   if (result.error || result.data == null) {
-    const status = typeof result.error?.status === 'number' ? result.error.status : null;
+    const status = isNumber(result.error?.status) ? result.error.status : null;
     throw new SafetyApiError(messageOf(result.error?.value, fallback), status);
   }
   return result.data;

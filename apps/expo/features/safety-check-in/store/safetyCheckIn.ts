@@ -1,5 +1,6 @@
 import { observable, syncState } from '@legendapp/state';
 import { syncObservable } from '@legendapp/state/sync';
+import { isEqual } from '@packrat/guards';
 import * as Sentry from '@sentry/react-native';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import { nanoid } from 'nanoid';
@@ -89,8 +90,7 @@ async function drain(): Promise<void> {
       updateSafety((state) => {
         // Ending a check-in can prune queued track points mid-send, so remove the operation
         // just sent by value rather than assuming it is still at the head.
-        const sent = JSON.stringify(operation);
-        const index = state.queue.findIndex((op) => JSON.stringify(op) === sent);
+        const index = state.queue.findIndex((op) => isEqual(op, operation));
         const next =
           index === -1 ? state : { ...state, queue: state.queue.filter((_, i) => i !== index) };
         return operation.kind === 'start' && remote
