@@ -119,7 +119,7 @@ export function StartSafetyCheckInScreen() {
       return next;
     });
 
-  const updateGear = (key: number, patch: Partial<IdentifyingGearItem>) =>
+  const updateGear = ({ key, patch }: { key: number; patch: Partial<IdentifyingGearItem> }) =>
     setGear((current) => current.map((item) => (item.key === key ? { ...item, ...patch } : item)));
 
   const send = (tracking: boolean) => {
@@ -264,7 +264,9 @@ export function StartSafetyCheckInScreen() {
               <View key={item.key} className="flex-row items-center gap-2 px-4 py-1">
                 <TextInput
                   value={item.note ?? ''}
-                  onChangeText={(note) => updateGear(item.key, { note: note || null })}
+                  onChangeText={(note) =>
+                    updateGear({ key: item.key, patch: { note: note || null } })
+                  }
                   placeholder={t('safetyCheckIn.start.colour')}
                   placeholderTextColor={colors.grey}
                   maxLength={60}
@@ -272,7 +274,7 @@ export function StartSafetyCheckInScreen() {
                 />
                 <TextInput
                   value={item.name}
-                  onChangeText={(name) => updateGear(item.key, { name })}
+                  onChangeText={(name) => updateGear({ key: item.key, patch: { name } })}
                   placeholder={t('safetyCheckIn.start.item')}
                   placeholderTextColor={colors.grey}
                   maxLength={100}

@@ -10,43 +10,52 @@ import type { PendingSafetyOperation } from '../types';
 
 /** A failed safety call, carrying the HTTP status so the queue can tell refusal from no signal. */
 export class SafetyApiError extends Error {
-  constructor(
-    message: string,
-    readonly httpStatus: number | null,
-  ) {
+  readonly httpStatus: number | null;
+
+  constructor({ message, httpStatus }: { message: string; httpStatus: number | null }) {
     super(message);
+    this.httpStatus = httpStatus;
     this.name = 'SafetyApiError';
   }
 }
 
 /** The server's `{ error }` message when it sent one, else a fallback. */
-function messageOf(value: unknown, fallback: string): string {
+function messageOf({ value, fallback }: { value: unknown; fallback: string }): string {
   const error = isObject(value) && 'error' in value ? value.error : undefined;
   return isString(error) ? error : fallback;
 }
 
-function unwrap<T>(
-  result: { data: T | null; error: { status: unknown; value: unknown } | null },
-  fallback: string,
-): T {
+function unwrap<T>({
+  result,
+  fallback,
+}: {
+  result: { data: T | null; error: { status: unknown; value: unknown } | null };
+  fallback: string;
+}): T {
   if (result.error || result.data == null) {
     const status = isNumber(result.error?.status) ? result.error.status : null;
-    throw new SafetyApiError(messageOf(result.error?.value, fallback), status);
+    throw new SafetyApiError({
+      message: messageOf({ value: result.error?.value, fallback }),
+      httpStatus: status,
+    });
   }
   return result.data;
 }
 
 export async function listContacts(): Promise<EmergencyContact[]> {
-  return unwrap(await apiClient['emergency-contacts'].get(), 'Failed to load emergency contacts');
+  return unwrap({
+    result: await apiClient['emergency-contacts'].get(),
+    fallback: 'Failed to load emergency contacts',
+  });
 }
 
 export async function createContact(
   request: CreateEmergencyContactRequest,
 ): Promise<EmergencyContact> {
-  return unwrap(
-    await apiClient['emergency-contacts'].post(request),
-    'Failed to add emergency contact',
-  );
+  return unwrap({
+    result: await apiClient['emergency-contacts'].post(request),
+    fallback: 'Failed to add emergency contact',
+  });
 }
 
 export async function updateContact({
@@ -56,24 +65,24 @@ export async function updateContact({
   id: string;
   request: UpdateEmergencyContactRequest;
 }): Promise<EmergencyContact> {
-  return unwrap(
-    await apiClient['emergency-contacts']({ id }).put(request),
-    'Failed to update emergency contact',
-  );
+  return unwrap({
+    result: await apiClient['emergency-contacts']({ id }).put(request),
+    fallback: 'Failed to update emergency contact',
+  });
 }
 
 export async function deleteContact(id: string): Promise<void> {
-  unwrap(
-    await apiClient['emergency-contacts']({ id }).delete(),
-    'Failed to remove emergency contact',
-  );
+  unwrap({
+    result: await apiClient['emergency-contacts']({ id }).delete(),
+    fallback: 'Failed to remove emergency contact',
+  });
 }
 
 export async function fetchActiveCheckIn(tripId: string): Promise<SafetyCheckIn | null> {
-  const body = unwrap(
-    await apiClient.trips({ tripId })['check-in'].get(),
-    'Failed to load safety check-in',
-  );
+  const body = unwrap({
+    result: await apiClient.trips({ tripId })['check-in'].get(),
+    fallback: 'Failed to load safety check-in',
+  });
   return body.checkIn;
 }
 
@@ -86,34 +95,39 @@ export async function performOperation(
 ): Promise<SafetyCheckIn | null> {
   switch (operation.kind) {
     case 'start':
-      return unwrap(
-        await apiClient.trips({ tripId: operation.tripId })['check-in'].post(operation.request),
-        "Your contacts couldn't be notified.",
-      );
+      return unwrap({
+        result: await apiClient
+          .trips({ tripId: operation.tripId })
+          ['check-in'].post(operation.request),
+        fallback: "Your contacts couldn't be notified.",
+      });
     case 'extend':
-      unwrap(
-        await apiClient['safety-check-ins']({ id: operation.checkInId }).extend.post({
+      unwrap({
+        result: await apiClient['safety-check-ins']({ id: operation.checkInId }).extend.post({
           expectedReturnAt: operation.expectedReturnAt,
         }),
-        'Failed to update the return time',
-      );
+        fallback: 'Failed to update the return time',
+      });
       return null;
     case 'end': {
       const route = apiClient['safety-check-ins']({ id: operation.checkInId });
       const body = { endedAt: operation.endedAt };
-      unwrap(
-        operation.outcome === 'safe' ? await route.safe.post(body) : await route.cancel.post(body),
-        'Failed to end the check-in',
-      );
+      unwrap({
+        result:
+          operation.outcome === 'safe'
+            ? await route.safe.post(body)
+            : await route.cancel.post(body),
+        fallback: 'Failed to end the check-in',
+      });
       return null;
     }
     case 'locations':
-      unwrap(
-        await apiClient['safety-check-ins']({ id: operation.checkInId }).locations.post({
+      unwrap({
+        result: await apiClient['safety-check-ins']({ id: operation.checkInId }).locations.post({
           locations: operation.locations,
         }),
-        'Failed to send check-in',
-      );
+        fallback: 'Failed to send check-in',
+      });
       return null;
   }
 }

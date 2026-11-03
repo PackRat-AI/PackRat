@@ -31,7 +31,13 @@ export const EMPTY_SAFETY_STATE: SafetyState = Object.freeze({
   queue: [],
 });
 
-function withoutTrip(active: SafetyState['active'], tripId: string): SafetyState['active'] {
+function withoutTrip({
+  active,
+  tripId,
+}: {
+  active: SafetyState['active'];
+  tripId: string;
+}): SafetyState['active'] {
   const { [tripId]: _removed, ...rest } = active;
   return rest;
 }
@@ -214,7 +220,7 @@ export function endCheckIn({
 }): { state: SafetyState; ended: LocalSafetyCheckIn | null } {
   const checkIn = state.active[tripId];
   if (!checkIn) return { state, ended: null };
-  const active = withoutTrip(state.active, tripId);
+  const active = withoutTrip({ active: state.active, tripId });
   const known = contactsNotified(checkIn) || state.queue.some((op) => op.checkInId === checkIn.id);
   if (!known) return { state: { ...state, active }, ended: checkIn };
   const queue = state.queue.filter(
@@ -239,7 +245,13 @@ export function endCheckIn({
 }
 
 /** Folds what the server knows into the local record. */
-function applyRemote(local: LocalSafetyCheckIn, remote: SafetyCheckIn): LocalSafetyCheckIn {
+function applyRemote({
+  local,
+  remote,
+}: {
+  local: LocalSafetyCheckIn;
+  remote: SafetyCheckIn;
+}): LocalSafetyCheckIn {
   return {
     ...local,
     shareUrl: remote.shareUrl,
@@ -261,7 +273,7 @@ export function confirmStart({
 }): SafetyState {
   const local = state.active[tripId];
   if (!local || local.id !== remote.id) return state;
-  return { ...state, active: { ...state.active, [tripId]: applyRemote(local, remote) } };
+  return { ...state, active: { ...state.active, [tripId]: applyRemote({ local, remote }) } };
 }
 
 /**
@@ -289,7 +301,10 @@ export function reconcileRemote({
   if (!remote) {
     // Ended elsewhere. Only drop it once the server had confirmed it existed.
     if (local && contactsNotified(local)) {
-      return { state: { ...state, active: withoutTrip(state.active, tripId) }, removed: local };
+      return {
+        state: { ...state, active: withoutTrip({ active: state.active, tripId }) },
+        removed: local,
+      };
     }
     return { state, removed: null };
   }
@@ -304,7 +319,10 @@ export function reconcileRemote({
     startedAt: remote.startedAt,
   };
   return {
-    state: { ...state, active: { ...state.active, [tripId]: applyRemote(base, remote) } },
+    state: {
+      ...state,
+      active: { ...state.active, [tripId]: applyRemote({ local: base, remote }) },
+    },
     removed: null,
   };
 }

@@ -26,12 +26,12 @@ describe('plannedRouteFromGpx', () => {
 describe('thinRoute', () => {
   it('keeps evenly spaced points including both ends', () => {
     const points = Array.from({ length: 11 }, (_, i) => i);
-    expect(thinRoute(points, 3)).toEqual([0, 5, 10]);
+    expect(thinRoute({ points, limit: 3 })).toEqual([0, 5, 10]);
   });
 
   it('leaves a short route as it is', () => {
-    expect(thinRoute([1, 2, 3], 5)).toEqual([1, 2, 3]);
-    expect(thinRoute([1, 2, 3], 1)).toEqual([1, 2, 3]);
+    expect(thinRoute({ points: [1, 2, 3], limit: 5 })).toEqual([1, 2, 3]);
+    expect(thinRoute({ points: [1, 2, 3], limit: 1 })).toEqual([1, 2, 3]);
   });
 });
 

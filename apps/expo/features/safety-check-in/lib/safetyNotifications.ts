@@ -19,7 +19,7 @@ async function ensureChannel(): Promise<void> {
   });
 }
 
-function content(checkIn: LocalSafetyCheckIn, kind: 'reminder' | 'overdue') {
+function content({ checkIn, kind }: { checkIn: LocalSafetyCheckIn; kind: 'reminder' | 'overdue' }) {
   const t = i18next.t;
   if (kind === 'reminder') {
     return {
@@ -86,7 +86,7 @@ async function scheduleNow(checkIn: LocalSafetyCheckIn): Promise<void> {
       await Notifications.scheduleNotificationAsync({
         identifier: planned.identifier,
         content: {
-          ...content(checkIn, planned.kind),
+          ...content({ checkIn, kind: planned.kind }),
           sound: true,
           data: { tripId: checkIn.tripId },
         },

@@ -59,7 +59,7 @@ function withTimeout<T>(promise: Promise<T>): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(
-      () => reject(new SafetyApiError('Request timed out', null)),
+      () => reject(new SafetyApiError({ message: 'Request timed out', httpStatus: null })),
       SEND_TIMEOUT_MS,
     );
   });

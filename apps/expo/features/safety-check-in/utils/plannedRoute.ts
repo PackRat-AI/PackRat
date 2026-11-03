@@ -9,7 +9,13 @@ import {
 export const MAX_ROUTE_POINTS = 5_000;
 
 /** Keeps evenly spaced points, always the first and last, so the shape survives. */
-export function thinRoute<T>(points: readonly T[], limit = MAX_ROUTE_POINTS): T[] {
+export function thinRoute<T>({
+  points,
+  limit = MAX_ROUTE_POINTS,
+}: {
+  points: readonly T[];
+  limit?: number;
+}): T[] {
   if (points.length <= limit || limit < 2) return [...points];
   const stride = (points.length - 1) / (limit - 1);
   return Array.from({ length: limit }, (_, i) => points[Math.round(i * stride)]).filter(
@@ -22,7 +28,7 @@ export function plannedRouteFromGpx(xml: string): TripPlannedRoute {
   const points = parseGpx(xml).map(({ latitude, longitude }) => ({ latitude, longitude }));
   // A single point is a place, not a route to stray from.
   if (points.length < 2) throw new GpxParseError('noPoints');
-  return thinRoute(points, MAX_ROUTE_POINTS);
+  return thinRoute({ points, limit: MAX_ROUTE_POINTS });
 }
 
 /** Total length in metres, for the summary under the route. */
