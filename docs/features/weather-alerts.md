@@ -103,7 +103,9 @@ The wrist is where an alert matters most: the person it is for is outdoors with 
 
 **At rest.** The watch's Weather page leads with an alert card while any saved location has an unread alert: the hazard's headline, its severity, and the location it affects, above the current conditions. The watch's summary page marks its Weather row in red at the same time, so the alert is visible from the first screen without paging. Both follow the phone's unread rule (ADR-010): they light when the alert arrives and clear once the user opens that location's forecast on the phone.
 
-When more than one location has an unread alert, the card shows the most severe and says how many others are waiting. The watch never shows an alert the phone has already marked as read, and never shows one for a hazard that has passed (ADR-013).
+**On the watch face.** The PackRat weather complication shows current temperature and conditions for the weather location the phone last showed. While any saved location has an unread alert, the alert takes over the complication in every size: a warning symbol and the hazard's name, with the affected location and the count of others where there is room. The alert outranks the temperature because a hazard is the reason to raise a wrist outdoors. It is marked by the symbol as well as by colour, so it still reads on watch faces tinted to a single colour. Tapping the complication opens the watch's Weather page. While an alert is waiting, the large rectangular version also rises to the top of the Smart Stack.
+
+When more than one location has an unread alert, the card and the complication show the most severe and say how many others are waiting. Neither the card nor the complication shows an alert the phone has already marked as read, and never shows one for a hazard that has passed (ADR-013).
 
 ## Staying current
 
@@ -488,4 +490,12 @@ start where the markers are not yet drawn — the fetch has to return first.
 
 **Why.** The case the issue worried about — a hazard arriving while the phone sits asleep in a pack — is exactly the case the system already forwards to the watch. A second delivery channel would buy coverage only for a watch away from its phone with its own connection, at the cost of a second registration to keep in step with the first and a real chance of the same hazard arriving twice. Relaying the at-rest state from the phone keeps one source of truth for what counts as unread, so the phone and the wrist cannot disagree about what the user has already seen.
 
-**Consequence.** The at-rest card is as current as the last time the phone handed state to the watch. The notification itself is not affected — it arrives with the push — but the card can trail it until the phone next updates the watch.
+**Consequence.** The at-rest card and the complication are as current as the last time the phone handed state to the watch. The notification itself is not affected — it arrives with the push — but the card and complication can trail it until the phone next updates the watch. The watch face also refreshes on the system's schedule, which rations updates through the day, so the complication can lag the watch's own Weather page by a short while.
+
+## ADR-014 — An unread alert takes over the weather complication
+
+**Decision.** The weather complication shows conditions by default and switches entirely to the alert while one is unread. It does not try to show both at once, and it has no separate alert-only complication.
+
+**Why.** A complication has room for one idea, and the issue's question was which idea wins when both exist. A hazard does: it is time-bound and actionable, and the temperature is neither. A user who keeps the complication on their face for the temperature is exactly the user who benefits from it changing, while a separate alert complication would be blank on most days and earn a slot only on the rare one that matters. A single complication that changes state is the one people keep. The warning symbol carries the state rather than colour alone, because tinted faces strip colour.
+
+**Consequence.** While an alert is unread, the temperature leaves the watch face. It returns as soon as the user opens the alert's forecast on the phone.
