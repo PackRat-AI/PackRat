@@ -183,4 +183,26 @@ struct WatchWeatherAlertTests {
 
         #expect(vm.watchAlert == nil)
     }
+
+    @Test("the footer counts the other places with alerts in a full sentence")
+    func othersText() {
+        var alert = WatchWeatherAlertSnapshot(headline: "Flood Warning", severity: "Severe", locationName: "Boulder", otherCount: 0)
+        #expect(alert.othersText == nil)
+        alert.otherCount = 1
+        #expect(alert.othersText == "1 more place has an alert.")
+        alert.otherCount = 3
+        #expect(alert.othersText == "3 more places have alerts.")
+    }
+
+    @Test("the complication store only reports a change when the weather differs")
+    func complicationStoreDetectsChange() {
+        var weather = PackRatWatchSnapshot.fallback.weather
+        weather.conditionText = "Store test \(UUID().uuidString)"
+        #expect(WatchComplicationStore.save(weather) == true)
+        #expect(WatchComplicationStore.save(weather) == false)
+        #expect(WatchComplicationStore.loadWeather() == weather)
+
+        weather.alert = WatchWeatherAlertSnapshot(headline: "Flood Warning", severity: "Severe", locationName: "Boulder", otherCount: 0)
+        #expect(WatchComplicationStore.save(weather) == true)
+    }
 }

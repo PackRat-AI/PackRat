@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WatchConnectivity
+import WidgetKit
 
 @Observable
 final class WatchConnectivityStore: NSObject {
@@ -109,6 +110,7 @@ final class WatchConnectivityStore: NSObject {
         else { return }
         snapshot = next
         UserDefaults.standard.set(data, forKey: snapshotKey)
+        publishToComplications(next.weather)
     }
 
     private func loadSnapshot() {
@@ -116,6 +118,14 @@ final class WatchConnectivityStore: NSObject {
               let cached = try? decoder.decode(PackRatWatchSnapshot.self, from: data)
         else { return }
         snapshot = cached
+        publishToComplications(cached.weather)
+    }
+
+    /// The phone republishes every few seconds while open, so only a change in
+    /// the weather slice reloads the complications.
+    private func publishToComplications(_ weather: WatchWeatherSnapshot) {
+        guard WatchComplicationStore.save(weather) else { return }
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     private func loadInjectedSnapshot() -> Bool {
@@ -125,6 +135,7 @@ final class WatchConnectivityStore: NSObject {
         else { return false }
         snapshot = injected
         UserDefaults.standard.set(data, forKey: snapshotKey)
+        publishToComplications(injected.weather)
         return true
     }
 

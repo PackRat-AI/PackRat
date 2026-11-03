@@ -55,6 +55,10 @@ private struct WatchDashboardView: View {
                 .tag(3)
         }
         .tabViewStyle(.verticalPage)
+        // A weather complication opens straight onto the Weather page.
+        .onOpenURL { url in
+            if url == WatchDeepLink.weather { selectedTab = 2 }
+        }
     }
 }
 
@@ -259,32 +263,15 @@ private struct WatchTrailReportView: View {
 private struct WatchWeatherAlertCard: View {
     let alert: WatchWeatherAlertSnapshot
 
-    private var severityColor: Color {
-        switch alert.severity?.lowercased() {
-        case "extreme": return .red
-        case "severe": return .orange
-        case "moderate": return .yellow
-        default: return .blue
-        }
-    }
-
-    private var othersText: String? {
-        switch alert.otherCount {
-        case ..<1: return nil
-        case 1: return "1 more place has an alert."
-        default: return "\(alert.otherCount) more places have alerts."
-        }
-    }
-
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             RoundedRectangle(cornerRadius: 2)
-                .fill(severityColor)
+                .fill(alert.severityColor)
                 .frame(width: 4)
             VStack(alignment: .leading, spacing: 2) {
                 Label(alert.headline, systemImage: "exclamationmark.triangle.fill")
                     .font(.headline)
-                    .foregroundStyle(severityColor)
+                    .foregroundStyle(alert.severityColor)
                     .lineLimit(3)
                 if let severity = alert.severity, !severity.isEmpty {
                     Text(severity.capitalized)
@@ -294,7 +281,7 @@ private struct WatchWeatherAlertCard: View {
                 Text(alert.locationName)
                     .font(.caption)
                     .lineLimit(2)
-                if let othersText {
+                if let othersText = alert.othersText {
                     Text(othersText)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
