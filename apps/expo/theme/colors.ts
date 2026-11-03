@@ -19,6 +19,8 @@ const IOS_SYSTEM_COLORS = {
     destructive: 'rgb(255, 56, 43)',
     primary: 'rgb(0, 123, 254)',
     primaryForeground: 'rgb(255, 255, 255)',
+    secondary: 'rgb(45, 175, 231)',
+    popover: 'rgb(230, 230, 235)',
     secondaryForeground: 'rgb(255, 255, 255)',
   },
   dark: {
@@ -37,6 +39,8 @@ const IOS_SYSTEM_COLORS = {
     destructive: 'rgb(254, 67, 54)',
     primary: 'rgb(3, 133, 255)',
     primaryForeground: 'rgb(255, 255, 255)',
+    secondary: 'rgb(100, 211, 254)',
+    popover: 'rgb(40, 40, 42)',
     secondaryForeground: 'rgb(255, 255, 255)',
   },
 } as const;
@@ -61,6 +65,8 @@ const ANDROID_COLORS = {
     destructive: 'rgb(186, 26, 26)', // error
     primary: 'rgb(0, 88, 186)', // primary
     primaryForeground: 'rgb(255, 255, 255)', // onPrimary
+    secondary: 'rgb(173, 199, 254)', // secondaryContainer
+    popover: 'rgb(236, 237, 248)', // surfaceContainer
     secondaryForeground: 'rgb(57, 82, 130)', // onSecondaryContainer
   },
   dark: {
@@ -79,6 +85,8 @@ const ANDROID_COLORS = {
     destructive: 'rgb(255, 180, 171)', // error
     primary: 'rgb(173, 199, 255)', // primary
     primaryForeground: 'rgb(0, 46, 104)', // onPrimary
+    secondary: 'rgb(47, 73, 120)', // secondaryContainer
+    popover: 'rgb(28, 32, 39)', // surfaceContainer
     secondaryForeground: 'rgb(159, 184, 239)', // onSecondaryContainer
   },
 } as const;
