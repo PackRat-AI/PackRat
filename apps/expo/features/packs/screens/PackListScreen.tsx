@@ -118,10 +118,10 @@ export function PackListScreen() {
     <TouchableOpacity
       key={value}
       onPress={() => setActiveFilter(value)}
-      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === value ? 'bg-primary' : 'bg-card'}`}
+      className={`mr-2 h-8 justify-center rounded-lg border px-4 ${activeFilter === value ? 'border-transparent bg-secondary' : 'border-border'}`}
     >
       <Text
-        className={`text-sm font-medium ${activeFilter === value ? 'text-primary-foreground' : 'text-foreground'}`}
+        className={`text-sm font-medium ${activeFilter === value ? 'text-secondary-foreground' : 'text-muted-foreground'}`}
       >
         {label}
       </Text>
