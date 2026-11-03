@@ -1,3 +1,4 @@
+import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
@@ -9,6 +10,7 @@ import { Stack } from 'expo-router';
 import { View } from 'react-native';
 import { usePost, useSharedPost } from '../hooks/usePost';
 import type { Post } from '../types';
+import { FeedApiError } from '../utils/errorCopy';
 import { EditCaptionScreen } from './EditCaptionScreen';
 import { FeedAuthWall } from './FeedAuthWall';
 import { PostDetailScreen } from './PostDetailScreen';
@@ -41,16 +43,37 @@ function Loading() {
   );
 }
 
+function LoadFailed({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation();
+  const { colors } = useColorScheme();
+  return (
+    <View className="flex-1 items-center justify-center gap-3 bg-background px-8">
+      <Stack.Screen options={{ title: t('feed.postTitle') }} />
+      <Icon name="cloud-off-outline" size={56} color={colors.grey} />
+      <Text className="text-center text-xl font-medium">{t('feed.postLoadFailed')}</Text>
+      <Button variant="tonal" onPress={onRetry}>
+        <Text>{t('feed.tryAgain')}</Text>
+      </Button>
+    </View>
+  );
+}
+
+/** Removed, hidden or never existed, as opposed to a request that did not get through. */
+function isGone(error: unknown): boolean {
+  return error instanceof FeedApiError && (error.status === 403 || error.status === 404);
+}
+
 function render({
   query,
   render: show,
 }: {
-  query: { isLoading: boolean; data: Post | undefined };
+  query: { isLoading: boolean; data: Post | undefined; error: unknown; refetch: () => unknown };
   render: (post: Post) => React.ReactNode;
 }) {
   if (query.isLoading) return <Loading />;
-  if (!query.data) return <Unavailable />;
-  return show(query.data);
+  if (query.data) return show(query.data);
+  if (query.error && !isGone(query.error)) return <LoadFailed onRetry={() => query.refetch()} />;
+  return <Unavailable />;
 }
 
 /** A post by id — from the feed, a notification, or `packrat://post/{id}`. */

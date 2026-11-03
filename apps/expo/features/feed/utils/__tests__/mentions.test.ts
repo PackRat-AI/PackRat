@@ -23,8 +23,8 @@ describe('displayName / initials', () => {
     expect(initials(cy)).toBe('C');
   });
 
-  it('falls back when the person has no name', () => {
-    expect(displayName({ firstName: null, lastName: '  ' })).toBe('PackRat member');
+  it('is empty when the person has no name, so the screen can supply its own fallback', () => {
+    expect(displayName({ firstName: null, lastName: '  ' })).toBe('');
     expect(initials({ firstName: null, lastName: null })).toBe('');
   });
 });
@@ -63,6 +63,16 @@ describe('taggedPeopleIn', () => {
       'u1',
     ]);
   });
+
+  it('drops someone whose name only survives as the start of a longer one', () => {
+    const plainAnn = { ...annie, id: 'u9' };
+    expect(
+      taggedPeopleIn({ text: 'with @Ann Lee', candidates: [plainAnn, ann] }).map((p) => p.id),
+    ).toEqual(['u1']);
+    expect(taggedPeopleIn({ text: 'hi @Ann.', candidates: [plainAnn] }).map((p) => p.id)).toEqual([
+      'u9',
+    ]);
+  });
 });
 
 describe('mentionSegments', () => {
@@ -82,6 +92,12 @@ describe('mentionSegments', () => {
     expect(mentionSegments({ text: '', people: [] })).toEqual([]);
   });
 
+  it('leaves a longer name plain rather than highlighting its first part', () => {
+    expect(mentionSegments({ text: '@Annabelle', people: [annie] })).toEqual([
+      { text: '@Annabelle' },
+    ]);
+  });
+
   it('handles text that is only a mention', () => {
     expect(mentionSegments({ text: '@Ben Ortiz', people: [ben] })).toEqual([
       { text: '@Ben Ortiz', person: ben },
@@ -92,8 +108,8 @@ describe('mentionSegments', () => {
 describe('taggedSummary', () => {
   it('names one, two, or the first and a count', () => {
     expect(taggedSummary([])).toBeNull();
-    expect(taggedSummary([ann])).toBe('Ann Lee');
-    expect(taggedSummary([ann, ben])).toBe('Ann Lee and Ben Ortiz');
-    expect(taggedSummary([ann, ben, cy])).toBe('Ann Lee and 2 others');
+    expect(taggedSummary([ann])).toEqual({ first: ann, second: null, others: 0 });
+    expect(taggedSummary([ann, ben])).toEqual({ first: ann, second: ben, others: 0 });
+    expect(taggedSummary([ann, ben, cy])).toEqual({ first: ann, second: null, others: 2 });
   });
 });

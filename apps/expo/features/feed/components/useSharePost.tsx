@@ -50,7 +50,9 @@ export function useSharePost({ onPhotoFailed }: { onPhotoFailed: () => void }) {
   const shareLink = async (post: Post) => {
     const url = postShareUrl(post);
     if (!url) return;
-    const name = post.author ? displayName(post.author) : t('feed.shareSomeone');
+    const name = post.author
+      ? displayName(post.author) || t('feed.packratMember')
+      : t('feed.shareSomeone');
     try {
       await Share.share({ message: `${t('feed.shareMessage', { name })} ${url}`, url });
     } catch (error) {
@@ -61,7 +63,7 @@ export function useSharePost({ onPhotoFailed }: { onPhotoFailed: () => void }) {
   const sharePhoto = ({ post, imageKey }: { post: Post; imageKey: string }) => {
     captureStarted.current = false;
     const title = post.author
-      ? t('feed.photoFileName', { name: displayName(post.author) })
+      ? t('feed.photoFileName', { name: displayName(post.author) || t('feed.packratMember') })
       : t('feed.photoFileNameNoAuthor');
     setPending({ imageKey, fileName: sharedPhotoFileName(title), size: null });
   };

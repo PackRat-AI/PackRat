@@ -130,7 +130,10 @@ export function PhotoViewer({
       visible={startIndex !== null}
       animationType="fade"
       onRequestClose={onClose}
-      onShow={() => setIndex(startIndex ?? 0)}
+      onShow={() => {
+        setIndex(startIndex ?? 0);
+        setZoomed(false);
+      }}
       statusBarTranslucent
       navigationBarTranslucent
     >

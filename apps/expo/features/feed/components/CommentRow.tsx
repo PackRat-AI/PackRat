@@ -43,7 +43,9 @@ export function CommentRow({
   const { t } = useTranslation();
   const { colors } = useColorScheme();
   const isMine = comment.userId === myId;
-  const name = comment.author ? displayName(comment.author) : t('feed.unknownPerson');
+  const name = comment.author
+    ? displayName(comment.author) || t('feed.packratMember')
+    : t('feed.unknownPerson');
 
   const items = [
     createDropdownItem({ actionKey: 'reply', title: t('feed.reply'), icon: { name: 'reply' } }),

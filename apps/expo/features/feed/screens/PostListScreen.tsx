@@ -2,11 +2,13 @@ import { Button } from '@packrat/ui/src/button';
 import { createDropdownItem, DropdownMenu } from '@packrat/ui/src/dropdown-menu';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
+import { unique } from '@packrat/utils';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { PostCard } from '../components/PostCard';
 import { usePostActions } from '../components/usePostActions';
@@ -37,6 +39,8 @@ function EmptyState({
   );
 }
 
+const Separator = () => <View className="h-3" />;
+
 /**
  * A list of posts: the community feed, newest first, or the viewer's Saved or Tagged-in posts.
  * Pull down to refresh; scrolling to the end loads more.
@@ -47,10 +51,16 @@ export function PostListScreen({ scope }: { scope: FeedScope }) {
   const router = useRouter();
   const feed = useFeed({ scope });
   const actions = usePostActions();
-  const posts = feed.data?.pages.flatMap((page) => page.items) ?? [];
+  // Offset pages shift when someone posts mid-scroll, so a post can come back on the next page.
+  const posts = useMemo(
+    () => unique(feed.data?.pages.flatMap((page) => page.items) ?? [], (post) => post.id),
+    [feed.data],
+  );
 
-  const openPost = (post: Post) =>
-    router.push({ pathname: '/feed/[id]', params: { id: String(post.id) } });
+  const openPost = useCallback(
+    (post: Post) => router.push({ pathname: '/feed/[id]', params: { id: String(post.id) } }),
+    [router],
+  );
   const compose = () => router.push('/feed/create');
 
   const title =
@@ -158,7 +168,7 @@ export function PostListScreen({ scope }: { scope: FeedScope }) {
           renderItem={({ item }) => (
             <PostCard post={item} actions={actions} onOpenComments={openPost} />
           )}
-          ItemSeparatorComponent={() => <View className="h-3" />}
+          ItemSeparatorComponent={Separator}
           contentContainerStyle={{ flexGrow: 1, padding: 12, paddingBottom: 32 }}
           refreshControl={
             <RefreshControl

@@ -410,7 +410,7 @@ export function CreatePostScreen() {
                   testID={testIds.feed.composerTagged(person.id)}
                 >
                   <PersonAvatar person={person} size={28} />
-                  <Text>{displayName(person)}</Text>
+                  <Text>{displayName(person) || t('feed.packratMember')}</Text>
                 </View>
               ))}
             </View>

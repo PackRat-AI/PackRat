@@ -123,6 +123,10 @@ export function PostDetailScreen({ post }: { post: Post }) {
 
   const onAction = ({ comment, action }: { comment: Comment; action: CommentAction }) => {
     if (action === 'reply') {
+      if (editing) {
+        setDraft('');
+        mentions.reset(tags);
+      }
       setEditing(null);
       setReplyingTo(comment);
       inputRef.current?.focus();
@@ -211,12 +215,16 @@ export function PostDetailScreen({ post }: { post: Post }) {
     ? t('feed.editingComment')
     : replyingTo
       ? t('feed.replyingTo', {
-          name: replyingTo.author ? displayName(replyingTo.author) : t('feed.aComment'),
+          name: replyingTo.author
+            ? displayName(replyingTo.author) || t('feed.packratMember')
+            : t('feed.aComment'),
         })
       : null;
   const placeholder = replyingTo
     ? t('feed.replyTo', {
-        name: replyingTo.author ? displayName(replyingTo.author) : t('feed.aComment'),
+        name: replyingTo.author
+          ? displayName(replyingTo.author) || t('feed.packratMember')
+          : t('feed.aComment'),
       })
     : t('feed.addComment');
   const isSending = write.add.isPending || write.edit.isPending;

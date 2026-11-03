@@ -98,10 +98,12 @@ export function useLiveComments(postId: number) {
     // Android drops sockets in the background; reconnect and catch up on return.
     const subscription = AppState.addEventListener('change', (state) => {
       if (state !== 'active' || cancelled) return;
-      if (socket && socket.readyState !== WebSocket.OPEN) {
-        clearTimeout(retry);
-        socket.close();
-      }
+      if (socket?.readyState === WebSocket.OPEN) return;
+      clearTimeout(retry);
+      // A closed socket never fires `onclose` again, so reconnect directly; a connecting or
+      // closing one is closed and its `onclose` schedules the retry.
+      if (!socket || socket.readyState === WebSocket.CLOSED) connect();
+      else socket.close();
     });
 
     return () => {

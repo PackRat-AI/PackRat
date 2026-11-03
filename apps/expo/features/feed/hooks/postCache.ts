@@ -2,7 +2,10 @@ import type { InfiniteData, QueryClient } from '@tanstack/react-query';
 import type { FeedResponse, Post } from '../types';
 import { feedKeys } from './queryKeys';
 
-/** Applies `update` to one post wherever it is cached: every feed list and its detail query. */
+/**
+ * Applies `update` to one post wherever it is cached: every feed list, its detail query, and any
+ * share link it was opened from.
+ */
 export function updateCachedPost({
   queryClient,
   postId,
@@ -24,6 +27,9 @@ export function updateCachedPost({
       : data,
   );
   queryClient.setQueryData<Post>(feedKeys.post(postId), (post) => (post ? update(post) : post));
+  queryClient.setQueriesData<Post>({ queryKey: feedKeys.sharedAll }, (post) =>
+    post?.id === postId ? update(post) : post,
+  );
 }
 
 /** Drops a post from every cached list — deleted, reported, or by someone just blocked. */

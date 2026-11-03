@@ -9,7 +9,7 @@ import { useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeOut, ZoomIn } from 'react-native-reanimated';
 import { useTogglePostLike, useTogglePostSave } from '../hooks/usePostMutations';
-import type { Post } from '../types';
+import type { Post, PostAuthor } from '../types';
 import { displayName, taggedSummary } from '../utils/mentions';
 import { postShareUrl } from '../utils/share';
 import { MentionText } from './MentionText';
@@ -51,8 +51,18 @@ export function PostCard({
   const isLongCaption =
     !!caption &&
     (caption.length > LONG_CAPTION_CHARS || caption.split('\n').length > LONG_CAPTION_LINES + 1);
-  const authorName = post.author ? displayName(post.author) : t('feed.unknownPerson');
-  const tagLine = taggedSummary(tags);
+  const authorName = post.author
+    ? displayName(post.author) || t('feed.packratMember')
+    : t('feed.unknownPerson');
+  const tagged = taggedSummary(tags);
+  const nameOf = (person: PostAuthor) => displayName(person) || t('feed.packratMember');
+  const tagLine = !tagged
+    ? null
+    : tagged.second
+      ? t('feed.taggedTwo', { first: nameOf(tagged.first), second: nameOf(tagged.second) })
+      : tagged.others > 0
+        ? t('feed.taggedMore', { first: nameOf(tagged.first), count: tagged.others })
+        : nameOf(tagged.first);
   const shareUrl = postShareUrl(post);
 
   // Double-tap only ever likes; undoing a like is the heart button's job.

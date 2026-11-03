@@ -84,7 +84,7 @@ export function usePostActions({ onGone }: { onGone?: () => void } = {}) {
 
   /** Blocking is shared with comments, so it takes the person rather than a post. */
   const confirmBlock = ({ person, onBlocked }: { person: PostAuthor; onBlocked?: () => void }) => {
-    const name = displayName(person);
+    const name = displayName(person) || t('feed.packratMember');
     alertRef.current?.alert({
       title: t('feed.blockTitle', { name }),
       message: t('feed.blockBody'),
@@ -139,7 +139,9 @@ export function usePostActions({ onGone }: { onGone?: () => void } = {}) {
         ? [
             createDropdownItem({
               actionKey: 'block',
-              title: t('feed.blockPerson', { name: displayName(post.author) }),
+              title: t('feed.blockPerson', {
+                name: displayName(post.author) || t('feed.packratMember'),
+              }),
               icon: { name: 'cancel' },
               destructive: true,
             }),

@@ -23,7 +23,7 @@ export function BlockedPeopleScreen() {
   const unblock = useUnblockUser();
 
   const confirmUnblock = (person: PostAuthor) => {
-    const name = displayName(person);
+    const name = displayName(person) || t('feed.packratMember');
     alertRef.current?.alert({
       title: t('feed.unblockTitle', { name }),
       message: t('feed.unblockBody'),
@@ -63,7 +63,9 @@ export function BlockedPeopleScreen() {
           renderItem={({ item }) => (
             <View className="min-h-[64px] flex-row items-center gap-4 px-4">
               <PersonAvatar person={item} size={40} />
-              <Text className="flex-1 text-base">{displayName(item)}</Text>
+              <Text className="flex-1 text-base">
+                {displayName(item) || t('feed.packratMember')}
+              </Text>
               <Pressable
                 onPress={() => confirmUnblock(item)}
                 className="h-10 justify-center rounded-full border border-border px-4"

@@ -1,5 +1,6 @@
 import { Text } from '@packrat/ui/src/text';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Pressable, View } from 'react-native';
 import type { PostAuthor } from '../types';
@@ -14,6 +15,7 @@ export function MentionSuggestionList({
   suggestions: PostAuthor[];
   onSelect: (person: PostAuthor) => void;
 }) {
+  const { t } = useTranslation();
   const { colors } = useColorScheme();
   if (suggestions.length === 0) return null;
   return (
@@ -33,7 +35,7 @@ export function MentionSuggestionList({
           testID={testIds.feed.mentionSuggestion(person.id)}
         >
           <PersonAvatar person={person} size={32} />
-          <Text className="flex-1">{displayName(person)}</Text>
+          <Text className="flex-1">{displayName(person) || t('feed.packratMember')}</Text>
         </Pressable>
       ))}
     </View>

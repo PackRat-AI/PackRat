@@ -14,10 +14,17 @@ const WHITESPACE = /\s/;
 const NEWLINE = /[\n\r]/;
 const TRAILING_WHITESPACE = /\s$/;
 
+/** First and last name, or `''` for someone who has not set one; screens supply the fallback. */
 export function displayName(person: Pick<PostAuthor, 'firstName' | 'lastName'>): string {
-  const name = [person.firstName, person.lastName].filter(Boolean).join(' ').trim();
-  return name || 'PackRat member';
+  return [person.firstName, person.lastName].filter(Boolean).join(' ').trim();
 }
+
+/** The name as it is written after `@`. Someone with no name still needs text to match on. */
+function mentionName(person: Pick<PostAuthor, 'firstName' | 'lastName'>): string {
+  return displayName(person) || 'PackRat member';
+}
+
+const WORD_CHARACTER = /[\p{L}\p{N}_]/u;
 
 export function initials(person: Pick<PostAuthor, 'firstName' | 'lastName'>): string {
   return [person.firstName, person.lastName]
@@ -52,10 +59,13 @@ export function activeMentionQuery(text: string): { atIndex: number; query: stri
 export function insertMention({ text, person }: { text: string; person: PostAuthor }): string {
   const active = activeMentionQuery(text);
   if (!active) return text;
-  return `${text.slice(0, active.atIndex)}@${displayName(person)} `;
+  return `${text.slice(0, active.atIndex)}@${mentionName(person)} `;
 }
 
-/** The people from `candidates` whose `@Name` still appears in `text`, first pick wins. */
+/**
+ * The people from `candidates` whose `@Name` still appears in `text`, first pick wins. Matching
+ * goes through `mentionSegments`, so `@Ann` is not found inside `@Ann Lee`.
+ */
 export function taggedPeopleIn({
   text,
   candidates,
@@ -63,9 +73,14 @@ export function taggedPeopleIn({
   text: string;
   candidates: PostAuthor[];
 }): PostAuthor[] {
+  const mentioned = new Set(
+    mentionSegments({ text, people: candidates }).flatMap((segment) =>
+      segment.person ? [segment.person.id] : [],
+    ),
+  );
   const seen = new Set<string>();
   return candidates.filter((person) => {
-    if (seen.has(person.id) || !text.includes(`@${displayName(person)}`)) return false;
+    if (seen.has(person.id) || !mentioned.has(person.id)) return false;
     seen.add(person.id);
     return true;
   });
@@ -86,7 +101,10 @@ export function mentionSegments({
   people: PostAuthor[];
 }): MentionSegment[] {
   const byName = new Map<string, PostAuthor>();
-  for (const person of people) byName.set(`@${displayName(person)}`, person);
+  for (const person of people) {
+    const name = `@${mentionName(person)}`;
+    if (!byName.has(name)) byName.set(name, person);
+  }
   const names = [...byName.keys()].sort((a, b) => b.length - a.length);
   if (names.length === 0 || text.length === 0) return text ? [{ text }] : [];
 
@@ -94,7 +112,11 @@ export function mentionSegments({
   let plain = '';
   let index = 0;
   while (index < text.length) {
-    const name = names.find((candidate) => text.startsWith(candidate, index));
+    const name = names.find(
+      (candidate) =>
+        text.startsWith(candidate, index) &&
+        !WORD_CHARACTER.test(text.charAt(index + candidate.length)),
+    );
     if (name) {
       if (plain) segments.push({ text: plain });
       plain = '';
@@ -109,11 +131,15 @@ export function mentionSegments({
   return segments;
 }
 
-/** "Ann", "Ann and Ben", or "Ann and 2 others" — the line under a post naming who was there. */
-export function taggedSummary(people: PostAuthor[]): string | null {
-  const [first, second] = people.map(displayName);
+/**
+ * Who a post's "with …" line names: the first person, the second when there are exactly two, and
+ * how many more otherwise. The screen words it ("Ann", "Ann and Ben", "Ann and 2 others").
+ */
+export function taggedSummary(
+  people: PostAuthor[],
+): { first: PostAuthor; second: PostAuthor | null; others: number } | null {
+  const [first, second] = people;
   if (!first) return null;
-  if (people.length === 1) return first;
-  if (people.length === 2) return `${first} and ${second}`;
-  return `${first} and ${people.length - 1} others`;
+  if (people.length === 2 && second) return { first, second, others: 0 };
+  return { first, second: null, others: people.length - 1 };
 }

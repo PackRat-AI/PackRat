@@ -6,6 +6,7 @@ export const feedKeys = Object.freeze({
   lists: ['feed', 'list'] as const,
   list: (scope: FeedScope) => ['feed', 'list', scope] as const,
   post: (postId: number) => ['feed', 'post', postId] as const,
+  sharedAll: ['feed', 'shared'] as const,
   shared: (publicId: string) => ['feed', 'shared', publicId] as const,
   comments: (postId: number) => ['feed', 'post', postId, 'comments'] as const,
   settings: ['feed', 'settings'] as const,
