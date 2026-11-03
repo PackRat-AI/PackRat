@@ -1,6 +1,8 @@
-import { isString, toRecord } from '@packrat/guards';
+import { isNumber, isString } from '@packrat/guards';
+import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
-import { Children, isValidElement, type ReactNode } from 'react';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { Children, type ReactNode, useMemo } from 'react';
 import {
   type LayoutChangeEvent,
   Pressable,
@@ -9,6 +11,7 @@ import {
   type ViewProps,
   type ViewStyle,
 } from 'react-native';
+import { ButtonContentContext } from './lib/button-content';
 import { Text } from './text';
 
 // Legacy NativeWindUI variant names, kept so call sites don't need rewriting.
@@ -55,11 +58,29 @@ const VARIANT_MAP: Record<ButtonVariant, ResolvedVariant> = {
  */
 const SIZE_CLASS: Record<ButtonSize, string> = {
   none: '',
-  sm: 'py-1 px-2.5',
-  md: 'py-2 px-3.5',
-  lg: 'py-2.5 px-5',
+  sm: 'min-h-8 px-4',
+  md: 'min-h-10 px-6',
+  lg: 'min-h-12 px-6',
   icon: 'h-10 w-10',
 };
+
+/**
+ * MD3 padding that depends on the variant or a leading icon: text buttons sit on 12dp sides, and
+ * a leading icon takes 8dp off its side (16dp leading / 24dp trailing).
+ */
+function paddingClass({
+  resolved,
+  size,
+  hasIcon,
+}: {
+  resolved: ResolvedVariant;
+  size: ButtonSize;
+  hasIcon: boolean;
+}) {
+  if (size === 'none' || size === 'icon') return '';
+  if (resolved === 'text') return hasIcon ? 'pl-3 pr-4' : 'px-3';
+  return hasIcon ? 'pl-4 pr-6' : '';
+}
 
 /**
  * Press feedback as a class, for the same reason the sizes are: it used to ride on the same
@@ -67,20 +88,13 @@ const SIZE_CLASS: Record<ButtonSize, string> = {
  * applied either. `active:` is NativeWind's binding for Pressable's pressed state; on-device a
  * held button measures 0.70x the released frame's mean brightness, and identical on release.
  */
-const BASE_CLASS = 'flex-row items-center justify-center rounded-full active:opacity-70';
+const BASE_CLASS = 'flex-row items-center justify-center gap-2 rounded-full active:opacity-70';
 
 const VARIANT_CLASS: Record<ResolvedVariant, string> = {
   filled: `${BASE_CLASS} bg-primary`,
   outlined: `${BASE_CLASS} border border-border`,
-  tonal: `${BASE_CLASS} bg-primary/10 dark:bg-primary/25`,
+  tonal: `${BASE_CLASS} bg-secondary`,
   text: BASE_CLASS,
-};
-
-const LABEL_CLASS: Record<ResolvedVariant, string> = {
-  filled: 'text-primary-foreground font-medium',
-  outlined: 'text-foreground font-medium',
-  tonal: 'text-primary font-medium',
-  text: 'text-primary font-medium',
 };
 
 function resolveVariant(variant: ButtonVariant): ResolvedVariant {
@@ -88,50 +102,29 @@ function resolveVariant(variant: ButtonVariant): ResolvedVariant {
 }
 
 /**
- * The `Text` props that carry visual intent. Any one of them present means the call site styled its
- * own label, so `extractLabel` must not unwrap and repaint it.
+ * The MD3 content colour for each variant: on-primary on filled, on-secondary-container on tonal,
+ * primary on outlined and text. Handed to `Text` and `Icon` children through context, so a label
+ * or icon is painted correctly however the call site shaped its children.
  */
-const STYLING_PROPS = Object.freeze([
-  'className',
-  'variant',
-  'color',
-  'textColor',
-  'textStyle',
-  'style',
-] as const);
+function useContentColor(resolved: ResolvedVariant) {
+  const { colors } = useColorScheme();
+  if (resolved === 'filled') return colors.primaryForeground;
+  if (resolved === 'tonal') return colors.secondaryForeground;
+  return colors.primary;
+}
 
-/**
- * Unwraps `<Button><Text>Save</Text></Button>` to the string `'Save'`, so an unstyled label can be
- * repainted with the button's own per-variant `LABEL_CLASS`.
- *
- * A `<Text>` that carries **its own styling props is deliberately left alone**. Unwrapping is
- * lossy — it keeps the string and throws the element away — so restyling a label the call site had
- * already styled silently reverses an explicit intent.
- *
- * The profile screen's sign-out button was exactly this bug. Its child looks like a ternary, but a
- * JSX ternary evaluates to a *single element* before React sees it, so `Children.toArray` returns
- * one child and every gate below passed: `<Text className="text-destructive">Log Out</Text>` was
- * flattened to `'Log Out'` and re-rendered with `filled`'s `text-primary-foreground` (#FFFFFF).
- * The call site's `className="bg-card"` also beats `bg-primary` under `twMerge`, so the pill was
- * white too — white-on-white, an empty rounded rectangle at the right size with no visible glyphs.
- * Bailing out here lets the call site's own `<Text>` render, in `destructive` red as intended.
- */
-function extractLabel(children: ReactNode): string | undefined {
-  const kids = Children.toArray(children);
-  if (kids.length !== 1) return undefined;
-  const only = kids[0];
-  if (isString(only)) return only;
-  if (isValidElement(only) && only.type === Text) {
-    const props = toRecord(only.props);
-    if (STYLING_PROPS.some((prop) => props[prop] !== undefined)) return undefined;
-    return isString(props.children) ? props.children : undefined;
-  }
-  return undefined;
+/** Bare strings and numbers become label `Text`; RN cannot render them directly in a view. */
+function wrapTextChildren(children: ReactNode) {
+  return Children.map(children, (child) =>
+    isString(child) || isNumber(child) ? <Text>{child}</Text> : child,
+  );
 }
 
 type ButtonProps = {
   children?: ReactNode;
   label?: string;
+  /** Leading icon name, drawn at MD3's 18dp in the button's content colour. */
+  icon?: string;
   onPress?: () => void;
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -181,6 +174,7 @@ type ButtonProps = {
 function Button({
   children,
   label,
+  icon,
   onPress,
   variant = 'primary',
   size = 'md',
@@ -191,20 +185,27 @@ function Button({
   ...viewProps
 }: ButtonProps) {
   const resolved = resolveVariant(variant);
-  const resolvedLabel = label ?? extractLabel(children);
+  const color = useContentColor(resolved);
+  const content = useMemo(() => ({ color }), [color]);
+  const hasIcon = icon !== undefined;
   return (
     <Pressable
-      className={cn(VARIANT_CLASS[resolved], SIZE_CLASS[size], className)}
+      className={cn(
+        VARIANT_CLASS[resolved],
+        SIZE_CLASS[size],
+        paddingClass({ resolved, size, hasIcon }),
+        disabled && 'opacity-40',
+        className,
+      )}
       style={style}
       onPress={onPress}
       disabled={disabled}
       {...viewProps}
     >
-      {resolvedLabel === undefined ? (
-        children
-      ) : (
-        <Text className={LABEL_CLASS[resolved]}>{resolvedLabel}</Text>
-      )}
+      <ButtonContentContext.Provider value={content}>
+        {hasIcon && <Icon name={icon} size={18} />}
+        {label === undefined ? wrapTextChildren(children) : <Text>{label}</Text>}
+      </ButtonContentContext.Provider>
     </Pressable>
   );
 }

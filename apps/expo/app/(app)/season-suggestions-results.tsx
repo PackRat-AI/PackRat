@@ -318,7 +318,7 @@ function ErrorCard({ error, onRetry, onGoBack, onGoToInventory, onSignIn }: Erro
           onPress={primaryAction}
           activeOpacity={0.8}
         >
-          <Text className="font-semibold text-white">{primaryLabel}</Text>
+          <Text className="font-semibold text-primary-foreground">{primaryLabel}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

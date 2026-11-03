@@ -218,7 +218,7 @@ function SwapSheet({
                       }}
                       className="rounded-full bg-primary px-3 py-1.5"
                     >
-                      <Text className="text-xs font-semibold text-white">Select</Text>
+                      <Text className="text-xs font-semibold text-primary-foreground">Select</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -630,7 +630,7 @@ export function GapAnalysisModal({
               disabled={selectedCount === 0 || isAdding}
               className="w-full"
             >
-              {isAdding && <ActivityIndicator size="small" color="#fff" />}
+              {isAdding && <ActivityIndicator size="small" color={colors.primaryForeground} />}
               <Text>
                 {isAdding
                   ? 'Adding...'

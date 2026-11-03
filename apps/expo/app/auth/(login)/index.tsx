@@ -1,3 +1,4 @@
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Button } from '@packrat/ui/src/button';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { Text } from '@packrat/ui/src/text';
@@ -10,7 +11,7 @@ import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
-import { Alert, Image, Platform, View } from 'react-native';
+import { Image, Platform, View } from 'react-native';
 import {
   KeyboardAwareScrollView,
   KeyboardController,
@@ -54,10 +55,10 @@ export default function LoginScreen() {
         // Navigation is handled in function after successful login
       } catch (error) {
         setIsLoading(false);
-        Alert.alert(
-          t('auth.loginFailed'),
-          error instanceof Error ? error.message : t('auth.invalidEmailOrPassword'),
-        );
+        showAlert({
+          title: t('auth.loginFailed'),
+          message: error instanceof Error ? error.message : t('auth.invalidEmailOrPassword'),
+        });
       }
     },
   });

@@ -137,7 +137,7 @@ export function PostListScreen({ scope }: { scope: FeedScope }) {
       body={t('feed.noPostsBody')}
       action={
         <Button className="mt-2" onPress={compose} testID={testIds.feed.emptyNewPostButton}>
-          <Icon name="pencil-plus-outline" size={18} color="white" />
+          <Icon name="pencil-plus-outline" size={18} color={colors.primaryForeground} />
           <Text className="font-medium text-primary-foreground">{t('feed.writePost')}</Text>
         </Button>
       }

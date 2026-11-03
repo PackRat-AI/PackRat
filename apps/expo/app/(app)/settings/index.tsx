@@ -64,6 +64,7 @@ export default function SettingsScreen() {
   const { unit: speedUnit, setSpeedUnit } = useSpeedUnit();
   const enableTripReminders = useFeatureFlag('enableTripReminders');
   const showsFeedSettings = useFeatureFlag('enableFeed') && isAuthenticated;
+  const enableSafetyCheckIn = useFeatureFlag('enableSafetyCheckIn');
   const tripRemindersEnabled = use$(tripReminderSettingsStore.enabled);
   const showsTrailReportToggle = useTrailReportAlertsEnabled() && isAuthenticated;
   const trailReports = useTrailReportNotificationsSetting({ active: showsTrailReportToggle });
@@ -229,6 +230,28 @@ export default function SettingsScreen() {
             </View>
           </View>
         </View>
+
+        {enableSafetyCheckIn && (
+          <View>
+            <Text variant="subhead" className="mb-3">
+              {t('safetyCheckIn.settings.section')}
+            </Text>
+            <TouchableOpacity
+              className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4"
+              onPress={() => router.push('/emergency-contacts')}
+              testID={testIds.safetyCheckIn.settingsRow}
+            >
+              <Icon name="shield-account-outline" size={22} color={colors.primary} />
+              <View className="flex-1">
+                <Text className="font-medium">{t('safetyCheckIn.contacts.title')}</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                  {t('safetyCheckIn.settings.subtitle')}
+                </Text>
+              </View>
+              <Icon name="chevron-right" size={20} color={colors.grey} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {(enableTripReminders || trailReportsLoaded) && (
           <View>

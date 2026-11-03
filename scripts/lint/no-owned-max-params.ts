@@ -65,6 +65,9 @@ const EXCLUDED_FILES = new Set([
   // the ~100 call sites read like the SDK call they replace. An object param
   // would force every site to diverge from the SDK shape for no real gain.
   'packages/mcp/src/registerTool.ts',
+  // Android drop-in for @expo/react-native-action-sheet: showActionSheetWithOptions must keep
+  // the library's positional (options, callback) signature so call sites are unchanged.
+  'packages/ui/src/action-sheet.android.tsx',
   // Web shim that must mirror expo-secure-store's positional (key, value) API.
   'apps/expo/lib/secureStore.web.ts',
   // Web shim that must mirror expo-sqlite/kv-store's positional (key, value) API.

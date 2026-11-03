@@ -690,11 +690,11 @@ export function PackDetailScreen() {
             </View>
             <View className="flex-row items-center gap-2">
               {/* Reset Button */}
-              <Button variant="plain" size="sm" onPress={handleResetPackingMode}>
+              <Button variant="plain" onPress={handleResetPackingMode}>
                 <Text>Reset</Text>
               </Button>
               {/* Save Button */}
-              <Button variant="plain" size="sm" onPress={handleSavePackingMode}>
+              <Button variant="plain" onPress={handleSavePackingMode}>
                 <Text>Save</Text>
               </Button>
             </View>

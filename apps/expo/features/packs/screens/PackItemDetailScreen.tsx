@@ -198,13 +198,8 @@ export function ItemDetailScreen() {
 
         {isOwnedByUser && (
           <View className="mt-2 px-4">
-            <Button
-              variant="secondary"
-              onPress={navigateToChat}
-              className="flex-row items-center justify-center rounded-full  px-4 py-3"
-            >
-              <Icon name="message-outline" size={20} color={colors.foreground} />
-              <Text textColor={colors.foreground}>{t('packs.askAIAboutItem')}</Text>
+            <Button variant="secondary" onPress={navigateToChat} icon="message-outline">
+              <Text>{t('packs.askAIAboutItem')}</Text>
             </Button>
           </View>
         )}

@@ -297,12 +297,12 @@ export function PostDetailScreen({ post }: { post: Post }) {
               testID={testIds.feed.commentSend}
             >
               {isSending ? (
-                <ActivityIndicator size="small" color="white" />
+                <ActivityIndicator size="small" color={colors.primaryForeground} />
               ) : (
                 <Icon
                   name={editing ? 'check' : 'send'}
                   size={18}
-                  color={canSend ? 'white' : colors.grey}
+                  color={canSend ? colors.primaryForeground : colors.grey}
                 />
               )}
             </Pressable>

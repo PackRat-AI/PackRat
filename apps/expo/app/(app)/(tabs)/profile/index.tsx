@@ -1,5 +1,6 @@
 import { clientEnvs } from '@packrat/env/expo-client';
 import { isRemoteUrl, isString } from '@packrat/guards';
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Avatar, AvatarFallback } from '@packrat/ui/src/avatar';
 import { Button } from '@packrat/ui/src/button';
@@ -31,7 +32,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Link, router, Stack } from 'expo-router';
 import { useSetAtom } from 'jotai';
 import { useState } from 'react';
-import { Alert, Linking, Platform, Pressable, TouchableOpacity, View } from 'react-native';
+import { Linking, Platform, Pressable, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -212,7 +213,7 @@ function ListHeaderComponent() {
       // Validate file size before uploading (5 MB limit)
       const info = await FileSystem.getInfoAsync(image.uri);
       if (info.exists && 'size' in info && info.size > AVATAR_MAX_BYTES) {
-        Alert.alert(t('errors.somethingWentWrong'), t('profile.imageTooLarge'));
+        showAlert({ title: t('errors.somethingWentWrong'), message: t('profile.imageTooLarge') });
         return;
       }
 
@@ -221,20 +222,24 @@ function ListHeaderComponent() {
       if (remoteFileName) {
         const success = await updateProfile({ avatarUrl: remoteFileName });
         if (!success) {
-          Alert.alert(t('errors.somethingWentWrong'), t('errors.tryAgain'));
+          showAlert({ title: t('errors.somethingWentWrong'), message: t('errors.tryAgain') });
         }
       }
     } catch (err) {
       if (err instanceof Error && err.message === 'Permission to access media library was denied') {
-        Alert.alert(t('permissions.photoLibraryTitle'), t('permissions.photoLibraryMessage'), [
-          { text: t('common.cancel'), style: 'cancel' },
-          { text: t('permissions.openSettings'), onPress: () => Linking.openSettings() },
-        ]);
+        showAlert({
+          title: t('permissions.photoLibraryTitle'),
+          message: t('permissions.photoLibraryMessage'),
+          buttons: [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('permissions.openSettings'), onPress: () => Linking.openSettings() },
+          ],
+        });
       } else {
         Sentry.captureException(err, {
           tags: { feature: 'profile', action: 'handleAvatarPress' },
         });
-        Alert.alert(t('errors.somethingWentWrong'), t('errors.tryAgain'));
+        showAlert({ title: t('errors.somethingWentWrong'), message: t('errors.tryAgain') });
       }
     } finally {
       setIsUploading(false);
@@ -311,10 +316,14 @@ function ListFooterComponent() {
               // Use native Alert on both platforms so the dialog buttons are
               // accessible to automated testing tools (custom portal-based
               // dialogs are not surfaced in XCTest/UIAutomator accessibility trees).
-              Alert.alert(t('profile.syncInProgress'), t('profile.syncMessage'), [
-                { text: t('common.cancel'), style: 'cancel' },
-                { text: t('auth.proceedLogOut'), style: 'destructive', onPress: handleSignOut },
-              ]);
+              showAlert({
+                title: t('profile.syncInProgress'),
+                message: t('profile.syncMessage'),
+                buttons: [
+                  { text: t('common.cancel'), style: 'cancel' },
+                  { text: t('auth.proceedLogOut'), style: 'destructive', onPress: handleSignOut },
+                ],
+              });
               return;
             }
             handleSignOut();

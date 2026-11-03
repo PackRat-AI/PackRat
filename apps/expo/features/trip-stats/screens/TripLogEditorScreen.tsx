@@ -1,4 +1,4 @@
-import { FilterChip, FlowRow, Host, Text as JCText } from '@expo/ui/jetpack-compose';
+import { FilterChip, FlowRow, Text as JCText } from '@expo/ui/jetpack-compose';
 import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
 import type {
   TripActivity,
@@ -10,6 +10,7 @@ import type {
 import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
+import { ThemedHost as Host } from '@packrat/ui/src/themed-host';
 import * as Sentry from '@sentry/react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { Icon } from 'expo-app/components/Icon';
@@ -398,13 +399,21 @@ export function TripLogEditorScreen() {
             />
           ) : null}
           <View className="flex-row flex-wrap gap-2 px-4 py-2">
-            <Button variant="tonal" onPress={importGpx} testID={testIds.tripStats.importGpxBtn}>
-              <Icon name="file-upload-outline" size={18} color={colors.foreground} />
+            <Button
+              variant="tonal"
+              onPress={importGpx}
+              testID={testIds.tripStats.importGpxBtn}
+              icon="file-upload-outline"
+            >
               <Text>{route ? t('tripStats.log.replaceRoute') : t('tripStats.log.importGpx')}</Text>
             </Button>
             {!route || source === 'manual' ? (
-              <Button variant="tonal" onPress={drawRoute} testID={testIds.tripStats.drawRouteBtn}>
-                <Icon name="draw" size={18} color={colors.foreground} />
+              <Button
+                variant="tonal"
+                onPress={drawRoute}
+                testID={testIds.tripStats.drawRouteBtn}
+                icon="draw"
+              >
                 <Text>{route ? t('tripStats.log.editRoute') : t('tripStats.log.drawRoute')}</Text>
               </Button>
             ) : null}

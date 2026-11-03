@@ -767,7 +767,7 @@ function Composer({
               variant="primary"
               className="h-7 w-7 rounded-full"
             >
-              <Icon name="stop" size={18} color="white" />
+              <Icon name="stop" size={18} />
             </Button>
           ) : (
             <Button
@@ -777,7 +777,7 @@ function Composer({
               size="icon"
               className="ios:rounded-full h-7 w-7 rounded-full"
             >
-              <Icon name="arrow-up" size={18} color="white" />
+              <Icon name="arrow-up" size={18} />
             </Button>
           )}
         </View>

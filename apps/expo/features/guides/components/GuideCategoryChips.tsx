@@ -1,5 +1,6 @@
-import { FilterChip, Host, Text as JCText, LazyRow } from '@expo/ui/jetpack-compose';
+import { FilterChip, Text as JCText, LazyRow } from '@expo/ui/jetpack-compose';
 import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
+import { ThemedHost as Host } from '@packrat/ui/src/themed-host';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';

@@ -1,10 +1,11 @@
-import { Checkbox as JCCheckbox, Host as JCHost } from '@expo/ui/jetpack-compose';
+import { Checkbox as JCCheckbox } from '@expo/ui/jetpack-compose';
 import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
 import { useControllableState } from '@rn-primitives/hooks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { cssInterop } from 'nativewind';
 import type { ComponentProps } from 'react';
 import type { CheckboxProps } from './checkbox-props';
+import { ThemedHost as JCHost } from './themed-host';
 
 cssInterop(JCHost, { className: 'style' });
 

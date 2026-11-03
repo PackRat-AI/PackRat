@@ -135,6 +135,7 @@
         "expo-blur": "~58.0.5",
         "expo-clipboard": "~58.0.4",
         "expo-constants": "~58.0.14",
+        "expo-contacts": "~58.0.10",
         "expo-dev-client": "~58.0.17",
         "expo-device": "~58.0.5",
         "expo-document-picker": "~58.0.4",
@@ -3121,6 +3122,8 @@
     "expo-clipboard": ["expo-clipboard@58.0.4", "", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }, "sha512-b2eEJMwdWXLTrmrkg/otsmL2OV6s9D90tytSNBsY87UswrWf6JwxcB2OaWegyUWD9XnvtBVNeVK7lej0zZh+5A=="],
 
     "expo-constants": ["expo-constants@58.0.14", "", { "dependencies": { "@expo/env": "~2.5.3", "@expo/require-utils": "^58.0.5" }, "peerDependencies": { "expo": "*", "react-native": "*" } }, "sha512-ogn/7xLmvkEVYX6SimDkcNDn/d8qZpCTQdBWPnMI+Ry7Sfch0Dz2GIcweqddK4hrkvrSY01TS20BZfMlCpJ75g=="],
+
+    "expo-contacts": ["expo-contacts@58.0.10", "", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }, "sha512-x/3o/ykm1FQrAlS0d0JK0MSGP3Yrw3i+0p1fQtBzULA1sfnsLlr+j6WI/P5iP4lUrvBhjWUDnifYl/YuFm1ClA=="],
 
     "expo-dev-client": ["expo-dev-client@58.0.17", "", { "dependencies": { "expo-dev-launcher": "~58.0.17", "expo-dev-menu": "~58.0.12", "expo-dev-menu-interface": "~58.0.1", "expo-manifests": "~58.0.1", "expo-updates-interface": "~58.0.1" }, "peerDependencies": { "expo": "*" } }, "sha512-9kGl91OWp4oxNuxAxg3C6UxgLFC78JpK4mRmNNo3B3K6OB40rZ5m6PqtqlxcZ1BWvGV8SGGoALxaYrxP68uw5A=="],
 

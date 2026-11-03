@@ -475,7 +475,7 @@ function ChatBubble({
                       isSameNextSender && (item.sender === ME ? 'rounded-br-md' : 'rounded-bl-md'),
                     )}
                   >
-                    <Text className={cn(isSelected && 'text-white')}>{item.text}</Text>
+                    <Text className={cn(isSelected && 'text-primary-foreground')}>{item.text}</Text>
                   </View>
                 </Pressable>
               </ContextMenu>
