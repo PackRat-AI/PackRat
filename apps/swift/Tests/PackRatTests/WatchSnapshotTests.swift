@@ -173,6 +173,25 @@ struct WatchWeatherAlertTests {
         #expect(alert?.otherCount == 2)
     }
 
+    @Test("a place with several alerts leads with its most severe")
+    func leadsWithLocationsWorstAlert() {
+        let vm = WeatherViewModel(loadPersistedState: false)
+        vm.savedLocations = [location(1, "Quito")]
+        let alert = { (event: String, severity: String) in
+            WeatherAlert(
+                headline: nil, event: event, severity: severity, urgency: nil, areas: nil,
+                effective: "2026-11-03T12:00:00Z", expires: nil, desc: nil, instruction: nil
+            )
+        }
+        vm.locationSummaries = [1: WeatherLocationSummary(forecast: WeatherForecastResponse(
+            location: nil, current: nil, forecast: nil,
+            alerts: WeatherAlertsWrapper(alert: [alert("Rain", "Moderate"), alert("Thunderstorm", "Extreme")])
+        ))]
+
+        #expect(vm.watchAlert?.headline == "Thunderstorm")
+        #expect(vm.watchAlert?.severity == "Extreme")
+    }
+
     @Test("an alert already opened on the phone does not reach the watch")
     func seenAlertIsExcluded() throws {
         let vm = WeatherViewModel(loadPersistedState: false)

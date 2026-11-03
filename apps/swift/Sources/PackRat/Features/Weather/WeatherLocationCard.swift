@@ -137,6 +137,10 @@ struct WeatherLocationSummary: Equatable, Sendable {
     /// Identity of the alert the headline came from, so the list can tell a
     /// hazard the user has already read from one that has just arrived.
     let alertId: String?
+    /// The location's most severe active alert, which the watch leads with.
+    /// Separate from `alertHeadline`/`alertId`, which follow the first alert
+    /// the server lists and drive the phone's unread rule.
+    let severestAlertHeadline: String?
     let alertSeverity: String?
     let localTimeLabel: String?
 
@@ -164,7 +168,11 @@ struct WeatherLocationSummary: Equatable, Sendable {
         let alerts = forecast.alerts?.alert ?? []
         alertHeadline = alerts.first.flatMap { $0.event ?? $0.headline }
         alertId = alerts.first?.id
-        alertSeverity = alerts.first?.severity
+        let severest = alerts.max {
+            WatchWeatherAlertSnapshot.rank($0.severity) < WatchWeatherAlertSnapshot.rank($1.severity)
+        }
+        severestAlertHeadline = severest.flatMap { $0.event ?? $0.headline }
+        alertSeverity = severest?.severity
         localTimeLabel = Self.timeLabel(from: forecast.location)
     }
 
