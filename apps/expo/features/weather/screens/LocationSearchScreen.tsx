@@ -1,4 +1,5 @@
 import { showAlert } from '@packrat/ui/src/alert-host';
+import { Button } from '@packrat/ui/src/button';
 import { Snackbar, type SnackbarHandle } from '@packrat/ui/src/snackbar';
 import { Text } from '@packrat/ui/src/text';
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
@@ -335,12 +336,11 @@ export default function LocationSearchScreen() {
         <View className="flex-1 items-center justify-center p-8">
           <Icon name="exclamation" size={48} color={colors.destructive} />
           <Text className="mt-4 text-center text-destructive">{error}</Text>
-          <TouchableOpacity
-            className="mt-6 rounded-full bg-primary px-4 py-2"
+          <Button
+            className="mt-6"
             onPress={() => (query.length > 0 ? debouncedSearch(query) : handleUseDeviceLocation())}
-          >
-            <Text className="text-primary-foreground">{t('weather.tryAgain')}</Text>
-          </TouchableOpacity>
+            label={t('weather.tryAgain')}
+          />
         </View>
       );
     }

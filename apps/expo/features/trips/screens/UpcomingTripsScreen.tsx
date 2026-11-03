@@ -1,4 +1,5 @@
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -52,11 +53,7 @@ function EmptyState({ onPlanTrip }: { onPlanTrip: () => void }) {
           {t('trips.noUpcomingTripsDesc')}
         </Text>
       </View>
-      <Pressable onPress={onPlanTrip} className="rounded-xl bg-primary px-6 py-3">
-        <Text variant="callout" className="font-semibold text-primary-foreground">
-          {t('trips.planATrip')}
-        </Text>
-      </Pressable>
+      <Button onPress={onPlanTrip} label={t('trips.planATrip')} />
     </View>
   );
 }

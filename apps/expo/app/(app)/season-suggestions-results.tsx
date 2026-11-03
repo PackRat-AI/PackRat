@@ -1,4 +1,5 @@
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
@@ -313,22 +314,14 @@ function ErrorCard({ error, onRetry, onGoBack, onGoToInventory, onSignIn }: Erro
       </Text>
 
       <View className="w-full gap-3">
-        <TouchableOpacity
-          className="w-full items-center rounded-xl bg-primary px-6 py-3.5"
-          onPress={primaryAction}
-          activeOpacity={0.8}
-        >
-          <Text className="font-semibold text-primary-foreground">{primaryLabel}</Text>
-        </TouchableOpacity>
+        <Button className="w-full" onPress={primaryAction} label={primaryLabel} />
 
-        <TouchableOpacity
-          className="w-full items-center rounded-xl px-6 py-3.5"
-          style={{ backgroundColor: colors.grey6 }}
+        <Button
+          variant="text"
+          className="w-full"
           onPress={secondaryAction}
-          activeOpacity={0.8}
-        >
-          <Text className="font-medium text-muted-foreground">{secondaryLabel}</Text>
-        </TouchableOpacity>
+          label={secondaryLabel}
+        />
       </View>
     </View>
   );

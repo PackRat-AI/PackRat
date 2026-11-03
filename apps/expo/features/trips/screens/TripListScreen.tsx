@@ -1,4 +1,5 @@
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
@@ -100,14 +101,12 @@ export function TripsListScreen() {
         </View>
         <Text className="mb-1 text-lg font-medium text-foreground">{t('trips.noTripsFound')}</Text>
         <Text className="mb-6 text-center text-muted-foreground">{t('trips.noTripsYet')}</Text>
-        <Pressable
+        <Button
           testID={testIds.trips.emptyCreateBtn}
           accessibilityLabel={testIds.trips.emptyCreateBtn}
-          className="rounded-lg bg-primary px-4 py-2"
           onPress={handleCreateTrip}
-        >
-          <Text className="font-medium text-primary-foreground">{t('trips.createNewTrip')}</Text>
-        </Pressable>
+          label={t('trips.createNewTrip')}
+        />
       </View>
     );
   };

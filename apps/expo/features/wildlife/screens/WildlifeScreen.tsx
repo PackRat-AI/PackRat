@@ -1,4 +1,5 @@
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -76,16 +77,12 @@ export function WildlifeScreen() {
 
       {/* Identify FAB */}
       <View className="px-4 mb-4">
-        <Pressable
+        <Button
           onPress={handleIdentify}
-          className="flex-row items-center justify-center gap-3 bg-primary rounded-xl py-4 px-6"
-          style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
-        >
-          <Icon name="camera-outline" size={24} color={colors.primaryForeground} />
-          <Text className="text-primary-foreground text-base font-semibold">
-            {t('wildlife.identifySpecies')}
-          </Text>
-        </Pressable>
+          icon="camera-outline"
+          className="w-full"
+          label={t('wildlife.identifySpecies')}
+        />
       </View>
 
       {/* History Section */}

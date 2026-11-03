@@ -211,15 +211,14 @@ function SwapSheet({
                       <Text className="text-xs font-semibold text-foreground">Current</Text>
                     </View>
                   ) : (
-                    <TouchableOpacity
+                    <Button
+                      size="sm"
                       onPress={() => {
                         onSelect(item);
                         onClose();
                       }}
-                      className="rounded-full bg-primary px-3 py-1.5"
-                    >
-                      <Text className="text-xs font-semibold text-primary-foreground">Select</Text>
-                    </TouchableOpacity>
+                      label="Select"
+                    />
                   )}
                 </View>
               );
