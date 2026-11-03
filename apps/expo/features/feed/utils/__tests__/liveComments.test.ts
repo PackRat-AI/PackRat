@@ -21,9 +21,11 @@ describe('isCommentsChangedSignal', () => {
 
 describe('liveCommentsUrl', () => {
   it('swaps http for ws and appends the live path', () => {
-    expect(liveCommentsUrl('https://api.packrat.world/', 7)).toBe(
+    expect(liveCommentsUrl({ apiBaseUrl: 'https://api.packrat.world/', postId: 7 })).toBe(
       'wss://api.packrat.world/api/feed/7/live',
     );
-    expect(liveCommentsUrl('http://10.0.2.2:8787', 7)).toBe('ws://10.0.2.2:8787/api/feed/7/live');
+    expect(liveCommentsUrl({ apiBaseUrl: 'http://10.0.2.2:8787', postId: 7 })).toBe(
+      'ws://10.0.2.2:8787/api/feed/7/live',
+    );
   });
 });

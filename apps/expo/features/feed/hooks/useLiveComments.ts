@@ -64,9 +64,13 @@ export function useLiveComments(postId: number) {
       if (cancelled || !token) return;
       let opened = false;
       // React Native's WebSocket takes request headers as a third argument.
-      const ws = new HeaderedWebSocket(liveCommentsUrl(getApiBaseUrl(), postId), undefined, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const ws = new HeaderedWebSocket(
+        liveCommentsUrl({ apiBaseUrl: getApiBaseUrl(), postId }),
+        undefined,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       socket = ws;
       ws.onopen = () => {
         // The pong is the first frame back, which proves the upgrade was accepted.

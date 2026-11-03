@@ -4,7 +4,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { FlatList, Modal, Pressable, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
@@ -120,6 +120,10 @@ export function PhotoViewer({
   const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(startIndex ?? 0);
   const [zoomed, setZoomed] = useState(false);
+  const getItemLayout = useCallback(
+    (_: unknown, i: number) => ({ length: width, offset: width * i, index: i }),
+    [width],
+  );
 
   return (
     <Modal
@@ -141,7 +145,7 @@ export function PhotoViewer({
             scrollEnabled={!zoomed && images.length > 1}
             showsHorizontalScrollIndicator={false}
             initialScrollIndex={startIndex ?? 0}
-            getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
+            getItemLayout={getItemLayout}
             onMomentumScrollEnd={(event) =>
               setIndex(Math.round(event.nativeEvent.contentOffset.x / width))
             }

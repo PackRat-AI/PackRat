@@ -40,7 +40,10 @@ export function usePostActions({ onGone }: { onGone?: () => void } = {}) {
     alertRef.current?.alert({ title, message, buttons: [{ text: t('feed.ok'), onPress: onOk }] });
 
   const fail = (title: string) => (error: unknown) =>
-    tell({ title, message: feedErrorMessage(error, t('feed.somethingWentWrong')) });
+    tell({
+      title,
+      message: feedErrorMessage({ error: error, fallback: t('feed.somethingWentWrong') }),
+    });
 
   const share = useSharePost({
     onPhotoFailed: () =>
@@ -80,7 +83,7 @@ export function usePostActions({ onGone }: { onGone?: () => void } = {}) {
   };
 
   /** Blocking is shared with comments, so it takes the person rather than a post. */
-  const confirmBlock = (person: PostAuthor, onBlocked?: () => void) => {
+  const confirmBlock = ({ person, onBlocked }: { person: PostAuthor; onBlocked?: () => void }) => {
     const name = displayName(person);
     alertRef.current?.alert({
       title: t('feed.blockTitle', { name }),
@@ -145,13 +148,14 @@ export function usePostActions({ onGone }: { onGone?: () => void } = {}) {
     ];
   };
 
-  const onMenuItemPress = (post: Post, actionKey: string) => {
+  const onMenuItemPress = ({ post, actionKey }: { post: Post; actionKey: string }) => {
     if (actionKey === 'edit')
       router.push({ pathname: '/feed/edit/[id]', params: { id: String(post.id) } });
     else if (actionKey === 'delete') confirmDelete(post);
     else if (actionKey === 'remove-tag') confirmRemoveTag(post);
     else if (actionKey === 'report') setReporting(post);
-    else if (actionKey === 'block' && post.author) confirmBlock(post.author, onGone);
+    else if (actionKey === 'block' && post.author)
+      confirmBlock({ person: post.author, onBlocked: onGone });
   };
 
   const dialogs = (

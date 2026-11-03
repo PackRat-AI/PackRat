@@ -62,7 +62,10 @@ export function PostDetailScreen({ post }: { post: Post }) {
   const tell = ({ title, error, fallback }: { title: string; error: unknown; fallback?: string }) =>
     alertRef.current?.alert({
       title,
-      message: feedErrorMessage(error, fallback ?? t('feed.somethingWentWrong')),
+      message: feedErrorMessage({
+        error: error,
+        fallback: fallback ?? t('feed.somethingWentWrong'),
+      }),
       buttons: [{ text: t('feed.ok') }],
     });
 
@@ -118,7 +121,7 @@ export function PostDetailScreen({ post }: { post: Post }) {
     );
   };
 
-  const onAction = (comment: Comment, action: CommentAction) => {
+  const onAction = ({ comment, action }: { comment: Comment; action: CommentAction }) => {
     if (action === 'reply') {
       setEditing(null);
       setReplyingTo(comment);
@@ -147,7 +150,7 @@ export function PostDetailScreen({ post }: { post: Post }) {
     } else if (action === 'report') {
       setReporting(comment);
     } else if (action === 'block' && comment.author) {
-      actions.confirmBlock(comment.author, () => comments.refetch());
+      actions.confirmBlock({ person: comment.author, onBlocked: () => comments.refetch() });
     }
   };
 

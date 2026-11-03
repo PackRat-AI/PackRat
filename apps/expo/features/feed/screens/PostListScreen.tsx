@@ -45,7 +45,7 @@ export function PostListScreen({ scope }: { scope: FeedScope }) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
   const router = useRouter();
-  const feed = useFeed(scope);
+  const feed = useFeed({ scope });
   const actions = usePostActions();
   const posts = feed.data?.pages.flatMap((page) => page.items) ?? [];
 

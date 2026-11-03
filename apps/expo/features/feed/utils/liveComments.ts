@@ -24,7 +24,13 @@ const TRAILING_SLASHES = /\/+$/;
 const HTTP_SCHEME = /^http/i;
 
 /** `wss://…/api/feed/{postId}/live` from the API's http(s) base URL. */
-export function liveCommentsUrl(apiBaseUrl: string, postId: number): string {
+export function liveCommentsUrl({
+  apiBaseUrl,
+  postId,
+}: {
+  apiBaseUrl: string;
+  postId: number;
+}): string {
   const base = apiBaseUrl.replace(TRAILING_SLASHES, '').replace(HTTP_SCHEME, 'ws');
   return `${base}/api/feed/${postId}/live`;
 }

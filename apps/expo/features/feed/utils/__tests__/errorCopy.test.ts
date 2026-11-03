@@ -17,32 +17,37 @@ describe('feedErrorMessage', () => {
       status: 403,
       serverMessage: 'Posting is suspended for this account',
     });
-    expect(feedErrorMessage(error, 'fallback')).toBe('Posting is suspended for this account');
+    expect(feedErrorMessage({ error: error, fallback: 'fallback' })).toBe(
+      'Posting is suspended for this account',
+    );
     expect(error.name).toBe('FeedApiError');
   });
 
   it('falls back for 5xx, long, JSON-looking, missing or foreign errors', () => {
     expect(
-      feedErrorMessage(
-        new FeedApiError({ message: 'x', status: 500, serverMessage: 'boom' }),
-        'fb',
-      ),
+      feedErrorMessage({
+        error: new FeedApiError({ message: 'x', status: 500, serverMessage: 'boom' }),
+        fallback: 'fb',
+      }),
     ).toBe('fb');
     expect(
-      feedErrorMessage(
-        new FeedApiError({ message: 'x', status: 400, serverMessage: 'a'.repeat(161) }),
-        'fb',
-      ),
+      feedErrorMessage({
+        error: new FeedApiError({ message: 'x', status: 400, serverMessage: 'a'.repeat(161) }),
+        fallback: 'fb',
+      }),
     ).toBe('fb');
     expect(
-      feedErrorMessage(
-        new FeedApiError({ message: 'x', status: 400, serverMessage: '{"a":1}' }),
-        'fb',
-      ),
+      feedErrorMessage({
+        error: new FeedApiError({ message: 'x', status: 400, serverMessage: '{"a":1}' }),
+        fallback: 'fb',
+      }),
     ).toBe('fb');
     expect(
-      feedErrorMessage(new FeedApiError({ message: 'x', status: 400, serverMessage: null }), 'fb'),
+      feedErrorMessage({
+        error: new FeedApiError({ message: 'x', status: 400, serverMessage: null }),
+        fallback: 'fb',
+      }),
     ).toBe('fb');
-    expect(feedErrorMessage(new Error('x'), 'fb')).toBe('fb');
+    expect(feedErrorMessage({ error: new Error('x'), fallback: 'fb' })).toBe('fb');
   });
 });

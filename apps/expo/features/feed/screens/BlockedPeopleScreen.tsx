@@ -36,7 +36,10 @@ export function BlockedPeopleScreen() {
               onError: (error) =>
                 alertRef.current?.alert({
                   title: t('feed.unblockFailed', { name }),
-                  message: feedErrorMessage(error, t('feed.somethingWentWrong')),
+                  message: feedErrorMessage({
+                    error: error,
+                    fallback: t('feed.somethingWentWrong'),
+                  }),
                   buttons: [{ text: t('feed.ok') }],
                 }),
             }),

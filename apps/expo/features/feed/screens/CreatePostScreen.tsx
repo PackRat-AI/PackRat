@@ -215,7 +215,7 @@ export function CreatePostScreen() {
         extra: { photoCount: working.length },
       });
       setPhase({ kind: 'editing' });
-      setError(feedErrorMessage(err, t('feed.postFailed')));
+      setError(feedErrorMessage({ error: err, fallback: t('feed.postFailed') }));
     }
   };
 

@@ -2,7 +2,7 @@ import { Text } from '@packrat/ui/src/text';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Image } from 'expo-image';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { FlatList, type LayoutChangeEvent, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { buildPostImageUrl } from '../utils';
@@ -33,11 +33,16 @@ export function PhotoCarousel({
   const first = images[0] ?? '';
   const [aspect, setAspect] = useState(aspectCache.get(first) ?? PLACEHOLDER_ASPECT);
 
+  const getItemLayout = useCallback(
+    (_: unknown, i: number) => ({ length: width, offset: width * i, index: i }),
+    [width],
+  );
+
   const onLayout = (event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width);
 
   const measureFirst = (size: { width: number; height: number }) => {
     if (aspectCache.has(first)) return;
-    const ratio = clampedPhotoAspect(size.width, size.height);
+    const ratio = clampedPhotoAspect(size);
     aspectCache.set(first, ratio);
     setAspect(ratio);
   };
@@ -87,7 +92,7 @@ export function PhotoCarousel({
           scrollEnabled={images.length > 1}
           showsHorizontalScrollIndicator={false}
           initialScrollIndex={index}
-          getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
+          getItemLayout={getItemLayout}
           onMomentumScrollEnd={(event) =>
             onIndexChange(Math.round(event.nativeEvent.contentOffset.x / width))
           }

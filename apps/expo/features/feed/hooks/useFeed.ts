@@ -3,7 +3,13 @@ import { listPosts } from '../lib/feedApi';
 import type { FeedScope } from '../types';
 import { feedKeys } from './queryKeys';
 
-export const useFeed = (scope: FeedScope = 'all', { enabled = true } = {}) =>
+export const useFeed = ({
+  scope = 'all',
+  enabled = true,
+}: {
+  scope?: FeedScope;
+  enabled?: boolean;
+} = {}) =>
   useInfiniteQuery({
     queryKey: feedKeys.list(scope),
     queryFn: ({ pageParam }) => listPosts({ scope, page: pageParam }),

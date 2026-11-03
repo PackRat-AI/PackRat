@@ -129,7 +129,7 @@ export function PostCard({
         </View>
         <DropdownMenu
           items={actions.menuItems(post)}
-          onItemPress={({ actionKey }) => actions.onMenuItemPress(post, actionKey)}
+          onItemPress={({ actionKey }) => actions.onMenuItemPress({ post, actionKey })}
           testID={testIds.feed.postMenu(post.id)}
         >
           <View

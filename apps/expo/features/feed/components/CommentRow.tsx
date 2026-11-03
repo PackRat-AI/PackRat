@@ -38,7 +38,7 @@ export function CommentRow({
   viewerOwnsPost: boolean;
   taggedPeople: PostAuthor[];
   onLike: (comment: Comment) => void;
-  onAction: (comment: Comment, action: CommentAction) => void;
+  onAction: (args: { comment: Comment; action: CommentAction }) => void;
 }) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
@@ -115,7 +115,7 @@ export function CommentRow({
           <DropdownMenu
             items={items}
             onItemPress={({ actionKey }) => {
-              if (isCommentAction(actionKey)) onAction(comment, actionKey);
+              if (isCommentAction(actionKey)) onAction({ comment, action: actionKey });
             }}
             testID={testIds.feed.commentMenu(comment.id)}
           >
@@ -131,7 +131,7 @@ export function CommentRow({
         <MentionText text={comment.content} people={taggedPeople} variant="subhead" selectable />
         <View className="flex-row items-center gap-1">
           <Pressable
-            onPress={() => onAction(comment, 'reply')}
+            onPress={() => onAction({ comment, action: 'reply' })}
             className="min-h-[40px] justify-center pr-3"
             accessibilityRole="button"
             testID={testIds.feed.commentReply(comment.id)}

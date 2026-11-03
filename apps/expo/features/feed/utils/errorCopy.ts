@@ -35,7 +35,13 @@ export function serverMessage(value: unknown): string | null {
  * Copy for an action that failed. Server messages for refused actions ("Posting is suspended for
  * this account") are written for people and shown as-is; anything else gets `fallback`.
  */
-export function feedErrorMessage(error: unknown, fallback: string): string {
+export function feedErrorMessage({
+  error,
+  fallback,
+}: {
+  error: unknown;
+  fallback: string;
+}): string {
   if (!(error instanceof FeedApiError)) return fallback;
   const message = error.serverMessage;
   if (

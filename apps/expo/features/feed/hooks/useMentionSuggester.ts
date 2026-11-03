@@ -38,12 +38,12 @@ export function useMentionSuggester({ text, known = [] }: { text: string; known?
         current.some((p) => p.id === person.id) ? current : [...current, person],
       );
       setDismissedFor(null);
-      return insertMention(text, person);
+      return insertMention({ text, person });
     },
     [text],
   );
 
-  const tagged = taggedPeopleIn(text, picked);
+  const tagged = taggedPeopleIn({ text, candidates: picked });
 
   return {
     suggestions,

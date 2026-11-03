@@ -11,7 +11,7 @@ export function MentionText({
 }: { text: string; people: PostAuthor[] } & ComponentProps<typeof Text>) {
   return (
     <Text {...props}>
-      {mentionSegments(text, people).map((segment, index) =>
+      {mentionSegments({ text, people }).map((segment, index) =>
         segment.person ? (
           <Text key={index} className="font-semibold text-primary">
             {segment.text}

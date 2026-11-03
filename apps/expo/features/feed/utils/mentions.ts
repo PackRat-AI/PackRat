@@ -49,14 +49,20 @@ export function activeMentionQuery(text: string): { atIndex: number; query: stri
 }
 
 /** `text` with the active query replaced by `@Name `. */
-export function insertMention(text: string, person: PostAuthor): string {
+export function insertMention({ text, person }: { text: string; person: PostAuthor }): string {
   const active = activeMentionQuery(text);
   if (!active) return text;
   return `${text.slice(0, active.atIndex)}@${displayName(person)} `;
 }
 
 /** The people from `candidates` whose `@Name` still appears in `text`, first pick wins. */
-export function taggedPeopleIn(text: string, candidates: PostAuthor[]): PostAuthor[] {
+export function taggedPeopleIn({
+  text,
+  candidates,
+}: {
+  text: string;
+  candidates: PostAuthor[];
+}): PostAuthor[] {
   const seen = new Set<string>();
   return candidates.filter((person) => {
     if (seen.has(person.id) || !text.includes(`@${displayName(person)}`)) return false;
@@ -72,7 +78,13 @@ export type MentionSegment = { text: string; person?: PostAuthor };
  * tag is no longer in `people`, so their name stays plain. Longer names match first so
  * `@Ann Lee` is not cut short by `@Ann`.
  */
-export function mentionSegments(text: string, people: PostAuthor[]): MentionSegment[] {
+export function mentionSegments({
+  text,
+  people,
+}: {
+  text: string;
+  people: PostAuthor[];
+}): MentionSegment[] {
   const byName = new Map<string, PostAuthor>();
   for (const person of people) byName.set(`@${displayName(person)}`, person);
   const names = [...byName.keys()].sort((a, b) => b.length - a.length);

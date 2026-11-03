@@ -48,24 +48,26 @@ describe('activeMentionQuery', () => {
 
 describe('insertMention', () => {
   it('replaces the active query with the full name and a trailing space', () => {
-    expect(insertMention('with @an', ann)).toBe('with @Ann Lee ');
+    expect(insertMention({ text: 'with @an', person: ann })).toBe('with @Ann Lee ');
   });
 
   it('leaves the text alone when no query is active', () => {
-    expect(insertMention('no query', ann)).toBe('no query');
+    expect(insertMention({ text: 'no query', person: ann })).toBe('no query');
   });
 });
 
 describe('taggedPeopleIn', () => {
   it('keeps picked people whose name is still in the text, once each', () => {
     const text = 'with @Ann Lee and @Ann Lee again';
-    expect(taggedPeopleIn(text, [ann, ben, ann]).map((p) => p.id)).toEqual(['u1']);
+    expect(taggedPeopleIn({ text: text, candidates: [ann, ben, ann] }).map((p) => p.id)).toEqual([
+      'u1',
+    ]);
   });
 });
 
 describe('mentionSegments', () => {
   it('marks tagged names and prefers the longer match', () => {
-    expect(mentionSegments('hi @Ann Lee and @Ann!', [annie, ann])).toEqual([
+    expect(mentionSegments({ text: 'hi @Ann Lee and @Ann!', people: [annie, ann] })).toEqual([
       { text: 'hi ' },
       { text: '@Ann Lee', person: ann },
       { text: ' and ' },
@@ -75,13 +77,15 @@ describe('mentionSegments', () => {
   });
 
   it('returns the text whole when nobody is tagged, and nothing for empty text', () => {
-    expect(mentionSegments('@Ann Lee', [])).toEqual([{ text: '@Ann Lee' }]);
-    expect(mentionSegments('', [ann])).toEqual([]);
-    expect(mentionSegments('', [])).toEqual([]);
+    expect(mentionSegments({ text: '@Ann Lee', people: [] })).toEqual([{ text: '@Ann Lee' }]);
+    expect(mentionSegments({ text: '', people: [ann] })).toEqual([]);
+    expect(mentionSegments({ text: '', people: [] })).toEqual([]);
   });
 
   it('handles text that is only a mention', () => {
-    expect(mentionSegments('@Ben Ortiz', [ben])).toEqual([{ text: '@Ben Ortiz', person: ben }]);
+    expect(mentionSegments({ text: '@Ben Ortiz', people: [ben] })).toEqual([
+      { text: '@Ben Ortiz', person: ben },
+    ]);
   });
 });
 

@@ -39,7 +39,7 @@ export function EditCaptionScreen({ post }: { post: Post }) {
         onError: (error) =>
           alertRef.current?.alert({
             title: t('feed.captionSaveFailedTitle'),
-            message: feedErrorMessage(error, t('feed.captionSaveFailed')),
+            message: feedErrorMessage({ error: error, fallback: t('feed.captionSaveFailed') }),
             buttons: [{ text: t('feed.ok') }],
           }),
       },
