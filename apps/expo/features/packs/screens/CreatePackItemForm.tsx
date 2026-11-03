@@ -2,6 +2,7 @@ import type { WeightUnit } from '@packrat/constants';
 import { safeIndexOf } from '@packrat/guards';
 import { useActionSheet } from '@packrat/ui/src/action-sheet';
 import { showAlert } from '@packrat/ui/src/alert-host';
+import { Button } from '@packrat/ui/src/button';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { SegmentedControl } from '@packrat/ui/src/segmented-control';
 import { TextField } from '@packrat/ui/src/text-field';
@@ -15,7 +16,7 @@ import { testIds } from 'expo-app/lib/testIds';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
@@ -491,18 +492,13 @@ export const CreatePackItemForm = ({
 
       <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
         {([canSubmit, isSubmitting]) => (
-          <Pressable
+          <Button
             testID={testIds.items.submitBtn}
             onPress={form.handleSubmit}
             disabled={!canSubmit || isSubmitting}
-            className={`mt-6 rounded-lg px-4 py-3.5 ${
-              !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
-            }`}
-          >
-            <Text className="text-center text-base font-semibold text-primary-foreground">
-              {isSubmitting ? 'Saving...' : isEditing ? 'Update Item' : 'Add Item'}
-            </Text>
-          </Pressable>
+            className="mt-6 w-full"
+            label={isSubmitting ? 'Saving...' : isEditing ? 'Update Item' : 'Add Item'}
+          />
         )}
       </form.Subscribe>
     </KeyboardAwareScrollView>

@@ -9,7 +9,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { z } from 'zod';
 import { useCreatePackTemplate } from '../hooks/useCreatePackTemplate';
 import { useUpdatePackTemplate } from '../hooks/useUpdatePacktemplate';
@@ -163,23 +163,20 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
 
         <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <Pressable
+            <Button
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
-              className={`mt-6 rounded-lg px-4 py-3.5 ${
-                !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
-              }`}
-            >
-              <Text className="text-center text-base font-semibold text-primary-foreground">
-                {isSubmitting
+              className="mt-6 w-full"
+              label={
+                isSubmitting
                   ? isEditing
                     ? t('packTemplates.updating')
                     : t('packTemplates.creating')
                   : isEditing
                     ? t('packTemplates.updateTemplate')
-                    : t('packTemplates.createTemplate')}
-              </Text>
-            </Pressable>
+                    : t('packTemplates.createTemplate')
+              }
+            />
           )}
         </form.Subscribe>
       </ScrollView>

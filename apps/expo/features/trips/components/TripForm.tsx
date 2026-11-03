@@ -1,4 +1,5 @@
 import { assertDefined, isString } from '@packrat/guards';
+import { Button } from '@packrat/ui/src/button';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { TextField } from '@packrat/ui/src/text-field';
 import * as Sentry from '@sentry/react-native';
@@ -293,14 +294,14 @@ export const TripForm = ({
                   </Text>
                 </Pressable>
                 {(location || trip?.location) && (
-                  <Pressable
+                  <Button
+                    variant="text"
                     onPress={() => {
                       setLocation(null);
                       form.setFieldValue('location', undefined);
                     }}
-                  >
-                    <Text className="text-red-500 font-semibold px-2">{t('common.clear')}</Text>
-                  </Pressable>
+                    label={t('common.clear')}
+                  />
                 )}
               </View>
             </FormItem>
@@ -324,9 +325,11 @@ export const TripForm = ({
                     </Text>
                   </Pressable>
                   {trail ? (
-                    <Pressable onPress={() => setTrail(null)} accessibilityRole="button">
-                      <Text className="px-2 font-semibold text-red-500">{t('common.clear')}</Text>
-                    </Pressable>
+                    <Button
+                      variant="text"
+                      onPress={() => setTrail(null)}
+                      label={t('common.clear')}
+                    />
                   ) : null}
                 </View>
                 <Text className="mt-1 text-xs text-muted-foreground">
@@ -370,9 +373,11 @@ export const TripForm = ({
                       <View className="bg-background rounded-t-2xl p-4">
                         <View className="flex-row justify-between items-center mb-2">
                           <Text className="text-lg font-semibold">{t('trips.selectPack')}</Text>
-                          <Pressable onPress={() => setShowPackModal(false)}>
-                            <Text className="text-primary font-semibold">{t('common.close')}</Text>
-                          </Pressable>
+                          <Button
+                            variant="text"
+                            onPress={() => setShowPackModal(false)}
+                            label={t('common.close')}
+                          />
                         </View>
 
                         <Picker
@@ -484,24 +489,21 @@ export const TripForm = ({
         {/* Submit Button */}
         <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <Pressable
+            <Button
               testID={testIds.trips.submitBtn}
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
-              className={`mt-6 rounded-lg px-4 py-3.5 ${
-                !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
-              }`}
-            >
-              <Text className="text-center text-base font-semibold text-primary-foreground">
-                {isSubmitting
+              className="mt-6 w-full"
+              label={
+                isSubmitting
                   ? isEditingExistingTrip
                     ? t('trips.updating')
                     : t('trips.creating')
                   : isEditingExistingTrip
                     ? t('trips.updateTrip')
-                    : t('trips.createTrip')}
-              </Text>
-            </Pressable>
+                    : t('trips.createTrip')
+              }
+            />
           )}
         </form.Subscribe>
       </KeyboardAwareScrollView>
