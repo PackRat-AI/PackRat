@@ -118,11 +118,11 @@ function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<Alert
             }}
           >
             <JCAlertDialog.Title>
-              <JCText>{current.title}</JCText>
+              <JCText style={{ typography: 'headlineSmall' }}>{current.title}</JCText>
             </JCAlertDialog.Title>
             {!!current.message && (
               <JCAlertDialog.Text>
-                <JCText>{current.message}</JCText>
+                <JCText style={{ typography: 'bodyMedium' }}>{current.message}</JCText>
               </JCAlertDialog.Text>
             )}
             {confirmButtons.length > 0 && (
