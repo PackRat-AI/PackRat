@@ -5,7 +5,7 @@ export default function WildlifeLayout() {
   const { t } = useTranslation();
 
   return (
-    <Stack>
+    <Stack screenOptions={{ title: '' }}>
       <Stack.Screen
         name="index"
         options={{

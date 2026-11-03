@@ -63,6 +63,7 @@ export default function SettingsScreen() {
   const { unit: temperatureUnit, setTemperatureUnit } = useTemperatureUnit();
   const { unit: speedUnit, setSpeedUnit } = useSpeedUnit();
   const enableTripReminders = useFeatureFlag('enableTripReminders');
+  const showsFeedSettings = useFeatureFlag('enableFeed') && isAuthenticated;
   const enableSafetyCheckIn = useFeatureFlag('enableSafetyCheckIn');
   const tripRemindersEnabled = use$(tripReminderSettingsStore.enabled);
   const showsTrailReportToggle = useTrailReportAlertsEnabled() && isAuthenticated;
@@ -293,6 +294,27 @@ export default function SettingsScreen() {
                 </View>
               )}
             </View>
+          </View>
+        )}
+
+        {showsFeedSettings && (
+          <View>
+            <Text variant="subhead" className="mb-3">
+              {t('feed.feed')}
+            </Text>
+            <TouchableOpacity
+              className="flex-row items-center gap-4 rounded-xl border border-border bg-card p-4"
+              onPress={() => router.push('/feed/settings')}
+              testID={testIds.feed.settingsEntry}
+            >
+              <View className="flex-1">
+                <Text className="font-medium">{t('feed.feedAndSharing')}</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                  {t('feed.feedAndSharingBody')}
+                </Text>
+              </View>
+              <Icon name="chevron-right" size={20} color={colors.grey} />
+            </TouchableOpacity>
           </View>
         )}
 

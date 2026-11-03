@@ -197,6 +197,8 @@ export default function AppLayout() {
           'trip-stats/year-in-review',
           'trip/[id]/log',
           'trip-stats/draw-route',
+          'feed/create',
+          'feed/edit/[id]',
           'trip/[id]/safety-start',
           'trip/[id]/check-in',
           'trip/[id]/running-late',
@@ -354,6 +356,9 @@ export default function AppLayout() {
 
 const SCREEN_OPTIONS = {
   animation: 'ios_from_right', // for android
+  // Screens set their own titles, some only once their data loads; until then the header stays
+  // blank rather than showing the route's file name.
+  title: '',
 } as const;
 
 const TABS_OPTIONS = {

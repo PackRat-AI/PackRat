@@ -333,6 +333,20 @@ export default (): ExpoConfig =>
           // expo-contacts adds write access; choosing an emergency contact only reads one.
           blockedPermissions: ['android.permission.WRITE_CONTACTS'],
           googleServicesFile: getGoogleServicesFile(),
+          // Shared post links open the post in the app. `autoVerify` checks
+          // packratai.com/.well-known/assetlinks.json, which lists the Play signing key, so
+          // only Play builds verify; dev and preview builds fall back to the disambiguation sheet.
+          intentFilters: [
+            {
+              action: 'VIEW',
+              autoVerify: true,
+              data: [
+                { scheme: 'https', host: 'packratai.com', pathPrefix: '/p/' },
+                { scheme: 'https', host: 'www.packratai.com', pathPrefix: '/p/' },
+              ],
+              category: ['BROWSABLE', 'DEFAULT'],
+            },
+          ],
           config: {
             googleMaps: {
               apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,

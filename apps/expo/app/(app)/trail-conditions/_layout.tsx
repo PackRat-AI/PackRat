@@ -12,7 +12,7 @@ import { Stack } from 'expo-router';
  */
 export default function TrailConditionsLayout() {
   return (
-    <Stack>
+    <Stack screenOptions={{ title: '' }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="[reportId]" />
       <Stack.Screen name="trail/[trailId]" />

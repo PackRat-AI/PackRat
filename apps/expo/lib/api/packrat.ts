@@ -17,28 +17,31 @@ let cachedToken: string | null = null;
 let cachedTokenExpiresAt = 0;
 let pendingTokenRequest: Promise<string | null> | null = null;
 
+/** The signed-in session token, for requests the API client cannot make itself (WebSockets). */
+export async function getSessionToken(): Promise<string | null> {
+  if (Platform.OS === 'web') {
+    const now = Date.now();
+    if (cachedToken && now < cachedTokenExpiresAt) return cachedToken;
+    pendingTokenRequest ??= authClient
+      .getSession()
+      .then(({ data }) => {
+        cachedToken = data?.session?.token ?? null;
+        cachedTokenExpiresAt = Date.now() + WEB_TOKEN_CACHE_MS;
+        return cachedToken;
+      })
+      .finally(() => {
+        pendingTokenRequest = null;
+      });
+    return pendingTokenRequest;
+  }
+  const cookieStr = await SecureStore.getItemAsync(COOKIE_STORE_KEY);
+  return parseSessionToken(cookieStr);
+}
+
 export const apiClient = createApiClient({
   baseUrl: getApiBaseUrl(),
   auth: {
-    getAccessToken: async () => {
-      if (Platform.OS === 'web') {
-        const now = Date.now();
-        if (cachedToken && now < cachedTokenExpiresAt) return cachedToken;
-        pendingTokenRequest ??= authClient
-          .getSession()
-          .then(({ data }) => {
-            cachedToken = data?.session?.token ?? null;
-            cachedTokenExpiresAt = Date.now() + WEB_TOKEN_CACHE_MS;
-            return cachedToken;
-          })
-          .finally(() => {
-            pendingTokenRequest = null;
-          });
-        return pendingTokenRequest;
-      }
-      const cookieStr = await SecureStore.getItemAsync(COOKIE_STORE_KEY);
-      return parseSessionToken(cookieStr);
-    },
+    getAccessToken: getSessionToken,
     // Better Auth has no separate refresh-token endpoint; the 7-day session
     // token is the only credential. Returning null here is intentional.
     getRefreshToken: () => null,

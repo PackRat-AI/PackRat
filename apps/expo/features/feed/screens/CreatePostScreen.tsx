@@ -1,217 +1,473 @@
-import { showAlert } from '@packrat/ui/src/alert-host';
-import { Button } from '@packrat/ui/src/button';
-import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
-import { TextInput } from 'expo-app/components/TextInput';
+import { userStore } from 'expo-app/features/auth/store';
 import { uploadImage } from 'expo-app/features/packs/utils/uploadImage';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
+import { Image } from 'expo-image';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import { Stack, useNavigation, usePreventRemove, useRouter } from 'expo-router';
 import { nanoid } from 'nanoid';
-import { useCallback, useState } from 'react';
-import { Image, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
-import { useCreatePost } from '../hooks';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { FeedDialogHeader } from '../components/FeedDialogHeader';
+import { MentionSuggestionList } from '../components/MentionSuggestionList';
+import { PersonAvatar } from '../components/PersonAvatar';
+import { useMentionSuggester } from '../hooks/useMentionSuggester';
+import { useCreatePost } from '../hooks/usePostMutations';
+import { feedErrorMessage } from '../utils/errorCopy';
+import { displayName } from '../utils/mentions';
 
-interface SelectedPhoto {
+export const MAX_POST_PHOTOS = 10;
+export const MAX_CAPTION = 500;
+/** Longest edge a posted photo keeps: sharp on a phone screen. */
+const MAX_PHOTO_EDGE = 2048;
+
+/** A photo waiting to be posted. Keeps its uploaded key so a retry only uploads what didn't make it. */
+interface DraftPhoto {
+  id: string;
   uri: string;
-  fileName: string;
+  uploadedKey?: string;
 }
 
-export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
+type Phase =
+  | { kind: 'editing' }
+  | { kind: 'uploading'; completed: number; total: number }
+  | { kind: 'publishing' };
+
+/**
+ * Re-encodes a picked photo as a fresh JPEG at upload size. The encoder writes no metadata, so the
+ * GPS position the camera stamped is gone before the photo leaves the device.
+ */
+async function preparePhoto(asset: ImagePicker.ImagePickerAsset): Promise<string> {
+  const context = ImageManipulator.manipulate(asset.uri);
+  if (Math.max(asset.width, asset.height) > MAX_PHOTO_EDGE) {
+    context.resize(
+      asset.width >= asset.height ? { width: MAX_PHOTO_EDGE } : { height: MAX_PHOTO_EDGE },
+    );
+  }
+  const image = await context.renderAsync();
+  const saved = await image.saveAsync({ format: SaveFormat.JPEG, compress: 0.85 });
+  return saved.uri;
+}
+
+/** The New Post full-screen dialog: photos, a caption with `@` tagging, and Post. */
+export function CreatePostScreen() {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
+  const router = useRouter();
+  const navigation = useNavigation();
+  const alertRef = useRef<AlertMethods>(null);
   const [caption, setCaption] = useState('');
-  const [photos, setPhotos] = useState<SelectedPhoto[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [photos, setPhotos] = useState<DraftPhoto[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const [phase, setPhase] = useState<Phase>({ kind: 'editing' });
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const mentions = useMentionSuggester({ text: caption });
+  const createPost = useCreatePost();
 
-  const { mutate: createPost, isPending } = useCreatePost();
+  const user = userStore.peek();
+  const userId = user?.id != null ? String(user.id) : undefined;
+  const me = {
+    id: userId ?? '',
+    firstName: user?.firstName ?? null,
+    lastName: user?.lastName ?? null,
+  };
 
-  const pickImages = useCallback(async () => {
+  const trimmed = caption.trim();
+  const isEditing = phase.kind === 'editing';
+  const isBusy = !isEditing || isImporting;
+  const hasContent = photos.length > 0 || trimmed.length > 0;
+  const canPost = !isBusy && hasContent && caption.length <= MAX_CAPTION;
+  const remaining = MAX_POST_PHOTOS - photos.length;
+
+  usePreventRemove(hasContent && !done, ({ data }) => {
+    if (!isEditing) return;
+    alertRef.current?.alert({
+      title: t('feed.discardTitle'),
+      message: t('feed.discardBody'),
+      buttons: [
+        { text: t('feed.keepEditing'), style: 'cancel' },
+        {
+          text: t('feed.discard'),
+          style: 'destructive',
+          onPress: () => {
+            setDone(true);
+            navigation.dispatch(data.action);
+          },
+        },
+      ],
+    });
+  });
+
+  const addAssets = async (assets: ImagePicker.ImagePickerAsset[]) => {
+    setIsImporting(true);
     try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        showAlert({ title: t('feed.permissionRequired'), message: t('feed.galleryPermission') });
-        return;
+      for (const asset of assets.slice(0, remaining)) {
+        try {
+          const uri = await preparePhoto(asset);
+          setPhotos((current) => [...current, { id: nanoid(), uri }].slice(0, MAX_POST_PHOTOS));
+        } catch (err) {
+          Sentry.captureException(err, { tags: { feature: 'feed', action: 'preparePhoto' } });
+          setError(t('feed.photoUnreadable'));
+        }
       }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: true,
-        quality: 0.8,
-        selectionLimit: 10,
-      });
-
-      if (!result.canceled && result.assets.length > 0) {
-        const newPhotos: SelectedPhoto[] = result.assets.map((asset) => {
-          const uriParts = asset.uri.split('/');
-          const rawName = uriParts[uriParts.length - 1] ?? `photo_${Date.now()}.jpg`;
-          return { uri: asset.uri, fileName: rawName };
-        });
-        setPhotos((prev) => [...prev, ...newPhotos].slice(0, 10));
-      }
-    } catch (err) {
-      console.error('Error picking images:', err);
-      Sentry.captureException(err, {
-        tags: { feature: 'feed', action: 'pickImages' },
-      });
+    } finally {
+      setIsImporting(false);
     }
-  }, [t]);
+  };
 
-  const takePhoto = useCallback(async () => {
+  const pickFromLibrary = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        orderedSelection: true,
+        selectionLimit: remaining,
+        quality: 1,
+      });
+      if (!result.canceled) await addAssets(result.assets);
+    } catch (err) {
+      Sentry.captureException(err, { tags: { feature: 'feed', action: 'pickPhotos' } });
+    }
+  };
+
+  const takePhoto = async () => {
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        showAlert({ title: t('feed.permissionRequired'), message: t('feed.cameraPermission') });
+        alertRef.current?.alert({
+          title: t('feed.permissionRequired'),
+          message: t('feed.cameraPermission'),
+          buttons: [{ text: t('feed.ok') }],
+        });
         return;
       }
-
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets.length > 0) {
-        const asset = result.assets[0];
-        if (asset) {
-          setPhotos((prev) =>
-            [...prev, { uri: asset.uri, fileName: `camera_${Date.now()}.jpg` }].slice(0, 10),
-          );
-        }
-      }
+      const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 });
+      if (!result.canceled) await addAssets(result.assets);
     } catch (err) {
-      console.error('Error taking photo:', err);
-      Sentry.captureException(err, {
-        tags: { feature: 'feed', action: 'takePhoto' },
-      });
+      Sentry.captureException(err, { tags: { feature: 'feed', action: 'takePhoto' } });
     }
-  }, [t]);
+  };
 
-  const removePhoto = useCallback((index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
-  }, []);
+  const move = ({ id, by }: { id: string; by: number }) =>
+    setPhotos((current) => {
+      const from = current.findIndex((p) => p.id === id);
+      const to = from + by;
+      if (from < 0 || to < 0 || to >= current.length) return current;
+      const next = [...current];
+      const [photo] = next.splice(from, 1);
+      if (photo) next.splice(to, 0, photo);
+      return next;
+    });
 
-  const handleSubmit = useCallback(async () => {
-    if (photos.length === 0) {
-      showAlert({ title: t('feed.noPhotos'), message: t('feed.addAtLeastOnePhoto') });
+  const remove = (id: string) => setPhotos((current) => current.filter((p) => p.id !== id));
+
+  const post = async () => {
+    if (!canPost) return;
+    if (!userId) {
+      setError(t('feed.signInToPost'));
       return;
     }
-
-    setUploading(true);
-    const uploadedKeys: string[] = [];
+    setError(null);
+    let working = photos;
     try {
-      const results = await Promise.all(
-        photos.map(async (photo) => {
-          const ext = photo.fileName.includes('.')
-            ? (photo.fileName.split('.').pop()?.toLowerCase() ?? 'jpg')
-            : 'jpg';
-          const uniqueName = `${nanoid()}.${ext}`;
-          return uploadImage({ fileName: uniqueName, uri: photo.uri });
-        }),
-      );
-
-      for (const key of results) {
-        if (key) uploadedKeys.push(key);
+      const pending = working.filter((p) => !p.uploadedKey);
+      let completed = working.length - pending.length;
+      if (pending.length > 0) {
+        setPhase({ kind: 'uploading', completed, total: working.length });
+        Sentry.addBreadcrumb({
+          category: 'feed',
+          message: 'Uploading post photos',
+          level: 'info',
+          data: { count: pending.length },
+        });
+        await Promise.all(
+          pending.map(async (photo) => {
+            const key = await uploadImage({ fileName: `${nanoid()}.jpg`, uri: photo.uri });
+            if (!key) throw new Error('Photo upload returned no key');
+            working = working.map((p) => (p.id === photo.id ? { ...p, uploadedKey: key } : p));
+            setPhotos((current) =>
+              current.map((p) => (p.id === photo.id ? { ...p, uploadedKey: key } : p)),
+            );
+            completed += 1;
+            setPhase({ kind: 'uploading', completed, total: working.length });
+          }),
+        );
       }
-
-      if (uploadedKeys.length === 0) {
-        throw new Error('No images uploaded');
-      }
-
-      createPost(
-        { caption: caption.trim() || undefined, images: uploadedKeys },
-        {
-          onSuccess: () => {
-            setPhotos([]);
-            setCaption('');
-            onSuccess?.();
-          },
-          onError: (err) => {
-            console.error('Failed to create post:', err);
-            showAlert({ title: t('common.error'), message: t('feed.postFailed') });
-          },
-        },
-      );
+      setPhase({ kind: 'publishing' });
+      await createPost.mutateAsync({
+        caption: trimmed || undefined,
+        images: working.flatMap((p) => (p.uploadedKey ? [p.uploadedKey] : [])),
+        taggedUserIds: mentions.taggedIds,
+      });
+      setDone(true);
+      requestAnimationFrame(() => router.back());
     } catch (err) {
-      console.error('Upload error:', err);
-      showAlert({ title: t('common.error'), message: t('feed.uploadFailed') });
-    } finally {
-      setUploading(false);
+      Sentry.captureException(err, {
+        tags: { feature: 'feed', action: 'createPost' },
+        extra: { photoCount: working.length },
+      });
+      setPhase({ kind: 'editing' });
+      setError(feedErrorMessage({ error: err, fallback: t('feed.postFailed') }));
     }
-  }, [photos, caption, createPost, t, onSuccess]);
+  };
 
-  const isSubmitting = uploading || isPending;
+  const counterColor =
+    caption.length > MAX_CAPTION
+      ? colors.destructive
+      : caption.length > MAX_CAPTION - 50
+        ? '#B45309'
+        : colors.grey;
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerStyle={{ padding: 16 }}>
-      {/* Photo grid */}
-      <View className="flex-row flex-wrap gap-2 mb-4">
-        {photos.map((photo, idx) => (
-          <View key={`${photo.uri}-${idx}`} className="relative">
-            <Image
-              source={{ uri: photo.uri }}
-              className="w-24 h-24 rounded-xl"
-              resizeMode="cover"
-            />
-            <TouchableOpacity
-              className="absolute top-1 right-1 bg-black/60 rounded-full w-5 h-5 items-center justify-center"
-              onPress={() => removePhoto(idx)}
-            >
-              <Icon name="close" size={12} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        ))}
-
-        {photos.length < 10 && (
-          <View className="flex-row gap-2">
-            <Pressable
-              onPress={pickImages}
-              className="w-24 h-24 rounded-xl border-2 border-dashed border-border items-center justify-center"
-            >
-              <Icon name="image-multiple" size={28} color={colors.grey2} />
-              <Text className="text-xs text-muted-foreground mt-1">{t('feed.gallery')}</Text>
-            </Pressable>
-            <Pressable
-              onPress={takePhoto}
-              className="w-24 h-24 rounded-xl border-2 border-dashed border-border items-center justify-center"
-            >
-              <Icon name="camera" size={28} color={colors.grey2} />
-              <Text className="text-xs text-muted-foreground mt-1">{t('feed.camera')}</Text>
-            </Pressable>
-          </View>
-        )}
-      </View>
-
-      {/* Caption input */}
-      <View className="rounded-xl border border-border bg-card p-3 mb-6">
-        <TextInput
-          value={caption}
-          onChangeText={setCaption}
-          placeholder={t('feed.captionPlaceholder')}
-          placeholderTextColor={colors.grey2}
-          multiline
-          numberOfLines={4}
-          maxLength={2000}
-          className="text-foreground text-sm min-h-[80px]"
-          style={{ color: colors.foreground }}
-        />
-        <Text className="text-xs text-muted-foreground text-right mt-1">{caption.length}/2000</Text>
-      </View>
-
-      {/* Submit */}
-      <Button
-        onPress={handleSubmit}
-        disabled={isSubmitting || photos.length === 0}
-        variant="primary"
-        className="w-full"
+    <View className="flex-1 bg-background" testID={testIds.feed.composer}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <FeedDialogHeader
+        title={t('feed.newPost')}
+        actionLabel={t('feed.post')}
+        onClose={() => router.back()}
+        onAction={post}
+        canAct={canPost}
+        isBusy={!isEditing}
+        closeTestID={testIds.feed.composerCancel}
+        actionTestID={testIds.feed.composerPost}
+      />
+      <KeyboardAwareScrollView
+        contentContainerClassName="gap-5 px-4 pb-10 pt-2"
+        keyboardShouldPersistTaps="handled"
+        bottomOffset={24}
       >
-        {isSubmitting ? (
-          <ActivityIndicator size="small" />
-        ) : (
-          <Text className="font-semibold">{t('feed.post')}</Text>
-        )}
-      </Button>
-    </ScrollView>
+        {/* Caption */}
+        <View className="gap-1">
+          <View className="flex-row gap-3">
+            <PersonAvatar person={me} size={36} />
+            <TextInput
+              value={caption}
+              onChangeText={setCaption}
+              editable={isEditing}
+              multiline
+              placeholder={t('feed.captionPlaceholder')}
+              placeholderTextColor={colors.grey}
+              className="min-h-[120px] flex-1 text-base"
+              style={{ color: colors.foreground, textAlignVertical: 'top' }}
+              testID={testIds.feed.composerCaption}
+            />
+          </View>
+          <Text
+            variant="caption1"
+            className="self-end"
+            style={{ color: counterColor, fontVariant: ['tabular-nums'] }}
+            testID={testIds.feed.composerCounter}
+          >
+            {`${caption.length} / ${MAX_CAPTION}`}
+          </Text>
+          <MentionSuggestionList
+            suggestions={mentions.suggestions}
+            onSelect={(person) => setCaption(mentions.accept(person))}
+          />
+        </View>
+
+        {/* Photos */}
+        <View className="gap-3">
+          <View className="flex-row items-center justify-between">
+            <Text variant="subhead" className="font-medium">
+              {t('feed.photos')}
+            </Text>
+            <Text
+              variant="caption1"
+              className="text-muted-foreground"
+              testID={testIds.feed.composerPhotoCount}
+            >
+              {t('feed.photoCount', { count: photos.length, max: MAX_POST_PHOTOS })}
+            </Text>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="gap-2.5"
+          >
+            {photos.map((photo, index) => (
+              <View
+                key={photo.id}
+                className="h-[88px] w-[88px] overflow-hidden rounded-xl bg-muted"
+                testID={testIds.feed.composerPhoto(index)}
+              >
+                <Image
+                  source={{ uri: photo.uri }}
+                  style={{ width: 88, height: 88 }}
+                  contentFit="cover"
+                />
+                {index === 0 ? (
+                  <View className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 py-0.5">
+                    <Text variant="caption2" className="font-semibold text-white">
+                      {t('feed.cover')}
+                    </Text>
+                  </View>
+                ) : null}
+                {isEditing ? (
+                  <>
+                    <Pressable
+                      onPress={() => remove(photo.id)}
+                      hitSlop={8}
+                      className="absolute right-1 top-1 h-6 w-6 items-center justify-center rounded-full bg-black/60"
+                      accessibilityRole="button"
+                      accessibilityLabel={t('feed.removePhoto')}
+                      testID={testIds.feed.composerRemovePhoto(index)}
+                    >
+                      <Icon name="close" size={14} color="white" />
+                    </Pressable>
+                    {index > 0 ? (
+                      <Pressable
+                        onPress={() => move({ id: photo.id, by: -1 })}
+                        hitSlop={6}
+                        className="absolute bottom-1 left-1 h-7 w-7 items-center justify-center rounded-full bg-black/60"
+                        accessibilityRole="button"
+                        accessibilityLabel={t('feed.moveEarlier')}
+                        testID={testIds.feed.composerMoveEarlier(index)}
+                      >
+                        <Icon name="chevron-left" size={18} color="white" />
+                      </Pressable>
+                    ) : null}
+                    {index < photos.length - 1 ? (
+                      <Pressable
+                        onPress={() => move({ id: photo.id, by: 1 })}
+                        hitSlop={6}
+                        className="absolute bottom-1 right-1 h-7 w-7 items-center justify-center rounded-full bg-black/60"
+                        accessibilityRole="button"
+                        accessibilityLabel={t('feed.moveLater')}
+                        testID={testIds.feed.composerMoveLater(index)}
+                      >
+                        <Icon name="chevron-right" size={18} color="white" />
+                      </Pressable>
+                    ) : null}
+                  </>
+                ) : photo.uploadedKey ? (
+                  <View className="absolute inset-0 items-center justify-center bg-black/20">
+                    <Icon name="check-circle" size={28} color="#22c55e" />
+                  </View>
+                ) : null}
+              </View>
+            ))}
+            {isImporting ? (
+              <View className="h-[88px] w-[88px] items-center justify-center rounded-xl border border-border bg-card">
+                <ActivityIndicator color={colors.primary} />
+              </View>
+            ) : null}
+            {remaining > 0 && isEditing ? (
+              <>
+                <Pressable
+                  onPress={pickFromLibrary}
+                  disabled={isImporting}
+                  className="h-[88px] w-[88px] items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-card"
+                  accessibilityRole="button"
+                  android_ripple={{ color: colors.grey5 }}
+                  testID={testIds.feed.composerLibrary}
+                >
+                  <Icon name="image-multiple-outline" size={24} color={colors.primary} />
+                  <Text variant="caption1">{t('feed.library')}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={takePhoto}
+                  disabled={isImporting}
+                  className="h-[88px] w-[88px] items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-card"
+                  accessibilityRole="button"
+                  android_ripple={{ color: colors.grey5 }}
+                  testID={testIds.feed.composerCamera}
+                >
+                  <Icon name="camera-outline" size={24} color={colors.primary} />
+                  <Text variant="caption1">{t('feed.camera')}</Text>
+                </Pressable>
+              </>
+            ) : null}
+          </ScrollView>
+          <Text variant="footnote" className="text-muted-foreground" wrap>
+            {photos.length > 1
+              ? t('feed.photosHintMany')
+              : t('feed.photosHintOne', { max: MAX_POST_PHOTOS })}
+          </Text>
+        </View>
+
+        {/* Tagged */}
+        {mentions.taggedPeople.length > 0 ? (
+          <View className="gap-2">
+            <Text variant="subhead" className="font-medium">
+              {t('feed.tagging')}
+            </Text>
+            <View className="rounded-xl border border-border bg-card">
+              {mentions.taggedPeople.map((person, index) => (
+                <View
+                  key={person.id}
+                  className={`min-h-[48px] flex-row items-center gap-3 px-4 py-2${
+                    index > 0 ? ' border-t border-border' : ''
+                  }`}
+                  testID={testIds.feed.composerTagged(person.id)}
+                >
+                  <PersonAvatar person={person} size={28} />
+                  <Text>{displayName(person) || t('feed.packratMember')}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {/* Status */}
+        {phase.kind === 'uploading' ? (
+          <View className="gap-2" testID={testIds.feed.composerProgress}>
+            <Text variant="callout">
+              {t('feed.uploading', {
+                index: Math.min(phase.completed + 1, phase.total),
+                count: phase.total,
+              })}
+            </Text>
+            <View className="h-1 overflow-hidden rounded-full bg-border">
+              <View
+                className="h-1 bg-primary"
+                style={{ width: `${(phase.completed / Math.max(phase.total, 1)) * 100}%` }}
+              />
+            </View>
+          </View>
+        ) : phase.kind === 'publishing' ? (
+          <View className="flex-row items-center gap-2.5">
+            <ActivityIndicator color={colors.primary} />
+            <Text variant="callout">{t('feed.posting')}</Text>
+          </View>
+        ) : error ? (
+          <View
+            className="gap-3 rounded-xl border border-border bg-card p-4"
+            testID={testIds.feed.composerError}
+          >
+            <View className="flex-row gap-3">
+              <Icon name="alert-circle-outline" size={20} color={colors.destructive} />
+              <Text variant="callout" className="flex-1" wrap>
+                {error}
+              </Text>
+            </View>
+            {hasContent ? (
+              <Pressable
+                onPress={post}
+                disabled={!canPost}
+                className="h-10 flex-row items-center gap-2 self-start rounded-full border border-border px-4"
+                accessibilityRole="button"
+                android_ripple={{ color: colors.grey5 }}
+                testID={testIds.feed.composerRetry}
+              >
+                <Icon name="refresh" size={18} color={colors.primary} />
+                <Text variant="callout" className="font-medium text-primary">
+                  {t('feed.tryAgain')}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+      </KeyboardAwareScrollView>
+      <Alert ref={alertRef} title="" buttons={[]} />
+    </View>
   );
-};
+}

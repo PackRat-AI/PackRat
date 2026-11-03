@@ -1,3 +1,12 @@
-export { CommentItem } from './CommentItem';
+export * from './CommentRow';
+export * from './FeedDialogHeader';
 export { FeedTile } from './FeedTile';
-export { PostCard } from './PostCard';
+export * from './MentionSuggestionList';
+export * from './MentionText';
+export * from './PersonAvatar';
+export * from './PhotoCarousel';
+export * from './PhotoViewer';
+export * from './PostCard';
+export * from './ReportReasonDialog';
+export * from './usePostActions';
+export * from './useSharePost';
