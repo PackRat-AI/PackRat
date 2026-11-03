@@ -64,7 +64,7 @@ const IDENTIFYING_KINDS: readonly { keywords: readonly string[]; rank: number }[
 const NON_WORD = /[^a-z0-9]+/;
 
 /** "tent" matches "Tent" and "tents", but not "Contents". */
-function hasKeyword(words: readonly string[], keyword: string): boolean {
+function hasKeyword({ words, keyword }: { words: readonly string[]; keyword: string }): boolean {
   return words.some((word) => word === keyword || word === `${keyword}s`);
 }
 
@@ -77,7 +77,9 @@ export function identifyingGear(
 ): IdentifyingGearItem[] {
   const ranked = items.flatMap((item) => {
     const words = `${item.name} ${item.category ?? ''}`.toLowerCase().split(NON_WORD);
-    const kind = IDENTIFYING_KINDS.find((k) => k.keywords.some((word) => hasKeyword(words, word)));
+    const kind = IDENTIFYING_KINDS.find((k) =>
+      k.keywords.some((word) => hasKeyword({ words, keyword: word })),
+    );
     return kind ? [{ item, rank: kind.rank }] : [];
   });
   const seen = new Set<number>();
