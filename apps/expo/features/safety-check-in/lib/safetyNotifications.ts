@@ -40,8 +40,18 @@ function content(checkIn: LocalSafetyCheckIn, kind: 'reminder' | 'overdue') {
   };
 }
 
-/** Clears a check-in's pending notifications. */
-export async function cancelSafetyNotifications(checkInId: string): Promise<void> {
+/**
+ * Notification changes run one after another. Callers don't await them, so without this an end
+ * could finish before the schedule it follows, leaving a reminder for a trip that's over, and two
+ * quick extensions could land in the wrong order.
+ */
+let pending: Promise<void> = Promise.resolve();
+function inOrder(change: () => Promise<void>): Promise<void> {
+  pending = pending.then(change, change);
+  return pending;
+}
+
+async function cancelNow(checkInId: string): Promise<void> {
   await Promise.all(
     [`reminder-${checkInId}`, `overdue-${checkInId}`].map((suffix) =>
       Notifications.cancelScheduledNotificationAsync(`${SAFETY_NOTIFICATION_PREFIX}${suffix}`),
@@ -49,19 +59,29 @@ export async function cancelSafetyNotifications(checkInId: string): Promise<void
   );
 }
 
+/** Clears a check-in's pending notifications. */
+export function cancelSafetyNotifications(checkInId: string): Promise<void> {
+  return inOrder(() => cancelNow(checkInId));
+}
+
 /**
  * Schedules the hour-before reminder and the "alert sent" notice as local notifications, so they
  * arrive on time with no signal. Replaces anything already scheduled for this check-in.
  */
-export async function scheduleSafetyNotifications(checkIn: LocalSafetyCheckIn): Promise<void> {
+export function scheduleSafetyNotifications(checkIn: LocalSafetyCheckIn): Promise<void> {
+  return inOrder(() => scheduleNow(checkIn));
+}
+
+async function scheduleNow(checkIn: LocalSafetyCheckIn): Promise<void> {
   try {
-    await cancelSafetyNotifications(checkIn.id);
+    await cancelNow(checkIn.id);
+    // Android 13 shows the notification permission prompt only once a channel exists.
+    await ensureChannel();
     let permission = await Notifications.getPermissionsAsync();
     if (!permission.granted && permission.canAskAgain) {
       permission = await Notifications.requestPermissionsAsync();
     }
     if (!permission.granted) return;
-    await ensureChannel();
     for (const planned of plannedNotifications({ checkIn, now: new Date() })) {
       await Notifications.scheduleNotificationAsync({
         identifier: planned.identifier,
@@ -86,7 +106,11 @@ export async function scheduleSafetyNotifications(checkIn: LocalSafetyCheckIn): 
 }
 
 /** Clears every safety notification, e.g. on sign-out. */
-export async function cancelAllSafetyNotifications(): Promise<void> {
+export function cancelAllSafetyNotifications(): Promise<void> {
+  return inOrder(cancelAllNow);
+}
+
+async function cancelAllNow(): Promise<void> {
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   await Promise.all(
     scheduled

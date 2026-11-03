@@ -12,20 +12,43 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Contact, requestPermissionsAsync } from 'expo-contacts';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { saveContact } from '../lib/safetyActions';
+import { loadContacts, saveContact } from '../lib/safetyActions';
 import { safetyStore } from '../store/safetyCheckIn';
+import type { EmergencyContact } from '../types';
 import { looksLikeEmail } from '../utils/safetyCheckIn';
 
-/** Add or edit one emergency contact. Can fill itself from the phone's contacts. */
+/**
+ * Add or edit one emergency contact. An edit waits for the contact to load, so it can never fall
+ * through to adding a duplicate; if the contact is gone, the dialog closes.
+ */
 export function EmergencyContactFormScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const existing = use$(() => safetyStore.contacts.get().find((c) => c.id === id));
+  const missing = Boolean(id) && !existing;
+  const [loading, setLoading] = useState(missing);
+
+  // Load once, for the contact the dialog opened with.
+  useEffect(() => {
+    if (missing) void loadContacts().finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (missing && !loading) router.back();
+  }, [missing, loading, router]);
+
+  if (missing) return <View className="flex-1 bg-background" />;
+  return <ContactForm key={existing?.id ?? 'new'} existing={existing} />;
+}
+
+/** The form itself, seeded once from the contact being edited. Can fill itself from the phone's contacts. */
+function ContactForm({ existing }: { existing: EmergencyContact | undefined }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useColorScheme();
-  const { id } = useLocalSearchParams<{ id?: string }>();
-  const existing = use$(() => safetyStore.contacts.get().find((c) => c.id === id));
 
   const [name, setName] = useState(existing?.name ?? '');
   const [email, setEmail] = useState(existing?.email ?? '');
@@ -49,9 +72,10 @@ export function EmergencyContactFormScreen() {
       if (!picked) return;
       const [fullName, emails] = await Promise.all([picked.getFullName(), picked.getEmails()]);
       if (fullName) setName(fullName);
-      const address = emails.find((e) => e.address)?.address;
-      if (address) setEmail(address);
-      else setErrorMessage(t('safetyCheckIn.form.pickedNoEmail'));
+      // Always replace the email, so a new name is never saved with someone else's address.
+      const address = emails.find((e) => e.address)?.address ?? '';
+      setEmail(address);
+      if (!address) setErrorMessage(t('safetyCheckIn.form.pickedNoEmail'));
     } catch (error) {
       Sentry.captureException(error, {
         tags: { feature: 'safetyCheckIn', action: 'pickContact' },

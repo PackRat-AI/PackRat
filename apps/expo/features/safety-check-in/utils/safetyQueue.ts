@@ -1,3 +1,4 @@
+import { isPresent } from '@packrat/guards';
 import type { SafetyCheckIn } from '@packrat/schemas/safetyCheckIn';
 import type {
   EmergencyContact,
@@ -266,7 +267,8 @@ export function confirmStart({
 /**
  * Brings a trip's check-in in line with the server, e.g. the overdue alert has gone out, or the
  * check-in was started or ended on another device. Skipped while this trip has writes queued, so
- * a stale read can never undo something the user just did.
+ * a stale read can never undo something the user just did. That includes a check-in just ended
+ * here: it has left `active`, but its end is still queued under the id the server returns.
  */
 export function reconcileRemote({
   state,
@@ -280,7 +282,8 @@ export function reconcileRemote({
   remote: SafetyCheckIn | null;
 }): { state: SafetyState; removed: LocalSafetyCheckIn | null } {
   const local = state.active[tripId];
-  if (local && state.queue.some((op) => op.checkInId === local.id)) {
+  const pendingIds = new Set([local?.id, remote?.id].filter(isPresent));
+  if (state.queue.some((op) => pendingIds.has(op.checkInId))) {
     return { state, removed: null };
   }
   if (!remote) {
@@ -308,11 +311,13 @@ export function reconcileRemote({
 
 /**
  * Whether a failed write should wait for signal and try again. Anything without an HTTP status is
- * a network failure; a 4xx other than timeout and rate limit is a refusal that would fail forever.
+ * a network failure, and a 401 means the session lapsed: the write is still wanted once the user
+ * signs back in, and dropping an I'm Safe would let the overdue alert go out. Any other 4xx except
+ * timeout and rate limit is a refusal that would fail forever.
  */
 export function isRetryable(httpStatus: number | null | undefined): boolean {
   if (httpStatus == null) return true;
-  return httpStatus === 408 || httpStatus === 429 || httpStatus >= 500;
+  return httpStatus === 401 || httpStatus === 408 || httpStatus === 429 || httpStatus >= 500;
 }
 
 /**

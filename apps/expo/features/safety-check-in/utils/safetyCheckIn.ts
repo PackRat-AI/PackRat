@@ -211,6 +211,8 @@ export const SAFETY_NOTIFICATION_PREFIX = 'safety-';
 /**
  * The local notifications for a check-in, skipping any already past: an hour before the expected
  * return, and when the overdue alert goes to the contacts. Local, so they arrive with no signal.
+ * The "alert sent" notice waits until the server has the check-in: before that, no one would be
+ * alerted, so saying they were would be false.
  */
 export function plannedNotifications({
   checkIn,
@@ -232,5 +234,8 @@ export function plannedNotifications({
       fireAt: overdueAt(checkIn),
     },
   ];
-  return candidates.filter((n) => n.fireAt.getTime() > now.getTime());
+  return candidates.filter(
+    (n) =>
+      n.fireAt.getTime() > now.getTime() && (n.kind === 'reminder' || contactsNotified(checkIn)),
+  );
 }

@@ -52,6 +52,8 @@ export function StartSafetyCheckInScreen() {
   const contacts = use$(safetyStore.contacts);
   const alertRef = useRef<AlertMethods>(null);
   const nextKey = useRef(0);
+  // A second tap on Send before the dialog closes would start a second check-in.
+  const sent = useRef(false);
 
   const [selected, setSelected] = useState<Set<string>>(() => new Set(initialContactIds(contacts)));
   const [expectedReturn, setExpectedReturn] = useState(() =>
@@ -121,6 +123,8 @@ export function StartSafetyCheckInScreen() {
     setGear((current) => current.map((item) => (item.key === key ? { ...item, ...patch } : item)));
 
   const send = (tracking: boolean) => {
+    if (sent.current) return;
+    sent.current = true;
     startSafetyCheckIn({
       tripId: trip.id,
       tripName: trip.name,

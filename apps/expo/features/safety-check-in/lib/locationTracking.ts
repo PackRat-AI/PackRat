@@ -64,8 +64,28 @@ export async function requestBackgroundPermission(): Promise<boolean> {
   return background.granted;
 }
 
-export async function startTracking(): Promise<void> {
+/**
+ * Starts and stops run one after another, and a start checks there is still a check-in to track
+ * once its turn comes. Callers don't await them, so otherwise an I'm Safe or sign-out during a
+ * slow start could stop nothing and leave the start to switch sharing back on.
+ */
+let pending: Promise<void> = Promise.resolve();
+function inOrder(change: () => Promise<void>): Promise<void> {
+  pending = pending.then(change, change);
+  return pending;
+}
+
+export function startTracking(): Promise<void> {
+  return inOrder(startNow);
+}
+
+export function stopTracking(): Promise<void> {
+  return inOrder(stopNow);
+}
+
+async function startNow(): Promise<void> {
   try {
+    if (!hasTrackingCheckIn(safetyStore.peek())) return;
     if (!(await hasBackgroundPermission())) return;
     if (await Location.hasStartedLocationUpdatesAsync(SAFETY_LOCATION_TASK)) return;
     await Location.startLocationUpdatesAsync(SAFETY_LOCATION_TASK, {
@@ -85,7 +105,7 @@ export async function startTracking(): Promise<void> {
   }
 }
 
-export async function stopTracking(): Promise<void> {
+async function stopNow(): Promise<void> {
   try {
     if (await TaskManager.isTaskRegisteredAsync(SAFETY_LOCATION_TASK)) {
       await Location.stopLocationUpdatesAsync(SAFETY_LOCATION_TASK);
@@ -98,8 +118,7 @@ export async function stopTracking(): Promise<void> {
 /** At launch: keeps tracking in step with the check-ins on the phone. */
 export async function syncTracking(): Promise<void> {
   await when(safetySyncState.isPersistLoaded);
-  if (hasTrackingCheckIn(safetyStore.peek())) await startTracking();
-  else await stopTracking();
+  await (hasTrackingCheckIn(safetyStore.peek()) ? startTracking() : stopTracking());
 }
 
 export class LocatorError extends Error {
@@ -123,7 +142,11 @@ export async function currentFix(): Promise<SafetyLocationFix> {
     (await Promise.race([
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null),
       timeout,
-    ])) ?? (await Location.getLastKnownPositionAsync({ maxAge: 5 * 60_000 }));
+    ])) ??
+    (await Location.getLastKnownPositionAsync({
+      maxAge: 5 * 60_000,
+      requiredAccuracy: MAX_ACCURACY_METERS,
+    }));
   if (!location) throw new LocatorError('unavailable');
   const fix = toFix(location);
   try {

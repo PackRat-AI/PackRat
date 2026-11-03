@@ -255,8 +255,10 @@ describe('countdown', () => {
 });
 
 describe('plannedNotifications', () => {
+  const notified = () => checkIn({ shareUrl: 'https://x/api/safety/abc' });
+
   it('reminds an hour before the return and marks the alert time', () => {
-    const result = plannedNotifications({ checkIn: checkIn(), now: new Date(2026, 8, 13) });
+    const result = plannedNotifications({ checkIn: notified(), now: new Date(2026, 8, 13) });
     expect(result).toEqual([
       {
         kind: 'reminder',
@@ -269,9 +271,14 @@ describe('plannedNotifications', () => {
 
   it('skips moments already past', () => {
     const result = plannedNotifications({
-      checkIn: checkIn(),
+      checkIn: notified(),
       now: new Date(2026, 8, 14, 18, 30),
     });
     expect(result.map((n) => n.kind)).toEqual(['overdue']);
+  });
+
+  it('holds back the alert-sent notice until the contacts have been told', () => {
+    const result = plannedNotifications({ checkIn: checkIn(), now: new Date(2026, 8, 13) });
+    expect(result.map((n) => n.kind)).toEqual(['reminder']);
   });
 });

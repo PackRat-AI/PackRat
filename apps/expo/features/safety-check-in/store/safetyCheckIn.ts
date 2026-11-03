@@ -5,6 +5,7 @@ import * as Sentry from '@sentry/react-native';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import { nanoid } from 'nanoid';
 import { performOperation, SafetyApiError } from '../lib/safetyApi';
+import { scheduleSafetyNotifications } from '../lib/safetyNotifications';
 import type { SafetyLocationFix } from '../types';
 import {
   confirmStart,
@@ -97,6 +98,11 @@ async function drain(): Promise<void> {
           ? confirmStart({ state: next, tripId: operation.tripId, remote })
           : next;
       });
+      if (operation.kind === 'start') {
+        // The contacts now know, so the "alert sent" notice can be scheduled.
+        const checkIn = safetyStore.active.peek()[operation.tripId];
+        if (checkIn?.id === operation.checkInId) void scheduleSafetyNotifications(checkIn);
+      }
     } catch (error) {
       const httpStatus = error instanceof SafetyApiError ? error.httpStatus : null;
       if (isRetryable(httpStatus)) {

@@ -296,6 +296,17 @@ describe('reconcileRemote', () => {
     expect(result.removed?.id).toBe('ci1');
   });
 
+  it('ignores a stale read of a check-in just ended here', () => {
+    const { state } = endCheckIn({
+      state: confirmed(started()),
+      tripId: 't1',
+      outcome: 'safe',
+      endedAt: now,
+    });
+    const result = reconcileRemote({ state, tripId: 't1', tripName: 'x', remote: remote() });
+    expect(result).toEqual({ state, removed: null });
+  });
+
   it('keeps an unconfirmed check-in when the server has none', () => {
     const state = { ...started(), queue: [] };
     const result = reconcileRemote({ state, tripId: 't1', tripName: 'x', remote: null });
@@ -336,6 +347,7 @@ describe('queue helpers', () => {
   it.each([
     [undefined, true],
     [null, true],
+    [401, true],
     [408, true],
     [429, true],
     [503, true],

@@ -20,12 +20,12 @@ import { useRef } from 'react';
 import { View } from 'react-native';
 import { plannedRouteFromGpx, plannedRouteLength } from '../utils/plannedRoute';
 
-function setPlannedRoute({ trip, route }: { trip: Trip; route: Trip['plannedRoute'] }) {
-  obs({ store: tripsStore, id: trip.id }).set({
-    ...trip,
-    plannedRoute: route,
-    localUpdatedAt: new Date().toISOString(),
-  });
+/** Reads the trip fresh, since the file picker can stay open while the trip changes underneath. */
+function setPlannedRoute({ tripId, route }: { tripId: string; route: Trip['plannedRoute'] }) {
+  const trip = obs({ store: tripsStore, id: tripId });
+  const current = trip.peek();
+  if (!current) return;
+  trip.set({ ...current, plannedRoute: route, localUpdatedAt: new Date().toISOString() });
 }
 
 /**
@@ -48,7 +48,7 @@ export function PlannedRouteSection({ trip }: { trip: Trip }) {
       const asset = result.canceled ? null : result.assets[0];
       if (!asset) return;
       const parsed = plannedRouteFromGpx(await FileSystem.readAsStringAsync(asset.uri));
-      setPlannedRoute({ trip, route: parsed });
+      setPlannedRoute({ tripId: trip.id, route: parsed });
     } catch (error) {
       if (!(error instanceof GpxParseError)) {
         Sentry.captureException(error, {
@@ -96,7 +96,8 @@ export function PlannedRouteSection({ trip }: { trip: Trip }) {
             ]}
             onItemPress={(item) => {
               if (item.actionKey === 'replace') void importRoute();
-              else if (item.actionKey === 'remove') setPlannedRoute({ trip, route: null });
+              else if (item.actionKey === 'remove')
+                setPlannedRoute({ tripId: trip.id, route: null });
             }}
           >
             <View
