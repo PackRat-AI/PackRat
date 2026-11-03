@@ -334,8 +334,8 @@ export default (): ExpoConfig =>
           blockedPermissions: ['android.permission.WRITE_CONTACTS'],
           googleServicesFile: getGoogleServicesFile(),
           // Shared post links open the post in the app. `autoVerify` checks
-          // packratai.com/.well-known/assetlinks.json; until that lists this build's
-          // signing key, Android offers the app from the link's disambiguation sheet.
+          // packratai.com/.well-known/assetlinks.json, which lists the Play signing key, so
+          // only Play builds verify; dev and preview builds fall back to the disambiguation sheet.
           intentFilters: [
             {
               action: 'VIEW',
