@@ -118,10 +118,10 @@ export function PackListScreen() {
     <TouchableOpacity
       key={value}
       onPress={() => setActiveFilter(value)}
-      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === value ? 'bg-primary' : 'bg-card'}`}
+      className={`mr-2 h-8 justify-center rounded-lg border px-4 ${activeFilter === value ? 'border-transparent bg-secondary' : 'border-border'}`}
     >
       <Text
-        className={`text-sm font-medium ${activeFilter === value ? 'text-primary-foreground' : 'text-foreground'}`}
+        className={`text-sm font-medium ${activeFilter === value ? 'text-secondary-foreground' : 'text-muted-foreground'}`}
       >
         {label}
       </Text>
@@ -179,14 +179,12 @@ export function PackListScreen() {
             ? 'No public packs are available at the moment.'
             : `No public ${activeFilter} packs are available.`}
         </Text>
-        <Pressable
+        <Button
           testID={testIds.packs.emptyCreateBtn}
           accessibilityLabel={testIds.packs.emptyCreateBtn}
-          className="rounded-lg bg-primary px-4 py-2"
           onPress={handleCreatePack}
-        >
-          <Text className="font-medium text-primary-foreground">{t('packs.createNewPack')}</Text>
-        </Pressable>
+          label={t('packs.createNewPack')}
+        />
       </View>
     );
   };
@@ -290,14 +288,7 @@ export function PackListScreen() {
                     ? "You haven't created or found any public packs yet."
                     : `You don't have any ${activeFilter} packs.`}
                 </Text>
-                <TouchableOpacity
-                  className="rounded-lg bg-primary px-4 py-2"
-                  onPress={handleCreatePack}
-                >
-                  <Text className="font-medium text-primary-foreground">
-                    {t('packs.createNewPack')}
-                  </Text>
-                </TouchableOpacity>
+                <Button onPress={handleCreatePack} label={t('packs.createNewPack')} />
               </View>
             )
           }

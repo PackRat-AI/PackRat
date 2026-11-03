@@ -1,4 +1,5 @@
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
 import { IosTransparentHeaderOverlapFix } from '@packrat/ui/src/ios-transparent-header-overlap-fix';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { Text } from '@packrat/ui/src/text';
@@ -13,14 +14,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useRouter } from 'expo-router';
 import { useAtom, useSetAtom } from 'jotai';
 import { useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, ScrollView, View } from 'react-native';
 import { useDebounce } from 'use-debounce';
 import { CatalogItemsAuthWall } from '../components';
 import { CatalogItemCard } from '../components/CatalogItemCard';
@@ -240,12 +234,7 @@ function CatalogItemsScreen() {
                   {paginatedError.message || t('catalog.somethingWentWrong')}
                 </Text>
 
-                <TouchableOpacity
-                  onPress={() => refetch()}
-                  className="mt-4 rounded-lg bg-primary px-4 py-2"
-                >
-                  <Text className="font-medium text-primary-foreground">{t('catalog.retry')}</Text>
-                </TouchableOpacity>
+                <Button onPress={() => refetch()} className="mt-4" label={t('catalog.retry')} />
               </>
             ) : (
               <>

@@ -1,13 +1,29 @@
 import { useFeatureFlags } from 'expo-app/hooks/useFeatureFlags';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { NativeTabs } from 'expo-router/native-tabs';
+import { Platform } from 'react-native';
 
 export default function TabLayout() {
   const { t } = useTranslation();
   const featureFlags = useFeatureFlags();
+  const { colors } = useColorScheme();
+
+  // A bare Material navigation bar takes its colours from the wallpaper; pin it to the app's M3
+  // scheme so the active pill matches every other surface.
+  const androidColors =
+    Platform.OS === 'android'
+      ? {
+          backgroundColor: colors.popover,
+          indicatorColor: colors.secondary,
+          iconColor: { default: colors.grey, selected: colors.secondaryForeground },
+          labelStyle: { default: { color: colors.grey }, selected: { color: colors.foreground } },
+          rippleColor: colors.grey5,
+        }
+      : {};
 
   return (
-    <NativeTabs>
+    <NativeTabs {...androidColors}>
       <NativeTabs.Trigger name="(home)">
         <NativeTabs.Trigger.Label>{t('navigation.dashboard')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="house" src={require('../../../assets/tab-icons/home.png')} />

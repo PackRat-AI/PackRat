@@ -1,4 +1,5 @@
 import { showAlert } from '@packrat/ui/src/alert-host';
+import { Button } from '@packrat/ui/src/button';
 
 // CreatePackTemplateItemForm.tsx
 
@@ -16,7 +17,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { Image, Pressable, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
@@ -460,21 +461,18 @@ export const CreatePackTemplateItemForm = ({
 
       <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
         {([canSubmit, isSubmitting]) => (
-          <Pressable
+          <Button
             onPress={form.handleSubmit}
             disabled={!canSubmit || isSubmitting}
-            className={`mt-6 rounded-lg px-4 py-3.5 ${
-              !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
-            }`}
-          >
-            <Text className="text-center text-base font-semibold text-primary-foreground">
-              {isSubmitting
+            className="mt-6 w-full"
+            label={
+              isSubmitting
                 ? t('common.loading')
                 : isEditing
                   ? t('packTemplates.updateTemplate')
-                  : t('packTemplates.addItem')}
-            </Text>
-          </Pressable>
+                  : t('packTemplates.addItem')
+            }
+          />
         )}
       </form.Subscribe>
     </KeyboardAwareScrollView>

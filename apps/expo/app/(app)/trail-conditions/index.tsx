@@ -1,4 +1,5 @@
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { SearchInput } from '@packrat/ui/src/search-input';
 import { Text } from '@packrat/ui/src/text';
@@ -65,15 +66,7 @@ export default function TrailConditionsScreen() {
           <Text variant="subhead" className="text-center text-muted-foreground" wrap>
             {t('trailConditions.signedOutMessage')}
           </Text>
-          <Pressable
-            onPress={() => router.push('/auth')}
-            accessibilityRole="button"
-            className="mt-2 rounded-xl bg-primary px-5 py-3 active:opacity-90"
-          >
-            <Text variant="body" className="font-semibold text-primary-foreground">
-              {t('auth.signIn')}
-            </Text>
-          </Pressable>
+          <Button onPress={() => router.push('/auth')} className="mt-2" label={t('auth.signIn')} />
         </View>
       );
     }
@@ -186,16 +179,12 @@ function EmptyState({ isSearching, onSubmit }: { isSearching: boolean; onSubmit:
         {isSearching ? t('trailConditions.noResults') : t('trailConditions.noReports')}
       </Text>
       {isSearching ? null : (
-        <Pressable
+        <Button
           onPress={onSubmit}
           testID={testIds.trailConditions.emptyStateSubmitBtn}
-          accessibilityRole="button"
-          className="mt-2 rounded-xl bg-primary px-5 py-3 active:opacity-90"
-        >
-          <Text variant="body" className="font-semibold text-primary-foreground">
-            {t('trailConditions.submitReport')}
-          </Text>
-        </Pressable>
+          className="mt-2"
+          label={t('trailConditions.submitReport')}
+        />
       )}
     </View>
   );
