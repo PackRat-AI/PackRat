@@ -116,6 +116,16 @@ describe('identifyingGear', () => {
     ]);
   });
 
+  it('matches keywords as whole words, plural included', () => {
+    const result = identifyingGear([
+      { name: 'Capilene shirt', category: 'Clothing' },
+      { name: 'Terrain shoes', category: 'Footwear' },
+      { name: 'Training tights' },
+      { name: 'Trucker caps' },
+    ]);
+    expect(result).toEqual([{ name: 'Trucker caps', note: null }]);
+  });
+
   it('returns nothing for gear no one would spot', () => {
     expect(identifyingGear([{ name: 'Spork', category: 'Kitchen' }])).toEqual([]);
   });

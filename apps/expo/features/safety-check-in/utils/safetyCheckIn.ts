@@ -61,6 +61,13 @@ const IDENTIFYING_KINDS: readonly { keywords: readonly string[]; rank: number }[
   { keywords: ['hat', 'cap', 'beanie'], rank: 3 },
 ]);
 
+const NON_WORD = /[^a-z0-9]+/;
+
+/** "tent" matches "Tent" and "tents", but not "Contents". */
+function hasKeyword(words: readonly string[], keyword: string): boolean {
+  return words.some((word) => word === keyword || word === `${keyword}s`);
+}
+
 /**
  * Gear someone could spot from a distance (shelter, outer layer, pack, hat), picked from the
  * trip's pack by name and category. One per kind, at most four.
@@ -69,8 +76,8 @@ export function identifyingGear(
   items: readonly { name: string; category?: string | null }[],
 ): IdentifyingGearItem[] {
   const ranked = items.flatMap((item) => {
-    const haystack = `${item.name} ${item.category ?? ''}`.toLowerCase();
-    const kind = IDENTIFYING_KINDS.find((k) => k.keywords.some((word) => haystack.includes(word)));
+    const words = `${item.name} ${item.category ?? ''}`.toLowerCase().split(NON_WORD);
+    const kind = IDENTIFYING_KINDS.find((k) => k.keywords.some((word) => hasKeyword(words, word)));
     return kind ? [{ item, rank: kind.rank }] : [];
   });
   const seen = new Set<number>();
