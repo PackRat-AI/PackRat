@@ -24,6 +24,18 @@ learn nothing. If you need to see an iOS behaviour, the code is in
 `bun ios` still exists for the rare case of debugging shared JS in a second
 runtime. Treat a result from it as a hint, never as validation.
 
+## Every component is Material 3
+
+All UI built here follows Material Design 3, and **alerts are the one most often missed**:
+
+- **Alerts and confirms** use the `Alert` ref from `@packrat/ui/src/alert` (a Compose `AlertDialog` on Android), rendered in the screen body. Never `Alert.alert` from `react-native`.
+- **A choice among options** is an MD3 radio-list dialog (pattern: `features/trail-conditions/components/FlagReasonDialog.tsx`) or a modal bottom sheet, never an action sheet. **An overflow of actions** is the MD3 `DropdownMenu` from `@packrat/ui/src/dropdown-menu`. Never `useActionSheet`.
+- **Buttons** are 40dp high with label colour set by variant (white on filled, primary on outlined and text), and an icon gets 18dp size and an 8dp gap to its label.
+- **Contrast**: never put `text-muted-foreground` on a `bg-muted` fill; use `bg-card` with a border for a quiet panel.
+- **Single select** uses segmented buttons for up to five short options, filter chips beyond that.
+
+Before handing work over, check every dialog, menu and button you added against this list.
+
 ## Android dev-client gotchas
 
 - The dev launcher **ignores `?url=` in a deep link**. Open the launcher, tap

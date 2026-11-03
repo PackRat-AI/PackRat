@@ -1,5 +1,4 @@
 import {
-  Host,
   Text as JCText,
   LinearProgressIndicator,
   SegmentedButton,
@@ -8,6 +7,7 @@ import {
 import { fillMaxWidth, testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
 import { Card } from '@packrat/ui/src/card';
 import { Text } from '@packrat/ui/src/text';
+import { ThemedHost as Host } from '@packrat/ui/src/themed-host';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import type { ReactNode } from 'react';

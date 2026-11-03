@@ -1,9 +1,10 @@
-import { Host as JCHost, LoadingIndicator as JCLoadingIndicator } from '@expo/ui/jetpack-compose';
+import { LoadingIndicator as JCLoadingIndicator } from '@expo/ui/jetpack-compose';
 import { isString } from '@packrat/guards';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { cssInterop } from 'nativewind';
 import type { ComponentProps } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
+import { ThemedHost as JCHost } from './themed-host';
 
 cssInterop(JCHost, { className: 'style' });
 

@@ -1,4 +1,4 @@
-import { useActionSheet } from '@expo/react-native-action-sheet';
+import { useActionSheet } from '@packrat/ui/src/action-sheet';
 import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { Button } from '@packrat/ui/src/button';
 import { Icon } from 'expo-app/components/Icon';
@@ -17,6 +17,8 @@ import type { Trip } from '../types';
 interface TripCardProps {
   trip: Trip;
   onPress?: (trip: Trip) => void;
+  /** A trail report on this trip the hiker hasn't read. */
+  hasUnreadReport?: boolean;
 }
 
 function getTripDurationDays({
@@ -40,7 +42,7 @@ function formatShortDate(isoString?: string): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export function TripCard({ trip, onPress }: TripCardProps) {
+export function TripCard({ trip, onPress, hasUnreadReport = false }: TripCardProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const deleteTrip = useDeleteTrip();
@@ -128,6 +130,18 @@ export function TripCard({ trip, onPress }: TripCardProps) {
             <Icon name="dots-horizontal" size={20} color={colors.grey2} />
           </Button>
         </View>
+
+        {hasUnreadReport ? (
+          <View
+            className="mt-1 flex-row items-center"
+            testID={testIds.trips.newTrailReportLabel(trip.id)}
+          >
+            <Icon name="hiking" size={14} color={colors.primary} />
+            <Text className="ml-1 text-sm font-semibold text-primary">
+              {t('trailConditions.newTrailReport')}
+            </Text>
+          </View>
+        ) : null}
 
         {/* Dates */}
         {(trip.startDate != null || trip.endDate != null) && (

@@ -1,9 +1,10 @@
+import { showAlert } from '@packrat/ui/src/alert-host';
 import * as Sentry from '@sentry/react-native';
 import * as Burnt from 'burnt';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Directory } from 'expo-file-system';
-import { Alert } from 'react-native';
+
 import { exportableTrips, exportFileName, tripsCsv, tripsGpx } from '../utils/tripExport';
 import { useDistanceUnit } from './useDistanceUnit';
 
@@ -33,7 +34,7 @@ export function useTripExport() {
           })
         : tripsGpx(finished);
     if (contents == null) {
-      Alert.alert(t('tripStats.export.noRoutes'));
+      showAlert({ title: t('tripStats.export.noRoutes') });
       return;
     }
     const name = exportFileName({
@@ -58,7 +59,7 @@ export function useTripExport() {
         tags: { feature: 'tripStats', action: 'exportTrips' },
         extra: { kind, trips: finished.length },
       });
-      Alert.alert(t('tripStats.export.failed'));
+      showAlert({ title: t('tripStats.export.failed') });
     }
   };
 }

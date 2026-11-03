@@ -1,3 +1,4 @@
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Button } from '@packrat/ui/src/button';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { IosTransparentHeaderOverlapFix } from '@packrat/ui/src/ios-transparent-header-overlap-fix';
@@ -10,7 +11,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
-import { Alert, Platform, View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 export default function NameScreen() {
   const { t } = useTranslation();
@@ -48,7 +49,7 @@ export default function NameScreen() {
     if (success) {
       router.back();
     } else {
-      Alert.alert(t('errors.somethingWentWrong'), t('errors.tryAgain'));
+      showAlert({ title: t('errors.somethingWentWrong'), message: t('errors.tryAgain') });
     }
   }
 

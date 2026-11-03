@@ -254,12 +254,9 @@ function Alert({
                             <Button
                               testID={button.testID}
                               variant="plain"
+                              label={button.text}
                               onPress={() => button.onPress?.(resolveValue())}
-                            >
-                              <Text className="text-primary text-[14px] font-medium">
-                                {button.text}
-                              </Text>
-                            </Button>
+                            />
                           </AlertDialogPrimitive.Cancel>
                         </View>
                       );
@@ -270,13 +267,10 @@ function Alert({
                           <AlertDialogPrimitive.Action asChild>
                             <Button
                               testID={button.testID}
-                              variant="tonal"
-                              className="bg-destructive/10 dark:bg-destructive/25"
+                              variant="plain"
                               onPress={() => button.onPress?.(resolveValue())}
                             >
-                              <Text className="text-foreground text-[14px] font-medium">
-                                {button.text}
-                              </Text>
+                              <Text className="text-destructive">{button.text}</Text>
                             </Button>
                           </AlertDialogPrimitive.Action>
                         </View>
@@ -288,12 +282,9 @@ function Alert({
                           <Button
                             testID={button.testID}
                             variant="plain"
+                            label={button.text}
                             onPress={() => button.onPress?.(resolveValue())}
-                          >
-                            <Text className="text-primary text-[14px] font-medium">
-                              {button.text}
-                            </Text>
-                          </Button>
+                          />
                         </AlertDialogPrimitive.Action>
                       </View>
                     );

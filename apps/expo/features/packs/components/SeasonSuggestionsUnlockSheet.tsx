@@ -48,7 +48,7 @@ export const SeasonSuggestionsUnlockSheet = React.forwardRef<
               namingScheme="sfSymbol"
               materialIcon={{ type: 'MaterialIcons', name: 'eco' }}
               size={32}
-              color="white"
+              color={colors.primaryForeground}
             />
           </View>
         </View>
@@ -62,7 +62,7 @@ export const SeasonSuggestionsUnlockSheet = React.forwardRef<
         </Text>
 
         <Button onPress={handleExplore} className="mb-3 w-full">
-          <Text className="font-semibold text-white">{t('seasons.explore')}</Text>
+          <Text>{t('seasons.explore')}</Text>
         </Button>
 
         <Button variant="plain" onPress={dismiss} className="w-full items-center p-2">

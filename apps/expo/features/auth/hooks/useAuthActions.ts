@@ -24,12 +24,15 @@ import {
   suppressSignOutNavAtom,
 } from '../atoms/authAtoms';
 
+// dismissTo, not replace: when an auth wall pushed /auth over the app, replace would stack a
+// second app screen on top of the first and leave a back button on it. dismissTo pops back to
+// the existing screen, and falls back to a replace when /auth is the root (cold start, sign-out).
 function redirect(route: string) {
   try {
     const parsedRoute = safeJsonParse<Href>(route, { strict: true });
-    return router.replace(parsedRoute);
+    return router.dismissTo(parsedRoute);
   } catch {
-    router.replace(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
+    router.dismissTo(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
   }
 }
 

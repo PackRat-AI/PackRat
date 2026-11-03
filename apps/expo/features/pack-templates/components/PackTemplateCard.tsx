@@ -1,5 +1,5 @@
-import { useActionSheet } from '@expo/react-native-action-sheet';
 import { isArray } from '@packrat/guards';
+import { useActionSheet } from '@packrat/ui/src/action-sheet';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { appAlert } from 'expo-app/app/_layout';

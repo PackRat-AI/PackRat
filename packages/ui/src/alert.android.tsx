@@ -1,12 +1,14 @@
 import {
   AlertDialog as JCAlertDialog,
-  Button as JCButton,
-  Host as JCHost,
+  Row as JCRow,
   Text as JCText,
+  TextButton as JCTextButton,
 } from '@expo/ui/jetpack-compose';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as React from 'react';
-import type { AlertMethods, AlertProps } from './alert.rn';
+import type { AlertButtonDef, AlertMethods, AlertProps } from './alert.rn';
 import { Alert as RNAlertFallback } from './alert.rn';
+import { ThemedHost as JCHost } from './themed-host';
 
 /**
  * Material 3 `AlertDialog` for Android, replacing the `@rn-primitives/alert-dialog` composition.
@@ -25,19 +27,21 @@ import { Alert as RNAlertFallback } from './alert.rn';
  * - `Button`'s label must be a Compose `<Text>` child, not a bare string. A bare string renders an
  *   unlabelled (but still tappable) pill with no accessibility node.
  *
- * **Delegation, not full replacement.** `AlertDialog` exposes exactly two button slots and no
- * text-input slot, so two shapes fall back to the RN implementation rather than being approximated:
- * a `prompt()` (one call site app-wide — the typed delete-account confirmation) and any alert with
- * more than two buttons. Those are genuinely different dialogs, and rendering them wrong would be
- * worse than rendering them in RN.
+ * Actions are MD3 dialog actions: `TextButton`s, with a destructive action in the error colour.
+ * The confirm slot holds a `Row`, so an alert with more than two buttons renders every non-cancel
+ * action there, after the dismiss action, as Material lays out stacked dialog actions.
+ *
+ * **One delegation.** `AlertDialog` has no text-input slot, so a `prompt()` (one call site
+ * app-wide — the typed delete-account confirmation) falls back to the RN implementation.
  */
 function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<AlertMethods> }) {
   const [open, setOpen] = React.useState(false);
   const [current, setCurrent] = React.useState<AlertProps>(props);
   const fallbackRef = React.useRef<AlertMethods>(null);
+  const { colors } = useColorScheme();
 
-  // A prompt needs a text field and >2 buttons need a third slot; neither exists on AlertDialog.
-  const needsFallback = (args: AlertProps) => !!args.prompt || args.buttons.length > 2;
+  // A prompt needs a text field, which AlertDialog has no slot for.
+  const needsFallback = (args: AlertProps) => !!args.prompt;
 
   // useImperativeHandle rather than @rn-primitives' useAugmentedRef: that helper augments a real RN
   // node's ref, and this component's root is a Compose Host with no RN node to attach to.
@@ -67,18 +71,39 @@ function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<Alert
     [current],
   );
 
-  // `cancel` is the dismiss affordance; the remaining button is the confirm action. Material orders
+  // `cancel` is the dismiss affordance; every other button is a confirm action. Material orders
   // the slots itself, so the visual order comes from the platform rather than from array order.
   const cancelButton = current.buttons.find((b) => b.style === 'cancel');
-  const confirmButton = current.buttons.find((b) => b.style !== 'cancel');
+  const confirmButtons = current.buttons.filter((b) => b.style !== 'cancel');
 
   function close() {
     setOpen(false);
   }
 
+  function renderAction({
+    button,
+    fallbackText,
+  }: {
+    button: AlertButtonDef;
+    fallbackText: string;
+  }) {
+    return (
+      <JCTextButton
+        key={button.text ?? fallbackText}
+        colors={button.style === 'destructive' ? { contentColor: colors.destructive } : undefined}
+        onClick={() => {
+          close();
+          button.onPress?.('');
+        }}
+      >
+        <JCText>{button.text ?? fallbackText}</JCText>
+      </JCTextButton>
+    );
+  }
+
   return (
     <>
-      {/* Rendered but inert unless a prompt / >2-button alert routes to it. */}
+      {/* Rendered but inert unless a prompt routes to it. */}
       <RNAlertFallback ref={fallbackRef} {...props}>
         {children}
       </RNAlertFallback>
@@ -100,28 +125,16 @@ function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<Alert
                 <JCText>{current.message}</JCText>
               </JCAlertDialog.Text>
             )}
-            {!!confirmButton && (
+            {confirmButtons.length > 0 && (
               <JCAlertDialog.ConfirmButton>
-                <JCButton
-                  onClick={() => {
-                    close();
-                    confirmButton.onPress?.('');
-                  }}
-                >
-                  <JCText>{confirmButton.text ?? 'OK'}</JCText>
-                </JCButton>
+                <JCRow>
+                  {confirmButtons.map((button) => renderAction({ button, fallbackText: 'OK' }))}
+                </JCRow>
               </JCAlertDialog.ConfirmButton>
             )}
             {!!cancelButton && (
               <JCAlertDialog.DismissButton>
-                <JCButton
-                  onClick={() => {
-                    close();
-                    cancelButton.onPress?.('');
-                  }}
-                >
-                  <JCText>{cancelButton.text ?? 'Cancel'}</JCText>
-                </JCButton>
+                {renderAction({ button: cancelButton, fallbackText: 'Cancel' })}
               </JCAlertDialog.DismissButton>
             )}
           </JCAlertDialog>

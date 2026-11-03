@@ -1,8 +1,10 @@
+import { use$ } from '@legendapp/state/react';
 import { BadgeDot } from '@packrat/ui/src/badge-dot';
 import { ListItem } from '@packrat/ui/src/list';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
+import { isAuthed } from 'expo-app/features/auth/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -12,14 +14,19 @@ import { useActiveLocation, useHasAnyUnseenAlert, useLocations } from '../hooks'
 import { WeatherIcon } from './WeatherIcon';
 
 export function WeatherTile() {
-  const { activeLocation } = useActiveLocation();
+  const { activeLocation: lastActiveLocation } = useActiveLocation();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
   const { displayTemperature } = useTemperatureUnit();
   const { locationsState } = useLocations();
-  const hasNewAlert = useHasAnyUnseenAlert(
+  const isAuthenticated = use$(isAuthed);
+  const hasUnseenAlert = useHasAnyUnseenAlert(
     locationsState.state === 'hasData' ? locationsState.data : [],
   );
+  // Weather is sign-in only, so a location or alert cached from an earlier session points at
+  // nothing to open.
+  const activeLocation = isAuthenticated ? lastActiveLocation : null;
+  const hasNewAlert = isAuthenticated && hasUnseenAlert;
 
   const handlePress = () => {
     router.push('/weather');

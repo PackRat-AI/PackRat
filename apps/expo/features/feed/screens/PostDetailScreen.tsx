@@ -216,7 +216,7 @@ export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps)
           {isAddingComment ? (
             <ActivityIndicator size="small" />
           ) : (
-            <Icon name="send" size={18} color="#fff" />
+            <Icon name="send" size={18} color={colors.primaryForeground} />
           )}
         </TouchableOpacity>
       </View>

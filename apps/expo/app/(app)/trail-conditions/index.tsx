@@ -6,7 +6,10 @@ import { ErrorState } from 'expo-app/components/ErrorState';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuthState } from 'expo-app/features/auth/hooks/useAuthState';
 import { TrailConditionReportRow } from 'expo-app/features/trail-conditions/components/TrailConditionReportRow';
-import { useTrailConditions } from 'expo-app/features/trail-conditions/hooks/useTrailConditions';
+import {
+  usePendingReportIds,
+  useTrailConditions,
+} from 'expo-app/features/trail-conditions/hooks/useTrailConditions';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -41,6 +44,7 @@ export default function TrailConditionsScreen() {
     error,
     refetch,
   } = useTrailConditions();
+  const pendingIds = usePendingReportIds();
 
   if (!enableTrailConditions) return null;
 
@@ -66,7 +70,7 @@ export default function TrailConditionsScreen() {
             accessibilityRole="button"
             className="mt-2 rounded-xl bg-primary px-5 py-3 active:opacity-90"
           >
-            <Text variant="body" className="font-semibold text-white">
+            <Text variant="body" className="font-semibold text-primary-foreground">
               {t('auth.signIn')}
             </Text>
           </Pressable>
@@ -100,6 +104,7 @@ export default function TrailConditionsScreen() {
         renderItem={({ item }) => (
           <TrailConditionReportRow
             report={item}
+            isPending={pendingIds.has(item.id)}
             onPress={() => router.push(`/trail-conditions/${item.id}`)}
           />
         )}
@@ -187,7 +192,7 @@ function EmptyState({ isSearching, onSubmit }: { isSearching: boolean; onSubmit:
           accessibilityRole="button"
           className="mt-2 rounded-xl bg-primary px-5 py-3 active:opacity-90"
         >
-          <Text variant="body" className="font-semibold text-white">
+          <Text variant="body" className="font-semibold text-primary-foreground">
             {t('trailConditions.submitReport')}
           </Text>
         </Pressable>

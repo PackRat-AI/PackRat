@@ -31,6 +31,10 @@ import {
   useRestorePurchases,
 } from 'expo-app/features/purchases';
 import { FEATURE_ACCESS_QUERY_KEY } from 'expo-app/features/purchases/hooks/useFeatureAccess';
+import {
+  useTrailReportAlertsEnabled,
+  useTrailReportNotificationsSetting,
+} from 'expo-app/features/trail-conditions/hooks/useTrailReportAlerts';
 import { tripReminderSettingsStore } from 'expo-app/features/trips/store/tripReminders';
 import { FEATURE_FLAGS_QUERY_KEY, useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
@@ -61,6 +65,10 @@ export default function SettingsScreen() {
   const enableTripReminders = useFeatureFlag('enableTripReminders');
   const enableSafetyCheckIn = useFeatureFlag('enableSafetyCheckIn');
   const tripRemindersEnabled = use$(tripReminderSettingsStore.enabled);
+  const showsTrailReportToggle = useTrailReportAlertsEnabled() && isAuthenticated;
+  const trailReports = useTrailReportNotificationsSetting({ active: showsTrailReportToggle });
+  // The toggle waits for the server's value rather than guessing one.
+  const trailReportsLoaded = trailReports.enabled !== undefined;
 
   const { isProMember } = useEntitlement();
   const { mutate: restorePurchases, isPending: isRestoring } = useRestorePurchases();
@@ -244,25 +252,46 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        {enableTripReminders && (
+        {(enableTripReminders || trailReportsLoaded) && (
           <View>
             <Text variant="subhead" className="mb-3">
               {t('settings.notifications')}
             </Text>
             <View className="rounded-xl border border-border bg-card">
-              <View className="flex-row items-center justify-between gap-4 p-4">
-                <View className="flex-1">
-                  <Text className="font-medium">{t('trips.reminders.title')}</Text>
-                  <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
-                    {t('settings.tripRemindersSubtitle')}
-                  </Text>
+              {enableTripReminders && (
+                <View className="flex-row items-center justify-between gap-4 p-4">
+                  <View className="flex-1">
+                    <Text className="font-medium">{t('trips.reminders.title')}</Text>
+                    <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                      {t('settings.tripRemindersSubtitle')}
+                    </Text>
+                  </View>
+                  <Toggle
+                    value={tripRemindersEnabled}
+                    onValueChange={(on) => tripReminderSettingsStore.enabled.set(on)}
+                    testID={testIds.settings.tripRemindersToggle}
+                  />
                 </View>
-                <Toggle
-                  value={tripRemindersEnabled}
-                  onValueChange={(on) => tripReminderSettingsStore.enabled.set(on)}
-                  testID={testIds.settings.tripRemindersToggle}
-                />
-              </View>
+              )}
+              {trailReportsLoaded && (
+                <View
+                  className={`flex-row items-center justify-between gap-4 p-4${
+                    enableTripReminders ? ' border-t border-border' : ''
+                  }`}
+                >
+                  <View className="flex-1">
+                    <Text className="font-medium">{t('settings.trailReports')}</Text>
+                    <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                      {t('settings.trailReportsSubtitle')}
+                    </Text>
+                  </View>
+                  <Toggle
+                    value={trailReports.enabled === true}
+                    onValueChange={trailReports.setEnabled}
+                    testID={testIds.settings.trailReportNotificationsToggle}
+                  />
+                </View>
+              )}
             </View>
           </View>
         )}

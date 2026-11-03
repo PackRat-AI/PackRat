@@ -1,3 +1,4 @@
+import { use$ } from '@legendapp/state/react';
 import type { FC } from 'react';
 import { isAuthed } from '../store';
 
@@ -9,7 +10,9 @@ export function withAuthWall<P extends object>({
   AuthWall: FC;
 }): FC<P> {
   return function WrappedComponent(props: P) {
-    const isAuthenticated = isAuthed.peek();
+    // Reactive: signing in from the wall returns to this same screen, which must then swap to
+    // the real content.
+    const isAuthenticated = use$(isAuthed);
 
     if (!isAuthenticated) {
       return <AuthWall />;

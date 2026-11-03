@@ -1,4 +1,5 @@
 import { use$ } from '@legendapp/state/react';
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { Toggle } from '@packrat/ui/src/toggle';
@@ -11,14 +12,7 @@ import { File, Paths } from 'expo-file-system';
 import { Stack, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useRef, useState } from 'react';
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  useWindowDimensions,
-  View,
-  type ViewInstance,
-} from 'react-native';
+import { Pressable, ScrollView, useWindowDimensions, View, type ViewInstance } from 'react-native';
 import { Marker, Polyline } from 'react-native-maps';
 import PagerView from 'react-native-pager-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -48,8 +42,6 @@ import { type ReviewPage, reviewPages, type YearInReview } from '../utils/yearIn
 
 const PREVIEW_HEIGHT = 420;
 /** Long enough for slow tiles on mobile data; past it the card shares without the map. */
-// The filled button's label colour (`--primary-foreground`), white in both themes.
-const ON_PRIMARY = '#FFFFFF';
 
 /**
  * A card on its way out: pick a shape, see exactly what will be shared, send it through the
@@ -129,7 +121,7 @@ function ShareCardEditor({ content }: { content: ShareContent }) {
         tags: { feature: 'tripStats', action: 'shareCard' },
         extra: { kind: content.kind, format },
       });
-      Alert.alert(t('tripStats.share.failed'));
+      showAlert({ title: t('tripStats.share.failed') });
     } finally {
       setSharing(false);
     }
@@ -232,10 +224,9 @@ function ShareCardEditor({ content }: { content: ShareContent }) {
           disabled={!ready || !cardSize || sharing}
           testID={testIds.tripStats.shareSendBtn}
           // M3 buttons with an icon: 18dp icon in the label's colour, 8dp before the label.
-          className="gap-2"
+          icon="share-variant"
         >
-          <Icon name="share-variant" size={18} color={ON_PRIMARY} />
-          <Text className="font-medium text-primary-foreground">{t('tripStats.share.send')}</Text>
+          <Text>{t('tripStats.share.send')}</Text>
         </Button>
       </View>
     </SafeAreaView>
