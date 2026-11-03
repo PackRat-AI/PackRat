@@ -5,6 +5,10 @@ private let savedLocationsKey = "savedWeatherLocations"
 private let activeLocationKey = "activeWeatherLocationId"
 private let seenAlertIdsKey = "seenWeatherAlertIds"
 
+/// Main-actor isolated like the app's other view models. Its state is mutated
+/// from several concurrent loads at launch (the restored forecast and every
+/// saved place's summary); off the main actor those writes raced and crashed.
+@MainActor
 @Observable
 final class WeatherViewModel {
     var searchText = ""
@@ -264,7 +268,6 @@ final class WeatherViewModel {
         await loadMissingLocationSummaries()
     }
 
-    @MainActor
     func loadSummary(for location: WeatherLocation) async {
         if VisualSampleData.isEnabled || VisualSampleData.isUITestFixturesEnabled {
             locationSummaries[location.id] = WeatherLocationSummary(
@@ -420,12 +423,6 @@ final class WeatherViewModel {
     /// cannot be relied on to have arrived, so the check is a pull on the one
     /// event that always happens before the badge can be seen — the app being
     /// opened. Push still handles the foreground case via the tap handler.
-    /// Main-actor isolated, like `loadSummary`: the group's children each
-    /// mutate the summary dictionaries, and running them on the cooperative
-    /// pool let two inserts into the same Set race and crash on launch with
-    /// two or more saved locations. On the main actor they interleave only at
-    /// the network await, so the fetches still overlap.
-    @MainActor
     func refreshAlertBadgeState() async {
         guard !savedLocations.isEmpty else { return }
         await withTaskGroup(of: Void.self) { group in
