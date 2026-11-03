@@ -1,7 +1,10 @@
+import { use$ } from '@legendapp/state/react';
 import { Button } from '@packrat/ui/src/button';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
+import { safetyStore } from 'expo-app/features/safety-check-in/store/safetyCheckIn';
 import { useTripDetailsFromStore } from 'expo-app/features/trips/hooks/useTripDetailsFromStore';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { t } from 'expo-app/lib/i18n';
@@ -21,6 +24,8 @@ export function getTripDetailOptions(id: string) {
       const deleteTrip = useDeleteTrip();
       const trip = useTripDetailsFromStore(id);
       const [isDeleting, setIsDeleting] = useState(false);
+      const enableSafetyCheckIn = useFeatureFlag('enableSafetyCheckIn');
+      const safetyActive = use$(() => Boolean(safetyStore.active.get()[id]));
 
       const handleShare = async () => {
         if (!trip) return;
@@ -79,6 +84,16 @@ export function getTripDetailOptions(id: string) {
 
       return (
         <View className="flex-row items-center gap-2">
+          {enableSafetyCheckIn && safetyActive ? (
+            <View
+              className="h-10 w-10 items-center justify-center"
+              accessible
+              accessibilityLabel={t('safetyCheckIn.card.activeLabel')}
+              testID={testIds.safetyCheckIn.headerShield}
+            >
+              <Icon name="shield-check" color={colors.primary} />
+            </View>
+          ) : null}
           <Button variant="plain" size="icon" onPress={handleShare}>
             <Icon
               materialIcon={{ type: 'MaterialIcons', name: 'share' }}

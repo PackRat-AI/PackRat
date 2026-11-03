@@ -18,6 +18,7 @@ import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { getPackDetailOptions } from 'expo-app/features/packs/utils/getPackDetailOptions';
 import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackItemDetailOptions';
 import { useRevenueCatUser } from 'expo-app/features/purchases';
+import { useSafetyCheckInSync } from 'expo-app/features/safety-check-in/hooks/useSafetyCheckInSync';
 import { useReportOutboxSync } from 'expo-app/features/trail-conditions/hooks/useReportOutboxSync';
 import { useTripReminderSync } from 'expo-app/features/trips/hooks/useTripReminderSync';
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
@@ -44,6 +45,7 @@ export default function AppLayout() {
   useWeatherAlertRefresh({ enabled: isAuthedValue });
   useNotificationSetup({ isAuthed: isAuthedValue });
   useTripReminderSync({ isAuthed: isAuthedValue });
+  useSafetyCheckInSync({ isAuthed: isAuthedValue });
   useReportOutboxSync({ isAuthed: isAuthedValue });
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
@@ -108,6 +110,10 @@ export default function AppLayout() {
       <Stack screenOptions={SCREEN_OPTIONS}>
         <Stack.Screen name="(tabs)" options={TABS_OPTIONS} />
         <Stack.Screen name="settings/index" options={getSettingsOptions(t)} />
+        <Stack.Screen
+          name="emergency-contacts/index"
+          options={{ title: t('safetyCheckIn.contacts.title') }}
+        />
         <Stack.Screen name="consent-modal" options={CONSENT_MODAL_OPTIONS} />
         <Stack.Screen
           name="pack/[id]/index"
@@ -182,8 +188,8 @@ export default function AppLayout() {
             animation: 'slide_from_bottom',
           }}
         />
-        {/* Trip Stats editors are Material full-screen dialogs: they rise from the bottom and
-            close with an X, not a back arrow. */}
+        {/* Trip Stats and safety check-in editors are Material full-screen dialogs: they rise from
+            the bottom and close with an X, not a back arrow. */}
         {[
           'trip-stats/goal',
           'trip-stats/add-summit',
@@ -191,6 +197,10 @@ export default function AppLayout() {
           'trip-stats/year-in-review',
           'trip/[id]/log',
           'trip-stats/draw-route',
+          'trip/[id]/safety-start',
+          'trip/[id]/check-in',
+          'trip/[id]/running-late',
+          'emergency-contacts/edit',
         ].map((name) => (
           <Stack.Screen
             key={name}
