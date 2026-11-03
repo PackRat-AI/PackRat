@@ -95,6 +95,16 @@ state, because on this screen the alert is already in front of the user
 If there's nothing to report, the user sees the ordinary forecast with no
 alert section, never an empty or confusing screen.
 
+## On Apple Watch
+
+The wrist is where an alert matters most: the person it is for is outdoors with the phone in a pack. A hazard for a watched location reaches the watch two ways.
+
+**The notification.** The push that announces a new hazard lands on the watch whenever the phone is locked or asleep and the watch is worn — the common case on a trail. It reads the same as on the phone: what the hazard is, how severe, and which location it affects.
+
+**At rest.** The watch's Weather page leads with an alert card while any saved location has an unread alert: the hazard's headline, its severity, and the location it affects, above the current conditions. The watch's summary page marks its Weather row in red at the same time, so the alert is visible from the first screen without paging. Both follow the phone's unread rule (ADR-010): they light when the alert arrives and clear once the user opens that location's forecast on the phone.
+
+When more than one location has an unread alert, the card shows the most severe and says how many others are waiting. The watch never shows an alert the phone has already marked as read, and never shows one for a hazard that has passed (ADR-013).
+
 ## Staying current
 
 A watched location's alert state reflects what's actually true right now, not
@@ -471,3 +481,11 @@ start where the markers are not yet drawn — the fetch has to return first.
 **Why.** A place's timer announces each alert once, to whoever watches the place at that moment. Without this, a second person who watches a town under a flood warning never hears about it, while the first person did, and the two experiences of the same place diverge for no reason the user can see. Only the new watcher is told, so nobody who already heard about the alert hears it twice.
 
 **Consequence.** A user who watches a place from its forecast, with the alert on screen, also gets a push for it. Accepted: the push confirms the watch is live and gives every watcher the same record of what happened at the place. The catch-up is best effort; if it fails, the watch is still saved and the next new alert arrives as usual.
+
+## ADR-013 — The watch mirrors the phone's alert state; it has no channel of its own
+
+**Decision.** The watch receives hazard notifications through the phone's push, which the system forwards to the wrist when the phone is locked or asleep. Its at-rest alert card and marker come from the alert state the phone relays to it. The watch does not register for its own push delivery.
+
+**Why.** The case the issue worried about — a hazard arriving while the phone sits asleep in a pack — is exactly the case the system already forwards to the watch. A second delivery channel would buy coverage only for a watch away from its phone with its own connection, at the cost of a second registration to keep in step with the first and a real chance of the same hazard arriving twice. Relaying the at-rest state from the phone keeps one source of truth for what counts as unread, so the phone and the wrist cannot disagree about what the user has already seen.
+
+**Consequence.** The at-rest card is as current as the last time the phone handed state to the watch. The notification itself is not affected — it arrives with the push — but the card can trail it until the phone next updates the watch.
