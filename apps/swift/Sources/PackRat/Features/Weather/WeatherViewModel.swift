@@ -446,6 +446,27 @@ final class WeatherViewModel {
         savedLocations.contains { hasUnseenAlert(locationId: $0.id) }
     }
 
+    /// The unseen alert the watch leads with: the most severe across saved
+    /// locations, plus how many other locations also carry one. Uses the same
+    /// unseen rule as the dashboard dot, so the wrist clears when the phone does.
+    var watchAlert: WatchWeatherAlertSnapshot? {
+        let unseen = savedLocations.compactMap { location -> (WeatherLocation, WeatherLocationSummary, String)? in
+            guard hasUnseenAlert(locationId: location.id),
+                  let summary = locationSummaries[location.id],
+                  let headline = summary.alertHeadline else { return nil }
+            return (location, summary, headline)
+        }
+        guard let lead = unseen.max(by: {
+            WatchWeatherAlertSnapshot.rank($0.1.alertSeverity) < WatchWeatherAlertSnapshot.rank($1.1.alertSeverity)
+        }) else { return nil }
+        return WatchWeatherAlertSnapshot(
+            headline: lead.2,
+            severity: lead.1.alertSeverity,
+            locationName: lead.0.displayName,
+            otherCount: unseen.count - 1
+        )
+    }
+
     /// Marks every alert currently active for a location as seen. Called when
     /// its forecast opens, which is the only point at which the alert has
     /// actually been put in front of the user.

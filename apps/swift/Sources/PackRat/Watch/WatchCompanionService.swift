@@ -93,7 +93,8 @@ final class WatchCompanionService: NSObject {
                     fahrenheit: weather?.current?.tempF
                 ),
                 conditionText: weather?.current?.condition?.text ?? "Open iPhone app to sync weather.",
-                symbolName: weather?.current?.condition?.sfSymbol ?? "cloud"
+                symbolName: weather?.current?.condition?.sfSymbol ?? "cloud",
+                alert: appState.weatherVM.watchAlert
             ),
             trail: WatchTrailSnapshot(
                 title: report?.trailName ?? "Trail Report",

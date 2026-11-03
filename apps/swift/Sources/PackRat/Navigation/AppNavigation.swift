@@ -615,6 +615,11 @@ private extension View {
         .onChange(of: appState.selectedTripId) { _, _ in
             WatchCompanionService.shared.publishSnapshot(from: appState)
         }
+        // Push the wrist an alert the moment it lands, and clear it the moment
+        // the forecast is opened, rather than waiting for the next tick.
+        .onChange(of: appState.weatherVM.watchAlert) { _, _ in
+            WatchCompanionService.shared.publishSnapshot(from: appState)
+        }
     }
 }
 #endif
