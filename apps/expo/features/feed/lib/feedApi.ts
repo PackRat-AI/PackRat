@@ -1,3 +1,4 @@
+import { isNumber } from '@packrat/guards';
 import * as Sentry from '@sentry/react-native';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import type {
@@ -29,7 +30,7 @@ function unwrap<T>({
   extra?: Record<string, unknown>;
 }): T {
   if (error || data == null) {
-    const status = typeof error?.status === 'number' ? error.status : 0;
+    const status = isNumber(error?.status) ? error.status : 0;
     const err = new FeedApiError({
       message: `Feed ${action} failed (${status})`,
       status,

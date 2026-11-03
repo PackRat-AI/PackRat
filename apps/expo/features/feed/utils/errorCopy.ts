@@ -1,3 +1,5 @@
+import { isObject, isString } from '@packrat/guards';
+
 /** An Eden Treaty error as the feed hooks rethrow it. */
 export class FeedApiError extends Error {
   readonly status: number;
@@ -21,10 +23,10 @@ export class FeedApiError extends Error {
 
 /** The `{ error }` text a refused feed request carries, if it has one. */
 export function serverMessage(value: unknown): string | null {
-  if (typeof value === 'string') return value;
-  if (value && typeof value === 'object' && 'error' in value) {
+  if (isString(value)) return value;
+  if (isObject(value) && 'error' in value) {
     const { error } = value as { error: unknown };
-    if (typeof error === 'string') return error;
+    if (isString(error)) return error;
   }
   return null;
 }

@@ -1,3 +1,6 @@
+import { isObject, isString } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
+
 /** Keeps the socket inside the session's 30 s idle timeout. The server answers "ping" without waking the room. */
 export const LIVE_KEEPALIVE_MS = 20_000;
 
@@ -8,14 +11,10 @@ export function liveReconnectDelayMs(failures: number): number {
 
 /** Whether a frame from a post's live channel says its comments changed. */
 export function isCommentsChangedSignal(data: unknown): boolean {
-  if (typeof data !== 'string') return false;
+  if (!isString(data)) return false;
   try {
-    const parsed: unknown = JSON.parse(data);
-    return (
-      typeof parsed === 'object' &&
-      parsed !== null &&
-      (parsed as { type?: unknown }).type === 'comments.changed'
-    );
+    const parsed = safeJsonParse<unknown>(data, { strict: true });
+    return isObject(parsed) && (parsed as { type?: unknown }).type === 'comments.changed';
   } catch {
     return false;
   }

@@ -1,3 +1,4 @@
+import { makeEnumGuard } from '@packrat/guards';
 import { createDropdownItem, DropdownMenu } from '@packrat/ui/src/dropdown-menu';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
@@ -11,7 +12,9 @@ import { displayName } from '../utils/mentions';
 import { MentionText } from './MentionText';
 import { PersonAvatar } from './PersonAvatar';
 
-export type CommentAction = 'reply' | 'edit' | 'delete' | 'report' | 'block';
+const COMMENT_ACTIONS = Object.freeze(['reply', 'edit', 'delete', 'report', 'block'] as const);
+export type CommentAction = (typeof COMMENT_ACTIONS)[number];
+const isCommentAction = makeEnumGuard(COMMENT_ACTIONS);
 
 /**
  * One comment: who wrote it and when, its text, a like, Reply, and an overflow menu. The
@@ -111,7 +114,9 @@ export function CommentRow({
           </View>
           <DropdownMenu
             items={items}
-            onItemPress={({ actionKey }) => onAction(comment, actionKey as CommentAction)}
+            onItemPress={({ actionKey }) => {
+              if (isCommentAction(actionKey)) onAction(comment, actionKey);
+            }}
             testID={testIds.feed.commentMenu(comment.id)}
           >
             <View
