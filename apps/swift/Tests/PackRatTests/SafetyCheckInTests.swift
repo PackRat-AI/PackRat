@@ -145,6 +145,17 @@ struct SafetyCheckInDefaultsTests {
         #expect(gear.map(\.name) == ["Big Agnes Copper Spur", "Patagonia Torrentshell", "Osprey Exos 58 Backpack"])
     }
 
+    @Test("keywords match whole words, plural included")
+    func gearWholeWords() {
+        let gear = SafetyCheckInDefaults.identifyingGear(from: [
+            item("Capilene shirt", category: "Clothing"),
+            item("Terrain shoes", category: "Footwear"),
+            item("Training tights"),
+            item("Trucker caps"),
+        ])
+        #expect(gear.map(\.name) == ["Trucker caps"])
+    }
+
     @Test("the preview matches what contacts receive, colour first")
     func preview() {
         let text = SafetyCheckInDefaults.previewMessage(
