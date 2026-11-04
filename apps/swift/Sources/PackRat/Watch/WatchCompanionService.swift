@@ -52,17 +52,25 @@ final class WatchCompanionService: NSObject {
         lastPublishedAppState = appState
         let snapshot = makeSnapshot(from: appState)
         guard snapshot != lastSnapshot else { return }
+        let weatherChanged = snapshot.weather != lastSnapshot?.weather
         lastSnapshot = snapshot
-        send(snapshot)
+        send(snapshot, weatherChanged: weatherChanged)
     }
 
-    private func send(_ snapshot: PackRatWatchSnapshot) {
+    private func send(_ snapshot: PackRatWatchSnapshot, weatherChanged: Bool) {
         guard let session else { return }
         do {
             let data = try encoder.encode(snapshot)
             let payload = [WatchCompanionMessage.snapshot: data]
             try session.updateApplicationContext(payload)
-            session.transferUserInfo(payload)
+            // A complication transfer wakes the watch app in the background so
+            // the face updates without the app being opened. It draws on a
+            // daily budget, so only a weather change spends one.
+            if weatherChanged, session.isComplicationEnabled, session.remainingComplicationUserInfoTransfers > 0 {
+                session.transferCurrentComplicationUserInfo(payload)
+            } else {
+                session.transferUserInfo(payload)
+            }
         } catch {
             print("[Watch] Failed to publish snapshot: \(error.localizedDescription)")
         }

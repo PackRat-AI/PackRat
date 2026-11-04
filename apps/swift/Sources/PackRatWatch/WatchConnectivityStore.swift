@@ -47,6 +47,19 @@ final class WatchConnectivityStore: NSObject {
         handle(activeSession.receivedApplicationContext)
     }
 
+    /// Runs when WatchConnectivity wakes the app in the background, for a
+    /// complication transfer from the phone. The system suspends the app once
+    /// this returns, so it waits for the queued content to be delivered first.
+    func receivePendingContent() async {
+        activate()
+        for _ in 0..<50 {
+            if let session, session.activationState == .activated, !session.hasContentPending { break }
+            try? await Task.sleep(for: .milliseconds(200))
+        }
+        // Delivery hops to the main actor; let those handlers run.
+        try? await Task.sleep(for: .milliseconds(200))
+    }
+
     func saveTrailDraft(condition: String, note: String) {
         let draft = WatchTrailReportDraft(
             condition: condition,

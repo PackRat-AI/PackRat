@@ -15,6 +15,9 @@ struct PackRatWatchApp: App {
                     connectivity.activate()
                 }
         }
+        .backgroundTask(.watchConnectivity) {
+            await connectivity.receivePendingContent()
+        }
     }
 }
 
