@@ -301,7 +301,10 @@ targets:
         CURRENT_PROJECT_VERSION: "2026081101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
-        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.watchkitapp.complications
+        PACKRAT_WATCH_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.watchkitapp
+        # An extension's id must extend its host app's, so it follows any
+        # override of the watch app's id (archive builds pass one).
+        PRODUCT_BUNDLE_IDENTIFIER: $(PACKRAT_WATCH_BUNDLE_IDENTIFIER).complications
         PACKRAT_DISPLAY_NAME: PackRat
         PRODUCT_MODULE_NAME: PackRatWatchComplications
         SKIP_INSTALL: YES

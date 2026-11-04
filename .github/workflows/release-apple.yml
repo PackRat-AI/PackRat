@@ -13,7 +13,9 @@ name: Release Apple
 #   MAC_INSTALLER_CERT_P12 / MAC_INSTALLER_CERT_PASSWORD
 #       "3rd Party Mac Developer Installer" identity (.p12), signs the .pkg
 #   IOS_APPSTORE_PROVISIONING_PROFILE      "PackRat iOS AppStore 2026-10"
-#   WATCH_APPSTORE_PROVISIONING_PROFILE    "PackRat iOS AppStore watchkitapp 2026"
+#   WATCH_APPSTORE_PROVISIONING_PROFILE    "PackRat iOS AppStore watchkitapp 2026-11"
+#   WATCH_COMPLICATIONS_APPSTORE_PROVISIONING_PROFILE
+#       "PackRat iOS AppStore watchkitapp complications 2026-11"
 #   MACOS_APPSTORE_PROVISIONING_PROFILE    "PackRat macOS App Store"
 #   ASC_API_KEY_P8 / ASC_API_KEY_ID / ASC_API_ISSUER_ID
 #       App Store Connect API key used to upload and submit
@@ -98,6 +100,7 @@ jobs:
           MAC_INSTALLER_CERT_PASSWORD: ${{ secrets.MAC_INSTALLER_CERT_PASSWORD }}
           IOS_APPSTORE_PROVISIONING_PROFILE: ${{ secrets.IOS_APPSTORE_PROVISIONING_PROFILE }}
           WATCH_APPSTORE_PROVISIONING_PROFILE: ${{ secrets.WATCH_APPSTORE_PROVISIONING_PROFILE }}
+          WATCH_COMPLICATIONS_APPSTORE_PROVISIONING_PROFILE: ${{ secrets.WATCH_COMPLICATIONS_APPSTORE_PROVISIONING_PROFILE }}
           MACOS_APPSTORE_PROVISIONING_PROFILE: ${{ secrets.MACOS_APPSTORE_PROVISIONING_PROFILE }}
           ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
         run: |
@@ -128,7 +131,7 @@ jobs:
 
           PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$PROFILES_DIR"
-          for name in IOS_APPSTORE_PROVISIONING_PROFILE WATCH_APPSTORE_PROVISIONING_PROFILE; do
+          for name in IOS_APPSTORE_PROVISIONING_PROFILE WATCH_APPSTORE_PROVISIONING_PROFILE WATCH_COMPLICATIONS_APPSTORE_PROVISIONING_PROFILE; do
             echo -n "${!name}" | base64 --decode > "$RUNNER_TEMP/p.mobileprovision"
             UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< "$(security cms -D -i "$RUNNER_TEMP/p.mobileprovision")")
             mv "$RUNNER_TEMP/p.mobileprovision" "$PROFILES_DIR/$UUID.mobileprovision"
@@ -154,7 +157,10 @@ jobs:
           PROVISIONING_PROFILE_SPECIFIER[target=PackRat-iOS] = PackRat iOS AppStore 2026-10
           CODE_SIGN_STYLE[target=PackRat-Watch] = Manual
           CODE_SIGN_IDENTITY[target=PackRat-Watch] = Apple Distribution
-          PROVISIONING_PROFILE_SPECIFIER[target=PackRat-Watch] = PackRat iOS AppStore watchkitapp 2026
+          PROVISIONING_PROFILE_SPECIFIER[target=PackRat-Watch] = PackRat iOS AppStore watchkitapp 2026-11
+          CODE_SIGN_STYLE[target=PackRat-WatchComplications] = Manual
+          CODE_SIGN_IDENTITY[target=PackRat-WatchComplications] = Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER[target=PackRat-WatchComplications] = PackRat iOS AppStore watchkitapp complications 2026-11
           EOF
           cat > "$RUNNER_TEMP/mac-signing.xcconfig" <<'EOF'
           DEVELOPMENT_TEAM = 666HGMV2LU
@@ -191,7 +197,8 @@ jobs:
         env:
           XCODE_XCCONFIG_FILE: ${{ runner.temp }}/ios-signing.xcconfig
           EXPORT_PROVISIONING_PROFILE: PackRat iOS AppStore 2026-10
-          EXPORT_WATCH_PROVISIONING_PROFILE: PackRat iOS AppStore watchkitapp 2026
+          EXPORT_WATCH_PROVISIONING_PROFILE: PackRat iOS AppStore watchkitapp 2026-11
+          EXPORT_WATCH_COMPLICATIONS_PROVISIONING_PROFILE: PackRat iOS AppStore watchkitapp complications 2026-11
         run: bun apps/swift/scripts/upload-testflight.ts --production
 
       - name: Build + upload · macOS
