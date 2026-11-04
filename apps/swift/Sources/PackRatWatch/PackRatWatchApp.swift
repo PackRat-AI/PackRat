@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 @main
 struct PackRatWatchApp: App {
@@ -13,11 +14,32 @@ struct PackRatWatchApp: App {
                         return
                     }
                     connectivity.activate()
+                    await WatchBackgroundRefresh.schedule()
                 }
         }
         .backgroundTask(.watchConnectivity) {
             await connectivity.receivePendingContent()
         }
+        // The complication wake above is the fast path, but it only fires when
+        // the phone sees a PackRat complication on the face and has budget
+        // left. This periodic refresh catches the face up regardless.
+        .backgroundTask(.appRefresh(WatchBackgroundRefresh.identifier)) {
+            await connectivity.receivePendingContent()
+            await WatchBackgroundRefresh.schedule()
+        }
+    }
+}
+
+enum WatchBackgroundRefresh {
+    static let identifier = "packrat.weather.refresh"
+
+    /// Four refreshes an hour is the budget watchOS gives an app with a
+    /// complication on the active face.
+    @MainActor static func schedule() {
+        WKApplication.shared().scheduleBackgroundRefresh(
+            withPreferredDate: Date(timeIntervalSinceNow: 15 * 60),
+            userInfo: identifier as NSString
+        ) { _ in }
     }
 }
 
