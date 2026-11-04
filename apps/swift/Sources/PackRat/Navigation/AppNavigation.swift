@@ -620,6 +620,14 @@ private extension View {
         .onChange(of: appState.weatherVM.watchAlert) { _, _ in
             WatchCompanionService.shared.publishSnapshot(from: appState)
         }
+        // Likewise when the place the complication shows changes or is
+        // deleted, so the face never holds a place that is gone.
+        .onChange(of: appState.weatherVM.selectedLocation?.id) { _, _ in
+            WatchCompanionService.shared.publishSnapshot(from: appState)
+        }
+        .onChange(of: appState.weatherVM.forecast?.current?.tempC) { _, _ in
+            WatchCompanionService.shared.publishSnapshot(from: appState)
+        }
     }
 }
 #endif
