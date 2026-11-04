@@ -153,18 +153,20 @@ const withSwiftUICoreFix: ConfigPlugin<void> = (config) => {
   return patched;
 };
 
-// SDK 58 turns on R8 for Android release builds. It has not been checked against
-// the reflection-heavy native libraries this app ships (RevenueCat, Sentry, llama.rn,
-// tflite), and it overruns the default Gradle heap, so release builds keep it off.
-const withR8Disabled: ConfigPlugin<void> = (config) =>
+// SDK 58 runs R8 on Android release builds, and R8 overruns the template's 2 GB Gradle heap.
+const withR8Heap: ConfigPlugin<void> = (config) =>
   withGradleProperties(config, (c) => {
-    const key = 'android.enableMinifyInReleaseBuilds';
+    const key = 'org.gradle.jvmargs';
     c.modResults = c.modResults.filter((item) => item.type !== 'property' || item.key !== key);
-    c.modResults.push({ type: 'property', key, value: 'false' });
+    c.modResults.push({
+      type: 'property',
+      key,
+      value: '-Xmx6144m -XX:MaxMetaspaceSize=1024m',
+    });
     return c;
   });
 
-const withNativeFixes: ConfigPlugin<void> = (config) => withR8Disabled(withSwiftUICoreFix(config));
+const withNativeFixes: ConfigPlugin<void> = (config) => withR8Heap(withSwiftUICoreFix(config));
 
 export default (): ExpoConfig =>
   withNativeFixes(

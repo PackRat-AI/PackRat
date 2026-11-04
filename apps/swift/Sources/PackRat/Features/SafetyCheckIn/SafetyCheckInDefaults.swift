@@ -27,13 +27,20 @@ enum SafetyCheckInDefaults {
         (["hat", "cap", "beanie"], 3),
     ]
 
+    /// "tent" matches "Tent" and "tents", but not "Contents".
+    private static func hasKeyword(_ words: [String], _ keyword: String) -> Bool {
+        words.contains { $0 == keyword || $0 == keyword + "s" }
+    }
+
     /// Gear someone could spot from a distance — shelter, outer layer, pack —
     /// picked from the trip's pack by name and category. At most four.
     static func identifyingGear(from items: [PackItem]) -> [IdentifyingGearItem] {
         let ranked = items.compactMap { item -> (PackItem, Int)? in
-            let haystack = "\(item.name) \(item.category ?? "")".lowercased()
+            let words = "\(item.name) \(item.category ?? "")".lowercased()
+                .split { !$0.isLetter && !$0.isNumber }
+                .map(String.init)
             guard let kind = identifyingKinds.first(where: { kind in
-                kind.keywords.contains { haystack.contains($0) }
+                kind.keywords.contains { hasKeyword(words, $0) }
             }) else { return nil }
             return (item, kind.rank)
         }
