@@ -466,7 +466,7 @@ final class WeatherViewModel {
         return WatchWeatherAlertSnapshot(
             headline: lead.2,
             severity: lead.1.alertSeverity,
-            locationName: lead.0.displayName,
+            locationName: lead.0.name,
             otherCount: unseen.count - 1
         )
     }

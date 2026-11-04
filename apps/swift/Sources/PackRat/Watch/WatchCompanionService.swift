@@ -93,7 +93,7 @@ final class WatchCompanionService: NSObject {
                 )
             },
             weather: WatchWeatherSnapshot(
-                locationName: appState.weatherVM.selectedLocation?.displayName
+                locationName: appState.weatherVM.selectedLocation?.name
                     ?? weather?.location?.name
                     ?? "No Location",
                 temperatureText: temperatureUnit.format(

@@ -142,17 +142,11 @@ struct WeatherComplicationView: View {
 
     @ViewBuilder private var rectangular: some View {
         if let alert = weather.alert {
-            VStack(alignment: .leading, spacing: 1) {
-                Label(alert.headline, systemImage: "exclamationmark.triangle.fill")
-                    .font(.headline)
-                    .foregroundStyle(alert.severityColor)
-                    .lineLimit(1)
-                    .widgetAccentable()
-                Text(alert.locationName)
-                    .lineLimit(1)
-                Text(alert.othersText ?? weather.temperatureText)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+            // The headline may wrap to a second line rather than truncate; the
+            // third line only appears when it does not.
+            ViewThatFits(in: .vertical) {
+                rectangularAlert(alert, footer: alert.othersText ?? weather.temperatureText)
+                rectangularAlert(alert, footer: nil)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
@@ -174,6 +168,23 @@ struct WeatherComplicationView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func rectangularAlert(_ alert: WatchWeatherAlertSnapshot, footer: String?) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Label(alert.headline, systemImage: "exclamationmark.triangle.fill")
+                .font(.headline)
+                .foregroundStyle(alert.severityColor)
+                .lineLimit(2)
+                .widgetAccentable()
+            Text(alert.locationName)
+                .lineLimit(1)
+            if let footer {
+                Text(footer)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
         }
     }
 }
