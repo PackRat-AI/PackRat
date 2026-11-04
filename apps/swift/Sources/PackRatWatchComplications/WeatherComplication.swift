@@ -145,7 +145,7 @@ struct WeatherComplicationView: View {
             // The headline may wrap to a second line rather than truncate; the
             // third line only appears when it does not.
             ViewThatFits(in: .vertical) {
-                rectangularAlert(alert, footer: alert.othersText ?? weather.temperatureText)
+                rectangularAlert(alert, footer: alert.othersShortText ?? weather.temperatureText)
                 rectangularAlert(alert, footer: nil)
             }
             .frame(maxWidth: .infinity, alignment: .leading)

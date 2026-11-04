@@ -20,6 +20,15 @@ extension WatchWeatherAlertSnapshot {
         default: return "\(otherCount) more places have alerts."
         }
     }
+
+    /// The same count, short enough for one line of a complication.
+    var othersShortText: String? {
+        switch otherCount {
+        case ..<1: return nil
+        case 1: return "+1 more place"
+        default: return "+\(otherCount) more places"
+        }
+    }
 }
 
 /// Deep link from a complication into the watch app's Weather page.
