@@ -551,10 +551,6 @@ function expandedStateRequirements(platform: Platform): ScreenshotRequirement[] 
       area: 'modal',
       flow: 'Weather alerts sheet with active alert',
     }),
-    requirement('93-data-weather-alert-preferences', {
-      area: 'modal',
-      flow: 'Weather alert preferences controls',
-    }),
   ];
 
   if (FEATURE_FLAGS.enableFeed) {
