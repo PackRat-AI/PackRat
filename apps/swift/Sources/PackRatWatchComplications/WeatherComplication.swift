@@ -162,11 +162,16 @@ struct WeatherComplicationView: View {
                     .font(.headline)
                     .lineLimit(1)
                     .widgetAccentable()
-                Text(weather.temperatureText)
-                    .font(.system(.title3, design: .rounded).weight(.semibold))
-                Text(weather.conditionText)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                // Temperature and condition share a line: a title-sized row plus
+                // two body rows overflows the rectangular slot.
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(weather.temperatureText)
+                        .font(.system(.title3, design: .rounded).weight(.semibold))
+                    Text(weather.conditionText)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
