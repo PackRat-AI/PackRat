@@ -112,4 +112,116 @@ struct WatchSnapshotTests {
         #expect(snapshot.weather.temperatureText != "--")
         #expect(snapshot.trail.hazardCount > 0)
     }
+
+    @Test("a weather payload without an alert key decodes as no alert")
+    func decodesWeatherWithoutAlert() throws {
+        let legacy = """
+        {"locationName":"Brainard Lake","temperatureText":"64°","conditionText":"Partly Cloudy","symbolName":"cloud.sun"}
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(WatchWeatherSnapshot.self, from: legacy)
+        #expect(decoded.alert == nil)
+        #expect(decoded.locationName == "Brainard Lake")
+    }
+
+    @Test("an alert round-trips through the snapshot")
+    func alertRoundTrips() throws {
+        var weather = PackRatWatchSnapshot.fallback.weather
+        weather.alert = WatchWeatherAlertSnapshot(
+            headline: "Flood Warning", severity: "Severe", locationName: "Boulder, Colorado", otherCount: 2
+        )
+        let decoded = try JSONDecoder().decode(WatchWeatherSnapshot.self, from: JSONEncoder().encode(weather))
+        #expect(decoded.alert == weather.alert)
+    }
+}
+
+@Suite("Watch weather alert")
+@MainActor
+struct WatchWeatherAlertTests {
+    private func location(_ id: Int, _ name: String) -> WeatherLocation {
+        WeatherLocation(id: id, name: name, region: nil, country: nil, lat: nil, lon: nil)
+    }
+
+    private func summary(event: String, severity: String?) -> WeatherLocationSummary {
+        WeatherLocationSummary(forecast: WeatherForecastResponse(
+            location: nil,
+            current: nil,
+            forecast: nil,
+            alerts: WeatherAlertsWrapper(alert: [
+                WeatherAlert(
+                    headline: nil, event: event, severity: severity, urgency: nil, areas: nil,
+                    effective: "2026-11-03T12:00:00Z", expires: nil, desc: nil, instruction: nil
+                ),
+            ])
+        ))
+    }
+
+    @Test("leads with the most severe unseen alert and counts the rest")
+    func leadsWithMostSevere() {
+        let vm = WeatherViewModel(loadPersistedState: false)
+        vm.savedLocations = [location(1, "Boulder"), location(2, "Estes Park"), location(3, "Nederland")]
+        vm.locationSummaries = [
+            1: summary(event: "Wind Advisory", severity: "Moderate"),
+            2: summary(event: "Tornado Warning", severity: "Extreme"),
+            3: summary(event: "Fog Advisory", severity: nil),
+        ]
+
+        let alert = vm.watchAlert
+        #expect(alert?.headline == "Tornado Warning")
+        #expect(alert?.severity == "Extreme")
+        #expect(alert?.locationName == "Estes Park")
+        #expect(alert?.otherCount == 2)
+    }
+
+    @Test("a place with several alerts leads with its most severe")
+    func leadsWithLocationsWorstAlert() {
+        let vm = WeatherViewModel(loadPersistedState: false)
+        vm.savedLocations = [location(1, "Quito")]
+        let alert = { (event: String, severity: String) in
+            WeatherAlert(
+                headline: nil, event: event, severity: severity, urgency: nil, areas: nil,
+                effective: "2026-11-03T12:00:00Z", expires: nil, desc: nil, instruction: nil
+            )
+        }
+        vm.locationSummaries = [1: WeatherLocationSummary(forecast: WeatherForecastResponse(
+            location: nil, current: nil, forecast: nil,
+            alerts: WeatherAlertsWrapper(alert: [alert("Rain", "Moderate"), alert("Thunderstorm", "Extreme")])
+        ))]
+
+        #expect(vm.watchAlert?.headline == "Thunderstorm")
+        #expect(vm.watchAlert?.severity == "Extreme")
+    }
+
+    @Test("an alert already opened on the phone does not reach the watch")
+    func seenAlertIsExcluded() throws {
+        let vm = WeatherViewModel(loadPersistedState: false)
+        vm.savedLocations = [location(1, "Boulder")]
+        let boulder = summary(event: "Wind Advisory", severity: "Moderate")
+        vm.locationSummaries = [1: boulder]
+        vm.seenAlertIds = [1: [try #require(boulder.alertId)]]
+
+        #expect(vm.watchAlert == nil)
+    }
+
+    @Test("the footer counts the other places with alerts in a full sentence")
+    func othersText() {
+        var alert = WatchWeatherAlertSnapshot(headline: "Flood Warning", severity: "Severe", locationName: "Boulder", otherCount: 0)
+        #expect(alert.othersText == nil)
+        alert.otherCount = 1
+        #expect(alert.othersText == "1 more place has an alert.")
+        alert.otherCount = 3
+        #expect(alert.othersText == "3 more places have alerts.")
+    }
+
+    @Test("the complication store only reports a change when the weather differs")
+    func complicationStoreDetectsChange() {
+        var weather = PackRatWatchSnapshot.fallback.weather
+        weather.conditionText = "Store test \(UUID().uuidString)"
+        #expect(WatchComplicationStore.save(weather) == true)
+        #expect(WatchComplicationStore.save(weather) == false)
+        #expect(WatchComplicationStore.loadWeather() == weather)
+
+        weather.alert = WatchWeatherAlertSnapshot(headline: "Flood Warning", severity: "Severe", locationName: "Boulder", otherCount: 0)
+        #expect(WatchComplicationStore.save(weather) == true)
+    }
 }

@@ -5,6 +5,10 @@ private let savedLocationsKey = "savedWeatherLocations"
 private let activeLocationKey = "activeWeatherLocationId"
 private let seenAlertIdsKey = "seenWeatherAlertIds"
 
+/// Main-actor isolated like the app's other view models. Its state is mutated
+/// from several concurrent loads at launch (the restored forecast and every
+/// saved place's summary); off the main actor those writes raced and crashed.
+@MainActor
 @Observable
 final class WeatherViewModel {
     var searchText = ""
@@ -423,7 +427,7 @@ final class WeatherViewModel {
         guard !savedLocations.isEmpty else { return }
         await withTaskGroup(of: Void.self) { group in
             for location in savedLocations {
-                group.addTask { [weak self] in
+                group.addTask { @MainActor [weak self] in
                     await self?.loadSummary(for: location)
                 }
             }
@@ -444,6 +448,27 @@ final class WeatherViewModel {
     /// and only needs to know whether there is anything to come and look at.
     var hasAnyUnseenAlert: Bool {
         savedLocations.contains { hasUnseenAlert(locationId: $0.id) }
+    }
+
+    /// The unseen alert the watch leads with: the most severe across saved
+    /// locations, plus how many other locations also carry one. Uses the same
+    /// unseen rule as the dashboard dot, so the wrist clears when the phone does.
+    var watchAlert: WatchWeatherAlertSnapshot? {
+        let unseen = savedLocations.compactMap { location -> (WeatherLocation, WeatherLocationSummary, String)? in
+            guard hasUnseenAlert(locationId: location.id),
+                  let summary = locationSummaries[location.id],
+                  let headline = summary.severestAlertHeadline else { return nil }
+            return (location, summary, headline)
+        }
+        guard let lead = unseen.max(by: {
+            WatchWeatherAlertSnapshot.rank($0.1.alertSeverity) < WatchWeatherAlertSnapshot.rank($1.1.alertSeverity)
+        }) else { return nil }
+        return WatchWeatherAlertSnapshot(
+            headline: lead.2,
+            severity: lead.1.alertSeverity,
+            locationName: lead.0.name,
+            otherCount: unseen.count - 1
+        )
     }
 
     /// Marks every alert currently active for a location as seen. Called when
