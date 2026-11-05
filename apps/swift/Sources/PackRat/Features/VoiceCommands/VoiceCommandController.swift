@@ -134,7 +134,7 @@ final class VoiceCommandController {
 
         case .checkIn:
             guard let checkIn else { return await respond(VoiceAnswers.noContactsTold) }
-            guard let fix = await currentFix() else { return await respond(VoiceAnswers.noFix) }
+            guard let fix = await currentFix() else { return await respond(noFixAnswer) }
             guard await confirm(VoiceAnswers.confirmCheckIn(contacts: checkIn.contactSummary, placeName: fix.placeName)) else {
                 return await respond(VoiceAnswers.cancelled)
             }
@@ -168,7 +168,7 @@ final class VoiceCommandController {
             await respond(VoiceAnswers.extended(to: target, online: online, now: now))
 
         case .whereAmI:
-            guard let fix = await currentFix() else { return await respond(VoiceAnswers.noFix) }
+            guard let fix = await currentFix() else { return await respond(noFixAnswer) }
             let progress = trip.plannedRoute.flatMap { RouteProgress(position: fix.point, route: $0) }
             await respond(VoiceAnswers.whereAmI(
                 placeName: fix.placeName, progress: progress,
@@ -179,7 +179,7 @@ final class VoiceCommandController {
         case .howFarToGo, .amIOnRoute:
             guard let route = trip.plannedRoute, route.count >= 2 else { return await respond(VoiceAnswers.noRoute) }
             guard let fix = await currentFix(), let progress = RouteProgress(position: fix.point, route: route) else {
-                return await respond(VoiceAnswers.noFix)
+                return await respond(noFixAnswer)
             }
             await respond(command == .howFarToGo
                 ? VoiceAnswers.remaining(progress, metric: metric)
@@ -241,8 +241,21 @@ final class VoiceCommandController {
         VoiceAudioSession.deactivate()
     }
 
+    private var locationDenied = false
+
+    /// Why there's no fix: location turned off for PackRat, or no signal.
+    private var noFixAnswer: String { locationDenied ? VoiceAnswers.locationDenied : VoiceAnswers.noFix }
+
     private func currentFix() async -> SafetyLocationFix? {
-        try? await SafetyCheckInLocator().currentFix(timeout: .seconds(15))
+        locationDenied = false
+        do {
+            return try await SafetyCheckInLocator().currentFix(timeout: .seconds(15))
+        } catch SafetyCheckInLocator.LocatorError.denied {
+            locationDenied = true
+            return nil
+        } catch {
+            return nil
+        }
     }
 }
 

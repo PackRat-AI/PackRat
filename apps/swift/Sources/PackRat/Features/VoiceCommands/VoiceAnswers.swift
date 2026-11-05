@@ -8,6 +8,7 @@ enum VoiceAnswers {
     static let noRoute = "This trip doesn't have a planned route."
     static let noCheckIn = "This trip doesn't have a return time. Notify your contacts from the trip page to set one."
     static let noFix = "I couldn't get your location. Try again with a clear view of the sky."
+    static let locationDenied = "PackRat needs your location for that. Allow it in Settings, under PackRat, then Location."
     static let cancelled = "OK, I won't send it."
     static let queued = "Saved. It'll send when you have signal."
     static let noForecast = "There's no forecast saved for this trip."
