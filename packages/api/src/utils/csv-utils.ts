@@ -224,14 +224,16 @@ export function parseWeight({ weightStr, unitStr }: { weightStr: string; unitStr
 
   const hint = (unitStr || weightStr).toLowerCase();
 
+  // Every branch converts to grams, so the unit is always 'g'. Reporting the source unit here
+  // stored values like 332 g as "332 oz" (#2725, #2735).
   if (hint.includes('oz')) {
-    return { weight: Math.round(weightVal * 28.35), unit: 'oz' };
+    return { weight: Math.round(weightVal * 28.35), unit: 'g' };
   }
   if (hint.includes('lb')) {
-    return { weight: Math.round(weightVal * 453.592), unit: 'lb' };
+    return { weight: Math.round(weightVal * 453.592), unit: 'g' };
   }
   if (hint.includes('kg')) {
-    return { weight: weightVal * 1000, unit: 'kg' };
+    return { weight: weightVal * 1000, unit: 'g' };
   }
 
   return { weight: weightVal, unit: 'g' };
