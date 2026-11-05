@@ -36,6 +36,8 @@ struct LocationSearchView: View {
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        // Plain buttons only hit-test their glyphs; make the whole row tappable.
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
