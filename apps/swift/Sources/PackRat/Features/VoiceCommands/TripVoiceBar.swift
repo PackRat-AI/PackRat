@@ -10,7 +10,9 @@ struct TripVoiceBar: View {
 
     @Environment(\.modelContext) private var modelContext
     @State private var controller = VoiceCommandController.shared
-    @State private var pressing = false
+    /// Resets on its own when the touch is cancelled, such as by a permission
+    /// alert, so the button never sticks in the listening state.
+    @GestureState private var pressing = false
 
     /// Shown while the trip is underway, and on its start day so "start my
     /// trip" works too.
@@ -103,16 +105,15 @@ struct TripVoiceBar: View {
             .contentShape(Capsule())
             .gesture(
                 DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        guard !pressing else { return }
-                        pressing = true
-                        controller.beginListening(.init(trip: trip, pack: pack, viewModel: viewModel, modelContext: modelContext))
-                    }
-                    .onEnded { _ in
-                        pressing = false
-                        controller.endListening()
-                    }
+                    .updating($pressing) { _, state, _ in state = true }
             )
+            .onChange(of: pressing) { _, isPressing in
+                if isPressing {
+                    controller.beginListening(.init(trip: trip, pack: pack, viewModel: viewModel, modelContext: modelContext))
+                } else {
+                    controller.endListening()
+                }
+            }
             .sensoryFeedback(.impact(weight: .medium), trigger: active)
             .accessibilityElement()
             .accessibilityLabel("Voice command")

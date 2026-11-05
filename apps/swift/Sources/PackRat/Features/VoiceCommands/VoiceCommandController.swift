@@ -50,6 +50,12 @@ final class VoiceCommandController {
     /// The microphone button went down: start listening.
     func beginListening(_ context: Context) {
         guard phase == .idle || phase == .answering else { return }
+        // The first press only asks for the microphone and speech recognition.
+        // The alert takes the touch away, so listening starts on the next hold.
+        if VoiceListener.needsPermission {
+            Task { try? await VoiceListener.requestPermissions() }
+            return
+        }
         speaker.stop()
         run?.cancel()
         heard = ""

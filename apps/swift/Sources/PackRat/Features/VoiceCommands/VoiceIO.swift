@@ -104,7 +104,9 @@ final class VoiceListener {
         case untilSilence
     }
 
-    private var audioEngine = AVAudioEngine()
+    /// Made only while listening: touching an engine's input node asks for
+    /// the microphone, which must never happen just by opening a trip.
+    private var audioEngine: AVAudioEngine?
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
     private var transcript = ""
@@ -120,6 +122,12 @@ final class VoiceListener {
     static let endOfSpeechPause: TimeInterval = 1.2
     /// How long to wait for anything at all before giving up.
     static let noSpeechTimeout: TimeInterval = 5
+
+    /// Either permission hasn't been asked for yet.
+    static var needsPermission: Bool {
+        SFSpeechRecognizer.authorizationStatus() == .notDetermined
+            || AVAudioApplication.shared.recordPermission == .undetermined
+    }
 
     static func requestPermissions() async throws {
         let speech = await withCheckedContinuation { continuation in
@@ -153,7 +161,8 @@ final class VoiceListener {
         // A fresh engine after the session is configured, so the input format
         // matches the hardware. A stale one makes installTap raise, and an
         // input with no channels (no microphone) can't be tapped at all.
-        audioEngine = AVAudioEngine()
+        let audioEngine = AVAudioEngine()
+        self.audioEngine = audioEngine
         let input = audioEngine.inputNode
         let format = input.outputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0 else {
@@ -211,8 +220,11 @@ final class VoiceListener {
     }
 
     func cancel() {
-        if audioEngine.isRunning { audioEngine.stop() }
-        audioEngine.inputNode.removeTap(onBus: 0)
+        if let audioEngine {
+            if audioEngine.isRunning { audioEngine.stop() }
+            audioEngine.inputNode.removeTap(onBus: 0)
+        }
+        audioEngine = nil
         request?.endAudio()
         task?.cancel()
         request = nil
