@@ -147,6 +147,17 @@ struct TripDetailView: View {
             }
             .padding(.bottom)
         }
+        #if os(iOS)
+        .safeAreaInset(edge: .bottom) {
+            if TripVoiceBar.shows(for: trip) {
+                TripVoiceBar(
+                    trip: trip,
+                    pack: trip.packId.flatMap { id in appState.packsVM.packs.first { $0.id == id } },
+                    viewModel: viewModel
+                )
+            }
+        }
+        #endif
         .navigationTitle(trip.name)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)

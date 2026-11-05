@@ -124,6 +124,7 @@ final class SafetyCheckInLocator: NSObject, CLLocationManagerDelegate {
             accuracy: location.horizontalAccuracy,
             recordedAt: location.timestamp
         )
+        if location.verticalAccuracy >= 0 { fix.altitude = location.altitude }
         fix.placeName = await Self.placeName(for: location)
         return fix
     }

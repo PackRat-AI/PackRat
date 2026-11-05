@@ -50,6 +50,8 @@ struct PreferencesView: View {
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
     @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
     @AppStorage("apiBaseURL") private var apiBaseURL: String = ""
+    @AppStorage(VoiceCommandSettings.enabledKey) private var voiceCommandsEnabled = true
+    @AppStorage(VoiceCommandSettings.spokenAnswersKey) private var voiceSpokenAnswers = true
 
     @State private var showingClearDataConfirm = false
     /// Owned here, at the screen root, so the paywall presents reliably —
@@ -92,6 +94,7 @@ struct PreferencesView: View {
             unitsSection
             notificationSection
             safetySection
+            voiceSection
             communitySection
             if ChatViewModel.isOnDeviceOffered {
                 Section {
@@ -278,6 +281,28 @@ struct PreferencesView: View {
                 Text("Safety")
             } footer: {
                 Text("Told when you start a trip, and alerted if you don't come back on time.")
+            }
+        }
+        #endif
+    }
+
+    @ViewBuilder
+    private var voiceSection: some View {
+        #if os(iOS)
+        if FeatureFlagStore.shared.isEnabled(VoiceCommandSettings.flagKey) {
+            Section {
+                Toggle("Voice Commands", isOn: $voiceCommandsEnabled)
+                    .accessibilityIdentifier("settings_voice_commands_toggle")
+                if voiceCommandsEnabled {
+                    Toggle("Spoken Answers", isOn: $voiceSpokenAnswers)
+                        .accessibilityIdentifier("settings_voice_spoken_answers_toggle")
+                }
+            } header: {
+                Text("Voice")
+            } footer: {
+                Text(voiceSpokenAnswers || !voiceCommandsEnabled
+                    ? "Talk to PackRat on a trip page to check in, hear where you are or find out how far you have to go."
+                    : "Answers appear on screen without being read aloud.")
             }
         }
         #endif
