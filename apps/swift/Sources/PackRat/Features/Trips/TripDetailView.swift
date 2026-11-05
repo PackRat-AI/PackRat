@@ -82,6 +82,12 @@ struct TripDetailView: View {
                 metaCards
                     .padding(.top, 8)
 
+                #if os(iOS)
+                if TripTrackingSection.shows(for: trip) {
+                    TripTrackingSection(trip: trip, viewModel: viewModel)
+                }
+                #endif
+
                 if isFinished, NavItem.tripStats.isFeatureEnabled {
                     TripLogSection(trip: trip, viewModel: viewModel)
                 }
@@ -335,6 +341,21 @@ struct TripDetailView: View {
             if route.count >= 2 {
                 MapPolyline(coordinates: route)
                     .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+            }
+            #if os(iOS)
+            // The path so far while this trip is being recorded.
+            if let live = TrackRecorder.shared.track, live.tripId == trip.id, live.samples.count >= 2 {
+                MapPolyline(coordinates: live.samples.map(\.trackPoint.coordinate))
+                    .stroke(.red, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+            }
+            #endif
+            ForEach(trip.log?.waypoints ?? []) { waypoint in
+                Marker(
+                    waypoint.name,
+                    systemImage: waypoint.note == nil ? "mappin" : "note.text",
+                    coordinate: CLLocationCoordinate2D(latitude: waypoint.latitude, longitude: waypoint.longitude)
+                )
+                .tint(.orange)
             }
             Annotation(trip.location?.name ?? trip.name, coordinate: coord) {
                 ZStack {

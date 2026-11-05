@@ -547,7 +547,8 @@ struct TripLogEditor: View {
             source: source ?? .manual,
             summits: summits,
             trails: trails,
-            landscape: landscape
+            landscape: landscape,
+            waypoints: trip.log?.waypoints ?? []
         )
         Task {
             await viewModel.saveLog(log, for: trip.id, context: modelContext)

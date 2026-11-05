@@ -200,6 +200,70 @@ final class VoiceCommandController {
                 return await respond(VoiceAnswers.noForecast)
             }
             await respond(VoiceAnswers.weather(conditions, metric: metric, now: now))
+
+        case .startTracking, .pauseTracking, .resumeTracking, .stopTracking, .trackSoFar:
+            await performTracking(command, context)
+
+        case .markWaypoint(let name):
+            guard let fix = await waypointFix() else { return await respond(noFixAnswer) }
+            let waypoint = TripWaypoint.named(name, latitude: fix.latitude, longitude: fix.longitude, elevation: fix.altitude)
+            await context.viewModel.addWaypoint(waypoint, to: trip.id, context: context.modelContext)
+            await respond(VoiceAnswers.waypointMarked(waypoint.name))
+
+        case .note(let text):
+            guard !text.isEmpty else { return await respond(VoiceAnswers.noteEmpty) }
+            guard let fix = await waypointFix() else { return await respond(noFixAnswer) }
+            let waypoint = TripWaypoint.named(nil, note: text, latitude: fix.latitude, longitude: fix.longitude, elevation: fix.altitude)
+            await context.viewModel.addWaypoint(waypoint, to: trip.id, context: context.modelContext)
+            await respond(VoiceAnswers.noteSaved)
+        }
+    }
+
+    private func performTracking(_ command: VoiceCommand, _ context: Context) async {
+        let recorder = TrackRecorder.shared
+        let trip = context.trip
+        if let track = recorder.track, track.tripId != trip.id {
+            return await respond(VoiceAnswers.trackingOtherTrip(track.tripName))
+        }
+        switch command {
+        case .startTracking:
+            guard recorder.track == nil else { return await respond(VoiceAnswers.alreadyTracking) }
+            guard trip.lifecycle != .complete else { return await respond(VoiceAnswers.tripEnded) }
+            do {
+                try await recorder.start(tripId: trip.id, tripName: trip.name)
+            } catch {
+                return await respond(VoiceAnswers.locationDenied)
+            }
+            // Tracking a trip that hasn't started starts it.
+            if trip.lifecycle == .planned {
+                context.viewModel.setLifecycle(trip.id, status: .inProgress, context: context.modelContext)
+                return await respond(VoiceAnswers.tripStartedTracking)
+            }
+            await respond(VoiceAnswers.trackingStarted)
+
+        case .pauseTracking:
+            guard let track = recorder.track else { return await respond(VoiceAnswers.notTracking) }
+            guard !track.isPaused else { return await respond(VoiceAnswers.alreadyPaused) }
+            recorder.pause()
+            await respond(VoiceAnswers.trackingPaused)
+
+        case .resumeTracking:
+            guard let track = recorder.track else { return await respond(VoiceAnswers.notTracking) }
+            guard track.isPaused else { return await respond(VoiceAnswers.notPaused) }
+            recorder.resume()
+            await respond(VoiceAnswers.trackingResumed)
+
+        case .stopTracking:
+            guard let track = recorder.stop() else { return await respond(VoiceAnswers.notTracking) }
+            await context.viewModel.saveRecording(track, context: context.modelContext)
+            await respond(VoiceAnswers.trackingStopped(track, metric: metric))
+
+        case .trackSoFar:
+            guard let track = recorder.track else { return await respond(VoiceAnswers.notTracking) }
+            await respond(VoiceAnswers.trackSoFar(track, metric: metric))
+
+        default:
+            break
         }
     }
 
@@ -251,6 +315,17 @@ final class VoiceCommandController {
 
     /// Why there's no fix: location turned off for PackRat, or no signal.
     private var noFixAnswer: String { locationDenied ? VoiceAnswers.locationDenied : VoiceAnswers.noFix }
+
+    /// The recorder's latest point when it's fresh, so marking a waypoint
+    /// while tracking is instant; otherwise a new fix.
+    private func waypointFix() async -> SafetyLocationFix? {
+        if let sample = TrackRecorder.shared.track?.lastSample, Date().timeIntervalSince(sample.time) < 30 {
+            var fix = SafetyLocationFix(latitude: sample.latitude, longitude: sample.longitude, accuracy: TrackRecorder.worstAccuracy, recordedAt: sample.time)
+            fix.altitude = sample.altitude
+            return fix
+        }
+        return await currentFix()
+    }
 
     private func currentFix() async -> SafetyLocationFix? {
         locationDenied = false

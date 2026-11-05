@@ -14,6 +14,16 @@ enum VoiceCommand: Equatable, Sendable {
     case amIOnRoute
     case whenAmIDue
     case weather
+    case startTracking
+    case pauseTracking
+    case resumeTracking
+    case stopTracking
+    /// "How far have I gone": the recording's totals so far.
+    case trackSoFar
+    /// "Mark waypoint", or "mark waypoint water source" with a name.
+    case markWaypoint(name: String?)
+    /// "Note: trail washed out past the bridge", in the user's own words.
+    case note(text: String)
 
     /// Commands that tell other people something, so they're read back and
     /// need a spoken yes before they run.
@@ -39,6 +49,12 @@ enum VoiceCommandParser {
     static func parse(_ transcript: String) -> VoiceCommand? {
         let text = normalize(transcript)
         guard !text.isEmpty else { return nil }
+
+        // A note is the user's own words, so it's caught before anything in
+        // them ("note: I'm safe at camp") can read as a command.
+        if let note = parseNote(transcript) { return .note(text: note) }
+        if let waypoint = parseWaypoint(text) { return waypoint }
+        if let tracking = parseTracking(text) { return tracking }
 
         // Return-time changes first: "I'll be back at eight" must not read as
         // a check-in, and "add an hour" must not fall through to nothing.
@@ -81,6 +97,53 @@ enum VoiceCommandParser {
             return .yes
         }
         return nil
+    }
+
+    // MARK: - Tracking and waypoints
+
+    private static func parseTracking(_ text: String) -> VoiceCommand? {
+        let subject = ["tracking", "recording", "my track", "the track", "my hike", "the hike"]
+        func verb(_ verbs: [String]) -> Bool {
+            verbs.contains { verb in subject.contains { containsAny(text, ["\(verb) \($0)"]) } }
+        }
+        if verb(["start", "begin", "record", "track"]) || containsAny(text, ["track me", "record my route"]) { return .startTracking }
+        if verb(["pause"]) || text == "pause" { return .pauseTracking }
+        if verb(["resume", "continue", "restart", "unpause"]) || text == "resume" { return .resumeTracking }
+        if verb(["stop", "end", "finish"]) { return .stopTracking }
+        if containsAny(text, ["how far have i gone", "how far have i come", "how far have i walked", "how far have i hiked", "how far did i", "distance so far", "so far today"]) {
+            return .trackSoFar
+        }
+        return nil
+    }
+
+    private static let waypointPhrases = [
+        "mark waypoint", "mark a waypoint", "add waypoint", "add a waypoint", "drop waypoint", "drop a waypoint",
+        "save waypoint", "save a waypoint", "new waypoint", "drop a pin", "drop pin", "mark this spot",
+        "mark this place", "save this spot", "save this place", "mark the spot",
+    ]
+
+    /// The name is whatever follows the phrase: "mark waypoint water source"
+    /// is "Water source"; a bare "mark waypoint" has none.
+    private static func parseWaypoint(_ text: String) -> VoiceCommand? {
+        let padded = " \(text) "
+        guard let phrase = waypointPhrases.first(where: { padded.contains(" \($0) ") }),
+              let range = padded.range(of: " \(phrase) ")
+        else { return nil }
+        var words = padded[range.upperBound...].split(separator: " ").map(String.init)
+        if ["called", "named", "as"].contains(words.first ?? "") { words.removeFirst() }
+        if words == ["here"] { words = [] }
+        let name = words.joined(separator: " ")
+        return .markWaypoint(name: name.isEmpty ? nil : name.prefix(1).uppercased() + name.dropFirst())
+    }
+
+    /// "Note: trail washed out", "take a note the spring is dry". Keeps the
+    /// user's own casing and punctuation, only dropping the lead-in. Nil when
+    /// it isn't a note; an empty string when it's a note with nothing in it.
+    private static func parseNote(_ transcript: String) -> String? {
+        let pattern = #"^\s*(?:(?:add|take|make|save|leave)\s+(?:a\s+)?)?note\b[\s:,.\-–—]*"#
+        guard let range = transcript.range(of: pattern, options: [.regularExpression, .caseInsensitive]) else { return nil }
+        let rest = transcript[range.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+        return rest.prefix(1).uppercased() + rest.dropFirst()
     }
 
     // MARK: - Return time

@@ -394,6 +394,13 @@ final class TripsViewModel {
             updated.completedAt = nil
         case .complete:
             updated.completedAt = date.iso8601String()
+            #if os(iOS)
+            // Ending a trip ends its recording, whichever button ended it.
+            if TrackRecorder.shared.isRecording(tripId: tripId), let track = TrackRecorder.shared.stop(),
+               track.logRoute != nil {
+                updated.log = track.applied(to: updated.log)
+            }
+            #endif
         }
         applyLocalUpdate(updated, context: context)
     }

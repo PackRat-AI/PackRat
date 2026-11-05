@@ -191,3 +191,149 @@ struct VoiceAnswersTests {
     }
     #endif
 }
+
+@Suite("Tracking and waypoint commands")
+struct TrackingCommandTests {
+    @Test("tracking in its natural phrasings", arguments: [
+        ("Start tracking", VoiceCommand.startTracking),
+        ("start recording", .startTracking),
+        ("track my hike", .startTracking),
+        ("Pause tracking", .pauseTracking),
+        ("pause", .pauseTracking),
+        ("resume tracking", .resumeTracking),
+        ("continue recording", .resumeTracking),
+        ("Stop tracking", .stopTracking),
+        ("end recording", .stopTracking),
+        ("How far have I gone?", .trackSoFar),
+        ("how far have I hiked", .trackSoFar),
+    ])
+    func phrasings(_ transcript: String, _ expected: VoiceCommand) {
+        #expect(VoiceCommandParser.parse(transcript) == expected)
+    }
+
+    @Test("how far have I gone is not how far to go")
+    func soFarVersusToGo() {
+        #expect(VoiceCommandParser.parse("how far have I gone") == .trackSoFar)
+        #expect(VoiceCommandParser.parse("how far to go") == .howFarToGo)
+    }
+
+    @Test("waypoints take the name said after them", arguments: [
+        ("Mark waypoint", String?.none),
+        ("mark a waypoint here", nil),
+        ("Mark waypoint water source", "Water source"),
+        ("drop a pin called camp", "Camp"),
+        ("add a waypoint named the bridge", "The bridge"),
+    ])
+    func waypoint(_ transcript: String, _ name: String?) {
+        #expect(VoiceCommandParser.parse(transcript) == .markWaypoint(name: name))
+    }
+
+    @Test("notes keep the user's own words, even ones that sound like commands")
+    func notes() {
+        #expect(VoiceCommandParser.parse("Note: trail washed out past the bridge") == .note(text: "Trail washed out past the bridge"))
+        #expect(VoiceCommandParser.parse("take a note I'm safe at the lake") == .note(text: "I'm safe at the lake"))
+        #expect(VoiceCommandParser.parse("note") == .note(text: ""))
+        #expect(VoiceCommandParser.parse("notebook") == nil)
+    }
+
+    @Test("none of them send anything, so none need a yes")
+    func noConfirmation() {
+        for command in [VoiceCommand.startTracking, .stopTracking, .markWaypoint(name: nil), .note(text: "x")] {
+            #expect(!command.needsConfirmation)
+        }
+    }
+}
+
+@Suite("RecordedTrack")
+struct RecordedTrackTests {
+    private let start = Date(timeIntervalSince1970: 1_800_000_000)
+
+    /// Walking north at 1.1 m/s (about 0.0001° latitude every 10 s).
+    private func sample(_ step: Int, altitude: Double? = nil, offset: TimeInterval = 0) -> RecordedTrack.Sample {
+        .init(latitude: 47.0 + Double(step) * 0.0001, longitude: -120.0, altitude: altitude, time: start.addingTimeInterval(Double(step) * 10 + offset))
+    }
+
+    @Test("distance and time moving add up as the user walks")
+    func walking() {
+        var track = RecordedTrack(tripId: "t", tripName: "Trip", startedAt: start)
+        for step in 0...10 { track.append(sample(step)) }
+        #expect(abs(track.distanceMeters - 111.2) < 1)
+        #expect(track.movingSeconds == 100)
+    }
+
+    @Test("standing still isn't time moving, and a long gap isn't either")
+    func notMoving() {
+        var track = RecordedTrack(tripId: "t", tripName: "Trip", startedAt: start)
+        track.append(sample(0))
+        track.append(sample(0, offset: 60))
+        track.append(sample(1, offset: 600))
+        #expect(track.movingSeconds == 0)
+    }
+
+    @Test("a pause leaves the ride back out of the distance")
+    func pause() {
+        var track = RecordedTrack(tripId: "t", tripName: "Trip", startedAt: start)
+        track.append(sample(0))
+        track.append(sample(1))
+        track.pause()
+        track.append(sample(50))
+        #expect(track.samples.count == 2)
+        track.resume()
+        track.append(sample(500))
+        track.append(sample(501))
+        #expect(track.stretches.count == 2)
+        #expect(abs(track.distanceMeters - 2 * 11.12) < 0.5)
+    }
+
+    @Test("climbing ignores a few metres of GPS jitter")
+    func climbing() {
+        var track = RecordedTrack(tripId: "t", tripName: "Trip", startedAt: start)
+        for (step, altitude) in [100.0, 102, 99, 101, 110, 108, 120].enumerated() {
+            track.append(sample(step, altitude: altitude))
+        }
+        #expect(track.elevationGainMeters == 23)
+    }
+
+    @Test("stopping fills the trip log and keeps everything else in it")
+    func appliedToLog() {
+        var track = RecordedTrack(tripId: "t", tripName: "Trip", startedAt: start)
+        for step in 0...5 { track.append(sample(step, altitude: Double(step) * 5)) }
+        let waypoint = TripWaypoint.named("Camp", latitude: 47, longitude: -120, elevation: nil)
+        let log = track.applied(to: TripLog(activities: [.hiking], distanceMeters: 1, waypoints: [waypoint]))
+        #expect(log.source == .track)
+        #expect(log.route != nil)
+        #expect(log.distanceMeters == track.distanceMeters)
+        #expect(log.elevationGainMeters == 25)
+        #expect(log.activities == [.hiking])
+        #expect(log.waypoints == [waypoint])
+    }
+
+    @Test("a single point is too little to save")
+    func tooShort() {
+        var track = RecordedTrack(tripId: "t", tripName: "Trip", startedAt: start)
+        track.append(sample(0))
+        #expect(track.logRoute == nil)
+        #expect(track.applied(to: nil).route == nil)
+    }
+
+    @Test("stopping reads the totals the way a watch does")
+    func stoppedAnswer() {
+        #expect(VoiceAnswers.movingTime(4 * 3_600 + 600) == "4 hours 10")
+        #expect(VoiceAnswers.movingTime(3_600) == "1 hour")
+        #expect(VoiceAnswers.movingTime(45 * 60) == "45 minutes")
+    }
+}
+
+@Suite("Trip log waypoints")
+struct TripLogWaypointTests {
+    @Test("waypoints survive a round trip, and an old log without them still reads")
+    func decoding() throws {
+        let waypoint = TripWaypoint.named(nil, note: "Spring is dry", latitude: 47.5, longitude: -120.8, elevation: 1_700)
+        let log = TripLog(waypoints: [waypoint])
+        let decoded = try JSONDecoder().decode(TripLog.self, from: JSONEncoder().encode(log))
+        #expect(decoded.waypoints == [waypoint])
+        #expect(!decoded.isEmpty)
+        let old = try JSONDecoder().decode(TripLog.self, from: Data(#"{"activities":["hiking"]}"#.utf8))
+        #expect(old.waypoints.isEmpty)
+    }
+}

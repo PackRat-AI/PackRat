@@ -141,7 +141,7 @@ targets:
           UIColorName: ""
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
-        NSLocationWhenInUseUsageDescription: "This app needs access to your location while you are using it."
+        NSLocationWhenInUseUsageDescription: "PackRat uses your location to record your hikes, mark waypoints and check in with your contacts."
         NSLocationAlwaysAndWhenInUseUsageDescription: "During a safety check-in you chose to share, PackRat follows your progress in the background so your emergency contacts can see where you are. It stops when you mark yourself safe."
         NSMicrophoneUsageDescription: "PackRat listens while you hold Hold to Talk on a trip, so you can check in or ask how far you have to go without typing."
         NSSpeechRecognitionUsageDescription: "Voice commands are recognised on your iPhone, so they work with no signal. Nothing you say is recorded or sent anywhere."
@@ -157,6 +157,7 @@ targets:
         # Pre-trip reminders refresh the destination forecast in the background.
         UIBackgroundModes:
           - fetch
+          - location
         BGTaskSchedulerPermittedIdentifiers:
           - world.packrat.trip-conditions
         CFBundleURLTypes:

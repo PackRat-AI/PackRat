@@ -3,7 +3,7 @@ import Foundation
 /// The sentences PackRat says back. Kept apart from the controller so every
 /// answer can be checked without a microphone or a location fix.
 enum VoiceAnswers {
-    static let notHeard = "Sorry, I didn't catch that. You can say check in, where am I, how far to go, am I on route, when am I due back, add an hour, weather, or I'm safe."
+    static let notHeard = "Sorry, I didn't catch that. You can say start tracking, mark waypoint, note, how far have I gone, check in, where am I, how far to go, am I on route, when am I due back, add an hour, weather, or I'm safe."
     static let noTrip = "There's no trip in progress."
     static let noRoute = "This trip doesn't have a planned route."
     static let noCheckIn = "This trip doesn't have a return time. Notify your contacts from the trip page to set one."
@@ -146,6 +146,58 @@ enum VoiceAnswers {
         if age > 3 * 3_600 { sentence += " This forecast is from \(duration(age)) ago." }
         return sentence
     }
+
+    // MARK: - Tracking
+
+    static let trackingStarted = "Tracking started. I'll keep recording with the screen off."
+    static let tripStartedTracking = "Trip started, and tracking. I'll keep recording with the screen off."
+    static let alreadyTracking = "You're already tracking."
+    static let notTracking = "You're not tracking. Say start tracking to begin."
+    static let trackingPaused = "Tracking paused. Say resume tracking when you set off again."
+    static let alreadyPaused = "Tracking is already paused."
+    static let trackingResumed = "Tracking resumed."
+    static let notPaused = "Tracking isn't paused."
+    static let tripEnded = "This trip has ended."
+
+    static func trackingOtherTrip(_ name: String) -> String {
+        "You're tracking \(name). Stop that first."
+    }
+
+    /// "Stopped. 8.4 miles, 2,900 feet of climbing, 4 hours 10 moving."
+    static func trackingStopped(_ track: RecordedTrack, metric: Bool) -> String {
+        guard track.logRoute != nil else { return "Stopped. Too little was recorded to save a route." }
+        return "Stopped. " + totals(track, metric: metric) + " Saved to your trip log."
+    }
+
+    /// "3.2 miles, 1,400 feet of climbing, 1 hour 20 moving."
+    static func trackSoFar(_ track: RecordedTrack, metric: Bool) -> String {
+        guard track.distanceMeters >= 10 else { return "You've only just started." }
+        let base = "You've gone " + totals(track, metric: metric)
+        return track.isPaused ? base + " Tracking is paused." : base
+    }
+
+    private static func totals(_ track: RecordedTrack, metric: Bool) -> String {
+        var parts = [distance(track.distanceMeters, metric: metric)]
+        if track.elevationGainMeters >= 10 { parts.append("\(height(track.elevationGainMeters, metric: metric)) of climbing") }
+        if track.movingSeconds >= 60 { parts.append("\(movingTime(track.movingSeconds)) moving") }
+        return parts.joined(separator: ", ") + "."
+    }
+
+    /// "4 hours 10", "1 hour", "45 minutes": the way a watch reads it out.
+    static func movingTime(_ seconds: TimeInterval) -> String {
+        let total = max(1, Int((seconds / 60).rounded()))
+        let hours = total / 60, minutes = total % 60
+        if hours == 0 { return minutes == 1 ? "1 minute" : "\(minutes) minutes" }
+        let h = hours == 1 ? "1 hour" : "\(hours) hours"
+        return minutes == 0 ? h : "\(h) \(minutes)"
+    }
+
+    // MARK: - Waypoints
+
+    static let noteEmpty = "Say note, then what you want to save."
+
+    static func waypointMarked(_ name: String) -> String { "Marked \(name)." }
+    static let noteSaved = "Note saved here."
 
     // MARK: - Time
 

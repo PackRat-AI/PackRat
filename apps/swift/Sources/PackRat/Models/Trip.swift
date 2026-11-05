@@ -52,6 +52,8 @@ struct TripLog: Codable, Equatable, Sendable {
     var trails: [TripTrail]
     /// Set by the user; nil means "from where the trip was" (`TripLandscapes`).
     var landscape: TripLandscape?
+    /// Places marked along the way, by tap or by voice.
+    var waypoints: [TripWaypoint]
 
     enum Source: String, Codable, Sendable {
         case manual, track, trail
@@ -65,7 +67,8 @@ struct TripLog: Codable, Equatable, Sendable {
         source: Source? = nil,
         summits: [TripSummit] = [],
         trails: [TripTrail] = [],
-        landscape: TripLandscape? = nil
+        landscape: TripLandscape? = nil,
+        waypoints: [TripWaypoint] = []
     ) {
         self.activities = activities
         self.distanceMeters = distanceMeters
@@ -75,6 +78,7 @@ struct TripLog: Codable, Equatable, Sendable {
         self.summits = summits
         self.trails = trails
         self.landscape = landscape
+        self.waypoints = waypoints
     }
 
     /// Unknown activity strings from a newer server are dropped rather than
@@ -92,13 +96,29 @@ struct TripLog: Codable, Equatable, Sendable {
         trails = (try? container.decodeIfPresent([Lenient<TripTrail>].self, forKey: .trails))?
             .compactMap(\.value) ?? []
         landscape = try? container.decodeIfPresent(TripLandscape.self, forKey: .landscape)
+        waypoints = (try? container.decodeIfPresent([Lenient<TripWaypoint>].self, forKey: .waypoints))?
+            .compactMap(\.value) ?? []
     }
 
     /// True when the log carries nothing worth saving.
     var isEmpty: Bool {
         activities.isEmpty && distanceMeters == nil && elevationGainMeters == nil
             && (route?.isEmpty ?? true) && summits.isEmpty && trails.isEmpty && landscape == nil
+            && waypoints.isEmpty
     }
+}
+
+/// A place marked on a trip, with an optional spoken or typed note. Mirrors
+/// `TripWaypointSchema`.
+struct TripWaypoint: Codable, Equatable, Hashable, Identifiable, Sendable {
+    var id: String
+    var name: String
+    var note: String?
+    var latitude: Double
+    var longitude: Double
+    var elevationMeters: Double?
+    /// ISO 8601.
+    var createdAt: String
 }
 
 /// A named peak reached on a trip. Mirrors `TripSummitSchema`; `osmId` is the
