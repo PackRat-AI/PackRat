@@ -22,7 +22,7 @@ final class VoiceSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         synthesizer.stopSpeaking(at: .immediate)
         resumeFinished()
         VoiceAudioSession.activate()
-        let utterance = AVSpeechUtterance(string: text)
+        let utterance = AVSpeechUtterance(string: VoiceAnswers.speakable(text))
         utterance.voice = AVSpeechSynthesisVoice(language: Locale.current.identifier.replacingOccurrences(of: "_", with: "-"))
             ?? AVSpeechSynthesisVoice(language: "en-US")
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate

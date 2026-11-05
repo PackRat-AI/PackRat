@@ -171,6 +171,23 @@ enum VoiceAnswers {
         return "\(day) at \(time)"
     }
 
+    /// The banner shows times on the phone's own clock, but the voice reads
+    /// "19:00" as "nineteen hundred hours", so spoken text says "7 PM".
+    static func speakable(_ text: String) -> String {
+        guard let regex = try? NSRegularExpression(pattern: #"\b([01]?\d|2[0-3]):([0-5]\d)\b"#) else { return text }
+        var result = text
+        for match in regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).reversed() {
+            guard let whole = Range(match.range, in: text),
+                  let h = Range(match.range(at: 1), in: text).flatMap({ Int(text[$0]) }),
+                  let m = Range(match.range(at: 2), in: text).flatMap({ Int(text[$0]) })
+            else { continue }
+            let hour = h % 12 == 0 ? 12 : h % 12
+            let spoken = (m == 0 ? "\(hour)" : String(format: "%d:%02d", hour, m)) + (h < 12 ? " AM" : " PM")
+            result.replaceSubrange(whole, with: spoken)
+        }
+        return result
+    }
+
     /// "2 hours", "1 hour 20 minutes", "45 minutes".
     static func duration(_ seconds: TimeInterval) -> String {
         let total = max(1, Int((seconds / 60).rounded()))

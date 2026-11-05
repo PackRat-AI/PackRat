@@ -157,6 +157,13 @@ struct VoiceAnswersTests {
         #expect(VoiceAnswers.spokenTime(date(19, 30), now: date(15), calendar: twentyFour) == "at 19:30")
     }
 
+    @Test("24-hour times are read aloud the way people say them")
+    func speakable() {
+        #expect(VoiceAnswers.speakable("Tell Imran you're due back Sunday at 19:00?") == "Tell Imran you're due back Sunday at 7 PM?")
+        #expect(VoiceAnswers.speakable("Back at 07:30 or 00:15.") == "Back at 7:30 AM or 12:15 AM.")
+        #expect(VoiceAnswers.speakable("Due back at 7 PM.") == "Due back at 7 PM.")
+    }
+
     @Test("check-in read-back names the contacts and the place")
     func confirmCheckIn() {
         #expect(VoiceAnswers.confirmCheckIn(contacts: "Sam and Jo", placeName: "Colchuck Lake")
