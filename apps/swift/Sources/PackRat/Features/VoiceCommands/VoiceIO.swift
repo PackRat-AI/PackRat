@@ -81,6 +81,7 @@ final class VoiceListener {
         case microphoneDenied
         case speechDenied
         case unavailable
+        case failed
 
         var errorDescription: String? {
             switch self {
@@ -90,6 +91,8 @@ final class VoiceListener {
                 "PackRat needs speech recognition for voice commands. Allow it in Settings › PackRat."
             case .unavailable:
                 "Voice commands aren't available in this language on this iPhone."
+            case .failed:
+                "PackRat couldn't listen just now. Try again."
             }
         }
     }
@@ -107,6 +110,7 @@ final class VoiceListener {
     private var transcript = ""
     private var lastHeard = Date.distantPast
     private var stopRequested = false
+    private var recognitionFailed = false
 
     private(set) var isListening = false
     /// What has been heard so far, for the on-screen banner.
@@ -135,6 +139,7 @@ final class VoiceListener {
         VoiceAudioSession.activate()
         transcript = ""
         stopRequested = false
+        recognitionFailed = false
         let startedAt = Date()
         lastHeard = .distantPast
 
@@ -162,8 +167,11 @@ final class VoiceListener {
         try audioEngine.start()
         isListening = true
 
-        task = recognizer.recognitionTask(with: request) { [weak self] result, _ in
-            guard let text = result?.bestTranscription.formattedString else { return }
+        task = recognizer.recognitionTask(with: request) { [weak self] result, error in
+            guard let text = result?.bestTranscription.formattedString else {
+                if error != nil { Task { @MainActor in self?.recognitionFailed = true } }
+                return
+            }
             Task { @MainActor in
                 guard let self, self.isListening else { return }
                 if text != self.transcript {
@@ -179,7 +187,7 @@ final class VoiceListener {
         // partial that has stopped changing is already the answer.
         while !Task.isCancelled {
             try? await Task.sleep(for: .milliseconds(150))
-            if stopRequested { break }
+            if stopRequested || recognitionFailed { break }
             let now = Date()
             if mode == .untilSilence {
                 if transcript.isEmpty, now.timeIntervalSince(startedAt) > Self.noSpeechTimeout { break }
@@ -191,7 +199,9 @@ final class VoiceListener {
         // Give the recogniser a moment to catch the last word after release.
         if mode == .untilStopped { try? await Task.sleep(for: .milliseconds(400)) }
         let heard = transcript
+        let failed = recognitionFailed && heard.isEmpty
         cancel()
+        if failed { throw ListenError.failed }
         return heard
     }
 
