@@ -94,7 +94,9 @@ struct TripVoiceBar: View {
     }
 
     private var micButton: some View {
-        let active = controller.phase == .listening
+        // Waiting on a spoken yes or no listens too, so the button says so
+        // rather than inviting another hold.
+        let active = controller.phase == .listening || controller.phase == .confirming
         return Label(active ? "Listening" : "Hold to Talk", systemImage: active ? "waveform" : "mic.fill")
             .font(.headline)
             .foregroundStyle(.white)

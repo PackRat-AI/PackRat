@@ -153,7 +153,11 @@ enum VoiceAnswers {
     static func spokenTime(_ date: Date, now: Date, calendar: Calendar = .current) -> String {
         let minute = calendar.component(.minute, from: date)
         var style = Date.FormatStyle(date: .omitted, time: .omitted).hour(.defaultDigits(amPM: .abbreviated))
-        if minute != 0 { style = style.minute(.twoDigits) }
+        // "7 PM" works on a 12-hour clock; a 24-hour clock needs "19:00".
+        let locale = calendar.locale ?? .current
+        let twelveHour = DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: locale)?.contains("a") ?? true
+        if minute != 0 || !twelveHour { style = style.minute(.twoDigits) }
+        style.locale = locale
         style.timeZone = calendar.timeZone
         // ICU puts a narrow no-break space before AM/PM; a plain space reads the same aloud.
         let time = date.formatted(style).replacingOccurrences(of: "\u{202F}", with: " ")

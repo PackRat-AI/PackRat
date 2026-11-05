@@ -119,6 +119,7 @@ struct VoiceAnswersTests {
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+        calendar.locale = Locale(identifier: "en_US")
         return calendar
     }
 
@@ -145,6 +146,15 @@ struct VoiceAnswersTests {
             == "You were due back at 7 PM. Your contacts get an overdue alert in 1 hour 30 minutes.")
         #expect(VoiceAnswers.dueBack(expectedReturn: date(19), graceMinutes: 120, now: date(22), calendar: calendar)
             == "You were due back at 7 PM. Your contacts have been sent an overdue alert.")
+    }
+
+    @Test("times follow the phone's 12- or 24-hour clock")
+    func spokenTimeClock() {
+        var twentyFour = calendar
+        twentyFour.locale = Locale(identifier: "en_GB")
+        #expect(VoiceAnswers.spokenTime(date(19), now: date(15), calendar: calendar) == "at 7 PM")
+        #expect(VoiceAnswers.spokenTime(date(19), now: date(15), calendar: twentyFour) == "at 19:00")
+        #expect(VoiceAnswers.spokenTime(date(19, 30), now: date(15), calendar: twentyFour) == "at 19:30")
     }
 
     @Test("check-in read-back names the contacts and the place")
