@@ -101,7 +101,7 @@ final class VoiceListener {
         case untilSilence
     }
 
-    private let audioEngine = AVAudioEngine()
+    private var audioEngine = AVAudioEngine()
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
     private var transcript = ""
@@ -145,9 +145,16 @@ final class VoiceListener {
         request.contextualStrings = ["check in", "I'm safe", "PackRat", "on route", "due back"]
         self.request = request
 
+        // A fresh engine after the session is configured, so the input format
+        // matches the hardware. A stale one makes installTap raise, and an
+        // input with no channels (no microphone) can't be tapped at all.
+        audioEngine = AVAudioEngine()
         let input = audioEngine.inputNode
         let format = input.outputFormat(forBus: 0)
-        input.removeTap(onBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            self.request = nil
+            throw ListenError.unavailable
+        }
         input.installTap(onBus: 0, bufferSize: 1_024, format: format) { [weak request] buffer, _ in
             request?.append(buffer)
         }
