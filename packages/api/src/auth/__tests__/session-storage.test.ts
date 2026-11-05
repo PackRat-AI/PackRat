@@ -128,7 +128,7 @@ describe('secondaryStorage.increment', () => {
     await expect(storage.increment('ip|/sign-in/email', 60)).resolves.toBe(1);
 
     expect(authKv.put).toHaveBeenCalledWith('ip|/sign-in/email', '1', {
-      expiration: now + 60,
+      expirationTtl: 60,
       metadata: { expiresAt: now + 60 },
     });
   });
@@ -143,7 +143,7 @@ describe('secondaryStorage.increment', () => {
     await expect(storage.increment('ip|/sign-in/email', 300)).resolves.toBe(4);
 
     expect(authKv.put).toHaveBeenCalledWith('ip|/sign-in/email', '4', {
-      expiration: now + 90,
+      expirationTtl: 90,
       metadata: { expiresAt: now + 90 },
     });
   });
@@ -158,8 +158,38 @@ describe('secondaryStorage.increment', () => {
     await storage.increment('ip|/sign-in/email', 60);
 
     expect(authKv.put).toHaveBeenCalledWith('ip|/sign-in/email', '3', {
-      expiration: now + 60,
+      expirationTtl: 60,
       metadata: { expiresAt: now + 10 },
+    });
+  });
+
+  it('starts a fresh window once the stored window has ended', async () => {
+    const storage = await secondaryStorage();
+    authKv.getWithMetadata.mockResolvedValueOnce({
+      value: '7',
+      metadata: { expiresAt: now - 5 },
+    });
+
+    await expect(storage.increment('ip|/sign-in/email', 120)).resolves.toBe(1);
+
+    expect(authKv.put).toHaveBeenCalledWith('ip|/sign-in/email', '1', {
+      expirationTtl: 120,
+      metadata: { expiresAt: now + 120 },
+    });
+  });
+
+  it('starts a fresh window when the stored window ends this second', async () => {
+    const storage = await secondaryStorage();
+    authKv.getWithMetadata.mockResolvedValueOnce({
+      value: '7',
+      metadata: { expiresAt: now },
+    });
+
+    await expect(storage.increment('ip|/sign-in/email', 60)).resolves.toBe(1);
+
+    expect(authKv.put).toHaveBeenCalledWith('ip|/sign-in/email', '1', {
+      expirationTtl: 60,
+      metadata: { expiresAt: now + 60 },
     });
   });
 
@@ -170,7 +200,7 @@ describe('secondaryStorage.increment', () => {
     await expect(storage.increment('ip|/sign-in/email', 60)).resolves.toBe(1);
 
     expect(authKv.put).toHaveBeenCalledWith('ip|/sign-in/email', '1', {
-      expiration: now + 60,
+      expirationTtl: 60,
       metadata: { expiresAt: now + 60 },
     });
   });
