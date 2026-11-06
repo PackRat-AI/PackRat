@@ -18,8 +18,10 @@ struct TripDetailView: View {
         viewModel.trips.first { $0.id == openedTrip.id } ?? openedTrip
     }
 
-    /// Over once its last day has passed, the point a trip can be logged.
+    /// Over once it's been finished or its last day has passed, the point a
+    /// trip can be logged.
     private var isFinished: Bool {
+        if trip.lifecycle == .complete { return true }
         guard let end = (trip.endDate ?? trip.startDate)?.toDate() else { return false }
         return Calendar.current.startOfDay(for: end) < Calendar.current.startOfDay(for: .now)
     }
