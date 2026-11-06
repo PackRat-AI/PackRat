@@ -282,6 +282,13 @@ enum VoiceCommandSettings {
             && (UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true)
     }
 
+    /// Spoken distances follow the units the trip page shows, which come
+    /// from the speed unit: mph means miles and feet.
+    static var metric: Bool {
+        let unit = UserDefaults.standard.string(forKey: "speedUnit").flatMap(SpeedUnit.init(rawValue:)) ?? .mph
+        return TripDistanceUnit(speedUnit: unit) == .metric
+    }
+
     static var speaksAnswers: Bool {
         UserDefaults.standard.object(forKey: spokenAnswersKey) as? Bool ?? true
     }

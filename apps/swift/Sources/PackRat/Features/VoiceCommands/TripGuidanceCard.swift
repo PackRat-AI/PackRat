@@ -130,7 +130,7 @@ struct TripGuidanceCard: View {
                         .font(.headline)
                         .monospacedDigit()
                         .contentTransition(.numericText())
-                    Text("to \(guideState.plan.destination.name.capitalizedFirstLetter)")
+                    Text("to \(guideState.plan.destination.name)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -168,8 +168,8 @@ struct TripGuidanceCard: View {
             return Maneuver(
                 symbol: "location.north.fill",
                 tint: .accentColor,
-                headline: shortDistance(guideState.remainingMeters),
-                detail: "Head \(Geo.compassName(session.bearing))."
+                headline: "Head \(Geo.compassName(session.bearing).capitalized)",
+                detail: "Straight to \(guideState.plan.destination.name)."
             )
         }
         if let turn = guideState.nextTurn, let along = guideState.progress?.alongMeters {
@@ -183,8 +183,8 @@ struct TripGuidanceCard: View {
         return Maneuver(
             symbol: "arrow.up",
             tint: .accentColor,
-            headline: shortDistance(guideState.remainingMeters),
-            detail: "Continue on your route."
+            headline: "Continue on Route",
+            detail: "Then arrive at \(guideState.plan.destination.name)."
         )
     }
 
@@ -202,10 +202,9 @@ struct TripGuidanceCard: View {
         starting = true
         Task {
             defer { starting = false }
-            let metric = UserDefaults.standard.object(forKey: "preferMetric") as? Bool ?? true
             do {
                 let (plan, position) = try await guide.start(tripId: trip.id, tripName: trip.name, to: destination, route: route)
-                guide.announce(VoiceAnswers.navigating(plan, from: position, metric: metric))
+                guide.announce(VoiceAnswers.navigating(plan, from: position, metric: VoiceCommandSettings.metric))
             } catch TripGuide.StartError.denied {
                 problem = "Allow location for PackRat in Settings to be guided."
             } catch TripGuide.StartError.alreadyThere {

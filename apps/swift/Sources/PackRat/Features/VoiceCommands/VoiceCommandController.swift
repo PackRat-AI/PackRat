@@ -34,7 +34,7 @@ final class VoiceCommandController {
     private var speaksAnswers: Bool { VoiceCommandSettings.speaksAnswers }
 
     private var metric: Bool {
-        UserDefaults.standard.object(forKey: "preferMetric") as? Bool ?? true
+        VoiceCommandSettings.metric
     }
 
     /// Everything a command needs from the trip page.

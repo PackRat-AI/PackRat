@@ -350,6 +350,18 @@ struct TripDetailView: View {
                 MapPolyline(coordinates: live.samples.map(\.trackPoint.coordinate))
                     .stroke(.red, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
             }
+            // Where the user is and where guidance is taking them.
+            if TrackRecorder.shared.isRecording(tripId: trip.id) || TripGuide.shared.isGuiding(tripId: trip.id) {
+                UserAnnotation()
+            }
+            if let destination = TripGuide.shared.session.flatMap({ $0.tripId == trip.id ? $0.guide.plan.destination : nil }) {
+                Marker(
+                    destination.name.prefix(1).uppercased() + destination.name.dropFirst(),
+                    systemImage: "flag.checkered",
+                    coordinate: CLLocationCoordinate2D(latitude: destination.point.latitude, longitude: destination.point.longitude)
+                )
+                .tint(.blue)
+            }
             #endif
             ForEach(trip.log?.waypoints ?? []) { waypoint in
                 Marker(
@@ -373,6 +385,10 @@ struct TripDetailView: View {
         .mapControls {
             #if os(macOS)
             MapZoomStepper()
+            #else
+            if TrackRecorder.shared.isRecording(tripId: trip.id) || TripGuide.shared.isGuiding(tripId: trip.id) {
+                MapUserLocationButton()
+            }
             #endif
             MapCompass()
         }

@@ -44,7 +44,7 @@ final class TripGuide: NSObject, CLLocationManagerDelegate {
 
     func isGuiding(tripId: String) -> Bool { session?.tripId == tripId }
 
-    private var metric: Bool { UserDefaults.standard.object(forKey: "preferMetric") as? Bool ?? true }
+    private var metric: Bool { VoiceCommandSettings.metric }
 
     // MARK: - Start and stop
 
