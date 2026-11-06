@@ -41,14 +41,12 @@ struct TripSafetySection: View {
                 startCard
             }
         }
-        .confirmationDialog(
-            "Notify your emergency contacts?",
-            isPresented: $askingToNotify,
-            titleVisibility: .visible
-        ) {
+        // An alert, not a confirmation dialog: Start Trip is gone by the time
+        // this shows, so a popover would point at the wrong card.
+        .alert("Notify your emergency contacts?", isPresented: $askingToNotify) {
             Button("Notify Contacts") { showingSetup = true }
                 .accessibilityIdentifier("trip_start_notify")
-            Button("Start Without Notifying") {}
+            Button("Not Now", role: .cancel) {}
                 .accessibilityIdentifier("trip_start_without_notifying")
         } message: {
             Text("They'll get your plan and when you're due back, and an alert if you don't return on time.")

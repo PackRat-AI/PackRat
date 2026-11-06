@@ -51,12 +51,14 @@ struct TripTrackingSection: View {
             get: { pendingWaypoint != nil },
             set: { if !$0 { pendingWaypoint = nil } }
         )) {
-            TextField("Lake viewpoint", text: $waypointName)
+            TextField("Name", text: $waypointName)
                 .textInputAutocapitalization(.sentences)
+                .submitLabel(.done)
             Button("Save") { saveWaypoint(named: waypointName) }
-            Button("Skip", role: .cancel) { saveWaypoint(named: nil) }
-        } message: {
-            Text("Skip to save it with the time it was marked.")
+                .keyboardShortcut(.defaultAction)
+        }
+        .onAppear {
+            UITextField.appearance(whenContainedInInstancesOf: [UIAlertController.self]).clearButtonMode = .whileEditing
         }
     }
 
@@ -236,7 +238,7 @@ struct TripTrackingSection: View {
                     return
                 }
             }
-            waypointName = ""
+            waypointName = waypoint.name
             pendingWaypoint = waypoint
         }
     }
