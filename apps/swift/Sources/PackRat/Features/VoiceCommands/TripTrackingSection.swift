@@ -13,6 +13,8 @@ struct TripTrackingSection: View {
     @State private var isMarking = false
     @State private var showingLocationDenied = false
     @State private var confirmingStop = false
+    @State private var pendingWaypoint: TripWaypoint?
+    @State private var waypointName = ""
 
     private var unit: TripDistanceUnit { TripDistanceUnit(speedUnit: speedUnit) }
     private var waypoints: [TripWaypoint] { trip.log?.waypoints ?? [] }
@@ -45,11 +47,16 @@ struct TripTrackingSection: View {
         } message: {
             Text("Allow location in Settings to record your hike and mark waypoints.")
         }
-        .confirmationDialog("Stop tracking?", isPresented: $confirmingStop, titleVisibility: .visible) {
-            Button("Stop and Save to Trip Log") { stop() }
-            Button("Keep Tracking", role: .cancel) {}
+        .alert("Name This Waypoint", isPresented: Binding(
+            get: { pendingWaypoint != nil },
+            set: { if !$0 { pendingWaypoint = nil } }
+        )) {
+            TextField("Lake viewpoint", text: $waypointName)
+                .textInputAutocapitalization(.sentences)
+            Button("Save") { saveWaypoint(named: waypointName) }
+            Button("Skip", role: .cancel) { saveWaypoint(named: nil) }
         } message: {
-            Text("The distance, climbing and route you recorded replace those in this trip's log.")
+            Text("Skip to save it with the time it was marked.")
         }
     }
 
@@ -83,21 +90,41 @@ struct TripTrackingSection: View {
                 .accessibilityIdentifier("trip_track_totals")
             }
 
-            HStack(spacing: 10) {
+            VStack(spacing: 10) {
                 if let track {
-                    Button(track.isPaused ? "Resume" : "Pause", systemImage: track.isPaused ? "play.fill" : "pause.fill") {
-                        track.isPaused ? recorder.resume() : recorder.pause()
-                    }
-                    .buttonStyle(.bordered)
-                    .accessibilityIdentifier(track.isPaused ? "trip_track_resume" : "trip_track_pause")
-                    Button("Stop", systemImage: "stop.fill", role: .destructive) { confirmingStop = true }
+                    HStack(spacing: 10) {
+                        Button {
+                            track.isPaused ? recorder.resume() : recorder.pause()
+                        } label: {
+                            Label(track.isPaused ? "Resume" : "Pause", systemImage: track.isPaused ? "play.fill" : "pause.fill")
+                                .lineLimit(1)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier(track.isPaused ? "trip_track_resume" : "trip_track_pause")
+                        Button(role: .destructive) {
+                            confirmingStop = true
+                        } label: {
+                            Label("Stop", systemImage: "stop.fill")
+                                .lineLimit(1)
+                                .frame(maxWidth: .infinity)
+                        }
                         .buttonStyle(.bordered)
                         .accessibilityIdentifier("trip_track_stop")
+                        .confirmationDialog("Stop tracking?", isPresented: $confirmingStop, titleVisibility: .visible) {
+                            Button("Stop and Save to Trip Log") { stop() }
+                            Button("Keep Tracking", role: .cancel) {}
+                        } message: {
+                            Text("The distance, climbing and route you recorded replace those in this trip's log.")
+                        }
+                    }
                 } else {
                     Button {
                         start()
                     } label: {
-                        Label("Start Tracking", systemImage: "record.circle").frame(maxWidth: .infinity)
+                        Label("Start Tracking", systemImage: "record.circle")
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(otherTrack != nil)
@@ -106,12 +133,14 @@ struct TripTrackingSection: View {
                 Button {
                     markWaypoint()
                 } label: {
-                    if isMarking {
-                        ProgressView().frame(maxWidth: track == nil ? nil : .infinity)
-                    } else {
-                        Label("Mark Waypoint", systemImage: "mappin.and.ellipse")
-                            .frame(maxWidth: track == nil ? nil : .infinity)
+                    Group {
+                        if isMarking {
+                            ProgressView()
+                        } else {
+                            Label("Mark Waypoint", systemImage: "mappin.and.ellipse").lineLimit(1)
+                        }
                     }
+                    .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .disabled(isMarking)
@@ -207,8 +236,25 @@ struct TripTrackingSection: View {
                     return
                 }
             }
-            await viewModel.addWaypoint(waypoint, to: trip.id, context: modelContext)
+            waypointName = ""
+            pendingWaypoint = waypoint
         }
+    }
+
+    /// The spot is fixed when Mark Waypoint is tapped, so typing a name
+    /// afterwards doesn't move it.
+    private func saveWaypoint(named name: String?) {
+        guard let marked = pendingWaypoint else { return }
+        pendingWaypoint = nil
+        let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let waypoint = TripWaypoint.named(
+            trimmed.isEmpty ? nil : trimmed,
+            latitude: marked.latitude,
+            longitude: marked.longitude,
+            elevation: marked.elevationMeters,
+            at: (try? Date(marked.createdAt, strategy: .iso8601)) ?? Date()
+        )
+        Task { await viewModel.addWaypoint(waypoint, to: trip.id, context: modelContext) }
     }
 }
 

@@ -99,11 +99,12 @@ struct TripSafetySection: View {
             Text("No one's been told about this trip. Start a safety check-in so someone at home knows when to expect you.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
-            HStack(spacing: 10) {
+            VStack(spacing: 10) {
                 Button {
                     showingSetup = true
                 } label: {
                     Label("Notify Contacts", systemImage: "shield.lefthalf.filled")
+                        .lineLimit(1)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
