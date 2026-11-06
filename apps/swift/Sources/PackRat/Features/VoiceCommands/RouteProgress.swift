@@ -5,7 +5,7 @@ import Foundation
 ///
 /// Works on a local flat projection around each segment, which is accurate to
 /// well under a metre over the few hundred metres between route points.
-struct RouteProgress: Equatable, Sendable {
+struct RouteProgress: Codable, Equatable, Sendable {
     /// Metres from the user to the nearest point on the route.
     let offRouteMeters: Double
     /// Metres along the route to that nearest point.

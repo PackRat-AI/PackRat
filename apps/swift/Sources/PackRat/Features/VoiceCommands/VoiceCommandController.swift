@@ -183,6 +183,12 @@ final class VoiceCommandController {
             ))
 
         case .howFarToGo, .amIOnRoute:
+            if let session = TripGuide.shared.session, session.tripId == trip.id {
+                if command == .howFarToGo {
+                    return await respond(VoiceAnswers.guidanceRemaining(session.guide, toward: session.bearing, metric: metric))
+                }
+                if let progress = session.guide.progress { return await respond(VoiceAnswers.onRoute(progress, metric: metric)) }
+            }
             guard let route = trip.plannedRoute, route.count >= 2 else { return await respond(VoiceAnswers.noRoute) }
             guard let fix = await currentFix(), let progress = RouteProgress(position: fix.point, route: route) else {
                 return await respond(noFixAnswer)
@@ -203,6 +209,14 @@ final class VoiceCommandController {
 
         case .startTracking, .pauseTracking, .resumeTracking, .stopTracking, .trackSoFar:
             await performTracking(command, context)
+
+        case .navigate(let spoken):
+            await navigate(to: spoken, context)
+
+        case .stopNavigating:
+            guard TripGuide.shared.isGuiding(tripId: trip.id) else { return await respond(VoiceAnswers.notNavigating) }
+            TripGuide.shared.stop()
+            await respond(VoiceAnswers.navigationStopped(tracking: TrackRecorder.shared.isRecording(tripId: trip.id)))
 
         case .markWaypoint(let name):
             guard let fix = await waypointFix() else { return await respond(noFixAnswer) }
@@ -264,6 +278,30 @@ final class VoiceCommandController {
 
         default:
             break
+        }
+    }
+
+    private func navigate(to spoken: String, _ context: Context) async {
+        let trip = context.trip
+        let guide = TripGuide.shared
+        guard trip.lifecycle != .complete else { return await respond(VoiceAnswers.tripEnded) }
+        if let other = guide.session, other.tripId != trip.id {
+            return await respond(VoiceAnswers.navigatingOtherTrip(other.tripName))
+        }
+        let waypoints = trip.log?.waypoints ?? []
+        guard let destination = GuidanceDestination.resolve(spoken, waypoints: waypoints, route: trip.plannedRoute) else {
+            let options = GuidanceDestination.options(waypoints: waypoints, route: trip.plannedRoute)
+            return await respond(options.isEmpty ? VoiceAnswers.noDestinations : VoiceAnswers.unknownDestination(spoken, options: options))
+        }
+        do {
+            let (plan, position) = try await guide.start(tripId: trip.id, tripName: trip.name, to: destination, route: trip.plannedRoute)
+            await respond(VoiceAnswers.navigating(plan, from: position, metric: metric))
+        } catch TripGuide.StartError.denied {
+            await respond(VoiceAnswers.locationDenied)
+        } catch TripGuide.StartError.alreadyThere {
+            await respond(VoiceAnswers.alreadyThere(destination.name))
+        } catch {
+            await respond(VoiceAnswers.noFix)
         }
     }
 

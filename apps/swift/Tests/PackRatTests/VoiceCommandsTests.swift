@@ -337,3 +337,115 @@ struct TripLogWaypointTests {
         #expect(old.waypoints.isEmpty)
     }
 }
+
+@Suite("Turn-by-turn guidance")
+struct GuidanceTests {
+    // North for about 1.1 km, then a right turn east for about 1.1 km.
+    private let route = [
+        TripRoutePoint(latitude: 47.0, longitude: -120.0),
+        TripRoutePoint(latitude: 47.01, longitude: -120.0),
+        TripRoutePoint(latitude: 47.01, longitude: -119.985),
+    ]
+    private let start = Date(timeIntervalSince1970: 1_800_000_000)
+
+    private func waypoint(_ name: String, _ latitude: Double, _ longitude: Double, note: String? = nil) -> TripWaypoint {
+        TripWaypoint(id: name, name: name, note: note, latitude: latitude, longitude: longitude, createdAt: "2026-11-06T12:00:00Z")
+    }
+
+    @Test("navigation in its natural phrasings", arguments: [
+        ("Navigate to camp", VoiceCommand.navigate(to: "camp")),
+        ("take me back to the car", .navigate(to: "the car")),
+        ("guide me to the end of the route", .navigate(to: "the end of the route")),
+        ("Stop navigating", .stopNavigating),
+        ("cancel navigation", .stopNavigating),
+        ("how far to go to camp", .howFarToGo),
+    ])
+    func phrasings(_ transcript: String, _ expected: VoiceCommand) {
+        #expect(VoiceCommandParser.parse(transcript) == expected)
+    }
+
+    @Test("a destination is a marked waypoint first, then an end of the route")
+    func resolve() throws {
+        let waypoints = [waypoint("Camp", 47.01, -119.99), waypoint("Water source", 47.005, -120.0)]
+        #expect(GuidanceDestination.resolve("camp", waypoints: waypoints, route: route)?.name == "Camp")
+        #expect(GuidanceDestination.resolve("the water", waypoints: waypoints, route: route)?.name == "Water source")
+        let car = try #require(GuidanceDestination.resolve("the car", waypoints: waypoints, route: route))
+        #expect(car.name == GuidanceDestination.startName && car.point == route[0])
+        #expect(GuidanceDestination.resolve("end of the route", waypoints: [], route: route)?.point == route[2])
+        #expect(GuidanceDestination.resolve("the bridge", waypoints: waypoints, route: route) == nil)
+        #expect(GuidanceDestination.resolve("the trailhead", waypoints: [], route: nil) == nil)
+        #expect(GuidanceDestination.options(waypoints: waypoints, route: route) == ["Water source", "Camp", "the trailhead", "the end of your route"])
+    }
+
+    @Test("a destination on the route is reached along it, with its one real turn")
+    func plan() throws {
+        let plan = GuidancePlan(from: route[0], to: .init(name: "the end of your route", point: route[2]), route: route)
+        let path = try #require(plan.path)
+        #expect(path.first == route[0] && path.last == route[2])
+        #expect(abs(plan.lengthMeters - 2_250) < 20)
+        let turn = try #require(plan.turns.first)
+        #expect(plan.turns.count == 1)
+        #expect(abs(turn.degrees - 90) < 5)
+        #expect(turn.maneuver == "turn right")
+        #expect(Geo.compassName(turn.headingAfter) == "east")
+    }
+
+    @Test("heading back to the trailhead runs the route backwards")
+    func backwards() throws {
+        let here = TripRoutePoint(latitude: 47.01, longitude: -119.99)
+        let plan = GuidancePlan(from: here, to: .init(name: GuidanceDestination.startName, point: route[0]), route: route)
+        let path = try #require(plan.path)
+        #expect(Geo.distance(path[0], here) < 5)
+        #expect(path.last == route[0])
+        #expect(plan.turns.first?.maneuver == "turn left")
+    }
+
+    @Test("a destination off the route is pointed to straight")
+    func straight() {
+        let plan = GuidancePlan(from: route[0], to: .init(name: "the lake", point: .init(latitude: 47.0, longitude: -119.97)), route: route)
+        #expect(plan.path == nil && plan.turns.isEmpty)
+        #expect(VoiceAnswers.navigating(plan, from: route[0], metric: false) == "The lake is 1.4 miles east of you. I'll tell you when you're there.")
+    }
+
+    @Test("switchbacks on a climb aren't each called out")
+    func switchbacks() {
+        var zigzag: [TripRoutePoint] = []
+        for index in 0...8 {
+            zigzag.append(.init(latitude: 47.0 + Double(index) * 0.0008, longitude: index.isMultiple(of: 2) ? -120.0 : -119.999))
+        }
+        #expect(GuidancePlan.turns(along: zigzag).isEmpty)
+    }
+
+    @Test("the turn is said once, a little before it")
+    func turnPrompt() {
+        var guide = RouteGuide(plan: GuidancePlan(from: route[0], to: .init(name: "camp", point: route[2]), route: route))
+        #expect(guide.update(position: .init(latitude: 47.005, longitude: -120.0), at: start, metric: false).isEmpty)
+        let prompts = guide.update(position: .init(latitude: 47.009, longitude: -120.0), at: start + 60, metric: false)
+        #expect(prompts == [GuidancePrompt(kind: .turn, text: "In 350 feet, turn right, heading east.")])
+        #expect(guide.update(position: .init(latitude: 47.0095, longitude: -120.0), at: start + 90, metric: false).isEmpty)
+    }
+
+    @Test("halfway, then arrival")
+    func milestones() {
+        var guide = RouteGuide(plan: GuidancePlan(from: route[0], to: .init(name: "camp", point: route[2]), route: route))
+        _ = guide.update(position: .init(latitude: 47.009, longitude: -120.0), at: start, metric: false)
+        let halfway = guide.update(position: .init(latitude: 47.01, longitude: -119.9995), at: start + 60, metric: false)
+        #expect(halfway.map(\.kind) == [.milestone])
+        #expect(halfway.first?.text == "Halfway to camp. Three quarters of a mile to go.")
+        let arrived = guide.update(position: .init(latitude: 47.01, longitude: -119.9852), at: start + 900, metric: false)
+        #expect(arrived == [GuidancePrompt(kind: .arrived, text: "You've reached camp.")])
+        #expect(guide.hasArrived)
+    }
+
+    @Test("off route is said after a while, once, then again only further away")
+    func offRoute() {
+        var guide = RouteGuide(plan: GuidancePlan(from: route[0], to: .init(name: "camp", point: route[2]), route: route))
+        let east = TripRoutePoint(latitude: 47.005, longitude: -119.996)
+        #expect(guide.update(position: east, at: start, metric: false).isEmpty)
+        #expect(guide.update(position: east, at: start + 25, metric: false)
+            == [GuidancePrompt(kind: .offRoute, text: "You're off route. Head west about 1,000 feet to rejoin it.")])
+        #expect(guide.update(position: east, at: start + 60, metric: false).isEmpty)
+        #expect(guide.update(position: .init(latitude: 47.005, longitude: -119.992), at: start + 90, metric: false).map(\.kind) == [.offRoute])
+        #expect(guide.update(position: .init(latitude: 47.005, longitude: -120.0), at: start + 120, metric: false).first?.text == "You're back on route.")
+    }
+}

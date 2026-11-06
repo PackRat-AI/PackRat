@@ -26,6 +26,7 @@ struct TripTrackingSection: View {
         guard VoiceCommandSettings.isAvailable else { return false }
         return trip.lifecycle == .inProgress
             || TrackRecorder.shared.isRecording(tripId: trip.id)
+            || TripGuide.shared.isGuiding(tripId: trip.id)
             || trip.log?.waypoints.isEmpty == false
     }
 
@@ -33,6 +34,9 @@ struct TripTrackingSection: View {
         VStack(alignment: .leading, spacing: 14) {
             if trip.lifecycle == .inProgress || track != nil {
                 trackCard
+            }
+            if TripGuidanceCard.shows(for: trip) {
+                TripGuidanceCard(trip: trip)
             }
             if !waypoints.isEmpty {
                 waypointList

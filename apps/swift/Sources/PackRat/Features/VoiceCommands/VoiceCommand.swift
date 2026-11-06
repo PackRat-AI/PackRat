@@ -24,6 +24,9 @@ enum VoiceCommand: Equatable, Sendable {
     case markWaypoint(name: String?)
     /// "Note: trail washed out past the bridge", in the user's own words.
     case note(text: String)
+    /// "Navigate to camp": the place as said, matched against the trip later.
+    case navigate(to: String)
+    case stopNavigating
 
     /// Commands that tell other people something, so they're read back and
     /// need a spoken yes before they run.
@@ -53,6 +56,7 @@ enum VoiceCommandParser {
         // A note is the user's own words, so it's caught before anything in
         // them ("note: I'm safe at camp") can read as a command.
         if let note = parseNote(transcript) { return .note(text: note) }
+        if let navigation = parseNavigation(text) { return navigation }
         if let waypoint = parseWaypoint(text) { return waypoint }
         if let tracking = parseTracking(text) { return tracking }
 
@@ -114,6 +118,27 @@ enum VoiceCommandParser {
             return .trackSoFar
         }
         return nil
+    }
+
+    private static let navigatePhrases = [
+        "navigate to", "navigate back to", "take me to", "take me back to", "guide me to", "guide me back to",
+        "directions to", "lead me to", "get me to", "get me back to", "head to", "head back to", "go to", "go back to",
+        "way to", "way back to",
+    ]
+
+    /// "Navigate to camp", "take me back to the car". Stopping comes first so
+    /// "stop navigating to camp" stops rather than starts.
+    private static func parseNavigation(_ text: String) -> VoiceCommand? {
+        if containsAny(text, ["stop navigating", "stop navigation", "end navigation", "cancel navigation", "stop guidance", "end guidance", "stop directions", "cancel directions", "stop guiding"]) {
+            return .stopNavigating
+        }
+        // "How far to go to camp" is a question, not a request to go there.
+        guard !text.hasPrefix("how ") else { return nil }
+        let padded = " \(text) "
+        guard let phrase = navigatePhrases.first(where: { padded.contains(" \($0) ") }),
+              let range = padded.range(of: " \(phrase) ")
+        else { return nil }
+        return .navigate(to: padded[range.upperBound...].trimmingCharacters(in: .whitespaces))
     }
 
     private static let waypointPhrases = [
@@ -247,6 +272,10 @@ enum VoiceCommandSettings {
     static let flagKey = "enableVoiceCommands"
     static let enabledKey = "voiceCommandsEnabled"
     static let spokenAnswersKey = "voiceSpokenAnswers"
+    static let turnPromptsKey = "voiceGuidanceTurns"
+    static let milestonesKey = "voiceGuidanceMilestones"
+    static let offRouteKey = "voiceGuidanceOffRoute"
+    static let vibrateOnlyKey = "voiceGuidanceVibrateOnly"
 
     static var isAvailable: Bool {
         FeatureFlagStore.shared.isEnabled(flagKey)
@@ -255,5 +284,21 @@ enum VoiceCommandSettings {
 
     static var speaksAnswers: Bool {
         UserDefaults.standard.object(forKey: spokenAnswersKey) as? Bool ?? true
+    }
+
+    /// Whether guidance says this kind of prompt at all.
+    static func allows(_ kind: GuidancePrompt.Kind) -> Bool {
+        let key: String
+        switch kind {
+        case .turn: key = turnPromptsKey
+        case .milestone: key = milestonesKey
+        case .offRoute: key = offRouteKey
+        case .arrived: return true
+        }
+        return UserDefaults.standard.object(forKey: key) as? Bool ?? true
+    }
+
+    static var guidanceVibratesOnly: Bool {
+        UserDefaults.standard.bool(forKey: vibrateOnlyKey)
     }
 }

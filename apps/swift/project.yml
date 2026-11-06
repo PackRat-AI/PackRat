@@ -156,6 +156,7 @@ targets:
           NSAllowsLocalNetworking: true
         # Pre-trip reminders refresh the destination forecast in the background.
         UIBackgroundModes:
+          - audio
           - fetch
           - location
         BGTaskSchedulerPermittedIdentifiers:

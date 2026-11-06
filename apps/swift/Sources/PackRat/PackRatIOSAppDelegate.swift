@@ -17,6 +17,7 @@ final class PackRatIOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
             SafetyLocationTracker.shared.resumeIfNeeded()
             // Carry on a hike recording PackRat was closed in the middle of.
             TrackRecorder.shared.resumeIfNeeded()
+            TripGuide.shared.resumeIfNeeded()
         }
         return true
     }

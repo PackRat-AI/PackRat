@@ -3,7 +3,7 @@ import Foundation
 /// The sentences PackRat says back. Kept apart from the controller so every
 /// answer can be checked without a microphone or a location fix.
 enum VoiceAnswers {
-    static let notHeard = "Sorry, I didn't catch that. You can say start tracking, mark waypoint, note, how far have I gone, check in, where am I, how far to go, am I on route, when am I due back, add an hour, weather, or I'm safe."
+    static let notHeard = "Sorry, I didn't catch that. You can say start tracking, mark waypoint, note, how far have I gone, navigate to, check in, where am I, how far to go, am I on route, when am I due back, add an hour, weather, or I'm safe."
     static let noTrip = "There's no trip in progress."
     static let noRoute = "This trip doesn't have a planned route."
     static let noCheckIn = "This trip doesn't have a return time. Notify your contacts from the trip page to set one."
@@ -198,6 +198,79 @@ enum VoiceAnswers {
 
     static func waypointMarked(_ name: String) -> String { "Marked \(name)." }
     static let noteSaved = "Note saved here."
+
+    // MARK: - Guidance
+
+    static let noDestinations = "There's nowhere to navigate to yet. Mark a waypoint or add a planned route first."
+    static let notNavigating = "You're not navigating anywhere."
+    static let backOnRoute = "You're back on route."
+
+    static func navigationStopped(tracking: Bool) -> String {
+        tracking ? "Navigation stopped. Tracking carries on." : "Navigation stopped."
+    }
+
+    static func navigatingOtherTrip(_ name: String) -> String {
+        "You're navigating on \(name). Stop that first."
+    }
+
+    /// "I couldn't find the bridge. You can navigate to Camp, Water source, the trailhead or the end of your route."
+    static func unknownDestination(_ spoken: String, options: [String]) -> String {
+        let heard = spoken.isEmpty ? "that place" : spoken
+        guard !options.isEmpty else { return "I couldn't find \(heard). \(noDestinations)" }
+        return "I couldn't find \(heard). You can navigate to \(list(options))."
+    }
+
+    static func alreadyThere(_ name: String) -> String { "You're already at \(name)." }
+
+    /// Said when guidance starts.
+    static func navigating(_ plan: GuidancePlan, from position: TripRoutePoint, metric: Bool) -> String {
+        let name = plan.destination.name
+        let length = distance(plan.lengthMeters, metric: metric)
+        if plan.path != nil { return "Navigating to \(name) along your route. \(length.capitalizedFirst) to go." }
+        let toward = Geo.compassName(Geo.bearing(from: position, to: plan.destination.point))
+        return "\(name.capitalizedFirst) is \(length) \(toward) of you. I'll tell you when you're there."
+    }
+
+    /// "How far to go" while navigating.
+    static func guidanceRemaining(_ guide: RouteGuide, toward bearing: Double?, metric: Bool) -> String {
+        var sentence = "\(distance(guide.remainingMeters, metric: metric).capitalizedFirst) to \(guide.plan.destination.name)"
+        if guide.plan.path == nil, let bearing { sentence += ", \(Geo.compassName(bearing))" }
+        sentence += "."
+        if let progress = guide.progress, !progress.isOnRoute {
+            sentence += " You're \(distance(progress.offRouteMeters, metric: metric)) off your route."
+        }
+        return sentence
+    }
+
+    /// "In 400 feet, bear left, heading north-east."
+    static func turnAhead(_ turn: GuidanceTurn, inMeters ahead: Double, metric: Bool) -> String {
+        let heading = Geo.compassName(turn.headingAfter)
+        if ahead < 30 { return "\(turn.maneuver.capitalizedFirst) now, heading \(heading)." }
+        return "In \(distance(ahead, metric: metric)), \(turn.maneuver), heading \(heading)."
+    }
+
+    /// "You're off route. Head east about 300 feet to rejoin it."
+    static func offRoute(_ progress: RouteProgress, metric: Bool) -> String {
+        "You're off route. Head \(Geo.compassName(progress.bearingToRoute)) about \(distance(progress.offRouteMeters, metric: metric)) to rejoin it."
+    }
+
+    static func halfway(to name: String, remaining: Double, metric: Bool, toward bearing: Double?) -> String {
+        let direction = bearing.map { ", \(Geo.compassName($0))" } ?? ""
+        return "Halfway to \(name). \(distance(remaining, metric: metric).capitalizedFirst) to go\(direction)."
+    }
+
+    static func lastLeg(to name: String, metric: Bool, toward bearing: Double?) -> String {
+        let direction = bearing.map { ", \(Geo.compassName($0))" } ?? ""
+        return "\(metric ? "1 kilometre" : "1 mile") to \(name)\(direction)."
+    }
+
+    static func arrived(_ name: String) -> String { "You've reached \(name)." }
+
+    /// "A, B or C".
+    private static func list(_ items: [String]) -> String {
+        guard items.count > 1, let last = items.last else { return items.first ?? "" }
+        return items.dropLast().joined(separator: ", ") + " or " + last
+    }
 
     // MARK: - Time
 

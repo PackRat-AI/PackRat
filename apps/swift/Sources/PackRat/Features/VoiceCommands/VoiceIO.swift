@@ -32,6 +32,8 @@ final class VoiceSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         }
     }
 
+    var isSpeaking: Bool { synthesizer.isSpeaking }
+
     func stop() {
         synthesizer.stopSpeaking(at: .immediate)
         resumeFinished()

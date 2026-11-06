@@ -52,6 +52,10 @@ struct PreferencesView: View {
     @AppStorage("apiBaseURL") private var apiBaseURL: String = ""
     @AppStorage(VoiceCommandSettings.enabledKey) private var voiceCommandsEnabled = true
     @AppStorage(VoiceCommandSettings.spokenAnswersKey) private var voiceSpokenAnswers = true
+    @AppStorage(VoiceCommandSettings.turnPromptsKey) private var guidanceTurns = true
+    @AppStorage(VoiceCommandSettings.milestonesKey) private var guidanceMilestones = true
+    @AppStorage(VoiceCommandSettings.offRouteKey) private var guidanceOffRoute = true
+    @AppStorage(VoiceCommandSettings.vibrateOnlyKey) private var guidanceVibrateOnly = false
 
     @State private var showingClearDataConfirm = false
     /// Owned here, at the screen root, so the paywall presents reliably —
@@ -303,6 +307,24 @@ struct PreferencesView: View {
                 Text(voiceSpokenAnswers || !voiceCommandsEnabled
                     ? "Talk to PackRat on a trip page to check in, hear where you are or find out how far you have to go."
                     : "Answers appear on screen without being read aloud.")
+            }
+            if voiceCommandsEnabled {
+                Section {
+                    Toggle("Turn Prompts", isOn: $guidanceTurns)
+                        .accessibilityIdentifier("settings_guidance_turns_toggle")
+                    Toggle("Milestones", isOn: $guidanceMilestones)
+                        .accessibilityIdentifier("settings_guidance_milestones_toggle")
+                    Toggle("Off-Route Warnings", isOn: $guidanceOffRoute)
+                        .accessibilityIdentifier("settings_guidance_off_route_toggle")
+                    Toggle("Vibrate Only", isOn: $guidanceVibrateOnly)
+                        .accessibilityIdentifier("settings_guidance_vibrate_only_toggle")
+                } header: {
+                    Text("Guidance")
+                } footer: {
+                    Text(guidanceVibrateOnly
+                        ? "Your phone vibrates at each prompt, and the trip page shows what it's about."
+                        : "What PackRat says while guiding you to a waypoint or along your route.")
+                }
             }
         }
         #endif
