@@ -12,6 +12,9 @@ struct TripVoiceBar: View {
     @State private var controller = VoiceCommandController.shared
     @State private var wakeWord = WakeWordListener.shared
     @AppStorage(VoiceCommandSettings.wakeWordKey) private var wakeWordOn = false
+    @AppStorage(VoiceCommandSettings.wakeWordOfferedKey) private var wakeWordOffered = false
+    @State private var showingCommands = false
+    @State private var offeringWakeWord = false
     /// Resets on its own when the touch is cancelled, such as by a permission
     /// alert, so the button never sticks in the listening state.
     @GestureState private var pressing = false
@@ -38,13 +41,10 @@ struct TripVoiceBar: View {
             VStack(spacing: 6) {
                 micButton
                 // Stays while an answer is on screen; hidden only while PackRat
-                // is mid-command, when it isn't listening for the phrase.
-                if wakeWord.isArmed, controller.phase == .idle || controller.phase == .answering {
-                    Label("Say “Hey PackRat” anytime", systemImage: "ear")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                // is mid-command.
+                if controller.phase == .idle || controller.phase == .answering {
+                    hint
                         .transition(.opacity)
-                        .accessibilityIdentifier("trip_voice_wake_word")
                 }
             }
         }
@@ -53,6 +53,20 @@ struct TripVoiceBar: View {
         .animation(.snappy, value: controller.phase)
         .animation(.snappy, value: wakeWord.isArmed)
         .onDisappear { controller.dismiss() }
+        .sheet(isPresented: $showingCommands) { VoiceCommandsSheet() }
+        // Offered once, when a trip first gets underway, rather than left for
+        // the user to find in Settings.
+        .task(id: "\(trip.lifecycle)-\(controller.phase)") { offerWakeWordIfNeeded() }
+        .alert("Talk to PackRat Hands-Free?", isPresented: $offeringWakeWord) {
+            Button("Turn On") {
+                wakeWordOffered = true
+                wakeWordOn = true
+                if VoiceListener.needsPermission { Task { try? await VoiceListener.requestPermissions() } }
+            }
+            Button("Not Now", role: .cancel) { wakeWordOffered = true }
+        } message: {
+            Text("Say “Hey PackRat” and a command while your trip is underway, even with your phone locked. You can turn this off in Settings.")
+        }
         // Hands-free listening follows the trip: on while it's underway and
         // the user has turned it on, off once it ends.
         .task(id: "\(trip.id)-\(trip.lifecycle)-\(wakeWordOn)") {
@@ -62,6 +76,49 @@ struct TripVoiceBar: View {
                 wakeWord.disarm(tripId: trip.id)
             }
         }
+    }
+
+    private func offerWakeWordIfNeeded() {
+        guard trip.lifecycle == .inProgress, !wakeWordOn, !wakeWordOffered, controller.phase == .idle else { return }
+        offeringWakeWord = true
+    }
+
+    /// A command worth trying now, changing every few seconds; a tap opens
+    /// the full list.
+    private var hint: some View {
+        Button {
+            showingCommands = true
+        } label: {
+            TimelineView(.periodic(from: .now, by: 5)) { timeline in
+                let example = currentExample(at: timeline.date)
+                HStack(spacing: 4) {
+                    Image(systemName: wakeWord.isArmed ? "ear" : "lightbulb")
+                    Text(wakeWord.isArmed ? "Say “Hey PackRat, \(example)”" : "Try saying “\(example)”")
+                        .contentTransition(.opacity)
+                        .animation(.easeInOut, value: example)
+                    Image(systemName: "info.circle")
+                }
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("What you can say")
+        .accessibilityHint("Shows every voice command.")
+        .accessibilityIdentifier("trip_voice_hint")
+    }
+
+    private func currentExample(at date: Date) -> String {
+        let examples = VoiceExamples.current(
+            lifecycle: trip.lifecycle,
+            tracking: TrackRecorder.shared.isRecording(tripId: trip.id),
+            guiding: TripGuide.shared.isGuiding(tripId: trip.id),
+            hasCheckIn: SafetyCheckInStore.shared.checkIn(forTrip: trip.id) != nil,
+            hasRoute: (trip.plannedRoute?.count ?? 0) >= 2
+        )
+        return examples[Int(date.timeIntervalSinceReferenceDate / 5) % examples.count]
     }
 
     private var banner: some View {

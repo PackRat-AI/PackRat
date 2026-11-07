@@ -30,8 +30,7 @@ final class VoiceSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         resumeFinished()
         VoiceAudioSession.activate()
         let utterance = AVSpeechUtterance(string: VoiceAnswers.speakable(text))
-        utterance.voice = AVSpeechSynthesisVoice(language: Locale.current.identifier.replacingOccurrences(of: "_", with: "-"))
-            ?? AVSpeechSynthesisVoice(language: "en-US")
+        utterance.voice = voice
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         await withCheckedContinuation { continuation in
             finished = continuation
@@ -40,6 +39,35 @@ final class VoiceSpeaker: NSObject, AVSpeechSynthesizerDelegate {
     }
 
     var isSpeaking: Bool { synthesizer.isSpeaking }
+
+    /// Picked once: the phone's voices don't change mid-trip.
+    private lazy var voice: AVSpeechSynthesisVoice? = {
+        let picked = Self.bestVoice(among: AVSpeechSynthesisVoice.speechVoices())
+        VoiceLog.note("Speaking with \(picked?.identifier ?? "the system default"), quality \(picked?.quality.rawValue ?? 0)")
+        return picked
+    }()
+
+    /// The most natural voice on the phone in the user's language: premium,
+    /// then enhanced (both downloaded in Settings, under Accessibility, then
+    /// Spoken Content), then the standard one; the user's own region first
+    /// within each, then US English. Novelty voices are never picked.
+    nonisolated static func bestVoice(among voices: [AVSpeechSynthesisVoice], locale: Locale = .current) -> AVSpeechSynthesisVoice? {
+        let language = locale.language.languageCode?.identifier ?? "en"
+        let region = locale.region.map { "\(language)-\($0.identifier)" }
+        func rank(_ voice: AVSpeechSynthesisVoice) -> (Int, Int) {
+            let quality: Int
+            switch voice.quality {
+            case .premium: quality = 2
+            case .enhanced: quality = 1
+            default: quality = 0
+            }
+            let place = voice.language == region ? 2 : voice.language == "\(language)-US" ? 1 : 0
+            return (quality, place)
+        }
+        return voices
+            .filter { $0.language.hasPrefix(language) && !$0.voiceTraits.contains(.isNoveltyVoice) && !$0.voiceTraits.contains(.isPersonalVoice) }
+            .max { rank($0) < rank($1) }
+    }
 
     func stop() {
         synthesizer.stopSpeaking(at: .immediate)

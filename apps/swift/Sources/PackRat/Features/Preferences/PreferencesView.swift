@@ -326,6 +326,8 @@ struct PreferencesView: View {
                         .accessibilityIdentifier("settings_voice_spoken_answers_toggle")
                     Toggle("Spoken Safety Alerts", isOn: $safetyAlertsSpoken)
                         .accessibilityIdentifier("settings_voice_safety_alerts_toggle")
+                    NavigationLink("What You Can Say") { VoiceCommandsList() }
+                        .accessibilityIdentifier("settings_voice_commands_list")
                 }
             } header: {
                 Text("Voice")

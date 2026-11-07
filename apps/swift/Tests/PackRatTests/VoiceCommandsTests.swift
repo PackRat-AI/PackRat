@@ -534,4 +534,23 @@ struct SiriTripTests {
         #expect(VoiceCommandHost.activeTrip(in: [trip("done", .complete)], preferring: ["done"], now: Date()) == nil)
     }
 }
+@Suite("Voice hints")
+struct VoiceExampleTests {
+    @Test("before the trip, starting it; underway, what fits what's running")
+    func examples() {
+        #expect(VoiceExamples.current(lifecycle: .planned, tracking: false, guiding: false, hasCheckIn: false, hasRoute: true).first == "start my trip")
+        let tracking = VoiceExamples.current(lifecycle: .inProgress, tracking: true, guiding: false, hasCheckIn: false, hasRoute: true)
+        #expect(tracking.contains("how far have I gone"))
+        #expect(!tracking.contains("start tracking"))
+        #expect(tracking.contains("take me back to the trailhead"))
+        let guiding = VoiceExamples.current(lifecycle: .inProgress, tracking: false, guiding: true, hasCheckIn: true, hasRoute: true)
+        #expect(guiding.contains("stop navigating"))
+        #expect(guiding.contains("add an hour"))
+        #expect(!guiding.contains("take me back to the trailhead"))
+        // Every example is something the parser acts on.
+        for example in tracking + guiding {
+            #expect(VoiceCommandParser.parse(example) != nil, "\(example)")
+        }
+    }
+}
 #endif

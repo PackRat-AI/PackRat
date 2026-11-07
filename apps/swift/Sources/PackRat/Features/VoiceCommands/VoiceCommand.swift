@@ -278,6 +278,8 @@ enum VoiceCommandSettings {
     static let vibrateOnlyKey = "voiceGuidanceVibrateOnly"
     static let wakeWordKey = "voiceWakeWord"
     static let safetyAlertsSpokenKey = "voiceSafetyAlertsSpoken"
+    static let wakeWordOfferedKey = "voiceWakeWordOffered"
+    static let siriTipVisibleKey = "voiceSiriTipVisible"
 
     static var isAvailable: Bool {
         FeatureFlagStore.shared.isEnabled(flagKey)

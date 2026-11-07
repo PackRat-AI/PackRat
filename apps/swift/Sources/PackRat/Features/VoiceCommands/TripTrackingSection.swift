@@ -1,4 +1,5 @@
 #if os(iOS)
+import AppIntents
 import SwiftUI
 
 /// Recording the hike and marking places along it, on the trip page while the
@@ -15,6 +16,8 @@ struct TripTrackingSection: View {
     @State private var confirmingStop = false
     @State private var pendingWaypoint: TripWaypoint?
     @State private var waypointName = ""
+    /// Apple's Siri tip, until the user closes it.
+    @AppStorage(VoiceCommandSettings.siriTipVisibleKey) private var siriTipVisible = true
 
     private var unit: TripDistanceUnit { TripDistanceUnit(speedUnit: speedUnit) }
     private var waypoints: [TripWaypoint] { trip.log?.waypoints ?? [] }
@@ -34,6 +37,10 @@ struct TripTrackingSection: View {
         VStack(alignment: .leading, spacing: 14) {
             if trip.lifecycle == .inProgress || track != nil {
                 trackCard
+            }
+            if trip.lifecycle == .inProgress, siriTipVisible {
+                SiriTipView(intent: TripCommandIntent(action: .whereAmI), isVisible: $siriTipVisible)
+                    .accessibilityIdentifier("trip_siri_tip")
             }
             if TripGuidanceCard.shows(for: trip) {
                 TripGuidanceCard(trip: trip)
