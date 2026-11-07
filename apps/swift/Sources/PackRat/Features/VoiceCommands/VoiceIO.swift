@@ -1,6 +1,7 @@
 #if os(iOS)
 import AVFoundation
 import Foundation
+import Sentry
 import Speech
 import UIKit
 
@@ -58,16 +59,18 @@ final class VoiceSpeaker: NSObject, AVSpeechSynthesizerDelegate {
 /// at once, prefer a Bluetooth headset, otherwise the loudspeaker, and duck
 /// whatever else is playing. "Hey PackRat" steps aside meanwhile.
 ///
-/// While "Hey PackRat" is on, the session stays as it is and stays active:
-/// iOS won't let an app start recording again from the background, so it is
-/// never closed mid-trip. Music then plays on at full volume under PackRat.
+/// While "Hey PackRat" is on, the session is never closed mid-trip, because
+/// iOS won't let an app start recording again from the background. Music is
+/// lowered and raised again by switching ducking on and off instead.
 @MainActor
 enum VoiceAudioSession {
+    static let listeningOptions: AVAudioSession.CategoryOptions = [.mixWithOthers, .allowBluetoothA2DP, .defaultToSpeaker]
+
     static func activate() {
         let wakeWord = WakeWordListener.shared
         wakeWord.suspend()
         if wakeWord.isArmed {
-            try? AVAudioSession.sharedInstance().setActive(true)
+            setOptions(listeningOptions.union(.duckOthers))
             return
         }
         let session = AVAudioSession.sharedInstance()
@@ -81,8 +84,37 @@ enum VoiceAudioSession {
 
     static func deactivate() {
         let wakeWord = WakeWordListener.shared
-        if wakeWord.isArmed { return wakeWord.resume() }
+        if wakeWord.isArmed {
+            setOptions(listeningOptions)
+            return wakeWord.resume()
+        }
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    /// Keeps the session active and the microphone open, changing only how
+    /// PackRat mixes with other audio.
+    private static func setOptions(_ options: AVAudioSession.CategoryOptions) {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            if session.category != .playAndRecord || session.categoryOptions != options {
+                try session.setCategory(.playAndRecord, mode: .default, options: options)
+            }
+            try session.setActive(true)
+        } catch {
+            VoiceLog.note("Session options change failed: \(error)")
+        }
+        VoiceLog.note("Ducking \(options.contains(.duckOthers) ? "on" : "off"), microphone \(VoiceMicrophone.shared.isRunning ? "open" : "closed")")
+    }
+}
+
+/// Breadcrumbs for the audio path, which only misbehaves on a real phone in
+/// a pocket, where there's no debugger.
+enum VoiceLog {
+    static func note(_ message: String) {
+        print("[voice] \(message)")
+        let crumb = Breadcrumb(level: .info, category: "voiceCommands")
+        crumb.message = message
+        SentrySDK.addBreadcrumb(crumb)
     }
 }
 

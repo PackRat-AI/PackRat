@@ -35,17 +35,18 @@ struct TripVoiceBar: View {
                 banner
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+            micButton
             if wakeWord.isListening, controller.phase == .idle {
+                // Sits over the page as it scrolls, so it gets its own backing.
                 Label("Say “Hey PackRat” anytime", systemImage: "ear")
-                    .font(.footnote.weight(.medium))
+                    .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
                     .background(.regularMaterial, in: Capsule())
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .transition(.opacity)
                     .accessibilityIdentifier("trip_voice_wake_word")
             }
-            micButton
         }
         .padding(.horizontal)
         .padding(.bottom, 8)

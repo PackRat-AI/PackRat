@@ -63,8 +63,7 @@ final class WakeWordListener {
             Task { @MainActor in
                 let listener = WakeWordListener.shared
                 guard listener.isArmed else { return }
-                listener.stopListening(closeMicrophone: true)
-                listener.startIfPossible()
+                listener.reopenMicrophone()
             }
         })
         // The microphone can't be opened from the background, so a restart
@@ -103,6 +102,21 @@ final class WakeWordListener {
         startIfPossible()
     }
 
+    /// The input stopped under PackRat (a route or option change): open it
+    /// again for whichever recogniser is attached.
+    private func reopenMicrophone() {
+        tearDownSegment()
+        isListening = false
+        VoiceMicrophone.shared.stop()
+        do {
+            try VoiceMicrophone.shared.start()
+            VoiceLog.note("Microphone reopened")
+        } catch {
+            VoiceLog.note("Microphone couldn't reopen: \(error)")
+        }
+        startIfPossible()
+    }
+
     // MARK: - Listening
 
     private func startIfPossible() {
@@ -119,13 +133,14 @@ final class WakeWordListener {
             // Changing the category under a running microphone stops it, so
             // it's only set when it isn't already this.
             let session = AVAudioSession.sharedInstance()
-            let options: AVAudioSession.CategoryOptions = [.mixWithOthers, .allowBluetoothA2DP, .defaultToSpeaker]
+            let options = VoiceAudioSession.listeningOptions
             if session.category != .playAndRecord || session.categoryOptions != options {
                 try session.setCategory(.playAndRecord, mode: .default, options: options)
             }
             try session.setActive(true)
             try VoiceMicrophone.shared.start()
         } catch {
+            VoiceLog.note("Wake listening couldn't start: \(error)")
             stopListening(closeMicrophone: true)
             return
         }
