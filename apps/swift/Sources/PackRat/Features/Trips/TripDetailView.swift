@@ -156,7 +156,7 @@ struct TripDetailView: View {
             .padding(.bottom)
         }
         #if os(iOS)
-        .safeAreaInset(edge: .bottom) {
+        .voiceBar {
             if TripVoiceBar.shows(for: trip) {
                 TripVoiceBar(
                     trip: trip,
@@ -426,3 +426,19 @@ struct TripDetailView: View {
         .padding(.horizontal)
     }
 }
+
+#if os(iOS)
+private extension View {
+    /// The voice bar pinned under the trip page. On iOS 26 it's a safe-area
+    /// bar, so the page blurs out beneath it the way it does under a toolbar
+    /// and the hint under Hold to Talk stays readable over anything.
+    @ViewBuilder
+    func voiceBar(@ViewBuilder _ content: () -> some View) -> some View {
+        if #available(iOS 26, *) {
+            safeAreaBar(edge: .bottom, content: content)
+        } else {
+            safeAreaInset(edge: .bottom, content: content)
+        }
+    }
+}
+#endif
