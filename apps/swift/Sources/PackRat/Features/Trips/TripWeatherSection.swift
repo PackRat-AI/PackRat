@@ -14,6 +14,15 @@ struct TripWeatherSection: View {
     @State private var loadFailed = false
     @State private var pushedLocation: WeatherLocation?
 
+    /// Active hazards at the destination, one per event: the provider repeats
+    /// an alert for every zone it covers.
+    private var alerts: [WeatherAlert] {
+        var seenEvents = Set<String>()
+        return (forecast?.alerts?.alert ?? []).filter { alert in
+            seenEvents.insert((alert.event ?? alert.headline ?? alert.id).lowercased()).inserted
+        }
+    }
+
     private var plan: TripWeatherPlan {
         TripWeatherPlan.make(
             trip: trip,
@@ -71,6 +80,14 @@ struct TripWeatherSection: View {
                         .background(.background.secondary, in: card)
                 }
             } else {
+                if !alerts.isEmpty {
+                    VStack(spacing: 8) {
+                        ForEach(Array(alerts.enumerated()), id: \.offset) { _, alert in
+                            ForecastAlertCard(alert: alert, onSky: false)
+                        }
+                    }
+                    .accessibilityIdentifier("trip_weather_alerts")
+                }
                 Button {
                     pushedLocation = forecastLocation
                 } label: {
@@ -180,6 +197,13 @@ struct TripWeatherSection: View {
             .background(.background.secondary, in: card)
     }
 
+    /// The trip list's marker clears once the alerts have been on screen here,
+    /// including any the list learned about from an earlier fetch.
+    private func markAlertsSeen() {
+        let stored = TripConditionsStore.shared.conditions(for: trip.id)?.alerts.map(\.id) ?? []
+        TripWeatherAlertReads.shared.markSeen(tripId: trip.id, alertIds: alerts.map(\.id) + stored)
+    }
+
     private func load() async {
         guard TripWeatherPlan.needsForecast(trip, now: Date()), let location = trip.location else { return }
         loadFailed = false
@@ -191,6 +215,7 @@ struct TripWeatherSection: View {
             forecast = try await WeatherService.shared.getForecast(
                 query: "\(location.latitude),\(location.longitude)"
             )
+            markAlertsSeen()
         } catch is CancellationError {
             return
         } catch {

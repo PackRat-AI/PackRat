@@ -85,3 +85,36 @@ struct TripWeatherPlanTests {
         #expect(plan == .days(dates: ["2026-11-09"], underWay: false, partial: false))
     }
 }
+
+@Suite("TripWeatherAlertReads")
+@MainActor
+struct TripWeatherAlertReadsTests {
+    private func reads() -> TripWeatherAlertReads {
+        let suite = "TripWeatherAlertReadsTests.\(UUID().uuidString)"
+        return TripWeatherAlertReads(defaults: UserDefaults(suiteName: suite)!)
+    }
+
+    @Test("an alert is unread until it has been shown on that trip")
+    func unreadUntilSeen() {
+        let store = reads()
+        #expect(store.hasUnread(tripId: "t1", alertIds: ["storm"]))
+        store.markSeen(tripId: "t1", alertIds: ["storm"])
+        #expect(!store.hasUnread(tripId: "t1", alertIds: ["storm"]))
+        #expect(store.hasUnread(tripId: "t2", alertIds: ["storm"]))
+    }
+
+    @Test("a new alert re-lights a trip whose earlier alert was seen")
+    func newAlertRelights() {
+        let store = reads()
+        store.markSeen(tripId: "t1", alertIds: ["storm"])
+        #expect(store.hasUnread(tripId: "t1", alertIds: ["storm", "wind"]))
+        #expect(!store.hasUnread(tripId: "t1", alertIds: []))
+    }
+
+    @Test("what was seen survives a relaunch")
+    func persists() {
+        let defaults = UserDefaults(suiteName: "TripWeatherAlertReadsTests.\(UUID().uuidString)")!
+        TripWeatherAlertReads(defaults: defaults).markSeen(tripId: "t1", alertIds: ["storm"])
+        #expect(!TripWeatherAlertReads(defaults: defaults).hasUnread(tripId: "t1", alertIds: ["storm"]))
+    }
+}
