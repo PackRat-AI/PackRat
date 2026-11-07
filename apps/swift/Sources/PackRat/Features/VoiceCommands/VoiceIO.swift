@@ -40,12 +40,24 @@ final class VoiceSpeaker: NSObject, AVSpeechSynthesizerDelegate {
 
     var isSpeaking: Bool { synthesizer.isSpeaking }
 
-    /// Picked once: the phone's voices don't change mid-trip.
-    private lazy var voice: AVSpeechSynthesisVoice? = {
-        let picked = Self.bestVoice(among: AVSpeechSynthesisVoice.speechVoices())
-        VoiceLog.note("Speaking with \(picked?.identifier ?? "the system default"), quality \(picked?.quality.rawValue ?? 0)")
+    /// Looked up each time, so a voice downloaded mid-trip is used straight away.
+    private var voice: AVSpeechSynthesisVoice? {
+        let picked = Self.preferredVoice
+        if picked?.identifier != lastVoiceId {
+            lastVoiceId = picked?.identifier
+            VoiceLog.note("Speaking with \(picked?.identifier ?? "the system default"), quality \(picked?.quality.rawValue ?? 0)")
+        }
         return picked
-    }()
+    }
+
+    private var lastVoiceId: String?
+
+    /// The voice PackRat speaks with, shown in Settings.
+    static var preferredVoice: AVSpeechSynthesisVoice? { bestVoice(among: AVSpeechSynthesisVoice.speechVoices()) }
+
+    /// True when only a standard voice is on the phone, so Settings can say
+    /// where to get a more natural one.
+    static var hasNaturalVoice: Bool { (preferredVoice?.quality ?? .default) != .default }
 
     /// The most natural voice on the phone in the user's language: premium,
     /// then enhanced (both downloaded in Settings, under Accessibility, then

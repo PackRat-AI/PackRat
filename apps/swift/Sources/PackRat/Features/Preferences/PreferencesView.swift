@@ -334,6 +334,16 @@ struct PreferencesView: View {
             } footer: {
                 Text(voiceFooter)
             }
+            if voiceCommandsEnabled, voiceSpokenAnswers || safetyAlertsSpoken {
+                Section {
+                    LabeledContent("Speaking Voice", value: VoiceSpeaker.preferredVoice?.name ?? "Default")
+                        .accessibilityIdentifier("settings_voice_speaking_voice")
+                } footer: {
+                    if !VoiceSpeaker.hasNaturalVoice {
+                        Text("For a more natural voice, download an Enhanced or Premium voice in your iPhone's Settings, under Accessibility, then Spoken Content, then Voices.")
+                    }
+                }
+            }
             if voiceCommandsEnabled {
                 Section {
                     Toggle("Turn Prompts", isOn: $guidanceTurns)
