@@ -82,6 +82,10 @@ struct TripDetailView: View {
                 metaCards
                     .padding(.top, 8)
 
+                if FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey) {
+                    TripWeatherSection(trip: trip)
+                }
+
                 if isFinished, NavItem.tripStats.isFeatureEnabled {
                     TripLogSection(trip: trip, viewModel: viewModel)
                 }
