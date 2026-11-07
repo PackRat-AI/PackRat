@@ -29,7 +29,6 @@ final class WakeWordListener {
 
     @ObservationIgnored private var target: Target?
     @ObservationIgnored private var suspended = false
-    @ObservationIgnored private var audioEngine: AVAudioEngine?
     @ObservationIgnored private var request: SFSpeechAudioBufferRecognitionRequest?
     @ObservationIgnored private var task: SFSpeechRecognitionTask?
     @ObservationIgnored private var loop: Task<Void, Never>?
@@ -56,7 +55,16 @@ final class WakeWordListener {
             let ended = (note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt).flatMap(AVAudioSession.InterruptionType.init) == .ended
             Task { @MainActor in
                 let listener = WakeWordListener.shared
-                if ended { listener.startIfPossible() } else { listener.stopEngine() }
+                if ended { listener.startIfPossible() } else { listener.stopListening(closeMicrophone: true) }
+            }
+        })
+        // A new headset or a lost one stops the input; carry on with the new route.
+        observers.append(center.addObserver(forName: .AVAudioEngineConfigurationChange, object: nil, queue: .main) { _ in
+            Task { @MainActor in
+                let listener = WakeWordListener.shared
+                guard listener.isArmed else { return }
+                listener.stopListening(closeMicrophone: true)
+                listener.startIfPossible()
             }
         })
         // The microphone can't be opened from the background, so a restart
@@ -79,13 +87,14 @@ final class WakeWordListener {
     func disarm(tripId: String? = nil) {
         guard tripId == nil || target?.tripId == tripId else { return }
         target = nil
-        stopEngine()
+        stopListening(closeMicrophone: true)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
     /// PackRat is about to listen or speak itself.
     func suspend() {
         suspended = true
-        stopEngine()
+        stopListening(closeMicrophone: false)
     }
 
     /// PackRat has finished listening and speaking.
@@ -107,34 +116,32 @@ final class WakeWordListener {
         do {
             // Mixes with music rather than ducking it: this runs for the whole
             // trip, and only PackRat speaking should lower anything.
+            // Changing the category under a running microphone stops it, so
+            // it's only set when it isn't already this.
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .default, options: [.mixWithOthers, .allowBluetoothA2DP, .defaultToSpeaker])
+            let options: AVAudioSession.CategoryOptions = [.mixWithOthers, .allowBluetoothA2DP, .defaultToSpeaker]
+            if session.category != .playAndRecord || session.categoryOptions != options {
+                try session.setCategory(.playAndRecord, mode: .default, options: options)
+            }
             try session.setActive(true)
-            try startSegment(recognizer)
+            try VoiceMicrophone.shared.start()
         } catch {
-            stopEngine()
+            stopListening(closeMicrophone: true)
             return
         }
+        startSegment(recognizer)
         isListening = true
     }
 
-    private func startSegment(_ recognizer: SFSpeechRecognizer) throws {
+    /// A fresh recognition request on the microphone that's already open.
+    private func startSegment(_ recognizer: SFSpeechRecognizer) {
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.requiresOnDeviceRecognition = true
         request.shouldReportPartialResults = true
         request.contextualStrings = ["Hey PackRat", "PackRat"]
         self.request = request
 
-        let engine = AVAudioEngine()
-        let input = engine.inputNode
-        let format = input.outputFormat(forBus: 0)
-        guard format.sampleRate > 0, format.channelCount > 0 else { throw VoiceListener.ListenError.unavailable }
-        input.installTap(onBus: 0, bufferSize: 1_024, format: format) { [weak request] buffer, _ in
-            request?.append(buffer)
-        }
-        engine.prepare()
-        try engine.start()
-        audioEngine = engine
+        VoiceMicrophone.shared.attach(request, for: .wakeWord)
 
         segment += 1
         let current = segment
@@ -178,15 +185,12 @@ final class WakeWordListener {
 
     private func restartSegment(_ recognizer: SFSpeechRecognizer) {
         tearDownSegment()
-        do {
-            try startSegment(recognizer)
-        } catch {
-            stopEngine()
-        }
+        startSegment(recognizer)
     }
 
     private func wake(command: String) {
-        stopEngine()
+        // The microphone stays open for the command that follows.
+        stopListening(closeMicrophone: false)
         guard let target,
               let trip = target.viewModel.trips.first(where: { $0.id == target.tripId }),
               trip.lifecycle == .inProgress
@@ -202,20 +206,17 @@ final class WakeWordListener {
     private func tearDownSegment() {
         loop?.cancel()
         loop = nil
-        if let audioEngine {
-            if audioEngine.isRunning { audioEngine.stop() }
-            audioEngine.inputNode.removeTap(onBus: 0)
-        }
-        audioEngine = nil
+        VoiceMicrophone.shared.detach(.wakeWord)
         request?.endAudio()
         task?.cancel()
         request = nil
         task = nil
     }
 
-    private func stopEngine() {
+    private func stopListening(closeMicrophone: Bool) {
         tearDownSegment()
         isListening = false
+        if closeMicrophone { VoiceMicrophone.shared.stop() }
     }
 }
 #endif

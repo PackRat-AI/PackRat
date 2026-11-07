@@ -2,6 +2,7 @@
 import AVFoundation
 import Foundation
 import Speech
+import UIKit
 
 /// Says PackRat's answers out loud, through a headset when one is connected,
 /// lowering any music while it speaks.
@@ -56,10 +57,19 @@ final class VoiceSpeaker: NSObject, AVSpeechSynthesizerDelegate {
 /// One shared audio session setup for listening and speaking: record and play
 /// at once, prefer a Bluetooth headset, otherwise the loudspeaker, and duck
 /// whatever else is playing. "Hey PackRat" steps aside meanwhile.
+///
+/// While "Hey PackRat" is on, the session stays as it is and stays active:
+/// iOS won't let an app start recording again from the background, so it is
+/// never closed mid-trip. Music then plays on at full volume under PackRat.
 @MainActor
 enum VoiceAudioSession {
     static func activate() {
-        WakeWordListener.shared.suspend()
+        let wakeWord = WakeWordListener.shared
+        wakeWord.suspend()
+        if wakeWord.isArmed {
+            try? AVAudioSession.sharedInstance().setActive(true)
+            return
+        }
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(
             .playAndRecord,
@@ -70,10 +80,84 @@ enum VoiceAudioSession {
     }
 
     static func deactivate() {
+        let wakeWord = WakeWordListener.shared
+        if wakeWord.isArmed { return wakeWord.resume() }
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        // Deactivating is what lifts the ducking; listening for the wake
-        // phrase then reopens the session without it.
-        WakeWordListener.shared.resume()
+    }
+}
+
+/// The one microphone input that listening reads from. Kept running for the
+/// whole trip while "Hey PackRat" is on, because a stopped input can't be
+/// started again until PackRat is back on screen.
+@MainActor
+final class VoiceMicrophone {
+    static let shared = VoiceMicrophone()
+
+    enum Listener {
+        case wakeWord
+        case command
+    }
+
+    private var engine: AVAudioEngine?
+    private let sink = BufferSink()
+
+    var isRunning: Bool { engine?.isRunning == true }
+
+    func start() throws {
+        if isRunning { return }
+        stop()
+        let engine = AVAudioEngine()
+        let input = engine.inputNode
+        let format = input.outputFormat(forBus: 0)
+        // An input with no channels (no microphone) can't be tapped at all.
+        guard format.sampleRate > 0, format.channelCount > 0 else { throw VoiceListener.ListenError.unavailable }
+        let sink = self.sink
+        input.installTap(onBus: 0, bufferSize: 1_024, format: format) { buffer, _ in
+            sink.deliver(buffer)
+        }
+        engine.prepare()
+        try engine.start()
+        self.engine = engine
+    }
+
+    func stop() {
+        if let engine {
+            if engine.isRunning { engine.stop() }
+            engine.inputNode.removeTap(onBus: 0)
+        }
+        engine = nil
+    }
+
+    func attach(_ request: SFSpeechAudioBufferRecognitionRequest, for listener: Listener) {
+        sink.set(request, for: listener)
+    }
+
+    func detach(_ listener: Listener) {
+        sink.set(nil, for: listener)
+    }
+}
+
+/// Hands each microphone buffer to whichever recognisers are attached. Called
+/// on the audio thread, hence the lock.
+private final class BufferSink: @unchecked Sendable {
+    private let lock = NSLock()
+    private var wakeWord: SFSpeechAudioBufferRecognitionRequest?
+    private var command: SFSpeechAudioBufferRecognitionRequest?
+
+    func set(_ request: SFSpeechAudioBufferRecognitionRequest?, for listener: VoiceMicrophone.Listener) {
+        lock.lock()
+        defer { lock.unlock() }
+        switch listener {
+        case .wakeWord: wakeWord = request
+        case .command: command = request
+        }
+    }
+
+    func deliver(_ buffer: AVAudioPCMBuffer) {
+        lock.lock()
+        let targets = [wakeWord, command]
+        lock.unlock()
+        for request in targets { request?.append(buffer) }
     }
 }
 
@@ -111,9 +195,6 @@ final class VoiceListener {
         case untilSilence
     }
 
-    /// Made only while listening: touching an engine's input node asks for
-    /// the microphone, which must never happen just by opening a trip.
-    private var audioEngine: AVAudioEngine?
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
     private var transcript = ""
@@ -165,22 +246,13 @@ final class VoiceListener {
         request.contextualStrings = ["check in", "I'm safe", "PackRat", "on route", "due back"]
         self.request = request
 
-        // A fresh engine after the session is configured, so the input format
-        // matches the hardware. A stale one makes installTap raise, and an
-        // input with no channels (no microphone) can't be tapped at all.
-        let audioEngine = AVAudioEngine()
-        self.audioEngine = audioEngine
-        let input = audioEngine.inputNode
-        let format = input.outputFormat(forBus: 0)
-        guard format.sampleRate > 0, format.channelCount > 0 else {
+        do {
+            try VoiceMicrophone.shared.start()
+        } catch {
             self.request = nil
             throw ListenError.unavailable
         }
-        input.installTap(onBus: 0, bufferSize: 1_024, format: format) { [weak request] buffer, _ in
-            request?.append(buffer)
-        }
-        audioEngine.prepare()
-        try audioEngine.start()
+        VoiceMicrophone.shared.attach(request, for: .command)
         isListening = true
 
         task = recognizer.recognitionTask(with: request) { [weak self] result, error in
@@ -227,11 +299,9 @@ final class VoiceListener {
     }
 
     func cancel() {
-        if let audioEngine {
-            if audioEngine.isRunning { audioEngine.stop() }
-            audioEngine.inputNode.removeTap(onBus: 0)
-        }
-        audioEngine = nil
+        VoiceMicrophone.shared.detach(.command)
+        // The microphone opens only while listening, unless "Hey PackRat" keeps it open.
+        if !WakeWordListener.shared.isArmed { VoiceMicrophone.shared.stop() }
         request?.endAudio()
         task?.cancel()
         request = nil
@@ -240,9 +310,31 @@ final class VoiceListener {
     }
 }
 
-/// The start and end tones around listening.
+/// The start and end tones around listening, played through the voice
+/// session so they're heard while the microphone is open, with a tap.
+@MainActor
 enum VoiceTone {
-    static func start() { AudioServicesPlaySystemSound(1113) }
-    static func end() { AudioServicesPlaySystemSound(1114) }
+    private static let startPlayer = player("begin_record")
+    private static let endPlayer = player("end_record")
+
+    static func start() { play(startPlayer, fallback: 1113, haptic: .medium) }
+    static func end() { play(endPlayer, fallback: 1114, haptic: .light) }
+
+    private static func player(_ name: String) -> AVAudioPlayer? {
+        let player = try? AVAudioPlayer(contentsOf: URL(filePath: "/System/Library/Audio/UISounds/\(name).caf"))
+        player?.prepareToPlay()
+        return player
+    }
+
+    private static func play(_ player: AVAudioPlayer?, fallback: SystemSoundID, haptic: UIImpactFeedbackGenerator.FeedbackStyle) {
+        UIImpactFeedbackGenerator(style: haptic).impactOccurred()
+        VoiceAudioSession.activate()
+        if let player {
+            player.currentTime = 0
+            player.play()
+        } else {
+            AudioServicesPlaySystemSound(fallback)
+        }
+    }
 }
 #endif

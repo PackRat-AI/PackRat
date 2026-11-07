@@ -35,14 +35,17 @@ struct TripVoiceBar: View {
                 banner
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            micButton
             if wakeWord.isListening, controller.phase == .idle {
                 Label("Say “Hey PackRat” anytime", systemImage: "ear")
-                    .font(.caption)
+                    .font(.footnote.weight(.medium))
                     .foregroundStyle(.secondary)
-                    .transition(.opacity)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(.regularMaterial, in: Capsule())
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                     .accessibilityIdentifier("trip_voice_wake_word")
             }
+            micButton
         }
         .padding(.horizontal)
         .padding(.bottom, 8)
