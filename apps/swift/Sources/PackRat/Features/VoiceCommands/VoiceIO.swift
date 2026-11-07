@@ -131,16 +131,6 @@ final class VoiceMicrophone {
         stop()
         let engine = AVAudioEngine()
         let input = engine.inputNode
-        // Echo cancellation, as on a call: takes music playing from the
-        // phone's own speaker out of what the recogniser hears. Its usual
-        // side effect, ducking everything else while the microphone is open,
-        // is turned right down, since this stays open for the whole trip.
-        do {
-            try input.setVoiceProcessingEnabled(true)
-            input.voiceProcessingOtherAudioDuckingConfiguration = .init(enableAdvancedDucking: false, duckingLevel: .min)
-        } catch {
-            VoiceLog.note("Echo cancellation unavailable: \(error)")
-        }
         let format = input.outputFormat(forBus: 0)
         // An input with no channels (no microphone) can't be tapped at all.
         guard format.sampleRate > 0, format.channelCount > 0 else { throw VoiceListener.ListenError.unavailable }
