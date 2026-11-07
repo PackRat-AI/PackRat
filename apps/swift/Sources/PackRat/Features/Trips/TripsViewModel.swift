@@ -257,6 +257,12 @@ final class TripsViewModel {
         await pushUpdate(trip, context: context)
     }
 
+    func setWeatherAlerts(_ on: Bool, for tripId: String, context: ModelContext? = nil) async {
+        guard var trip = trips.first(where: { $0.id == tripId }) else { return }
+        trip.weatherAlerts = on
+        await pushUpdate(trip, context: context)
+    }
+
     /// Optimistic update of the whole trip. Every write sends the full record,
     /// log included, so a queued edit folds into a queued create without
     /// losing fields, and the server copy always matches the local one.
@@ -304,6 +310,7 @@ final class TripsViewModel {
                     startDate: startDate, endDate: endDate, location: location,
                     notes: localUpdated.notes, packId: localUpdated.packId,
                     checklist: localUpdated.checklist, log: localUpdated.log, excludedFromStats: localUpdated.isExcludedFromStats,
+                    weatherAlerts: localUpdated.sendsWeatherAlerts,
                     trailId: localUpdated.trailId, trailName: localUpdated.trailName
                 )
             } catch {
@@ -535,6 +542,7 @@ final class TripsViewModel {
             plannedRoute: trip.plannedRoute,
             log: trip.log,
             excludedFromStats: trip.excludedFromStats,
+            weatherAlerts: trip.weatherAlerts,
             trailId: trip.trailId,
             trailName: trip.trailName
         )
