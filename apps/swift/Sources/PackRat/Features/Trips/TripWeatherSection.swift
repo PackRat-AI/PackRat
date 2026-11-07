@@ -126,6 +126,19 @@ struct TripWeatherSection: View {
                     .padding(.vertical, 10)
                     .accessibilityIdentifier("trip_weather_partial")
             }
+            if forecastLocation != nil {
+                Divider().padding(.leading)
+                HStack {
+                    Text("Full Forecast")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                }
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(.tint)
+                .padding(.horizontal)
+                .padding(.vertical, 12)
+            }
             if let attribution = forecast?.attribution {
                 WeatherAttributionView(attribution: attribution, onDarkBackground: false)
                     .padding(.horizontal)
@@ -156,9 +169,6 @@ struct TripWeatherSection: View {
             ))
                 .font(.title2.bold())
                 .accessibilityIdentifier("trip_weather_current_temp")
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
         }
         .padding(.horizontal)
         .padding(.vertical, 12)
