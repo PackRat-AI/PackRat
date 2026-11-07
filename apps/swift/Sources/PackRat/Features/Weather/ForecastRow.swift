@@ -36,10 +36,12 @@ enum WeatherTemperatureDisplay {
 struct ForecastRow: View {
     let day: ForecastDay
     let temperatureUnit: AppPreferences.TemperatureUnit
+    /// Overrides the relative day name, for lists that can span a weekday twice.
+    var title: String? = nil
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(day.displayDate)
+            Text(title ?? day.displayDate)
                 .font(.callout)
                 .frame(width: 90, alignment: .leading)
 

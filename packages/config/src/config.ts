@@ -23,6 +23,7 @@ const FeatureFlag = Object.freeze({
   EnableSafetyCheckIn: 'enableSafetyCheckIn',
   EnableTripStats: 'enableTripStats',
   EnableVoiceCommands: 'enableVoiceCommands',
+  EnableTripWeather: 'enableTripWeather',
 });
 
 const DashboardTileId = Object.freeze({
@@ -90,6 +91,7 @@ const APP_CONFIG_SOURCE = {
     [FeatureFlag.EnableSafetyCheckIn]: false,
     [FeatureFlag.EnableTripStats]: false,
     [FeatureFlag.EnableVoiceCommands]: false,
+    [FeatureFlag.EnableTripWeather]: false,
   },
   dashboard: {
     gapPrefix: GAP_PREFIX,

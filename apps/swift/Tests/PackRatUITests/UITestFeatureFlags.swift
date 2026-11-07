@@ -22,6 +22,7 @@ enum UITestFeatureFlags {
     static let enableTrips = true
     static let enableTripStats = false
     static let enableVoiceCommands = false
+    static let enableTripWeather = false
     static let enableWeatherMonitoring = false
     static let enableWildlifeIdentification = false
 
@@ -46,6 +47,7 @@ enum UITestFeatureFlags {
         "enableTrips": true,
         "enableTripStats": false,
         "enableVoiceCommands": false,
+        "enableTripWeather": false,
         "enableWeatherMonitoring": false,
         "enableWildlifeIdentification": false,
     ]

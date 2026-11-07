@@ -166,14 +166,16 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
             // per the interface contract. A KV put replaces the expiration too,
             // so carry the window's end in metadata and re-send it on every
             // put. A counter without one (written before this fix, with no
-            // TTL) starts a fresh window.
+            // TTL), or whose window has already ended, starts a fresh window.
             const windowEnd = metadata?.expiresAt;
-            const continuing = current !== null && windowEnd !== undefined;
+            const continuing = current !== null && windowEnd !== undefined && windowEnd > now;
             const next = (continuing ? Number.parseInt(current, 10) || 0 : 0) + 1;
             const expiresAt = continuing ? windowEnd : now + Math.max(60, ttl);
             await env.AUTH_KV.put(key, String(next), {
-              // KV rejects an expiration less than 60 seconds away.
-              expiration: Math.max(expiresAt, now + 60),
+              // KV rejects an expiry under 60 seconds away. A relative TTL is
+              // measured on KV's clock, so an absolute `now + 60` can't land
+              // just short of the minimum after flooring or clock drift.
+              expirationTtl: Math.max(60, expiresAt - now),
               metadata: { expiresAt },
             });
             return next;

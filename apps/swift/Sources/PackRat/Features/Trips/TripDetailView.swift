@@ -89,6 +89,9 @@ struct TripDetailView: View {
                     TripTrackingSection(trip: trip, viewModel: viewModel)
                 }
                 #endif
+                if FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey) {
+                    TripWeatherSection(trip: trip)
+                }
 
                 if isFinished, NavItem.tripStats.isFeatureEnabled {
                     TripLogSection(trip: trip, viewModel: viewModel)

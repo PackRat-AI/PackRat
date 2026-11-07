@@ -27,8 +27,9 @@ location being previewed.
 
 **Watching** a saved location subscribes it to background polling and push.
 Watching is always something a user does on purpose: nothing is inferred
-from search history, trip destinations, or how often something is looked up
-(ADR-002).
+from search history or how often something is looked up (ADR-002).
+
+The one exception is a trip. A trip with a destination watches that destination for the trip's own dates, with no step from the user, and the watch ends when the trip does (ADR-015).
 
 **A location must be saved before it can be watched** (ADR-008). The
 forecast's navigation bar offers one thing at a time — `+` while the
@@ -156,6 +157,8 @@ not any user is looking at it, and the result needs to be able to reach a
 device that isn't currently in the user's hand.
 
 ## ADR-002 — Watching a location is always explicit
+
+> **Amended by ADR-015.** Trip destinations are no longer excluded. A trip watches its destination for its own dates without the user asking. Searches and lookup frequency still never create a watch.
 
 **Decision.** A location is only ever watched because a user chose to watch
 it. It is never inferred from search history, trip destinations, or
@@ -366,6 +369,8 @@ against a neutral surface.
 
 ## ADR-008 — A location must be saved before it can be watched
 
+> **Amended by ADR-015.** A trip's watch on its destination does not save the location. The trip is that watch's home: it explains the notification and holds the switch to stop it, which is the job this ADR gives the weather list.
+
 **Decision.** The forecast's navigation bar offers `+` while a location is
 unsaved and the watch bell once it is — never both, and never the bell alone.
 The one path that can still reach watching from an unsaved location, the call
@@ -499,3 +504,11 @@ start where the markers are not yet drawn — the fetch has to return first.
 **Why.** A complication has room for one idea, and the issue's question was which idea wins when both exist. A hazard does: it is time-bound and actionable, and the temperature is neither. A user who keeps the complication on their face for the temperature is exactly the user who benefits from it changing, while a separate alert complication would be blank on most days and earn a slot only on the rare one that matters. A single complication that changes state is the one people keep. The warning symbol carries the state rather than colour alone, because tinted faces strip colour.
 
 **Consequence.** While an alert is unread, the temperature leaves the watch face. It returns as soon as the user opens the alert's forecast on the phone.
+
+## ADR-015 — A trip watches its destination for its own dates
+
+**Decision.** Every upcoming trip with a destination is watched automatically, from three days before it starts until the day after it ends, or until it is deleted. The user is not asked first. The only prompt is the system's notification permission, requested when the user creates their first trip with a destination. Trip alerts can be turned off for one trip from its Weather section, or for all trips from notification settings. A trip's watch does not save the destination to the weather list.
+
+**Why.** ADR-002 excluded trips because a trip is a plan for a future date range, not a request to hear about every hazard from now until departure. That objection is about the window, not the trip. A watch scoped to the trip's own days answers it exactly: the user has said where they will be and when, and a hazard there and then is the warning they would want. Asking first adds a step that nearly everyone answers yes, and anyone who skips it misses the alert that mattered. TripIt watches every itinerary over its dates without asking, behind one settings switch. Apple Weather asks first for predicted destinations, but those are guesses; a trip is a statement. Saving the destination as well would fill the weather list with places the user never chose to keep, so the trip itself carries the watch: its screen shows the alert, the notification opens it, and its switch stops it.
+
+**Consequence.** A user gets pushes they never explicitly turned on, which is the trust cost ADR-002 was guarding against. It is held down by the narrow window, the end date, and an off switch in the place the notification leads to. The watch list now has two kinds of entry: ordinary watches on saved locations, and trip watches listed under the trip's name with an end date.
