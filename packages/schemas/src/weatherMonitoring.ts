@@ -29,3 +29,7 @@ export const RegisterDeviceTokenRequestSchema = z.object({
 });
 
 export type RegisterDeviceTokenRequest = z.infer<typeof RegisterDeviceTokenRequestSchema>;
+
+export const TripWeatherNotificationSettingsSchema = z.object({ tripWeather: z.boolean() });
+
+export type TripWeatherNotificationSettings = z.infer<typeof TripWeatherNotificationSettingsSchema>;
