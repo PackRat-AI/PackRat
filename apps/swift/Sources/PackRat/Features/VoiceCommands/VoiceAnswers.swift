@@ -14,6 +14,8 @@ enum VoiceAnswers {
     static let noForecast = "There's no forecast saved for this trip."
     static let alreadyStarted = "Your trip has already started."
     static let busy = "PackRat is in the middle of another command. Try again in a moment."
+    static let comingSoon = "Voice commands are coming soon to PackRat."
+    static let voiceOff = "Voice commands are off. Turn them on in PackRat's Settings, under Voice."
     static let openingPackRat = "Opening PackRat to find your trip."
 
     // MARK: - Safety alerts

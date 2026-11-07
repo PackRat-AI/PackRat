@@ -107,7 +107,10 @@ struct AskPackRatIntent: AppIntent, ForegroundContinuableIntent {
 @MainActor
 enum SiriTripCommand {
     static func run<Intent: ForegroundContinuableIntent>(_ request: VoiceCommandController.SiriRequest, intent: Intent) async throws -> String {
-        guard FeatureFlagStore.shared.isEnabled(VoiceCommandSettings.flagKey) else { return VoiceAnswers.noTrip }
+        // Siri's phrases are fixed when the app is built, so they're there
+        // before the feature is on; each says plainly why nothing happened.
+        guard FeatureFlagStore.shared.isEnabled(VoiceCommandSettings.flagKey) else { return VoiceAnswers.comingSoon }
+        guard VoiceCommandSettings.isAvailable else { return VoiceAnswers.voiceOff }
         // Siri can wake PackRat with nothing on screen; the trips load with the app.
         if !VoiceCommandHost.shared.isAttached {
             try await intent.requestToContinueInForeground(IntentDialog(stringLiteral: VoiceAnswers.openingPackRat))
