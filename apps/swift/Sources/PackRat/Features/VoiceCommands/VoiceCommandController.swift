@@ -76,6 +76,34 @@ final class VoiceCommandController {
         }
     }
 
+    /// "Hey PackRat" was heard, with a command said in the same breath or on
+    /// its own, in which case PackRat listens for one hands-free.
+    func handleWake(command: String, _ context: Context) async {
+        guard phase == .idle || phase == .answering else { return WakeWordListener.shared.resume() }
+        speaker.stop()
+        run?.cancel()
+        heard = ""
+        answer = ""
+        if !command.isEmpty {
+            run = Task { [weak self] in await self?.handle(command, context) }
+            return
+        }
+        phase = .listening
+        listener.onPartial = { [weak self] in self?.heard = $0 }
+        VoiceTone.start()
+        run = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let transcript = try await self.listener.listen(.untilSilence)
+                VoiceTone.end()
+                await self.handle(transcript, context)
+            } catch {
+                VoiceTone.end()
+                await self.respond((error as? LocalizedError)?.errorDescription ?? VoiceAnswers.notHeard)
+            }
+        }
+    }
+
     /// The microphone button came up: stop listening and act on what was heard.
     func endListening() {
         guard phase == .listening else { return }

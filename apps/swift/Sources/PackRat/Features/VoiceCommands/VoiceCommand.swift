@@ -276,6 +276,7 @@ enum VoiceCommandSettings {
     static let milestonesKey = "voiceGuidanceMilestones"
     static let offRouteKey = "voiceGuidanceOffRoute"
     static let vibrateOnlyKey = "voiceGuidanceVibrateOnly"
+    static let wakeWordKey = "voiceWakeWord"
 
     static var isAvailable: Bool {
         FeatureFlagStore.shared.isEnabled(flagKey)
@@ -305,7 +306,36 @@ enum VoiceCommandSettings {
         return UserDefaults.standard.object(forKey: key) as? Bool ?? true
     }
 
+    /// "Hey PackRat" is off until the user turns it on.
+    static var wakeWordEnabled: Bool {
+        isAvailable && UserDefaults.standard.bool(forKey: wakeWordKey)
+    }
+
     static var guidanceVibratesOnly: Bool {
         UserDefaults.standard.bool(forKey: vibrateOnlyKey)
+    }
+}
+
+/// Finds "Hey PackRat" in what the hands-free listener heard. The recogniser
+/// writes the name several ways, so each is accepted.
+enum WakePhrase {
+    private static let greetings = ["hey", "hay", "hi", "okay", "ok"]
+    private static let names = ["packrat", "packrats", "pack rat", "pack rats", "pac rat", "pakrat", "packed rat", "back rat"]
+
+    /// What was said after the last "Hey PackRat", trimmed; an empty string
+    /// when nothing followed it yet, nil when it wasn't said.
+    static func command(after transcript: String) -> String? {
+        let padded = " \(VoiceCommandParser.normalize(transcript)) "
+        var latest: Range<String.Index>?
+        for greeting in greetings {
+            for name in names {
+                if let range = padded.range(of: " \(greeting) \(name) ", options: .backwards),
+                   latest.map({ range.lowerBound > $0.lowerBound }) ?? true {
+                    latest = range
+                }
+            }
+        }
+        guard let latest else { return nil }
+        return padded[latest.upperBound...].trimmingCharacters(in: .whitespaces)
     }
 }

@@ -397,6 +397,7 @@ final class TripsViewModel {
             #if os(iOS)
             // Ending a trip ends its recording and guidance, whichever button ended it.
             if TripGuide.shared.isGuiding(tripId: tripId) { TripGuide.shared.stop() }
+            WakeWordListener.shared.disarm(tripId: tripId)
             if TrackRecorder.shared.isRecording(tripId: tripId), let track = TrackRecorder.shared.stop(),
                track.logRoute != nil {
                 updated.log = track.applied(to: updated.log)

@@ -56,6 +56,7 @@ struct PreferencesView: View {
     @AppStorage(VoiceCommandSettings.milestonesKey) private var guidanceMilestones = true
     @AppStorage(VoiceCommandSettings.offRouteKey) private var guidanceOffRoute = true
     @AppStorage(VoiceCommandSettings.vibrateOnlyKey) private var guidanceVibrateOnly = false
+    @AppStorage(VoiceCommandSettings.wakeWordKey) private var wakeWordOn = false
 
     @State private var showingClearDataConfirm = false
     /// Owned here, at the screen root, so the paywall presents reliably —
@@ -290,6 +291,17 @@ struct PreferencesView: View {
         #endif
     }
 
+    private var voiceFooter: String {
+        guard voiceCommandsEnabled else {
+            return "Talk to PackRat on a trip page to check in, hear where you are or find out how far you have to go."
+        }
+        var footer = wakeWordOn
+            ? "While a trip is underway, say “Hey PackRat” and a command, even with your phone locked."
+            : "Hold the microphone on a trip page and say a command. Turn on “Hey PackRat” to talk hands-free."
+        if !voiceSpokenAnswers { footer += " Answers appear on screen without being read aloud." }
+        return footer
+    }
+
     @ViewBuilder
     private var voiceSection: some View {
         #if os(iOS)
@@ -298,15 +310,21 @@ struct PreferencesView: View {
                 Toggle("Voice Commands", isOn: $voiceCommandsEnabled)
                     .accessibilityIdentifier("settings_voice_commands_toggle")
                 if voiceCommandsEnabled {
+                    Toggle("“Hey PackRat”", isOn: $wakeWordOn)
+                        .accessibilityIdentifier("settings_voice_wake_word_toggle")
+                        .onChange(of: wakeWordOn) { _, on in
+                            // Asked for when switched on, not on the trail.
+                            if on, VoiceListener.needsPermission {
+                                Task { try? await VoiceListener.requestPermissions() }
+                            }
+                        }
                     Toggle("Spoken Answers", isOn: $voiceSpokenAnswers)
                         .accessibilityIdentifier("settings_voice_spoken_answers_toggle")
                 }
             } header: {
                 Text("Voice")
             } footer: {
-                Text(voiceSpokenAnswers || !voiceCommandsEnabled
-                    ? "Talk to PackRat on a trip page to check in, hear where you are or find out how far you have to go."
-                    : "Answers appear on screen without being read aloud.")
+                Text(voiceFooter)
             }
             if voiceCommandsEnabled {
                 Section {

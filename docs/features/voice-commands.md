@@ -4,15 +4,15 @@ Lets a user run the trip they're on, record it, mark places along it and be guid
 
 ## The model in one paragraph
 
-While a trip is in progress, a user can talk to PackRat instead of tapping it. They say "Hey PackRat", hold the microphone button on the trip page, press a headset button, or ask Siri or the phone's assistant to "ask PackRat". They say a short command, such as "start tracking", "mark waypoint", "navigate to camp" or "I'm safe", and PackRat does it and answers out loud. Once it is guiding the user somewhere, PackRat speaks up on its own at each turn and when they stray. Recognition happens on the phone, so everything works in Airplane Mode and far from signal. The set of commands is fixed, and anything that tells other people something is read back for a spoken "yes" first, so a misheard word never sends an alert.
+While a trip is in progress, a user can talk to PackRat instead of tapping it. They say "Hey PackRat", hold the microphone button on the trip page, press a headset button on Android, or ask Siri or the phone's assistant to "ask PackRat". They say a short command, such as "start tracking", "mark waypoint", "navigate to camp" or "I'm safe", and PackRat does it and answers out loud. Once it is guiding the user somewhere, PackRat speaks up on its own at each turn and when they stray. Recognition happens on the phone, so everything works in Airplane Mode and far from signal. The set of commands is fixed, and anything that tells other people something is read back for a spoken "yes" first, so a misheard word never sends an alert.
 
 ## Starting a command
 
-There are four ways to get PackRat listening:
+There are four ways to get PackRat listening (three on iPhone):
 
 - **"Hey PackRat."** With hands-free listening on, saying "Hey PackRat" while a trip is in progress starts a command, with the phone locked and in a pocket. The wake phrase is detected on the phone, and nothing said before it is kept or sent anywhere.
 - **Hold to talk.** A microphone button on the trip page while the trip is in progress. PackRat listens for as long as it's held.
-- **Headset.** A long press on a connected headset's button, while the trip is in progress, starts listening without unlocking the phone.
+- **Headset (Android).** A long press on a connected headset's button, while the trip is in progress, starts listening without unlocking the phone. iPhone gives that press to Siri, so on iPhone the headset route is "Hey Siri, ask PackRat".
 - **The phone's assistant.** "Hey Siri, ask PackRat how far to go" on iPhone, or the Google Assistant equivalent on Android, from the lock screen.
 
 A short tone marks the start and the end of listening. If nothing is heard after a few seconds, PackRat stops listening with a second tone and says nothing more.
@@ -84,7 +84,7 @@ Commands are recognised and answered on the phone, and tracking, waypoints and g
 
 - **On or off.** Voice commands can be turned off entirely in Settings, which hides the microphone button and every shortcut.
 - **"Hey PackRat."** Off until the user turns it on. When on, it listens only while a trip is in progress and stops when the trip ends.
-- **Headset shortcut.** Can be turned off separately for users whose headset button already does something else.
+- **Headset shortcut (Android).** Can be turned off separately for users whose headset button already does something else.
 - **Guidance prompts.** Turn prompts, milestones and off-route warnings can each be turned off, and prompts can be set to vibrate only.
 - **Safety alerts.** Can be switched from spoken to a notification only.
 - **Spoken answers.** Can be switched to on-screen only.

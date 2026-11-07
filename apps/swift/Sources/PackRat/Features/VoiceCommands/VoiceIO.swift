@@ -55,9 +55,11 @@ final class VoiceSpeaker: NSObject, AVSpeechSynthesizerDelegate {
 
 /// One shared audio session setup for listening and speaking: record and play
 /// at once, prefer a Bluetooth headset, otherwise the loudspeaker, and duck
-/// whatever else is playing.
+/// whatever else is playing. "Hey PackRat" steps aside meanwhile.
+@MainActor
 enum VoiceAudioSession {
     static func activate() {
+        WakeWordListener.shared.suspend()
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(
             .playAndRecord,
@@ -69,6 +71,9 @@ enum VoiceAudioSession {
 
     static func deactivate() {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        // Deactivating is what lifts the ducking; listening for the wake
+        // phrase then reopens the session without it.
+        WakeWordListener.shared.resume()
     }
 }
 

@@ -10,6 +10,8 @@ struct TripVoiceBar: View {
 
     @Environment(\.modelContext) private var modelContext
     @State private var controller = VoiceCommandController.shared
+    @State private var wakeWord = WakeWordListener.shared
+    @AppStorage(VoiceCommandSettings.wakeWordKey) private var wakeWordOn = false
     /// Resets on its own when the touch is cancelled, such as by a permission
     /// alert, so the button never sticks in the listening state.
     @GestureState private var pressing = false
@@ -34,11 +36,28 @@ struct TripVoiceBar: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             micButton
+            if wakeWord.isListening, controller.phase == .idle {
+                Label("Say “Hey PackRat” anytime", systemImage: "ear")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .transition(.opacity)
+                    .accessibilityIdentifier("trip_voice_wake_word")
+            }
         }
         .padding(.horizontal)
         .padding(.bottom, 8)
         .animation(.snappy, value: controller.phase)
+        .animation(.snappy, value: wakeWord.isListening)
         .onDisappear { controller.dismiss() }
+        // Hands-free listening follows the trip: on while it's underway and
+        // the user has turned it on, off once it ends.
+        .task(id: "\(trip.id)-\(trip.lifecycle)-\(wakeWordOn)") {
+            if trip.lifecycle == .inProgress, VoiceCommandSettings.wakeWordEnabled {
+                wakeWord.arm(.init(tripId: trip.id, pack: pack, viewModel: viewModel, modelContext: modelContext))
+            } else {
+                wakeWord.disarm(tripId: trip.id)
+            }
+        }
     }
 
     private var banner: some View {

@@ -449,3 +449,23 @@ struct GuidanceTests {
         #expect(guide.update(position: .init(latitude: 47.005, longitude: -120.0), at: start + 120, metric: false).first?.text == "You're back on route.")
     }
 }
+
+@Suite("Hey PackRat")
+struct WakePhraseTests {
+    @Test("the phrase in the ways the recogniser writes it, with what followed", arguments: [
+        ("Hey PackRat", ""),
+        ("hey pack rat mark waypoint", "mark waypoint"),
+        ("Hey, PackRat, how far to go?", "how far to go"),
+        ("okay packrat navigate to camp", "navigate to camp"),
+        ("we stopped for lunch hey packrat start tracking", "start tracking"),
+        ("Hey PackRat check in hey packrat I'm safe", "im safe"),
+    ])
+    func heard(_ transcript: String, _ command: String) {
+        #expect(WakePhrase.command(after: transcript) == command)
+    }
+
+    @Test("talk without the phrase wakes nothing", arguments: ["the pack is heavy", "hey there", "packrat is a good app", "check in"])
+    func notHeard(_ transcript: String) {
+        #expect(WakePhrase.command(after: transcript) == nil)
+    }
+}
