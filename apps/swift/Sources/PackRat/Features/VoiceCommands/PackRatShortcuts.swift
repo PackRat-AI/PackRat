@@ -2,8 +2,10 @@
 import AppIntents
 import Foundation
 
-/// The trip commands Siri can run by name: "Hey Siri, ask PackRat where am I".
+/// The trip commands Siri can run by name: "Hey Siri, ask PackRat where am I",
+/// or "ask PackRat to start my trip".
 enum TripVoiceAction: String, AppEnum {
+    case startTrip
     case whereAmI
     case howFarToGo
     case amIOnRoute
@@ -22,6 +24,7 @@ enum TripVoiceAction: String, AppEnum {
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Trip Command"
 
     static let caseDisplayRepresentations: [TripVoiceAction: DisplayRepresentation] = [
+        .startTrip: DisplayRepresentation(title: "Start my trip", synonyms: ["start the trip", "start trip", "begin my trip"]),
         .whereAmI: DisplayRepresentation(title: "Where am I", synonyms: ["where I am", "my location"]),
         .howFarToGo: DisplayRepresentation(title: "How far to go", synonyms: ["how much further", "how far is left"]),
         .amIOnRoute: DisplayRepresentation(title: "Am I on route", synonyms: ["am I on track", "am I off route"]),
@@ -40,6 +43,7 @@ enum TripVoiceAction: String, AppEnum {
 
     var command: VoiceCommand {
         switch self {
+        case .startTrip: .startTrip
         case .whereAmI: .whereAmI
         case .howFarToGo: .howFarToGo
         case .amIOnRoute: .amIOnRoute
@@ -140,6 +144,8 @@ struct PackRatShortcuts: AppShortcutsProvider {
             intent: TripCommandIntent(),
             phrases: [
                 "Ask \(.applicationName) \(\.$action)",
+                "Ask \(.applicationName) to \(\.$action)",
+                "Tell \(.applicationName) to \(\.$action)",
                 "Tell \(.applicationName) \(\.$action)",
                 "\(.applicationName) \(\.$action)",
             ],
