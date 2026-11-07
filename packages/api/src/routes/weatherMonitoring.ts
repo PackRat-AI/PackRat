@@ -21,6 +21,7 @@ import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
 const WEATHER_MONITORING_ACCESS_KEY = featureAccessKeyForFlag(FeatureFlag.EnableWeatherMonitoring);
+const TRIP_WEATHER_ACCESS_KEY = featureAccessKeyForFlag(FeatureFlag.EnableTripWeather);
 
 function toWatchedLocationResponse(row: { createdAt: Date; [key: string]: unknown }) {
   return { ...row, createdAt: row.createdAt.toISOString() };
@@ -95,7 +96,10 @@ export const weatherMonitoringRoutes = new Elysia({ prefix: '/weather' })
   .post(
     '/device-token',
     async ({ body, user }) => {
-      const denied = await enforceFeatureAccess(WEATHER_MONITORING_ACCESS_KEY, user.userId);
+      // Trip weather alerts are pushed too, so either feature may register a device.
+      const denied =
+        (await enforceFeatureAccess(WEATHER_MONITORING_ACCESS_KEY, user.userId)) &&
+        (await enforceFeatureAccess(TRIP_WEATHER_ACCESS_KEY, user.userId));
       if (denied) return denied;
 
       await registerDeviceToken({ userId: user.userId, request: body });
