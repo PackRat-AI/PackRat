@@ -37,7 +37,9 @@ struct TripVoiceBar: View {
             }
             VStack(spacing: 6) {
                 micButton
-                if wakeWord.isListening, controller.phase == .idle {
+                // Stays while an answer is on screen; hidden only while PackRat
+                // is mid-command, when it isn't listening for the phrase.
+                if wakeWord.isArmed, controller.phase == .idle || controller.phase == .answering {
                     Label("Say “Hey PackRat” anytime", systemImage: "ear")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
@@ -49,7 +51,7 @@ struct TripVoiceBar: View {
         .padding(.horizontal)
         .padding(.bottom, 8)
         .animation(.snappy, value: controller.phase)
-        .animation(.snappy, value: wakeWord.isListening)
+        .animation(.snappy, value: wakeWord.isArmed)
         .onDisappear { controller.dismiss() }
         // Hands-free listening follows the trip: on while it's underway and
         // the user has turned it on, off once it ends.

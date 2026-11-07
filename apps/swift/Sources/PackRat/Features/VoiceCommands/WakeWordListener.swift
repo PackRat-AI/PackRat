@@ -27,7 +27,8 @@ final class WakeWordListener {
 
     private(set) var isListening = false
 
-    @ObservationIgnored private var target: Target?
+    /// Observed, so the trip page's hint follows whether hands-free is on.
+    private var target: Target?
     @ObservationIgnored private var suspended = false
     @ObservationIgnored private var request: SFSpeechAudioBufferRecognitionRequest?
     @ObservationIgnored private var task: SFSpeechRecognitionTask?
