@@ -57,6 +57,7 @@ struct PreferencesView: View {
     @AppStorage(VoiceCommandSettings.offRouteKey) private var guidanceOffRoute = true
     @AppStorage(VoiceCommandSettings.vibrateOnlyKey) private var guidanceVibrateOnly = false
     @AppStorage(VoiceCommandSettings.wakeWordKey) private var wakeWordOn = false
+    @AppStorage(VoiceCommandSettings.safetyAlertsSpokenKey) private var safetyAlertsSpoken = true
 
     @State private var showingClearDataConfirm = false
     /// Owned here, at the screen root, so the paywall presents reliably —
@@ -299,6 +300,9 @@ struct PreferencesView: View {
             ? "While a trip is underway, say “Hey PackRat” and a command, even with your phone locked."
             : "Hold the microphone on a trip page and say a command. Turn on “Hey PackRat” to talk hands-free."
         if !voiceSpokenAnswers { footer += " Answers appear on screen without being read aloud." }
+        footer += safetyAlertsSpoken
+            ? " Severe weather, an hour before you're due back and a low battery are said out loud."
+            : " Severe weather, an hour before you're due back and a low battery arrive as notifications."
         return footer
     }
 
@@ -320,6 +324,8 @@ struct PreferencesView: View {
                         }
                     Toggle("Spoken Answers", isOn: $voiceSpokenAnswers)
                         .accessibilityIdentifier("settings_voice_spoken_answers_toggle")
+                    Toggle("Spoken Safety Alerts", isOn: $safetyAlertsSpoken)
+                        .accessibilityIdentifier("settings_voice_safety_alerts_toggle")
                 }
             } header: {
                 Text("Voice")

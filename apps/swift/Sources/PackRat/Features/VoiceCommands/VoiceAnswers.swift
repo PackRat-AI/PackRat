@@ -13,6 +13,31 @@ enum VoiceAnswers {
     static let queued = "Saved. It'll send when you have signal."
     static let noForecast = "There's no forecast saved for this trip."
     static let alreadyStarted = "Your trip has already started."
+    static let busy = "PackRat is in the middle of another command. Try again in a moment."
+    static let openingPackRat = "Opening PackRat to find your trip."
+
+    // MARK: - Safety alerts
+
+    /// Said once when the overdue alert is an hour or less away.
+    static func overdueSoon(contacts: String, overdueAt: Date, now: Date) -> String {
+        let left = overdueAt.timeIntervalSince(now)
+        return "Heads up. \(contacts.capitalizedFirst) will be told you're overdue in \(duration(left)). Say I'm safe, or add an hour."
+    }
+
+    /// Said at 20 and again at 10 percent while the phone isn't charging.
+    static func lowBattery(percent: Int, tracking: Bool) -> String {
+        let base = "Your battery is at \(percent) percent."
+        return tracking ? base + " Tracking will stop if it runs out." : base + " Your phone may turn off before you're back."
+    }
+
+    /// A severe or extreme weather alert for where the user is.
+    static func weatherAlert(event: String, headline: String?) -> String {
+        var sentence = "Weather alert. \(event.capitalizedFirst) in effect for your area."
+        if let headline, !headline.isEmpty, headline.lowercased() != event.lowercased() {
+            sentence += " \(headline.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: ".")))."
+        }
+        return sentence
+    }
 
     // MARK: - Distances
 

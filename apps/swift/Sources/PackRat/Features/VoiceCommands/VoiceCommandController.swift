@@ -30,6 +30,14 @@ final class VoiceCommandController {
     private let listener = VoiceListener()
     private let speaker = VoiceSpeaker.shared
     private var run: Task<Void, Never>?
+    /// Set while Siri runs a command: Siri asks the yes-or-no question and
+    /// says the answer, so PackRat neither listens nor speaks.
+    private var siri: SiriTurn?
+
+    private struct SiriTurn {
+        let confirm: @MainActor (String) async -> Bool
+        var answer = ""
+    }
 
     private var speaksAnswers: Bool { VoiceCommandSettings.speaksAnswers }
 
@@ -118,6 +126,35 @@ final class VoiceCommandController {
         heard = ""
         answer = ""
         VoiceAudioSession.deactivate()
+    }
+
+    // MARK: - Siri
+
+    /// Runs a command Siri heard, or a spoken request Siri passed on, and
+    /// hands back what to say. `confirm` asks Siri's yes-or-no question.
+    func runForSiri(_ request: SiriRequest, _ context: Context, confirm: @escaping @MainActor (String) async -> Bool) async -> String {
+        guard phase == .idle || phase == .answering else { return VoiceAnswers.busy }
+        let command: VoiceCommand
+        switch request {
+        case .command(let given):
+            command = given
+        case .spoken(let transcript):
+            guard let parsed = VoiceCommandParser.parse(transcript) else { return VoiceAnswers.notHeard }
+            command = parsed
+        }
+        let crumb = Breadcrumb(level: .info, category: "voiceCommands")
+        crumb.message = "Siri command"
+        crumb.data = ["command": String(describing: command), "tripId": context.trip.id]
+        SentrySDK.addBreadcrumb(crumb)
+        siri = SiriTurn(confirm: confirm)
+        defer { siri = nil }
+        await perform(command, context)
+        return siri?.answer ?? ""
+    }
+
+    enum SiriRequest {
+        case command(VoiceCommand)
+        case spoken(String)
     }
 
     // MARK: - Commands
@@ -352,6 +389,7 @@ final class VoiceCommandController {
     /// Asks a yes/no question and listens hands-free for the answer. Anything
     /// but a clear yes, including silence, is a no.
     private func confirm(_ question: String) async -> Bool {
+        if let siri { return await siri.confirm(question) }
         phase = .confirming
         answer = question
         if speaksAnswers { await speaker.say(question) }
@@ -365,6 +403,10 @@ final class VoiceCommandController {
     }
 
     private func respond(_ text: String) async {
+        if siri != nil {
+            siri?.answer = text
+            return
+        }
         guard !Task.isCancelled else { return }
         phase = .answering
         answer = text

@@ -277,6 +277,7 @@ enum VoiceCommandSettings {
     static let offRouteKey = "voiceGuidanceOffRoute"
     static let vibrateOnlyKey = "voiceGuidanceVibrateOnly"
     static let wakeWordKey = "voiceWakeWord"
+    static let safetyAlertsSpokenKey = "voiceSafetyAlertsSpoken"
 
     static var isAvailable: Bool {
         FeatureFlagStore.shared.isEnabled(flagKey)
@@ -309,6 +310,11 @@ enum VoiceCommandSettings {
     /// "Hey PackRat" is off until the user turns it on.
     static var wakeWordEnabled: Bool {
         isAvailable && UserDefaults.standard.bool(forKey: wakeWordKey)
+    }
+
+    /// Safety alerts are spoken unless switched to a notification only.
+    static var safetyAlertsSpoken: Bool {
+        UserDefaults.standard.object(forKey: safetyAlertsSpokenKey) as? Bool ?? true
     }
 
     static var guidanceVibratesOnly: Bool {

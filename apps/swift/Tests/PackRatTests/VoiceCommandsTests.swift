@@ -469,3 +469,69 @@ struct WakePhraseTests {
         #expect(WakePhrase.command(after: transcript) == nil)
     }
 }
+
+#if os(iOS)
+@Suite("Spoken safety alerts")
+struct SafetyAlertTests {
+    private let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+    private func checkIn(overdueIn minutes: Double) -> LocalSafetyCheckIn {
+        LocalSafetyCheckIn(
+            id: "c1", tripId: "t1", tripName: "Rae Lakes", contactNames: ["Sam"],
+            expectedReturnAt: now.addingTimeInterval(minutes * 60 - 30 * 60), graceMinutes: 30,
+            trackingEnabled: false, startedAt: now.addingTimeInterval(-3_600)
+        )
+    }
+
+    @Test("an hour before contacts are told, and not before")
+    func overdue() {
+        let soon = TripSafetyAnnouncer.due(checkIn: checkIn(overdueIn: 45), battery: nil, weather: [], tracking: false, now: now)
+        #expect(soon.map(\.kind) == [.overdue])
+        #expect(soon.first?.text == "Heads up. Sam will be told you're overdue in 45 minutes. Say I'm safe, or add an hour.")
+        #expect(TripSafetyAnnouncer.due(checkIn: checkIn(overdueIn: 90), battery: nil, weather: [], tracking: false, now: now).isEmpty)
+        #expect(TripSafetyAnnouncer.due(checkIn: checkIn(overdueIn: -5), battery: nil, weather: [], tracking: false, now: now).isEmpty)
+    }
+
+    @Test("battery at 20 and 10 percent, never while charging")
+    func battery() {
+        let twenty = TripSafetyAnnouncer.due(checkIn: nil, battery: (0.19, false), weather: [], tracking: true, now: now)
+        #expect(twenty.map(\.key) == [TripSafetyAnnouncer.batteryKey(20)])
+        #expect(twenty.first?.text == "Your battery is at 19 percent. Tracking will stop if it runs out.")
+        let ten = TripSafetyAnnouncer.due(checkIn: nil, battery: (0.08, false), weather: [], tracking: false, now: now)
+        #expect(ten.map(\.key) == [TripSafetyAnnouncer.batteryKey(10)])
+        #expect(TripSafetyAnnouncer.due(checkIn: nil, battery: (0.08, true), weather: [], tracking: true, now: now).isEmpty)
+        #expect(TripSafetyAnnouncer.due(checkIn: nil, battery: (0.5, false), weather: [], tracking: true, now: now).isEmpty)
+    }
+
+    @Test("only severe and extreme weather is said")
+    func weather() {
+        let warnings = [
+            TripSafetyAnnouncer.WeatherWarning(id: "a", event: "severe thunderstorm warning", headline: "Large hail expected until 6 PM.", severity: "Severe"),
+            TripSafetyAnnouncer.WeatherWarning(id: "b", event: "Frost Advisory", headline: nil, severity: "Minor"),
+        ]
+        let alerts = TripSafetyAnnouncer.due(checkIn: nil, battery: nil, weather: warnings, tracking: false, now: now)
+        #expect(alerts.map(\.key) == ["weather-a"])
+        #expect(alerts.first?.text == "Weather alert. Severe thunderstorm warning in effect for your area. Large hail expected until 6 PM.")
+    }
+}
+
+@Suite("Siri trip")
+struct SiriTripTests {
+    private func trip(_ id: String, _ status: TripStatus, started: String? = nil, start: String? = nil) -> Trip {
+        Trip(id: id, name: id, description: nil, notes: nil, location: nil, startDate: start, endDate: nil, userId: nil,
+             packId: nil, deleted: false, createdAt: nil, updatedAt: nil, status: status, startedAt: started)
+    }
+
+    @Test("the tracked trip first, then the latest one in progress")
+    func picksTrip() {
+        let trips = [
+            trip("old", .inProgress, started: "2026-11-01T08:00:00Z"),
+            trip("new", .inProgress, started: "2026-11-06T08:00:00Z"),
+            trip("done", .complete),
+        ]
+        #expect(VoiceCommandHost.activeTrip(in: trips, preferring: [], now: Date())?.id == "new")
+        #expect(VoiceCommandHost.activeTrip(in: trips, preferring: ["old"], now: Date())?.id == "old")
+        #expect(VoiceCommandHost.activeTrip(in: [trip("done", .complete)], preferring: ["done"], now: Date()) == nil)
+    }
+}
+#endif
