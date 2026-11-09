@@ -352,7 +352,8 @@ struct TripLogEditor: View {
             .confirmationDialog("Clear this trip's log?", isPresented: $confirmingClear, titleVisibility: .visible) {
                 Button("Clear Trip Log", role: .destructive) {
                     Task {
-                        await viewModel.saveLog(nil, for: trip.id, context: modelContext)
+                        // Places marked on the trip aren't stats, so they stay.
+                        await viewModel.saveLog(TripLog(waypoints: trip.log?.waypoints ?? []), for: trip.id, context: modelContext)
                         dismiss()
                     }
                 }

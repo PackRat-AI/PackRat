@@ -13,6 +13,7 @@ enum VoiceAnswers {
     static let queued = "Saved. It'll send when you have signal."
     static let noForecast = "There's no forecast saved for this trip."
     static let alreadyStarted = "Your trip has already started."
+    static let waypointLimit = "This trip has 500 waypoints already. Delete one on the trip page to mark another."
     static let busy = "PackRat is in the middle of another command. Try again in a moment."
     static let comingSoon = "Voice commands are coming soon to PackRat."
     static let voiceOff = "Voice commands are off. Turn them on in PackRat's Settings, under Voice."

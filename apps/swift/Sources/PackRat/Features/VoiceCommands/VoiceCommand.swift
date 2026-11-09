@@ -38,6 +38,20 @@ enum VoiceCommand: Equatable, Sendable {
     }
 }
 
+extension VoiceCommand {
+    /// The command's name for logs, never the user's own words.
+    var logName: String {
+        switch self {
+        case .note: "note"
+        case .markWaypoint: "markWaypoint"
+        case .navigate: "navigate"
+        case .extendBy: "extendBy"
+        case .extendUntil: "extendUntil"
+        default: String(describing: self)
+        }
+    }
+}
+
 /// A spoken answer to a "Send it?" question.
 enum VoiceConfirmation: Equatable, Sendable {
     case yes
@@ -94,7 +108,8 @@ enum VoiceCommandParser {
     static func parseConfirmation(_ transcript: String) -> VoiceConfirmation? {
         let text = normalize(transcript)
         let words = Set(text.split(separator: " ").map(String.init))
-        if containsAny(text, ["dont", "do not", "cancel", "stop", "never mind", "nevermind"]) || !words.isDisjoint(with: ["no", "nope", "nah"]) {
+        // Any hesitation is a no: "I'm not sure" must never send an alert.
+        if containsAny(text, ["dont", "do not", "cancel", "stop", "never mind", "nevermind", "hold on"]) || !words.isDisjoint(with: ["no", "nope", "nah", "not", "wait"]) {
             return .no
         }
         if containsAny(text, ["send it", "go ahead", "do it", "confirm"]) || !words.isDisjoint(with: ["yes", "yeah", "yep", "yup", "sure", "ok", "okay", "correct", "send"]) {

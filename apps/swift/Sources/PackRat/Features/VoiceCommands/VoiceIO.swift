@@ -13,6 +13,9 @@ final class VoiceSpeaker: NSObject, AVSpeechSynthesizerDelegate {
 
     private let synthesizer = AVSpeechSynthesizer()
     private var finished: CheckedContinuation<Void, Never>?
+    /// The sentence `finished` waits on. A cancelled sentence's callback
+    /// arrives late and must not end the next one.
+    private var current: AVSpeechUtterance?
 
     override init() {
         super.init()
@@ -34,6 +37,7 @@ final class VoiceSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         await withCheckedContinuation { continuation in
             finished = continuation
+            current = utterance
             synthesizer.speak(utterance)
         }
     }
@@ -89,14 +93,20 @@ final class VoiceSpeaker: NSObject, AVSpeechSynthesizerDelegate {
     private func resumeFinished() {
         finished?.resume()
         finished = nil
+        current = nil
+    }
+
+    private func ended(_ utterance: AVSpeechUtterance) {
+        guard utterance === current else { return }
+        resumeFinished()
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        Task { @MainActor in self.resumeFinished() }
+        Task { @MainActor in self.ended(utterance) }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        Task { @MainActor in self.resumeFinished() }
+        Task { @MainActor in self.ended(utterance) }
     }
 }
 
@@ -263,6 +273,7 @@ final class VoiceListener {
     private var transcript = ""
     private var lastHeard = Date.distantPast
     private var stopRequested = false
+    private var generation = 0
     private var recognitionFailed = false
 
     private(set) var isListening = false
@@ -289,6 +300,9 @@ final class VoiceListener {
     }
 
     func listen(_ mode: Mode) async throws -> String {
+        // A release that comes before listening is under way still ends it;
+        // the flag is cleared once this listen is over.
+        defer { stopRequested = false }
         try await Self.requestPermissions()
         guard let recognizer = SFSpeechRecognizer(locale: Locale.current) ?? SFSpeechRecognizer(locale: Locale(identifier: "en-US")),
               recognizer.supportsOnDeviceRecognition, recognizer.isAvailable
@@ -297,8 +311,9 @@ final class VoiceListener {
         cancel()
         VoiceAudioSession.activate()
         transcript = ""
-        stopRequested = false
         recognitionFailed = false
+        generation += 1
+        let thisListen = generation
         let startedAt = Date()
         lastHeard = .distantPast
 
@@ -318,13 +333,20 @@ final class VoiceListener {
         VoiceMicrophone.shared.attach(request, for: .command)
         isListening = true
 
+        // Results from an earlier listen, such as the command before a yes
+        // or no, are ignored by their generation.
         task = recognizer.recognitionTask(with: request) { [weak self] result, error in
             guard let text = result?.bestTranscription.formattedString else {
-                if error != nil { Task { @MainActor in self?.recognitionFailed = true } }
+                if error != nil {
+                    Task { @MainActor in
+                        guard let self, self.generation == thisListen else { return }
+                        self.recognitionFailed = true
+                    }
+                }
                 return
             }
             Task { @MainActor in
-                guard let self, self.isListening else { return }
+                guard let self, self.isListening, self.generation == thisListen else { return }
                 if text != self.transcript {
                     self.transcript = text
                     self.lastHeard = Date()

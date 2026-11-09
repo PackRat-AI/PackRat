@@ -37,9 +37,9 @@ Waypoints and notes appear on the trip's map and route, and can be navigated to.
 
 ### Finding the way
 
-- **Where am I.** Says the nearest named place and how far away it is: "About half a mile north-east of Colchuck Lake, at 5,600 feet."
+- **Where am I.** Says the nearest named place the phone knows, otherwise how far along the planned route the user is, otherwise their coordinates, with their altitude: "You're near Colchuck Lake, at 5,600 feet."
 - **Navigate to [place].** Starts guidance to a waypoint the user marked, a waypoint on the planned route, or the end of the route, such as "navigate to camp" or "navigate to the trailhead". PackRat follows the planned route where there is one and points straight to the place where there isn't.
-- **How far to destination.** Says the distance and climb left to where PackRat is guiding the user, or to the end of the planned route: "3.2 miles and 1,400 feet of climbing to go."
+- **How far to destination.** Says the distance left to where PackRat is guiding the user, or to the end of the planned route, and how far off the route they are if they've strayed: "3.2 miles to the trailhead."
 - **Am I on route.** Says whether the user is on their route, and if not, how far off and which way to head back.
 - **Stop navigating.** Ends guidance. Tracking carries on.
 
@@ -57,7 +57,7 @@ Anything PackRat doesn't recognise gets "Sorry, I didn't catch that" and a short
 
 While navigating, PackRat speaks without being asked:
 
-- **Before each turn** where the route leaves the trail the user is on or bends sharply: "In 400 feet, bear left onto Stuart Lake Trail."
+- **Before each turn** where the route leaves the trail the user is on or bends sharply: "In 400 feet, bear left, heading north-east." Trail names aren't on the phone offline, so turns use compass headings.
 - **At milestones** along the way: "Halfway to camp. 2.1 miles to go."
 - **When the user strays.** If they move well off the route and stay off it, PackRat says so and points them back: "You're off route. Head east about 300 feet to rejoin it." It says it once, then again only if they move further away.
 - **On arrival.** "You've reached camp."
@@ -74,7 +74,7 @@ Answers and prompts are short, said once and also shown on screen as a banner on
 
 ## Confirming before anything is sent
 
-Check in, I'm safe and changing the return time all tell other people something, so each is read back and needs a spoken "yes", "send it" or "confirm". "No", "cancel" or silence drops it. Everything else runs straight away.
+Check in, I'm safe and changing the return time all tell other people something, so each is read back and needs a spoken "yes", "send it" or "confirm". "No", "cancel", "wait", anything with "not" in it, or silence drops it. Everything else runs straight away.
 
 ## Without signal
 
@@ -82,7 +82,7 @@ Commands are recognised and answered on the phone, and tracking, waypoints and g
 
 ## What the user controls
 
-- **On or off.** Voice commands can be turned off entirely in Settings, which hides the microphone button and every shortcut.
+- **On or off.** Voice commands can be turned off entirely in Settings, which hides the microphone button; Siri then says how to turn them back on.
 - **"Hey PackRat."** Off until the user turns it on. When on, it listens only while a trip is in progress and stops when the trip ends.
 - **Headset shortcut (Android).** Can be turned off separately for users whose headset button already does something else.
 - **Guidance prompts.** Turn prompts, milestones and off-route warnings can each be turned off, and prompts can be set to vibrate only.

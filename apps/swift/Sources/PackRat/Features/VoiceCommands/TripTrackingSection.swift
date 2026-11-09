@@ -16,6 +16,7 @@ struct TripTrackingSection: View {
     @State private var confirmingStop = false
     @State private var pendingWaypoint: TripWaypoint?
     @State private var waypointName = ""
+    @State private var showingWaypointLimit = false
     /// Apple's Siri tip, until the user closes it.
     @AppStorage(VoiceCommandSettings.siriTipVisibleKey) private var siriTipVisible = true
 
@@ -67,6 +68,12 @@ struct TripTrackingSection: View {
                 .submitLabel(.done)
             Button("Save") { saveWaypoint(named: waypointName) }
                 .keyboardShortcut(.defaultAction)
+            Button("Cancel", role: .cancel) { pendingWaypoint = nil }
+        }
+        .alert("Too Many Waypoints", isPresented: $showingWaypointLimit) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(VoiceAnswers.waypointLimit)
         }
         .onAppear {
             UITextField.appearance(whenContainedInInstancesOf: [UIAlertController.self]).clearButtonMode = .whileEditing
@@ -267,7 +274,11 @@ struct TripTrackingSection: View {
             elevation: marked.elevationMeters,
             at: (try? Date(marked.createdAt, strategy: .iso8601)) ?? Date()
         )
-        Task { await viewModel.addWaypoint(waypoint, to: trip.id, context: modelContext) }
+        Task {
+            if await !viewModel.addWaypoint(waypoint, to: trip.id, context: modelContext) {
+                showingWaypointLimit = true
+            }
+        }
     }
 }
 

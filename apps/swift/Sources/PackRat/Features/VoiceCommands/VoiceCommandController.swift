@@ -144,7 +144,7 @@ final class VoiceCommandController {
         }
         let crumb = Breadcrumb(level: .info, category: "voiceCommands")
         crumb.message = "Siri command"
-        crumb.data = ["command": String(describing: command), "tripId": context.trip.id]
+        crumb.data = ["command": command.logName, "tripId": context.trip.id]
         SentrySDK.addBreadcrumb(crumb)
         siri = SiriTurn(confirm: confirm)
         defer { siri = nil }
@@ -167,7 +167,7 @@ final class VoiceCommandController {
         }
         let crumb = Breadcrumb(level: .info, category: "voiceCommands")
         crumb.message = "Voice command"
-        crumb.data = ["command": String(describing: command), "tripId": context.trip.id]
+        crumb.data = ["command": command.logName, "tripId": context.trip.id]
         SentrySDK.addBreadcrumb(crumb)
         phase = .working
         await perform(command, context)
@@ -286,14 +286,18 @@ final class VoiceCommandController {
         case .markWaypoint(let name):
             guard let fix = await waypointFix() else { return await respond(noFixAnswer) }
             let waypoint = TripWaypoint.named(name, latitude: fix.latitude, longitude: fix.longitude, elevation: fix.altitude)
-            await context.viewModel.addWaypoint(waypoint, to: trip.id, context: context.modelContext)
+            guard await context.viewModel.addWaypoint(waypoint, to: trip.id, context: context.modelContext) else {
+                return await respond(VoiceAnswers.waypointLimit)
+            }
             await respond(VoiceAnswers.waypointMarked(waypoint.name))
 
         case .note(let text):
             guard !text.isEmpty else { return await respond(VoiceAnswers.noteEmpty) }
             guard let fix = await waypointFix() else { return await respond(noFixAnswer) }
             let waypoint = TripWaypoint.named(nil, note: text, latitude: fix.latitude, longitude: fix.longitude, elevation: fix.altitude)
-            await context.viewModel.addWaypoint(waypoint, to: trip.id, context: context.modelContext)
+            guard await context.viewModel.addWaypoint(waypoint, to: trip.id, context: context.modelContext) else {
+                return await respond(VoiceAnswers.waypointLimit)
+            }
             await respond(VoiceAnswers.noteSaved)
         }
     }

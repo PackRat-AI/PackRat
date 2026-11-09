@@ -470,6 +470,35 @@ struct WakePhraseTests {
     }
 }
 
+
+@Suite("Review fixes")
+struct VoiceReviewFixTests {
+    @Test("hesitation never confirms", arguments: ["I'm not sure", "not ok", "wait", "hold on a second", "no don't send it"])
+    func hesitation(_ reply: String) {
+        #expect(VoiceCommandParser.parseConfirmation(reply) == .no)
+    }
+
+    @Test("a clear yes still confirms", arguments: ["yes", "yeah send it", "sure", "go ahead"])
+    func clearYes(_ reply: String) {
+        #expect(VoiceCommandParser.parseConfirmation(reply) == .yes)
+    }
+
+    @Test("logs name the command, never the user's words")
+    func logName() {
+        #expect(VoiceCommand.note(text: "meet Sam at the bridge").logName == "note")
+        #expect(VoiceCommand.markWaypoint(name: "Sam's camp").logName == "markWaypoint")
+        #expect(VoiceCommand.navigate(to: "home").logName == "navigate")
+    }
+
+    @Test("names and notes fit the server's limits")
+    func limits() {
+        let long = String(repeating: "🏔", count: 150)
+        let waypoint = TripWaypoint.named(long, note: String(repeating: "a", count: 3_000), latitude: 0, longitude: 0, elevation: nil)
+        #expect(waypoint.name.utf16.count <= TripWaypoint.maxNameLength)
+        #expect((waypoint.note?.utf16.count ?? 0) == TripWaypoint.maxNoteLength)
+    }
+}
+
 #if os(iOS)
 @Suite("Spoken safety alerts")
 struct SafetyAlertTests {
