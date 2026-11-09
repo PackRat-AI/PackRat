@@ -45,4 +45,6 @@ export interface SafetyLocationFix {
   accuracy: number | null;
   recordedAt: Date;
   placeName?: string | null;
+  /** Metres above sea level, when the phone has a 3D fix. */
+  altitude?: number | null;
 }

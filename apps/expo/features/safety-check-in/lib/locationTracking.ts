@@ -26,6 +26,7 @@ function toFix(location: Location.LocationObject): SafetyLocationFix {
     longitude: location.coords.longitude,
     accuracy: location.coords.accuracy ?? null,
     recordedAt: new Date(location.timestamp),
+    altitude: location.coords.altitude ?? null,
   };
 }
 

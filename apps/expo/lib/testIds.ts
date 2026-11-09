@@ -290,6 +290,14 @@ export const testIds = Object.freeze({
   }),
 
   // ── Safety check-in ───────────────────────────────────────────────────────
+  voiceCommands: Object.freeze({
+    bar: 'voice:bar',
+    button: 'voice:button',
+    banner: 'voice:banner',
+    dismissBtn: 'voice:dismiss',
+    settingsToggle: 'voice:settings-enabled',
+    spokenAnswersToggle: 'voice:settings-spoken-answers',
+  }),
   safetyCheckIn: Object.freeze({
     startTripBtn: 'safety:start-trip',
     notifyContactsBtn: 'safety:notify-contacts',

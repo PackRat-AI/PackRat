@@ -36,6 +36,7 @@ import {
   useTrailReportNotificationsSetting,
 } from 'expo-app/features/trail-conditions/hooks/useTrailReportAlerts';
 import { tripReminderSettingsStore } from 'expo-app/features/trips/store/tripReminders';
+import { VoiceSettingsSection } from 'expo-app/features/voice-commands';
 import { FEATURE_FLAGS_QUERY_KEY, useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -252,6 +253,8 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         )}
+
+        <VoiceSettingsSection />
 
         {(enableTripReminders || trailReportsLoaded) && (
           <View>

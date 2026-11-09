@@ -2181,5 +2181,25 @@
       "overdueBody_one": "We've told {{who}} that you're overdue from {{trip}}. Tap I'm Safe as soon as you can.",
       "overdueBody_other": "We've told {{who}} that you're overdue from {{trip}}. Tap I'm Safe as soon as you can."
     }
+  },
+  "voiceCommands": {
+    "bar": {
+      "holdToTalk": "Hold to Talk",
+      "listening": "Listening",
+      "listeningStatus": "Listening…",
+      "confirmHint": "Say yes to send, or no to cancel.",
+      "dismiss": "Dismiss",
+      "buttonLabel": "Voice command",
+      "buttonHint": "Hold and speak a command, then let go."
+    },
+    "settings": {
+      "section": "Voice",
+      "enabled": "Voice Commands",
+      "enabledOffSubtitle": "Talk to PackRat on a trip page to check in, hear where you are or find out how far you have to go.",
+      "enabledSubtitle": "Hold the microphone on a trip page and say a command.",
+      "spokenAnswers": "Spoken Answers",
+      "spokenAnswersSubtitle": "PackRat reads its answers out loud as well as showing them.",
+      "spokenAnswersOffSubtitle": "Answers appear on screen without being read aloud."
+    }
   }
 }
