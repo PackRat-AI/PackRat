@@ -17,6 +17,7 @@ const IOS_SYSTEM_COLORS = {
     root: 'rgb(255, 255, 255)',
     card: 'rgb(255, 255, 255)',
     destructive: 'rgb(255, 56, 43)',
+    destructiveForeground: 'rgb(255, 255, 255)',
     primary: 'rgb(0, 123, 254)',
     primaryForeground: 'rgb(255, 255, 255)',
     secondary: 'rgb(45, 175, 231)',
@@ -37,6 +38,7 @@ const IOS_SYSTEM_COLORS = {
     root: 'rgb(0, 0, 0)',
     card: 'rgb(28, 28, 30)',
     destructive: 'rgb(254, 67, 54)',
+    destructiveForeground: 'rgb(255, 255, 255)',
     primary: 'rgb(3, 133, 255)',
     primaryForeground: 'rgb(255, 255, 255)',
     secondary: 'rgb(100, 211, 254)',
@@ -63,6 +65,7 @@ const ANDROID_COLORS = {
     root: 'rgb(249, 249, 255)', // surface
     card: 'rgb(242, 243, 254)', // surfaceContainerLow
     destructive: 'rgb(186, 26, 26)', // error
+    destructiveForeground: 'rgb(255, 255, 255)', // onError
     primary: 'rgb(0, 88, 186)', // primary
     primaryForeground: 'rgb(255, 255, 255)', // onPrimary
     secondary: 'rgb(173, 199, 254)', // secondaryContainer
@@ -83,6 +86,7 @@ const ANDROID_COLORS = {
     root: 'rgb(16, 19, 26)', // surface
     card: 'rgb(24, 28, 35)', // surfaceContainerLow
     destructive: 'rgb(255, 180, 171)', // error
+    destructiveForeground: 'rgb(105, 0, 5)', // onError
     primary: 'rgb(173, 199, 255)', // primary
     primaryForeground: 'rgb(0, 46, 104)', // onPrimary
     secondary: 'rgb(47, 73, 120)', // secondaryContainer

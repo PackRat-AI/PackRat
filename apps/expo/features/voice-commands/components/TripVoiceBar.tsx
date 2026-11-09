@@ -92,7 +92,7 @@ export function TripVoiceBar({ trip }: { trip: Trip }) {
       <Pressable
         onPressIn={press}
         onPressOut={endListening}
-        android_ripple={{ color: 'rgba(255,255,255,0.24)', borderless: false }}
+        android_ripple={{ color: colors.grey4, borderless: false }}
         accessibilityRole="button"
         accessibilityLabel={t('voiceCommands.bar.buttonLabel')}
         accessibilityHint={t('voiceCommands.bar.buttonHint')}
@@ -103,8 +103,14 @@ export function TripVoiceBar({ trip }: { trip: Trip }) {
         style={{ backgroundColor: active ? colors.destructive : colors.primary, elevation: 3 }}
         testID={testIds.voiceCommands.button}
       >
-        <Icon name={active ? 'waveform' : 'microphone'} size={24} color="white" />
-        <Text className="text-base font-medium text-white">
+        <Icon
+          name={active ? 'waveform' : 'microphone'}
+          size={24}
+          color={active ? colors.destructiveForeground : colors.primaryForeground}
+        />
+        <Text
+          className={`text-base font-medium ${active ? 'text-destructive-foreground' : 'text-primary-foreground'}`}
+        >
           {active ? t('voiceCommands.bar.listening') : t('voiceCommands.bar.holdToTalk')}
         </Text>
       </Pressable>

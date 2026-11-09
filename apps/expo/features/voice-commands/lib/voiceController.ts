@@ -7,6 +7,7 @@ import { currentFix, LocatorError } from 'expo-app/features/safety-check-in/lib/
 import {
   endSafetyCheckIn,
   extendSafetyCheckIn,
+  loadContacts,
   recordSafetyCheckIn,
   startSafetyCheckIn,
 } from 'expo-app/features/safety-check-in/lib/safetyActions';
@@ -215,6 +216,8 @@ async function perform({
     case 'startTrip': {
       if (status !== 'planned') return answer(VoiceAnswers.alreadyStarted);
       setTripLifecycle({ tripId: trip.id, status: 'in_progress' });
+      // Contacts load when a safety screen opens; by voice, none may have been yet.
+      if (safetyStore.contacts.peek().length === 0) await loadContacts();
       const reachable = safetyStore.contacts.peek().filter(canBeNotified);
       const contact = reachable.find((c) => c.isDefault) ?? reachable[0];
       if (!contact) return answer(VoiceAnswers.tripStarted);
