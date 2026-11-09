@@ -18,8 +18,10 @@ struct TripDetailView: View {
         viewModel.trips.first { $0.id == openedTrip.id } ?? openedTrip
     }
 
-    /// Over once its last day has passed, the point a trip can be logged.
+    /// Over once it's been finished or its last day has passed, the point a
+    /// trip can be logged.
     private var isFinished: Bool {
+        if trip.lifecycle == .complete { return true }
         guard let end = (trip.endDate ?? trip.startDate)?.toDate() else { return false }
         return Calendar.current.startOfDay(for: end) < Calendar.current.startOfDay(for: .now)
     }
@@ -82,6 +84,11 @@ struct TripDetailView: View {
                 metaCards
                     .padding(.top, 8)
 
+                #if os(iOS)
+                if TripTrackingSection.shows(for: trip) {
+                    TripTrackingSection(trip: trip, viewModel: viewModel)
+                }
+                #endif
                 if FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey) {
                     TripWeatherSection(trip: trip, viewModel: viewModel)
                 }
@@ -151,6 +158,17 @@ struct TripDetailView: View {
             }
             .padding(.bottom)
         }
+        #if os(iOS)
+        .voiceBar {
+            if TripVoiceBar.shows(for: trip) {
+                TripVoiceBar(
+                    trip: trip,
+                    pack: trip.packId.flatMap { id in appState.packsVM.packs.first { $0.id == id } },
+                    viewModel: viewModel
+                )
+            }
+        }
+        #endif
         .navigationTitle(trip.name)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
@@ -329,6 +347,33 @@ struct TripDetailView: View {
                 MapPolyline(coordinates: route)
                     .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
             }
+            #if os(iOS)
+            // The path so far while this trip is being recorded.
+            if let live = TrackRecorder.shared.track, live.tripId == trip.id, live.samples.count >= 2 {
+                MapPolyline(coordinates: live.samples.map(\.trackPoint.coordinate))
+                    .stroke(.red, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+            }
+            // Where the user is and where guidance is taking them.
+            if TrackRecorder.shared.isRecording(tripId: trip.id) || TripGuide.shared.isGuiding(tripId: trip.id) {
+                UserAnnotation()
+            }
+            if let destination = TripGuide.shared.session.flatMap({ $0.tripId == trip.id ? $0.guide.plan.destination : nil }) {
+                Marker(
+                    destination.name.prefix(1).uppercased() + destination.name.dropFirst(),
+                    systemImage: "flag.checkered",
+                    coordinate: CLLocationCoordinate2D(latitude: destination.point.latitude, longitude: destination.point.longitude)
+                )
+                .tint(.blue)
+            }
+            #endif
+            ForEach(trip.log?.waypoints ?? []) { waypoint in
+                Marker(
+                    waypoint.name,
+                    systemImage: waypoint.note == nil ? "mappin" : "note.text",
+                    coordinate: CLLocationCoordinate2D(latitude: waypoint.latitude, longitude: waypoint.longitude)
+                )
+                .tint(.orange)
+            }
             Annotation(trip.location?.name ?? trip.name, coordinate: coord) {
                 ZStack {
                     Circle().fill(.red).frame(width: 36, height: 36)
@@ -343,6 +388,10 @@ struct TripDetailView: View {
         .mapControls {
             #if os(macOS)
             MapZoomStepper()
+            #else
+            if TrackRecorder.shared.isRecording(tripId: trip.id) || TripGuide.shared.isGuiding(tripId: trip.id) {
+                MapUserLocationButton()
+            }
             #endif
             MapCompass()
         }
@@ -380,3 +429,19 @@ struct TripDetailView: View {
         .padding(.horizontal)
     }
 }
+
+#if os(iOS)
+private extension View {
+    /// The voice bar pinned under the trip page. On iOS 26 it's a safe-area
+    /// bar, so the page blurs out beneath it the way it does under a toolbar
+    /// and the hint under Hold to Talk stays readable over anything.
+    @ViewBuilder
+    func voiceBar(@ViewBuilder _ content: () -> some View) -> some View {
+        if #available(iOS 26, *) {
+            safeAreaBar(edge: .bottom, content: content)
+        } else {
+            safeAreaInset(edge: .bottom, content: content)
+        }
+    }
+}
+#endif

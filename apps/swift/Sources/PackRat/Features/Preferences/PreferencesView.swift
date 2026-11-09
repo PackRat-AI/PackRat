@@ -50,6 +50,14 @@ struct PreferencesView: View {
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
     @AppStorage("speedUnit") private var speedUnit: SpeedUnit = .mph
     @AppStorage("apiBaseURL") private var apiBaseURL: String = ""
+    @AppStorage(VoiceCommandSettings.enabledKey) private var voiceCommandsEnabled = true
+    @AppStorage(VoiceCommandSettings.spokenAnswersKey) private var voiceSpokenAnswers = true
+    @AppStorage(VoiceCommandSettings.turnPromptsKey) private var guidanceTurns = true
+    @AppStorage(VoiceCommandSettings.milestonesKey) private var guidanceMilestones = true
+    @AppStorage(VoiceCommandSettings.offRouteKey) private var guidanceOffRoute = true
+    @AppStorage(VoiceCommandSettings.vibrateOnlyKey) private var guidanceVibrateOnly = false
+    @AppStorage(VoiceCommandSettings.wakeWordKey) private var wakeWordOn = false
+    @AppStorage(VoiceCommandSettings.safetyAlertsSpokenKey) private var safetyAlertsSpoken = true
 
     @State private var showingClearDataConfirm = false
     /// Owned here, at the screen root, so the paywall presents reliably —
@@ -94,6 +102,7 @@ struct PreferencesView: View {
             unitsSection
             notificationSection
             safetySection
+            voiceSection
             communitySection
             if ChatViewModel.isOnDeviceOffered {
                 Section {
@@ -310,6 +319,80 @@ struct PreferencesView: View {
                 Text("Safety")
             } footer: {
                 Text("Told when you start a trip, and alerted if you don't come back on time.")
+            }
+        }
+        #endif
+    }
+
+    private var voiceFooter: String {
+        guard voiceCommandsEnabled else {
+            return "Talk to PackRat on a trip page to check in, hear where you are or find out how far you have to go."
+        }
+        var footer = wakeWordOn
+            ? "While a trip is underway, say “Hey PackRat” and a command, even with your phone locked."
+            : "Hold the microphone on a trip page and say a command. Turn on “Hey PackRat” to talk hands-free."
+        if !voiceSpokenAnswers { footer += " Answers appear on screen without being read aloud." }
+        footer += safetyAlertsSpoken
+            ? " Severe weather, an hour before you're due back and a low battery are said out loud."
+            : " Severe weather, an hour before you're due back and a low battery arrive as notifications."
+        return footer
+    }
+
+    @ViewBuilder
+    private var voiceSection: some View {
+        #if os(iOS)
+        if FeatureFlagStore.shared.isEnabled(VoiceCommandSettings.flagKey) {
+            Section {
+                Toggle("Voice Commands", isOn: $voiceCommandsEnabled)
+                    .accessibilityIdentifier("settings_voice_commands_toggle")
+                if voiceCommandsEnabled {
+                    Toggle("“Hey PackRat”", isOn: $wakeWordOn)
+                        .accessibilityIdentifier("settings_voice_wake_word_toggle")
+                        .onChange(of: wakeWordOn) { _, on in
+                            // Asked for when switched on, not on the trail.
+                            if on, VoiceListener.needsPermission {
+                                Task { try? await VoiceListener.requestPermissions() }
+                            }
+                        }
+                    Toggle("Spoken Answers", isOn: $voiceSpokenAnswers)
+                        .accessibilityIdentifier("settings_voice_spoken_answers_toggle")
+                    Toggle("Spoken Safety Alerts", isOn: $safetyAlertsSpoken)
+                        .accessibilityIdentifier("settings_voice_safety_alerts_toggle")
+                    NavigationLink("What You Can Say") { VoiceCommandsList() }
+                        .accessibilityIdentifier("settings_voice_commands_list")
+                }
+            } header: {
+                Text("Voice")
+            } footer: {
+                Text(voiceFooter)
+            }
+            if voiceCommandsEnabled, voiceSpokenAnswers || safetyAlertsSpoken {
+                Section {
+                    LabeledContent("Speaking Voice", value: VoiceSpeaker.preferredVoice?.name ?? "Default")
+                        .accessibilityIdentifier("settings_voice_speaking_voice")
+                } footer: {
+                    if !VoiceSpeaker.hasNaturalVoice {
+                        Text("For a more natural voice, download an Enhanced or Premium voice in your iPhone's Settings, under Accessibility, then Spoken Content, then Voices.")
+                    }
+                }
+            }
+            if voiceCommandsEnabled {
+                Section {
+                    Toggle("Turn Prompts", isOn: $guidanceTurns)
+                        .accessibilityIdentifier("settings_guidance_turns_toggle")
+                    Toggle("Milestones", isOn: $guidanceMilestones)
+                        .accessibilityIdentifier("settings_guidance_milestones_toggle")
+                    Toggle("Off-Route Warnings", isOn: $guidanceOffRoute)
+                        .accessibilityIdentifier("settings_guidance_off_route_toggle")
+                    Toggle("Vibrate Only", isOn: $guidanceVibrateOnly)
+                        .accessibilityIdentifier("settings_guidance_vibrate_only_toggle")
+                } header: {
+                    Text("Guidance")
+                } footer: {
+                    Text(guidanceVibrateOnly
+                        ? "Your phone vibrates at each prompt, and the trip page shows what it's about."
+                        : "What PackRat says while guiding you to a waypoint or along your route.")
+                }
             }
         }
         #endif

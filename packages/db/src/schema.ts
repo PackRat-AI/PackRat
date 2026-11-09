@@ -695,6 +695,19 @@ export type TripLog = {
   trails?: TripTrail[] | null;
   /** Set by the user; null means the app reads it from where the trip was. */
   landscape?: 'desert' | 'mountain' | 'forest' | 'coastal' | 'water' | 'grassland' | 'polar' | null;
+  /** Places marked along the way, with optional notes. */
+  waypoints?: TripWaypoint[] | null;
+};
+
+/** A place marked on a trip. `createdAt` is ISO 8601. */
+export type TripWaypoint = {
+  id: string;
+  name: string;
+  note?: string | null;
+  latitude: number;
+  longitude: number;
+  elevationMeters?: number | null;
+  createdAt: string;
 };
 
 /** A trail walked on a trip; `id` is `trails.id` on the trail database. */
