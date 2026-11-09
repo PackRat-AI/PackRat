@@ -118,3 +118,37 @@ struct TripWeatherAlertReadsTests {
         #expect(!TripWeatherAlertReads(defaults: defaults).hasUnread(tripId: "t1", alertIds: ["storm"]))
     }
 }
+
+@Suite("TripWeatherPlan.watchedTrips")
+struct TripWatchListTests {
+    private let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+    private func trip(_ id: String, startsIn days: Double, lasting length: Double = 2,
+                      alerts: Bool? = nil, located: Bool = true) -> Trip {
+        var trip = Trip(id: id, name: id, description: nil, notes: nil,
+                        location: located ? TripLocation(latitude: 47.5, longitude: -120.8, name: "Leavenworth") : nil,
+                        startDate: now.addingTimeInterval(days * 86_400).iso8601String(),
+                        endDate: now.addingTimeInterval((days + length) * 86_400).iso8601String(),
+                        userId: nil, packId: nil, checklist: nil, deleted: false, createdAt: nil, updatedAt: nil)
+        trip.weatherAlerts = alerts
+        return trip
+    }
+
+    @Test("watched from 3 days before the start until a day after the end")
+    func window() {
+        let trips = [
+            trip("soon", startsIn: 2.9),
+            trip("later", startsIn: 3.1),
+            trip("underway", startsIn: -1),
+            trip("justEnded", startsIn: -2.5, lasting: 2),
+            trip("over", startsIn: -4, lasting: 2),
+        ]
+        #expect(TripWeatherPlan.watchedTrips(trips, now: now).map(\.id) == ["justEnded", "underway", "soon"])
+    }
+
+    @Test("a trip with alerts off or no destination is not watched")
+    func excluded() {
+        let trips = [trip("off", startsIn: 1, alerts: false), trip("nowhere", startsIn: 1, located: false)]
+        #expect(TripWeatherPlan.watchedTrips(trips, now: now).isEmpty)
+    }
+}

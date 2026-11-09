@@ -7,13 +7,24 @@ import SwiftUI
 /// different concern (viewing each location's forecast).
 struct WeatherWatchListView: View {
     @Bindable var viewModel: WeatherViewModel
+    @Environment(AppState.self) private var appState
+    @Environment(\.modelContext) private var modelContext
     @State private var isAddingLocation = false
+    @State private var tripAlertsOn = false
+
+    /// Trips watching their destination right now. They belong to the trip,
+    /// not the list, so they end on their own; docs/features/trip-weather.md
+    /// ("Watching the destination").
+    private var watchedTrips: [Trip] {
+        guard tripAlertsOn else { return [] }
+        return TripWeatherPlan.watchedTrips(appState.tripsVM.trips, now: Date())
+    }
 
     var body: some View {
         Group {
-            if viewModel.isLoadingWatchedLocations && viewModel.watchedLocations.isEmpty {
+            if viewModel.isLoadingWatchedLocations && viewModel.watchedLocations.isEmpty && watchedTrips.isEmpty {
                 ProgressView("Loading watch list…")
-            } else if viewModel.watchedLocations.isEmpty {
+            } else if viewModel.watchedLocations.isEmpty && watchedTrips.isEmpty {
                 UnavailableStateView(
                     title: "No Watched Locations",
                     subtitle: "Add a location to get notified when a hazard alert is issued for it.",
@@ -21,15 +32,40 @@ struct WeatherWatchListView: View {
                 )
             } else {
                 List {
-                    ForEach(viewModel.watchedLocations) { location in
-                        WatchedLocationRow(location: location)
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    Task { await viewModel.unwatchLocation(location) }
+                    if !watchedTrips.isEmpty {
+                        Section("Trips") {
+                            ForEach(watchedTrips) { trip in
+                                NavigationLink {
+                                    TripDetailView(trip: trip, viewModel: appState.tripsVM)
                                 } label: {
-                                    Label("Remove", systemImage: "trash")
+                                    WatchedTripRow(trip: trip)
                                 }
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        Task {
+                                            await appState.tripsVM.setWeatherAlerts(
+                                                false, for: trip.id, context: modelContext
+                                            )
+                                        }
+                                    } label: {
+                                        Label("Turn Off", systemImage: "bell.slash")
+                                    }
+                                }
+                                .accessibilityIdentifier("weather_watch_list_trip_\(trip.id)")
                             }
+                        }
+                    }
+                    Section(watchedTrips.isEmpty ? "" : "Locations") {
+                        ForEach(viewModel.watchedLocations) { location in
+                            WatchedLocationRow(location: location)
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        Task { await viewModel.unwatchLocation(location) }
+                                    } label: {
+                                        Label("Remove", systemImage: "trash")
+                                    }
+                                }
+                        }
                     }
                 }
             }
@@ -52,6 +88,32 @@ struct WeatherWatchListView: View {
             WatchListAddLocationView(viewModel: viewModel)
         }
         .task { await viewModel.loadWatchedLocations() }
+        .task { await loadTripWatches() }
+    }
+
+    private func loadTripWatches() async {
+        guard FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey) else { return }
+        if appState.tripsVM.trips.isEmpty { await appState.tripsVM.load(context: modelContext) }
+        tripAlertsOn = (try? await WeatherMonitoringService.shared.tripAlertsEnabled()) ?? false
+    }
+}
+
+private struct WatchedTripRow: View {
+    let trip: Trip
+
+    private var endDate: String? {
+        (trip.endDate ?? trip.startDate)?.toDate()?.formatted(.dateTime.month(.abbreviated).day())
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(trip.name)
+                .font(.body)
+            Text([trip.location?.name, endDate.map { "Ends \($0)" }].compactMap { $0 }.joined(separator: " · "))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
     }
 }
 
