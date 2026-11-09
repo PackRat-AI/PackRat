@@ -69,6 +69,8 @@ struct PreferencesView: View {
     @Bindable private var tripReminders = TripReminderSettings.shared
     /// The server-side switch; nil until loaded, and the toggle waits for it.
     @State private var trailReportNotifications: Bool?
+    /// The server-side trip weather alerts switch; nil until loaded.
+    @State private var tripWeatherAlerts: Bool?
 
     var body: some View {
         #if os(macOS)
@@ -116,6 +118,7 @@ struct PreferencesView: View {
         .hostsPaywall(paywallTrigger)
         .onAppear { Task { await refreshNotificationStatus() } }
         .task { await loadTrailReportNotifications() }
+        .task { await loadTripWeatherAlerts() }
         #endif
     }
 
@@ -231,6 +234,13 @@ struct PreferencesView: View {
                 ))
                 .accessibilityIdentifier("settings_trail_report_notifications_toggle")
             }
+            if showsTripWeatherToggle, let enabled = tripWeatherAlerts {
+                Toggle("Trip Weather Alerts", isOn: Binding(
+                    get: { enabled },
+                    set: { new in Task { await setTripWeatherAlerts(new) } }
+                ))
+                .accessibilityIdentifier("settings_trip_weather_alerts_toggle")
+            }
         } header: {
             Text("Notifications")
         } footer: {
@@ -252,7 +262,29 @@ struct PreferencesView: View {
         if showsTrailReportToggle, trailReportNotifications != nil {
             lines.append("Trail Reports tell you when someone reports on a trail for one of your upcoming trips.")
         }
+        if showsTripWeatherToggle, tripWeatherAlerts != nil {
+            lines.append("Trip Weather Alerts tell you about weather hazards at a trip's destination from 3 days before you leave. Turn them off for one trip from its Weather section.")
+        }
         return lines.isEmpty ? nil : lines.joined(separator: "\n\n")
+    }
+
+    private var showsTripWeatherToggle: Bool {
+        FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey) && authManager.isAuthenticated
+    }
+
+    private func loadTripWeatherAlerts() async {
+        guard showsTripWeatherToggle else { return }
+        tripWeatherAlerts = try? await WeatherMonitoringService.shared.tripAlertsEnabled()
+    }
+
+    private func setTripWeatherAlerts(_ enabled: Bool) async {
+        let previous = tripWeatherAlerts
+        tripWeatherAlerts = enabled
+        do {
+            try await WeatherMonitoringService.shared.setTripAlertsEnabled(enabled)
+        } catch {
+            tripWeatherAlerts = previous
+        }
     }
 
     private func loadTrailReportNotifications() async {

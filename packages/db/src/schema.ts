@@ -675,6 +675,8 @@ export const notificationPreferences = pgTable('notification_preferences', {
     .primaryKey()
     .references(() => users.id, { onDelete: 'cascade' }),
   trailConditions: boolean('trail_conditions').default(true).notNull(),
+  // Pushes about weather alerts at the destination of any of the user's trips.
+  tripWeather: boolean('trip_weather').default(true).notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
@@ -756,6 +758,9 @@ export const trips = pgTable('trips', {
   plannedRoute: jsonb('planned_route').$type<{ latitude: number; longitude: number }[]>(),
   log: jsonb('log').$type<TripLog>(),
   excludedFromStats: boolean('excluded_from_stats').notNull().default(false),
+  // Whether this trip pushes weather alerts at its destination; see
+  // docs/features/trip-weather.md.
+  weatherAlerts: boolean('weather_alerts').notNull().default(true),
   localCreatedAt: timestamp('local_created_at').notNull(),
   localUpdatedAt: timestamp('local_updated_at').notNull(),
   deleted: boolean('deleted').notNull().default(false),

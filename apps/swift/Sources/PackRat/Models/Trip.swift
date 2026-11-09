@@ -28,6 +28,9 @@ extension Trip {
     /// Left out of trip stats by the user, for a trip that never happened or
     /// was planned for someone else. The trip itself stays in the list.
     var isExcludedFromStats: Bool { excludedFromStats ?? false }
+    /// Whether the trip pushes weather alerts at its destination. On unless
+    /// the user turned it off for this trip.
+    var sendsWeatherAlerts: Bool { weatherAlerts ?? true }
 
     var dateRange: String {
         let parts = [startDate, endDate].compactMap { $0?.toDate()?.formatted(date: .abbreviated, time: .omitted) }
@@ -232,10 +235,11 @@ struct UpdateTripRequest: Encodable {
     var trailName: String? = nil
     let log: TripLog?
     let excludedFromStats: Bool
+    var weatherAlerts: Bool = true
     let localUpdatedAt: String
 
     enum CodingKeys: String, CodingKey {
-        case name, description, location, startDate, endDate, notes, packId, checklist, log, excludedFromStats
+        case name, description, location, startDate, endDate, notes, packId, checklist, log, excludedFromStats, weatherAlerts
         case status, startedAt, completedAt, plannedRoute, localUpdatedAt, trailId, trailName
     }
 
@@ -271,6 +275,7 @@ struct UpdateTripRequest: Encodable {
         try container.encodeIfPresent(trailName, forKey: .trailName)
         try container.encode(log, forKey: .log)
         try container.encode(excludedFromStats, forKey: .excludedFromStats)
+        try container.encode(weatherAlerts, forKey: .weatherAlerts)
         try container.encode(localUpdatedAt, forKey: .localUpdatedAt)
     }
 }

@@ -109,6 +109,7 @@ export const TripSchema = z.object({
   plannedRoute: TripPlannedRouteSchema.nullable().optional(),
   log: TripLogSchema.nullable().optional(),
   excludedFromStats: z.boolean().optional(),
+  weatherAlerts: z.boolean().optional(),
   deleted: z.boolean(),
   localCreatedAt: datetimeString.optional(),
   localUpdatedAt: datetimeString.optional(),
@@ -132,6 +133,7 @@ export const CreateTripBodySchema = z.object({
   checklist: TripChecklistSchema.nullable().optional(),
   log: TripLogSchema.nullable().optional(),
   excludedFromStats: z.boolean().optional(),
+  weatherAlerts: z.boolean().optional(),
   localCreatedAt: z.string().datetime(),
   localUpdatedAt: z.string().datetime(),
 });
@@ -153,6 +155,7 @@ export const UpdateTripBodySchema = z.object({
   plannedRoute: TripPlannedRouteSchema.nullable().optional(),
   log: TripLogSchema.nullable().optional(),
   excludedFromStats: z.boolean().optional(),
+  weatherAlerts: z.boolean().optional(),
   localUpdatedAt: z.string().datetime().optional(),
 });
 

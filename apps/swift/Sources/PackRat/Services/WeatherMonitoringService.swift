@@ -32,4 +32,25 @@ final class WeatherMonitoringService: WeatherMonitoringServicing {
         let endpoint = Endpoint(.post, "/api/weather/device-token", body: request)
         try await api.sendDiscarding(endpoint)
     }
+
+    /// Whether weather alerts at the user's trip destinations are pushed.
+    func tripAlertsEnabled() async throws -> Bool {
+        let settings: TripWeatherNotificationSettings = try await api.send(
+            Endpoint(.get, "/api/weather/trip-alerts/settings")
+        )
+        return settings.tripWeather
+    }
+
+    func setTripAlertsEnabled(_ enabled: Bool) async throws {
+        let endpoint = Endpoint(
+            .put,
+            "/api/weather/trip-alerts/settings",
+            body: TripWeatherNotificationSettings(tripWeather: enabled)
+        )
+        try await api.sendDiscarding(endpoint)
+    }
+}
+
+private struct TripWeatherNotificationSettings: Codable, Sendable {
+    let tripWeather: Bool
 }
