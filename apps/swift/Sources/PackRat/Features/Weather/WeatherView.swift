@@ -135,7 +135,8 @@ struct WeatherView: View {
             }
             .disabled(viewModel.savedLocations.isEmpty)
 
-            if AppFeatureFlags.enableWeatherMonitoring {
+            if AppFeatureFlags.enableWeatherMonitoring
+                || FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey) {
                 NavigationLink {
                     WeatherWatchListView(viewModel: viewModel)
                 } label: {

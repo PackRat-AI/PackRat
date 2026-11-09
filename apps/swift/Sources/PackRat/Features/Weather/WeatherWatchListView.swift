@@ -15,6 +15,10 @@ struct WeatherWatchListView: View {
     /// Trips watching their destination right now. They belong to the trip,
     /// not the list, so they end on their own; docs/features/trip-weather.md
     /// ("Watching the destination").
+    /// Watching saved places is its own feature; with only trip weather on,
+    /// the list holds trips alone.
+    private var showsLocations: Bool { AppFeatureFlags.enableWeatherMonitoring }
+
     private var watchedTrips: [Trip] {
         guard tripAlertsOn else { return [] }
         return TripWeatherPlan.watchedTrips(appState.tripsVM.trips, now: Date())
@@ -25,11 +29,19 @@ struct WeatherWatchListView: View {
             if viewModel.isLoadingWatchedLocations && viewModel.watchedLocations.isEmpty && watchedTrips.isEmpty {
                 ProgressView("Loading watch list…")
             } else if viewModel.watchedLocations.isEmpty && watchedTrips.isEmpty {
-                UnavailableStateView(
-                    title: "No Watched Locations",
-                    subtitle: "Add a location to get notified when a hazard alert is issued for it.",
-                    systemImage: "bell.slash"
-                )
+                if showsLocations {
+                    UnavailableStateView(
+                        title: "No Watched Locations",
+                        subtitle: "Add a location to get notified when a hazard alert is issued for it.",
+                        systemImage: "bell.slash"
+                    )
+                } else {
+                    UnavailableStateView(
+                        title: "No Trips Being Watched",
+                        subtitle: "Each trip with a destination is watched for weather alerts from 3 days before it starts.",
+                        systemImage: "bell.slash"
+                    )
+                }
             } else {
                 List {
                     if !watchedTrips.isEmpty {
@@ -55,16 +67,18 @@ struct WeatherWatchListView: View {
                             }
                         }
                     }
-                    Section(watchedTrips.isEmpty ? "" : "Locations") {
-                        ForEach(viewModel.watchedLocations) { location in
-                            WatchedLocationRow(location: location)
-                                .swipeActions(edge: .trailing) {
-                                    Button(role: .destructive) {
-                                        Task { await viewModel.unwatchLocation(location) }
-                                    } label: {
-                                        Label("Remove", systemImage: "trash")
+                    if showsLocations {
+                        Section(watchedTrips.isEmpty ? "" : "Locations") {
+                            ForEach(viewModel.watchedLocations) { location in
+                                WatchedLocationRow(location: location)
+                                    .swipeActions(edge: .trailing) {
+                                        Button(role: .destructive) {
+                                            Task { await viewModel.unwatchLocation(location) }
+                                        } label: {
+                                            Label("Remove", systemImage: "trash")
+                                        }
                                     }
-                                }
+                            }
                         }
                     }
                 }
@@ -75,13 +89,15 @@ struct WeatherWatchListView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isAddingLocation = true
-                } label: {
-                    Label("Add Location", systemImage: "plus")
+            if showsLocations {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isAddingLocation = true
+                    } label: {
+                        Label("Add Location", systemImage: "plus")
+                    }
+                    .accessibilityIdentifier("weather_watch_list_add_button")
                 }
-                .accessibilityIdentifier("weather_watch_list_add_button")
             }
         }
         .sheet(isPresented: $isAddingLocation) {
