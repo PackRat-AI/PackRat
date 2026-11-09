@@ -38,6 +38,7 @@ There are three ways to fill it, and they combine:
   out-and-back trip, whichever the user picks.
 - **From a track file.** Importing a GPS track file from a watch or another
   app replaces the distance, elevation and route with what was recorded.
+- **Recorded on the trail.** A hike tracked as it happens replaces the distance, elevation and route with what was recorded.
 - **By hand.** Any field can be typed in or corrected, and a route can be
   drawn on the map.
 
@@ -214,8 +215,6 @@ account, so they are the same on every device they sign in on.
 
 ## What this feature does not do
 
-- No live GPS recording. Routes come from the trail, a track file or the
-  user's own drawing, not from tracking a hike as it happens.
 - No public profiles, leaderboards or comparison with other users. Stats are
   only ever seen by others through a card the user chose to share.
 - No checklists beyond US National Parks. Other park systems, peak lists and

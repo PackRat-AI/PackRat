@@ -110,6 +110,7 @@ struct AppNavigation: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.modelContext) private var modelContext
     @State private var phoneTab: PhoneTab = .home
     @State private var phoneHomePath: [NavItem] = []
     // Count, not the rows themselves — the Weather tab badge only needs
@@ -147,6 +148,10 @@ struct AppNavigation: View {
         }
     }
 
+    private var tripsInProgressSignature: [String] {
+        appState.tripsVM.trips.filter { $0.lifecycle == .inProgress && !$0.deleted }.map(\.id)
+    }
+
     private func syncTripReminders() {
         let trips = appState.tripsVM.trips
         let packs = appState.packsVM.packs
@@ -181,6 +186,11 @@ struct AppNavigation: View {
             }
             .task { syncTripReminders() }
             .onChange(of: tripReminderSignature) { _, _ in syncTripReminders() }
+            // Siri and spoken safety alerts reach the trips from here, with no trip page open.
+            .task(id: tripsInProgressSignature) {
+                VoiceCommandHost.shared.attach(appState, modelContext: modelContext)
+                TripSafetyAnnouncer.shared.sync()
+            }
             .onReceive(NotificationCenter.default.publisher(for: .weatherAlertNotificationTapped)) { notification in
                 guard let weatherLocationId = notification.userInfo?["weatherLocationId"] as? Int else { return }
                 appState.apply(.weatherAlert(weatherLocationId: weatherLocationId))
