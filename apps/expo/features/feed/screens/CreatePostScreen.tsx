@@ -4,6 +4,7 @@ import { TextInput } from 'expo-app/components/TextInput';
 import { uploadImage } from 'expo-app/features/packs/utils/uploadImage';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import * as ImagePicker from 'expo-image-picker';
 import { nanoid } from 'nanoid';
 import { useCallback, useState } from 'react';
@@ -145,6 +146,7 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
               resizeMode="cover"
             />
             <TouchableOpacity
+              testID={testIds.feed.photoRemoveBtn(idx)}
               className="absolute top-1 right-1 bg-black/60 rounded-full w-5 h-5 items-center justify-center"
               onPress={() => removePhoto(idx)}
             >
@@ -156,6 +158,7 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
         {photos.length < 10 && (
           <View className="flex-row gap-2">
             <Pressable
+              testID={testIds.feed.galleryBtn}
               onPress={pickImages}
               className="w-24 h-24 rounded-xl border-2 border-dashed border-border items-center justify-center"
             >
@@ -163,6 +166,7 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
               <Text className="text-xs text-muted-foreground mt-1">{t('feed.gallery')}</Text>
             </Pressable>
             <Pressable
+              testID={testIds.feed.cameraBtn}
               onPress={takePhoto}
               className="w-24 h-24 rounded-xl border-2 border-dashed border-border items-center justify-center"
             >
@@ -176,6 +180,7 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
       {/* Caption input */}
       <View className="rounded-xl border border-border bg-card p-3 mb-6">
         <TextInput
+          testID={testIds.feed.captionInput}
           value={caption}
           onChangeText={setCaption}
           placeholder={t('feed.captionPlaceholder')}
@@ -191,6 +196,7 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
 
       {/* Submit */}
       <Button
+        testID={testIds.feed.submitBtn}
         onPress={handleSubmit}
         disabled={isSubmitting || photos.length === 0}
         variant="primary"

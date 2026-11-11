@@ -1,6 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { testIds } from 'expo-app/lib/testIds';
 import { TouchableOpacity, View } from 'react-native';
 import type { Comment } from '../types';
 import { formatAuthorName, formatRelativeDate } from '../utils';
@@ -36,6 +37,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
         <Text className="text-sm mt-0.5">{comment.content}</Text>
         <View className="flex-row items-center gap-3 mt-1">
           <TouchableOpacity
+            testID={testIds.feed.commentLikeBtn(comment.id)}
             onPress={() => onLike(comment.id)}
             className="flex-row items-center gap-1"
           >
@@ -49,7 +51,10 @@ export const CommentItem: React.FC<CommentItemProps> = ({
             )}
           </TouchableOpacity>
           {isOwner && onDelete && (
-            <TouchableOpacity onPress={() => onDelete(comment.id)}>
+            <TouchableOpacity
+              testID={testIds.feed.commentDeleteBtn(comment.id)}
+              onPress={() => onDelete(comment.id)}
+            >
               <Icon name="trash-can-outline" size={16} color={colors.grey2} />
             </TouchableOpacity>
           )}

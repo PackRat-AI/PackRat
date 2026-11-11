@@ -3,6 +3,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { useCallback, useRef, useState } from 'react';
 import {
   Dimensions,
@@ -125,7 +126,11 @@ export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps)
 
         {/* Like row */}
         <View className="flex-row items-center gap-4">
-          <TouchableOpacity onPress={handlePostLike} className="flex-row items-center gap-1.5">
+          <TouchableOpacity
+            testID={testIds.feed.postLikeBtn(post.id)}
+            onPress={handlePostLike}
+            className="flex-row items-center gap-1.5"
+          >
             <Icon
               name={post.likedByMe ? 'heart' : 'heart-outline'}
               size={22}
@@ -190,6 +195,7 @@ export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps)
       {/* Comment input */}
       <View className="border-t border-border/50 px-4 py-2 flex-row items-center gap-2 bg-background">
         <TextInput
+          testID={testIds.feed.commentInput}
           ref={inputRef}
           value={commentText}
           onChangeText={setCommentText}
@@ -203,6 +209,7 @@ export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps)
           onSubmitEditing={handleAddComment}
         />
         <TouchableOpacity
+          testID={testIds.feed.commentSubmitBtn}
           onPress={handleAddComment}
           disabled={!commentText.trim() || isAddingComment}
           className="h-9 w-9 items-center justify-center rounded-full bg-primary"

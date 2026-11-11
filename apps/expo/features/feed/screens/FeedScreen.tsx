@@ -3,6 +3,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
@@ -89,7 +90,7 @@ export const FeedScreen = () => {
         title={t('feed.feed')}
         rightView={() => (
           <View className="px-4">
-            <Button variant="plain" onPress={handleCreatePost}>
+            <Button testID={testIds.feed.createBtn} variant="plain" onPress={handleCreatePost}>
               <Icon name="plus" size={24} color={colors.primary} />
             </Button>
           </View>

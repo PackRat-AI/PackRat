@@ -3,6 +3,7 @@ import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -138,11 +139,17 @@ export function PackTemplateDetailScreen() {
         {/* Actions */}
         <View className="p-4">
           <View className="gap-4 flex-row items-center">
-            <Button className="flex-1" variant="secondary" onPress={handleCreate}>
+            <Button
+              testID={testIds.packTemplates.useTemplateBtn}
+              className="flex-1"
+              variant="secondary"
+              onPress={handleCreate}
+            >
               <Text>Use Template</Text>
             </Button>
             {(!packTemplate.isAppTemplate || user?.role === 'ADMIN') && (
               <Button
+                testID={testIds.packTemplates.addItemBtn}
                 className="flex-1"
                 variant="secondary"
                 onPress={() => addPackTemplateItemActionsRef.current?.present()}
@@ -155,13 +162,22 @@ export function PackTemplateDetailScreen() {
 
         {/* Tabs */}
         <View className="flex-row bg-background border-b border-border">
-          <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
+          <TouchableOpacity
+            testID={testIds.packTemplates.allTab}
+            className={getTabStyle('all')}
+            onPress={() => setActiveTab('all')}
+          >
             <Text className={getTabTextStyle('all')}>All Items</Text>
           </TouchableOpacity>
-          <TouchableOpacity className={getTabStyle('worn')} onPress={() => setActiveTab('worn')}>
+          <TouchableOpacity
+            testID={testIds.packTemplates.wornTab}
+            className={getTabStyle('worn')}
+            onPress={() => setActiveTab('worn')}
+          >
             <Text className={getTabTextStyle('worn')}>Worn</Text>
           </TouchableOpacity>
           <TouchableOpacity
+            testID={testIds.packTemplates.consumableTab}
             className={getTabStyle('consumable')}
             onPress={() => setActiveTab('consumable')}
           >

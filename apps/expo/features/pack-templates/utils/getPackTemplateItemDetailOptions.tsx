@@ -3,6 +3,7 @@ import { Alert, Button, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { t } from 'expo-app/lib/i18n';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { useDeletePackTemplateItem, usePackTemplateItem } from '../hooks';
@@ -44,11 +45,12 @@ export function getPackTemplateItemDetailOptions(id: string) {
               },
             ]}
           >
-            <Button variant="plain" size="icon">
+            <Button variant="plain" size="icon" testID={testIds.packTemplates.itemDetailDeleteBtn}>
               <Icon name="trash-can" color={colors.grey2} />
             </Button>
           </Alert>
           <Button
+            testID={testIds.packTemplates.itemDetailEditBtn}
             variant="plain"
             size="icon"
             onPress={() =>

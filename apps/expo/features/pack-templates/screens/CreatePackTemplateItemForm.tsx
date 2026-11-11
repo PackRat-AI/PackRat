@@ -10,6 +10,7 @@ import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Alert, Image, Pressable, Switch, Text, TouchableOpacity, View } from 'react-native';
@@ -203,6 +204,7 @@ export const CreatePackTemplateItemForm = ({
             {(field) => (
               <FormItem>
                 <TextField
+                  testID={testIds.packTemplates.nameInput}
                   placeholder={t('items.itemName')}
                   autoFocus
                   value={field.state.value}
@@ -223,6 +225,7 @@ export const CreatePackTemplateItemForm = ({
             {(field) => (
               <FormItem>
                 <TextField
+                  testID={testIds.packTemplates.descriptionInput}
                   placeholder={t('packTemplates.description')}
                   value={field.state.value}
                   onBlur={field.handleBlur}
@@ -244,6 +247,7 @@ export const CreatePackTemplateItemForm = ({
             {(field) => (
               <FormItem>
                 <TextField
+                  testID={testIds.packTemplates.categoryInput}
                   placeholder={t('packTemplates.category')}
                   value={field.state.value}
                   onBlur={field.handleBlur}
@@ -267,6 +271,7 @@ export const CreatePackTemplateItemForm = ({
             {(field) => (
               <FormItem>
                 <TextField
+                  testID={testIds.packTemplates.weightInput}
                   placeholder={t('items.itemWeight')}
                   value={weightText}
                   onBlur={field.handleBlur}
@@ -311,6 +316,7 @@ export const CreatePackTemplateItemForm = ({
             {(field) => (
               <FormItem>
                 <TextField
+                  testID={testIds.items.quantityInput}
                   placeholder={t('items.itemQuantity')}
                   value={field.state.value === 0 ? '' : field.state.value.toString()}
                   onBlur={field.handleBlur}
@@ -346,6 +352,7 @@ export const CreatePackTemplateItemForm = ({
                     </Text>
                   </View>
                   <Switch
+                    testID={testIds.packTemplates.consumableSwitch}
                     value={field.state.value}
                     onValueChange={field.handleChange}
                     trackColor={{
@@ -370,6 +377,7 @@ export const CreatePackTemplateItemForm = ({
                     </Text>
                   </View>
                   <Switch
+                    testID={testIds.packTemplates.wornSwitch}
                     value={field.state.value}
                     onValueChange={field.handleChange}
                     trackColor={{
@@ -404,6 +412,7 @@ export const CreatePackTemplateItemForm = ({
                   </View>
                 ) : (
                   <TouchableOpacity
+                    testID={testIds.packTemplates.imageButton}
                     className="h-48 items-center justify-center rounded-lg border border-dashed border-input bg-background p-4"
                     onPress={handleAddImage}
                   >
@@ -426,6 +435,7 @@ export const CreatePackTemplateItemForm = ({
             {(field) => (
               <FormItem>
                 <TextField
+                  testID={testIds.packTemplates.notesInput}
                   placeholder={t('packTemplates.notes')}
                   value={field.state.value}
                   onBlur={field.handleBlur}
@@ -448,6 +458,7 @@ export const CreatePackTemplateItemForm = ({
       <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
         {([canSubmit, isSubmitting]) => (
           <Pressable
+            testID={testIds.packTemplates.submitBtn}
             onPress={form.handleSubmit}
             disabled={!canSubmit || isSubmitting}
             className={`mt-6 rounded-lg px-4 py-3.5 ${

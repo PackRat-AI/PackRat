@@ -12,6 +12,7 @@ import { useRecentlyUsedCatalogItems } from 'expo-app/features/catalog/hooks/use
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useImagePicker } from 'expo-app/features/packs';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { router } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
@@ -142,6 +143,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
           <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
             <View className="gap-2 mb-4">
               <TouchableOpacity
+                testID={testIds.packTemplates.addManuallyBtn}
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={() => {
                   ref && !isFunction(ref) && ref.current?.close();
@@ -158,6 +160,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
+                testID={testIds.packTemplates.scanPhotoBtn}
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={handleAddFromPhoto}
               >
@@ -170,6 +173,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
+                testID={testIds.packTemplates.addFromCatalogBtn}
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={handleAddFromCatalog}
               >

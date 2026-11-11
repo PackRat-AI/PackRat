@@ -7,6 +7,7 @@ import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
@@ -63,6 +64,7 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
 
             {/* Create from scratch option */}
             <TouchableOpacity
+              testID={testIds.packTemplates.createFromScratchBtn}
               onPress={handleCreateFromScratch}
               className="mb-4 rounded-lg border border-border bg-card p-4 flex-row items-center"
             >
@@ -83,6 +85,7 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
             {/* Import from TikTok option (only for admins) */}
             {isAdmin && isAuthenticated && (
               <TouchableOpacity
+                testID={testIds.packTemplates.importOnlineContentBtn}
                 onPress={handleImportFromOnlineContent}
                 className="rounded-lg border border-border bg-card p-4 flex-row items-center"
               >

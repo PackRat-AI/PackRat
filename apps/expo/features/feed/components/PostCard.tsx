@@ -1,6 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import {
@@ -54,7 +55,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, curr
           </View>
         </View>
         {isOwner && onDelete && (
-          <TouchableOpacity onPress={() => onDelete(post.id)} hitSlop={8}>
+          <TouchableOpacity
+            testID={testIds.feed.postDeleteBtn(post.id)}
+            onPress={() => onDelete(post.id)}
+            hitSlop={8}
+          >
             <Icon name="trash-can-outline" size={20} color={colors.grey2} />
           </TouchableOpacity>
         )}
@@ -97,7 +102,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, curr
 
       {/* Actions */}
       <View className="flex-row items-center gap-4 px-4 py-3">
-        <TouchableOpacity onPress={handleLike} className="flex-row items-center gap-1">
+        <TouchableOpacity
+          testID={testIds.feed.postLikeBtn(post.id)}
+          onPress={handleLike}
+          className="flex-row items-center gap-1"
+        >
           <Icon
             name={post.likedByMe ? 'heart' : 'heart-outline'}
             size={22}

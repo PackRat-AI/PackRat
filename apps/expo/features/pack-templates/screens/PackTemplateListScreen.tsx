@@ -8,6 +8,7 @@ import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import type { PackCategory } from 'expo-app/features/packs/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
@@ -37,7 +38,7 @@ function CreateTemplateIconButton({ onPress }: { onPress: () => void }) {
   const { colors } = useColorScheme();
 
   return (
-    <Pressable onPress={onPress}>
+    <Pressable testID={testIds.packTemplates.createOptionsBtn} onPress={onPress}>
       <Icon name="plus" color={colors.foreground} />
     </Pressable>
   );

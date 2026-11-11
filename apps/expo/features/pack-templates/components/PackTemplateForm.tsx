@@ -14,6 +14,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import {
   KeyboardAvoidingView,
@@ -109,6 +110,7 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
               {(field) => (
                 <FormItem>
                   <TextField
+                    testID={testIds.packTemplates.nameInput}
                     placeholder={t('packTemplates.templateName')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
@@ -128,6 +130,7 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
               {(field) => (
                 <FormItem>
                   <TextField
+                    testID={testIds.packTemplates.descriptionInput}
                     placeholder={t('packTemplates.description')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
@@ -160,7 +163,7 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
                       if (cat) field.handleChange(cat);
                     }}
                   >
-                    <Button className="my-2 w-full" variant="plain">
+                    <Button className="my-2 w-full" variant="plain" testID={testIds.packTemplates.categoryInput}>
                       <View className="w-full flex-row items-center justify-between capitalize">
                         <Text className="text-zinc-800 dark:text-zinc-200">
                           {field.state.value || t('packTemplates.selectCategory')}
@@ -189,6 +192,7 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
                         </Text>
                       </View>
                       <Switch
+                        testID={testIds.packTemplates.isAppTemplateSwitch}
                         value={field.state.value}
                         onValueChange={field.handleChange}
                         trackColor={{
@@ -208,6 +212,7 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
         <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Pressable
+              testID={testIds.packTemplates.submitBtn}
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
               className={`mt-6 rounded-lg px-4 py-3.5 ${

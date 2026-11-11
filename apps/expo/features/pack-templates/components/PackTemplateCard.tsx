@@ -6,6 +6,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { router } from 'expo-router';
 import { Image, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -86,6 +87,7 @@ export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
 
   return (
     <Pressable
+      testID={testIds.packTemplates.templateCard(template.id)}
       className="mb-4 overflow-hidden rounded-xl bg-card shadow-sm"
       onPress={() => onPress(template)}
     >

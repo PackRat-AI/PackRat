@@ -2,6 +2,7 @@ import { Alert, Button, useColorScheme, useSheetRef } from '@packrat/ui/nativewi
 import { Icon } from 'expo-app/components/Icon';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { t } from 'expo-app/lib/i18n';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import AddPackTemplateItemActions from '../components/AddPackTemplateItemActions';
@@ -44,11 +45,12 @@ export function getPackTemplateDetailOptions(id: string) {
               },
             ]}
           >
-            <Button variant="plain" size="icon">
+            <Button variant="plain" size="icon" testID={testIds.packTemplates.detailDeleteBtn}>
               <Icon name="trash-can-outline" color={colors.grey2} />
             </Button>
           </Alert>
           <Button
+            testID={testIds.packTemplates.detailEditBtn}
             variant="plain"
             size="icon"
             onPress={() =>
@@ -61,6 +63,7 @@ export function getPackTemplateDetailOptions(id: string) {
             <Icon name="pencil-box-outline" color={colors.grey2} />
           </Button>
           <Button
+            testID={testIds.packTemplates.addItemBtn}
             variant="plain"
             size="icon"
             onPress={() => addPackTemplateItemActionsRef.current?.present()}

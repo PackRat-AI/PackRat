@@ -6,6 +6,7 @@ import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import { Pressable, TouchableWithoutFeedback, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -99,7 +100,10 @@ export function PackTemplateItemCard({
 
   return (
     <TouchableWithoutFeedback key={item.id} onPress={() => onPress(item)}>
-      <View className="rounded-lg flex-row gap-3 border p-4 border-border bg-card">
+      <View
+        testID={testIds.packTemplates.itemCard(item.id)}
+        className="rounded-lg flex-row gap-3 border p-4 border-border bg-card"
+      >
         {/* Image */}
         <PackTemplateItemImage item={item} className="h-16 w-16 rounded-md" resizeMode="cover" />
 
@@ -109,7 +113,7 @@ export function PackTemplateItemCard({
             <Text className="flex-1 font-medium text-foreground" numberOfLines={2}>
               {item.name}
             </Text>
-            <Pressable onPress={handleActionsPress}>
+            <Pressable testID={testIds.packTemplates.itemCardActionsBtn(item.id)} onPress={handleActionsPress}>
               <Icon name="dots-horizontal" size={20} color={colors.grey2} />
             </Pressable>
           </View>

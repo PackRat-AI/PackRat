@@ -54,6 +54,39 @@ export const testIds = Object.freeze({
     listItem: (id: string | number) => `packs:list-item-${id}`,
   }),
 
+  // ── Pack templates ────────────────────────────────────────────────────────
+  packTemplates: Object.freeze({
+    createOptionsBtn: 'pack-templates:create-options',
+    createFromScratchBtn: 'pack-templates:create-from-scratch',
+    importOnlineContentBtn: 'pack-templates:import-online-content',
+    addManuallyBtn: 'pack-templates:add-manually',
+    scanPhotoBtn: 'pack-templates:scan-photo',
+    addFromCatalogBtn: 'pack-templates:add-from-catalog',
+    nameInput: 'pack-templates:name-input',
+    descriptionInput: 'pack-templates:description-input',
+    categoryInput: 'pack-templates:category-input',
+    isAppTemplateSwitch: 'pack-templates:is-app-template-switch',
+    weightInput: 'pack-templates:weight-input',
+    quantityInput: 'pack-templates:quantity-input',
+    consumableSwitch: 'pack-templates:consumable-switch',
+    wornSwitch: 'pack-templates:worn-switch',
+    imageButton: 'pack-templates:image-button',
+    notesInput: 'pack-templates:notes-input',
+    submitBtn: 'pack-templates:submit',
+    useTemplateBtn: 'pack-templates:use-template',
+    addItemBtn: 'pack-templates:add-item',
+    templateCard: (id: string | number) => `pack-templates:template-card-${id}`,
+    itemCard: (id: string | number) => `pack-templates:item-card-${id}`,
+    allTab: 'pack-templates:tab-all',
+    wornTab: 'pack-templates:tab-worn',
+    consumableTab: 'pack-templates:tab-consumable',
+    itemCardActionsBtn: (id: string | number) => `pack-templates:item-actions-${id}`,
+    itemDetailEditBtn: 'pack-templates:item-detail-edit',
+    itemDetailDeleteBtn: 'pack-templates:item-detail-delete',
+    detailEditBtn: 'pack-templates:detail-edit',
+    detailDeleteBtn: 'pack-templates:detail-delete',
+  }),
+
   // ── Pack items ────────────────────────────────────────────────────────────
   items: Object.freeze({
     addManuallyOption: 'add-manually-option', // keep Maestro value
@@ -108,6 +141,22 @@ export const testIds = Object.freeze({
     notesInput: 'catalog:notes-input',
     categoryInput: 'catalog:category-input',
     addDetailsSubmitBtn: 'catalog:add-details-submit',
+  }),
+
+  // ── Feed ──────────────────────────────────────────────────────────────────
+  feed: Object.freeze({
+    createBtn: 'feed:create-post',
+    galleryBtn: 'feed:gallery-button',
+    cameraBtn: 'feed:camera-button',
+    captionInput: 'feed:caption-input',
+    photoRemoveBtn: (index: number) => `feed:photo-remove-${index}`,
+    submitBtn: 'feed:submit',
+    postLikeBtn: (id: string | number) => `feed:post-like-${id}`,
+    postDeleteBtn: (id: string | number) => `feed:post-delete-${id}`,
+    commentInput: 'feed:comment-input',
+    commentSubmitBtn: 'feed:comment-submit',
+    commentLikeBtn: (id: string | number) => `feed:comment-like-${id}`,
+    commentDeleteBtn: (id: string | number) => `feed:comment-delete-${id}`,
   }),
 
   // ── Profile ───────────────────────────────────────────────────────────────
