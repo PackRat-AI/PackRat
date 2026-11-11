@@ -9,9 +9,10 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
-import { Pressable, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { beginListening, dismissVoice, endListening, voiceStore } from '../lib/voiceController';
+import { warmUpVoice } from '../lib/voiceIO';
 import { voiceSettingsStore } from '../store/voiceSettings';
 
 /** Shown while the trip is underway, and from its start day so "start my trip" works too. */
@@ -30,16 +31,24 @@ export function useShowsVoiceBar(trip: Trip | undefined): boolean {
 export function TripVoiceBar({ trip }: { trip: Trip }) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
-  const { phase, heard, answer } = use$(voiceStore);
+  const { phase, heard, status, answer } = use$(voiceStore);
   // Waiting on a spoken yes or no listens too, so the button says so rather than inviting
   // another hold.
   const active = phase === 'listening' || phase === 'confirming';
 
-  useEffect(() => dismissVoice, []);
+  useEffect(() => {
+    warmUpVoice();
+    return dismissVoice;
+  }, []);
 
   const press = () => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     void beginListening(trip);
+  };
+
+  const release = () => {
+    if (phase === 'listening') void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    endListening();
   };
 
   return (
@@ -51,11 +60,11 @@ export function TripVoiceBar({ trip }: { trip: Trip }) {
           className="flex-row items-start gap-3 rounded-2xl border border-border bg-card p-3.5"
           testID={testIds.voiceCommands.banner}
         >
-          <Icon
-            name={active ? 'waveform' : phase === 'working' ? 'dots-horizontal' : 'message-text'}
-            size={24}
-            color={colors.primary}
-          />
+          {phase === 'working' ? (
+            <ActivityIndicator size={24} color={colors.primary} />
+          ) : (
+            <Icon name={active ? 'waveform' : 'message-text'} size={24} color={colors.primary} />
+          )}
           <View className="flex-1 gap-1">
             {heard ? (
               <Text variant="subhead" className="text-muted-foreground" wrap>
@@ -69,6 +78,10 @@ export function TripVoiceBar({ trip }: { trip: Trip }) {
             ) : phase === 'listening' && !heard ? (
               <Text variant="callout" className="font-medium">
                 {t('voiceCommands.bar.listeningStatus')}
+              </Text>
+            ) : status ? (
+              <Text variant="callout" className="font-medium text-muted-foreground">
+                {status}
               </Text>
             ) : null}
             {phase === 'confirming' && (
@@ -91,7 +104,7 @@ export function TripVoiceBar({ trip }: { trip: Trip }) {
       {/* An MD3 extended FAB: held rather than tapped, so it gets the larger 56dp target. */}
       <Pressable
         onPressIn={press}
-        onPressOut={endListening}
+        onPressOut={release}
         android_ripple={{ color: colors.grey4, borderless: false }}
         accessibilityRole="button"
         accessibilityLabel={t('voiceCommands.bar.buttonLabel')}

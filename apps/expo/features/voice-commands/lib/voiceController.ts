@@ -55,6 +55,7 @@ import {
   hasVoicePermission,
   type ListenMode,
   listen,
+  playTone,
   requestVoicePermission,
   say,
   stopListening,
@@ -71,20 +72,26 @@ export type VoicePhase =
   | 'answering';
 
 /**
- * What the trip page's voice bar shows: the phase, what PackRat heard, then what it said. One
- * command runs at a time, for the trip on screen.
+ * What the trip page's voice bar shows: the phase, what PackRat heard, what it's doing about it,
+ * then what it said. One command runs at a time, for the trip on screen.
  */
-export const voiceStore = observable<{ phase: VoicePhase; heard: string; answer: string }>({
+export const voiceStore = observable<{
+  phase: VoicePhase;
+  heard: string;
+  status: string;
+  answer: string;
+}>({
   phase: 'idle',
   heard: '',
+  status: '',
   answer: '',
 });
 
 /** Bumped by every new listen or dismiss, so a superseded command stops quietly. */
 let generation = 0;
 
-function setPhase(phase: VoicePhase) {
-  voiceStore.phase.set(phase);
+function goIdle() {
+  voiceStore.assign({ phase: 'idle', status: '' });
 }
 
 // ── Push to talk ──────────────────────────────────────────────────────────
@@ -101,7 +108,11 @@ export async function beginListening(trip: Trip): Promise<void> {
   }
   stopSpeaking();
   const run = ++generation;
-  voiceStore.set({ phase: 'listening', heard: '', answer: '' });
+  voiceStore.set({ phase: 'listening', heard: '', status: '', answer: '' });
+  await playTone('start');
+  if (run !== generation) return;
+  // Let go during the tone: nothing was said.
+  if (voiceStore.phase.peek() !== 'listening') return goIdle();
   try {
     const transcript = await listenFor('untilStopped');
     if (run !== generation) return;
@@ -112,9 +123,15 @@ export async function beginListening(trip: Trip): Promise<void> {
   }
 }
 
-/** The microphone button came up: stop listening and act on what was heard. */
+/**
+ * The microphone button came up: stop listening and act on what was heard. The bar moves on at
+ * once, so the wait for the recogniser's last words doesn't look like nothing happened.
+ */
 export function endListening(): void {
-  if (voiceStore.phase.peek() === 'listening') stopListening();
+  if (voiceStore.phase.peek() !== 'listening') return;
+  void playTone('end');
+  voiceStore.assign({ phase: 'working', status: t('voiceCommands.status.working') });
+  stopListening();
 }
 
 /** The banner was closed, or the trip page went away. */
@@ -122,7 +139,7 @@ export function dismissVoice(): void {
   generation++;
   cancelListening();
   stopSpeaking();
-  voiceStore.set({ phase: 'idle', heard: '', answer: '' });
+  voiceStore.set({ phase: 'idle', heard: '', status: '', answer: '' });
 }
 
 function listenFor(mode: ListenMode): Promise<string> {
@@ -145,7 +162,7 @@ async function handleTranscript({
   run: number;
 }): Promise<void> {
   voiceStore.heard.set(transcript);
-  if (!transcript.trim()) return setPhase('idle');
+  if (!transcript.trim()) return goIdle();
   const command = parseVoiceCommand(transcript);
   if (!command || !STAGE_ONE_COMMANDS.has(command.kind)) {
     return respond({ text: VoiceAnswers.notHeard, run });
@@ -156,7 +173,7 @@ async function handleTranscript({
     level: 'info',
     data: { command: command.kind, tripId: trip.id },
   });
-  setPhase('working');
+  voiceStore.assign({ phase: 'working', status: workingStatus(command) });
   try {
     await perform({ command, trip, run });
   } catch (error) {
@@ -167,6 +184,20 @@ async function handleTranscript({
     await respond({ text: VoiceAnswers.listenFailed, run });
   }
 }
+
+/** What the bar says while a command runs; finding the phone's position is the slow part. */
+function workingStatus(command: VoiceCommand): string {
+  return LOCATING_COMMANDS.has(command.kind)
+    ? t('voiceCommands.status.locating')
+    : t('voiceCommands.status.working');
+}
+
+const LOCATING_COMMANDS: ReadonlySet<VoiceCommand['kind']> = new Set([
+  'checkIn',
+  'whereAmI',
+  'howFarToGo',
+  'amIOnRoute',
+]);
 
 /** Tracking, waypoints and guidance arrive with the recorder and the guide. */
 const STAGE_ONE_COMMANDS: ReadonlySet<VoiceCommand['kind']> = new Set([
@@ -327,11 +358,14 @@ async function perform({
   }
 }
 
+/** A fix this recent answers straight away instead of waiting on the GPS. */
+const RECENT_FIX_MS = 60_000;
+
 async function locate(): Promise<
   { ok: true; fix: SafetyLocationFix } | { ok: false; answer: string }
 > {
   try {
-    return { ok: true, fix: await currentFix() };
+    return { ok: true, fix: await currentFix({ acceptRecentMs: RECENT_FIX_MS }) };
   } catch (error) {
     const denied = error instanceof LocatorError && error.reason === 'denied';
     return { ok: false, answer: denied ? VoiceAnswers.locationDenied : VoiceAnswers.noFix };
@@ -345,7 +379,7 @@ async function locate(): Promise<
  * including silence, is a no.
  */
 async function confirm({ question, run }: { question: string; run: number }): Promise<boolean> {
-  voiceStore.set({ phase: 'confirming', heard: '', answer: question });
+  voiceStore.set({ phase: 'confirming', heard: '', status: '', answer: question });
   if (voiceSettingsStore.spokenAnswers.peek()) await say(question);
   if (run !== generation) return false;
   let reply = '';
@@ -355,13 +389,18 @@ async function confirm({ question, run }: { question: string; run: number }): Pr
     // A failed listen is a no, like silence.
   }
   if (run !== generation) return false;
-  voiceStore.heard.set(reply);
-  setPhase('working');
-  return parseVoiceConfirmation(reply) === 'yes';
+  const yes = parseVoiceConfirmation(reply) === 'yes';
+  voiceStore.assign({
+    phase: 'working',
+    heard: reply,
+    status: t('voiceCommands.status.working'),
+    answer: '',
+  });
+  return yes;
 }
 
 async function respond({ text, run }: { text: string; run: number }): Promise<void> {
   if (run !== generation) return;
-  voiceStore.assign({ phase: 'answering', answer: text });
+  voiceStore.assign({ phase: 'answering', status: '', answer: text });
   if (voiceSettingsStore.spokenAnswers.peek()) await say(text);
 }

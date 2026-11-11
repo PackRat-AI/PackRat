@@ -130,16 +130,33 @@ export class LocatorError extends Error {
 }
 
 const FIX_TIMEOUT_MS = 30_000;
+/** How accurate a reused recent fix has to be. */
+const RECENT_ACCURACY_METERS = 100;
+
+/** A place name that hasn't arrived by now isn't worth waiting for. */
+const PLACE_NAME_TIMEOUT_MS = 2_500;
 
 /**
  * One accurate fix for a manual check-in, with a place name when the phone can look one up (it
- * can't offline; the coordinates are what matter).
+ * can't offline; the coordinates are what matter). `acceptRecentMs` lets a quick answer reuse a
+ * recent accurate fix rather than wait on the GPS.
  */
-export async function currentFix(): Promise<SafetyLocationFix> {
+export async function currentFix({
+  acceptRecentMs,
+}: {
+  acceptRecentMs?: number;
+} = {}): Promise<SafetyLocationFix> {
   const permission = await Location.requestForegroundPermissionsAsync();
   if (!permission.granted) throw new LocatorError('denied');
+  const recent = acceptRecentMs
+    ? await Location.getLastKnownPositionAsync({
+        maxAge: acceptRecentMs,
+        requiredAccuracy: RECENT_ACCURACY_METERS,
+      }).catch(() => null)
+    : null;
   const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), FIX_TIMEOUT_MS));
   const location =
+    recent ??
     (await Promise.race([
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null),
       timeout,
@@ -151,7 +168,11 @@ export async function currentFix(): Promise<SafetyLocationFix> {
   if (!location) throw new LocatorError('unavailable');
   const fix = toFix(location);
   try {
-    const [place] = await Location.reverseGeocodeAsync(location.coords);
+    const lookup = Location.reverseGeocodeAsync(location.coords);
+    const giveUp = new Promise<[]>((resolve) =>
+      setTimeout(() => resolve([]), PLACE_NAME_TIMEOUT_MS),
+    );
+    const [place] = await Promise.race([lookup, giveUp]);
     fix.placeName = place?.name ?? place?.district ?? place?.city ?? null;
   } catch {
     // Offline: the coordinates are enough.

@@ -2200,6 +2200,10 @@
       "spokenAnswers": "Spoken Answers",
       "spokenAnswersSubtitle": "PackRat reads its answers out loud as well as showing them.",
       "spokenAnswersOffSubtitle": "Answers appear on screen without being read aloud."
+    },
+    "status": {
+      "working": "One moment…",
+      "locating": "Finding where you are…"
     }
   }
 }

@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react-native';
+import { type AudioPlayer, createAudioPlayer } from 'expo-audio';
 import * as Speech from 'expo-speech';
 import {
   type ExpoSpeechRecognitionErrorCode,
@@ -151,6 +152,46 @@ export function cancelListening(): void {
   if (!activeAbort) return;
   activeAbort();
   ExpoSpeechRecognitionModule.abort();
+}
+
+// ── Tones ─────────────────────────────────────────────────────────────────
+
+export type VoiceTone = 'start' | 'end';
+
+const TONE_SOURCES = Object.freeze({
+  start: require('expo-app/assets/sounds/voice-start.wav'),
+  end: require('expo-app/assets/sounds/voice-end.wav'),
+} as const);
+
+/** Long enough for the start tone to finish before the microphone opens, so it isn't heard. */
+const START_TONE_MS = 200;
+
+const tonePlayers: Partial<Record<VoiceTone, AudioPlayer>> = {};
+
+function tonePlayer(tone: VoiceTone): AudioPlayer {
+  tonePlayers[tone] ??= createAudioPlayer(TONE_SOURCES[tone]);
+  return tonePlayers[tone];
+}
+
+/** The short chime that marks the microphone opening or closing. */
+export async function playTone(tone: VoiceTone): Promise<void> {
+  try {
+    const player = tonePlayer(tone);
+    await player.seekTo(0);
+    player.play();
+  } catch (error) {
+    Sentry.captureException(error, { tags: { feature: 'voiceCommands', action: 'tone' } });
+    return;
+  }
+  if (tone === 'start') await new Promise((resolve) => setTimeout(resolve, START_TONE_MS));
+}
+
+/** Loads the tones, the voice and the recogniser choice ahead of the first press. */
+export function warmUpVoice(): void {
+  tonePlayer('start');
+  tonePlayer('end');
+  void bestVoice();
+  void onDeviceOptions();
 }
 
 // ── Speaking ──────────────────────────────────────────────────────────────
