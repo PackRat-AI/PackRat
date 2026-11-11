@@ -124,6 +124,7 @@ jobs:
             -scheme "${{ matrix.scheme }}" \
             -destination "${DESTINATION}" \
             -testPlan "${{ matrix.plan }}" \
+            -onlyUsePackageVersionsFromResolvedFile \
             -resultBundlePath "/tmp/${{ matrix.scheme }}-smoke.xcresult" \
             -quiet \
             "${CODE_SIGN_ARGS[@]}" \
