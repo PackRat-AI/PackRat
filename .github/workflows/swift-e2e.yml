@@ -90,7 +90,7 @@ permissions:
   contents: read
 
 env:
-  XCODE_VERSION: "26.2"
+  XCODE_VERSION: "26.6"
   E2E_API_BASE_URL: ${{ secrets.SWIFT_E2E_API_BASE_URL }}
   E2E_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
   E2E_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
@@ -186,7 +186,7 @@ jobs:
 
   macos-ui:
     name: macOS Swift UI E2E
-    runs-on: [self-hosted, macOS, packrat-e2e]
+    runs-on: macos-26
     timeout-minutes: 45
     if: >
       github.event_name == 'schedule' ||
@@ -267,9 +267,12 @@ jobs:
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
 
-      - name: Check Automation Mode status
+      # Hosted runners start fresh, so allow XCUITest to drive the desktop without a password
+      # prompt on every run.
+      - name: Enable Automation Mode
         run: |
-          automationmodetool status || true
+          sudo automationmodetool enable-automationmode-without-authentication
+          automationmodetool status
 
       - name: Generate Swift Xcode project
         run: bun run swift

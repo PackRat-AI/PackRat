@@ -9,43 +9,17 @@ Do not move the Swift app to Maestro. XCUITest is the native Apple UI automation
 
 ## GitHub Runner
 
-The full macOS Swift UI suite should run on a persistent self-hosted Mac runner. GitHub-hosted macOS runners are fine for iOS simulator work, but desktop macOS app automation depends on machine-level state.
+The macOS and iOS Swift UI suites run on GitHub-hosted `macos-26` runners. The workflow pins Xcode through `XCODE_VERSION`, which must be new enough for the tools version every pinned package declares (mlx-swift needs Xcode 26.4 or later). Each macOS run enables Automation Mode without authentication before the tests start, since a hosted runner has no state carried over from earlier runs.
 
-Required labels:
+The manual TestFlight replacement archive verification job still targets a self-hosted Mac with the labels `self-hosted`, `macOS`, `packrat-e2e`, because it needs distribution signing identities installed. The label is registered in `.github/actionlint.yaml` so workflow linting accepts it.
 
-```text
-self-hosted
-macOS
-packrat-e2e
-```
+## Self-hosted Mac Setup (archive verification only)
 
-The label `packrat-e2e` is registered in `.github/actionlint.yaml` so workflow linting accepts the custom runner.
-
-## Machine Setup
-
-Install and select the expected Xcode version:
+Install and select an Xcode at least as new as `XCODE_VERSION` in the workflow:
 
 ```sh
-sudo xcode-select -s /Applications/Xcode-26.2.0.app/Contents/Developer
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 xcodebuild -version
-```
-
-Enable Automation Mode without per-run prompts:
-
-```sh
-sudo automationmodetool enable-automationmode-without-authentication
-automationmodetool status
-```
-
-The status may still show Automation Mode disabled until a process enables it, but it must say the device does not require user authentication to enable Automation Mode.
-
-Keep the runner attached to a logged-in GUI session. macOS UI tests are less reliable from a headless or locked desktop session because Accessibility and event synthesis depend on the user session.
-
-Run macOS UI tests under `caffeinate` so long cold builds do not let the display or user session idle before XCTest activates the app:
-
-```sh
-caffeinate -dimsu bun run e2e:swift:mac-smoke
-caffeinate -dimsu bun run e2e:swift:mac-ui
 ```
 
 ## Required Secrets
@@ -66,7 +40,7 @@ PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN
 
 Pull requests:
 
-- Run `bun run e2e:swift:mac-smoke` on the self-hosted Mac runner.
+- Run `bun run e2e:swift:mac-smoke` on a GitHub-hosted macOS runner.
 - Upload `.xcresult`, screenshots, and failure triage artifacts.
 
 Pushes to `main` or `development`, scheduled runs, and manual macOS runs:
