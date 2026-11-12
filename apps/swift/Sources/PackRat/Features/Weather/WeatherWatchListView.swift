@@ -10,7 +10,9 @@ struct WeatherWatchListView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
     @State private var isAddingLocation = false
-    @State private var tripAlertsOn = false
+    /// The account-level Trip Weather Alerts setting; nil until it loads.
+    @State private var tripAlertsOn: Bool?
+    @State private var turnOnFailed = false
 
     /// Trips watching their destination right now. They belong to the trip,
     /// not the list, so they end on their own; docs/features/trip-weather.md
@@ -19,29 +21,26 @@ struct WeatherWatchListView: View {
     /// the list holds trips alone.
     private var showsLocations: Bool { AppFeatureFlags.enableWeatherMonitoring }
 
+    private var tripWeatherOn: Bool { FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey) }
+
+    /// Switching a trip off keeps it here, marked off; only leaving its
+    /// window takes it out.
     private var watchedTrips: [Trip] {
-        guard tripAlertsOn else { return [] }
-        return TripWeatherPlan.watchedTrips(appState.tripsVM.trips, now: Date())
+        guard tripAlertsOn == true else { return [] }
+        return TripWeatherPlan.tripsInWatchWindow(appState.tripsVM.trips, now: Date())
+    }
+
+    private var isLoading: Bool {
+        (viewModel.isLoadingWatchedLocations && viewModel.watchedLocations.isEmpty)
+            || (tripWeatherOn && tripAlertsOn == nil)
     }
 
     var body: some View {
         Group {
-            if viewModel.isLoadingWatchedLocations && viewModel.watchedLocations.isEmpty && watchedTrips.isEmpty {
+            if isLoading && watchedTrips.isEmpty {
                 ProgressView("Loading watch list…")
             } else if viewModel.watchedLocations.isEmpty && watchedTrips.isEmpty {
-                if showsLocations {
-                    UnavailableStateView(
-                        title: "No Watched Locations",
-                        subtitle: "Add a location to get notified when a hazard alert is issued for it.",
-                        systemImage: "bell.slash"
-                    )
-                } else {
-                    UnavailableStateView(
-                        title: "No Trips Being Watched",
-                        subtitle: "Each trip with a destination is watched for weather alerts from 3 days before it starts.",
-                        systemImage: "bell.slash"
-                    )
-                }
+                emptyState
             } else {
                 List {
                     if !watchedTrips.isEmpty {
@@ -53,15 +52,18 @@ struct WeatherWatchListView: View {
                                     WatchedTripRow(trip: trip)
                                 }
                                 .swipeActions(edge: .trailing) {
-                                    Button(role: .destructive) {
+                                    let isOn = trip.sendsWeatherAlerts
+                                    Button {
                                         Task {
                                             await appState.tripsVM.setWeatherAlerts(
-                                                false, for: trip.id, context: modelContext
+                                                !isOn, for: trip.id, context: modelContext
                                             )
                                         }
                                     } label: {
-                                        Label("Turn Off", systemImage: "bell.slash")
+                                        Label(isOn ? "Turn Off" : "Turn On",
+                                              systemImage: isOn ? "bell.slash" : "bell")
                                     }
+                                    .tint(isOn ? .indigo : .blue)
                                 }
                                 .accessibilityIdentifier("weather_watch_list_trip_\(trip.id)")
                             }
@@ -103,14 +105,61 @@ struct WeatherWatchListView: View {
         .sheet(isPresented: $isAddingLocation) {
             WatchListAddLocationView(viewModel: viewModel)
         }
+        .alert("Alerts Couldn't Be Turned On", isPresented: $turnOnFailed) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Check your connection and try again.")
+        }
         .task { await viewModel.loadWatchedLocations() }
         .task { await loadTripWatches() }
     }
 
+    @ViewBuilder
+    private var emptyState: some View {
+        if tripWeatherOn && tripAlertsOn == false {
+            UnavailableStateView(
+                title: "Trip Weather Alerts Are Off",
+                subtitle: "Turn them on to get alerts for weather at your trip destinations.",
+                systemImage: "bell.slash",
+                accessibilityIdentifier: "weather_watch_list_trip_alerts_off"
+            ) {
+                Button("Turn On Alerts") {
+                    Task { await turnOnTripAlerts() }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        } else if showsLocations {
+            UnavailableStateView(
+                title: "No Watched Locations",
+                subtitle: "Add a location to get notified when a hazard alert is issued for it.",
+                systemImage: "bell.slash"
+            ) {
+                Button("Add Location") { isAddingLocation = true }
+                    .buttonStyle(.borderedProminent)
+            }
+        } else {
+            UnavailableStateView(
+                title: "No Trips Being Watched",
+                subtitle: "Trips with a destination appear here 3 days before they start.",
+                systemImage: "suitcase",
+                accessibilityIdentifier: "weather_watch_list_empty"
+            )
+        }
+    }
+
     private func loadTripWatches() async {
-        guard FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey) else { return }
+        guard tripWeatherOn else { return }
         if appState.tripsVM.trips.isEmpty { await appState.tripsVM.load(context: modelContext) }
         tripAlertsOn = (try? await WeatherMonitoringService.shared.tripAlertsEnabled()) ?? false
+    }
+
+    private func turnOnTripAlerts() async {
+        do {
+            try await WeatherMonitoringService.shared.setTripAlertsEnabled(true)
+            tripAlertsOn = true
+        } catch {
+            turnOnFailed = true
+        }
     }
 }
 
@@ -122,12 +171,20 @@ private struct WatchedTripRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(trip.name)
-                .font(.body)
-            Text([trip.location?.name, endDate.map { "Ends \($0)" }].compactMap { $0 }.joined(separator: " · "))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(trip.name)
+                    .font(.body)
+                Text([trip.location?.name, endDate.map { "Ends \($0)" }].compactMap { $0 }.joined(separator: " · "))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if !trip.sendsWeatherAlerts {
+                Label("Alerts off", systemImage: "bell.slash")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.vertical, 2)
     }

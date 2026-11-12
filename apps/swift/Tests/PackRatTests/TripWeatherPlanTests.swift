@@ -151,4 +151,10 @@ struct TripWatchListTests {
         let trips = [trip("off", startsIn: 1, alerts: false), trip("nowhere", startsIn: 1, located: false)]
         #expect(TripWeatherPlan.watchedTrips(trips, now: now).isEmpty)
     }
+
+    @Test("the watch list keeps a trip whose alerts are off")
+    func keepsSwitchedOff() {
+        let trips = [trip("off", startsIn: 1, alerts: false), trip("later", startsIn: 5, alerts: false)]
+        #expect(TripWeatherPlan.tripsInWatchWindow(trips, now: now).map(\.id) == ["off"])
+    }
 }

@@ -51,6 +51,12 @@ enum TripWeatherPlan: Equatable {
     /// `packages/api/src/services/weatherMonitoring/tripDestinationWatch.ts`:
     /// from 3 days before the start until a day after the end.
     static func watchedTrips(_ trips: [Trip], now: Date) -> [Trip] {
+        tripsInWatchWindow(trips, now: now).filter(\.sendsWeatherAlerts)
+    }
+
+    /// Trips inside their watch window whether or not their alerts are on, so
+    /// the watch list keeps a trip the user switched off.
+    static func tripsInWatchWindow(_ trips: [Trip], now: Date) -> [Trip] {
         trips
             .compactMap { trip in watchWindow(trip).map { (trip, $0) } }
             .filter { _, window in window.opensAt <= now && now <= window.closesAt }
@@ -59,7 +65,7 @@ enum TripWeatherPlan: Equatable {
     }
 
     static func watchWindow(_ trip: Trip) -> (opensAt: Date, closesAt: Date)? {
-        guard !trip.deleted, trip.sendsWeatherAlerts, trip.location != nil,
+        guard !trip.deleted, trip.location != nil,
               let start = trip.startDate?.toDate()
         else { return nil }
         let end = trip.endDate?.toDate() ?? start
