@@ -160,8 +160,8 @@ export type VoiceTone = 'start' | 'end';
 
 /** Android's stock record start and stop sounds (AOSP, Apache 2.0), the ones users already know. */
 const TONE_SOURCES = Object.freeze({
-  start: require('expo-app/assets/sounds/voice-start.ogg'),
-  end: require('expo-app/assets/sounds/voice-end.ogg'),
+  start: require('expo-app/assets/sounds/voice-start.wav'),
+  end: require('expo-app/assets/sounds/voice-end.wav'),
 } as const);
 
 /** Long enough for the start tone to finish before the microphone opens, so it isn't heard. */
