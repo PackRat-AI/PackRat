@@ -30,8 +30,14 @@ struct WeatherWatchListView: View {
         return TripWeatherPlan.tripsInWatchWindow(appState.tripsVM.trips, now: Date())
     }
 
+    /// Hidden locations must not count, or a list with only hidden rows
+    /// renders blank instead of its empty state.
+    private var watchedLocations: [WatchedLocation] {
+        showsLocations ? viewModel.watchedLocations : []
+    }
+
     private var isLoading: Bool {
-        (viewModel.isLoadingWatchedLocations && viewModel.watchedLocations.isEmpty)
+        (showsLocations && viewModel.isLoadingWatchedLocations && watchedLocations.isEmpty)
             || (tripWeatherOn && tripAlertsOn == nil)
     }
 
@@ -39,7 +45,7 @@ struct WeatherWatchListView: View {
         Group {
             if isLoading && watchedTrips.isEmpty {
                 ProgressView("Loading watch list…")
-            } else if viewModel.watchedLocations.isEmpty && watchedTrips.isEmpty {
+            } else if watchedLocations.isEmpty && watchedTrips.isEmpty {
                 emptyState
             } else {
                 List {
@@ -71,7 +77,7 @@ struct WeatherWatchListView: View {
                     }
                     if showsLocations {
                         Section(watchedTrips.isEmpty ? "" : "Locations") {
-                            ForEach(viewModel.watchedLocations) { location in
+                            ForEach(watchedLocations) { location in
                                 WatchedLocationRow(location: location)
                                     .swipeActions(edge: .trailing) {
                                         Button(role: .destructive) {
