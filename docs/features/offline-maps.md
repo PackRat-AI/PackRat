@@ -8,7 +8,7 @@ Before a trip, a user picks an area on the map and saves it. The app shows how m
 
 ## Choosing an area
 
-The user starts from a trip, a trail page, or the Offline maps screen. A trip or trail suggests an area that covers its route or destination with a margin around it; the user can accept it or adjust the frame. From the Offline maps screen the user pans and zooms to frame any area by hand.
+The user starts from a trip, a trail page, or the Offline maps screen. A trip or trail suggests an area that covers its route or destination with a margin around it; the user can accept it or adjust the frame. From the Offline maps screen the user pans and zooms to frame any area by hand, or picks a named region such as a national park, state or county. A named region saves the map inside that region's boundary rather than a rectangle around it, so a park download does not pay for the land around it. Both paths lead to the same detail choice, size estimate and download.
 
 The user chooses how much detail to keep: **Standard** covers overview and road-level detail, **Trail detail** adds the closest zoom levels used for following a path. The estimated size updates as the frame and detail level change. An area too large to save at the chosen detail is flagged before download, with a prompt to shrink the frame or lower the detail.
 
@@ -45,7 +45,6 @@ The user can set a storage limit for offline maps. A download that would exceed 
 
 ## What this feature does not do
 
-- **Pre-built regional packs.** There is no catalogue of ready-made park, county or state downloads; the user frames the area they need.
 - **Automatic deletion.** Saved areas are never removed without the user deleting them.
 - **Automatic downloads.** The app suggests saving a trip's area; it never downloads on its own.
 - **Offline search or routing.** Saved areas are for viewing the map and the user's position, not for looking up places or planning a route without signal.
