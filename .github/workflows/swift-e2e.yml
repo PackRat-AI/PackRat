@@ -263,7 +263,8 @@ jobs:
   macos-ui:
     name: macOS Swift UI E2E
     runs-on: macos-26
-    timeout-minutes: 45
+    # The full suite builds for ~12 minutes and then runs ~40 minutes of UI tests.
+    timeout-minutes: 90
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'push' ||
@@ -367,7 +368,8 @@ jobs:
 
       - name: Run macOS Swift UI E2E
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          # Pushes run the smoke subset; the full suite runs nightly and on manual dispatch.
+          if [ "${{ github.event_name }}" = "push" ]; then
             caffeinate -dimsu bun run e2e:swift:mac-smoke
           else
             caffeinate -dimsu bun run e2e:swift:mac-ui

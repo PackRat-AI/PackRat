@@ -68,8 +68,8 @@ E2E_API_BASE_URL=http://localhost:8788
 
 Swift E2E CI is defined in `.github/workflows/swift-e2e.yml`.
 
-- Pull requests run the macOS smoke subset on a GitHub-hosted macOS runner.
-- Pushes, scheduled runs, and manual macOS runs execute the full macOS suite.
+- Pushes to `main` and `development` run the macOS smoke subset on a GitHub-hosted macOS runner.
+- Scheduled and manual macOS runs execute the full macOS suite.
 - Swift iOS runs nightly or manually and is labeled exploratory while the Expo
   app remains the production iOS app.
 - Each CI run uploads `.xcresult` bundles, screenshots, failure triage artifacts,

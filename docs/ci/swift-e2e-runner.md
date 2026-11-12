@@ -29,14 +29,14 @@ PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN
 
 ## Workflow Behavior
 
-Pull requests:
+Pushes to `main` or `development`:
 
 - Run `bun run e2e:swift:mac-smoke` on a GitHub-hosted macOS runner.
 - Upload `.xcresult`, screenshots, and failure triage artifacts.
 
-Pushes to `main` or `development`, scheduled runs, and manual macOS runs:
+Scheduled runs and manual macOS runs:
 
-- Run `bun run e2e:swift:mac-ui`.
+- Run the full `bun run e2e:swift:mac-ui` suite, with a 90-minute job limit.
 - Treat this as the primary Swift app confidence signal.
 
 Scheduled runs and manual iOS runs:
