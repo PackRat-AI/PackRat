@@ -46,6 +46,32 @@ enum TripWeatherPlan: Equatable {
         return .days(dates: dates, underWay: underWay, partial: partial)
     }
 
+    /// Trips whose destination is being watched for alerts right now, soonest
+    /// first. Mirrors the server's window in
+    /// `packages/api/src/services/weatherMonitoring/tripDestinationWatch.ts`:
+    /// from 3 days before the start until a day after the end.
+    static func watchedTrips(_ trips: [Trip], now: Date) -> [Trip] {
+        tripsInWatchWindow(trips, now: now).filter(\.sendsWeatherAlerts)
+    }
+
+    /// Trips inside their watch window whether or not their alerts are on, so
+    /// the watch list keeps a trip the user switched off.
+    static func tripsInWatchWindow(_ trips: [Trip], now: Date) -> [Trip] {
+        trips
+            .compactMap { trip in watchWindow(trip).map { (trip, $0) } }
+            .filter { _, window in window.opensAt <= now && now <= window.closesAt }
+            .sorted { $0.1.opensAt < $1.1.opensAt }
+            .map(\.0)
+    }
+
+    static func watchWindow(_ trip: Trip) -> (opensAt: Date, closesAt: Date)? {
+        guard !trip.deleted, trip.location != nil,
+              let start = trip.startDate?.toDate()
+        else { return nil }
+        let end = trip.endDate?.toDate() ?? start
+        return (start.addingTimeInterval(-3 * 86_400), end.addingTimeInterval(86_400))
+    }
+
     private static func dayRange(_ trip: Trip, calendar: Calendar) -> (start: Date, end: Date)? {
         guard !trip.deleted, trip.location != nil,
               let start = trip.startDate?.toDate()
