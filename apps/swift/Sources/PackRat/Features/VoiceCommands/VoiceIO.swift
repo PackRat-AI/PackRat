@@ -402,6 +402,16 @@ enum VoiceTone {
     private static let startPlayer = player("begin_record")
     private static let endPlayer = player("end_record")
 
+    /// How long the start tone plays; the microphone opens after it.
+    static let startDuration: Duration = .milliseconds(200)
+
+    /// Loads the tones and the speaking voice ahead of the first press.
+    static func warmUp() {
+        _ = (startPlayer, endPlayer)
+        _ = VoiceSpeaker.shared
+        _ = VoiceSpeaker.preferredVoice
+    }
+
     static func start() { play(startPlayer, fallback: 1113, haptic: .medium) }
     static func end() { play(endPlayer, fallback: 1114, haptic: .light) }
 

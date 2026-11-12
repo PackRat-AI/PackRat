@@ -23,8 +23,10 @@ final class VoiceCommandController {
     }
 
     private(set) var phase: Phase = .idle
-    /// What PackRat heard, then what it said, for the banner on the trip page.
+    /// What PackRat heard, what it's doing about it, then what it said, for
+    /// the banner on the trip page.
     private(set) var heard = ""
+    private(set) var status = ""
     private(set) var answer = ""
 
     private let listener = VoiceListener()
@@ -67,21 +69,29 @@ final class VoiceCommandController {
         speaker.stop()
         run?.cancel()
         heard = ""
+        status = ""
         answer = ""
         phase = .listening
         listener.onPartial = { [weak self] in self?.heard = $0 }
         VoiceTone.start()
         run = Task { [weak self] in
             guard let self else { return }
+            // Let the start tone finish before the microphone opens, so it isn't heard.
+            try? await Task.sleep(for: VoiceTone.startDuration)
             do {
                 let transcript = try await self.listener.listen(.untilStopped)
-                VoiceTone.end()
+                self.endTone()
                 await self.handle(transcript, context)
             } catch {
-                VoiceTone.end()
+                self.endTone()
                 await self.respond((error as? LocalizedError)?.errorDescription ?? VoiceAnswers.notHeard)
             }
         }
+    }
+
+    /// The end tone, unless letting go of the button already played it.
+    private func endTone() {
+        if phase == .listening { VoiceTone.end() }
     }
 
     /// "Hey PackRat" was heard, with a command said in the same breath or on
@@ -91,6 +101,7 @@ final class VoiceCommandController {
         speaker.stop()
         run?.cancel()
         heard = ""
+        status = ""
         answer = ""
         if !command.isEmpty {
             run = Task { [weak self] in await self?.handle(command, context) }
@@ -112,9 +123,14 @@ final class VoiceCommandController {
         }
     }
 
-    /// The microphone button came up: stop listening and act on what was heard.
+    /// The microphone button came up: stop listening and act on what was
+    /// heard. The bar moves on at once, so the wait for the recogniser's last
+    /// words doesn't look like nothing happened.
     func endListening() {
         guard phase == .listening else { return }
+        VoiceTone.end()
+        phase = .working
+        status = VoiceAnswers.working
         listener.stop()
     }
 
@@ -124,6 +140,7 @@ final class VoiceCommandController {
         speaker.stop()
         phase = .idle
         heard = ""
+        status = ""
         answer = ""
         VoiceAudioSession.deactivate()
     }
@@ -170,6 +187,7 @@ final class VoiceCommandController {
         crumb.data = ["command": command.logName, "tripId": context.trip.id]
         SentrySDK.addBreadcrumb(crumb)
         phase = .working
+        status = command.needsLocation ? VoiceAnswers.locating : VoiceAnswers.working
         await perform(command, context)
     }
 
@@ -402,6 +420,8 @@ final class VoiceCommandController {
         let reply = (try? await listener.listen(.untilSilence)) ?? ""
         VoiceTone.end()
         heard = reply
+        answer = ""
+        status = VoiceAnswers.working
         phase = .working
         return VoiceCommandParser.parseConfirmation(reply) == .yes
     }
@@ -413,6 +433,7 @@ final class VoiceCommandController {
         }
         guard !Task.isCancelled else { return }
         phase = .answering
+        status = ""
         answer = text
         if speaksAnswers { await speaker.say(text) }
         VoiceAudioSession.deactivate()
@@ -420,6 +441,7 @@ final class VoiceCommandController {
 
     private func finishQuietly() {
         phase = .idle
+        status = ""
         VoiceAudioSession.deactivate()
     }
 
@@ -439,15 +461,28 @@ final class VoiceCommandController {
         return await currentFix()
     }
 
+    /// A fix this recent answers straight away instead of waiting on the GPS.
+    private static let recentFixAge: TimeInterval = 60
+
     private func currentFix() async -> SafetyLocationFix? {
         locationDenied = false
         do {
-            return try await SafetyCheckInLocator().currentFix(timeout: .seconds(15))
+            return try await SafetyCheckInLocator().currentFix(timeout: .seconds(15), acceptRecent: Self.recentFixAge)
         } catch SafetyCheckInLocator.LocatorError.denied {
             locationDenied = true
             return nil
         } catch {
             return nil
+        }
+    }
+}
+
+private extension VoiceCommand {
+    /// Finding the phone's position is the slow part of these.
+    var needsLocation: Bool {
+        switch self {
+        case .checkIn, .whereAmI, .howFarToGo, .amIOnRoute, .markWaypoint, .note: true
+        default: false
         }
     }
 }

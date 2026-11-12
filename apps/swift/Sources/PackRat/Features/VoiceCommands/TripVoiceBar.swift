@@ -52,6 +52,7 @@ struct TripVoiceBar: View {
         .padding(.bottom, 8)
         .animation(.snappy, value: controller.phase)
         .animation(.snappy, value: wakeWord.isArmed)
+        .onAppear { VoiceTone.warmUp() }
         .onDisappear { controller.dismiss() }
         .sheet(isPresented: $showingCommands) { VoiceCommandsSheet() }
         // Offered once, when a trip first gets underway, rather than left for
@@ -123,11 +124,17 @@ struct TripVoiceBar: View {
 
     private var banner: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: bannerSymbol)
-                .font(.title3)
-                .foregroundStyle(.tint)
-                .symbolEffect(.variableColor.iterative, isActive: controller.phase == .listening || controller.phase == .confirming)
-                .frame(width: 28)
+            Group {
+                if controller.phase == .working {
+                    ProgressView()
+                } else {
+                    Image(systemName: bannerSymbol)
+                        .font(.title3)
+                        .foregroundStyle(.tint)
+                        .symbolEffect(.variableColor.iterative, isActive: controller.phase == .listening || controller.phase == .confirming)
+                }
+            }
+            .frame(width: 28)
             VStack(alignment: .leading, spacing: 4) {
                 if !controller.heard.isEmpty {
                     Text("“\(controller.heard)”")
@@ -140,6 +147,10 @@ struct TripVoiceBar: View {
                 } else if controller.phase == .listening, controller.heard.isEmpty {
                     Text("Listening…")
                         .font(.callout.weight(.medium))
+                } else if !controller.status.isEmpty {
+                    Text(controller.status)
+                        .font(.callout.weight(.medium))
+                        .foregroundStyle(.secondary)
                 }
                 if controller.phase == .confirming {
                     Text("Say yes to send, or no to cancel.")
@@ -168,7 +179,6 @@ struct TripVoiceBar: View {
     private var bannerSymbol: String {
         switch controller.phase {
         case .listening, .confirming: "waveform"
-        case .working: "ellipsis"
         default: "bubble.left.fill"
         }
     }
