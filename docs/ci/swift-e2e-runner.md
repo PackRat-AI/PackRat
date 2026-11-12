@@ -11,16 +11,7 @@ Do not move the Swift app to Maestro. XCUITest is the native Apple UI automation
 
 The macOS and iOS Swift UI suites run on GitHub-hosted `macos-26` runners. The workflow pins Xcode through `XCODE_VERSION`, which must be new enough for the tools version every pinned package declares (mlx-swift needs Xcode 26.4 or later). Each macOS run enables Automation Mode without authentication before the tests start, since a hosted runner has no state carried over from earlier runs.
 
-The manual TestFlight replacement archive verification job still targets a self-hosted Mac with the labels `self-hosted`, `macOS`, `packrat-e2e`, because it needs distribution signing identities installed. The label is registered in `.github/actionlint.yaml` so workflow linting accepts it.
-
-## Self-hosted Mac Setup (archive verification only)
-
-Install and select an Xcode at least as new as `XCODE_VERSION` in the workflow:
-
-```sh
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-xcodebuild -version
-```
+The manual TestFlight replacement archive verification job runs on `macos-26` as well. It imports the distribution certificate, the iOS and watch App Store profiles and the App Store Connect API key from the same secrets `release-apple.yml` uses, then deletes them when the job ends.
 
 ## Required Secrets
 
