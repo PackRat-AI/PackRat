@@ -68,14 +68,14 @@ E2E_API_BASE_URL=http://localhost:8788
 
 Swift E2E CI is defined in `.github/workflows/swift-e2e.yml`.
 
-- Pull requests run the macOS smoke subset on a self-hosted Mac runner.
-- Pushes, scheduled runs, and manual macOS runs execute the full macOS suite.
+- Pushes to `main` and `development` run the macOS smoke subset on a GitHub-hosted macOS runner.
+- Scheduled and manual macOS runs execute the full macOS suite.
 - Swift iOS runs nightly or manually and is labeled exploratory while the Expo
   app remains the production iOS app.
 - Each CI run uploads `.xcresult` bundles, screenshots, failure triage artifacts,
   and a GitHub step summary generated with `xcresulttool`.
 
-See `docs/ci/swift-e2e-runner.md` for self-hosted Mac runner setup.
+See `docs/ci/swift-e2e-runner.md` for runner details.
 
 ## TestFlight Identity
 
@@ -105,14 +105,7 @@ Use `--dry-run` before a real upload to verify the bundle id, display
 name, build configuration, API environment, and Xcode archive overrides without
 requiring Apple credentials or running Xcode.
 
-Use `--verify-archive-only` on a self-hosted Mac signing runner before a real
-replacement upload when you want TestFlight-level confidence without shipping a
-build. It archives, exports, and inspects the built app/IPA metadata for the
-replacement bundle ids, display name, build number, production `PACKRAT_ENV`,
-and embedded watch companion linkage, then exits before upload. The hosted
-GitHub macOS runners do not have a signed-in Apple account or provisioning
-profiles, so the manual archive verification job runs on the same
-`self-hosted`, `macOS`, `packrat-e2e` runner used for Mac app UI automation.
+Use `--verify-archive-only` before a real replacement upload when you want TestFlight-level confidence without shipping a build. It archives, exports, and inspects the built app/IPA metadata for the replacement bundle ids, display name, build number, production `PACKRAT_ENV`, and embedded watch companion linkage, then exits before upload. In CI, the manual archive verification job in `swift-e2e.yml` runs it on a GitHub-hosted macOS runner, signing with the same secrets as `release-apple.yml`.
 
 Use `swift:testflight:preflight` before the replacement upload when validating a
 seamless update. It fails unless the resolved archive is the existing Expo
