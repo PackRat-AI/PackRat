@@ -26,6 +26,7 @@ import { t } from 'expo-app/lib/i18n';
 import { getDefaultSpeedUnit } from 'expo-app/lib/unitDefaults';
 import * as Network from 'expo-network';
 import { voiceSettingsStore } from '../store/voiceSettings';
+import { lastSample } from '../utils/recordedTrack';
 import { routeProgress } from '../utils/routeProgress';
 import {
   checkedIn,
@@ -41,7 +42,11 @@ import {
   notified,
   onRouteAnswer,
   remainingAnswer,
+  trackingOtherTrip,
+  trackingStopped,
+  trackSoFar,
   VoiceAnswers,
+  waypointMarked,
   weatherAnswer,
   whereAmIAnswer,
 } from '../utils/voiceAnswers';
@@ -50,6 +55,15 @@ import {
   parseVoiceConfirmation,
   type VoiceCommand,
 } from '../utils/voiceCommand';
+import {
+  pauseRecording,
+  resumeRecording,
+  startRecording,
+  stopRecording,
+  trackStore,
+  WORST_ACCURACY_METERS,
+} from './trackRecorder';
+import { addWaypoint, saveRecording } from './tripLogEdits';
 import {
   cancelListening,
   hasVoicePermission,
@@ -62,6 +76,7 @@ import {
   stopSpeaking,
   VoiceListenError,
 } from './voiceIO';
+import { waypointAt } from './waypointAt';
 
 export type VoicePhase =
   | 'idle'
@@ -164,7 +179,7 @@ async function handleTranscript({
   voiceStore.heard.set(transcript);
   if (!transcript.trim()) return goIdle();
   const command = parseVoiceCommand(transcript);
-  if (!command || !STAGE_ONE_COMMANDS.has(command.kind)) {
+  if (!command || LATER_COMMANDS.has(command.kind)) {
     return respond({ text: VoiceAnswers.notHeard, run });
   }
   Sentry.addBreadcrumb({
@@ -197,21 +212,12 @@ const LOCATING_COMMANDS: ReadonlySet<VoiceCommand['kind']> = new Set([
   'whereAmI',
   'howFarToGo',
   'amIOnRoute',
+  'markWaypoint',
+  'note',
 ]);
 
-/** Tracking, waypoints and guidance arrive with the recorder and the guide. */
-const STAGE_ONE_COMMANDS: ReadonlySet<VoiceCommand['kind']> = new Set([
-  'startTrip',
-  'checkIn',
-  'imSafe',
-  'extendBy',
-  'extendUntil',
-  'whereAmI',
-  'howFarToGo',
-  'amIOnRoute',
-  'whenAmIDue',
-  'weather',
-]);
+/** Guidance arrives with the route guide. */
+const LATER_COMMANDS: ReadonlySet<VoiceCommand['kind']> = new Set(['navigate', 'stopNavigating']);
 
 function isMetric(): boolean {
   return (preferencesStore.speedUnit.peek() ?? getDefaultSpeedUnit()) === 'kmh';
@@ -353,6 +359,83 @@ async function perform({
       return answer(weatherAnswer({ conditions, metric, now }));
     }
 
+    case 'startTracking':
+    case 'pauseTracking':
+    case 'resumeTracking':
+    case 'stopTracking':
+    case 'trackSoFar':
+      return performTracking({ command, trip, answer, metric });
+
+    case 'markWaypoint':
+    case 'note': {
+      if (command.kind === 'note' && !command.text.trim()) return answer(VoiceAnswers.noteEmpty);
+      const fix = await waypointFix();
+      if (!fix.ok) return answer(fix.answer);
+      const waypoint = waypointAt({
+        fix: fix.fix,
+        name: command.kind === 'markWaypoint' ? command.name : null,
+        note: command.kind === 'note' ? command.text : null,
+      });
+      if (!addWaypoint({ tripId: trip.id, waypoint })) return answer(VoiceAnswers.waypointLimit);
+      return answer(
+        command.kind === 'note' ? VoiceAnswers.noteSaved : waypointMarked(waypoint.name),
+      );
+    }
+
+    default:
+      return answer(VoiceAnswers.notHeard);
+  }
+}
+
+async function performTracking({
+  command,
+  trip,
+  answer,
+  metric,
+}: {
+  command: VoiceCommand;
+  trip: Trip;
+  answer: (text: string) => Promise<void>;
+  metric: boolean;
+}): Promise<void> {
+  const track = trackStore.track.peek();
+  if (track && track.tripId !== trip.id) return answer(trackingOtherTrip(track.tripName));
+  switch (command.kind) {
+    case 'startTracking': {
+      if (track) return answer(VoiceAnswers.alreadyTracking);
+      const status = trip.status ?? 'planned';
+      if (status === 'complete') return answer(VoiceAnswers.tripEnded);
+      try {
+        await startRecording({ tripId: trip.id, tripName: trip.name });
+      } catch {
+        return answer(VoiceAnswers.locationDenied);
+      }
+      // Tracking a trip that hasn't started starts it.
+      if (status === 'planned') {
+        setTripLifecycle({ tripId: trip.id, status: 'in_progress' });
+        return answer(VoiceAnswers.tripStartedTracking);
+      }
+      return answer(VoiceAnswers.trackingStarted);
+    }
+    case 'pauseTracking':
+      if (!track) return answer(VoiceAnswers.notTracking);
+      if (track.isPaused) return answer(VoiceAnswers.alreadyPaused);
+      await pauseRecording();
+      return answer(VoiceAnswers.trackingPaused);
+    case 'resumeTracking':
+      if (!track) return answer(VoiceAnswers.notTracking);
+      if (!track.isPaused) return answer(VoiceAnswers.notPaused);
+      await resumeRecording();
+      return answer(VoiceAnswers.trackingResumed);
+    case 'stopTracking': {
+      const finished = await stopRecording();
+      if (!finished) return answer(VoiceAnswers.notTracking);
+      saveRecording(finished);
+      return answer(trackingStopped({ track: finished, metric }));
+    }
+    case 'trackSoFar':
+      if (!track) return answer(VoiceAnswers.notTracking);
+      return answer(trackSoFar({ track, metric }));
     default:
       return answer(VoiceAnswers.notHeard);
   }
@@ -370,6 +453,28 @@ async function locate(): Promise<
     const denied = error instanceof LocatorError && error.reason === 'denied';
     return { ok: false, answer: denied ? VoiceAnswers.locationDenied : VoiceAnswers.noFix };
   }
+}
+
+/** A recorder point this recent is where the user is, so marking while tracking is instant. */
+const FRESH_SAMPLE_MS = 30_000;
+
+/** The recorder's latest point when it's fresh; otherwise a new fix. */
+async function waypointFix(): ReturnType<typeof locate> {
+  const track = trackStore.track.peek();
+  const sample = track ? lastSample(track) : null;
+  if (sample && Date.now() - sample.time < FRESH_SAMPLE_MS) {
+    return {
+      ok: true,
+      fix: {
+        latitude: sample.latitude,
+        longitude: sample.longitude,
+        accuracy: WORST_ACCURACY_METERS,
+        recordedAt: new Date(sample.time),
+        altitude: sample.altitude,
+      },
+    };
+  }
+  return locate();
 }
 
 // ── Speaking and confirming ───────────────────────────────────────────────

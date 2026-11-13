@@ -22,6 +22,7 @@ import { useSafetyCheckInSync } from 'expo-app/features/safety-check-in/hooks/us
 import { useReportOutboxSync } from 'expo-app/features/trail-conditions/hooks/useReportOutboxSync';
 import { useTripReminderSync } from 'expo-app/features/trips/hooks/useTripReminderSync';
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
+import { useTrackRecorderSync } from 'expo-app/features/voice-commands';
 import { useWeatherAlertRefresh } from 'expo-app/features/weather/hooks/useWeatherAlertRefresh';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
@@ -47,6 +48,7 @@ export default function AppLayout() {
   useTripReminderSync({ isAuthed: isAuthedValue });
   useSafetyCheckInSync({ isAuthed: isAuthedValue });
   useReportOutboxSync({ isAuthed: isAuthedValue });
+  useTrackRecorderSync({ isAuthed: isAuthedValue });
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const isLoadingGlobal = useAtomValue(isLoadingAtom);

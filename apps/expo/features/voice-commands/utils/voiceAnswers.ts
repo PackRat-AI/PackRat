@@ -1,4 +1,6 @@
 import type { TripConditions } from 'expo-app/features/trips/utils/tripConditions';
+import type { RecordedTrack } from './recordedTrack';
+import { trackLogRoute } from './recordedTrack';
 import { compassName, isOnRoute, type RouteProgress } from './routeProgress';
 import type { VoiceCommand } from './voiceCommand';
 
@@ -8,7 +10,7 @@ import type { VoiceCommand } from './voiceCommand';
  */
 export const VoiceAnswers = Object.freeze({
   notHeard:
-    "Sorry, I didn't catch that. You can say check in, where am I, how far to go, am I on route, when am I due back, add an hour, weather, or I'm safe.",
+    "Sorry, I didn't catch that. You can say start tracking, mark waypoint, note, how far have I gone, check in, where am I, how far to go, am I on route, when am I due back, add an hour, weather, or I'm safe.",
   noTrip: "There's no trip in progress.",
   noRoute: "This trip doesn't have a planned route.",
   noCheckIn:
@@ -28,6 +30,18 @@ export const VoiceAnswers = Object.freeze({
     "No one's been told about this trip yet. Notify your contacts from the trip page first.",
   finished: 'Trip ended. Welcome back.',
   tripEnded: 'This trip has ended.',
+  trackingStarted: "Tracking started. I'll keep recording with the screen off.",
+  tripStartedTracking: "Trip started, and tracking. I'll keep recording with the screen off.",
+  alreadyTracking: "You're already tracking.",
+  notTracking: "You're not tracking. Say start tracking to begin.",
+  trackingPaused: 'Tracking paused. Say resume tracking when you set off again.',
+  alreadyPaused: 'Tracking is already paused.',
+  trackingResumed: 'Tracking resumed.',
+  notPaused: "Tracking isn't paused.",
+  waypointLimit:
+    'This trip has 500 waypoints already. Delete one on the trip page to mark another.',
+  noteEmpty: 'Say note, then what you want to save.',
+  noteSaved: 'Note saved here.',
 });
 
 // ── Distances ─────────────────────────────────────────────────────────────
@@ -373,4 +387,45 @@ export function spokenDuration(milliseconds: number): string {
   if (hours === 0) return m;
   if (minutes === 0 || hours >= 5) return h;
   return `${h} ${m}`;
+}
+
+// ── Tracking and waypoints ────────────────────────────────────────────────
+
+export function trackingOtherTrip(tripName: string): string {
+  return `You're tracking ${tripName}. Stop that first.`;
+}
+
+export function waypointMarked(name: string): string {
+  return `Marked ${name}.`;
+}
+
+export function trackingStopped({ track, metric }: { track: RecordedTrack; metric: boolean }) {
+  if (!trackLogRoute(track)) return 'Stopped. Too little was recorded to save a route.';
+  return `Stopped. ${trackTotals({ track, metric })} Saved to your trip log.`;
+}
+
+export function trackSoFar({ track, metric }: { track: RecordedTrack; metric: boolean }) {
+  if (track.distanceMeters < 10) return "You've only just started.";
+  const base = `You've gone ${trackTotals({ track, metric })}`;
+  return track.isPaused ? `${base} Tracking is paused.` : base;
+}
+
+/** "3.2 miles, 1,400 feet of climbing, 1 hour 20 moving." */
+function trackTotals({ track, metric }: { track: RecordedTrack; metric: boolean }): string {
+  const parts = [spokenDistance({ meters: track.distanceMeters, metric })];
+  if (track.elevationGainMeters >= 10) {
+    parts.push(`${spokenHeight({ meters: track.elevationGainMeters, metric })} of climbing`);
+  }
+  if (track.movingSeconds >= 60) parts.push(`${movingTime(track.movingSeconds)} moving`);
+  return `${parts.join(', ')}.`;
+}
+
+/** "4 hours 10", "1 hour", "45 minutes": the way a watch reads it out. */
+export function movingTime(seconds: number): string {
+  const total = Math.max(1, Math.round(seconds / 60));
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  if (hours === 0) return minutes === 1 ? '1 minute' : `${minutes} minutes`;
+  const h = hours === 1 ? '1 hour' : `${hours} hours`;
+  return minutes === 0 ? h : `${h} ${minutes}`;
 }

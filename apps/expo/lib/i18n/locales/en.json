@@ -2204,6 +2204,40 @@
     "status": {
       "working": "One moment…",
       "locating": "Finding where you are…"
+    },
+    "tracking": {
+      "serviceTitle": "Recording your hike",
+      "serviceBody": "PackRat is recording your route, distance and climbing.",
+      "idleTitle": "Record Your Hike",
+      "idleDetail": "Records your distance, climbing and route, with the screen off. Stopping saves it to the trip log.",
+      "recordingTitle": "Tracking",
+      "recordingDetail": "Keeps recording with the screen off. You can lock your phone.",
+      "pausedTitle": "Tracking Paused",
+      "pausedDetail": "Resume when you set off again. Distance between pause and resume isn't counted.",
+      "otherTrip": "You're tracking {{name}}. Stop that recording to track this trip.",
+      "distance": "Distance",
+      "climbing": "Climbing",
+      "moving": "Moving",
+      "start": "Start Tracking",
+      "pause": "Pause",
+      "resume": "Resume",
+      "stop": "Stop",
+      "mark": "Mark Waypoint",
+      "stopTitle": "Stop tracking?",
+      "stopMessage": "The distance, climbing and route you recorded replace those in this trip's log.",
+      "stopAndSave": "Stop and Save",
+      "keepTracking": "Keep Tracking",
+      "nameTitle": "Name This Waypoint",
+      "limitTitle": "Too Many Waypoints",
+      "limitMessage": "This trip has 500 waypoints already. Delete one to mark another.",
+      "locationOffTitle": "Location Is Off for PackRat",
+      "locationOffMessage": "Allow location in Settings to record your hike and mark waypoints.",
+      "openSettings": "Open Settings",
+      "noFixTitle": "Couldn't Find Your Location",
+      "noFixMessage": "Try again with a clear view of the sky.",
+      "waypoints": "Waypoints",
+      "deleteWaypoint": "Delete Waypoint",
+      "waypointMore": "More options for {{name}}"
     }
   }
 }

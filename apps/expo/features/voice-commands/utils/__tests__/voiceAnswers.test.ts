@@ -1,5 +1,6 @@
 import type { TripConditions } from 'expo-app/features/trips/utils/tripConditions';
 import { describe, expect, it } from 'vitest';
+import { appendSamples, newTrack, type RecordedTrack } from '../recordedTrack';
 import { compassName, routeProgress } from '../routeProgress';
 import {
   checkedIn,
@@ -11,6 +12,7 @@ import {
   dueBackAnswer,
   extended,
   markedSafe,
+  movingTime,
   newReturnTime,
   notified,
   onRouteAnswer,
@@ -21,7 +23,11 @@ import {
   spokenDuration,
   spokenHeight,
   spokenTime,
+  trackingOtherTrip,
+  trackingStopped,
+  trackSoFar,
   VoiceAnswers,
+  waypointMarked,
   weatherAnswer,
   whereAmIAnswer,
 } from '../voiceAnswers';
@@ -299,5 +305,68 @@ describe('weather', () => {
     expect(
       weatherAnswer({ conditions: { ...base, maxChanceOfRain: 0 }, metric: false, now: date(19) }),
     ).toBe('Partly cloudy. Between 41 and 64 degrees. This forecast is from 5 hours ago.');
+  });
+});
+
+describe('tracking answers', () => {
+  const walked = (overrides: Partial<RecordedTrack>): RecordedTrack =>
+    appendSamples({
+      track: { ...newTrack({ tripId: 't', tripName: 'Mailbox Peak', now: 0 }), ...overrides },
+      samples: [
+        { latitude: 47, longitude: -120, altitude: null, time: 0 },
+        { latitude: 47.001, longitude: -120, altitude: null, time: 60_000 },
+      ],
+    });
+
+  it('reads totals on stop, leaving out climbing and time that round to nothing', () => {
+    const track = {
+      ...walked({}),
+      distanceMeters: 13_518,
+      elevationGainMeters: 884,
+      movingSeconds: 15_000,
+    };
+    expect(trackingStopped({ track, metric: false })).toBe(
+      'Stopped. 8.4 miles, 2,900 feet of climbing, 4 hours 10 moving. Saved to your trip log.',
+    );
+    const short = {
+      ...walked({}),
+      distanceMeters: 1_400,
+      elevationGainMeters: 4,
+      movingSeconds: 30,
+    };
+    expect(trackingStopped({ track: short, metric: true })).toBe(
+      'Stopped. 1.4 kilometres. Saved to your trip log.',
+    );
+  });
+
+  it('says nothing was saved when too little was recorded', () => {
+    const empty = newTrack({ tripId: 't', tripName: 'x', now: 0 });
+    expect(trackingStopped({ track: empty, metric: false })).toBe(
+      'Stopped. Too little was recorded to save a route.',
+    );
+  });
+
+  it('reads progress so far, and says when paused', () => {
+    expect(trackSoFar({ track: newTrack({ tripId: 't', tripName: 'x' }), metric: false })).toBe(
+      "You've only just started.",
+    );
+    const track = { ...walked({}), distanceMeters: 5_150, movingSeconds: 4_800, isPaused: true };
+    expect(trackSoFar({ track, metric: false })).toBe(
+      "You've gone 3.2 miles, 1 hour 20 moving. Tracking is paused.",
+    );
+  });
+
+  it('reads moving time the way a watch does', () => {
+    expect(movingTime(45 * 60)).toBe('45 minutes');
+    expect(movingTime(60)).toBe('1 minute');
+    expect(movingTime(3_600)).toBe('1 hour');
+    expect(movingTime(15_000)).toBe('4 hours 10');
+  });
+
+  it('names the trip being tracked and the waypoint marked', () => {
+    expect(trackingOtherTrip('Mailbox Peak')).toBe(
+      "You're tracking Mailbox Peak. Stop that first.",
+    );
+    expect(waypointMarked('Water source')).toBe('Marked Water source.');
   });
 });
