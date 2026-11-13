@@ -63,6 +63,9 @@ struct TripMapboxMap: View {
         }
         .mapStyle(.outdoors)
         .ornamentOptions(OrnamentOptions(scaleBar: ScaleBarViewOptions(visibility: .hidden)))
+        .onChange(of: (plannedRoute + loggedRoute).frameKey) {
+            viewport = Self.initialViewport(destination: destination, routes: [plannedRoute, loggedRoute])
+        }
         .accessibilityIdentifier("trip_detail_map")
     }
 

@@ -6,9 +6,15 @@ import SwiftUI
 /// `RoutePreview` on Mapbox Outdoors, so a logged route shows offline.
 struct MapboxRoutePreview: View {
     let coordinates: [CLLocationCoordinate2D]
+    @State private var viewport: Viewport
+
+    init(coordinates: [CLLocationCoordinate2D]) {
+        self.coordinates = coordinates
+        _viewport = State(initialValue: .framing(coordinates, padding: 24))
+    }
 
     var body: some View {
-        Map(initialViewport: .framing(coordinates, padding: 24)) {
+        Map(viewport: $viewport) {
             if coordinates.count >= 2 {
                 PolylineAnnotationGroup {
                     routeLine(coordinates)
@@ -26,6 +32,9 @@ struct MapboxRoutePreview: View {
         }
         .mapStyle(.outdoors)
         .allowsHitTesting(false)
+        .onChange(of: coordinates.frameKey) {
+            viewport = .framing(coordinates, padding: 24)
+        }
     }
 }
 

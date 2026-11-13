@@ -24,6 +24,11 @@ extension Viewport {
     }
 }
 
+extension Array where Element == CLLocationCoordinate2D {
+    /// Changes whenever the line does, so a map can re-frame after an edit.
+    var frameKey: [Double] { flatMap { [$0.latitude, $0.longitude] } }
+}
+
 /// A route drawn as a solid orange line, the style every in-app map uses.
 func routeLine(_ coordinates: [CLLocationCoordinate2D], width: Double = 4) -> PolylineAnnotation {
     PolylineAnnotation(lineCoordinates: coordinates)
