@@ -582,6 +582,18 @@ struct RoutePreview: View {
     let coordinates: [CLLocationCoordinate2D]
 
     var body: some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            MapboxRoutePreview(coordinates: coordinates)
+        } else {
+            mapKitPreview
+        }
+        #else
+        mapKitPreview
+        #endif
+    }
+
+    private var mapKitPreview: some View {
         Map(initialPosition: .automatic, interactionModes: []) {
             MapPolyline(coordinates: coordinates)
                 .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))

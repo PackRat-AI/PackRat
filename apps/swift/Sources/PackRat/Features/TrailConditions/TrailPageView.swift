@@ -334,6 +334,18 @@ private struct TrailLineMap: View {
     }
 
     var body: some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            MapboxTrailLineMap(lines: coordinates)
+        } else {
+            mapKitMap
+        }
+        #else
+        mapKitMap
+        #endif
+    }
+
+    private var mapKitMap: some View {
         Map(initialPosition: region.map { .region($0) } ?? .automatic, interactionModes: []) {
             ForEach(Array(coordinates.enumerated()), id: \.offset) { _, line in
                 MapPolyline(coordinates: line)
