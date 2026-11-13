@@ -22,6 +22,7 @@ const FeatureFlag = Object.freeze({
   EnableTripReminders: 'enableTripReminders',
   EnableSafetyCheckIn: 'enableSafetyCheckIn',
   EnableTripStats: 'enableTripStats',
+  EnableOfflineMaps: 'enableOfflineMaps',
 });
 
 const DashboardTileId = Object.freeze({
@@ -88,6 +89,7 @@ const APP_CONFIG_SOURCE = {
     [FeatureFlag.EnableTripReminders]: false,
     [FeatureFlag.EnableSafetyCheckIn]: false,
     [FeatureFlag.EnableTripStats]: false,
+    [FeatureFlag.EnableOfflineMaps]: false,
   },
   dashboard: {
     gapPrefix: GAP_PREFIX,
