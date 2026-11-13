@@ -62,6 +62,10 @@ final class OfflineMapStore {
         areas.first { $0.tripId == tripId }
     }
 
+    func area(forTrail trailId: String) -> OfflineArea? {
+        areas.first { $0.trailId == trailId }
+    }
+
     func isDownloading(_ id: String) -> Bool { cancelables[id] != nil }
 
     // MARK: - Estimate
@@ -117,6 +121,7 @@ final class OfflineMapStore {
         detail: OfflineDetailLevel,
         tripId: String? = nil,
         tripEndDate: Date? = nil,
+        trailId: String? = nil,
         allowCellular: Bool
     ) {
         let area = OfflineArea(
@@ -126,7 +131,8 @@ final class OfflineMapStore {
             detail: detail,
             savedAt: Date(),
             tripId: tripId,
-            tripEndDate: tripEndDate
+            tripEndDate: tripEndDate,
+            trailId: trailId
         )
         areas.append(area)
         load(area, allowCellular: allowCellular)

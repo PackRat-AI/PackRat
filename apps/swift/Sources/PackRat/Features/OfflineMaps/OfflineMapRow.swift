@@ -1,21 +1,21 @@
 #if os(iOS)
-import CoreLocation
 import SwiftUI
 
-/// On a trip: offers to save the map around its destination, then shows the
+/// On a trip or trail page: offers to save the map around it, then shows the
 /// download and a "Saved for offline" badge once it is done.
-struct TripOfflineMapRow: View {
-    let tripId: String
-    let tripName: String
-    let destination: CLLocationCoordinate2D
-    let endDate: Date?
+struct OfflineMapRow: View {
+    /// The area already saved for this trip or trail, if any.
+    let area: OfflineArea?
+    /// Prefixes the accessibility identifiers, e.g. `trip` or `trail_page`.
+    let idPrefix: String
+    @ViewBuilder let picker: () -> OfflineAreaPickerView
 
     @State private var store = OfflineMapStore.shared
     @State private var showingPicker = false
 
     var body: some View {
         Group {
-            if let area = store.area(forTrip: tripId) {
+            if let area {
                 saved(area)
             } else {
                 Button {
@@ -25,19 +25,11 @@ struct TripOfflineMapRow: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .accessibilityIdentifier("trip_save_offline_map")
+                .accessibilityIdentifier("\(idPrefix)_save_offline_map")
             }
         }
-        .padding(.horizontal)
         .sheet(isPresented: $showingPicker) {
-            NavigationStack {
-                OfflineAreaPickerView(
-                    initialCenter: destination,
-                    suggestedName: tripName,
-                    tripId: tripId,
-                    tripEndDate: endDate
-                )
-            }
+            NavigationStack { picker() }
         }
     }
 
@@ -53,7 +45,7 @@ struct TripOfflineMapRow: View {
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
-            .accessibilityIdentifier("trip_offline_map_progress")
+            .accessibilityIdentifier("\(idPrefix)_offline_map_progress")
         } else if store.failures[area.id] != nil {
             Button {
                 store.update(area)
@@ -62,12 +54,12 @@ struct TripOfflineMapRow: View {
                     .font(.subheadline)
             }
             .tint(.orange)
-            .accessibilityIdentifier("trip_offline_map_retry")
+            .accessibilityIdentifier("\(idPrefix)_offline_map_retry")
         } else {
             Label("Saved for offline", systemImage: "checkmark.circle.fill")
                 .font(.subheadline)
                 .foregroundStyle(.green)
-                .accessibilityIdentifier("trip_offline_map_saved")
+                .accessibilityIdentifier("\(idPrefix)_offline_map_saved")
         }
     }
 }

@@ -95,12 +95,15 @@ struct TripDetailView: View {
 
                     #if os(iOS)
                     if OfflineMapStore.isEnabled, !isFinished {
-                        TripOfflineMapRow(
-                            tripId: trip.id,
-                            tripName: trip.name,
-                            destination: coord,
-                            endDate: (trip.endDate ?? trip.startDate)?.toDate()
-                        )
+                        OfflineMapRow(area: OfflineMapStore.shared.area(forTrip: trip.id), idPrefix: "trip") {
+                            OfflineAreaPickerView(
+                                initialCenter: coord,
+                                suggestedName: trip.name,
+                                tripId: trip.id,
+                                tripEndDate: (trip.endDate ?? trip.startDate)?.toDate()
+                            )
+                        }
+                        .padding(.horizontal)
                     }
                     #endif
                 }

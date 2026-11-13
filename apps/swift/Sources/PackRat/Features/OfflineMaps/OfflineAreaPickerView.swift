@@ -13,6 +13,9 @@ struct OfflineAreaPickerView: View {
     var suggestedName: String = ""
     var tripId: String?
     var tripEndDate: Date?
+    var trailId: String?
+    /// A trail's line, drawn on the map and framed to fit when the map opens.
+    var lines: [[CLLocationCoordinate2D]] = []
 
     @Environment(\.dismiss) private var dismiss
     @State private var store = OfflineMapStore.shared
@@ -31,15 +34,21 @@ struct OfflineAreaPickerView: View {
         initialCenter: CLLocationCoordinate2D? = nil,
         suggestedName: String = "",
         tripId: String? = nil,
-        tripEndDate: Date? = nil
+        tripEndDate: Date? = nil,
+        trailId: String? = nil,
+        lines: [[CLLocationCoordinate2D]] = []
     ) {
         self.initialCenter = initialCenter
         self.suggestedName = suggestedName
         self.tripId = tripId
         self.tripEndDate = tripEndDate
+        self.trailId = trailId
+        self.lines = lines
         _name = State(initialValue: suggestedName)
-        _viewport = State(initialValue: initialCenter.map { .camera(center: $0, zoom: 11) }
-            ?? .followPuck(zoom: 11))
+        let points = lines.flatMap { $0 }
+        _viewport = State(initialValue: points.count > 1 || initialCenter != nil
+            ? .framing(points, fallback: initialCenter, padding: 48, maxZoom: 14)
+            : .followPuck(zoom: 11))
     }
 
     private var isTooLarge: Bool { (estimate ?? 0) > OfflineMapStore.maxAreaBytes }
@@ -54,6 +63,10 @@ struct OfflineAreaPickerView: View {
             MapReader { proxy in
                 Map(viewport: $viewport) {
                     Puck2D()
+                    PolylineAnnotationGroup(Array(lines.enumerated()), id: \.offset) { _, line in
+                        routeLine(line)
+                    }
+                    .lineCap(.round)
                 }
                 .mapStyle(.outdoors)
                 .onMapIdle { _ in
@@ -199,6 +212,7 @@ struct OfflineAreaPickerView: View {
             detail: detail,
             tripId: tripId,
             tripEndDate: tripEndDate,
+            trailId: trailId,
             allowCellular: allowCellular
         )
         dismiss()

@@ -67,7 +67,7 @@ struct OfflineAreaBounds: Codable, Hashable, Defaults.Serializable {
 ///
 /// The tiles live in Mapbox's tile store under `id`; this record carries
 /// what the tile store does not: the user's name for it, the detail level,
-/// and the trip it was saved for.
+/// and the trip or trail it was saved for.
 struct OfflineArea: Codable, Hashable, Identifiable, Defaults.Serializable {
     var id: String
     var name: String
@@ -76,6 +76,7 @@ struct OfflineArea: Codable, Hashable, Identifiable, Defaults.Serializable {
     var savedAt: Date
     var tripId: String?
     var tripEndDate: Date?
+    var trailId: String?
     /// Bytes on disk once the download finished. Zero while downloading.
     var sizeBytes: Int64 = 0
     /// False until every tile has arrived, so an interrupted download can be
