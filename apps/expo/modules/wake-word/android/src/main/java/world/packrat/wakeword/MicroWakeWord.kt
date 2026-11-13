@@ -120,6 +120,7 @@ class MicroWakeWord(
         private val libraryLoaded: Unit by lazy {
             System.loadLibrary("microwakeword")
             Log.d(TAG, "Loaded microwakeword native library")
+            Unit
         }
 
         fun ensureLibraryLoaded() {
