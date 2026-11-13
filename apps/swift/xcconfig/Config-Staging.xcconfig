@@ -23,3 +23,8 @@ SENTRY_DSN =
 // make purchases as the signed-in user. The secret key (sk_...) is what
 // must never appear here.
 REVENUECAT_API_KEY = appl_rnWelSVCsFFZVbcedvupYEUjNyq
+
+// MAPBOX_PUBLIC_TOKEN flows xcconfig → Info.plist (MBXAccessToken) → Mapbox SDK.
+// A public (pk.) token ships inside the app binary by design, like the
+// RevenueCat key above. Secret (sk.) tokens must never appear here.
+MAPBOX_PUBLIC_TOKEN = pk.eyJ1IjoiYW5kcmV3Ymllcm1hbiIsImEiOiJjbDhwYTVtc3kwMGprM3Buejg3d2doa2pvIn0.F_D3I0KRlQkQK70DkK7MlQ
