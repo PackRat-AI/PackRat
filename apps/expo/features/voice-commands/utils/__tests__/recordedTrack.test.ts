@@ -61,14 +61,24 @@ describe('appendSamples', () => {
     expect(trackSamples(after)).toHaveLength(2);
   });
 
-  it('counts a climb only once it rises 3 m above the last low point', () => {
-    const heights = [100, 101, 99, 101, 103, 106, 104, 110];
+  it('counts a climb only once the average of five fixes rises 10 m above its low point', () => {
+    const heights = [100, 100, 100, 100, 100, 105, 110, 115, 120, 120, 120];
     const track = appendSamples({
       track: fresh(),
       samples: walk({ count: heights.length, altitude: (i) => heights[i] ?? null }),
     });
-    // 99 → 106 is 7, then 104 → 110 is 6.
-    expect(track.elevationGainMeters).toBe(13);
+    // Averages run 100, 101, 103, 106, 110 (counted: +10), 114, 117 (under 10 more).
+    expect(track.elevationGainMeters).toBe(10);
+  });
+
+  it('counts no climbing from GPS height noise while standing still', () => {
+    // Heights recorded outdoors on flat ground: 21 minutes inside a 15 m square.
+    const heights = [382.0, 395.5, 402.6, 393.9, 394.1, 398.6, 395.5, 398.1, 397.4, 393.6, 392.2];
+    const track = appendSamples({
+      track: fresh(),
+      samples: walk({ count: heights.length, altitude: (i) => heights[i] ?? null }),
+    });
+    expect(track.elevationGainMeters).toBe(0);
   });
 
   it('ignores fixes while paused', () => {

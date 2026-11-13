@@ -29,15 +29,22 @@ export interface RecordedTrack {
   distanceMeters: number;
   elevationGainMeters: number;
   movingSeconds: number;
-  /** Low point the next climb is measured from (see `elevationGain` in trip stats). */
+  /** Low point of the smoothed altitude that the next climb is measured from. */
   climbReference: number | null;
+  /** The latest altitudes, averaged so GPS height noise doesn't count as climbing. */
+  altitudeWindow?: number[];
 }
 
 /** Faster than this between fixes, in metres a second, counts as moving; slower is standing about. */
 const MOVING_SPEED = 0.3;
 /** A longer gap than this between fixes is the phone losing the sky, not the user walking. */
 const LONGEST_MOVING_GAP_SECONDS = 120;
-const CLIMB_THRESHOLD = 3;
+/**
+ * GPS height swings 20 m standing still, so climbing counts from the average of the last few
+ * fixes, and only once that average rises this far above its low point.
+ */
+const ALTITUDE_WINDOW = 5;
+const CLIMB_THRESHOLD = 10;
 
 export function newTrack({
   tripId,
@@ -58,6 +65,7 @@ export function newTrack({
     elevationGainMeters: 0,
     movingSeconds: 0,
     climbReference: null,
+    altitudeWindow: [],
   };
 }
 
@@ -90,6 +98,7 @@ export function appendSamples({
   const stretches = track.stretches.slice(0, -1);
   const current = [...(track.stretches[track.stretches.length - 1] ?? [])];
   let { distanceMeters, elevationGainMeters, movingSeconds, climbReference } = track;
+  const altitudeWindow = [...(track.altitudeWindow ?? [])];
   for (const sample of samples) {
     const previous = current[current.length - 1];
     if (previous) {
@@ -102,11 +111,17 @@ export function appendSamples({
       }
     }
     if (sample.altitude != null) {
-      if (climbReference == null || sample.altitude < climbReference) {
-        climbReference = sample.altitude;
-      } else if (sample.altitude - climbReference >= CLIMB_THRESHOLD) {
-        elevationGainMeters += sample.altitude - climbReference;
-        climbReference = sample.altitude;
+      altitudeWindow.push(sample.altitude);
+      if (altitudeWindow.length > ALTITUDE_WINDOW) altitudeWindow.shift();
+      if (altitudeWindow.length === ALTITUDE_WINDOW) {
+        const altitude =
+          altitudeWindow.reduce((total, height) => total + height, 0) / ALTITUDE_WINDOW;
+        if (climbReference == null || altitude < climbReference) {
+          climbReference = altitude;
+        } else if (altitude - climbReference >= CLIMB_THRESHOLD) {
+          elevationGainMeters += altitude - climbReference;
+          climbReference = altitude;
+        }
       }
     }
     current.push(sample);
@@ -118,6 +133,7 @@ export function appendSamples({
     elevationGainMeters,
     movingSeconds,
     climbReference,
+    altitudeWindow,
   };
 }
 
@@ -134,6 +150,7 @@ export function resumeTrack(track: RecordedTrack): RecordedTrack {
     stretches: last && last.length > 0 ? [...track.stretches, []] : track.stretches,
     // Climbing restarts from wherever the user is when they set off again.
     climbReference: null,
+    altitudeWindow: [],
   };
 }
 
