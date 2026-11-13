@@ -323,14 +323,53 @@ struct TripDetailView: View {
         .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
     }
 
+    private var plannedRouteCoordinates: [CLLocationCoordinate2D] {
+        (trip.plannedRoute ?? []).map {
+            CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+        }
+    }
+
     private func tripMap(coord: CLLocationCoordinate2D) -> some View {
+        tripMapContent(coord: coord)
+            .overlay(alignment: .bottomTrailing) {
+                Button {
+                    openInMaps(coord: coord)
+                } label: {
+                    Label("Open in Maps", systemImage: "map.fill")
+                        .font(.caption.bold())
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(.regularMaterial, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .padding(10)
+            }
+    }
+
+    @ViewBuilder
+    private func tripMapContent(coord: CLLocationCoordinate2D) -> some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            TripMapboxMap(
+                destination: coord,
+                destinationName: trip.location?.name ?? trip.name,
+                plannedRoute: plannedRouteCoordinates,
+                loggedRoute: route
+            )
+        } else {
+            mapKitTripMap(coord: coord)
+        }
+        #else
+        mapKitTripMap(coord: coord)
+        #endif
+    }
+
+    private func mapKitTripMap(coord: CLLocationCoordinate2D) -> some View {
         Map(position: $mapPosition) {
             // The route they meant to follow, dashed, under the one they logged.
-            if let planned = trip.plannedRoute, planned.count >= 2 {
-                MapPolyline(coordinates: planned.map {
-                    CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
-                })
-                .stroke(.orange, style: StrokeStyle(lineWidth: 3, dash: [6, 4]))
+            if plannedRouteCoordinates.count >= 2 {
+                MapPolyline(coordinates: plannedRouteCoordinates)
+                    .stroke(.orange, style: StrokeStyle(lineWidth: 3, dash: [6, 4]))
             }
             if route.count >= 2 {
                 MapPolyline(coordinates: route)
@@ -352,19 +391,6 @@ struct TripDetailView: View {
             MapZoomStepper()
             #endif
             MapCompass()
-        }
-        .overlay(alignment: .bottomTrailing) {
-            Button {
-                openInMaps(coord: coord)
-            } label: {
-                Label("Open in Maps", systemImage: "map.fill")
-                    .font(.caption.bold())
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(.regularMaterial, in: Capsule())
-            }
-            .buttonStyle(.plain)
-            .padding(10)
         }
     }
 
