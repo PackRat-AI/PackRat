@@ -21,6 +21,9 @@ configFiles:
   Staging: xcconfig/Config-Staging.xcconfig
   Release: xcconfig/Config-Release.xcconfig
 
+# Exact versions are pinned in Package.resolved, which `bun swift` copies into the generated
+# project. After adding or bumping a package here, run `bun swift`, resolve it in Xcode, then run
+# `bun swift:pin`.
 packages:
   Nuke:
     url: https://github.com/kean/Nuke
