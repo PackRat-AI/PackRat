@@ -3,6 +3,7 @@ import { syncObservable } from '@legendapp/state/sync';
 import * as Sentry from '@sentry/react-native';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import * as Location from 'expo-location';
+import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import i18next from 'i18next';
 import {
@@ -93,6 +94,7 @@ export async function startRecording({
   if (!permission.granted) throw new TrackStartError();
   trackStore.track.set(newTrack({ tripId, tripName }));
   breadcrumb({ message: 'Tracking started', tripId });
+  await askToShowNotification();
   await startUpdates();
 }
 
@@ -126,6 +128,21 @@ export async function resumeRecordingIfNeeded(): Promise<void> {
   const track = trackStore.track.peek();
   if (track && !track.isPaused) await startUpdates();
   else await stopUpdates();
+}
+
+/**
+ * Android 13 hides a foreground service's notification until notifications are allowed. Recording
+ * runs either way, but the notification is how the user sees it's on and stops it from the shade.
+ */
+async function askToShowNotification(): Promise<void> {
+  try {
+    const current = await Notifications.getPermissionsAsync();
+    if (!current.granted && current.canAskAgain) await Notifications.requestPermissionsAsync();
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { feature: 'voiceCommands', action: 'notificationPermission' },
+    });
+  }
 }
 
 async function startUpdates(): Promise<void> {

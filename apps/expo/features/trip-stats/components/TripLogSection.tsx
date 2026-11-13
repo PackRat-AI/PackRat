@@ -14,8 +14,14 @@ import { useDistanceUnit } from '../hooks/useDistanceUnit';
 import { dayFromString } from '../utils/tripStats';
 import { formatDistance, formatElevation } from '../utils/units';
 
-/** A trip is finished once its last day, or its only day, is before today. */
-export function isTripFinished(trip: Pick<Trip, 'startDate' | 'endDate'>): boolean {
+/**
+ * A trip can be logged once it's been ended, its last day has passed, or a recorded hike has been
+ * saved to it.
+ */
+export function isTripFinished(
+  trip: Pick<Trip, 'startDate' | 'endDate' | 'status' | 'log'>,
+): boolean {
+  if (trip.status === 'complete' || trip.log?.source === 'track') return true;
   const last = dayFromString(trip.endDate) ?? dayFromString(trip.startDate);
   return last != null && last < startOfDay(new Date());
 }
