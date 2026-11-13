@@ -2199,7 +2199,14 @@
       "enabledSubtitle": "Hold the microphone on a trip page and say a command.",
       "spokenAnswers": "Spoken Answers",
       "spokenAnswersSubtitle": "PackRat reads its answers out loud as well as showing them.",
-      "spokenAnswersOffSubtitle": "Answers appear on screen without being read aloud."
+      "spokenAnswersOffSubtitle": "Answers appear on screen without being read aloud.",
+      "guidanceSection": "Guidance",
+      "guidanceTurns": "Turn Prompts",
+      "guidanceMilestones": "Milestones",
+      "guidanceOffRoute": "Off-Route Warnings",
+      "guidanceVibrateOnly": "Vibrate Only",
+      "guidanceFooter": "What PackRat says while guiding you to a waypoint or along your route.",
+      "guidanceVibrateFooter": "Your phone vibrates at each prompt, and the trip page shows what it's about."
     },
     "status": {
       "working": "One moment…",
@@ -2238,6 +2245,28 @@
       "waypoints": "Waypoints",
       "deleteWaypoint": "Delete Waypoint",
       "waypointMore": "More options for {{name}}"
+    },
+    "guidance": {
+      "serviceTitle": "Guiding you to {{destination}}",
+      "serviceBody": "PackRat speaks up at each turn and if you go off route.",
+      "idleTitle": "Find Your Way",
+      "idleDetail": "Spoken directions to a waypoint or along your route, with the screen off.",
+      "navigate": "Navigate",
+      "pickTitle": "Navigate To",
+      "endOfRoute": "End of route",
+      "trailhead": "Trailhead",
+      "end": "End",
+      "continue": "Continue on Route",
+      "thenArrive": "Then arrive at {{name}}.",
+      "offRoute": "Off Route",
+      "offRouteDetail": "Head {{direction}} about {{distance}} to rejoin it.",
+      "head": "Head {{direction}}",
+      "straightTo": "Straight to {{name}}.",
+      "turnDetail": "{{maneuver}}, heading {{direction}}.",
+      "toDestination": "to {{name}}",
+      "problemTitle": "Couldn't Start Directions",
+      "locationOff": "Allow location for PackRat in Settings to be guided.",
+      "noFix": "Your location isn't available right now. Try again with a clear view of the sky."
     }
   }
 }

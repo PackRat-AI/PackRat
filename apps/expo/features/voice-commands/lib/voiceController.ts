@@ -27,8 +27,10 @@ import { getDefaultSpeedUnit } from 'expo-app/lib/unitDefaults';
 import * as Network from 'expo-network';
 import { voiceSettingsStore } from '../store/voiceSettings';
 import { lastSample } from '../utils/recordedTrack';
+import { destinationOptions, resolveDestination } from '../utils/routeGuide';
 import { routeProgress } from '../utils/routeProgress';
 import {
+  alreadyThere,
   checkedIn,
   confirmCheckIn,
   confirmExtend,
@@ -37,7 +39,11 @@ import {
   confirmSafe,
   dueBackAnswer,
   extended,
+  guidanceRemaining,
   markedSafe,
+  navigatingAnswer,
+  navigatingOtherTrip,
+  navigationStopped,
   newReturnTime,
   notified,
   onRouteAnswer,
@@ -45,6 +51,7 @@ import {
   trackingOtherTrip,
   trackingStopped,
   trackSoFar,
+  unknownDestination,
   VoiceAnswers,
   waypointMarked,
   weatherAnswer,
@@ -63,6 +70,7 @@ import {
   trackStore,
   WORST_ACCURACY_METERS,
 } from './trackRecorder';
+import { GuideStartError, guideStore, isGuiding, startGuidance, stopGuidance } from './tripGuide';
 import { addWaypoint, saveRecording } from './tripLogEdits';
 import {
   cancelListening,
@@ -179,7 +187,7 @@ async function handleTranscript({
   voiceStore.heard.set(transcript);
   if (!transcript.trim()) return goIdle();
   const command = parseVoiceCommand(transcript);
-  if (!command || LATER_COMMANDS.has(command.kind)) {
+  if (!command) {
     return respond({ text: VoiceAnswers.notHeard, run });
   }
   Sentry.addBreadcrumb({
@@ -214,10 +222,8 @@ const LOCATING_COMMANDS: ReadonlySet<VoiceCommand['kind']> = new Set([
   'amIOnRoute',
   'markWaypoint',
   'note',
+  'navigate',
 ]);
-
-/** Guidance arrives with the route guide. */
-const LATER_COMMANDS: ReadonlySet<VoiceCommand['kind']> = new Set(['navigate', 'stopNavigating']);
 
 function isMetric(): boolean {
   return (preferencesStore.speedUnit.peek() ?? getDefaultSpeedUnit()) === 'kmh';
@@ -329,6 +335,17 @@ async function perform({
 
     case 'howFarToGo':
     case 'amIOnRoute': {
+      const session = guideStore.session.peek();
+      if (session?.tripId === trip.id) {
+        if (command.kind === 'howFarToGo') {
+          return answer(
+            guidanceRemaining({ guide: session.guide, bearing: session.bearing, metric }),
+          );
+        }
+        if (session.guide.progress) {
+          return answer(onRouteAnswer({ progress: session.guide.progress, metric }));
+        }
+      }
       const route = trip.plannedRoute ?? [];
       if (route.length < 2) return answer(VoiceAnswers.noRoute);
       const fix = await locate();
@@ -366,6 +383,15 @@ async function perform({
     case 'trackSoFar':
       return performTracking({ command, trip, answer, metric });
 
+    case 'navigate':
+      return navigate({ spoken: command.to, trip, answer, metric });
+
+    case 'stopNavigating': {
+      if (!isGuiding(trip.id)) return answer(VoiceAnswers.notNavigating);
+      await stopGuidance();
+      return answer(navigationStopped(trackStore.track.peek()?.tripId === trip.id));
+    }
+
     case 'markWaypoint':
     case 'note': {
       if (command.kind === 'note' && !command.text.trim()) return answer(VoiceAnswers.noteEmpty);
@@ -384,6 +410,50 @@ async function perform({
 
     default:
       return answer(VoiceAnswers.notHeard);
+  }
+}
+
+async function navigate({
+  spoken,
+  trip,
+  answer,
+  metric,
+}: {
+  spoken: string;
+  trip: Trip;
+  answer: (text: string) => Promise<void>;
+  metric: boolean;
+}): Promise<void> {
+  if (trip.status === 'complete') return answer(VoiceAnswers.tripEnded);
+  const other = guideStore.session.peek();
+  if (other && other.tripId !== trip.id) return answer(navigatingOtherTrip(other.tripName));
+  const waypoints = trip.log?.waypoints ?? [];
+  const route = trip.plannedRoute ?? [];
+  const destination = resolveDestination({ spoken, waypoints, route });
+  if (!destination) {
+    const options = destinationOptions({ waypoints, route });
+    return answer(
+      options.length === 0 ? VoiceAnswers.noDestinations : unknownDestination({ spoken, options }),
+    );
+  }
+  try {
+    const { plan, position } = await startGuidance({
+      tripId: trip.id,
+      tripName: trip.name,
+      destination,
+      route,
+    });
+    const text = navigatingAnswer({ plan, from: position, metric });
+    guideStore.session.lastPrompt.set(text);
+    return answer(text);
+  } catch (error) {
+    if (error instanceof GuideStartError && error.reason === 'denied') {
+      return answer(VoiceAnswers.locationDenied);
+    }
+    if (error instanceof GuideStartError && error.reason === 'alreadyThere') {
+      return answer(alreadyThere(destination.name));
+    }
+    return answer(VoiceAnswers.noFix);
   }
 }
 

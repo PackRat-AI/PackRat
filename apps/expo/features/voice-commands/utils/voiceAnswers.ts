@@ -1,7 +1,20 @@
 import type { TripConditions } from 'expo-app/features/trips/utils/tripConditions';
 import type { RecordedTrack } from './recordedTrack';
 import { trackLogRoute } from './recordedTrack';
-import { compassName, isOnRoute, type RouteProgress } from './routeProgress';
+import {
+  type GuidancePlan,
+  type GuidancePrompt,
+  type GuidanceTurn,
+  maneuver,
+  type RouteGuide,
+} from './routeGuide';
+import {
+  compassName,
+  type GeoPoint,
+  geoBearing,
+  isOnRoute,
+  type RouteProgress,
+} from './routeProgress';
 import type { VoiceCommand } from './voiceCommand';
 
 /**
@@ -10,7 +23,7 @@ import type { VoiceCommand } from './voiceCommand';
  */
 export const VoiceAnswers = Object.freeze({
   notHeard:
-    "Sorry, I didn't catch that. You can say start tracking, mark waypoint, note, how far have I gone, check in, where am I, how far to go, am I on route, when am I due back, add an hour, weather, or I'm safe.",
+    "Sorry, I didn't catch that. You can say start tracking, mark waypoint, note, how far have I gone, navigate to, check in, where am I, how far to go, am I on route, when am I due back, add an hour, weather, or I'm safe.",
   noTrip: "There's no trip in progress.",
   noRoute: "This trip doesn't have a planned route.",
   noCheckIn:
@@ -42,6 +55,10 @@ export const VoiceAnswers = Object.freeze({
     'This trip has 500 waypoints already. Delete one on the trip page to mark another.',
   noteEmpty: 'Say note, then what you want to save.',
   noteSaved: 'Note saved here.',
+  noDestinations:
+    "There's nowhere to navigate to yet. Mark a waypoint or add a planned route first.",
+  notNavigating: "You're not navigating anywhere.",
+  backOnRoute: "You're back on route.",
 });
 
 // ── Distances ─────────────────────────────────────────────────────────────
@@ -428,4 +445,121 @@ export function movingTime(seconds: number): string {
   if (hours === 0) return minutes === 1 ? '1 minute' : `${minutes} minutes`;
   const h = hours === 1 ? '1 hour' : `${hours} hours`;
   return minutes === 0 ? h : `${h} ${minutes}`;
+}
+
+// ── Guidance ──────────────────────────────────────────────────────────────
+
+export function navigationStopped(tracking: boolean): string {
+  return tracking ? 'Navigation stopped. Tracking carries on.' : 'Navigation stopped.';
+}
+
+export function navigatingOtherTrip(tripName: string): string {
+  return `You're navigating on ${tripName}. Stop that first.`;
+}
+
+/** "I couldn't find the bridge. You can navigate to Camp, the trailhead or the end of your route." */
+export function unknownDestination({ spoken, options }: { spoken: string; options: string[] }) {
+  const heard = spoken || 'that place';
+  if (options.length === 0) return `I couldn't find ${heard}. ${VoiceAnswers.noDestinations}`;
+  return `I couldn't find ${heard}. You can navigate to ${orList(options)}.`;
+}
+
+export function alreadyThere(name: string): string {
+  return `You're already at ${name}.`;
+}
+
+/** Said when guidance starts. */
+export function navigatingAnswer({
+  plan,
+  from,
+  metric,
+}: {
+  plan: GuidancePlan;
+  from: GeoPoint;
+  metric: boolean;
+}): string {
+  const { name } = plan.destination;
+  const length = spokenDistance({ meters: plan.lengthMeters, metric });
+  if (plan.path) return `Navigating to ${name} along your route. ${capitalizeFirst(length)} to go.`;
+  const toward = compassName(geoBearing(from, plan.destination.point));
+  return `${capitalizeFirst(name)} is ${length} ${toward} of you. I'll tell you when you're there.`;
+}
+
+/** "How far to go" while navigating. */
+export function guidanceRemaining({
+  guide,
+  bearing,
+  metric,
+}: {
+  guide: RouteGuide;
+  bearing: number | null;
+  metric: boolean;
+}): string {
+  let sentence = `${capitalizeFirst(spokenDistance({ meters: guide.remainingMeters, metric }))} to ${guide.plan.destination.name}`;
+  if (!guide.plan.path && bearing != null) sentence += `, ${compassName(bearing)}`;
+  sentence += '.';
+  if (guide.progress && !isOnRoute(guide.progress)) {
+    sentence += ` You're ${spokenDistance({ meters: guide.progress.offRouteMeters, metric })} off your route.`;
+  }
+  return sentence;
+}
+
+/** "In 400 feet, bear left, heading north-east." */
+export function turnAhead({
+  turn,
+  aheadMeters,
+  metric,
+}: {
+  turn: GuidanceTurn;
+  aheadMeters: number;
+  metric: boolean;
+}): string {
+  const heading = compassName(turn.headingAfter);
+  if (aheadMeters < 30) return `${capitalizeFirst(maneuver(turn))} now, heading ${heading}.`;
+  return `In ${spokenDistance({ meters: aheadMeters, metric })}, ${maneuver(turn)}, heading ${heading}.`;
+}
+
+/** "You're off route. Head east about 300 feet to rejoin it." */
+export function offRouteAnswer({ progress, metric }: { progress: RouteProgress; metric: boolean }) {
+  return `You're off route. Head ${compassName(progress.bearingToRoute)} about ${spokenDistance({ meters: progress.offRouteMeters, metric })} to rejoin it.`;
+}
+
+export function arrived(name: string): string {
+  return `You've reached ${name}.`;
+}
+
+/** What guidance says for a prompt it raised on its own. */
+export function guidancePromptText({
+  prompt,
+  destination,
+  metric,
+}: {
+  prompt: GuidancePrompt;
+  destination: string;
+  metric: boolean;
+}): string {
+  switch (prompt.kind) {
+    case 'turn':
+      return turnAhead({ turn: prompt.turn, aheadMeters: prompt.aheadMeters, metric });
+    case 'milestone': {
+      const direction = prompt.bearing != null ? `, ${compassName(prompt.bearing)}` : '';
+      if (prompt.milestone === 'half') {
+        const left = capitalizeFirst(spokenDistance({ meters: prompt.remainingMeters, metric }));
+        return `Halfway to ${destination}. ${left} to go${direction}.`;
+      }
+      return `${metric ? '1 kilometre' : '1 mile'} to ${destination}${direction}.`;
+    }
+    case 'offRoute':
+      return offRouteAnswer({ progress: prompt.progress, metric });
+    case 'backOnRoute':
+      return VoiceAnswers.backOnRoute;
+    case 'arrived':
+      return arrived(destination);
+  }
+}
+
+/** "A, B or C". */
+function orList(items: readonly string[]): string {
+  if (items.length <= 1) return items[0] ?? '';
+  return `${items.slice(0, -1).join(', ')} or ${items[items.length - 1]}`;
 }

@@ -14,7 +14,35 @@ export function VoiceSettingsSection() {
   const flag = useFeatureFlag('enableVoiceCommands');
   const enabled = use$(voiceSettingsStore.enabled);
   const spokenAnswers = use$(voiceSettingsStore.spokenAnswers);
+  const settings = use$(voiceSettingsStore);
   if (!flag) return null;
+
+  const guidanceSwitches = [
+    {
+      key: 'guidanceTurns',
+      label: t('voiceCommands.settings.guidanceTurns'),
+      testID: testIds.voiceCommands.guidanceTurnsToggle,
+      on: settings.guidanceTurns !== false,
+    },
+    {
+      key: 'guidanceMilestones',
+      label: t('voiceCommands.settings.guidanceMilestones'),
+      testID: testIds.voiceCommands.guidanceMilestonesToggle,
+      on: settings.guidanceMilestones !== false,
+    },
+    {
+      key: 'guidanceOffRoute',
+      label: t('voiceCommands.settings.guidanceOffRoute'),
+      testID: testIds.voiceCommands.guidanceOffRouteToggle,
+      on: settings.guidanceOffRoute !== false,
+    },
+    {
+      key: 'guidanceVibrateOnly',
+      label: t('voiceCommands.settings.guidanceVibrateOnly'),
+      testID: testIds.voiceCommands.guidanceVibrateToggle,
+      on: settings.guidanceVibrateOnly === true,
+    },
+  ] as const;
 
   const setEnabled = (on: boolean) => {
     voiceSettingsStore.enabled.set(on);
@@ -60,6 +88,33 @@ export function VoiceSettingsSection() {
           </View>
         )}
       </View>
+      {enabled && (
+        <>
+          <Text variant="subhead" className="mb-3 mt-6">
+            {t('voiceCommands.settings.guidanceSection')}
+          </Text>
+          <View className="rounded-xl border border-border bg-card">
+            {guidanceSwitches.map((item, index) => (
+              <View
+                key={item.key}
+                className={`flex-row items-center justify-between gap-4 p-4 ${index > 0 ? 'border-t border-border' : ''}`}
+              >
+                <Text className="flex-1 font-medium">{item.label}</Text>
+                <Toggle
+                  value={item.on}
+                  onValueChange={(on) => voiceSettingsStore[item.key].set(on)}
+                  testID={item.testID}
+                />
+              </View>
+            ))}
+          </View>
+          <Text variant="footnote" className="mt-2 px-1 text-muted-foreground" wrap>
+            {settings.guidanceVibrateOnly
+              ? t('voiceCommands.settings.guidanceVibrateFooter')
+              : t('voiceCommands.settings.guidanceFooter')}
+          </Text>
+        </>
+      )}
     </View>
   );
 }

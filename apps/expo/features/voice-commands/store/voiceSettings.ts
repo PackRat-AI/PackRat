@@ -11,7 +11,20 @@ export const voiceSettingsStore = observable<{
   enabled: boolean;
   /** Answers are said out loud as well as shown; off means shown only. */
   spokenAnswers: boolean;
-}>({ enabled: true, spokenAnswers: true });
+  /** What guidance says on its own. Arriving is always said. */
+  guidanceTurns: boolean;
+  guidanceMilestones: boolean;
+  guidanceOffRoute: boolean;
+  /** Guidance buzzes instead of speaking, and the trip page shows what it's about. */
+  guidanceVibrateOnly: boolean;
+}>({
+  enabled: true,
+  spokenAnswers: true,
+  guidanceTurns: true,
+  guidanceMilestones: true,
+  guidanceOffRoute: true,
+  guidanceVibrateOnly: false,
+});
 
 syncObservable(voiceSettingsStore, {
   persist: { plugin: persistPlugin, name: 'voiceSettings' },

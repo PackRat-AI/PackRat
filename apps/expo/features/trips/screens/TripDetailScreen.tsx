@@ -8,8 +8,10 @@ import { PlannedRouteSection, TripSafetySection } from 'expo-app/features/safety
 import { TripTrailConditionsSection } from 'expo-app/features/trail-conditions/components/TripTrailConditionsSection';
 import { TripLogSection } from 'expo-app/features/trip-stats/components/TripLogSection';
 import {
+  TripGuidanceCard,
   TripTrackingSection,
   TripVoiceBar,
+  useShowsGuidance,
   useShowsTracking,
   useShowsVoiceBar,
 } from 'expo-app/features/voice-commands';
@@ -46,6 +48,7 @@ export function TripDetailScreen() {
   const trip = useTripDetailsFromStore(id as string) as Trip;
   const showsVoiceBar = useShowsVoiceBar(trip);
   const showsTracking = useShowsTracking(trip);
+  const showsGuidance = useShowsGuidance(trip);
   const packs = useDetailedPacks();
   const packedRecord = use$(() =>
     trip?.packId ? obs({ store: packingModeStore, id: trip.packId }).get() : null,
@@ -102,6 +105,8 @@ export function TripDetailScreen() {
           <Text className="mb-3 text-3xl font-bold text-foreground">{trip.name}</Text>
 
           {enableSafetyCheckIn && <TripSafetySection trip={trip} />}
+
+          {showsGuidance && <TripGuidanceCard trip={trip} />}
 
           {showsTracking && <TripTrackingSection trip={trip} />}
 

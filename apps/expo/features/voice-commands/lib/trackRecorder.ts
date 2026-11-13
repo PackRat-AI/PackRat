@@ -134,7 +134,7 @@ export async function resumeRecordingIfNeeded(): Promise<void> {
  * Android 13 hides a foreground service's notification until notifications are allowed. Recording
  * runs either way, but the notification is how the user sees it's on and stops it from the shade.
  */
-async function askToShowNotification(): Promise<void> {
+export async function askToShowNotification(): Promise<void> {
   try {
     const current = await Notifications.getPermissionsAsync();
     if (!current.granted && current.canAskAgain) await Notifications.requestPermissionsAsync();
