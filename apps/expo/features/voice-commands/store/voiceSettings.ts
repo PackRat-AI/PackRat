@@ -11,6 +11,10 @@ export const voiceSettingsStore = observable<{
   enabled: boolean;
   /** Answers are said out loud as well as shown; off means shown only. */
   spokenAnswers: boolean;
+  /** "Hey PackRat" while a trip is underway. Off until the user turns it on. */
+  wakeWord: boolean;
+  /** The trip page has asked once whether to turn on "Hey PackRat". */
+  wakeWordOffered: boolean;
   /** What guidance says on its own. Arriving is always said. */
   guidanceTurns: boolean;
   guidanceMilestones: boolean;
@@ -20,6 +24,8 @@ export const voiceSettingsStore = observable<{
 }>({
   enabled: true,
   spokenAnswers: true,
+  wakeWord: false,
+  wakeWordOffered: false,
   guidanceTurns: true,
   guidanceMilestones: true,
   guidanceOffRoute: true,

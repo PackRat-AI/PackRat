@@ -7,6 +7,7 @@ import {
   type ExpoSpeechRecognitionOptions,
 } from 'expo-speech-recognition';
 import { speakable, VoiceAnswers } from '../utils/voiceAnswers';
+import { pauseWakeWord } from './wakeWord';
 
 /** Why listening ended without a transcript, said back to the user. */
 export class VoiceListenError extends Error {
@@ -82,6 +83,7 @@ export function listen({
   onPartial: (text: string) => void;
 }): Promise<string> {
   cancelListening();
+  pauseWakeWord();
   return new Promise((resolve, reject) => {
     let transcript = '';
     let settled = false;

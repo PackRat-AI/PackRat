@@ -297,6 +297,7 @@ export const testIds = Object.freeze({
     dismissBtn: 'voice:dismiss',
     settingsToggle: 'voice:settings-enabled',
     spokenAnswersToggle: 'voice:settings-spoken-answers',
+    wakeWordToggle: 'voice:settings-wake-word',
     trackingSection: 'voice:tracking',
     trackTotals: 'voice:track-totals',
     trackStart: 'voice:track-start',

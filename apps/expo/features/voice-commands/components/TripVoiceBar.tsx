@@ -1,4 +1,5 @@
 import { use$ } from '@legendapp/state/react';
+import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { canStartTrip } from 'expo-app/features/safety-check-in/utils/safetyCheckIn';
@@ -8,11 +9,19 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import * as Haptics from 'expo-haptics';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
-import { beginListening, dismissVoice, endListening, voiceStore } from '../lib/voiceController';
-import { warmUpVoice } from '../lib/voiceIO';
+import { askToShowNotification } from '../lib/trackRecorder';
+import {
+  beginListening,
+  dismissVoice,
+  endListening,
+  handleWake,
+  voiceStore,
+} from '../lib/voiceController';
+import { hasVoicePermission, requestVoicePermission, warmUpVoice } from '../lib/voiceIO';
+import { armWakeWord, disarmWakeWord, isWakeWordAvailable } from '../lib/wakeWord';
 import { voiceSettingsStore } from '../store/voiceSettings';
 
 /** Shown while the trip is underway, and from its start day so "start my trip" works too. */
@@ -53,6 +62,7 @@ export function TripVoiceBar({ trip }: { trip: Trip }) {
 
   return (
     <View className="gap-2.5 px-4 pb-2 pt-2" testID={testIds.voiceCommands.bar}>
+      <WakeWordHost trip={trip} />
       {phase !== 'idle' && (
         <Animated.View
           entering={FadeInDown.duration(200)}
@@ -129,4 +139,63 @@ export function TripVoiceBar({ trip }: { trip: Trip }) {
       </Pressable>
     </View>
   );
+}
+
+/**
+ * "Hey PackRat" follows the trip: listening while it's underway and the user has turned it on,
+ * stopped once it ends. Leaving the trip page keeps it listening. The first time a trip is
+ * underway, the user is asked once whether to turn it on.
+ */
+function WakeWordHost({ trip }: { trip: Trip }) {
+  const { t } = useTranslation();
+  const alertRef = useRef<AlertMethods>(null);
+  const wakeWord = use$(voiceSettingsStore.wakeWord);
+  const offered = use$(voiceSettingsStore.wakeWordOffered);
+  const phase = use$(voiceStore.phase);
+  const underway = (trip.status ?? 'planned') === 'in_progress';
+  const latestTrip = useRef(trip);
+  latestTrip.current = trip;
+
+  useEffect(() => {
+    if (!isWakeWordAvailable()) return;
+    if (!underway || !wakeWord) {
+      disarmWakeWord(trip.id);
+      return;
+    }
+    let cancelled = false;
+    void hasVoicePermission().then((granted) => {
+      if (cancelled || !granted) return;
+      armWakeWord({ tripId: trip.id, onHeard: () => void handleWake(latestTrip.current) });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [trip.id, underway, wakeWord]);
+
+  useEffect(() => {
+    if (!isWakeWordAvailable() || !underway || wakeWord || offered || phase !== 'idle') return;
+    voiceSettingsStore.wakeWordOffered.set(true);
+    alertRef.current?.alert({
+      title: t('voiceCommands.wake.offerTitle'),
+      message: t('voiceCommands.wake.offerMessage'),
+      materialIcon: { name: 'microphone' },
+      buttons: [
+        { text: t('voiceCommands.wake.notNow'), style: 'cancel' },
+        {
+          text: t('voiceCommands.wake.turnOn'),
+          style: 'default',
+          onPress: () => void turnOnWakeWord(),
+        },
+      ],
+    });
+  }, [underway, wakeWord, offered, phase, t]);
+
+  return <Alert title="" buttons={[]} ref={alertRef} />;
+}
+
+/** Asks for the microphone and the listening notification, then turns "Hey PackRat" on. */
+export async function turnOnWakeWord(): Promise<void> {
+  if (!(await hasVoicePermission()) && !(await requestVoicePermission())) return;
+  await askToShowNotification();
+  voiceSettingsStore.wakeWord.set(true);
 }

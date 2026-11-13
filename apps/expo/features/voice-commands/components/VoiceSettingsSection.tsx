@@ -6,7 +6,9 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { View } from 'react-native';
 import { requestVoicePermission } from '../lib/voiceIO';
+import { isWakeWordAvailable } from '../lib/wakeWord';
 import { voiceSettingsStore } from '../store/voiceSettings';
+import { turnOnWakeWord } from './TripVoiceBar';
 
 /** Settings › Voice: the user's switch for voice commands, and whether answers are spoken. */
 export function VoiceSettingsSection() {
@@ -14,6 +16,7 @@ export function VoiceSettingsSection() {
   const flag = useFeatureFlag('enableVoiceCommands');
   const enabled = use$(voiceSettingsStore.enabled);
   const spokenAnswers = use$(voiceSettingsStore.spokenAnswers);
+  const wakeWord = use$(voiceSettingsStore.wakeWord);
   const settings = use$(voiceSettingsStore);
   if (!flag) return null;
 
@@ -84,6 +87,25 @@ export function VoiceSettingsSection() {
               value={spokenAnswers}
               onValueChange={(on) => voiceSettingsStore.spokenAnswers.set(on)}
               testID={testIds.voiceCommands.spokenAnswersToggle}
+            />
+          </View>
+        )}
+        {enabled && isWakeWordAvailable() && (
+          <View className="flex-row items-center justify-between gap-4 border-t border-border p-4">
+            <View className="flex-1">
+              <Text className="font-medium">{t('voiceCommands.settings.wakeWord')}</Text>
+              <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                {wakeWord
+                  ? t('voiceCommands.settings.wakeWordSubtitle')
+                  : t('voiceCommands.settings.wakeWordOffSubtitle')}
+              </Text>
+            </View>
+            <Toggle
+              value={wakeWord}
+              onValueChange={(on) =>
+                on ? void turnOnWakeWord() : voiceSettingsStore.wakeWord.set(false)
+              }
+              testID={testIds.voiceCommands.wakeWordToggle}
             />
           </View>
         )}

@@ -84,6 +84,7 @@ import {
   stopSpeaking,
   VoiceListenError,
 } from './voiceIO';
+import { resumeWakeWord } from './wakeWord';
 import { waypointAt } from './waypointAt';
 
 export type VoicePhase =
@@ -115,6 +116,7 @@ let generation = 0;
 
 function goIdle() {
   voiceStore.assign({ phase: 'idle', status: '' });
+  resumeWakeWord();
 }
 
 // ── Push to talk ──────────────────────────────────────────────────────────
@@ -146,6 +148,38 @@ export async function beginListening(trip: Trip): Promise<void> {
   }
 }
 
+// ── "Hey PackRat" ─────────────────────────────────────────────────────────
+
+/**
+ * The wake phrase was heard, perhaps with the phone locked: listen hands-free for the command.
+ * While a command is already running the wake listener stays paused, and that command resumes it
+ * when it's done.
+ */
+export async function handleWake(trip: Trip): Promise<void> {
+  const phase = voiceStore.phase.peek();
+  if (phase !== 'idle' && phase !== 'answering') return;
+  Sentry.addBreadcrumb({
+    category: 'voiceCommands',
+    message: 'Wake phrase heard',
+    level: 'info',
+    data: { tripId: trip.id },
+  });
+  stopSpeaking();
+  const run = ++generation;
+  voiceStore.set({ phase: 'listening', heard: '', status: '', answer: '' });
+  await playTone('start');
+  if (run !== generation) return;
+  try {
+    const transcript = await listenFor('untilSilence');
+    if (run !== generation) return;
+    void playTone('end');
+    await handleTranscript({ transcript, trip, run });
+  } catch (error) {
+    if (run !== generation) return;
+    await respond({ text: listenErrorText(error), run });
+  }
+}
+
 /**
  * The microphone button came up: stop listening and act on what was heard. The bar moves on at
  * once, so the wait for the recogniser's last words doesn't look like nothing happened.
@@ -163,6 +197,7 @@ export function dismissVoice(): void {
   cancelListening();
   stopSpeaking();
   voiceStore.set({ phase: 'idle', heard: '', status: '', answer: '' });
+  resumeWakeWord();
 }
 
 function listenFor(mode: ListenMode): Promise<string> {
@@ -578,4 +613,5 @@ async function respond({ text, run }: { text: string; run: number }): Promise<vo
   if (run !== generation) return;
   voiceStore.assign({ phase: 'answering', status: '', answer: text });
   if (voiceSettingsStore.spokenAnswers.peek()) await say(text);
+  if (run === generation) resumeWakeWord();
 }

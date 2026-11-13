@@ -2200,6 +2200,9 @@
       "spokenAnswers": "Spoken Answers",
       "spokenAnswersSubtitle": "PackRat reads its answers out loud as well as showing them.",
       "spokenAnswersOffSubtitle": "Answers appear on screen without being read aloud.",
+      "wakeWord": "“Hey PackRat”",
+      "wakeWordSubtitle": "While a trip is underway, say “Hey PackRat” and a command, even with your phone locked.",
+      "wakeWordOffSubtitle": "Turn on to talk to PackRat hands-free while a trip is underway.",
       "guidanceSection": "Guidance",
       "guidanceTurns": "Turn Prompts",
       "guidanceMilestones": "Milestones",
@@ -2267,6 +2270,15 @@
       "problemTitle": "Couldn't Start Directions",
       "locationOff": "Allow location for PackRat in Settings to be guided.",
       "noFix": "Your location isn't available right now. Try again with a clear view of the sky."
+    },
+    "wake": {
+      "offerTitle": "Talk to PackRat Hands-Free?",
+      "offerMessage": "Say “Hey PackRat” and a command while your trip is underway, even with your phone locked. You can turn this off in Settings.",
+      "turnOn": "Turn On",
+      "notNow": "Not Now",
+      "notificationTitle": "Listening for “Hey PackRat”",
+      "notificationBody": "Say “Hey PackRat” and a command while your trip is underway.",
+      "channel": "Hands-free listening"
     }
   }
 }

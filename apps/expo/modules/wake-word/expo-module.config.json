@@ -1,0 +1,6 @@
+{
+  "platforms": ["android"],
+  "android": {
+    "modules": ["world.packrat.wakeword.WakeWordModule"]
+  }
+}
