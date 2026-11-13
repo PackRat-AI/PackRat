@@ -23,7 +23,8 @@ import java.util.Random
 import org.json.JSONObject
 
 /**
- * Listens for "Hey PackRat" while a trip is in progress, with the phone locked.
+ * Listens for "Hey PackRat" while a trip is in progress, with the phone locked, and keeps PackRat
+ * allowed to hear the command that follows it or a headset's long press.
  *
  * A foreground service of the microphone type, so Android lets it keep the microphone after the
  * app leaves the screen. Detection runs on the phone with the bundled microWakeWord model and no
@@ -33,6 +34,11 @@ import org.json.JSONObject
 class WakeWordService : Service() {
   private var worker: Thread? = null
   @Volatile private var running = false
+  /**
+   * Off when only the headset shortcut is on: the service then holds the microphone permission
+   * for the command a long press starts, without listening in between.
+   */
+  private var listensForWake = true
 
   override fun onBind(intent: Intent?): IBinder? = null
 
@@ -42,8 +48,9 @@ class WakeWordService : Service() {
         val title = intent.getStringExtra(EXTRA_TITLE) ?: ""
         val text = intent.getStringExtra(EXTRA_TEXT) ?: ""
         val channelName = intent.getStringExtra(EXTRA_CHANNEL) ?: title
+        listensForWake = intent.getBooleanExtra(EXTRA_LISTEN, true)
         if (!enterForeground(title, text, channelName)) return START_NOT_STICKY
-        startListening()
+        if (listensForWake) startListening() else stopListening()
       }
       ACTION_RESUME -> startListening()
       ACTION_PAUSE -> stopListening()
@@ -105,7 +112,7 @@ class WakeWordService : Service() {
   }
 
   private fun startListening() {
-    if (running || !isArmed) return
+    if (running || !isArmed || !listensForWake) return
     running = true
     worker = Thread({ listenLoop() }, "WakeWordListener").also { it.start() }
   }
@@ -213,6 +220,7 @@ class WakeWordService : Service() {
     const val EXTRA_TITLE = "title"
     const val EXTRA_TEXT = "text"
     const val EXTRA_CHANNEL = "channel"
+    const val EXTRA_LISTEN = "listen"
 
     private const val CHANNEL_ID = "packrat-wake-word"
     private const val NOTIFICATION_ID = 4_721
@@ -229,5 +237,11 @@ class WakeWordService : Service() {
 
     /** Called on the listening thread once the phrase is heard and the microphone is free. */
     @Volatile var onWake: (() -> Unit)? = null
+
+    /** A trip is underway and the user wants the headset's long press to start a command. */
+    @Volatile var headsetActive = false
+
+    /** Called when the headset's button is held while [headsetActive]. */
+    @Volatile var onHeadset: (() -> Unit)? = null
   }
 }

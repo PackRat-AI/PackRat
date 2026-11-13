@@ -15,6 +15,8 @@ export const voiceSettingsStore = observable<{
   wakeWord: boolean;
   /** The trip page has asked once whether to turn on "Hey PackRat". */
   wakeWordOffered: boolean;
+  /** A long press on the headset's button starts a command while a trip is underway. */
+  headsetShortcut: boolean;
   /** What guidance says on its own. Arriving is always said. */
   guidanceTurns: boolean;
   guidanceMilestones: boolean;
@@ -26,6 +28,7 @@ export const voiceSettingsStore = observable<{
   spokenAnswers: true,
   wakeWord: false,
   wakeWordOffered: false,
+  headsetShortcut: true,
   guidanceTurns: true,
   guidanceMilestones: true,
   guidanceOffRoute: true,

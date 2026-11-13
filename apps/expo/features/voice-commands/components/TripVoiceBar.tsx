@@ -142,14 +142,15 @@ export function TripVoiceBar({ trip }: { trip: Trip }) {
 }
 
 /**
- * "Hey PackRat" follows the trip: listening while it's underway and the user has turned it on,
- * stopped once it ends. Leaving the trip page keeps it listening. The first time a trip is
- * underway, the user is asked once whether to turn it on.
+ * "Hey PackRat" and the headset shortcut follow the trip: on while it's underway and the user has
+ * turned them on, off once it ends. Leaving the trip page keeps them on. The first time a trip is
+ * underway, the user is asked once whether to turn on "Hey PackRat".
  */
 function WakeWordHost({ trip }: { trip: Trip }) {
   const { t } = useTranslation();
   const alertRef = useRef<AlertMethods>(null);
   const wakeWord = use$(voiceSettingsStore.wakeWord);
+  const headset = use$(voiceSettingsStore.headsetShortcut) !== false;
   const offered = use$(voiceSettingsStore.wakeWordOffered);
   const phase = use$(voiceStore.phase);
   const underway = (trip.status ?? 'planned') === 'in_progress';
@@ -158,19 +159,25 @@ function WakeWordHost({ trip }: { trip: Trip }) {
 
   useEffect(() => {
     if (!isWakeWordAvailable()) return;
-    if (!underway || !wakeWord) {
+    if (!underway || (!wakeWord && !headset)) {
       disarmWakeWord(trip.id);
       return;
     }
     let cancelled = false;
+    // The service needs the microphone permission before Android lets it start.
     void hasVoicePermission().then((granted) => {
       if (cancelled || !granted) return;
-      armWakeWord({ tripId: trip.id, onHeard: () => void handleWake(latestTrip.current) });
+      armWakeWord({
+        tripId: trip.id,
+        listen: wakeWord,
+        headset,
+        onCommand: () => void handleWake(latestTrip.current),
+      });
     });
     return () => {
       cancelled = true;
     };
-  }, [trip.id, underway, wakeWord]);
+  }, [trip.id, underway, wakeWord, headset]);
 
   useEffect(() => {
     if (!isWakeWordAvailable() || !underway || wakeWord || offered || phase !== 'idle') return;

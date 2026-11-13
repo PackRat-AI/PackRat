@@ -298,6 +298,7 @@ export const testIds = Object.freeze({
     settingsToggle: 'voice:settings-enabled',
     spokenAnswersToggle: 'voice:settings-spoken-answers',
     wakeWordToggle: 'voice:settings-wake-word',
+    headsetToggle: 'voice:settings-headset',
     trackingSection: 'voice:tracking',
     trackTotals: 'voice:track-totals',
     trackStart: 'voice:track-start',

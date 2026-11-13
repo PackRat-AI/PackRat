@@ -2,14 +2,16 @@ import { type EventSubscription, requireOptionalNativeModule } from 'expo-module
 
 type WakeWordEvents = {
   onWake: () => void;
+  onHeadset: () => void;
 };
 
 interface WakeWordNativeModule {
-  arm(title: string, text: string, channelName: string): void;
+  arm(title: string, text: string, channelName: string, listen: boolean): void;
   disarm(): void;
   pause(): void;
   resume(): void;
   isArmed(): boolean;
+  setHeadsetActive(active: boolean): void;
   addListener<E extends keyof WakeWordEvents>(
     event: E,
     listener: WakeWordEvents[E],

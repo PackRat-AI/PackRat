@@ -9,5 +9,19 @@
       android:name="world.packrat.wakeword.WakeWordService"
       android:exported="false"
       android:foregroundServiceType="microphone" />
+
+    <activity
+      android:name="world.packrat.wakeword.HeadsetVoiceActivity"
+      android:exported="true"
+      android:excludeFromRecents="true"
+      android:noHistory="true"
+      android:showWhenLocked="true"
+      android:taskAffinity=""
+      android:theme="@android:style/Theme.NoDisplay">
+      <intent-filter>
+        <action android:name="android.speech.action.VOICE_SEARCH_HANDS_FREE" />
+        <category android:name="android.intent.category.DEFAULT" />
+      </intent-filter>
+    </activity>
   </application>
 </manifest>

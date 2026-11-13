@@ -2203,6 +2203,9 @@
       "wakeWord": "“Hey PackRat”",
       "wakeWordSubtitle": "While a trip is underway, say “Hey PackRat” and a command, even with your phone locked.",
       "wakeWordOffSubtitle": "Turn on to talk to PackRat hands-free while a trip is underway.",
+      "headset": "Headset Shortcut",
+      "headsetSubtitle": "While a trip is underway, press and hold your headset's button to give a command.",
+      "headsetOffSubtitle": "Your headset's button works as it normally does.",
       "guidanceSection": "Guidance",
       "guidanceTurns": "Turn Prompts",
       "guidanceMilestones": "Milestones",
@@ -2278,7 +2281,9 @@
       "notNow": "Not Now",
       "notificationTitle": "Listening for “Hey PackRat”",
       "notificationBody": "Say “Hey PackRat” and a command while your trip is underway.",
-      "channel": "Hands-free listening"
+      "channel": "Hands-free listening",
+      "headsetTitle": "Ready for your headset",
+      "headsetBody": "Press and hold your headset's button to give a command."
     }
   }
 }

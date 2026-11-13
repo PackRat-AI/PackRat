@@ -13,22 +13,29 @@ class WakeWordModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("WakeWord")
 
-    Events("onWake")
+    Events("onWake", "onHeadset")
 
     OnCreate {
       WakeWordService.onWake = { sendEvent("onWake", emptyMap<String, Any>()) }
+      WakeWordService.onHeadset = { sendEvent("onHeadset", emptyMap<String, Any>()) }
     }
 
     OnDestroy {
       WakeWordService.onWake = null
+      WakeWordService.onHeadset = null
+      WakeWordService.headsetActive = false
     }
 
-    /** Starts listening. Call while the app is on screen: Android refuses it from the background. */
-    Function("arm") { title: String, text: String, channelName: String ->
+    /**
+     * Starts the service, listening for "Hey PackRat" when [listen] is set. Call while the app is
+     * on screen: Android refuses a microphone service started from the background.
+     */
+    Function("arm") { title: String, text: String, channelName: String, listen: Boolean ->
       val intent = serviceIntent(WakeWordService.ACTION_START)
         .putExtra(WakeWordService.EXTRA_TITLE, title)
         .putExtra(WakeWordService.EXTRA_TEXT, text)
         .putExtra(WakeWordService.EXTRA_CHANNEL, channelName)
+        .putExtra(WakeWordService.EXTRA_LISTEN, listen)
       ContextCompat.startForegroundService(context, intent)
     }
 
@@ -46,6 +53,11 @@ class WakeWordModule : Module() {
     }
 
     Function("isArmed") { WakeWordService.isArmed }
+
+    /** Whether a long press on the headset's button starts a PackRat command. */
+    Function("setHeadsetActive") { active: Boolean ->
+      WakeWordService.headsetActive = active
+    }
   }
 
   private fun serviceIntent(action: String) = Intent(context, WakeWordService::class.java).setAction(action)

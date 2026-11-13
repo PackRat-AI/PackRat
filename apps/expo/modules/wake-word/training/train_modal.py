@@ -43,6 +43,75 @@ SYNTH_AFTER = '''         "--noise_w", str(noise_w)]
            if _num_speakers(str(voice_onnx)) > 1 else []),'''
 
 
+# The trainer starts Piper once per clip, and loading a voice costs seconds, so 100k clips take
+# six hours. This replaces its clip generator with one Piper process per voice and setting, fed
+# every clip for it as JSON lines, then resamples the results to 16 kHz in parallel.
+BATCH_GENERATOR = '''
+
+def _resample_into(raw_path, out_dir):
+    import scipy.io.wavfile as wavfile
+    import scipy.signal
+    try:
+        sr, data = wavfile.read(str(raw_path))
+        if sr != SAMPLE_RATE:
+            data = scipy.signal.resample_poly(data, SAMPLE_RATE, sr).astype(np.int16)
+        wavfile.write(str(Path(out_dir) / Path(raw_path).name), SAMPLE_RATE, data)
+    finally:
+        Path(raw_path).unlink(missing_ok=True)
+
+
+def _generate_clips(phrases, voice_files, n_total, out_dir, desc):
+    import json
+    from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    existing = count_wav(out_dir)
+    if existing >= n_total:
+        log.info("  %s: %d clips exist (target %d) — skip", desc, existing, n_total)
+        return
+    remaining = n_total - existing
+    settings = [(ls, ns, nw) for ls in (0.75, 1.0, 1.1, 1.25)
+                for ns in (0.667, 0.8, 0.98) for nw in (0.8, 0.9, 0.98)]
+    groups = {}
+    for _ in range(remaining):
+        key = (str(random.choice(voice_files)),) + random.choice(settings)
+        groups.setdefault(key, []).append(random.choice(phrases))
+
+    raw_dir = out_dir.parent / f"_raw_{out_dir.name}"
+    shutil.rmtree(raw_dir, ignore_errors=True)
+    raw_dir.mkdir(parents=True)
+    env = os.environ.copy()
+    env["LD_LIBRARY_PATH"] = str(PIPER_BIN_DIR.resolve()) + ":" + env.get("LD_LIBRARY_PATH", "")
+    env["ESPEAK_DATA_PATH"] = str(PIPER_ESPEAK.resolve())
+
+    def synthesize(item):
+        (voice, ls, ns, nw), texts = item
+        speakers = _num_speakers(voice)
+        lines = []
+        for text in texts:
+            entry = {"text": text, "output_file": str(raw_dir / f"{uuid.uuid4().hex}.wav")}
+            if speakers > 1:
+                entry["speaker_id"] = random.randrange(speakers)
+            lines.append(json.dumps(entry))
+        result = subprocess.run(
+            [str(PIPER_BIN.resolve()), "--model", voice, "--json-input",
+             "--length_scale", str(ls), "--noise_scale", str(ns), "--noise_w", str(nw)],
+            input="\\n".join(lines) + "\\n", text=True, capture_output=True, env=env,
+        )
+        if result.returncode != 0:
+            log.warning("  piper failed for %s: %s", voice, result.stderr[-500:])
+
+    log.info("  %s: %d clips in %d Piper runs", desc, remaining, len(groups))
+    with ThreadPoolExecutor(max_workers=GEN_WORKERS) as pool:
+        list(pool.map(synthesize, groups.items()))
+    raw = [p for p in raw_dir.glob("*.wav") if p.stat().st_size > 44]
+    with ProcessPoolExecutor(max_workers=os.cpu_count()) as pool:
+        list(pool.map(_resample_into, raw, [str(out_dir)] * len(raw), chunksize=64))
+    shutil.rmtree(raw_dir, ignore_errors=True)
+    log.info("  %s: %d new clips", desc, len(raw))
+'''
+
+
 def patch_trainer() -> None:
     path = Path("/trainer/train_mww.py")
     source = path.read_text()
@@ -50,6 +119,10 @@ def patch_trainer() -> None:
     source = source.replace(SYNTH_BEFORE, SYNTH_AFTER)
     marker = "def synthesize_clip("
     source = source.replace(marker, SPEAKER_PATCH + "\n\n" + marker, 1)
+    # Defined after the original, so the phases pick this one up.
+    marker = "def phase_generate("
+    assert marker in source, "trainer's generate phase moved; update BATCH_GENERATOR"
+    source = source.replace(marker, BATCH_GENERATOR + "\n\n" + marker, 1)
     path.write_text(source)
 
 

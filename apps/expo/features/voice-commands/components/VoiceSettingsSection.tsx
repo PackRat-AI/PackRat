@@ -17,6 +17,7 @@ export function VoiceSettingsSection() {
   const enabled = use$(voiceSettingsStore.enabled);
   const spokenAnswers = use$(voiceSettingsStore.spokenAnswers);
   const wakeWord = use$(voiceSettingsStore.wakeWord);
+  const headset = use$(voiceSettingsStore.headsetShortcut) !== false;
   const settings = use$(voiceSettingsStore);
   if (!flag) return null;
 
@@ -106,6 +107,23 @@ export function VoiceSettingsSection() {
                 on ? void turnOnWakeWord() : voiceSettingsStore.wakeWord.set(false)
               }
               testID={testIds.voiceCommands.wakeWordToggle}
+            />
+          </View>
+        )}
+        {enabled && isWakeWordAvailable() && (
+          <View className="flex-row items-center justify-between gap-4 border-t border-border p-4">
+            <View className="flex-1">
+              <Text className="font-medium">{t('voiceCommands.settings.headset')}</Text>
+              <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                {headset
+                  ? t('voiceCommands.settings.headsetSubtitle')
+                  : t('voiceCommands.settings.headsetOffSubtitle')}
+              </Text>
+            </View>
+            <Toggle
+              value={headset}
+              onValueChange={(on) => voiceSettingsStore.headsetShortcut.set(on)}
+              testID={testIds.voiceCommands.headsetToggle}
             />
           </View>
         )}
