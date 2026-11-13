@@ -92,6 +92,17 @@ struct TripDetailView: View {
                         .frame(height: 220)
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         .padding(.horizontal)
+
+                    #if os(iOS)
+                    if OfflineMapStore.isEnabled, !isFinished {
+                        TripOfflineMapRow(
+                            tripId: trip.id,
+                            tripName: trip.name,
+                            destination: coord,
+                            endDate: (trip.endDate ?? trip.startDate)?.toDate()
+                        )
+                    }
+                    #endif
                 }
 
                 TripTrailConditionsSection(trip: trip)

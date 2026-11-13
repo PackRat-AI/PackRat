@@ -92,6 +92,7 @@ struct PreferencesView: View {
             unitsSection
             notificationSection
             safetySection
+            offlineMapsSection
             communitySection
             if ChatViewModel.isOnDeviceOffered {
                 Section {
@@ -278,6 +279,24 @@ struct PreferencesView: View {
                 Text("Safety")
             } footer: {
                 Text("Told when you start a trip, and alerted if you don't come back on time.")
+            }
+        }
+        #endif
+    }
+
+    // MARK: - Offline maps
+
+    @ViewBuilder
+    private var offlineMapsSection: some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            Section {
+                NavigationLink {
+                    OfflineMapsView()
+                } label: {
+                    Label("Offline Maps", systemImage: "map")
+                }
+                .accessibilityIdentifier("settings_offline_maps")
             }
         }
         #endif
