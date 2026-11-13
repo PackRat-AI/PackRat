@@ -1,3 +1,4 @@
+import type { TripLog } from '@packrat/schemas/trips';
 import { describe, expect, it } from 'vitest';
 import {
   addWaypointToLog,
@@ -69,7 +70,7 @@ describe('trip log waypoints', () => {
   });
 
   it('removes only the waypoint asked for', () => {
-    const log = { activities: ['hiking'], waypoints: [waypoint('a'), waypoint('b')] };
+    const log: TripLog = { activities: ['hiking'], waypoints: [waypoint('a'), waypoint('b')] };
     expect(removeWaypointFromLog({ log, id: 'a' })).toEqual({
       activities: ['hiking'],
       waypoints: [waypoint('b')],
