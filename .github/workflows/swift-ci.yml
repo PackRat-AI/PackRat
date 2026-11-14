@@ -50,6 +50,7 @@ jobs:
           # Metal shaders; Xcode 26 ships the Metal toolchain separately.
           xcodebuild -downloadComponent MetalToolchain
           xcrun --show-sdk-version
+          echo "XCODE_BUILD=$(xcodebuild -version | tail -1 | awk '{print $NF}')" >> "$GITHUB_ENV"
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -65,6 +66,20 @@ jobs:
 
       - name: Generate Xcode project
         run: bun swift
+
+      # Package checkouts and their compiled products (mlx-swift's Metal
+      # shaders are most of a cold build). First-party sources still rebuild,
+      # because checkout gives them fresh mtimes.
+      - name: Restore build cache
+        id: build-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ~/DerivedData/Build
+            ~/SourcePackages
+          key: swift-build-${{ matrix.scheme }}-${{ env.XCODE_BUILD }}-${{ hashFiles('apps/swift/Package.resolved') }}
+          restore-keys: |
+            swift-build-${{ matrix.scheme }}-${{ env.XCODE_BUILD }}-
 
       - name: Boot iOS simulator
         if: matrix.scheme == 'PackRat-iOS'
@@ -125,10 +140,26 @@ jobs:
             -destination "${DESTINATION}" \
             -testPlan "${{ matrix.plan }}" \
             -onlyUsePackageVersionsFromResolvedFile \
+            -derivedDataPath "$HOME/DerivedData" \
+            -clonedSourcePackagesDirPath "$HOME/SourcePackages" \
+            COMPILER_INDEX_STORE_ENABLE=NO \
             -resultBundlePath "/tmp/${{ matrix.scheme }}-smoke.xcresult" \
             -quiet \
             "${CODE_SIGN_ARGS[@]}" \
             | tee "/tmp/${{ matrix.scheme }}-smoke.log"
+
+      # Only pushes and manual runs write the cache; PRs read it. One entry per
+      # scheme, Xcode build and Package.resolved keeps it inside the repo quota.
+      - name: Save build cache
+        if: >-
+          always() && steps.build-cache.outputs.cache-hit != 'true'
+          && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ~/DerivedData/Build
+            ~/SourcePackages
+          key: ${{ steps.build-cache.outputs.cache-primary-key }}
 
       - name: Parse xcresult summary
         if: always()
