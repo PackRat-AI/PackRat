@@ -103,6 +103,7 @@ struct PreferencesView: View {
             notificationSection
             safetySection
             voiceSection
+            offlineMapsSection
             communitySection
             if ChatViewModel.isOnDeviceOffered {
                 Section {
@@ -393,6 +394,24 @@ struct PreferencesView: View {
                         ? "Your phone vibrates at each prompt, and the trip page shows what it's about."
                         : "What PackRat says while guiding you to a waypoint or along your route.")
                 }
+            }
+        }
+        #endif
+    }
+
+    // MARK: - Offline maps
+
+    @ViewBuilder
+    private var offlineMapsSection: some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            Section {
+                NavigationLink {
+                    OfflineMapsView()
+                } label: {
+                    Label("Offline Maps", systemImage: "map")
+                }
+                .accessibilityIdentifier("settings_offline_maps")
             }
         }
         #endif

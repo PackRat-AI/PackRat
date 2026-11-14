@@ -225,6 +225,7 @@ struct TrailPickerRow: View {
 struct TrailPinDropView: View {
     let onConfirm: (ReportPlace) -> Void
 
+    private let start: CLLocationCoordinate2D?
     @State private var position: MapCameraPosition
     @State private var pin: CLLocationCoordinate2D?
     @State private var label = ""
@@ -232,35 +233,54 @@ struct TrailPinDropView: View {
 
     init(start: CLLocationCoordinate2D?, onConfirm: @escaping (ReportPlace) -> Void) {
         self.onConfirm = onConfirm
+        self.start = start
         _pin = State(initialValue: start)
         _position = State(initialValue: start.map {
             .region(MKCoordinateRegion(center: $0, latitudinalMeters: 1500, longitudinalMeters: 1500))
         } ?? .automatic)
     }
 
+    @ViewBuilder
+    private var map: some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            MapboxPinDropMap(pin: $pin, start: start) { isLabelFocused = false }
+                .accessibilityIdentifier("trail_pin_map")
+        } else {
+            mapKitMap
+        }
+        #else
+        mapKitMap
+        #endif
+    }
+
+    private var mapKitMap: some View {
+        MapReader { proxy in
+            Map(position: $position) {
+                if let pin {
+                    Marker("Report", systemImage: "mappin", coordinate: pin)
+                }
+                UserAnnotation()
+            }
+            .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
+            .mapControls {
+                MapUserLocationButton()
+                MapCompass()
+                MapScaleView()
+            }
+            .onTapGesture { point in
+                if let coordinate = proxy.convert(point, from: .local) {
+                    pin = coordinate
+                    isLabelFocused = false
+                }
+            }
+            .accessibilityIdentifier("trail_pin_map")
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            MapReader { proxy in
-                Map(position: $position) {
-                    if let pin {
-                        Marker("Report", systemImage: "mappin", coordinate: pin)
-                    }
-                    UserAnnotation()
-                }
-                .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
-                .mapControls {
-                    MapUserLocationButton()
-                    MapCompass()
-                    MapScaleView()
-                }
-                .onTapGesture { point in
-                    if let coordinate = proxy.convert(point, from: .local) {
-                        pin = coordinate
-                        isLabelFocused = false
-                    }
-                }
-                .accessibilityIdentifier("trail_pin_map")
-            }
+            map
             .overlay(alignment: .top) {
                 Text(pin == nil ? "Tap the map to drop a pin" : "Tap elsewhere to move the pin")
                     .font(.footnote.weight(.medium))

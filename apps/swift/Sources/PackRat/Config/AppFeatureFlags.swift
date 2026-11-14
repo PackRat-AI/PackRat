@@ -8,6 +8,7 @@ enum AppFeatureFlags {
     static let enableFeed = false
     static let enableLocalAI = true
     static let enableOAuth = true
+    static let enableOfflineMaps = false
     static let enableOfflineWildlifeID = false
     static let enablePackInsights = false
     static let enablePackTemplates = true
@@ -33,6 +34,7 @@ enum AppFeatureFlags {
         "enableFeed": false,
         "enableLocalAI": true,
         "enableOAuth": true,
+        "enableOfflineMaps": false,
         "enableOfflineWildlifeID": false,
         "enablePackInsights": false,
         "enablePackTemplates": true,

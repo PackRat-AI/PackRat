@@ -73,6 +73,11 @@ packages:
   SwiftTransformers:
     url: https://github.com/huggingface/swift-transformers
     from: "1.3.0"
+  # In-app maps and offline map downloads. iOS only: the watch and macOS
+  # apps keep MapKit.
+  MapboxMaps:
+    url: https://github.com/mapbox/mapbox-maps-ios
+    from: "11.0.0"
 
 targets:
   PackRat-iOS:
@@ -154,6 +159,7 @@ targets:
         PACKRAT_ENV: $(PACKRAT_ENV)
         SENTRY_DSN: $(SENTRY_DSN)
         REVENUECAT_API_KEY: $(REVENUECAT_API_KEY)
+        MBXAccessToken: $(MAPBOX_PUBLIC_TOKEN)
         GOOGLE_IOS_CLIENT_ID: 993694750638-f2pbg3e5tkt2btn9eih6c8ah8igal55m.apps.googleusercontent.com
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
@@ -209,6 +215,8 @@ targets:
         product: MLXLMCommon
       - package: SwiftTransformers
         product: Tokenizers
+      - package: MapboxMaps
+        product: MapboxMaps
       # The watch app ships from 2.2.1 on, so it is embedded in the iOS app.
       # WKCompanionAppBundleIdentifier must resolve to the iOS bundle id or
       # installs fail with "Unable to Install PackRat".

@@ -185,6 +185,11 @@ struct AppNavigation: View {
                 Task { await appState.weatherVM.refreshAlertBadgeState() }
             }
             .task { syncTripReminders() }
+            #if os(iOS)
+            // Map downloads cut off when the app was closed pick up where
+            // they stopped.
+            .task { if OfflineMapStore.isEnabled { OfflineMapStore.shared.resumeIncomplete() } }
+            #endif
             .onChange(of: tripReminderSignature) { _, _ in syncTripReminders() }
             // Siri and spoken safety alerts reach the trips from here, with no trip page open.
             .task(id: tripsInProgressSignature) {

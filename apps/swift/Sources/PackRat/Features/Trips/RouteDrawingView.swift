@@ -18,57 +18,75 @@ struct RouteDrawingView: View {
 
     var body: some View {
         NavigationStack {
-            MapReader { proxy in
-                Map(position: $position) {
-                    if points.count >= 2 {
-                        MapPolyline(coordinates: points)
-                            .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+            map
+                .ignoresSafeArea(edges: .bottom)
+                .safeAreaInset(edge: .bottom) { panel }
+                .navigationTitle("Draw Route")
+                #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+                #endif
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { dismiss() }
                     }
-                    ForEach(Array(points.enumerated()), id: \.offset) { index, point in
-                        Annotation("Point \(index + 1)", coordinate: point) {
-                            Circle()
-                                .fill(index == 0 ? Color.green : index == points.count - 1 ? Color.red : Color.orange)
-                                .stroke(.white, lineWidth: 2)
-                                .frame(width: index == 0 || index == points.count - 1 ? 14 : 9)
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") {
+                            onDone(points)
+                            dismiss()
                         }
-                        .annotationTitles(.hidden)
+                        .disabled(points.count < 2)
+                        .accessibilityIdentifier("route_drawing_done")
                     }
                 }
-                .mapStyle(.standard(elevation: .realistic))
-                .onTapGesture { location in
-                    if let coordinate = proxy.convert(location, from: .local) {
-                        points.append(coordinate)
+                .onAppear {
+                    points = initial
+                    if let region = RouteDrawing.region(points: initial, center: center) {
+                        position = .region(region)
                     }
                 }
-                .accessibilityIdentifier("route_drawing_map")
-            }
-            .ignoresSafeArea(edges: .bottom)
-            .safeAreaInset(edge: .bottom) { panel }
-            .navigationTitle("Draw Route")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        onDone(points)
-                        dismiss()
-                    }
-                    .disabled(points.count < 2)
-                    .accessibilityIdentifier("route_drawing_done")
-                }
-            }
-            .onAppear {
-                points = initial
-                if let region = RouteDrawing.region(points: initial, center: center) {
-                    position = .region(region)
-                }
-            }
         }
         .formSheetSize(minWidth: 640, minHeight: 640)
+    }
+
+    @ViewBuilder
+    private var map: some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            MapboxRouteDrawingMap(points: $points, initial: initial, center: center)
+                .accessibilityIdentifier("route_drawing_map")
+        } else {
+            mapKitMap
+        }
+        #else
+        mapKitMap
+        #endif
+    }
+
+    private var mapKitMap: some View {
+        MapReader { proxy in
+            Map(position: $position) {
+                if points.count >= 2 {
+                    MapPolyline(coordinates: points)
+                        .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+                }
+                ForEach(Array(points.enumerated()), id: \.offset) { index, point in
+                    Annotation("Point \(index + 1)", coordinate: point) {
+                        Circle()
+                            .fill(index == 0 ? Color.green : index == points.count - 1 ? Color.red : Color.orange)
+                            .stroke(.white, lineWidth: 2)
+                            .frame(width: index == 0 || index == points.count - 1 ? 14 : 9)
+                    }
+                    .annotationTitles(.hidden)
+                }
+            }
+            .mapStyle(.standard(elevation: .realistic))
+            .onTapGesture { location in
+                if let coordinate = proxy.convert(location, from: .local) {
+                    points.append(coordinate)
+                }
+            }
+            .accessibilityIdentifier("route_drawing_map")
+        }
     }
 
     private var panel: some View {
