@@ -29,6 +29,8 @@ const LANGUAGE = 'en-US';
 /** Silence that ends a hands-free answer, and the most a user gets to start one. */
 const SILENCE_MS = 1_500;
 const HANDS_FREE_LIMIT_MS = 8_000;
+/** How often the recogniser reports the volume, which doubles as the clock for that limit. */
+const VOLUME_TICK_MS = 250;
 
 /**
  * Android only lets the app on screen, or one with a microphone service, hear the microphone, and
@@ -97,12 +99,26 @@ export function listen({
   return new Promise((resolve, reject) => {
     let transcript = '';
     let settled = false;
+    const startedAt = Date.now();
     const subscriptions = [
       ExpoSpeechRecognitionModule.addListener('result', (event) => {
         const text = event.results[0]?.transcript ?? '';
         if (!text) return;
         transcript = text;
         onPartial(text);
+        // When PackRat records itself the recogniser hears in segments and only stops when told:
+        // the first finished segment is the whole answer.
+        if (event.isFinal && mode === 'untilSilence') ExpoSpeechRecognitionModule.stop();
+      }),
+      ExpoSpeechRecognitionModule.addListener('nomatch', () => {
+        if (mode === 'untilSilence') ExpoSpeechRecognitionModule.stop();
+      }),
+      // Timers stop while the phone is locked, so the hands-free limit is kept by the
+      // recogniser's steady volume readings instead.
+      ExpoSpeechRecognitionModule.addListener('volumechange', () => {
+        if (mode === 'untilSilence' && Date.now() - startedAt > HANDS_FREE_LIMIT_MS) {
+          ExpoSpeechRecognitionModule.stop();
+        }
       }),
       ExpoSpeechRecognitionModule.addListener('error', (event) => {
         if (SILENT_ERRORS.includes(event.error)) return finish(() => resolve(transcript));
@@ -115,7 +131,9 @@ export function listen({
         });
         finish(() => reject(new VoiceListenError(VoiceAnswers.listenFailed)));
       }),
-      ExpoSpeechRecognitionModule.addListener('end', () => finish(() => resolve(transcript))),
+      ExpoSpeechRecognitionModule.addListener('end', () => {
+        finish(() => resolve(transcript));
+      }),
     ];
     const limit =
       mode === 'untilSilence'
@@ -140,8 +158,11 @@ export function listen({
         // Push to talk keeps listening through pauses until the button comes up.
         continuous: mode === 'untilStopped',
         addsPunctuation: false,
-        ...(mode === 'untilSilence' && RECORDS_ITSELF
-          ? { recordingOptions: HANDS_FREE_RECORDING }
+        ...(mode === 'untilSilence'
+          ? {
+              volumeChangeEventOptions: { enabled: true, intervalMillis: VOLUME_TICK_MS },
+              ...(RECORDS_ITSELF ? { recordingOptions: HANDS_FREE_RECORDING } : {}),
+            }
           : {}),
         ...options,
         androidIntentOptions: {
