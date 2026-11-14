@@ -179,7 +179,7 @@ const TONE_SOURCES = Object.freeze({
   end: require('expo-app/assets/sounds/voice-end.wav'),
 } as const);
 
-/** Long enough for the start tone to finish before the microphone opens, so it isn't heard. */
+/** The start tone's length: the microphone opens once it's over, so it isn't heard. */
 const START_TONE_MS = 500;
 
 const tonePlayers: Partial<Record<VoiceTone, AudioPlayer>> = {};
@@ -191,15 +191,31 @@ function tonePlayer(tone: VoiceTone): AudioPlayer {
 
 /** The short chime that marks the microphone opening or closing. */
 export async function playTone(tone: VoiceTone): Promise<void> {
+  const player = tonePlayer(tone);
+  // Timers stop while the phone is locked, so after "Hey PackRat" only the tone's own end says
+  // when to open the microphone. The timer covers a tone that never reports finishing.
+  const finished =
+    tone === 'start'
+      ? new Promise<void>((resolve) => {
+          const subscription = player.addListener('playbackStatusUpdate', (status) => {
+            if (!status.didJustFinish) return;
+            subscription.remove();
+            resolve();
+          });
+          setTimeout(() => {
+            subscription.remove();
+            resolve();
+          }, START_TONE_MS);
+        })
+      : null;
   try {
-    const player = tonePlayer(tone);
     await player.seekTo(0);
     player.play();
   } catch (error) {
     Sentry.captureException(error, { tags: { feature: 'voiceCommands', action: 'tone' } });
     return;
   }
-  if (tone === 'start') await new Promise((resolve) => setTimeout(resolve, START_TONE_MS));
+  await finished;
 }
 
 /** Loads the tones, the voice and the recogniser choice ahead of the first press. */
