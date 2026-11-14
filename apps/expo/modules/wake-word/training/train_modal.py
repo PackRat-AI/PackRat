@@ -145,9 +145,14 @@ image = (
     )
     .run_commands(
         f"git clone {TRAINER_REPO} /trainer && cd /trainer && git checkout {TRAINER_REF}",
+        # The pip install leaves out microwakeword's subpackages that lack an __init__.py
+        # (layers, among others), so the source tree goes on the path ahead of it.
+        "git clone https://github.com/kahrendt/microWakeWord /mww && cd /mww && git checkout "
+        + MWW_REF,
         "mkdir -p /piper && wget -q -O /tmp/piper.tgz " + PIPER_URL
         + " && tar -xzf /tmp/piper.tgz -C /piper && rm /tmp/piper.tgz",
     )
+    .env({"PYTHONPATH": "/mww"})
     .run_function(patch_trainer)
     .add_local_file(HERE / CONFIG, f"/trainer/{CONFIG}")
 )
@@ -257,6 +262,12 @@ def train() -> None:
 @app.local_entrypoint()
 def main() -> None:
     prepare.remote()
+    train.remote()
+
+
+@app.local_entrypoint()
+def train_only() -> None:
+    """Training and export again, on the clips and features already on the volume."""
     train.remote()
 
 
