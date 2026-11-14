@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Share, View } from 'react-native';
 import { capitalizeFirst, contactSummary } from '../lib/copy';
 import { endSafetyCheckIn, refreshSafetyCheckIn } from '../lib/safetyActions';
-import { setTripLifecycle } from '../lib/tripLifecycle';
+import { setTripLifecycle, tripStartPromptOpen } from '../lib/tripLifecycle';
 import { safetySendBlocked, safetyStore } from '../store/safetyCheckIn';
 import type { LocalSafetyCheckIn } from '../types';
 import {
@@ -57,14 +57,26 @@ export function TripSafetySection({ trip }: { trip: Trip }) {
   const openSetup = () => router.push(`/trip/${trip.id}/safety-start`);
 
   const startTrip = () => {
+    tripStartPromptOpen.set(true);
     setTripLifecycle({ tripId: trip.id, status: 'in_progress' });
     alertRef.current?.alert({
       title: t('safetyCheckIn.start.askTitle'),
       message: t('safetyCheckIn.start.askMessage'),
       materialIcon: { name: 'shield-outline' },
       buttons: [
-        { text: t('safetyCheckIn.start.withoutNotifying'), style: 'cancel' },
-        { text: t('safetyCheckIn.start.notify'), style: 'default', onPress: openSetup },
+        {
+          text: t('safetyCheckIn.start.withoutNotifying'),
+          style: 'cancel',
+          onPress: () => tripStartPromptOpen.set(false),
+        },
+        {
+          text: t('safetyCheckIn.start.notify'),
+          style: 'default',
+          onPress: () => {
+            tripStartPromptOpen.set(false);
+            openSetup();
+          },
+        },
       ],
     });
   };

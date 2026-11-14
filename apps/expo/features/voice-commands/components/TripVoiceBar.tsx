@@ -2,6 +2,7 @@ import { use$ } from '@legendapp/state/react';
 import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
+import { tripStartPromptOpen } from 'expo-app/features/safety-check-in/lib/tripLifecycle';
 import { canStartTrip } from 'expo-app/features/safety-check-in/utils/safetyCheckIn';
 import type { Trip } from 'expo-app/features/trips/types';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
@@ -9,6 +10,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import * as Haptics from 'expo-haptics';
+import { useIsFocused } from 'expo-router/react-navigation';
 import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
@@ -153,6 +155,10 @@ function WakeWordHost({ trip }: { trip: Trip }) {
   const headset = use$(voiceSettingsStore.headsetShortcut) !== false;
   const offered = use$(voiceSettingsStore.wakeWordOffered);
   const phase = use$(voiceStore.phase);
+  const otherPrompt = use$(tripStartPromptOpen);
+  // A screen opened over the trip page, such as the check-in setup, hides the offer until the user
+  // comes back.
+  const focused = useIsFocused();
   const underway = (trip.status ?? 'planned') === 'in_progress';
   const latestTrip = useRef(trip);
   latestTrip.current = trip;
@@ -181,6 +187,7 @@ function WakeWordHost({ trip }: { trip: Trip }) {
 
   useEffect(() => {
     if (!isWakeWordAvailable() || !underway || wakeWord || offered || phase !== 'idle') return;
+    if (otherPrompt || !focused) return;
     voiceSettingsStore.wakeWordOffered.set(true);
     alertRef.current?.alert({
       title: t('voiceCommands.wake.offerTitle'),
@@ -195,7 +202,7 @@ function WakeWordHost({ trip }: { trip: Trip }) {
         },
       ],
     });
-  }, [underway, wakeWord, offered, phase, t]);
+  }, [underway, wakeWord, offered, phase, otherPrompt, focused, t]);
 
   return <Alert title="" buttons={[]} ref={alertRef} />;
 }

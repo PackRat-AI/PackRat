@@ -18,8 +18,11 @@
       android:showWhenLocked="true"
       android:taskAffinity=""
       android:theme="@android:style/Theme.NoDisplay">
+      <!-- A wired headset sends the first (locked) or second; a Bluetooth headset the third. -->
       <intent-filter>
         <action android:name="android.speech.action.VOICE_SEARCH_HANDS_FREE" />
+        <action android:name="android.speech.action.WEB_SEARCH" />
+        <action android:name="android.intent.action.VOICE_COMMAND" />
         <category android:name="android.intent.category.DEFAULT" />
       </intent-filter>
     </activity>
