@@ -21,6 +21,9 @@ configFiles:
   Staging: xcconfig/Config-Staging.xcconfig
   Release: xcconfig/Config-Release.xcconfig
 
+# Exact versions are pinned in Package.resolved, which `bun swift` copies into the generated
+# project. After adding or bumping a package here, run `bun swift`, resolve it in Xcode, then run
+# `bun swift:pin`.
 packages:
   Nuke:
     url: https://github.com/kean/Nuke
@@ -146,8 +149,10 @@ targets:
           UIColorName: ""
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
-        NSLocationWhenInUseUsageDescription: "This app needs access to your location while you are using it."
+        NSLocationWhenInUseUsageDescription: "PackRat uses your location to record your hikes, mark waypoints and check in with your contacts."
         NSLocationAlwaysAndWhenInUseUsageDescription: "During a safety check-in you chose to share, PackRat follows your progress in the background so your emergency contacts can see where you are. It stops when you mark yourself safe."
+        NSMicrophoneUsageDescription: "PackRat listens while you hold Hold to Talk on a trip. If you turn on “Hey PackRat”, it listens for the phrase throughout the trip, even with your phone locked."
+        NSSpeechRecognitionUsageDescription: "Voice commands are recognised on your iPhone, so they work with no signal. Recordings are never kept. Notes and waypoint names you dictate are saved to your trip."
         NSCameraUsageDescription: "This app requires access to your camera to let you take photos or scan items."
         NSPhotoLibraryUsageDescription: "This app needs access to your photo library to let you upload or choose photos."
         ITSAppUsesNonExemptEncryption: false
@@ -160,7 +165,9 @@ targets:
           NSAllowsLocalNetworking: true
         # Pre-trip reminders refresh the destination forecast in the background.
         UIBackgroundModes:
+          - audio
           - fetch
+          - location
         BGTaskSchedulerPermittedIdentifiers:
           - world.packrat.trip-conditions
         CFBundleURLTypes:

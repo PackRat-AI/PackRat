@@ -95,6 +95,7 @@ struct Trip: Codable, Identifiable, Sendable {
     /// What happened on the trip, once it's over. See `TripLog`.
     var log: TripLog? = nil
     var excludedFromStats: Bool? = nil
+    var weatherAlerts: Bool? = nil
     /// The trail the trip is for (trail-conditions/trails id), and its name.
     var trailId: String? = nil
     var trailName: String? = nil

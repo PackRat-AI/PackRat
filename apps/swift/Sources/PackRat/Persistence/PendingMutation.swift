@@ -291,16 +291,20 @@ struct TripMutationPayload: Codable, Sendable {
     var plannedRoute: [TripRoutePoint]? = nil
 
     /// Queued trip updates collapse to the latest payload, so every one carries
-    /// the lifecycle and route — otherwise a checklist tick queued after Start
-    /// Trip would replace that update and the trip would never start upstream.
+    /// the lifecycle, route and weather-alert switch — otherwise a checklist
+    /// tick queued after Start Trip would replace that update and the trip
+    /// would never start upstream.
     mutating func carryLifecycle(of trip: Trip) {
         status = trip.status
         startedAt = trip.startedAt
         completedAt = trip.completedAt
         plannedRoute = trip.plannedRoute
+        weatherAlerts = trip.weatherAlerts
     }
     var log: TripLog? = nil
     var excludedFromStats: Bool? = nil
+    /// Optional so payloads queued before the switch existed still decode.
+    var weatherAlerts: Bool? = nil
     /// Optional so payloads queued before trips named a trail still decode.
     var trailId: String? = nil
     var trailName: String? = nil

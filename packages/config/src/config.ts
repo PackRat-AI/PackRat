@@ -22,6 +22,8 @@ const FeatureFlag = Object.freeze({
   EnableTripReminders: 'enableTripReminders',
   EnableSafetyCheckIn: 'enableSafetyCheckIn',
   EnableTripStats: 'enableTripStats',
+  EnableVoiceCommands: 'enableVoiceCommands',
+  EnableTripWeather: 'enableTripWeather',
   EnableOfflineMaps: 'enableOfflineMaps',
 });
 
@@ -89,6 +91,8 @@ const APP_CONFIG_SOURCE = {
     [FeatureFlag.EnableTripReminders]: false,
     [FeatureFlag.EnableSafetyCheckIn]: false,
     [FeatureFlag.EnableTripStats]: false,
+    [FeatureFlag.EnableVoiceCommands]: false,
+    [FeatureFlag.EnableTripWeather]: false,
     [FeatureFlag.EnableOfflineMaps]: false,
   },
   dashboard: {

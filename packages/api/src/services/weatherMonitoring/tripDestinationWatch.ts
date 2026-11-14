@@ -1,6 +1,6 @@
 import { createDbClient } from '@packrat/api/db';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
-import { tripDestinationAlertState, trips } from '@packrat/db/schema';
+import { notificationPreferences, tripDestinationAlertState, trips } from '@packrat/db/schema';
 import type { WeatherAlertItem } from '@packrat/schemas/weather';
 import { and, eq } from 'drizzle-orm';
 import { notifyTripOwner } from '../push/notifyTripOwner';
@@ -9,8 +9,12 @@ import { fetchCoordinateAlerts } from './fetchLocationAlerts';
 
 export const POLL_INTERVAL_MS = 20 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
-/** A trip is watched from 10 days out (the forecast window) until a day after it starts. */
-export const HORIZON_MS = 10 * DAY_MS;
+/**
+ * A trip is watched from 3 days out until a day after it ends. Weather watches,
+ * the earliest alerts, go out at most ~72 hours ahead; see
+ * docs/features/trip-weather.md.
+ */
+export const HORIZON_MS = 3 * DAY_MS;
 export const GRACE_MS = DAY_MS;
 
 /** What a trip's timer keeps so a weather check never needs Postgres. */
@@ -20,16 +24,22 @@ export type TripWatch = {
   name: string;
   location: { latitude: number; longitude: number; name?: string };
   startDate: number;
+  /** Absent on timers armed before trips were watched to their end. */
+  endDate?: number | null;
 };
 
-/** The period a trip's destination is checked for alerts. */
-export function watchWindow(startDate: number): { opensAt: number; closesAt: number } {
-  return { opensAt: startDate - HORIZON_MS, closesAt: startDate + GRACE_MS };
+/** The period a trip's destination is checked for alerts. A trip with no end date lasts a day. */
+export function watchWindow({ startDate, endDate }: Pick<TripWatch, 'startDate' | 'endDate'>): {
+  opensAt: number;
+  closesAt: number;
+} {
+  return { opensAt: startDate - HORIZON_MS, closesAt: (endDate ?? startDate) + GRACE_MS };
 }
 
 /**
  * The watch a trip row should have, or null when it has nothing to watch:
- * deleted, no destination, no start date, or already past its window.
+ * deleted, alerts turned off, no destination, no start date, or already past
+ * its window.
  */
 export function tripWatchFor({
   trip,
@@ -40,28 +50,33 @@ export function tripWatchFor({
     userId: string;
     name: string;
     deleted: boolean;
+    weatherAlerts: boolean;
     location: TripWatch['location'] | null;
     startDate: Date | null;
+    endDate: Date | null;
   };
   now: number;
 }): TripWatch | null {
-  if (trip.deleted || !trip.location || !trip.startDate) return null;
+  if (trip.deleted || !trip.weatherAlerts || !trip.location || !trip.startDate) return null;
   const startDate = trip.startDate.getTime();
-  if (now > watchWindow(startDate).closesAt) return null;
+  const endDate = trip.endDate?.getTime() ?? null;
+  if (now > watchWindow({ startDate, endDate }).closesAt) return null;
   return {
     tripId: trip.id,
     userId: trip.userId,
     name: trip.name,
     location: trip.location,
     startDate,
+    endDate,
   };
 }
 
 /**
  * Pushes alerts the timer saw for the first time to the trip's owner. Postgres
  * is the record of what was already pushed, so a timer that lost its storage
- * can't push the same alert twice. Returns `gone` when the trip was deleted,
- * so the timer can stop.
+ * can't push the same alert twice. Returns `gone` when the trip was deleted or
+ * its alerts turned off, so the timer can stop. With trip alerts off for the
+ * whole account the alert is recorded but not pushed.
  */
 export async function deliverTripDestinationAlerts({
   env,
@@ -77,10 +92,16 @@ export async function deliverTripDestinationAlerts({
   const db = createDbClient(env);
   const [row] = await db
     .tag('tripReminders.getDestinationAlertState')
-    .select({ lastAlertIds: tripDestinationAlertState.lastAlertIds })
+    .select({
+      lastAlertIds: tripDestinationAlertState.lastAlertIds,
+      tripWeather: notificationPreferences.tripWeather,
+    })
     .from(trips)
     .leftJoin(tripDestinationAlertState, eq(tripDestinationAlertState.tripId, trips.id))
-    .where(and(eq(trips.id, watch.tripId), eq(trips.deleted, false)));
+    .leftJoin(notificationPreferences, eq(notificationPreferences.userId, trips.userId))
+    .where(
+      and(eq(trips.id, watch.tripId), eq(trips.deleted, false), eq(trips.weatherAlerts, true)),
+    );
   if (!row) return { gone: true, notified: false };
 
   const diff = diffAlerts({ previousIds: row.lastAlertIds ?? [], currentAlerts: alerts });
@@ -98,7 +119,9 @@ export async function deliverTripDestinationAlerts({
       set: { lastAlertIds: diff.currentIds, lastPolledAt: now, updatedAt: now },
     });
 
-  if (diff.newAlerts.length === 0) return { gone: false, notified: false };
+  if (diff.newAlerts.length === 0 || row.tripWeather === false) {
+    return { gone: false, notified: false };
+  }
   await notifyTripOwner({
     env,
     userId: watch.userId,
@@ -137,7 +160,7 @@ export async function tickTripDestination({
   enabled: boolean;
   now: number;
 }): Promise<TickResult> {
-  const { opensAt, closesAt } = watchWindow(watch.startDate);
+  const { opensAt, closesAt } = watchWindow(watch);
   if (now > closesAt) return { seenIds, nextAt: null, notified: false };
   if (now < opensAt) return { seenIds, nextAt: opensAt, notified: false };
 

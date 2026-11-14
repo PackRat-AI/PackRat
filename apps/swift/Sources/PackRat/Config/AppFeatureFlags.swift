@@ -22,6 +22,8 @@ enum AppFeatureFlags {
     static let enableTripReminders = false
     static let enableTrips = true
     static let enableTripStats = false
+    static let enableTripWeather = false
+    static let enableVoiceCommands = false
     static let enableWeatherMonitoring = false
     static let enableWildlifeIdentification = false
 
@@ -46,6 +48,8 @@ enum AppFeatureFlags {
         "enableTripReminders": false,
         "enableTrips": true,
         "enableTripStats": false,
+        "enableTripWeather": false,
+        "enableVoiceCommands": false,
         "enableWeatherMonitoring": false,
         "enableWildlifeIdentification": false,
     ]

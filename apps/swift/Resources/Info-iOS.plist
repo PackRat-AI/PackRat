@@ -71,9 +71,13 @@
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>During a safety check-in you chose to share, PackRat follows your progress in the background so your emergency contacts can see where you are. It stops when you mark yourself safe.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs access to your location while you are using it.</string>
+	<string>PackRat uses your location to record your hikes, mark waypoints and check in with your contacts.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>PackRat listens while you hold Hold to Talk on a trip. If you turn on “Hey PackRat”, it listens for the phrase throughout the trip, even with your phone locked.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to your photo library to let you upload or choose photos.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Voice commands are recognised on your iPhone, so they work with no signal. Recordings are never kept. Notes and waypoint names you dictate are saved to your trip.</string>
 	<key>PACKRAT_ENV</key>
 	<string>$(PACKRAT_ENV)</string>
 	<key>REVENUECAT_API_KEY</key>
@@ -87,7 +91,9 @@
 	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
+		<string>audio</string>
 		<string>fetch</string>
+		<string>location</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict>

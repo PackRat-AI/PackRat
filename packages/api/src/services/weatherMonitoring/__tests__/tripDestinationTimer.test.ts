@@ -41,8 +41,10 @@ function trip(id: string, patch: Record<string, unknown> = {}) {
     userId: 'user-1',
     name: `Trip ${id}`,
     deleted: false,
+    weatherAlerts: true,
     location,
     startDate: START,
+    endDate: null,
     ...patch,
   };
 }
@@ -64,7 +66,15 @@ describe('syncTripDestinationTimer', () => {
       name: 'Trip t1',
       location,
       startDate: START.getTime(),
+      endDate: null,
     });
+  });
+
+  it('clears the timer when the trip has its alerts turned off', async () => {
+    fakeNamespace();
+    await syncTripDestinationTimer({ trip: trip('t1', { weatherAlerts: false }), now: NOW });
+    expect(mocks.disarm).toHaveBeenCalledTimes(1);
+    expect(mocks.arm).toHaveBeenCalledTimes(0);
   });
 
   it('clears the timer when the trip has nothing to watch', async () => {

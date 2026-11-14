@@ -392,6 +392,8 @@ struct SafetyLocationFix: Sendable {
     let accuracy: Double?
     let recordedAt: Date
     var placeName: String?
+    /// Metres above sea level, when the fix had a vertical reading.
+    var altitude: Double?
 }
 
 private extension String {

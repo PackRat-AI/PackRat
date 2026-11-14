@@ -34,18 +34,28 @@ final class TripConditionsStore {
     func conditions(for tripId: String) -> TripConditions? { conditions[tripId] }
 
     /// Trips worth a forecast: dated, located, and starting within the horizon
-    /// but not yet over.
+    /// but not yet over. Trips under way count once trip weather is on, so the
+    /// trip list can mark a hazard that arrives mid-trip.
     static func needsForecast(_ trip: Trip, now: Date, calendar: Calendar = .current) -> Bool {
         guard !trip.deleted, trip.location != nil,
               let days = TripReminderPlanner.daysUntilStart(trip, now: now, calendar: calendar)
         else { return false }
+        if days < 0, FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey) {
+            return TripWeatherPlan.needsForecast(trip, now: now, calendar: calendar)
+        }
         return days >= 0 && days <= forecastHorizonDays
+    }
+
+    /// Either feature that reads these forecasts keeps them fetched.
+    static var isEnabled: Bool {
+        FeatureFlagStore.shared.isEnabled(TripReminderPlanner.flagKey)
+            || FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey)
     }
 
     /// Refreshes every trip that needs a forecast and drops entries for trips
     /// that no longer do. `force` ignores `maxAge` (background refresh).
     func refresh(trips: [Trip], force: Bool = false, now: Date = Date()) async {
-        guard FeatureFlagStore.shared.isEnabled(TripReminderPlanner.flagKey) else { return }
+        guard Self.isEnabled else { return }
         let due = trips.filter { Self.needsForecast($0, now: now) }
         let dueIds = Set(due.map(\.id))
         conditions = conditions.filter { dueIds.contains($0.key) }
