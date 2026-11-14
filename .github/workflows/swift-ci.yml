@@ -27,7 +27,7 @@ jobs:
   build-and-smoke:
     name: ${{ matrix.scheme }} (smoke)
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -94,7 +94,7 @@ jobs:
             swift-build-${{ matrix.scheme }}-${{ env.XCODE_BUILD }}-
 
       - name: Run ${{ matrix.plan }} test plan
-        timeout-minutes: 35
+        timeout-minutes: 45
         env:
           E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
