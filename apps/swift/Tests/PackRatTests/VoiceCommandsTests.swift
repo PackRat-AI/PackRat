@@ -285,25 +285,56 @@ struct RecordedTrackTests {
         #expect(abs(track.distanceMeters - 2 * 11.12) < 0.5)
     }
 
-    @Test("climbing ignores a few metres of GPS jitter")
+    @Test("a climb counts once the average of five fixes rises 10 m above its low point")
     func climbing() {
         var track = RecordedTrack(tripId: "t", tripName: "Trip", startedAt: start)
-        for (step, altitude) in [100.0, 102, 99, 101, 110, 108, 120].enumerated() {
+        for (step, altitude) in [100.0, 100, 100, 100, 100, 105, 110, 115, 120, 120, 120].enumerated() {
             track.append(sample(step, altitude: altitude))
         }
-        #expect(track.elevationGainMeters == 23)
+        // Averages run 100, 101, 103, 106, 110 (counted: +10), 114, 117 (under 10 more).
+        #expect(track.elevationGainMeters == 10)
+    }
+
+    @Test("GPS height noise while standing still isn't climbing")
+    func standingStill() {
+        // Heights recorded outdoors on flat ground: 21 minutes inside a 15 m square.
+        let heights = [382.0, 395.5, 402.6, 393.9, 394.1, 398.6, 395.5, 398.1, 397.4, 393.6, 392.2]
+        var track = RecordedTrack(tripId: "t", tripName: "Trip", startedAt: start)
+        for (step, altitude) in heights.enumerated() { track.append(sample(step, altitude: altitude)) }
+        #expect(track.elevationGainMeters == 0)
+    }
+
+    @Test("climbing waits for five fixes again after a resume")
+    func climbingAfterResume() {
+        var track = RecordedTrack(tripId: "t", tripName: "Trip", startedAt: start)
+        for step in 0..<5 { track.append(sample(step, altitude: 100)) }
+        track.pause()
+        track.resume()
+        // A ride up to a higher trailhead isn't climbing.
+        for step in 5..<10 { track.append(sample(step, altitude: 300)) }
+        #expect(track.elevationGainMeters == 0)
+    }
+
+    @Test("a recording saved before averaging still loads")
+    func decodesOldRecording() throws {
+        var track = RecordedTrack(tripId: "t", tripName: "Trip", startedAt: start)
+        track.append(sample(0, altitude: 100))
+        var json = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(track)) as? [String: Any])
+        json["altitudeWindow"] = nil
+        let decoded = try JSONDecoder().decode(RecordedTrack.self, from: JSONSerialization.data(withJSONObject: json))
+        #expect(decoded.samples.count == 1)
     }
 
     @Test("stopping fills the trip log and keeps everything else in it")
     func appliedToLog() {
         var track = RecordedTrack(tripId: "t", tripName: "Trip", startedAt: start)
-        for step in 0...5 { track.append(sample(step, altitude: Double(step) * 5)) }
+        for step in 0...9 { track.append(sample(step, altitude: Double(step) * 5)) }
         let waypoint = TripWaypoint.named("Camp", latitude: 47, longitude: -120, elevation: nil)
         let log = track.applied(to: TripLog(activities: [.hiking], distanceMeters: 1, waypoints: [waypoint]))
         #expect(log.source == .track)
         #expect(log.route != nil)
         #expect(log.distanceMeters == track.distanceMeters)
-        #expect(log.elevationGainMeters == 25)
+        #expect(log.elevationGainMeters == 20)  // averages 10 → 20 → 30
         #expect(log.activities == [.hiking])
         #expect(log.waypoints == [waypoint])
     }

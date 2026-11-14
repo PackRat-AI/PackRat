@@ -24,15 +24,22 @@ struct RecordedTrack: Codable, Equatable, Sendable {
     private(set) var distanceMeters = 0.0
     private(set) var elevationGainMeters = 0.0
     private(set) var movingSeconds = 0.0
-    /// Low point the next climb is measured from (see `TrackMath.elevationGain`).
+    /// Low point of the averaged altitude that the next climb is measured from.
     private var climbReference: Double?
+    /// The latest altitudes, averaged so GPS height noise doesn't count as
+    /// climbing. Optional so a recording saved before it existed still loads.
+    private var altitudeWindow: [Double]?
 
     /// Faster than this between fixes counts as moving; slower is standing about.
     static let movingSpeed = 0.3
     /// A longer gap than this between fixes isn't counted as time moving: the
     /// phone lost the sky, not the user walking.
     static let longestMovingGap = 120.0
-    static let climbThreshold = 3.0
+    /// GPS height swings 20 m standing still, so climbing counts from the
+    /// average of the last few fixes, and only once that average rises this
+    /// far above its low point.
+    static let altitudeWindowSize = 5
+    static let climbThreshold = 10.0
 
     init(tripId: String, tripName: String, startedAt: Date) {
         self.tripId = tripId
@@ -54,16 +61,21 @@ struct RecordedTrack: Codable, Equatable, Sendable {
                 movingSeconds += seconds
             }
         }
-        if let altitude = sample.altitude {
-            if let reference = climbReference {
-                if altitude - reference >= Self.climbThreshold {
-                    elevationGainMeters += altitude - reference
-                    climbReference = altitude
-                } else if altitude < reference {
+        if let height = sample.altitude {
+            var window = altitudeWindow ?? []
+            window.append(height)
+            if window.count > Self.altitudeWindowSize { window.removeFirst() }
+            altitudeWindow = window
+            if window.count == Self.altitudeWindowSize {
+                let altitude = window.reduce(0, +) / Double(Self.altitudeWindowSize)
+                if let reference = climbReference, altitude >= reference {
+                    if altitude - reference >= Self.climbThreshold {
+                        elevationGainMeters += altitude - reference
+                        climbReference = altitude
+                    }
+                } else {
                     climbReference = altitude
                 }
-            } else {
-                climbReference = altitude
             }
         }
         stretches[stretches.count - 1].append(sample)
@@ -79,6 +91,7 @@ struct RecordedTrack: Codable, Equatable, Sendable {
         if stretches.last?.isEmpty == false { stretches.append([]) }
         // Climbing restarts from wherever the user is when they set off again.
         climbReference = nil
+        altitudeWindow = nil
     }
 
     /// What goes into the trip log, or nil when too little was recorded to
