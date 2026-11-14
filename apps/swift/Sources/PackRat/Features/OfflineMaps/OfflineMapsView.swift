@@ -8,6 +8,7 @@ struct OfflineMapsView: View {
     @Default(.offlineMapsAllowCellular) private var allowCellular
     @Default(.offlineMapsStorageLimitBytes) private var storageLimit
     @State private var showingPicker = false
+    @State private var showingRegions = false
     @State private var renaming: OfflineArea?
     @State private var newName = ""
     @State private var confirmingDeleteAll = false
@@ -25,6 +26,8 @@ struct OfflineMapsView: View {
                     Button("Save a Map Area") { showingPicker = true }
                         .buttonStyle(.borderedProminent)
                         .accessibilityIdentifier("offline_maps_empty_add")
+                    Button("Choose a Park or Region") { showingRegions = true }
+                        .accessibilityIdentifier("offline_maps_empty_add_region")
                 }
                 .listRowBackground(Color.clear)
             } else {
@@ -66,8 +69,11 @@ struct OfflineMapsView: View {
         .navigationTitle("Offline Maps")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showingPicker = true
+                Menu {
+                    Button("Frame an Area on the Map", systemImage: "viewfinder") { showingPicker = true }
+                        .accessibilityIdentifier("offline_maps_add_frame")
+                    Button("Choose a Park or Region", systemImage: "mountain.2") { showingRegions = true }
+                        .accessibilityIdentifier("offline_maps_add_region")
                 } label: {
                     Label("Save a Map Area", systemImage: "plus")
                 }
@@ -76,6 +82,9 @@ struct OfflineMapsView: View {
         }
         .sheet(isPresented: $showingPicker) {
             NavigationStack { OfflineAreaPickerView() }
+        }
+        .sheet(isPresented: $showingRegions) {
+            NavigationStack { OfflineRegionListView { showingRegions = false } }
         }
         .alert("Rename Map", isPresented: Binding(
             get: { renaming != nil },

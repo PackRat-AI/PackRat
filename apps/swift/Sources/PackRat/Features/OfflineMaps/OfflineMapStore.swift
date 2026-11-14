@@ -72,8 +72,8 @@ final class OfflineMapStore {
     // MARK: - Estimate
 
     /// Bytes the area would take on disk at the given detail.
-    func estimateSize(bounds: OfflineAreaBounds, detail: OfflineDetailLevel) async throws -> Int64 {
-        guard let options = loadOptions(bounds: bounds, detail: detail, allowCellular: true, metadata: nil) else {
+    func estimateSize(rings: [[CLLocationCoordinate2D]], detail: OfflineDetailLevel) async throws -> Int64 {
+        guard let options = loadOptions(rings: rings, detail: detail, allowCellular: true, metadata: nil) else {
             throw DownloadError.failed
         }
         let store = tileStore
@@ -93,9 +93,17 @@ final class OfflineMapStore {
         }
     }
 
-    /// Largest estimate the picker lets through. Provisional until measured
-    /// against Mapbox's 750-tile-pack cap on a real park and state.
-    static let maxAreaBytes: Int64 = 1_500_000_000
+    /// Whether the area fits under Mapbox's tile-pack cap alongside the areas
+    /// already saved, and whether it would fit on its own. Counted off the
+    /// main actor: a state at Trail detail runs to thousands of tiles.
+    func packFit(rings: [[CLLocationCoordinate2D]], detail: OfflineDetailLevel) async -> (fits: Bool, fitsAlone: Bool) {
+        let saved = areas.filter { $0.isComplete || cancelables[$0.id] != nil }
+        return await Task.detached(priority: .userInitiated) {
+            let budget = OfflineTilePacks.budget(adding: rings, detail: detail, to: saved)
+            let alone = OfflineTilePacks.packs(for: rings, detail: detail).count
+            return (budget.used + budget.added <= OfflineTilePacks.limit, alone <= OfflineTilePacks.limit)
+        }.value
+    }
 
     /// Saved areas whose removal would make room for `bytes` under the
     /// storage limit, oldest first. Empty when no limit is set or the download
@@ -124,6 +132,7 @@ final class OfflineMapStore {
         tripEndDate: Date? = nil,
         trailId: String? = nil,
         trailLines: [[CLLocationCoordinate2D]] = [],
+        boundary: [[CLLocationCoordinate2D]] = [],
         allowCellular: Bool
     ) {
         let area = OfflineArea(
@@ -137,6 +146,9 @@ final class OfflineMapStore {
             trailId: trailId,
             trailLines: trailLines.isEmpty ? nil : trailLines.map { line in
                 line.map { OfflinePoint(latitude: $0.latitude, longitude: $0.longitude) }
+            },
+            boundary: boundary.isEmpty ? nil : boundary.map { ring in
+                ring.map { OfflinePoint(latitude: $0.latitude, longitude: $0.longitude) }
             }
         )
         areas.append(area)
@@ -184,7 +196,7 @@ final class OfflineMapStore {
 
     private func load(_ area: OfflineArea, allowCellular: Bool, refreshing: Bool = false) {
         guard let options = loadOptions(
-            bounds: area.bounds,
+            rings: area.rings,
             detail: area.detail,
             allowCellular: allowCellular,
             metadata: ["name": area.name]
@@ -252,7 +264,7 @@ final class OfflineMapStore {
     // MARK: - Helpers
 
     private func loadOptions(
-        bounds: OfflineAreaBounds,
+        rings: [[CLLocationCoordinate2D]],
         detail: OfflineDetailLevel,
         allowCellular: Bool,
         metadata: [String: String]?
@@ -261,7 +273,11 @@ final class OfflineMapStore {
             for: TilesetDescriptorOptions(styleURI: .outdoors, zoomRange: 0...detail.maxZoom, tilesets: nil)
         )
         return TileRegionLoadOptions(
-            geometry: .polygon(Polygon([bounds.ring])),
+            // Each ring as its own polygon: a region's outline is islands and
+            // holes alike, and saving a hole's tiles too costs little.
+            geometry: rings.count == 1
+                ? .polygon(Polygon([rings[0]]))
+                : .multiPolygon(MultiPolygon(rings.map { [$0] })),
             descriptors: [descriptor],
             metadata: metadata,
             acceptExpired: true,
