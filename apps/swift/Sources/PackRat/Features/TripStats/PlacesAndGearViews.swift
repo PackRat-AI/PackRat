@@ -253,26 +253,10 @@ struct PlaceDetailView: View {
 
         List {
             Section {
-                Map(initialPosition: Self.position(for: shapes), interactionModes: [.zoom, .pan]) {
-                    ForEach(shapes) { shape in
-                        ForEach(Array(shape.rings.enumerated()), id: \.offset) { _, ring in
-                            MapPolygon(coordinates: ring)
-                                .foregroundStyle(Color.accentColor.opacity(0.18))
-                                .stroke(Color.accentColor, lineWidth: 1.2)
-                        }
-                    }
-                    ForEach(visits) { visit in
-                        if let location = trips.first(where: { $0.id == visit.tripId })?.location {
-                            Marker(visit.tripName, systemImage: "tent.fill",
-                                   coordinate: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude))
-                                .tint(Color.accentColor)
-                        }
-                    }
-                }
-                .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
-                .frame(height: 240)
-                .listRowInsets(EdgeInsets())
-                .accessibilityIdentifier("place_detail_map")
+                placeMap(shapes: shapes, visits: visits, trips: trips)
+                    .frame(height: 240)
+                    .listRowInsets(EdgeInsets())
+                    .accessibilityIdentifier("place_detail_map")
             }
 
             if let country, !country.regions.isEmpty {
@@ -317,6 +301,52 @@ struct PlaceDetailView: View {
         }
         .navigationTitle(country.map { "\($0.flag.map { "\($0) " } ?? "")\($0.name)" } ?? region?.name ?? "Place")
         .accessibilityIdentifier("place_detail")
+    }
+
+    @ViewBuilder
+    private func placeMap(shapes: [PlaceBoundary], visits: [TripPlaces.Visit], trips: [Trip]) -> some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            MapboxOutlineMap(
+                rings: shapes.flatMap(\.rings),
+                pins: visits.compactMap { visit in
+                    trips.first(where: { $0.id == visit.tripId })?.location.map { location in
+                        MapboxOutlineMap.Pin(
+                            id: visit.id,
+                            title: visit.tripName,
+                            systemImage: "tent.fill",
+                            coordinate: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
+                        )
+                    }
+                },
+                tint: .tintColor
+            )
+        } else {
+            placeMapKitMap(shapes: shapes, visits: visits, trips: trips)
+        }
+        #else
+        placeMapKitMap(shapes: shapes, visits: visits, trips: trips)
+        #endif
+    }
+
+    private func placeMapKitMap(shapes: [PlaceBoundary], visits: [TripPlaces.Visit], trips: [Trip]) -> some View {
+        Map(initialPosition: Self.position(for: shapes), interactionModes: [.zoom, .pan]) {
+            ForEach(shapes) { shape in
+                ForEach(Array(shape.rings.enumerated()), id: \.offset) { _, ring in
+                    MapPolygon(coordinates: ring)
+                        .foregroundStyle(Color.accentColor.opacity(0.18))
+                        .stroke(Color.accentColor, lineWidth: 1.2)
+                }
+            }
+            ForEach(visits) { visit in
+                if let location = trips.first(where: { $0.id == visit.tripId })?.location {
+                    Marker(visit.tripName, systemImage: "tent.fill",
+                           coordinate: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude))
+                        .tint(Color.accentColor)
+                }
+            }
+        }
+        .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
     }
 
     /// A region's own outline; a country's, or for one listed by state, the

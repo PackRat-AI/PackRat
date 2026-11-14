@@ -233,15 +233,8 @@ struct ParkDetailView: View {
         List {
             if let status {
                 Section {
-                    Map(initialPosition: .rect(Self.rect(for: status.park)), interactionModes: [.zoom, .pan]) {
-                        ForEach(Array(status.park.rings.enumerated()), id: \.offset) { _, ring in
-                            MapPolygon(coordinates: ring)
-                                .foregroundStyle(.green.opacity(0.18))
-                                .stroke(.green, lineWidth: 1.5)
-                        }
-                    }
-                    .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
-                    .frame(height: 220)
+                    parkMap(status.park)
+                        .frame(height: 220)
                     .listRowInsets(EdgeInsets())
                 }
 
@@ -285,6 +278,30 @@ struct ParkDetailView: View {
                 Task { await appState.tripGoalsVM.save(entry, context: modelContext) }
             }
         }
+    }
+
+    @ViewBuilder
+    private func parkMap(_ park: NationalPark) -> some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            MapboxOutlineMap(rings: park.rings, tint: .systemGreen)
+        } else {
+            parkMapKitMap(park)
+        }
+        #else
+        parkMapKitMap(park)
+        #endif
+    }
+
+    private func parkMapKitMap(_ park: NationalPark) -> some View {
+        Map(initialPosition: .rect(Self.rect(for: park)), interactionModes: [.zoom, .pan]) {
+            ForEach(Array(park.rings.enumerated()), id: \.offset) { _, ring in
+                MapPolygon(coordinates: ring)
+                    .foregroundStyle(.green.opacity(0.18))
+                    .stroke(.green, lineWidth: 1.5)
+            }
+        }
+        .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
     }
 
     private static func rect(for park: NationalPark) -> MKMapRect {
@@ -793,7 +810,44 @@ struct PeakPickerView: View {
         }
     }
 
+    @ViewBuilder
     private func map(_ ranked: PeakSuggestions, bottomInset: CGFloat = 0) -> some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            MapboxPeakMap(
+                region: region,
+                route: route,
+                peaks: ranked.all.map { item in
+                    MapboxPeakMap.Peak(
+                        id: item.peak.osmId,
+                        name: item.peak.name,
+                        coordinate: CLLocationCoordinate2D(latitude: item.peak.latitude, longitude: item.peak.longitude),
+                        isOnRoute: item.isOnRoute
+                    )
+                },
+                selection: $selection,
+                onSettle: noteCameraSettled(on:)
+            )
+            .safeAreaPadding(.bottom, bottomInset)
+            .accessibilityIdentifier("peak_picker_map")
+        } else {
+            mapKitMap(ranked, bottomInset: bottomInset)
+        }
+        #else
+        mapKitMap(ranked, bottomInset: bottomInset)
+        #endif
+    }
+
+    /// The first settle is the map framing itself, not the user moving it.
+    private func noteCameraSettled(on visible: MKCoordinateRegion) {
+        if !cameraSettled {
+            cameraSettled = true
+            settledRegion = visible
+        }
+        visibleRegion = visible
+    }
+
+    private func mapKitMap(_ ranked: PeakSuggestions, bottomInset: CGFloat) -> some View {
         Map(position: $position, selection: $selection) {
             if route.count >= 2 {
                 MapPolyline(coordinates: route)
@@ -822,12 +876,7 @@ struct PeakPickerView: View {
         .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
         .safeAreaPadding(.bottom, bottomInset)
         .onMapCameraChange(frequency: .onEnd) { context in
-            // The first settle is the map framing itself, not the user moving it.
-            if !cameraSettled {
-                cameraSettled = true
-                settledRegion = context.region
-            }
-            visibleRegion = context.region
+            noteCameraSettled(on: context.region)
         }
         .accessibilityIdentifier("peak_picker_map")
     }
