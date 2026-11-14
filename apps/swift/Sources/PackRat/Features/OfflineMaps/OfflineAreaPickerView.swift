@@ -213,6 +213,7 @@ struct OfflineAreaPickerView: View {
             tripId: tripId,
             tripEndDate: tripEndDate,
             trailId: trailId,
+            trailLines: lines,
             allowCellular: allowCellular
         )
         dismiss()

@@ -1,4 +1,5 @@
 #if os(iOS)
+import CoreLocation
 import Defaults
 import Foundation
 import MapboxMaps
@@ -122,6 +123,7 @@ final class OfflineMapStore {
         tripId: String? = nil,
         tripEndDate: Date? = nil,
         trailId: String? = nil,
+        trailLines: [[CLLocationCoordinate2D]] = [],
         allowCellular: Bool
     ) {
         let area = OfflineArea(
@@ -132,7 +134,10 @@ final class OfflineMapStore {
             savedAt: Date(),
             tripId: tripId,
             tripEndDate: tripEndDate,
-            trailId: trailId
+            trailId: trailId,
+            trailLines: trailLines.isEmpty ? nil : trailLines.map { line in
+                line.map { OfflinePoint(latitude: $0.latitude, longitude: $0.longitude) }
+            }
         )
         areas.append(area)
         load(area, allowCellular: allowCellular)

@@ -30,7 +30,7 @@ struct OfflineMapsView: View {
             } else {
                 Section {
                     ForEach(sortedAreas) { area in
-                        OfflineAreaRow(area: area, store: store)
+                        row(for: area)
                             .swipeActions {
                                 Button("Delete", role: .destructive) { store.delete(area) }
                             }
@@ -104,6 +104,21 @@ struct OfflineMapsView: View {
         store.areas.sorted { lhs, rhs in
             if lhs.tripHasEnded != rhs.tripHasEnded { return lhs.tripHasEnded }
             return lhs.savedAt > rhs.savedAt
+        }
+    }
+
+    /// A finished area opens its map; one still downloading keeps its
+    /// Cancel and Try Again buttons tappable instead.
+    @ViewBuilder
+    private func row(for area: OfflineArea) -> some View {
+        if area.isComplete && !store.isDownloading(area.id) && store.failures[area.id] == nil {
+            NavigationLink {
+                OfflineAreaMapView(area: area)
+            } label: {
+                OfflineAreaRow(area: area, store: store)
+            }
+        } else {
+            OfflineAreaRow(area: area, store: store)
         }
     }
 

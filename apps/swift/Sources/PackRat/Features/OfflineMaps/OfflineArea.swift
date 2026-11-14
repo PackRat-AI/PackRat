@@ -63,6 +63,16 @@ struct OfflineAreaBounds: Codable, Hashable, Defaults.Serializable {
     }
 }
 
+/// A point on a saved trail line, stored as plain degrees like the bounds.
+struct OfflinePoint: Codable, Hashable, Defaults.Serializable {
+    var latitude: Double
+    var longitude: Double
+
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+}
+
 /// A map area the user saved for offline use.
 ///
 /// The tiles live in Mapbox's tile store under `id`; this record carries
@@ -77,6 +87,8 @@ struct OfflineArea: Codable, Hashable, Identifiable, Defaults.Serializable {
     var tripId: String?
     var tripEndDate: Date?
     var trailId: String?
+    /// The trail's line, kept so the saved map can draw it without signal.
+    var trailLines: [[OfflinePoint]]?
     /// Bytes on disk once the download finished. Zero while downloading.
     var sizeBytes: Int64 = 0
     /// False until every tile has arrived, so an interrupted download can be
