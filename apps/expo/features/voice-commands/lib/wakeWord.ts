@@ -123,7 +123,10 @@ export function pauseWakeWord(): void {
   if (armed?.listen) WakeWord?.pause();
 }
 
-/** PackRat has finished listening and speaking: listen for "Hey PackRat" again. */
+/**
+ * PackRat has finished listening and speaking: listen for "Hey PackRat" again, and let the phone
+ * sleep.
+ */
 export function resumeWakeWord(): void {
-  if (armed?.listen) WakeWord?.resume();
+  if (armed) WakeWord?.resume();
 }

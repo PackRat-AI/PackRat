@@ -17,6 +17,7 @@ class HeadsetVoiceActivity : Activity() {
     super.onCreate(savedInstanceState)
     val handler = WakeWordService.onHeadset
     if (WakeWordService.headsetActive && handler != null) {
+      WakeWordService.holdAwake(applicationContext)
       handler()
     } else {
       forwardToAssistant()

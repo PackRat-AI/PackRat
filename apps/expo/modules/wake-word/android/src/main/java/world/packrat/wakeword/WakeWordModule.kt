@@ -49,6 +49,7 @@ class WakeWordModule : Module() {
     }
 
     Function("resume") {
+      WakeWordService.releaseAwake()
       if (WakeWordService.isArmed) context.startService(serviceIntent(WakeWordService.ACTION_RESUME))
     }
 

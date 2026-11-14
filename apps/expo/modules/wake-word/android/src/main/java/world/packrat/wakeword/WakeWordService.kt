@@ -14,6 +14,7 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
@@ -52,9 +53,13 @@ class WakeWordService : Service() {
         if (!enterForeground(title, text, channelName)) return START_NOT_STICKY
         if (listensForWake) startListening() else stopListening()
       }
-      ACTION_RESUME -> startListening()
+      ACTION_RESUME -> {
+        releaseAwake()
+        startListening()
+      }
       ACTION_PAUSE -> stopListening()
       ACTION_STOP -> {
+        releaseAwake()
         stopListening()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -65,6 +70,7 @@ class WakeWordService : Service() {
   }
 
   override fun onDestroy() {
+    releaseAwake()
     stopListening()
     isArmed = false
     super.onDestroy()
@@ -178,7 +184,10 @@ class WakeWordService : Service() {
       detector.close()
     }
     // Only now is the microphone free for the recogniser that hears the command.
-    if (heard) onWake?.invoke()
+    if (heard) {
+      holdAwake(this)
+      onWake?.invoke()
+    }
   }
 
   private fun createDetector(): MicroWakeWord {
@@ -243,5 +252,30 @@ class WakeWordService : Service() {
 
     /** Called when the headset's button is held while [headsetActive]. */
     @Volatile var onHeadset: (() -> Unit)? = null
+
+    /** Longest a command keeps the phone awake, should the app never say it's done. */
+    private const val COMMAND_AWAKE_MS = 60_000L
+    private var awake: PowerManager.WakeLock? = null
+
+    /**
+     * With the screen off the processor sleeps as soon as the microphone closes, which would leave
+     * a heard command waiting until the phone is unlocked. Keep it awake until the answer has been
+     * given and listening resumes.
+     */
+    @Synchronized
+    fun holdAwake(context: Context) {
+      val lock = awake ?: (context.getSystemService(Context.POWER_SERVICE) as PowerManager)
+        .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "PackRat:VoiceCommand")
+        .also {
+          it.setReferenceCounted(false)
+          awake = it
+        }
+      lock.acquire(COMMAND_AWAKE_MS)
+    }
+
+    @Synchronized
+    fun releaseAwake() {
+      awake?.takeIf { it.isHeld }?.release()
+    }
   }
 }
