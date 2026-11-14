@@ -6,6 +6,7 @@ import {
   ExpoSpeechRecognitionModule,
   type ExpoSpeechRecognitionOptions,
 } from 'expo-speech-recognition';
+import { Platform } from 'react-native';
 import { speakable, VoiceAnswers } from '../utils/voiceAnswers';
 import { pauseWakeWord } from './wakeWord';
 
@@ -28,6 +29,15 @@ const LANGUAGE = 'en-US';
 /** Silence that ends a hands-free answer, and the most a user gets to start one. */
 const SILENCE_MS = 1_500;
 const HANDS_FREE_LIMIT_MS = 8_000;
+
+/**
+ * Android only lets the app on screen, or one with a microphone service, hear the microphone, and
+ * the recogniser runs in another app. Hands-free listens follow "Hey PackRat" with the phone
+ * locked, so on Android 13 and later PackRat records them itself and streams the audio to the
+ * recogniser. The file is overwritten each time.
+ */
+const RECORDS_ITSELF = Platform.OS === 'android' && Number(Platform.Version) >= 33;
+const HANDS_FREE_RECORDING = Object.freeze({ persist: true, outputFileName: 'hands-free.wav' });
 
 let recognizerOptions: Promise<Partial<ExpoSpeechRecognitionOptions>> | null = null;
 
@@ -130,6 +140,9 @@ export function listen({
         // Push to talk keeps listening through pauses until the button comes up.
         continuous: mode === 'untilStopped',
         addsPunctuation: false,
+        ...(mode === 'untilSilence' && RECORDS_ITSELF
+          ? { recordingOptions: HANDS_FREE_RECORDING }
+          : {}),
         ...options,
         androidIntentOptions: {
           ...options.androidIntentOptions,

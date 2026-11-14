@@ -23,7 +23,7 @@ import {
   voiceStore,
 } from '../lib/voiceController';
 import { hasVoicePermission, requestVoicePermission, warmUpVoice } from '../lib/voiceIO';
-import { armWakeWord, disarmWakeWord, isWakeWordAvailable } from '../lib/wakeWord';
+import { followTrip, isWakeWordAvailable, leaveTrip } from '../lib/wakeWord';
 import { voiceSettingsStore } from '../store/voiceSettings';
 
 /** Shown while the trip is underway, and from its start day so "start my trip" works too. */
@@ -152,7 +152,6 @@ function WakeWordHost({ trip }: { trip: Trip }) {
   const { t } = useTranslation();
   const alertRef = useRef<AlertMethods>(null);
   const wakeWord = use$(voiceSettingsStore.wakeWord);
-  const headset = use$(voiceSettingsStore.headsetShortcut) !== false;
   const offered = use$(voiceSettingsStore.wakeWordOffered);
   const phase = use$(voiceStore.phase);
   const otherPrompt = use$(tripStartPromptOpen);
@@ -165,25 +164,9 @@ function WakeWordHost({ trip }: { trip: Trip }) {
 
   useEffect(() => {
     if (!isWakeWordAvailable()) return;
-    if (!underway || (!wakeWord && !headset)) {
-      disarmWakeWord(trip.id);
-      return;
-    }
-    let cancelled = false;
-    // The service needs the microphone permission before Android lets it start.
-    void hasVoicePermission().then((granted) => {
-      if (cancelled || !granted) return;
-      armWakeWord({
-        tripId: trip.id,
-        listen: wakeWord,
-        headset,
-        onCommand: () => void handleWake(latestTrip.current),
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [trip.id, underway, wakeWord, headset]);
+    if (underway) followTrip(trip.id, () => void handleWake(latestTrip.current));
+    else leaveTrip(trip.id);
+  }, [trip.id, underway]);
 
   useEffect(() => {
     if (!isWakeWordAvailable() || !underway || wakeWord || offered || phase !== 'idle') return;

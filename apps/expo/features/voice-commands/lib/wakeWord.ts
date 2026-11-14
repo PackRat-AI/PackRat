@@ -1,6 +1,9 @@
+import { observe } from '@legendapp/state';
 import * as Sentry from '@sentry/react-native';
 import { WakeWord } from 'expo-app/modules/wake-word';
+import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
 import i18next from 'i18next';
+import { voiceSettingsStore } from '../store/voiceSettings';
 
 /**
  * "Hey PackRat" and the headset's long press while a trip is underway. The native service owns
@@ -9,6 +12,9 @@ import i18next from 'i18next';
  */
 let armed: { tripId: string; listen: boolean } | null = null;
 let onStart: (() => void) | null = null;
+/** The trip underway, while the trip page has it open or left it in the background. */
+let followed: { tripId: string; onCommand: () => void } | null = null;
+let settingsObserved = false;
 /** The native events are subscribed once, for the life of the app. */
 let subscribed = false;
 
@@ -17,10 +23,48 @@ export function isWakeWordAvailable(): boolean {
 }
 
 /**
+ * Keeps the service in step with the trip and the user's switches. A change in Settings takes
+ * effect straight away, without the trip page having to come back on screen.
+ */
+export function followTrip(tripId: string, onCommand: () => void): void {
+  followed = { tripId, onCommand };
+  if (!settingsObserved) {
+    settingsObserved = true;
+    observe(() => {
+      const listen = voiceSettingsStore.wakeWord.get();
+      const headset = voiceSettingsStore.headsetShortcut.get() !== false;
+      void applySettings(listen, headset);
+    });
+  } else {
+    void applySettings(
+      voiceSettingsStore.wakeWord.peek(),
+      voiceSettingsStore.headsetShortcut.peek() !== false,
+    );
+  }
+}
+
+/** The trip ended: switch hands-free off. */
+export function leaveTrip(tripId: string): void {
+  if (followed?.tripId !== tripId) return;
+  followed = null;
+  disarmWakeWord(tripId);
+}
+
+async function applySettings(listen: boolean, headset: boolean): Promise<void> {
+  const trip = followed;
+  if (!trip) return;
+  if (!listen && !headset) return disarmWakeWord(trip.tripId);
+  // The service needs the microphone permission before Android lets it start.
+  const { granted } = await ExpoSpeechRecognitionModule.getPermissionsAsync();
+  if (!granted || followed !== trip) return;
+  armWakeWord({ tripId: trip.tripId, listen, headset, onCommand: trip.onCommand });
+}
+
+/**
  * Starts the service for this trip: listening for "Hey PackRat" when `listen` is set, and starting
  * a command on the headset's long press when `headset` is. Must be called with the app on screen.
  */
-export function armWakeWord({
+function armWakeWord({
   tripId,
   listen,
   headset,
