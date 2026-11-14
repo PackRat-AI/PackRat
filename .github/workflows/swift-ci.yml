@@ -52,6 +52,18 @@ jobs:
           xcrun --show-sdk-version
           echo "XCODE_BUILD=$(xcodebuild -version | tail -1 | awk '{print $NF}')" >> "$GITHUB_ENV"
 
+      # A new device's first boot runs data migration that takes 3 to 9
+      # minutes. Start it now without waiting; the test step waits for it
+      # after the build, which takes longer.
+      - name: Start iOS simulator
+        if: matrix.scheme == 'PackRat-iOS'
+        run: |
+          # Pick the newest available iPhone runtime and boot a matching device.
+          DEVICE_ID=$(xcrun simctl create CI-Test "iPhone 17" \
+            "$(xcrun simctl list runtimes -j | jq -r '.runtimes[] | select(.identifier | contains("iOS-")) | .identifier' | sort -V | tail -1)")
+          xcrun simctl boot "$DEVICE_ID"
+          echo "IOS_SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -80,16 +92,6 @@ jobs:
           key: swift-build-${{ matrix.scheme }}-${{ env.XCODE_BUILD }}-${{ hashFiles('apps/swift/Package.resolved') }}
           restore-keys: |
             swift-build-${{ matrix.scheme }}-${{ env.XCODE_BUILD }}-
-
-      - name: Boot iOS simulator
-        if: matrix.scheme == 'PackRat-iOS'
-        run: |
-          # Pick the newest available iPhone runtime and boot a matching device.
-          DEVICE_ID=$(xcrun simctl create CI-Test "iPhone 17" \
-            "$(xcrun simctl list runtimes -j | jq -r '.runtimes[] | select(.identifier | contains("iOS-")) | .identifier' | sort -V | tail -1)")
-          xcrun simctl boot "$DEVICE_ID"
-          xcrun simctl bootstatus "$DEVICE_ID"
-          echo "IOS_SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
 
       - name: Run ${{ matrix.plan }} test plan
         timeout-minutes: 35
@@ -135,18 +137,28 @@ jobs:
           fi
           echo "Testing ${{ matrix.scheme }} on ${DESTINATION}"
 
-          xcodebuild test \
-            -scheme "${{ matrix.scheme }}" \
-            -destination "${DESTINATION}" \
-            -testPlan "${{ matrix.plan }}" \
-            -onlyUsePackageVersionsFromResolvedFile \
-            -derivedDataPath "$HOME/DerivedData" \
-            -clonedSourcePackagesDirPath "$HOME/SourcePackages" \
-            COMPILER_INDEX_STORE_ENABLE=NO \
-            -resultBundlePath "/tmp/${{ matrix.scheme }}-smoke.xcresult" \
-            -quiet \
-            "${CODE_SIGN_ARGS[@]}" \
+          XCODEBUILD_ARGS=(
+            -scheme "${{ matrix.scheme }}"
+            -destination "${DESTINATION}"
+            -testPlan "${{ matrix.plan }}"
+            -onlyUsePackageVersionsFromResolvedFile
+            -derivedDataPath "$HOME/DerivedData"
+            -clonedSourcePackagesDirPath "$HOME/SourcePackages"
+            -quiet
+            COMPILER_INDEX_STORE_ENABLE=NO
+            "${CODE_SIGN_ARGS[@]}"
+          )
+
+          xcodebuild build-for-testing "${XCODEBUILD_ARGS[@]}" \
             | tee "/tmp/${{ matrix.scheme }}-smoke.log"
+
+          if [ "${{ matrix.scheme }}" = "PackRat-iOS" ]; then
+            xcrun simctl bootstatus "${IOS_SIMULATOR_ID}"
+          fi
+
+          xcodebuild test-without-building "${XCODEBUILD_ARGS[@]}" \
+            -resultBundlePath "/tmp/${{ matrix.scheme }}-smoke.xcresult" \
+            | tee -a "/tmp/${{ matrix.scheme }}-smoke.log"
 
       # Only pushes and manual runs write the cache; PRs read it. One entry per
       # scheme, Xcode build and Package.resolved keeps it inside the repo quota.
