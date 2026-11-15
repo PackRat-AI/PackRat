@@ -123,7 +123,7 @@ final class OfflineMapStore {
         return await Task.detached(priority: .userInitiated) {
             let budget = OfflineTilePacks.budget(adding: rings, detail: detail, to: saved)
             let alone = OfflineTilePacks.packs(for: rings, detail: detail).count
-            return (budget.used + budget.added <= OfflineTilePacks.limit, alone <= OfflineTilePacks.limit)
+            return (budget.used + budget.added <= OfflineTilePacks.budget, alone <= OfflineTilePacks.budget)
         }.value
     }
 

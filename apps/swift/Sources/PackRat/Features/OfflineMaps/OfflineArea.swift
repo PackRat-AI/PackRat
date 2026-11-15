@@ -134,6 +134,10 @@ struct OfflineArea: Codable, Hashable, Identifiable, Defaults.Serializable {
 /// "too large" is a pack count, not a byte count.
 enum OfflineTilePacks {
     static let limit = 750
+    /// What we let through. Our count runs a few packs under the SDK's (a
+    /// Yosemite plus Vermont pair we put at 742 was refused), so keep a margin
+    /// rather than offer a download the SDK will turn down.
+    static let budget = 700
 
     private static func indexZooms(_ detail: OfflineDetailLevel) -> [(group: Int, zoom: Int)] {
         switch detail {

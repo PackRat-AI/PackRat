@@ -46,7 +46,7 @@ struct OfflineNamedRegion: Identifiable, Sendable {
     /// countries are left out rather than offered and then refused.
     static func saveable() async -> [OfflineNamedRegion] {
         await Task.detached(priority: .userInitiated) {
-            all.filter { OfflineTilePacks.packs(for: $0.rings, detail: .standard).count <= OfflineTilePacks.limit }
+            all.filter { OfflineTilePacks.packs(for: $0.rings, detail: .standard).count <= OfflineTilePacks.budget }
         }.value
     }
 }
