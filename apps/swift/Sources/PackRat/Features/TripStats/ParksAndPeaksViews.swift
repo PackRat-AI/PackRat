@@ -233,15 +233,8 @@ struct ParkDetailView: View {
         List {
             if let status {
                 Section {
-                    Map(initialPosition: .rect(Self.rect(for: status.park)), interactionModes: [.zoom, .pan]) {
-                        ForEach(Array(status.park.rings.enumerated()), id: \.offset) { _, ring in
-                            MapPolygon(coordinates: ring)
-                                .foregroundStyle(.green.opacity(0.18))
-                                .stroke(.green, lineWidth: 1.5)
-                        }
-                    }
-                    .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
-                    .frame(height: 220)
+                    parkMap(status.park)
+                        .frame(height: 220)
                     .listRowInsets(EdgeInsets())
                 }
 
@@ -285,6 +278,30 @@ struct ParkDetailView: View {
                 Task { await appState.tripGoalsVM.save(entry, context: modelContext) }
             }
         }
+    }
+
+    @ViewBuilder
+    private func parkMap(_ park: NationalPark) -> some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            MapboxOutlineMap(rings: park.rings, tint: .systemGreen)
+        } else {
+            parkMapKitMap(park)
+        }
+        #else
+        parkMapKitMap(park)
+        #endif
+    }
+
+    private func parkMapKitMap(_ park: NationalPark) -> some View {
+        Map(initialPosition: .rect(Self.rect(for: park)), interactionModes: [.zoom, .pan]) {
+            ForEach(Array(park.rings.enumerated()), id: \.offset) { _, ring in
+                MapPolygon(coordinates: ring)
+                    .foregroundStyle(.green.opacity(0.18))
+                    .stroke(.green, lineWidth: 1.5)
+            }
+        }
+        .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
     }
 
     private static func rect(for park: NationalPark) -> MKMapRect {
@@ -615,7 +632,7 @@ struct PeakPickerView: View {
     @State private var cameraSettled = false
     /// Where the map came to rest on open, standing in for the first search's area.
     @State private var settledRegion: MKCoordinateRegion?
-    @State private var detent: PresentationDetent = .height(PeakPickerView.peekHeight)
+    @State private var detent: PresentationDetent = .medium
     @State private var typing = false
     @State private var typedName = ""
     @State private var typedElevation = ""
@@ -676,41 +693,44 @@ struct PeakPickerView: View {
     }
 
     #if os(iOS)
-    /// Full-screen map, list in a sheet that rests at a peek, half or full height.
+    /// Full-screen map, list in a sheet that opens at half height and also
+    /// rests at a peek or full height.
     private func compactLayout(_ ranked: PeakSuggestions) -> some View {
-        // Inset the map's safe area by the panel's peek height so the camera
-        // frames the route in the part of the map left visible.
-        map(ranked, bottomInset: Self.peekHeight)
-            .ignoresSafeArea()
-            .overlay(alignment: .top) { searchAreaButton.padding(.top, 8) }
-            // Back sits on the map, like Maps' floating controls, rather than
-            // in the panel: leaving is about the screen, not the list.
-            .overlay(alignment: .topLeading) { backButton.padding(.leading, 16).padding(.top, 8) }
-            .sheet(isPresented: .constant(true)) {
-                NavigationStack {
-                    listPanel(ranked)
-                        .navigationTitle("Choose a Peak")
-                        .navigationBarTitleDisplayMode(.inline)
-                }
-                .presentationDetents([.height(Self.peekHeight), .medium, .large], selection: $detent)
-                .presentationDragIndicator(.visible)
-                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-                .presentationContentInteraction(.scrolls)
-                .interactiveDismissDisabled()
-                .alert("Enter a Peak", isPresented: $typing) {
-                    TextField("Name", text: $typedName)
-                    TextField("Elevation (\(unit.elevationSymbol))", text: $typedElevation)
-                        .keyboardType(.numberPad)
-                    Button("Cancel", role: .cancel) {}
-                    Button("Add") { addTyped() }
-                } message: {
-                    Text("For a peak that isn't on the map.")
-                }
+        // Inset the map's safe area by the panel's height so the camera
+        // frames the route, and shows peaks, in the part of the map left visible.
+        GeometryReader { geometry in
+            map(ranked, bottomInset: detent == .height(Self.peekHeight) ? Self.peekHeight : geometry.size.height / 2)
+        }
+        .ignoresSafeArea()
+        .overlay(alignment: .top) { searchAreaButton.padding(.top, 8) }
+        // Back sits on the map, like Maps' floating controls, rather than
+        // in the panel: leaving is about the screen, not the list.
+        .overlay(alignment: .topLeading) { backButton.padding(.leading, 16).padding(.top, 8) }
+        .sheet(isPresented: .constant(true)) {
+            NavigationStack {
+                listPanel(ranked)
+                    .navigationTitle("Choose a Peak")
+                    .navigationBarTitleDisplayMode(.inline)
             }
-            .onChange(of: selection) { _, id in
-                // A pin tapped while the panel is low lifts it so the row shows.
-                if id != nil, detent == .height(Self.peekHeight) { detent = .medium }
+            .presentationDetents([.height(Self.peekHeight), .medium, .large], selection: $detent)
+            .presentationDragIndicator(.visible)
+            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            .presentationContentInteraction(.scrolls)
+            .interactiveDismissDisabled()
+            .alert("Enter a Peak", isPresented: $typing) {
+                TextField("Name", text: $typedName)
+                TextField("Elevation (\(unit.elevationSymbol))", text: $typedElevation)
+                    .keyboardType(.numberPad)
+                Button("Cancel", role: .cancel) {}
+                Button("Add") { addTyped() }
+            } message: {
+                Text("For a peak that isn't on the map.")
             }
+        }
+        .onChange(of: selection) { _, id in
+            // A pin tapped while the panel is low lifts it so the row shows.
+            if id != nil, detent == .height(Self.peekHeight) { detent = .medium }
+        }
     }
 
     private var backButton: some View {
@@ -793,7 +813,44 @@ struct PeakPickerView: View {
         }
     }
 
+    @ViewBuilder
     private func map(_ ranked: PeakSuggestions, bottomInset: CGFloat = 0) -> some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            MapboxPeakMap(
+                region: region,
+                route: route,
+                peaks: ranked.all.map { item in
+                    MapboxPeakMap.Peak(
+                        id: item.peak.osmId,
+                        name: item.peak.name,
+                        coordinate: CLLocationCoordinate2D(latitude: item.peak.latitude, longitude: item.peak.longitude),
+                        isOnRoute: item.isOnRoute
+                    )
+                },
+                selection: $selection,
+                bottomInset: bottomInset,
+                onSettle: noteCameraSettled(on:)
+            )
+            .accessibilityIdentifier("peak_picker_map")
+        } else {
+            mapKitMap(ranked, bottomInset: bottomInset)
+        }
+        #else
+        mapKitMap(ranked, bottomInset: bottomInset)
+        #endif
+    }
+
+    /// The first settle is the map framing itself, not the user moving it.
+    private func noteCameraSettled(on visible: MKCoordinateRegion) {
+        if !cameraSettled {
+            cameraSettled = true
+            settledRegion = visible
+        }
+        visibleRegion = visible
+    }
+
+    private func mapKitMap(_ ranked: PeakSuggestions, bottomInset: CGFloat) -> some View {
         Map(position: $position, selection: $selection) {
             if route.count >= 2 {
                 MapPolyline(coordinates: route)
@@ -822,12 +879,7 @@ struct PeakPickerView: View {
         .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
         .safeAreaPadding(.bottom, bottomInset)
         .onMapCameraChange(frequency: .onEnd) { context in
-            // The first settle is the map framing itself, not the user moving it.
-            if !cameraSettled {
-                cameraSettled = true
-                settledRegion = context.region
-            }
-            visibleRegion = context.region
+            noteCameraSettled(on: context.region)
         }
         .accessibilityIdentifier("peak_picker_map")
     }
@@ -881,8 +933,43 @@ struct PeakPickerView: View {
                 Text("Peak data © OpenStreetMap contributors.")
             }
         }
+        // Our own field pinned under the panel's title: the system search
+        // field is glass, and glass on a glass panel over a map disappears.
+        #if os(iOS)
+        .safeAreaInset(edge: .top, spacing: 0) { filterField }
+        #else
         .searchable(text: $query, prompt: "Filter peaks")
+        #endif
     }
+
+    #if os(iOS)
+    private var filterField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField("Filter peaks", text: $query)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+            if !query.isEmpty {
+                Button {
+                    query = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear filter")
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 44)
+        // Half-strength, like the list's rows: enough to read as a field
+        // without outranking them.
+        .background(Color(.systemBackground).opacity(0.55), in: Capsule())
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .accessibilityIdentifier("peak_picker_filter")
+    }
+    #endif
 
     private func row(_ item: PeakSuggestions.Item) -> some View {
         let taken = excluded.contains(item.peak.summit.peakKey)

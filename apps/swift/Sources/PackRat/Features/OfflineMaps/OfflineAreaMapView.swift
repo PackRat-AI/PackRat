@@ -28,10 +28,12 @@ struct OfflineAreaMapView: View {
     var body: some View {
         Map(viewport: $viewport) {
             Puck2D(bearing: .heading)
-            PolylineAnnotation(lineCoordinates: area.bounds.ring)
-                .lineColor(UIColor.tintColor)
-                .lineWidth(2)
-                .lineOpacity(0.6)
+            PolylineAnnotationGroup(Array(area.rings.enumerated()), id: \.offset) { _, ring in
+                PolylineAnnotation(lineCoordinates: ring + ring.prefix(1))
+                    .lineColor(UIColor.tintColor)
+                    .lineWidth(2)
+                    .lineOpacity(0.6)
+            }
             PolylineAnnotationGroup(Array(trailLines.enumerated()), id: \.offset) { _, line in
                 routeLine(line)
             }
