@@ -208,7 +208,7 @@ class AppUITestCase: XCTestCase {
     }
 
     func visibleLoginFailureMessage() -> String {
-        let loginError = app.descendants(matching: .any)["login_error"]
+        let loginError = app.descendants(matching: .any)["login_error"].firstMatch
         if loginError.exists, !loginError.label.isEmpty {
             return "visible login error: \(loginError.label)"
         }
