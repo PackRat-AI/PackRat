@@ -1,10 +1,13 @@
 package world.packrat.wakeword
 
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import androidx.core.content.ContextCompat
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import expo.modules.kotlin.Promise
 
 class WakeWordModule : Module() {
   private val context
@@ -54,6 +57,14 @@ class WakeWordModule : Module() {
     }
 
     Function("isArmed") { WakeWordService.isArmed }
+
+    /**
+     * Resolves after [ms]. JavaScript timers stop while the screen is off, so a command running
+     * with the phone locked waits on this instead.
+     */
+    AsyncFunction("delay") { ms: Double, promise: Promise ->
+      Handler(Looper.getMainLooper()).postDelayed({ promise.resolve(null) }, ms.toLong())
+    }
 
     /** Whether a long press on the headset's button starts a PackRat command. */
     Function("setHeadsetActive") { active: Boolean ->

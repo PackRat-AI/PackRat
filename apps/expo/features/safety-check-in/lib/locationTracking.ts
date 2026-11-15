@@ -1,5 +1,6 @@
 import { when } from '@legendapp/state';
 import * as Sentry from '@sentry/react-native';
+import { delay } from 'expo-app/modules/wake-word';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import i18next from 'i18next';
@@ -154,7 +155,7 @@ export async function currentFix({
         requiredAccuracy: RECENT_ACCURACY_METERS,
       }).catch(() => null)
     : null;
-  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), FIX_TIMEOUT_MS));
+  const timeout = delay(FIX_TIMEOUT_MS).then(() => null);
   const location =
     recent ??
     (await Promise.race([
@@ -169,9 +170,7 @@ export async function currentFix({
   const fix = toFix(location);
   try {
     const lookup = Location.reverseGeocodeAsync(location.coords);
-    const giveUp = new Promise<[]>((resolve) =>
-      setTimeout(() => resolve([]), PLACE_NAME_TIMEOUT_MS),
-    );
+    const giveUp = delay(PLACE_NAME_TIMEOUT_MS).then((): [] => []);
     const [place] = await Promise.race([lookup, giveUp]);
     fix.placeName = place?.name ?? place?.district ?? place?.city ?? null;
   } catch {
