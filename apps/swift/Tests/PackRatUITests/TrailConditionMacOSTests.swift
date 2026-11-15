@@ -52,6 +52,11 @@ final class TrailConditionMacOSTests: AppUITestCase {
         let firstTrail = app.buttons.matching(
             NSPredicate(format: "identifier BEGINSWITH 'trail_picker_row_'")
         ).firstMatch
+        // The search can fail transiently; retry the way a user would.
+        let tryAgain = app.buttons["Try Again"]
+        for _ in 0..<3 where !firstTrail.waitForExistence(timeout: 15) && tryAgain.exists {
+            tryAgain.click()
+        }
         waitFor(firstTrail, timeout: 15, message: "Trail search must return a trail to report on")
         firstTrail.click()
 

@@ -139,7 +139,8 @@ class AppUITestCase: XCTestCase {
         // per account in a short window. Back-to-back tests trip it, so wait
         // out the window once instead of failing the test on a rate limit.
         let rateLimited = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS[c] 'too many requests'")
+            // macOS exposes a Text's string as its value, iOS as its label.
+            NSPredicate(format: "label CONTAINS[c] 'too many requests' OR value CONTAINS[c] 'too many requests'")
         ).firstMatch
         for backoff in [15.0, 30.0, 45.0] where !loggedIn && rateLimited.exists {
             Thread.sleep(forTimeInterval: backoff)
@@ -209,8 +210,10 @@ class AppUITestCase: XCTestCase {
 
     func visibleLoginFailureMessage() -> String {
         let loginError = app.descendants(matching: .any)["login_error"].firstMatch
-        if loginError.exists, !loginError.label.isEmpty {
-            return "visible login error: \(loginError.label)"
+        if loginError.exists {
+            let text = loginError.staticTexts.firstMatch
+            let message = text.exists ? (text.value as? String).flatMap { $0.isEmpty ? nil : $0 } ?? text.label : ""
+            return "visible login error: \(message.isEmpty ? loginError.label : message)"
         }
 
         let inlineError = app.staticTexts["inline_error"]
