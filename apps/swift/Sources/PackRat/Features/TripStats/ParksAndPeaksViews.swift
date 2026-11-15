@@ -829,9 +829,9 @@ struct PeakPickerView: View {
                     )
                 },
                 selection: $selection,
+                bottomInset: bottomInset,
                 onSettle: noteCameraSettled(on:)
             )
-            .safeAreaPadding(.bottom, bottomInset)
             .accessibilityIdentifier("peak_picker_map")
         } else {
             mapKitMap(ranked, bottomInset: bottomInset)

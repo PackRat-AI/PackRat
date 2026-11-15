@@ -85,6 +85,9 @@ struct MapboxPeakMap: View {
     let route: [CLLocationCoordinate2D]
     let peaks: [Peak]
     @Binding var selection: Int?
+    /// Height of the panel over the map's bottom: the map still draws under
+    /// it, but frames the route and keeps its logo above it.
+    var bottomInset: CGFloat = 0
     let onSettle: (MKCoordinateRegion) -> Void
 
     @State private var viewport: Viewport
@@ -94,11 +97,13 @@ struct MapboxPeakMap: View {
         route: [CLLocationCoordinate2D],
         peaks: [Peak],
         selection: Binding<Int?>,
+        bottomInset: CGFloat = 0,
         onSettle: @escaping (MKCoordinateRegion) -> Void
     ) {
         self.route = route
         self.peaks = peaks
         _selection = selection
+        self.bottomInset = bottomInset
         self.onSettle = onSettle
         let corners = route.count >= 2 ? route : region.corners
         _viewport = State(initialValue: .framing(boundingCorners(corners), padding: 40, maxZoom: 14))
@@ -141,6 +146,7 @@ struct MapboxPeakMap: View {
                 }
             }
             .mapStyle(.outdoors)
+            .additionalSafeAreaInsets(.bottom, bottomInset)
             .onMapTapGesture { _ in selection = nil }
             .onMapIdle { _ in
                 guard let map = proxy.map else { return }
