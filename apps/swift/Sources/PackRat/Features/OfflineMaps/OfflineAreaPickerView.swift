@@ -152,8 +152,11 @@ struct OfflineAreaPickerView: View {
         .navigationTitle("Save Map Area")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") { dismiss() }
+            // Pushed from the region list, Back already leaves.
+            if region == nil {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save", action: attemptSave)
