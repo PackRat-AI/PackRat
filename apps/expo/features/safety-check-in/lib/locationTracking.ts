@@ -4,6 +4,7 @@ import { delay } from 'expo-app/modules/wake-word';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import i18next from 'i18next';
+import { AppState } from 'react-native';
 import { addTrackPoints, safetyStore, safetySyncState } from '../store/safetyCheckIn';
 import type { SafetyLocationFix } from '../types';
 import { hasTrackingCheckIn } from '../utils/safetyQueue';
@@ -142,13 +143,23 @@ const PLACE_NAME_TIMEOUT_MS = 2_500;
  * can't offline; the coordinates are what matter). `acceptRecentMs` lets a quick answer reuse a
  * recent accurate fix rather than wait on the GPS.
  */
+/**
+ * Asks only when it must and only with the app on screen. Android's prompt is a screen of its own,
+ * which it won't open for a command given with the phone locked, so asking then never returns.
+ */
+export async function hasLocationPermission(): Promise<boolean> {
+  const current = await Location.getForegroundPermissionsAsync();
+  if (current.granted) return true;
+  if (!current.canAskAgain || AppState.currentState !== 'active') return false;
+  return (await Location.requestForegroundPermissionsAsync()).granted;
+}
+
 export async function currentFix({
   acceptRecentMs,
 }: {
   acceptRecentMs?: number;
 } = {}): Promise<SafetyLocationFix> {
-  const permission = await Location.requestForegroundPermissionsAsync();
-  if (!permission.granted) throw new LocatorError('denied');
+  if (!(await hasLocationPermission())) throw new LocatorError('denied');
   const recent = acceptRecentMs
     ? await Location.getLastKnownPositionAsync({
         maxAge: acceptRecentMs,

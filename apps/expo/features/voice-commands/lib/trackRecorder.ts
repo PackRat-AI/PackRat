@@ -1,6 +1,7 @@
 import { observable, syncState, when } from '@legendapp/state';
 import { syncObservable } from '@legendapp/state/sync';
 import * as Sentry from '@sentry/react-native';
+import { hasLocationPermission } from 'expo-app/features/safety-check-in/lib/locationTracking';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
@@ -90,8 +91,7 @@ export async function startRecording({
 }): Promise<void> {
   await when(trackSyncState.isPersistLoaded);
   if (trackStore.track.peek()) return;
-  const permission = await Location.requestForegroundPermissionsAsync();
-  if (!permission.granted) throw new TrackStartError();
+  if (!(await hasLocationPermission())) throw new TrackStartError();
   trackStore.track.set(newTrack({ tripId, tripName }));
   breadcrumb({ message: 'Tracking started', tripId });
   await askToShowNotification();
