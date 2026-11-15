@@ -142,10 +142,14 @@ final class TripMacOSTests: AppUITestCase {
     /// rows on screen, so a new trip can sit below the fold. Filtering by its
     /// unique name brings it into view.
     private func tripRow(named name: String) -> XCUIElement {
+        // The search field can't take focus while the new-trip sheet is
+        // still closing, so wait it out before clicking in.
+        waitForAbsence(app.textFields["trip_name"], timeout: 10)
         let search = app.searchFields.firstMatch
         if search.waitForExistence(timeout: 5) {
             search.click()
-            search.clearAndTypeText(name)
+            search.typeKey("a", modifierFlags: .command)
+            app.typeText(name)
         }
         return app.staticTexts[name].firstMatch
     }

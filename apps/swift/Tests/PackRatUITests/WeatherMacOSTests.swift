@@ -58,7 +58,9 @@ final class WeatherMacOSTests: AppUITestCase {
         ).firstMatch
         waitFor(saveButton, timeout: 10)
         saveButton.click()
-        searchField.clearAndTypeText("")
+        // The saved list sits behind the search results until search closes.
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
 
         XCTAssertTrue(
             app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'weather_saved_location_'")).firstMatch
@@ -107,7 +109,7 @@ final class WeatherMacOSTests: AppUITestCase {
         )
     }
 
-    func testWeatherAlertsButtonAppearsWithForecast() {
+    func testActiveAlertsAppearWithForecast() {
         goToSidebar("Weather")
 
         let searchField = app.searchFields["Search for a city or place"]
@@ -119,12 +121,10 @@ final class WeatherMacOSTests: AppUITestCase {
         waitFor(firstResult, timeout: 10)
         firstResult.click()
 
-        let alertsButton = app.buttons.matching(
-            NSPredicate(format: "label == 'Alerts' OR label CONTAINS 'bell'")
-        ).firstMatch
+        // Alerts sit inline on the forecast; the fixture forecast carries one.
         XCTAssertTrue(
-            alertsButton.waitForExistence(timeout: 20),
-            "Alerts button must appear in toolbar after forecast loads"
+            app.descendants(matching: .any)["forecast_alert_section"].waitForExistence(timeout: 20),
+            "Active alerts must appear on the forecast"
         )
     }
 

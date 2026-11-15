@@ -57,8 +57,12 @@ final class TrailConditionMacOSTests: AppUITestCase {
 
         let chooseTrail = app.buttons["trail_report_choose_trail"]
         waitFor(chooseTrail)
-        let trailName = chooseTrail.staticTexts.firstMatch.label
-        XCTAssertFalse(trailName.isEmpty || trailName == "Choose Trail", "Picking a trail must fill the trail field")
+        let trailName = chooseTrail.label.components(separatedBy: ",").first?
+            .trimmingCharacters(in: .whitespaces) ?? ""
+        XCTAssertFalse(
+            trailName.isEmpty || trailName.hasPrefix("Choose Trail"),
+            "Picking a trail must fill the trail field"
+        )
         createdReportTrail = trailName
 
         let submit = app.buttons["trail_report_submit"]

@@ -138,8 +138,11 @@ class AppUITestCase: XCTestCase {
         // Every suite signs in fresh, and the API allows only a few sign-ins
         // per account in a short window. Back-to-back tests trip it, so wait
         // out the window once instead of failing the test on a rate limit.
-        if !loggedIn, visibleLoginFailureMessage().localizedCaseInsensitiveContains("too many requests") {
-            Thread.sleep(forTimeInterval: 12)
+        let rateLimited = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS[c] 'too many requests'")
+        ).firstMatch
+        for backoff in [15.0, 30.0, 45.0] where !loggedIn && rateLimited.exists {
+            Thread.sleep(forTimeInterval: backoff)
             submitLoginForm()
             loggedIn = waitForLoggedIn(timeout: 20)
         }
@@ -205,7 +208,7 @@ class AppUITestCase: XCTestCase {
     }
 
     func visibleLoginFailureMessage() -> String {
-        let loginError = app.staticTexts["login_error"]
+        let loginError = app.descendants(matching: .any)["login_error"]
         if loginError.exists, !loginError.label.isEmpty {
             return "visible login error: \(loginError.label)"
         }
