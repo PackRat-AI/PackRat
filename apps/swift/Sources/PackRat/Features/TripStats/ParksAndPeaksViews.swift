@@ -933,7 +933,13 @@ struct PeakPickerView: View {
                 Text("Peak data © OpenStreetMap contributors.")
             }
         }
+        // Under the panel's title, not floating over the rows: a floating
+        // field over a translucent panel on a map all but disappears.
+        #if os(iOS)
+        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Filter peaks")
+        #else
         .searchable(text: $query, prompt: "Filter peaks")
+        #endif
     }
 
     private func row(_ item: PeakSuggestions.Item) -> some View {
