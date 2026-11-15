@@ -136,13 +136,11 @@ class AppUITestCase: XCTestCase {
 
         var loggedIn = waitForLoggedIn(timeout: 20)
         // Every suite signs in fresh, and the API allows only a few sign-ins
-        // per account in a short window. Back-to-back tests trip it, so wait
-        // out the window once instead of failing the test on a rate limit.
-        let rateLimited = app.staticTexts.matching(
-            // macOS exposes a Text's string as its value, iOS as its label.
-            NSPredicate(format: "label CONTAINS[c] 'too many requests' OR value CONTAINS[c] 'too many requests'")
-        ).firstMatch
-        for backoff in [15.0, 30.0, 45.0] where !loggedIn && rateLimited.exists {
+        // per account in a short window; the CI runner's network also drops
+        // out briefly. Either shows a sign-in error, so back off and retry
+        // instead of failing the test on a transient failure.
+        let loginError = app.descendants(matching: .any)["login_error"].firstMatch
+        for backoff in [15.0, 30.0, 45.0] where !loggedIn && loginError.exists {
             Thread.sleep(forTimeInterval: backoff)
             submitLoginForm()
             loggedIn = waitForLoggedIn(timeout: 20)
