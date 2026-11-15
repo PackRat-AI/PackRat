@@ -20,7 +20,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { safeJsonStringify } from '@packrat/utils';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const outputPath = resolve(__dir, '../Resources/NationalForests.json');
@@ -109,7 +109,9 @@ interface State {
 
 function loadStates(): State[] {
   type Row = { code: string; country?: string; rings: string[] };
-  const places: { countries: Row[]; regions: Row[] } = JSON.parse(readFileSync(placesPath, 'utf8'));
+  const places = safeJsonParse<{ countries: Row[]; regions: Row[] }>(
+    readFileSync(placesPath, 'utf8'),
+  );
   return [
     ...places.regions.filter((region) => region.country === 'US'),
     ...places.countries.filter((country) => TERRITORIES.has(country.code)),
