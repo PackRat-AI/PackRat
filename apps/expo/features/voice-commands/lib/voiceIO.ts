@@ -192,16 +192,12 @@ export function cancelListening(): void {
 
 // ── Tones ─────────────────────────────────────────────────────────────────
 
-export type VoiceTone = 'start' | 'end' | 'working';
+export type VoiceTone = 'start' | 'end';
 
-/**
- * Android's stock record start and stop sounds (AOSP, Apache 2.0), the ones users already know,
- * and a quieter blip of our own that repeats while a command runs.
- */
+/** Android's stock record start and stop sounds (AOSP, Apache 2.0), the ones users already know. */
 const TONE_SOURCES = Object.freeze({
   start: require('expo-app/assets/sounds/voice-start.wav'),
   end: require('expo-app/assets/sounds/voice-end.wav'),
-  working: require('expo-app/assets/sounds/voice-working.wav'),
 } as const);
 
 /** The start tone's length: the microphone opens once it's over, so it isn't heard. */
@@ -247,7 +243,6 @@ export async function playTone(tone: VoiceTone): Promise<void> {
 export function warmUpVoice(): void {
   tonePlayer('start');
   tonePlayer('end');
-  tonePlayer('working');
   void bestVoice();
   void onDeviceOptions();
 }

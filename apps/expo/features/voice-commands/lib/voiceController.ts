@@ -115,36 +115,6 @@ export const voiceStore = observable<{
 /** Bumped by every new listen or dismiss, so a superseded command stops quietly. */
 let generation = 0;
 
-/**
- * Puts the bar in its working state and, while it stays there, repeats a soft tone so a user with
- * the phone locked hears that the command is still running.
- */
-function showWorking(status: string) {
-  voiceStore.assign({ phase: 'working', status });
-  void playWorkingCue(generation);
-}
-
-/** Quick answers come before the first tone; slow ones, like a GPS fix, get one every so often. */
-const WORKING_CUE_AFTER_MS = 1_200;
-const WORKING_CUE_EVERY_MS = 1_800;
-
-/** The command whose tone is repeating, so a second working stretch doesn't start another. */
-let workingCueRun: number | null = null;
-
-/** Uses the native delay: JS timers stop while the phone is locked. */
-async function playWorkingCue(run: number): Promise<void> {
-  if (workingCueRun === run) return;
-  workingCueRun = run;
-  const stillWorking = () =>
-    workingCueRun === run && run === generation && voiceStore.phase.peek() === 'working';
-  await delay(WORKING_CUE_AFTER_MS);
-  while (stillWorking()) {
-    await playTone('working');
-    await delay(WORKING_CUE_EVERY_MS);
-  }
-  if (workingCueRun === run) workingCueRun = null;
-}
-
 function goIdle() {
   voiceStore.assign({ phase: 'idle', status: '' });
   resumeWakeWord();
@@ -218,7 +188,7 @@ export async function handleWake(trip: Trip): Promise<void> {
 export function endListening(): void {
   if (voiceStore.phase.peek() !== 'listening') return;
   void playTone('end');
-  showWorking(t('voiceCommands.status.working'));
+  voiceStore.assign({ phase: 'working', status: t('voiceCommands.status.working') });
   stopListening();
 }
 
@@ -262,7 +232,8 @@ async function handleTranscript({
     level: 'info',
     data: { command: command.kind, tripId: trip.id },
   });
-  showWorking(workingStatus(command));
+  voiceStore.assign({ phase: 'working', status: workingStatus(command) });
+  if (LOCATING_COMMANDS.has(command.kind)) void sayWhenSlow(run);
   try {
     await perform({ command, trip, run });
   } catch (error) {
@@ -290,6 +261,19 @@ const LOCATING_COMMANDS: ReadonlySet<VoiceCommand['kind']> = new Set([
   'note',
   'navigate',
 ]);
+
+/** An answer within this long needs no word that PackRat is on it. */
+const SLOW_ANSWER_MS = 1_200;
+
+/**
+ * With the phone locked the bar can't be seen, so a slow fix says once what PackRat is doing.
+ * The native delay keeps time while locked, which JS timers don't.
+ */
+async function sayWhenSlow(run: number): Promise<void> {
+  await delay(SLOW_ANSWER_MS);
+  if (run !== generation || voiceStore.phase.peek() !== 'working') return;
+  if (voiceSettingsStore.spokenAnswers.peek()) await say(t('voiceCommands.status.locating'));
+}
 
 function isMetric(): boolean {
   return (preferencesStore.speedUnit.peek() ?? getDefaultSpeedUnit()) === 'kmh';
@@ -631,8 +615,12 @@ async function confirm({ question, run }: { question: string; run: number }): Pr
   }
   if (run !== generation) return false;
   const yes = parseVoiceConfirmation(reply) === 'yes';
-  voiceStore.assign({ heard: reply, answer: '' });
-  showWorking(t('voiceCommands.status.working'));
+  voiceStore.assign({
+    phase: 'working',
+    heard: reply,
+    status: t('voiceCommands.status.working'),
+    answer: '',
+  });
   return yes;
 }
 
