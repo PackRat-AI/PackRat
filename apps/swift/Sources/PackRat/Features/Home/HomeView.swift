@@ -10,6 +10,7 @@ struct HomeView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showingSeasonSuggestions = false
     @State private var showingShoppingList = false
+    @State private var showingOfflineMaps = false
     @State private var homeSearchText = ""
 
     private var greeting: String {
@@ -103,7 +104,11 @@ struct HomeView: View {
                 ContentUnavailableView.search(text: homeSearchText)
             }
         }
-        .homeSheets(showingSeasonSuggestions: $showingSeasonSuggestions, showingShoppingList: $showingShoppingList)
+        .homeSheets(
+            showingSeasonSuggestions: $showingSeasonSuggestions,
+            showingShoppingList: $showingShoppingList,
+            showingOfflineMaps: $showingOfflineMaps
+        )
     }
 
     private var regularBody: some View {
@@ -129,7 +134,11 @@ struct HomeView: View {
         }
         .navigationTitle("Home")
         .searchable(text: $homeSearchText, prompt: "Search PackRat")
-        .homeSheets(showingSeasonSuggestions: $showingSeasonSuggestions, showingShoppingList: $showingShoppingList)
+        .homeSheets(
+            showingSeasonSuggestions: $showingSeasonSuggestions,
+            showingShoppingList: $showingShoppingList,
+            showingOfflineMaps: $showingOfflineMaps
+        )
     }
 
     /// Trip Stats teaser, shown once the feature is on and a trip has
@@ -409,6 +418,14 @@ struct HomeView: View {
             actions.append(HomeAction(title: "Trail Conditions", subtitle: "Community reports", symbol: "figure.hiking", color: .red) { appState.navItem = .trailConditions })
         }
 
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            actions.append(HomeAction(title: "Offline Maps", subtitle: offlineMapsSubtitle, symbol: "arrow.down.circle.fill", color: Color(red: 0.2, green: 0.5, blue: 0.3)) {
+                showingOfflineMaps = true
+            })
+        }
+        #endif
+
         if FeatureFlagStore.shared.isEnabled("enableShoppingList") {
             actions.append(HomeAction(title: "Shopping List", subtitle: "Gear wishlist", symbol: "cart.fill", color: .pink) { showingShoppingList = true })
         }
@@ -430,6 +447,13 @@ struct HomeView: View {
         if upcoming.isEmpty { return "No upcoming trips" }
         return "\(upcoming.count) upcoming"
     }
+
+    #if os(iOS)
+    private var offlineMapsSubtitle: String {
+        let count = OfflineMapStore.shared.areas.count
+        return count == 0 ? "Maps for no signal" : "\(count) saved map\(count == 1 ? "" : "s")"
+    }
+    #endif
 
     private var inventorySubtitle: String {
         let count = appState.packsVM.packs.flatMap { $0.activeItems }.count
@@ -596,7 +620,8 @@ private extension View {
 
     func homeSheets(
         showingSeasonSuggestions: Binding<Bool>,
-        showingShoppingList: Binding<Bool>
+        showingShoppingList: Binding<Bool>,
+        showingOfflineMaps: Binding<Bool>
     ) -> some View {
         self
             .sheet(isPresented: showingSeasonSuggestions) {
@@ -607,5 +632,17 @@ private extension View {
                     ShoppingListView()
                 }
             }
+            #if os(iOS)
+            .sheet(isPresented: showingOfflineMaps) {
+                NavigationStack {
+                    OfflineMapsView()
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") { showingOfflineMaps.wrappedValue = false }
+                            }
+                        }
+                }
+            }
+            #endif
     }
 }
