@@ -84,6 +84,16 @@ struct OfflineMapsTests {
         #expect(budget.added == 0)
     }
 
+    #if os(iOS)
+    @Test func nationalForestsAreListedAndMostFit() async {
+        let forests = OfflineNamedRegion.all.filter { $0.kind == .forest }
+        #expect(forests.count >= 140)
+        #expect(forests.allSatisfy { !$0.rings.isEmpty && !$0.subtitle.isEmpty })
+        let saveable = await OfflineNamedRegion.saveable().filter { $0.kind == .forest }
+        #expect(saveable.count > forests.count / 2)
+    }
+    #endif
+
     @Test func namedRegionCoversItsOutline() {
         let outline = [[
             OfflinePoint(latitude: 1, longitude: 1),
