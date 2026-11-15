@@ -66,10 +66,22 @@ final class ChatMacOSTests: AppUITestCase {
         let exp = XCTNSPredicateExpectation(predicate: inputCleared, object: nil)
         _ = XCTWaiter.wait(for: [exp], timeout: 8)
 
-        XCTAssertTrue(
-            waitForElement(identifier: "chat_message_assistant", containing: "three essential items", timeout: 15),
-            "Assistant response must stream back deterministic E2E content"
-        )
+        // Only the local E2E API stubs the model; a deployed API answers with
+        // a real reply, so there the test can only ask that one streams back.
+        let apiBaseURL = ProcessInfo.processInfo.environment["E2E_API_BASE_URL"]
+            ?? (Bundle(for: AppUITestCase.self).object(forInfoDictionaryKey: "E2E_API_BASE_URL") as? String)
+            ?? ""
+        if apiBaseURL.isEmpty {
+            XCTAssertTrue(
+                waitForElement(identifier: "chat_message_assistant", containing: "three essential items", timeout: 15),
+                "Assistant response must stream back deterministic E2E content"
+            )
+        } else {
+            let reply = app.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier == 'chat_message_assistant' AND label != ''"))
+                .firstMatch
+            XCTAssertTrue(reply.waitForExistence(timeout: 30), "Assistant response must stream back")
+        }
     }
 
     func testClearChatHistoryButton() {

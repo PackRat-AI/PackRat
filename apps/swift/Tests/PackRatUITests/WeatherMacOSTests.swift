@@ -52,9 +52,13 @@ final class WeatherMacOSTests: AppUITestCase {
         searchField.click()
         searchField.typeText(testCity)
 
-        let firstResult = weatherSearchResults().firstMatch
-        waitFor(firstResult, timeout: 10)
-        firstResult.click()
+        // Opening a result only previews it; saving is the row's own button.
+        let saveButton = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'weather_search_save_' AND label CONTAINS '\(testCityFull)'")
+        ).firstMatch
+        waitFor(saveButton, timeout: 10)
+        saveButton.click()
+        searchField.clearAndTypeText("")
 
         XCTAssertTrue(
             app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'weather_saved_location_'")).firstMatch

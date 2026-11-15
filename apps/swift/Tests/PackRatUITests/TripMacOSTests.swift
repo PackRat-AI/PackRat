@@ -52,7 +52,7 @@ final class TripMacOSTests: AppUITestCase {
         app.buttons["Create"].click()
 
         XCTAssertTrue(
-            app.staticTexts[tripName].waitForExistence(timeout: 15),
+            tripRow(named: tripName).waitForExistence(timeout: 15),
             "Created trip '\(tripName)' must appear in list"
         )
     }
@@ -78,7 +78,8 @@ final class TripMacOSTests: AppUITestCase {
         app.buttons["Create"].click()
 
         XCTAssertTrue(
-            app.staticTexts[tripName].waitForExistence(timeout: 15)
+            tripRow(named: tripName).waitForExistence(timeout: 15),
+            "Created trip '\(tripName)' must appear in list"
         )
     }
 
@@ -134,12 +135,24 @@ final class TripMacOSTests: AppUITestCase {
         nameField.click()
         nameField.typeText(name)
         app.buttons["Create"].click()
-        waitFor(app.staticTexts[name], timeout: 15)
+        waitFor(tripRow(named: name), timeout: 15)
+    }
+
+    /// The shared E2E account carries many trips and the list only renders
+    /// rows on screen, so a new trip can sit below the fold. Filtering by its
+    /// unique name brings it into view.
+    private func tripRow(named name: String) -> XCUIElement {
+        let search = app.searchFields.firstMatch
+        if search.waitForExistence(timeout: 5) {
+            search.click()
+            search.clearAndTypeText(name)
+        }
+        return app.staticTexts[name].firstMatch
     }
 
     private func cleanupTrip(named name: String) {
         goToSidebar("Trips")
-        let cell = app.staticTexts[name]
+        let cell = tripRow(named: name)
         guard cell.waitForExistence(timeout: 5) else { return }
         cell.rightClick()
         let deleteButton = rowDeleteMenuItem()

@@ -134,7 +134,15 @@ class AppUITestCase: XCTestCase {
 
         submitLoginForm()
 
-        let loggedIn = waitForLoggedIn(timeout: 20)
+        var loggedIn = waitForLoggedIn(timeout: 20)
+        // Every suite signs in fresh, and the API allows only a few sign-ins
+        // per account in a short window. Back-to-back tests trip it, so wait
+        // out the window once instead of failing the test on a rate limit.
+        if !loggedIn, visibleLoginFailureMessage().localizedCaseInsensitiveContains("too many requests") {
+            Thread.sleep(forTimeInterval: 12)
+            submitLoginForm()
+            loggedIn = waitForLoggedIn(timeout: 20)
+        }
         XCTAssertTrue(
             loggedIn,
             "Logged-in landmark must appear after login — \(visibleLoginFailureMessage())"

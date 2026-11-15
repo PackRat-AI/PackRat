@@ -30,7 +30,7 @@ final class TrailConditionMacOSTests: AppUITestCase {
         submitButton.click()
 
         XCTAssertTrue(
-            app.textFields["trail_report_name"].waitForExistence(timeout: 5),
+            app.buttons["trail_report_choose_trail"].waitForExistence(timeout: 5),
             "Submit Report form must appear with trail field"
         )
         XCTAssertTrue(app.buttons["Cancel"].exists)
@@ -38,53 +38,38 @@ final class TrailConditionMacOSTests: AppUITestCase {
     }
 
     func testSubmitTrailReport() {
-        let trailName = uniqueName("E2E Trail")
-        createdReportTrail = trailName
-
         goToSidebar("Trail Conditions")
         waitFor(app.buttons["Submit Report"].firstMatch).click()
 
-        let nameField = app.textFields["trail_report_name"]
-        waitFor(nameField)
-        nameField.click()
-        nameField.typeText(trailName)
+        // The trail comes from the picker, not free text, so the report is
+        // filed against whichever real trail the search returns first.
+        waitFor(app.buttons["trail_report_choose_trail"]).click()
+        let pickerSearch = app.searchFields["Search trails"]
+        waitFor(pickerSearch)
+        pickerSearch.click()
+        pickerSearch.typeText("Trail")
 
-        let regionField = app.textFields["trail_report_region"]
-        if regionField.waitForExistence(timeout: 3) {
-            regionField.click()
-            regionField.typeText("Test Region")
-        }
-
-        // Pick a non-null surface — the API rejects null surface with a 400.
-        let surfacePicker = app.popUpButtons.matching(
-            NSPredicate(format: "label CONTAINS 'Surface' OR label CONTAINS 'specified'")
+        let firstTrail = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'trail_picker_row_'")
         ).firstMatch
-        if surfacePicker.waitForExistence(timeout: 3) {
-            surfacePicker.click()
-            let dirt = app.menuItems["Dirt"].firstMatch
-            if dirt.waitForExistence(timeout: 3) { dirt.click() }
-        } else {
-            // Fall back to button-style picker if popUpButton isn't surfaced.
-            let pickerButton = app.buttons.matching(
-                NSPredicate(format: "label CONTAINS 'Surface' OR label CONTAINS 'specified'")
-            ).firstMatch
-            if pickerButton.waitForExistence(timeout: 3) {
-                pickerButton.click()
-                let dirt = app.buttons["Dirt"].firstMatch
-                if dirt.waitForExistence(timeout: 3) { dirt.click() }
-            }
-        }
+        waitFor(firstTrail, timeout: 15, message: "Trail search must return a trail to report on")
+        firstTrail.click()
 
-        app.buttons["Submit"].click()
+        let chooseTrail = app.buttons["trail_report_choose_trail"]
+        waitFor(chooseTrail)
+        let trailName = chooseTrail.staticTexts.firstMatch.label
+        XCTAssertFalse(trailName.isEmpty || trailName == "Choose Trail", "Picking a trail must fill the trail field")
+        createdReportTrail = trailName
 
-        // Wait for the form sheet to dismiss.
-        waitFor(app.buttons["Submit Report"].firstMatch, timeout: 20)
+        let submit = app.buttons["trail_report_submit"]
+        XCTAssertTrue(submit.isEnabled, "Submit must enable once a trail is chosen")
+        submit.click()
 
-        let target = app.staticTexts[trailName]
-        let row = app.descendants(matching: .any)["trail_report_row_\(trailName)"]
+        waitForAbsence(submit, timeout: 20)
+        let row = app.descendants(matching: .any)["trail_report_row_\(trailName)"].firstMatch
         XCTAssertTrue(
-            target.waitForExistence(timeout: 10) || row.waitForExistence(timeout: 1),
-            "Submitted report '\(trailName)' must appear in list"
+            row.waitForExistence(timeout: 10),
+            "Submitted report for '\(trailName)' must appear in list"
         )
     }
 
