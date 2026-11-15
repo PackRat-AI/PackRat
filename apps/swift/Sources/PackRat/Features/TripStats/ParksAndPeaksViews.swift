@@ -933,14 +933,42 @@ struct PeakPickerView: View {
                 Text("Peak data © OpenStreetMap contributors.")
             }
         }
-        // Under the panel's title, not floating over the rows: a floating
-        // field over a translucent panel on a map all but disappears.
+        // A solid field pinned under the panel's title: the system search
+        // field is glass, and glass on a glass panel over a map disappears.
         #if os(iOS)
-        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Filter peaks")
+        .safeAreaInset(edge: .top, spacing: 0) { filterField }
         #else
         .searchable(text: $query, prompt: "Filter peaks")
         #endif
     }
+
+    #if os(iOS)
+    private var filterField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField("Filter peaks", text: $query)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+            if !query.isEmpty {
+                Button {
+                    query = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear filter")
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 44)
+        .background(Color(.systemBackground), in: Capsule())
+        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .accessibilityIdentifier("peak_picker_filter")
+    }
+    #endif
 
     private func row(_ item: PeakSuggestions.Item) -> some View {
         let taken = excluded.contains(item.peak.summit.peakKey)
