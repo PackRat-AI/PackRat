@@ -632,7 +632,7 @@ struct PeakPickerView: View {
     @State private var cameraSettled = false
     /// Where the map came to rest on open, standing in for the first search's area.
     @State private var settledRegion: MKCoordinateRegion?
-    @State private var detent: PresentationDetent = .height(PeakPickerView.peekHeight)
+    @State private var detent: PresentationDetent = .medium
     @State private var typing = false
     @State private var typedName = ""
     @State private var typedElevation = ""
@@ -693,41 +693,44 @@ struct PeakPickerView: View {
     }
 
     #if os(iOS)
-    /// Full-screen map, list in a sheet that rests at a peek, half or full height.
+    /// Full-screen map, list in a sheet that opens at half height and also
+    /// rests at a peek or full height.
     private func compactLayout(_ ranked: PeakSuggestions) -> some View {
-        // Inset the map's safe area by the panel's peek height so the camera
-        // frames the route in the part of the map left visible.
-        map(ranked, bottomInset: Self.peekHeight)
-            .ignoresSafeArea()
-            .overlay(alignment: .top) { searchAreaButton.padding(.top, 8) }
-            // Back sits on the map, like Maps' floating controls, rather than
-            // in the panel: leaving is about the screen, not the list.
-            .overlay(alignment: .topLeading) { backButton.padding(.leading, 16).padding(.top, 8) }
-            .sheet(isPresented: .constant(true)) {
-                NavigationStack {
-                    listPanel(ranked)
-                        .navigationTitle("Choose a Peak")
-                        .navigationBarTitleDisplayMode(.inline)
-                }
-                .presentationDetents([.height(Self.peekHeight), .medium, .large], selection: $detent)
-                .presentationDragIndicator(.visible)
-                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-                .presentationContentInteraction(.scrolls)
-                .interactiveDismissDisabled()
-                .alert("Enter a Peak", isPresented: $typing) {
-                    TextField("Name", text: $typedName)
-                    TextField("Elevation (\(unit.elevationSymbol))", text: $typedElevation)
-                        .keyboardType(.numberPad)
-                    Button("Cancel", role: .cancel) {}
-                    Button("Add") { addTyped() }
-                } message: {
-                    Text("For a peak that isn't on the map.")
-                }
+        // Inset the map's safe area by the panel's opening height so the
+        // camera frames the route in the part of the map left visible.
+        GeometryReader { geometry in
+            map(ranked, bottomInset: geometry.size.height / 2)
+        }
+        .ignoresSafeArea()
+        .overlay(alignment: .top) { searchAreaButton.padding(.top, 8) }
+        // Back sits on the map, like Maps' floating controls, rather than
+        // in the panel: leaving is about the screen, not the list.
+        .overlay(alignment: .topLeading) { backButton.padding(.leading, 16).padding(.top, 8) }
+        .sheet(isPresented: .constant(true)) {
+            NavigationStack {
+                listPanel(ranked)
+                    .navigationTitle("Choose a Peak")
+                    .navigationBarTitleDisplayMode(.inline)
             }
-            .onChange(of: selection) { _, id in
-                // A pin tapped while the panel is low lifts it so the row shows.
-                if id != nil, detent == .height(Self.peekHeight) { detent = .medium }
+            .presentationDetents([.height(Self.peekHeight), .medium, .large], selection: $detent)
+            .presentationDragIndicator(.visible)
+            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            .presentationContentInteraction(.scrolls)
+            .interactiveDismissDisabled()
+            .alert("Enter a Peak", isPresented: $typing) {
+                TextField("Name", text: $typedName)
+                TextField("Elevation (\(unit.elevationSymbol))", text: $typedElevation)
+                    .keyboardType(.numberPad)
+                Button("Cancel", role: .cancel) {}
+                Button("Add") { addTyped() }
+            } message: {
+                Text("For a peak that isn't on the map.")
             }
+        }
+        .onChange(of: selection) { _, id in
+            // A pin tapped while the panel is low lifts it so the row shows.
+            if id != nil, detent == .height(Self.peekHeight) { detent = .medium }
+        }
     }
 
     private var backButton: some View {

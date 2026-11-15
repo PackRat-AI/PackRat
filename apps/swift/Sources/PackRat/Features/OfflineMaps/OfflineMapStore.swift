@@ -72,24 +72,46 @@ final class OfflineMapStore {
     // MARK: - Estimate
 
     /// Bytes the area would take on disk at the given detail.
+    ///
+    /// Settles for a figure within 25% after two seconds, and gives up waiting
+    /// at eight with the best figure so far: an exact count over a state at
+    /// Trail detail can run for minutes, and the picker only says "About".
     func estimateSize(rings: [[CLLocationCoordinate2D]], detail: OfflineDetailLevel) async throws -> Int64 {
         guard let options = loadOptions(rings: rings, detail: detail, allowCellular: true, metadata: nil) else {
             throw DownloadError.failed
         }
+        let estimateOptions = TileRegionEstimateOptions(
+            errorMargin: 0.25,
+            preciseEstimationTimeout: 2,
+            timeout: 8,
+            extraOptions: nil
+        )
         let store = tileStore
-        return try await withCheckedThrowingContinuation { continuation in
-            store.estimateTileRegion(
-                forId: "estimate-\(UUID().uuidString)",
-                loadOptions: options,
-                progress: { _ in }
-            ) { result in
-                switch result {
-                case .success(let estimate):
-                    continuation.resume(returning: Int64(estimate.storageSize))
-                case .failure(let error):
-                    continuation.resume(throwing: Self.downloadError(from: error))
-                }
+        let partial = PartialEstimate()
+        let operation = CancelableBox()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                operation.set(store.estimateTileRegion(
+                    forId: "estimate-\(UUID().uuidString)",
+                    loadOptions: options,
+                    estimateOptions: estimateOptions,
+                    progress: { progress in partial.bytes = Int64(progress.partialResult.storageSize) }
+                ) { result in
+                    switch result {
+                    case .success(let estimate):
+                        continuation.resume(returning: Int64(estimate.storageSize))
+                    case .failure(let error):
+                        // A timeout still leaves a usable figure from the progress so far.
+                        if partial.bytes > 0 {
+                            continuation.resume(returning: partial.bytes)
+                        } else {
+                            continuation.resume(throwing: Self.downloadError(from: error))
+                        }
+                    }
+                })
             }
+        } onCancel: {
+            operation.cancel()
         }
     }
 
@@ -283,6 +305,39 @@ final class OfflineMapStore {
             acceptExpired: true,
             networkRestriction: allowCellular ? .none : .disallowExpensive
         )
+    }
+
+    /// The latest running total from an estimate, written on Mapbox's worker thread.
+    private final class PartialEstimate: @unchecked Sendable {
+        private let lock = NSLock()
+        private var value: Int64 = 0
+        var bytes: Int64 {
+            get { lock.withLock { value } }
+            set { lock.withLock { value = newValue } }
+        }
+    }
+
+    /// Holds an estimate's `Cancelable` so a cancelled task can stop it.
+    private final class CancelableBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var cancelable: Cancelable?
+        private var cancelled = false
+
+        func set(_ cancelable: Cancelable) {
+            let cancelNow = lock.withLock {
+                self.cancelable = cancelable
+                return cancelled
+            }
+            if cancelNow { cancelable.cancel() }
+        }
+
+        func cancel() {
+            let cancelable = lock.withLock {
+                cancelled = true
+                return self.cancelable
+            }
+            cancelable?.cancel()
+        }
     }
 
     nonisolated private static func downloadError(from error: Error) -> DownloadError {
