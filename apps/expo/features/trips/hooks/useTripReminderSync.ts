@@ -53,6 +53,8 @@ function currentTrips(): Trip[] {
  */
 export function useTripReminderSync({ isAuthed }: { isAuthed: boolean }) {
   const featureEnabled = useFeatureFlag('enableTripReminders');
+  // Trip weather marks a trip carrying a destination alert from the same forecasts.
+  const tripWeatherEnabled = useFeatureFlag('enableTripWeather');
   const { unit } = useTemperatureUnit();
   const signature = useReminderSignature();
   const celsius = unit === 'C';
@@ -63,8 +65,11 @@ export function useTripReminderSync({ isAuthed }: { isAuthed: boolean }) {
   run.current = (refreshForecast: boolean) => {
     queue.current = queue.current.then(async () => {
       try {
-        if (featureEnabled && refreshForecast) {
-          await refreshTripConditions({ trips: currentTrips() });
+        if ((featureEnabled || tripWeatherEnabled) && refreshForecast) {
+          await refreshTripConditions({
+            trips: currentTrips(),
+            includeUnderWay: tripWeatherEnabled,
+          });
         }
         await syncTripReminders({ trips: currentTrips(), celsius, featureEnabled });
       } catch (error) {
@@ -90,5 +95,5 @@ export function useTripReminderSync({ isAuthed }: { isAuthed: boolean }) {
   // then settles: the refresh is throttled per trip.
   useEffect(() => {
     if (isAuthed) run.current(true);
-  }, [isAuthed, featureEnabled, celsius, signature]);
+  }, [isAuthed, featureEnabled, tripWeatherEnabled, celsius, signature]);
 }

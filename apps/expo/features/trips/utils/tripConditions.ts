@@ -1,5 +1,10 @@
-import type { WeatherAPIForecastResponse, WeatherAttribution } from '@packrat/schemas/weather';
+import type {
+  WeatherAlertItem,
+  WeatherAPIForecastResponse,
+  WeatherAttribution,
+} from '@packrat/schemas/weather';
 import { differenceInCalendarDays, format } from 'date-fns';
+import { alertId } from 'expo-app/features/weather/utils/alertState';
 import { parseLocalDate } from 'expo-app/lib/utils/dateUtils';
 import type { ReminderTrip } from './tripReminderPlanner';
 
@@ -77,6 +82,19 @@ export function isConditionsFresh({
   );
 }
 
+/** The provider repeats one alert per affected zone; keeps the first per event. */
+export function destinationAlerts<T extends Pick<WeatherAlertItem, 'event' | 'headline'>>(
+  alerts: readonly T[],
+): T[] {
+  const seenEvents = new Set<string>();
+  return alerts.filter((alert) => {
+    const event = (alert.event || alert.headline)?.toLowerCase();
+    if (!event || seenEvents.has(event)) return false;
+    seenEvents.add(event);
+    return true;
+  });
+}
+
 /** Summarises `forecast` over the trip's days; null when no forecast day falls inside the trip yet. */
 export function makeTripConditions({
   trip,
@@ -98,14 +116,11 @@ export function makeTripConditions({
     .map((day) => day.day);
   if (daily.length === 0) return null;
 
-  // The provider repeats one alert per affected zone; keep one per event.
-  const seenEvents = new Set<string>();
-  const alerts = (forecast.alerts?.alert ?? []).flatMap((alert, index) => {
-    const event = alert.event || alert.headline;
-    if (!event || seenEvents.has(event.toLowerCase())) return [];
-    seenEvents.add(event.toLowerCase());
-    return [{ id: `${index}-${event}`, event, severity: alert.severity }];
-  });
+  const alerts = destinationAlerts(forecast.alerts?.alert ?? []).map((alert) => ({
+    id: alertId(alert),
+    event: alert.event || alert.headline,
+    severity: alert.severity,
+  }));
 
   return {
     tripId: trip.id,

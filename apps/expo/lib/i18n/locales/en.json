@@ -1023,7 +1023,20 @@
     },
     "chooseTrail": "Choose a trail",
     "trailFooter": "Optional. Without a trail, the trip shows conditions from trails near its destination.",
-    "trailFooterChosen": "The trip shows conditions reported on this trail."
+    "trailFooterChosen": "The trip shows conditions reported on this trail.",
+    "weather": {
+      "title": "Weather",
+      "beyondRange": "The forecast for your trip appears {{days}} days before you leave.",
+      "partial": "The rest of your trip's forecast appears as it gets closer.",
+      "now": "Now",
+      "tomorrow": "Tomorrow",
+      "fullForecast": "Full Forecast",
+      "loadFailed": "The forecast couldn't be loaded.",
+      "tryAgain": "Try Again",
+      "alertsToggle": "Weather Alerts",
+      "alertsToggleDesc": "Get notified about weather hazards at your destination from 3 days before you leave until your trip ends.",
+      "alertLabel": "Weather alert"
+    }
   },
   "catalog": {
     "itemsCatalog": "Items Catalog",
@@ -1386,7 +1399,20 @@
     "saveNamedA11y": "Save {{name}}",
     "alreadySavedA11y": "{{name}} is already saved",
     "watchLocationTitle": "Watch a location",
-    "stopWatchingNamedA11y": "Stop watching {{name}}"
+    "stopWatchingNamedA11y": "Stop watching {{name}}",
+    "watchListTrips": "Trips",
+    "watchListLocations": "Locations",
+    "tripEnds": "Ends {{date}}",
+    "tripAlertsOff": "Alerts off",
+    "turnOffTripAlertsA11y": "Turn off weather alerts for {{name}}",
+    "turnOnTripAlertsA11y": "Turn on weather alerts for {{name}}",
+    "tripAlertsOffTitle": "Trip Weather Alerts Are Off",
+    "tripAlertsOffDesc": "Turn them on to get alerts for weather at your trip destinations.",
+    "turnOnAlerts": "Turn On Alerts",
+    "noWatchedTrips": "No Trips Being Watched",
+    "noWatchedTripsDesc": "Trips with a destination appear here 3 days before they start.",
+    "turnOnFailedTitle": "Alerts Couldn't Be Turned On",
+    "turnOnFailedDesc": "Check your connection and try again."
   },
   "location": {
     "location": "Location",
