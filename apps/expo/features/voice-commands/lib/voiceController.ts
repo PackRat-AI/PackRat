@@ -24,6 +24,7 @@ import { tripConditionsStore } from 'expo-app/features/trips/store/tripReminders
 import type { Trip } from 'expo-app/features/trips/types';
 import { t } from 'expo-app/lib/i18n';
 import { getDefaultSpeedUnit } from 'expo-app/lib/unitDefaults';
+import { delay } from 'expo-app/modules/wake-word';
 import * as Network from 'expo-network';
 import { voiceSettingsStore } from '../store/voiceSettings';
 import { lastSample } from '../utils/recordedTrack';
@@ -114,6 +115,36 @@ export const voiceStore = observable<{
 /** Bumped by every new listen or dismiss, so a superseded command stops quietly. */
 let generation = 0;
 
+/**
+ * Puts the bar in its working state and, while it stays there, repeats a soft tone so a user with
+ * the phone locked hears that the command is still running.
+ */
+function showWorking(status: string) {
+  voiceStore.assign({ phase: 'working', status });
+  void playWorkingCue(generation);
+}
+
+/** Quick answers come before the first tone; slow ones, like a GPS fix, get one every so often. */
+const WORKING_CUE_AFTER_MS = 1_200;
+const WORKING_CUE_EVERY_MS = 1_800;
+
+/** The command whose tone is repeating, so a second working stretch doesn't start another. */
+let workingCueRun: number | null = null;
+
+/** Uses the native delay: JS timers stop while the phone is locked. */
+async function playWorkingCue(run: number): Promise<void> {
+  if (workingCueRun === run) return;
+  workingCueRun = run;
+  const stillWorking = () =>
+    workingCueRun === run && run === generation && voiceStore.phase.peek() === 'working';
+  await delay(WORKING_CUE_AFTER_MS);
+  while (stillWorking()) {
+    await playTone('working');
+    await delay(WORKING_CUE_EVERY_MS);
+  }
+  if (workingCueRun === run) workingCueRun = null;
+}
+
 function goIdle() {
   voiceStore.assign({ phase: 'idle', status: '' });
   resumeWakeWord();
@@ -187,7 +218,7 @@ export async function handleWake(trip: Trip): Promise<void> {
 export function endListening(): void {
   if (voiceStore.phase.peek() !== 'listening') return;
   void playTone('end');
-  voiceStore.assign({ phase: 'working', status: t('voiceCommands.status.working') });
+  showWorking(t('voiceCommands.status.working'));
   stopListening();
 }
 
@@ -231,7 +262,7 @@ async function handleTranscript({
     level: 'info',
     data: { command: command.kind, tripId: trip.id },
   });
-  voiceStore.assign({ phase: 'working', status: workingStatus(command) });
+  showWorking(workingStatus(command));
   try {
     await perform({ command, trip, run });
   } catch (error) {
@@ -600,12 +631,8 @@ async function confirm({ question, run }: { question: string; run: number }): Pr
   }
   if (run !== generation) return false;
   const yes = parseVoiceConfirmation(reply) === 'yes';
-  voiceStore.assign({
-    phase: 'working',
-    heard: reply,
-    status: t('voiceCommands.status.working'),
-    answer: '',
-  });
+  voiceStore.assign({ heard: reply, answer: '' });
+  showWorking(t('voiceCommands.status.working'));
   return yes;
 }
 
