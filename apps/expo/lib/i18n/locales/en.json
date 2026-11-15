@@ -1241,7 +1241,9 @@
     "notifications": "Notifications",
     "tripRemindersSubtitle": "Trip Reminders help you pack and charge in the week before a trip. Turn them off for a single trip from that trip.",
     "trailReports": "Trail Reports",
-    "trailReportsSubtitle": "Trail Reports tell you when someone reports on a trail for one of your upcoming trips."
+    "trailReportsSubtitle": "Trail Reports tell you when someone reports on a trail for one of your upcoming trips.",
+    "tripWeatherAlerts": "Trip Weather Alerts",
+    "tripWeatherAlertsSubtitle": "Trip Weather Alerts tell you about weather hazards at a trip's destination from 3 days before you leave. Turn them off for one trip from its Weather section."
   },
   "weather": {
     "weather": "Weather",

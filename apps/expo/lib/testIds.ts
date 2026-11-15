@@ -390,6 +390,7 @@ export const testIds = Object.freeze({
     speedUnitControl: 'settings:speed-unit',
     tripRemindersToggle: 'settings:trip-reminders',
     trailReportNotificationsToggle: 'settings:trail-report-notifications',
+    tripWeatherAlertsToggle: 'settings:trip-weather-alerts',
     upgradeToProBtn: 'settings:upgrade-to-pro',
     manageSubscriptionBtn: 'settings:manage-subscription',
     restorePurchasesBtn: 'settings:restore-purchases',
