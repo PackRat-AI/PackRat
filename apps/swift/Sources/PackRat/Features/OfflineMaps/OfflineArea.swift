@@ -183,13 +183,8 @@ enum OfflineTilePacks {
         var tiles = Set<Tile>()
         for ring in rings where !ring.isEmpty {
             let points = ring.map { project($0, scale: scale) }
-            // Edges: step at under half a tile so no tile an edge crosses is skipped.
             for (a, b) in zip(points, points.dropFirst() + [points[0]]) {
-                let steps = max(Int((max(abs(b.x - a.x), abs(b.y - a.y)) * 2).rounded(.up)), 1)
-                for step in 0...steps {
-                    let t = Double(step) / Double(steps)
-                    tiles.insert(tile(at: (a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t), scale: scale))
-                }
+                insertTiles(from: a, to: b, scale: scale, into: &tiles)
                 if tiles.count > maxTiles { return tiles }
             }
             // Interior: for each row of tile centres, fill between the points
@@ -222,9 +217,45 @@ enum OfflineTilePacks {
         return (x, y)
     }
 
-    private static func tile(at point: (x: Double, y: Double), scale: Double) -> Tile {
+    /// Every tile an edge passes through, walked one grid line at a time
+    /// (Amanatides and Woo). An edge through a tile corner takes both tiles
+    /// beside it, so the count errs high rather than letting an area through.
+    private static func insertTiles(
+        from a: (x: Double, y: Double),
+        to b: (x: Double, y: Double),
+        scale: Double,
+        into tiles: inout Set<Tile>
+    ) {
         let last = Int(scale) - 1
-        return Tile(x: min(max(Int(point.x), 0), last), y: min(max(Int(point.y), 0), last))
+        func insert(_ x: Int, _ y: Int) {
+            tiles.insert(Tile(x: min(max(x, 0), last), y: min(max(y, 0), last)))
+        }
+        var x = Int(a.x.rounded(.down)), y = Int(a.y.rounded(.down))
+        let endX = Int(b.x.rounded(.down)), endY = Int(b.y.rounded(.down))
+        let dx = b.x - a.x, dy = b.y - a.y
+        let stepX = dx > 0 ? 1 : -1, stepY = dy > 0 ? 1 : -1
+        let deltaX = dx == 0 ? .infinity : abs(1 / dx), deltaY = dy == 0 ? .infinity : abs(1 / dy)
+        // How far along the edge (0...1) the next vertical and horizontal grid lines are.
+        var nextX = dx == 0 ? .infinity : (dx > 0 ? Double(x + 1) - a.x : a.x - Double(x)) / abs(dx)
+        var nextY = dy == 0 ? .infinity : (dy > 0 ? Double(y + 1) - a.y : a.y - Double(y)) / abs(dy)
+        insert(x, y)
+        while x != endX || y != endY {
+            if y == endY || (x != endX && nextX < nextY) {
+                x += stepX
+                nextX += deltaX
+            } else if x == endX || nextY < nextX {
+                y += stepY
+                nextY += deltaY
+            } else {
+                insert(x + stepX, y)
+                insert(x, y + stepY)
+                x += stepX
+                y += stepY
+                nextX += deltaX
+                nextY += deltaY
+            }
+            insert(x, y)
+        }
     }
 }
 

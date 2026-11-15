@@ -36,6 +36,20 @@ struct OfflineMapsTests {
         #expect(tiles.count == width * height)
     }
 
+    @Test func thinDiagonalCountsEveryTileItCrosses() {
+        // A sliver from tile (1000, 1000) to (1004, 1004) at zoom 11 steps
+        // through nine tiles; sampling its edges every half tile found five.
+        let scale = Double(1 << 11)
+        func point(_ x: Double, _ y: Double) -> CLLocationCoordinate2D {
+            CLLocationCoordinate2D(
+                latitude: atan(sinh(.pi * (1 - 2 * y / scale))) * 180 / .pi,
+                longitude: x / scale * 360 - 180
+            )
+        }
+        let sliver = [[point(1000.1, 1000.2), point(1004.1, 1004.2), point(1004.1, 1004.21), point(1000.1, 1000.21)]]
+        #expect(OfflineTilePacks.tiles(covering: sliver, zoom: 11).count == 9)
+    }
+
     @Test func trianglesSkipTilesOutsideTheShape() {
         // A right triangle covers roughly half its bounding box.
         let triangle = [[

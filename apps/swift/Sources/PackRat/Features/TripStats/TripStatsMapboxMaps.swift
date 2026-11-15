@@ -150,12 +150,15 @@ struct MapboxPeakMap: View {
             .onMapTapGesture { _ in selection = nil }
             .onMapIdle { _ in
                 guard let map = proxy.map else { return }
-                let visible = map.coordinateBounds(for: CameraOptions(cameraState: map.cameraState))
+                // Unwrapped so a view across the antimeridian keeps east past
+                // west; the centre is then wrapped back into ±180.
+                let visible = map.coordinateBoundsUnwrapped(for: CameraOptions(cameraState: map.cameraState))
                 let sw = visible.southwest, ne = visible.northeast
+                let longitude = (sw.longitude + ne.longitude) / 2
                 onSettle(MKCoordinateRegion(
                     center: CLLocationCoordinate2D(
                         latitude: (sw.latitude + ne.latitude) / 2,
-                        longitude: (sw.longitude + ne.longitude) / 2
+                        longitude: longitude - 360 * ((longitude + 180) / 360).rounded(.down)
                     ),
                     span: MKCoordinateSpan(
                         latitudeDelta: ne.latitude - sw.latitude,

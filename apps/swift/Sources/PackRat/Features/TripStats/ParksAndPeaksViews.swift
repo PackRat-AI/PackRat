@@ -696,10 +696,10 @@ struct PeakPickerView: View {
     /// Full-screen map, list in a sheet that opens at half height and also
     /// rests at a peek or full height.
     private func compactLayout(_ ranked: PeakSuggestions) -> some View {
-        // Inset the map's safe area by the panel's opening height so the
-        // camera frames the route in the part of the map left visible.
+        // Inset the map's safe area by the panel's height so the camera
+        // frames the route, and shows peaks, in the part of the map left visible.
         GeometryReader { geometry in
-            map(ranked, bottomInset: geometry.size.height / 2)
+            map(ranked, bottomInset: detent == .height(Self.peekHeight) ? Self.peekHeight : geometry.size.height / 2)
         }
         .ignoresSafeArea()
         .overlay(alignment: .top) { searchAreaButton.padding(.top, 8) }
