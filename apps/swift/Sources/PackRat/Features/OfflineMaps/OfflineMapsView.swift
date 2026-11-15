@@ -48,6 +48,16 @@ struct OfflineMapsView: View {
                 Section {
                     Button("Delete All Saved Maps", role: .destructive) { confirmingDeleteAll = true }
                         .accessibilityIdentifier("offline_maps_delete_all")
+                        // On the button so the popover points at it, not the list.
+                        .confirmationDialog(
+                            "Delete all saved maps?",
+                            isPresented: $confirmingDeleteAll,
+                            titleVisibility: .visible
+                        ) {
+                            Button("Delete All", role: .destructive) { store.deleteAll() }
+                        } message: {
+                            Text("Maps for these areas won't work without signal until you save them again.")
+                        }
                 }
             }
 
@@ -96,15 +106,6 @@ struct OfflineMapsView: View {
                 renaming = nil
             }
             Button("Cancel", role: .cancel) { renaming = nil }
-        }
-        .confirmationDialog(
-            "Delete all saved maps?",
-            isPresented: $confirmingDeleteAll,
-            titleVisibility: .visible
-        ) {
-            Button("Delete All", role: .destructive) { store.deleteAll() }
-        } message: {
-            Text("Maps for these areas won't work without signal until you save them again.")
         }
     }
 
