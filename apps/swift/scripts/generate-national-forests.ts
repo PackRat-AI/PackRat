@@ -119,7 +119,13 @@ function loadStates(): State[] {
 }
 
 /** Even-odd ray casting over every ring. */
-function contains(rings: [number, number][][], [lat, lng]: [number, number]): boolean {
+function contains({
+  rings,
+  point: [lat, lng],
+}: {
+  rings: [number, number][][];
+  point: [number, number];
+}): boolean {
   let inside = false;
   for (const ring of rings) {
     for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -137,14 +143,14 @@ function contains(rings: [number, number][][], [lat, lng]: [number, number]): bo
 }
 
 /** States holding a fair share of the outline's points, so a boundary that grazes a state line doesn't list it. */
-function statesTouched(rings: number[][], states: State[]): string[] {
+function statesTouched({ rings, states }: { rings: number[][]; states: State[] }): string[] {
   const counts = new Map<string, number>();
   let total = 0;
   for (const ring of rings) {
     for (let i = 0; i < ring.length - 1; i += 2) {
       const lng = ring[i] ?? 0;
       const lat = ring[i + 1] ?? 0;
-      const state = states.find((s) => contains(s.rings, [lat, lng]));
+      const state = states.find((s) => contains({ rings: s.rings, point: [lat, lng] }));
       if (!state) continue;
       total++;
       counts.set(state.code, (counts.get(state.code) ?? 0) + 1);
@@ -152,7 +158,7 @@ function statesTouched(rings: number[][], states: State[]): string[] {
   }
   return [...counts]
     .filter(([, count]) => count >= total * 0.05)
-    .sort((a, b) => b[1] - a[1])
+    .sort(([, a], [, b]) => b - a)
     .map(([code]) => code);
 }
 
@@ -175,7 +181,7 @@ for (const feature of await fetchFeatures()) {
 }
 
 const forests = [...byName.values()]
-  .map((forest) => ({ ...forest, states: statesTouched(forest.rings, states) }))
+  .map((forest) => ({ ...forest, states: statesTouched({ rings: forest.rings, states }) }))
   .sort((a, b) => a.name.localeCompare(b.name));
 if (forests.length < MINIMUM_COUNT)
   throw new Error(`Expected at least ${MINIMUM_COUNT} forests, got ${forests.length}`);
