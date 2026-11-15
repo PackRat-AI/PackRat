@@ -933,7 +933,7 @@ struct PeakPickerView: View {
                 Text("Peak data © OpenStreetMap contributors.")
             }
         }
-        // A solid field pinned under the panel's title: the system search
+        // Our own field pinned under the panel's title: the system search
         // field is glass, and glass on a glass panel over a map disappears.
         #if os(iOS)
         .safeAreaInset(edge: .top, spacing: 0) { filterField }
@@ -962,8 +962,9 @@ struct PeakPickerView: View {
         }
         .padding(.horizontal, 14)
         .frame(height: 44)
-        .background(Color(.systemBackground), in: Capsule())
-        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+        // Half-strength, like the list's rows: enough to read as a field
+        // without outranking them.
+        .background(Color(.systemBackground).opacity(0.55), in: Capsule())
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .accessibilityIdentifier("peak_picker_filter")
