@@ -8,6 +8,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.media.AudioFormat
 import android.media.AudioRecord
@@ -100,7 +101,7 @@ class WakeWordService : Service() {
         this,
         NOTIFICATION_ID,
         notification,
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE else 0,
+        serviceTypes(),
       )
       isArmed = true
       true
@@ -110,6 +111,20 @@ class WakeWordService : Service() {
       stopSelf()
       false
     }
+  }
+
+  /**
+   * The location type too once location is allowed, so a command like "mark waypoint" can find
+   * the user with the phone locked. Android refuses the type without the permission.
+   */
+  private fun serviceTypes(): Int {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return 0
+    val located = listOf(
+      android.Manifest.permission.ACCESS_FINE_LOCATION,
+      android.Manifest.permission.ACCESS_COARSE_LOCATION,
+    ).any { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
+    return ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or
+      (if (located) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0)
   }
 
   private fun smallIcon(): Int {

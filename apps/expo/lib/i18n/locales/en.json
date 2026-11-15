@@ -2276,7 +2276,10 @@
     },
     "wake": {
       "offerTitle": "Talk to PackRat Hands-Free?",
-      "offerMessage": "Say “Hey PackRat” and a command while your trip is underway, even with your phone locked. You can turn this off in Settings.",
+      "offerMessage": "Say “Hey PackRat” and a command while your trip is underway, even with your phone locked. PackRat uses your microphone to hear you and your location to answer where you are.",
+      "permissionsTitle": "Allow Hands-Free Commands",
+      "permissionsMessage": "PackRat uses your microphone to hear your commands and your location to answer where you are, even with your phone locked.",
+      "continue": "Continue",
       "turnOn": "Turn On",
       "notNow": "Not Now",
       "notificationTitle": "Listening for “Hey PackRat”",

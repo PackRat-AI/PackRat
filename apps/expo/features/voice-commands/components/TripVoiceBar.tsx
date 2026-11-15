@@ -1,6 +1,7 @@
 import { use$ } from '@legendapp/state/react';
 import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { Text } from '@packrat/ui/src/text';
+import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { tripStartPromptOpen } from 'expo-app/features/safety-check-in/lib/tripLifecycle';
 import { canStartTrip } from 'expo-app/features/safety-check-in/utils/safetyCheckIn';
@@ -10,6 +11,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 import { useIsFocused } from 'expo-router/react-navigation';
 import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
@@ -190,9 +192,42 @@ function WakeWordHost({ trip }: { trip: Trip }) {
   return <Alert title="" buttons={[]} ref={alertRef} />;
 }
 
-/** Asks for the microphone and the listening notification, then turns "Hey PackRat" on. */
-export async function turnOnWakeWord(): Promise<void> {
-  if (!(await hasVoicePermission()) && !(await requestVoicePermission())) return;
+/** Whether hands-free commands already have the microphone and location they use. */
+export async function hasHandsFreePermissions(): Promise<boolean> {
+  const [microphone, location] = await Promise.all([
+    hasVoicePermission(),
+    Location.getForegroundPermissionsAsync(),
+  ]);
+  return microphone && location.granted;
+}
+
+/**
+ * Asks, with the app on screen, for everything a hands-free command needs: the microphone to hear
+ * it, location for answers like "mark waypoint" and the listening notification. A request made
+ * once the phone is locked would wait unseen. False when the microphone is refused.
+ */
+async function askForHandsFree(): Promise<boolean> {
+  if (!(await hasVoicePermission()) && !(await requestVoicePermission())) return false;
+  try {
+    const location = await Location.getForegroundPermissionsAsync();
+    if (!location.granted && location.canAskAgain) {
+      await Location.requestForegroundPermissionsAsync();
+    }
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { feature: 'voiceCommands', action: 'handsFreeLocationPermission' },
+    });
+  }
   await askToShowNotification();
-  voiceSettingsStore.wakeWord.set(true);
+  return true;
+}
+
+/** Asks for what hands-free commands need, then turns "Hey PackRat" on. */
+export async function turnOnWakeWord(): Promise<void> {
+  if (await askForHandsFree()) voiceSettingsStore.wakeWord.set(true);
+}
+
+/** Asks for what hands-free commands need, then turns the headset shortcut on. */
+export async function turnOnHeadsetShortcut(): Promise<void> {
+  if (await askForHandsFree()) voiceSettingsStore.headsetShortcut.set(true);
 }

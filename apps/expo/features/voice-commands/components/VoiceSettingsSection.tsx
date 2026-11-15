@@ -1,14 +1,16 @@
 import { use$ } from '@legendapp/state/react';
+import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { Text } from '@packrat/ui/src/text';
 import { Toggle } from '@packrat/ui/src/toggle';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
+import { useRef } from 'react';
 import { View } from 'react-native';
 import { requestVoicePermission } from '../lib/voiceIO';
 import { isWakeWordAvailable } from '../lib/wakeWord';
 import { voiceSettingsStore } from '../store/voiceSettings';
-import { turnOnWakeWord } from './TripVoiceBar';
+import { hasHandsFreePermissions, turnOnHeadsetShortcut, turnOnWakeWord } from './TripVoiceBar';
 
 /** Settings › Voice: the user's switch for voice commands, and whether answers are spoken. */
 export function VoiceSettingsSection() {
@@ -19,7 +21,22 @@ export function VoiceSettingsSection() {
   const wakeWord = use$(voiceSettingsStore.wakeWord);
   const headset = use$(voiceSettingsStore.headsetShortcut) !== false;
   const settings = use$(voiceSettingsStore);
+  const alertRef = useRef<AlertMethods>(null);
   if (!flag) return null;
+
+  /** Says why PackRat asks before the phone's own prompts appear; straight on when nothing's missing. */
+  const turnOnHandsFree = async (turnOn: () => Promise<void>) => {
+    if (await hasHandsFreePermissions()) return turnOn();
+    alertRef.current?.alert({
+      title: t('voiceCommands.wake.permissionsTitle'),
+      message: t('voiceCommands.wake.permissionsMessage'),
+      materialIcon: { name: 'microphone' },
+      buttons: [
+        { text: t('voiceCommands.wake.notNow'), style: 'cancel' },
+        { text: t('voiceCommands.wake.continue'), style: 'default', onPress: () => void turnOn() },
+      ],
+    });
+  };
 
   const guidanceSwitches = [
     {
@@ -104,7 +121,7 @@ export function VoiceSettingsSection() {
             <Toggle
               value={wakeWord}
               onValueChange={(on) =>
-                on ? void turnOnWakeWord() : voiceSettingsStore.wakeWord.set(false)
+                on ? void turnOnHandsFree(turnOnWakeWord) : voiceSettingsStore.wakeWord.set(false)
               }
               testID={testIds.voiceCommands.wakeWordToggle}
             />
@@ -122,7 +139,11 @@ export function VoiceSettingsSection() {
             </View>
             <Toggle
               value={headset}
-              onValueChange={(on) => voiceSettingsStore.headsetShortcut.set(on)}
+              onValueChange={(on) =>
+                on
+                  ? void turnOnHandsFree(turnOnHeadsetShortcut)
+                  : voiceSettingsStore.headsetShortcut.set(false)
+              }
               testID={testIds.voiceCommands.headsetToggle}
             />
           </View>
@@ -155,6 +176,7 @@ export function VoiceSettingsSection() {
           </Text>
         </>
       )}
+      <Alert title="" buttons={[]} ref={alertRef} />
     </View>
   );
 }
