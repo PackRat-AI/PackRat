@@ -481,4 +481,25 @@ export const testIds = Object.freeze({
     resultCard: (speciesId: string) => `wildlife:result-${speciesId}`,
     outcomeMessage: 'wildlife:outcome-message',
   }),
+
+  // ── Offline maps ──────────────────────────────────────────────────────────
+  offlineMaps: Object.freeze({
+    settingsRow: 'offline-maps:settings-row',
+    add: 'offline-maps:add',
+    emptyAdd: 'offline-maps:empty-add',
+    deleteAll: 'offline-maps:delete-all',
+    allowCellular: 'offline-maps:allow-cellular',
+    storageLimit: 'offline-maps:storage-limit',
+    areaRow: (id: string) => `offline-maps:area-row-${id}`,
+    areaMap: 'offline-maps:area-map',
+    detail: 'offline-maps:area-detail',
+    name: 'offline-maps:area-name',
+    save: 'offline-maps:area-save',
+    fullMap: 'offline-maps:full-map',
+    locate: 'offline-maps:locate',
+    saveForOffline: (prefix: string) => `${prefix}:save-offline-map`,
+    progress: (prefix: string) => `${prefix}:offline-map-progress`,
+    retry: (prefix: string) => `${prefix}:offline-map-retry`,
+    saved: (prefix: string) => `${prefix}:offline-map-saved`,
+  }),
 });

@@ -132,11 +132,12 @@ export function useTrailSearch({ query, near }: { query: string; near: Coordinat
 }
 
 /** One trail with its line, for the trail page. */
-export function useTrail(trailId: string) {
+export function useTrail(trailId: string, { enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: trailQueryKey(trailId),
     queryFn: () => getTrail(trailId),
     staleTime: 1000 * 60 * 60,
+    enabled,
   });
 }
 

@@ -4,6 +4,7 @@ import {
   areasToFree,
   BYTES_PER_TILE,
   boundsEnclosing,
+  boundsFromCorners,
   boundsRing,
   estimateBytes,
   formatBytes,
@@ -58,6 +59,16 @@ describe('boundsEnclosing', () => {
         [[-121, 36.5]],
       ]),
     ).toEqual({ south: 36.5, west: -121, north: 38, east: -119 });
+  });
+});
+
+describe('boundsFromCorners', () => {
+  it('reads the north-east and south-west corners', () => {
+    expect(boundsFromCorners({ ne: [-119.5, 37.76], sw: [-119.7, 37.7] })).toEqual(yosemiteValley);
+  });
+
+  it('returns null for an incomplete corner', () => {
+    expect(boundsFromCorners({ ne: [-119.5], sw: [-119.7, 37.7] })).toBeNull();
   });
 });
 

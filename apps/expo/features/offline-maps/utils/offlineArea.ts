@@ -55,6 +55,22 @@ export function boundsEnclosing(lines: LonLat[][]): OfflineAreaBounds | null {
   return bounds;
 }
 
+/** Bounds from the map's `[longitude, latitude]` corners, or null if either is incomplete. */
+export function boundsFromCorners({
+  ne,
+  sw,
+}: {
+  ne: number[];
+  sw: number[];
+}): OfflineAreaBounds | null {
+  const [east, north] = ne;
+  const [west, south] = sw;
+  if (east === undefined || north === undefined || west === undefined || south === undefined) {
+    return null;
+  }
+  return { south, west, north, east };
+}
+
 /** Grows the bounds by `fraction` of their span on every side, with a floor for a single point. */
 export function padBounds(bounds: OfflineAreaBounds, fraction = 0.2): OfflineAreaBounds {
   const latPad = Math.max((bounds.north - bounds.south) * fraction, 0.02);
