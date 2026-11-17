@@ -209,6 +209,60 @@ function listenErrorText(error: unknown): string {
   return error instanceof VoiceListenError ? error.spoken : VoiceAnswers.listenFailed;
 }
 
+// ── The phone's assistant ─────────────────────────────────────────────────
+
+export interface AssistantResult {
+  answer: string;
+  /** The answer is a yes-or-no question; the assistant asks it and calls again on a yes. */
+  needsConfirmation: boolean;
+}
+
+/**
+ * A command from Gemini or another assistant, perhaps with PackRat closed. The assistant says the
+ * answer itself, so nothing is spoken or shown here. A command that tells other people something
+ * comes back as a question, and runs when the assistant calls again with the user's yes.
+ */
+export async function runForAssistant({
+  request,
+  confirmed,
+  trip,
+}: {
+  request: string;
+  confirmed: boolean;
+  trip: Trip | null;
+}): Promise<AssistantResult> {
+  const reply = (answer: string): AssistantResult => ({ answer, needsConfirmation: false });
+  if (voiceSettingsStore.enabled.peek() === false) return reply(VoiceAnswers.voiceOff);
+  const phase = voiceStore.phase.peek();
+  if (phase !== 'idle' && phase !== 'answering') return reply(VoiceAnswers.busy);
+  const command = parseVoiceCommand(request);
+  if (!command) return reply(VoiceAnswers.notHeard);
+  if (!trip) return reply(VoiceAnswers.noTrip);
+  Sentry.addBreadcrumb({
+    category: 'voiceCommands',
+    message: 'Assistant command',
+    level: 'info',
+    data: { command: command.kind, tripId: trip.id, confirmed },
+  });
+
+  let said = '';
+  let question: string | null = null;
+  await perform({
+    command,
+    trip,
+    answer: async (text) => {
+      said = text;
+    },
+    ask: async (text) => {
+      if (confirmed) return true;
+      question = text;
+      return false;
+    },
+    confirmedByAssistant: confirmed,
+  });
+  return question ? { answer: question, needsConfirmation: true } : reply(said);
+}
+
 // ── Commands ──────────────────────────────────────────────────────────────
 
 async function handleTranscript({
@@ -235,7 +289,12 @@ async function handleTranscript({
   voiceStore.assign({ phase: 'working', status: workingStatus(command) });
   if (LOCATING_COMMANDS.has(command.kind)) void sayWhenSlow(run);
   try {
-    await perform({ command, trip, run });
+    await perform({
+      command,
+      trip,
+      answer: (text) => respond({ text, run }),
+      ask: (question) => confirm({ question, run }),
+    });
   } catch (error) {
     Sentry.captureException(error, {
       tags: { feature: 'voiceCommands', action: command.kind },
@@ -291,24 +350,31 @@ async function isOnline(): Promise<boolean> {
 async function perform({
   command,
   trip,
-  run,
+  answer,
+  ask,
+  confirmedByAssistant = false,
 }: {
   command: VoiceCommand;
   trip: Trip;
-  run: number;
+  answer: (text: string) => Promise<void>;
+  /** Resolves true on a clear yes. */
+  ask: (question: string) => Promise<boolean>;
+  /** The assistant's second call, after the user said yes to the question its first call asked. */
+  confirmedByAssistant?: boolean;
 }): Promise<void> {
   const checkIn = safetyStore.active.peek()[trip.id];
   const contacts = checkIn ? contactSummary({ names: checkIn.contactNames, t }) : '';
   const status = trip.status ?? 'planned';
   const now = new Date();
   const metric = isMetric();
-  const answer = (text: string) => respond({ text, run });
-  const ask = (question: string) => confirm({ question, run });
 
   switch (command.kind) {
     case 'startTrip': {
-      if (status !== 'planned') return answer(VoiceAnswers.alreadyStarted);
-      setTripLifecycle({ tripId: trip.id, status: 'in_progress' });
+      // The assistant's first call started the trip and asked about telling a contact; its
+      // second call carries the yes.
+      const resumingYes = confirmedByAssistant && status === 'in_progress' && !checkIn;
+      if (status !== 'planned' && !resumingYes) return answer(VoiceAnswers.alreadyStarted);
+      if (status === 'planned') setTripLifecycle({ tripId: trip.id, status: 'in_progress' });
       // Contacts load when a safety screen opens; by voice, none may have been yet.
       if (safetyStore.contacts.peek().length === 0) await loadContacts();
       const reachable = safetyStore.contacts.peek().filter(canBeNotified);

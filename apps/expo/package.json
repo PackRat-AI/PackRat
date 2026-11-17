@@ -2,7 +2,7 @@
   "name": "packrat-expo-app",
   "version": "2.3.0",
   "private": true,
-  "main": "expo-router/entry",
+  "main": "index.ts",
   "scripts": {
     "android": "APP_VARIANT=development expo run:android",
     "build:development": "eas build --profile development --local",

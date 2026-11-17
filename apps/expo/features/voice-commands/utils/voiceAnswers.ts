@@ -25,6 +25,8 @@ export const VoiceAnswers = Object.freeze({
   notHeard:
     "Sorry, I didn't catch that. You can say start tracking, mark waypoint, note, how far have I gone, navigate to, check in, where am I, how far to go, am I on route, when am I due back, add an hour, weather, or I'm safe.",
   noTrip: "There's no trip in progress.",
+  voiceOff: "Voice commands are off. Turn them on in PackRat's Settings, under Voice.",
+  busy: 'PackRat is in the middle of another command. Try again in a moment.',
   noRoute: "This trip doesn't have a planned route.",
   noCheckIn:
     "This trip doesn't have a return time. Notify your contacts from the trip page to set one.",
@@ -34,6 +36,7 @@ export const VoiceAnswers = Object.freeze({
   microphoneDenied:
     'PackRat needs the microphone for voice commands. Allow it in Settings, under Apps, PackRat, then Permissions.',
   listenFailed: "PackRat couldn't listen just now. Try again.",
+  commandFailed: "PackRat couldn't do that just now. Try again.",
   cancelled: "OK, I won't send it.",
   queued: "Saved. It'll send when you have signal.",
   noForecast: "There's no forecast saved for this trip.",
