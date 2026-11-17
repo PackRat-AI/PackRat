@@ -31,6 +31,7 @@ const createTrip = async (tripData: TripInStore) => {
     ...(tripData.excludedFromStats !== undefined
       ? { excludedFromStats: tripData.excludedFromStats }
       : {}),
+    ...(tripData.weatherAlerts !== undefined ? { weatherAlerts: tripData.weatherAlerts } : {}),
     localCreatedAt: tripData.localCreatedAt ?? new Date().toISOString(),
     localUpdatedAt: tripData.localUpdatedAt ?? new Date().toISOString(),
   });
@@ -52,6 +53,7 @@ const updateTrip = async ({ id, ...data }: Partial<TripInStore>) => {
     ...(data.log !== undefined ? { log: data.log ?? null } : {}),
     ...(data.checklist !== undefined ? { checklist: data.checklist ?? null } : {}),
     ...(data.excludedFromStats !== undefined ? { excludedFromStats: data.excludedFromStats } : {}),
+    ...(data.weatherAlerts !== undefined ? { weatherAlerts: data.weatherAlerts } : {}),
     ...(data.status !== undefined ? { status: data.status } : {}),
     ...(data.startedAt !== undefined ? { startedAt: data.startedAt ?? null } : {}),
     ...(data.completedAt !== undefined ? { completedAt: data.completedAt ?? null } : {}),

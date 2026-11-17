@@ -1,5 +1,10 @@
-import type { WeatherAPIForecastResponse, WeatherAttribution } from '@packrat/schemas/weather';
+import type {
+  WeatherAlertItem,
+  WeatherAPIForecastResponse,
+  WeatherAttribution,
+} from '@packrat/schemas/weather';
 import { differenceInCalendarDays, format } from 'date-fns';
+import { alertId } from 'expo-app/features/weather/utils/alertState';
 import { parseLocalDate } from 'expo-app/lib/utils/dateUtils';
 import type { ReminderTrip } from './tripReminderPlanner';
 
@@ -77,6 +82,24 @@ export function isConditionsFresh({
   );
 }
 
+/**
+ * The provider repeats one alert per affected zone; keeps one per event, in first-seen
+ * order. The zone kept is the one whose areas sort first, so the alert's id stays the
+ * same when the provider returns the zones in a different order.
+ */
+export function destinationAlerts<T extends Pick<WeatherAlertItem, 'event' | 'headline' | 'areas'>>(
+  alerts: readonly T[],
+): T[] {
+  const byEvent = new Map<string, T>();
+  for (const alert of alerts) {
+    const event = (alert.event || alert.headline)?.toLowerCase();
+    if (!event) continue;
+    const kept = byEvent.get(event);
+    if (!kept || alert.areas < kept.areas) byEvent.set(event, alert);
+  }
+  return [...byEvent.values()];
+}
+
 /** Summarises `forecast` over the trip's days; null when no forecast day falls inside the trip yet. */
 export function makeTripConditions({
   trip,
@@ -98,14 +121,11 @@ export function makeTripConditions({
     .map((day) => day.day);
   if (daily.length === 0) return null;
 
-  // The provider repeats one alert per affected zone; keep one per event.
-  const seenEvents = new Set<string>();
-  const alerts = (forecast.alerts?.alert ?? []).flatMap((alert, index) => {
-    const event = alert.event || alert.headline;
-    if (!event || seenEvents.has(event.toLowerCase())) return [];
-    seenEvents.add(event.toLowerCase());
-    return [{ id: `${index}-${event}`, event, severity: alert.severity }];
-  });
+  const alerts = destinationAlerts(forecast.alerts?.alert ?? []).map((alert) => ({
+    id: alertId(alert),
+    event: alert.event || alert.headline,
+    severity: alert.severity,
+  }));
 
   return {
     tripId: trip.id,

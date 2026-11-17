@@ -11,14 +11,21 @@ const LOGO_WIDTH = 77;
 /**
  * The Apple Weather mark and its legal link, shown under any forecast that
  * includes Apple Weather days — Apple's terms require both wherever that data
- * appears. Always sits on the sky gradient, so it uses the white mark.
+ * appears. On the sky gradient it uses the white mark; `onSky` false draws it
+ * for the app's ordinary surface.
  */
-export function WeatherAttribution({ attribution }: { attribution: WeatherAttributionData }) {
+export function WeatherAttribution({
+  attribution,
+  onSky = true,
+}: {
+  attribution: WeatherAttributionData;
+  onSky?: boolean;
+}) {
   const { t } = useTranslation();
   return (
     <View className="flex-row items-center gap-2 px-1">
       <Image
-        source={{ uri: attribution.logoDarkUrl }}
+        source={{ uri: onSky ? attribution.logoDarkUrl : attribution.logoLightUrl }}
         style={{ height: LOGO_HEIGHT, width: LOGO_WIDTH }}
         resizeMode="contain"
         accessibilityLabel={attribution.serviceName}
@@ -29,7 +36,10 @@ export function WeatherAttribution({ attribution }: { attribution: WeatherAttrib
         hitSlop={12}
         testID={testIds.weather.attributionLegal}
       >
-        <Text variant="caption2" className="text-white/70 underline">
+        <Text
+          variant="caption2"
+          className={onSky ? 'text-white/70 underline' : 'text-muted-foreground underline'}
+        >
           {t('weather.attributionLegal')}
         </Text>
       </Pressable>

@@ -47,6 +47,8 @@ is how they hear about the next one (ADR-006).
 A dedicated watch list holds everything a user has chosen, and any location
 can be added or removed there too.
 
+Trips watching their destination sit in their own Trips section at the top of the watch list, from three days before the trip starts until the day after it ends. Tapping a trip opens it, and swiping it turns that trip's alerts off or back on. A trip switched off stays in the list marked "Alerts off", so turning alerts off never reads as deleting the trip. When the list is empty it says why: if trip alerts are off for the whole account it says so and offers to turn them on, and otherwise it explains when trips will appear.
+
 ## Getting notified
 
 A push notification arrives the moment a new hazard is detected for a

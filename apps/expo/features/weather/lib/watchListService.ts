@@ -1,5 +1,6 @@
 import {
   type AddWatchedLocationRequest,
+  TripWeatherNotificationSettingsSchema,
   WatchedLocationSchema,
 } from '@packrat/schemas/weatherMonitoring';
 import * as Sentry from '@sentry/react-native';
@@ -63,4 +64,22 @@ export async function registerDeviceToken(deviceToken: string) {
     deviceToken,
   });
   if (error) throw apiError({ action: 'registerDeviceToken', error });
+}
+
+/** The account-level Trip Weather Alerts switch. */
+export async function fetchTripAlertsEnabled() {
+  const { data, error } = await apiClient.weather['trip-alerts'].settings.get();
+  if (error) throw apiError({ action: 'fetchTripAlertsEnabled', error });
+  return TripWeatherNotificationSettingsSchema.parse(data).tripWeather;
+}
+
+export async function setTripAlertsEnabled(enabled: boolean) {
+  Sentry.addBreadcrumb({
+    category: 'weatherMonitoring',
+    message: 'Setting trip weather alerts',
+    level: 'info',
+    data: { enabled },
+  });
+  const { error } = await apiClient.weather['trip-alerts'].settings.put({ tripWeather: enabled });
+  if (error) throw apiError({ action: 'setTripAlertsEnabled', error, extra: { enabled } });
 }

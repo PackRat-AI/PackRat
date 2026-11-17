@@ -8,6 +8,7 @@ import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -51,6 +52,7 @@ function LocationsScreen() {
   const { isRefreshing, refreshAllLocations } = useLocationRefresh();
   const { isUnseen } = useSeenAlerts();
   const { enabled: monitoringEnabled, watchedFor, refetch: refetchWatchList } = useWatchList();
+  const tripWeatherEnabled = useFeatureFlag('enableTripWeather');
   const { unit, setTemperatureUnit } = useTemperatureUnit();
 
   const isLoading = locationsState.state === 'loading';
@@ -105,7 +107,7 @@ function LocationsScreen() {
   };
 
   const menuItems = [
-    ...(monitoringEnabled
+    ...(monitoringEnabled || tripWeatherEnabled
       ? [createDropdownItem({ actionKey: 'watch-list', title: t('weather.watchList') })]
       : []),
     createDropdownItem({
