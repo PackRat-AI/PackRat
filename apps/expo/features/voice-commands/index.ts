@@ -2,4 +2,5 @@ export { TripGuidanceCard, useShowsGuidance } from './components/TripGuidanceCar
 export { TripTrackingSection, useShowsTracking } from './components/TripTrackingSection';
 export { TripVoiceBar, useShowsVoiceBar } from './components/TripVoiceBar';
 export { VoiceSettingsSection } from './components/VoiceSettingsSection';
+export { useSafetyAnnouncerSync } from './hooks/useSafetyAnnouncerSync';
 export { useTrackRecorderSync } from './hooks/useTrackRecorderSync';

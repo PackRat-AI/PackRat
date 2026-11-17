@@ -23,6 +23,8 @@ export const voiceSettingsStore = observable<{
   guidanceOffRoute: boolean;
   /** Guidance buzzes instead of speaking, and the trip page shows what it's about. */
   guidanceVibrateOnly: boolean;
+  /** Severe weather, an hour before overdue and a low battery are said out loud; off means notified only. */
+  safetyAlertsSpoken: boolean;
 }>({
   enabled: true,
   spokenAnswers: true,
@@ -33,6 +35,7 @@ export const voiceSettingsStore = observable<{
   guidanceMilestones: true,
   guidanceOffRoute: true,
   guidanceVibrateOnly: false,
+  safetyAlertsSpoken: true,
 });
 
 syncObservable(voiceSettingsStore, {

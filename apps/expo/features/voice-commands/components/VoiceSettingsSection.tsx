@@ -20,6 +20,7 @@ export function VoiceSettingsSection() {
   const spokenAnswers = use$(voiceSettingsStore.spokenAnswers);
   const wakeWord = use$(voiceSettingsStore.wakeWord);
   const headset = use$(voiceSettingsStore.headsetShortcut) !== false;
+  const safetyAlertsSpoken = use$(voiceSettingsStore.safetyAlertsSpoken) !== false;
   const settings = use$(voiceSettingsStore);
   const alertRef = useRef<AlertMethods>(null);
   if (!flag) return null;
@@ -105,6 +106,23 @@ export function VoiceSettingsSection() {
               value={spokenAnswers}
               onValueChange={(on) => voiceSettingsStore.spokenAnswers.set(on)}
               testID={testIds.voiceCommands.spokenAnswersToggle}
+            />
+          </View>
+        )}
+        {enabled && (
+          <View className="flex-row items-center justify-between gap-4 border-t border-border p-4">
+            <View className="flex-1">
+              <Text className="font-medium">{t('voiceCommands.settings.safetyAlerts')}</Text>
+              <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                {safetyAlertsSpoken
+                  ? t('voiceCommands.settings.safetyAlertsSubtitle')
+                  : t('voiceCommands.settings.safetyAlertsOffSubtitle')}
+              </Text>
+            </View>
+            <Toggle
+              value={safetyAlertsSpoken}
+              onValueChange={(on) => voiceSettingsStore.safetyAlertsSpoken.set(on)}
+              testID={testIds.voiceCommands.safetyAlertsToggle}
             />
           </View>
         )}

@@ -198,6 +198,45 @@ export function dueBackAnswer({
   return `You're due back ${when}. That's ${spokenDuration(expectedReturn.getTime() - now.getTime())} from now.`;
 }
 
+// ── Safety alerts ─────────────────────────────────────────────────────────
+
+const TRAILING_STOPS = /\.+$/;
+
+/** Said an hour before the contacts are told the user is overdue. */
+export function overdueSoon({
+  contacts,
+  overdueAt,
+  now,
+}: {
+  contacts: string;
+  overdueAt: Date;
+  now: Date;
+}): string {
+  return `Heads up. ${capitalizeFirst(contacts)} will be told you're overdue in ${spokenDuration(overdueAt.getTime() - now.getTime())}. Say I'm safe, or add an hour.`;
+}
+
+/** Said at 20 and again at 10 percent while the phone isn't charging. */
+export function lowBattery({ percent, tracking }: { percent: number; tracking: boolean }): string {
+  const base = `Your battery is at ${percent} percent.`;
+  return tracking
+    ? `${base} Tracking will stop if it runs out.`
+    : `${base} Your phone may turn off before you're back.`;
+}
+
+/** A severe or extreme weather alert for where the user is. */
+export function weatherAlert({
+  event,
+  headline,
+}: {
+  event: string;
+  headline?: string | null;
+}): string {
+  let sentence = `Weather alert. ${capitalizeFirst(event)} in effect for your area.`;
+  const extra = headline?.trim().replace(TRAILING_STOPS, '');
+  if (extra && extra.toLowerCase() !== event.toLowerCase()) sentence += ` ${extra}.`;
+  return sentence;
+}
+
 // ── Confirmations ─────────────────────────────────────────────────────────
 
 export function confirmCheckIn({
