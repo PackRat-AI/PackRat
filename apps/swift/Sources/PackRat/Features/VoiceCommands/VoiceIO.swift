@@ -397,6 +397,9 @@ final class VoiceListener {
 
 /// The start and end tones around listening, played through the voice
 /// session so they're heard while the microphone is open, with a tap.
+///
+/// These are iOS's own record sounds, raised to full scale: as shipped they
+/// peak about 18 dB down and get lost outdoors.
 @MainActor
 enum VoiceTone {
     private static let startPlayer = player("begin_record")
@@ -416,9 +419,44 @@ enum VoiceTone {
     static func end() { play(endPlayer, fallback: 1114, haptic: .light) }
 
     private static func player(_ name: String) -> AVAudioPlayer? {
-        let player = try? AVAudioPlayer(contentsOf: URL(filePath: "/System/Library/Audio/UISounds/\(name).caf"))
+        let url = URL(filePath: "/System/Library/Audio/UISounds/\(name).caf")
+        let player = (try? louder(url)).flatMap { try? AVAudioPlayer(data: $0) } ?? (try? AVAudioPlayer(contentsOf: url))
         player?.prepareToPlay()
         return player
+    }
+
+    /// The sound at `url` scaled so its loudest point sits just under full
+    /// scale, as a 16-bit mono WAV.
+    nonisolated static func louder(_ url: URL, peak target: Float = 0.9) throws -> Data? {
+        let file = try AVAudioFile(forReading: url)
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)) else { return nil }
+        try file.read(into: buffer)
+        guard let channel = buffer.floatChannelData?[0] else { return nil }
+        let samples = Array(UnsafeBufferPointer(start: channel, count: Int(buffer.frameLength)))
+        let peak = samples.map(abs).max() ?? 0
+        guard peak > 0 else { return nil }
+        let gain = target / peak
+        return wav(samples.map { $0 * gain }, rate: UInt32(file.processingFormat.sampleRate))
+    }
+
+    nonisolated static func wav(_ samples: [Float], rate: UInt32) -> Data {
+        var data = Data()
+        func append<T: FixedWidthInteger>(_ value: T) { withUnsafeBytes(of: value.littleEndian) { data.append(contentsOf: $0) } }
+        let bytes = UInt32(samples.count * 2)
+        data.append(contentsOf: Array("RIFF".utf8))
+        append(36 + bytes)
+        data.append(contentsOf: Array("WAVEfmt ".utf8))
+        append(UInt32(16)) // format chunk size
+        append(UInt16(1)) // PCM
+        append(UInt16(1)) // mono
+        append(rate)
+        append(rate * 2) // bytes per second
+        append(UInt16(2)) // bytes per frame
+        append(UInt16(16)) // bits per sample
+        data.append(contentsOf: Array("data".utf8))
+        append(bytes)
+        for sample in samples { append(Int16(max(-1, min(1, sample)) * Float(Int16.max))) }
+        return data
     }
 
     private static func play(_ player: AVAudioPlayer?, fallback: SystemSoundID, haptic: UIImpactFeedbackGenerator.FeedbackStyle) {
