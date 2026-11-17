@@ -12,6 +12,7 @@ import { SignOutPrompt } from 'expo-app/features/auth/components/SignOutPrompt';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { useNotificationSetup } from 'expo-app/features/notifications/hooks/useNotificationSetup';
+import { useOfflineMapsSync } from 'expo-app/features/offline-maps/hooks/useOfflineMapsSync';
 import { getPackTemplateDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateDetailOptions';
 import { getPackTemplateItemDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateItemDetailOptions';
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
@@ -47,6 +48,7 @@ export default function AppLayout() {
   useTripReminderSync({ isAuthed: isAuthedValue });
   useSafetyCheckInSync({ isAuthed: isAuthedValue });
   useReportOutboxSync({ isAuthed: isAuthedValue });
+  useOfflineMapsSync();
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const isLoadingGlobal = useAtomValue(isLoadingAtom);
