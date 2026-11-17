@@ -8,6 +8,9 @@ import { useQuery } from '@tanstack/react-query';
 import { format, isToday, isTomorrow } from 'date-fns';
 import { Icon } from 'expo-app/components/Icon';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
+import { NotificationsOffNotice } from 'expo-app/features/notifications/components/NotificationsOffNotice';
+import { useNotificationPermission } from 'expo-app/features/notifications/hooks/useNotificationPermission';
+import { showsNotificationsOffNotice } from 'expo-app/features/notifications/utils/notificationsOffNotice';
 import { AlertCard } from 'expo-app/features/weather/components/forecast/ForecastAlertSection';
 import { WeatherAttribution } from 'expo-app/features/weather/components/WeatherAttribution';
 import { getWeatherIconName } from 'expo-app/features/weather/lib/weatherIcons';
@@ -56,6 +59,7 @@ export function TripWeatherSection({ trip }: { trip: Trip }) {
   const { colors } = useColorScheme();
   const { displayTemperature } = useTemperatureUnit();
   const setTripWeatherAlerts = useSetTripWeatherAlerts();
+  const notifications = useNotificationPermission();
   const stored = use$(() => tripConditionsStore[trip.id]?.get());
 
   const now = new Date();
@@ -239,6 +243,15 @@ export function TripWeatherSection({ trip }: { trip: Trip }) {
           testID={testIds.trips.weatherAlertsToggle}
         />
       </View>
+      {showsNotificationsOffNotice({
+        granted: notifications.granted,
+        alertsOn: tripSendsWeatherAlerts(trip),
+      }) ? (
+        <NotificationsOffNotice
+          onOpenSettings={notifications.openSettings}
+          testID={testIds.trips.weatherNotificationsOff}
+        />
+      ) : null}
     </View>
   );
 }
