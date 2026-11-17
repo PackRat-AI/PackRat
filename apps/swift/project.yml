@@ -105,6 +105,9 @@ targets:
         buildPhase: resources
       - path: Resources/Places.json
         buildPhase: resources
+      # Outlines for saving an offline map by forest name. iOS only, like Mapbox.
+      - path: Resources/NationalForests.json
+        buildPhase: resources
       - path: Resources/Landscapes.bin
         buildPhase: resources
     entitlements:

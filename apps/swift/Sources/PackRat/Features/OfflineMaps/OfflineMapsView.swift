@@ -26,7 +26,7 @@ struct OfflineMapsView: View {
                     Button("Save a Map Area") { showingPicker = true }
                         .buttonStyle(.borderedProminent)
                         .accessibilityIdentifier("offline_maps_empty_add")
-                    Button("Choose a Park or Region") { showingRegions = true }
+                    Button("Choose a Park, Forest or Region") { showingRegions = true }
                         .accessibilityIdentifier("offline_maps_empty_add_region")
                 }
                 .listRowBackground(Color.clear)
@@ -48,6 +48,16 @@ struct OfflineMapsView: View {
                 Section {
                     Button("Delete All Saved Maps", role: .destructive) { confirmingDeleteAll = true }
                         .accessibilityIdentifier("offline_maps_delete_all")
+                        // On the button so the popover points at it, not the list.
+                        .confirmationDialog(
+                            "Delete all saved maps?",
+                            isPresented: $confirmingDeleteAll,
+                            titleVisibility: .visible
+                        ) {
+                            Button("Delete All", role: .destructive) { store.deleteAll() }
+                        } message: {
+                            Text("Maps for these areas won't work without signal until you save them again.")
+                        }
                 }
             }
 
@@ -72,7 +82,7 @@ struct OfflineMapsView: View {
                 Menu {
                     Button("Frame an Area on the Map", systemImage: "viewfinder") { showingPicker = true }
                         .accessibilityIdentifier("offline_maps_add_frame")
-                    Button("Choose a Park or Region", systemImage: "mountain.2") { showingRegions = true }
+                    Button("Choose a Park, Forest or Region", systemImage: "mountain.2") { showingRegions = true }
                         .accessibilityIdentifier("offline_maps_add_region")
                 } label: {
                     Label("Save a Map Area", systemImage: "plus")
@@ -96,15 +106,6 @@ struct OfflineMapsView: View {
                 renaming = nil
             }
             Button("Cancel", role: .cancel) { renaming = nil }
-        }
-        .confirmationDialog(
-            "Delete all saved maps?",
-            isPresented: $confirmingDeleteAll,
-            titleVisibility: .visible
-        ) {
-            Button("Delete All", role: .destructive) { store.deleteAll() }
-        } message: {
-            Text("Maps for these areas won't work without signal until you save them again.")
         }
     }
 
