@@ -1,4 +1,9 @@
-import type { TrailConditionReport as ApiTrailConditionReport } from '@packrat/schemas/trailConditions';
+import type {
+  TrailConditionReport as ApiTrailConditionReport,
+  TrailConditionFlagReasonSchema,
+} from '@packrat/schemas/trailConditions';
+import type { z } from 'zod';
+import type { Coordinate, ReportPlace } from './utils/trails';
 
 /**
  * The report shape is owned by `@packrat/schemas/trailConditions` — the same Zod schema the API
@@ -12,27 +17,21 @@ export type TrailSurface = TrailConditionReport['surface'];
 export type OverallCondition = TrailConditionReport['overallCondition'];
 export type WaterCrossingDifficulty = NonNullable<TrailConditionReport['waterCrossingDifficulty']>;
 
+export type TrailConditionFlagReason = z.infer<typeof TrailConditionFlagReasonSchema>;
+
 /** The fields the submit form collects. Everything else is server- or client-generated. */
 export interface TrailConditionReportInput {
-  trailName: string;
-  trailRegion?: string | null;
+  /** The picked trail or the dropped pin. A report is never about a typed name alone. */
+  place: ReportPlace;
+  /** Where the device was when the hiker wrote it, recorded on reports about a trail. */
+  writtenFrom?: Coordinate | null;
   surface: TrailSurface;
   overallCondition: OverallCondition;
   hazards: string[];
   notes?: string | null;
+  /** Object keys of photos already uploaded. */
+  photos?: string[];
   tripId?: string | null;
-}
-
-/**
- * Locally-created reports carry a `local-` id prefix, matching
- * `TrailConditionsViewModel.makeLocalReport` in the Swift app. Both platforms use the prefix to
- * recognise a report that only exists on this device, so deleting one is a local removal rather
- * than a DELETE the server would reject.
- */
-export const LOCAL_REPORT_ID_PREFIX = 'local-';
-
-export function isLocalReport(id: string): boolean {
-  return id.startsWith(LOCAL_REPORT_ID_PREFIX);
 }
 
 // MARK: - Display metadata

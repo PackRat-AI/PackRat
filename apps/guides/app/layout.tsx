@@ -4,14 +4,14 @@ import Header from 'guides-app/components/header';
 import { QueryProvider } from 'guides-app/components/providers/query-provider';
 import { ThemeProvider } from 'guides-app/components/theme-provider';
 import { guidesMetadata } from 'guides-app/lib/metadata';
-import { Mona_Sans as FontSans } from 'next/font/google';
+import localFont from 'next/font/local';
 import type React from 'react';
 import './globals.css';
 
-const fontSans = FontSans({
-  subsets: ['latin'],
+const fontSans = localFont({
+  src: './fonts/mona-sans-latin.woff2',
   variable: '--font-sans',
-  weight: ['400', '500', '600', '700'],
+  weight: '400 700',
 });
 
 export const metadata = guidesMetadata;

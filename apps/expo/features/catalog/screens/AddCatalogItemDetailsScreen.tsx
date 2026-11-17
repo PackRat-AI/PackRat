@@ -1,9 +1,10 @@
-import { FilterChip, FlowRow, Host, Text as JCText } from '@expo/ui/jetpack-compose';
+import { FilterChip, FlowRow, Text as JCText } from '@expo/ui/jetpack-compose';
 import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
 import { assertDefined } from '@packrat/guards';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { TextField } from '@packrat/ui/src/text-field';
+import { ThemedHost as Host } from '@packrat/ui/src/themed-host';
 import { Toggle } from '@packrat/ui/src/toggle';
 import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 import { useQueryClient } from '@tanstack/react-query';
@@ -18,7 +19,7 @@ import { testIds } from 'expo-app/lib/testIds';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, type TextInput as RNTextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, type TextInputInstance, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatalogItemImage } from '../components/CatalogItemImage';
@@ -51,7 +52,7 @@ export function AddCatalogItemDetailsScreen() {
 
   const { colors } = useColorScheme();
   const insets = useSafeAreaInsets();
-  const notesRef = useRef<RNTextInput>(null);
+  const notesRef = useRef<TextInputInstance>(null);
   const quantityValue = Math.max(1, Number.parseInt(quantity, 10) || 1);
 
   const contentContainerStyle = useMemo(
@@ -322,7 +323,7 @@ export function AddCatalogItemDetailsScreen() {
             disabled={isAdding}
           >
             {isAdding ? (
-              <ActivityIndicator color={colors.background} />
+              <ActivityIndicator color={colors.primaryForeground} />
             ) : (
               <Text>{t('catalog.addToPack')}</Text>
             )}

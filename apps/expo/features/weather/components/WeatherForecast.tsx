@@ -1,3 +1,4 @@
+import type { WeatherAttribution as WeatherAttributionData } from '@packrat/schemas/weather';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
@@ -5,6 +6,7 @@ import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureU
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ScrollView, View } from 'react-native';
+import { WeatherAttribution } from './WeatherAttribution';
 import { WeatherIcon } from './WeatherIcon';
 
 export interface HourlyForecastItem {
@@ -34,6 +36,7 @@ interface WeatherForecastProps {
   dailyForecast?: DailyForecastItem[];
   details?: WeatherDetails;
   temperature?: number;
+  attribution?: WeatherAttributionData;
 }
 
 export function WeatherForecast({
@@ -41,6 +44,7 @@ export function WeatherForecast({
   dailyForecast,
   details,
   temperature,
+  attribution,
 }: WeatherForecastProps) {
   const { t } = useTranslation();
   const { displayTemperature } = useTemperatureUnit();
@@ -118,6 +122,11 @@ export function WeatherForecast({
           </View>
         )}
       </View>
+      {attribution ? (
+        <View className="mt-3">
+          <WeatherAttribution attribution={attribution} />
+        </View>
+      ) : null}
       <View className="mb-6 mt-4 rounded-xl bg-white/10 p-4">
         <Text className="mb-2 font-medium text-white">{t('weather.details')}</Text>
         <View className="flex-row flex-wrap">

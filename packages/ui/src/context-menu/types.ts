@@ -1,4 +1,4 @@
-import type { View, ViewProps } from 'react-native';
+import type { ViewInstance, ViewProps } from 'react-native';
 
 type ContextMenuIcon = { name: string; color?: string };
 
@@ -42,7 +42,7 @@ type ContextMenuConfig = {
   iOSItemSize?: 'small' | 'medium' | 'large';
 };
 
-type ContextMenuMethods = View & {
+type ContextMenuMethods = ViewInstance & {
   presentMenu?: () => void;
   dismissMenu?: () => void;
 };

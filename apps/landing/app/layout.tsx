@@ -3,14 +3,14 @@ import MainNav from 'landing-app/components/main-nav';
 import SiteFooter from 'landing-app/components/site-footer';
 import { ThemeProvider } from 'landing-app/components/theme-provider';
 import { landingMetadata } from 'landing-app/lib/metadata';
-import { Mona_Sans as FontSans } from 'next/font/google';
+import localFont from 'next/font/local';
 import type React from 'react';
 import './globals.css';
 
-const fontSans = FontSans({
-  subsets: ['latin'],
+const fontSans = localFont({
+  src: './fonts/mona-sans-latin.woff2',
   variable: '--font-sans',
-  weight: ['400', '500', '600', '700'],
+  weight: '400 700',
 });
 
 export const metadata = landingMetadata;

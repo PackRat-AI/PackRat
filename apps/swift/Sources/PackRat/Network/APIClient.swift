@@ -239,7 +239,11 @@ actor APIClient {
     ]
 
     private static func reportTransportFailure(_ error: Error, request: URLRequest, elapsed: TimeInterval) {
-        guard let urlError = error as? URLError,
+        // Without a DSN the SDK is never started, and the first capture would
+        // build its hub here, off the main thread, where it reads UIKit state.
+        // The Main Thread Checker aborts on that in UI tests.
+        guard SentrySDK.isEnabled,
+              let urlError = error as? URLError,
               !unreportedURLErrorCodes.contains(urlError.code)
         else { return }
         let path = request.url?.path ?? "?"

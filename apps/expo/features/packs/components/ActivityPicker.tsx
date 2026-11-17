@@ -124,7 +124,7 @@ export function ActivityPicker({
                 </View>
                 {activity.key === selectedActivity && (
                   <View className="h-5 w-5 items-center justify-center rounded-full bg-primary">
-                    <Icon name="check" size={14} color="white" />
+                    <Icon name="check" size={14} color={colors.primaryForeground} />
                   </View>
                 )}
               </Pressable>

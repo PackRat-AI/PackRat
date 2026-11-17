@@ -1,6 +1,6 @@
-import type { TextInput, TextInputProps } from 'react-native';
+import type { TextInputInstance, TextInputProps } from 'react-native';
 
-type SearchInputRef = React.Ref<TextInput>;
+type SearchInputRef = React.Ref<TextInputInstance>;
 
 type SearchInputProps = TextInputProps & {
   ref?: SearchInputRef;

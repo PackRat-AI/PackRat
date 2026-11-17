@@ -1,13 +1,16 @@
+import { use$ } from '@legendapp/state/react';
 import { assertDefined } from '@packrat/guards';
 import { Button } from '@packrat/ui/src/button';
 import { Card } from '@packrat/ui/src/card';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
-import { Icon } from 'expo-app/components/Icon';
+import { PlannedRouteSection, TripSafetySection } from 'expo-app/features/safety-check-in';
+import { TripTrailConditionsSection } from 'expo-app/features/trail-conditions/components/TripTrailConditionsSection';
 import { TripLogSection } from 'expo-app/features/trip-stats/components/TripLogSection';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { obs } from 'expo-app/lib/store';
 import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo } from 'react';
@@ -15,8 +18,13 @@ import { ScrollView, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
+import { packingModeStore } from '../../packs/store/packingMode';
+import { TripChecklistSection } from '../components/TripChecklistSection';
+import { TripReadinessCard } from '../components/TripReadinessCard';
+import { TripRemindersRow } from '../components/TripRemindersRow';
 import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
 import type { Trip } from '../types';
+import { isDepartureNear, packedIdsFrom, packState } from '../utils/tripReminderPlanner';
 
 export function TripDetailScreen() {
   const router = useRouter();
@@ -24,12 +32,16 @@ export function TripDetailScreen() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
 
-  const enableTrailConditions = useFeatureFlag('enableTrailConditions');
+  const enableTripReminders = useFeatureFlag('enableTripReminders');
+  const enableSafetyCheckIn = useFeatureFlag('enableSafetyCheckIn');
 
   // safe-cast: trip may be undefined before the store is hydrated; the guard at line ~38 handles
   // the undefined case and returns early, ensuring trip is non-null at render time below.
   const trip = useTripDetailsFromStore(id as string) as Trip;
   const packs = useDetailedPacks();
+  const packedRecord = use$(() =>
+    trip?.packId ? obs({ store: packingModeStore, id: trip.packId }).get() : null,
+  );
 
   // Create a stable key for MapView based on location coordinates
   // This forces remount when location changes, fixing iOS initialRegion issue
@@ -50,6 +62,10 @@ export function TripDetailScreen() {
   }
 
   const pack = packs.find((p) => p.id === trip.packId);
+  const { progress: packing } = packState({
+    items: pack ? pack.items : null,
+    packedItemIds: packedIdsFrom(packedRecord),
+  });
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '—';
@@ -76,6 +92,12 @@ export function TripDetailScreen() {
         <View className="p-4">
           {/* Trip name */}
           <Text className="mb-3 text-3xl font-bold text-foreground">{trip.name}</Text>
+
+          {enableSafetyCheckIn && <TripSafetySection trip={trip} />}
+
+          {enableTripReminders && isDepartureNear({ trip, now: new Date() }) && (
+            <TripReadinessCard trip={trip} />
+          )}
 
           {/* Dates */}
           <View className="mb-6" testID={testIds.trips.datesSection}>
@@ -158,7 +180,7 @@ export function TripDetailScreen() {
                   </Button>
 
                   {/* Weather */}
-                  <Button variant="secondary" size="sm" onPress={handleWeatherPress}>
+                  <Button variant="secondary" onPress={handleWeatherPress}>
                     <Text>{t('trips.viewWeather')}</Text>
                   </Button>
                 </View>
@@ -174,10 +196,23 @@ export function TripDetailScreen() {
               <Card>
                 <View className="p-3">
                   <Text>{pack.name}</Text>
-                  <Text>{t('trips.items', { count: pack.items.length })}</Text>
+                  {enableTripReminders && packing.kind === 'done' ? (
+                    <Text textColor={colors.green} testID={testIds.trips.packAllPacked}>
+                      {t('trips.reminders.allPacked')}
+                    </Text>
+                  ) : enableTripReminders && packing.kind === 'partial' && packing.packed > 0 ? (
+                    <Text>
+                      {t('trips.reminders.packedCount', {
+                        packed: packing.packed,
+                        total: packing.total,
+                      })}
+                    </Text>
+                  ) : (
+                    <Text>{t('trips.items', { count: pack.items.length })}</Text>
+                  )}
                 </View>
 
-                <View className="p-3">
+                <View className="flex-row gap-2 p-3">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -185,47 +220,36 @@ export function TripDetailScreen() {
                   >
                     <Text>{t('trips.viewPack')}</Text>
                   </Button>
+                  {enableTripReminders && pack.items.length > 0 && (
+                    <Button
+                      variant="tonal"
+                      size="sm"
+                      onPress={() => router.push(`/pack/${pack.id}?packing=1`)}
+                      testID={testIds.trips.startPackingBtn}
+                    >
+                      <Text>
+                        {packing.kind === 'done'
+                          ? t('trips.reminders.reviewPacking')
+                          : packing.kind === 'partial' && packing.packed > 0
+                            ? t('trips.reminders.continuePacking')
+                            : t('trips.reminders.startPacking')}
+                      </Text>
+                    </Button>
+                  )}
                 </View>
               </Card>
             </View>
           )}
+
+          {enableSafetyCheckIn && <PlannedRouteSection trip={trip} />}
+
+          {enableTripReminders && <TripChecklistSection trip={trip} />}
+
+          {enableTripReminders && <TripRemindersRow trip={trip} />}
 
           <TripLogSection trip={trip} />
 
-          {/* Trail Condition Report Prompt */}
-          {enableTrailConditions && trip.endDate && new Date(trip.endDate) < new Date() && (
-            <View className="mb-6">
-              <Card className="rounded-xl bg-card border border-border overflow-hidden">
-                <View className="p-4">
-                  <View className="flex-row items-center mb-2 gap-2">
-                    <Icon name="map-marker-outline" size={20} color={colors.primary} />
-                    <Text className="text-base font-semibold text-foreground">
-                      {t('trailConditions.reportConditionsTitle')}
-                    </Text>
-                  </View>
-                  <Text className="text-sm text-muted-foreground mb-3" wrap>
-                    {t('trailConditions.reportConditionsPrompt')}
-                  </Text>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onPress={() =>
-                      router.push({
-                        pathname: '/trail-conditions/submit',
-                        params: {
-                          tripId: trip.id,
-                          trailName: trip.location?.name ?? trip.name,
-                        },
-                      })
-                    }
-                    className="flex-row items-center gap-2"
-                  >
-                    <Text className="text-sm">{t('trailConditions.submitReport')}</Text>
-                  </Button>
-                </View>
-              </Card>
-            </View>
-          )}
+          <TripTrailConditionsSection trip={trip} />
         </View>
       </ScrollView>
     </SafeAreaView>

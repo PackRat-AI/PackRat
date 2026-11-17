@@ -109,7 +109,7 @@ export function NewPackFromTemplateScreen() {
           testID={testIds.packTemplates.newPackCreate}
         >
           {isCreating ? (
-            <ActivityIndicator color={colors.background} />
+            <ActivityIndicator color={colors.primaryForeground} />
           ) : (
             <Text>{t('packTemplates.create')}</Text>
           )}

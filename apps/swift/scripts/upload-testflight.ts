@@ -46,6 +46,9 @@
  *                            Profile *name* for the embedded watch app. Required
  *                            alongside the above once the watch app ships, or the
  *                            manual export fails on the watchkitapp bundle id.
+ *   EXPORT_WATCH_COMPLICATIONS_PROVISIONING_PROFILE
+ *                            Profile *name* for the watch app's complications
+ *                            extension, embedded inside the watch app.
  *
  * Flags:
  *   --staging                Archive the Staging config (PACKRAT_ENV=dev) so the
@@ -290,6 +293,9 @@ const exportProfileName = process.env.EXPORT_PROVISIONING_PROFILE?.trim();
 // The embedded watch app needs its own profile mapping; without it a manual
 // export fails on the watchkitapp bundle id even though the iOS one resolves.
 const exportWatchProfileName = process.env.EXPORT_WATCH_PROVISIONING_PROFILE?.trim();
+// Likewise the complications extension inside the watch app.
+const exportComplicationsProfileName =
+  process.env.EXPORT_WATCH_COMPLICATIONS_PROVISIONING_PROFILE?.trim();
 const exportOptions = join(work, 'ExportOptions.plist');
 writeFileSync(
   exportOptions,
@@ -310,6 +316,11 @@ ${
       exportWatchProfileName
         ? `
     <key>${uploadConfig.watchBundleId}</key><string>${exportWatchProfileName}</string>`
+        : ''
+    }${
+      exportComplicationsProfileName
+        ? `
+    <key>${uploadConfig.watchBundleId}.complications</key><string>${exportComplicationsProfileName}</string>`
         : ''
     }
   </dict>`

@@ -94,7 +94,9 @@ export function ReportModal({
                       selectedReason === reason ? 'border-primary bg-primary' : 'border-muted',
                     )}
                   >
-                    {selectedReason === reason && <Icon name="check" size={12} color="white" />}
+                    {selectedReason === reason && (
+                      <Icon name="check" size={12} color={colors.primaryForeground} />
+                    )}
                   </View>
                   <Text className={cn(selectedReason === reason && 'font-medium')}>
                     {t(reportReasonTranslationKeys[reason])}

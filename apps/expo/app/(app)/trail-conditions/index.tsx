@@ -1,4 +1,5 @@
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { SearchInput } from '@packrat/ui/src/search-input';
 import { Text } from '@packrat/ui/src/text';
@@ -6,7 +7,10 @@ import { ErrorState } from 'expo-app/components/ErrorState';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuthState } from 'expo-app/features/auth/hooks/useAuthState';
 import { TrailConditionReportRow } from 'expo-app/features/trail-conditions/components/TrailConditionReportRow';
-import { useTrailConditions } from 'expo-app/features/trail-conditions/hooks/useTrailConditions';
+import {
+  usePendingReportIds,
+  useTrailConditions,
+} from 'expo-app/features/trail-conditions/hooks/useTrailConditions';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -41,6 +45,7 @@ export default function TrailConditionsScreen() {
     error,
     refetch,
   } = useTrailConditions();
+  const pendingIds = usePendingReportIds();
 
   if (!enableTrailConditions) return null;
 
@@ -61,15 +66,7 @@ export default function TrailConditionsScreen() {
           <Text variant="subhead" className="text-center text-muted-foreground" wrap>
             {t('trailConditions.signedOutMessage')}
           </Text>
-          <Pressable
-            onPress={() => router.push('/auth')}
-            accessibilityRole="button"
-            className="mt-2 rounded-xl bg-primary px-5 py-3 active:opacity-90"
-          >
-            <Text variant="body" className="font-semibold text-white">
-              {t('auth.signIn')}
-            </Text>
-          </Pressable>
+          <Button onPress={() => router.push('/auth')} className="mt-2" label={t('auth.signIn')} />
         </View>
       );
     }
@@ -100,6 +97,7 @@ export default function TrailConditionsScreen() {
         renderItem={({ item }) => (
           <TrailConditionReportRow
             report={item}
+            isPending={pendingIds.has(item.id)}
             onPress={() => router.push(`/trail-conditions/${item.id}`)}
           />
         )}
@@ -119,7 +117,9 @@ export default function TrailConditionsScreen() {
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={refetch}
+            onRefresh={() => {
+              refetch();
+            }}
             colors={[colors.primary]}
             tintColor={colors.primary}
           />
@@ -179,16 +179,12 @@ function EmptyState({ isSearching, onSubmit }: { isSearching: boolean; onSubmit:
         {isSearching ? t('trailConditions.noResults') : t('trailConditions.noReports')}
       </Text>
       {isSearching ? null : (
-        <Pressable
+        <Button
           onPress={onSubmit}
           testID={testIds.trailConditions.emptyStateSubmitBtn}
-          accessibilityRole="button"
-          className="mt-2 rounded-xl bg-primary px-5 py-3 active:opacity-90"
-        >
-          <Text variant="body" className="font-semibold text-white">
-            {t('trailConditions.submitReport')}
-          </Text>
-        </Pressable>
+          className="mt-2"
+          label={t('trailConditions.submitReport')}
+        />
       )}
     </View>
   );

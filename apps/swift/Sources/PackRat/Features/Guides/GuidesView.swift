@@ -1,29 +1,58 @@
 import SwiftUI
-import MarkdownUI
 
 // MARK: - Models
 
-struct Guide: Codable, Identifiable, Sendable {
+struct Guide: Codable, Identifiable, Hashable, Sendable {
     let id: String
     let title: String
     let content: String?
-    /// The API calls this `description`; the UI shows it as the row excerpt.
+    /// The API calls this `description`; the UI shows it as the summary.
     let description: String?
     /// Coarse bucket — currently `"general"` for every guide.
     let category: String?
-    /// The tags the /guides/categories endpoint actually returns; this is what
-    /// the category filter must match against, not `category`.
+    /// The topic tags the /guides/categories endpoint returns; the topic
+    /// filter and the card's topic line read these, not `category`.
     let categories: [String]?
     let author: String?
     let difficulty: String?
     let createdAt: String?
+    /// Minutes. Guide frontmatter stores it as either a number or a string.
+    var readingTime: Int? = nil
+    var updatedAt: String? = nil
 
     var excerpt: String? { description }
 }
 
-/// Mirrors `GuidesResponseSchema` in packages/schemas/src/guides.ts:
-/// `{ items, totalCount, page, limit, totalPages }`.
-struct GuidesResponse: Codable {
+extension Guide {
+    private enum CodingKeys: String, CodingKey {
+        case id, title, content, description, category, categories, author, difficulty
+        case createdAt, readingTime, updatedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        title = try c.decode(String.self, forKey: .title)
+        content = try c.decodeIfPresent(String.self, forKey: .content)
+        description = try c.decodeIfPresent(String.self, forKey: .description)
+        category = try c.decodeIfPresent(String.self, forKey: .category)
+        categories = try c.decodeIfPresent([String].self, forKey: .categories)
+        author = try c.decodeIfPresent(String.self, forKey: .author)
+        difficulty = try c.decodeIfPresent(String.self, forKey: .difficulty)
+        createdAt = try c.decodeIfPresent(String.self, forKey: .createdAt)
+        updatedAt = try c.decodeIfPresent(String.self, forKey: .updatedAt)
+        if let minutes = try? c.decodeIfPresent(Double.self, forKey: .readingTime) {
+            readingTime = Int(minutes.rounded())
+        } else if let text = try? c.decodeIfPresent(String.self, forKey: .readingTime),
+                  let minutes = Double(text) {
+            readingTime = Int(minutes.rounded())
+        }
+    }
+}
+
+/// Mirrors `GuidesResponseSchema` (and `GuideSearchResponseSchema`, which adds
+/// `query`) in packages/schemas/src/guides.ts.
+struct GuidesResponse: Codable, Sendable {
     let items: [Guide]
     let totalCount: Int?
     let page: Int?
@@ -45,13 +74,23 @@ final class GuidesService: Sendable {
 
     init(api: APIClient = .shared) { self.api = api }
 
-    func listGuides(page: Int = 1, limit: Int = 20, category: String? = nil) async throws -> [Guide] {
-        var query: [String: String] = ["page": "\(page)", "limit": "\(limit)"]
-        if let cat = category { query["category"] = cat }
-        let endpoint = Endpoint(.get, "/api/guides", query: query)
-        // Errors propagate: a failed fetch must surface as an error state, not
-        // as an empty list indistinguishable from "there are no guides".
-        return try await api.send(endpoint, as: GuidesResponse.self).items
+    /// Newest first. Errors propagate: a failed fetch must surface as an error
+    /// state, not as an empty list indistinguishable from "there are no guides".
+    func listGuides(page: Int = 1, limit: Int = 20, category: String? = nil) async throws -> GuidesResponse {
+        var query: [String: String] = [
+            "page": "\(page)",
+            "limit": "\(limit)",
+            "sort[field]": "createdAt",
+            "sort[order]": "desc",
+        ]
+        if let category { query["category"] = category }
+        return try await api.send(Endpoint(.get, "/api/guides", query: query), as: GuidesResponse.self)
+    }
+
+    /// Ranked by the server: title matches first, then summary, then article text.
+    func searchGuides(_ text: String, page: Int = 1, limit: Int = 20) async throws -> GuidesResponse {
+        let query = ["q": text, "page": "\(page)", "limit": "\(limit)"]
+        return try await api.send(Endpoint(.get, "/api/guides/search", query: query), as: GuidesResponse.self)
     }
 
     func getGuide(_ id: String) async throws -> Guide {
@@ -65,75 +104,189 @@ final class GuidesService: Sendable {
     }
 }
 
+// MARK: - Paging
+
+private let guidesPageSize = 20
+
+/// One paged list of guides: the library for a topic, or the results for a
+/// search. `key` names what is loaded, so a view reappearing after a pushed
+/// guide does not reload it, and a newer load always wins over an older one
+/// that answers late.
+@Observable
+@MainActor
+final class GuidePager {
+    enum Phase: Equatable { case idle, loading, loaded, failed }
+
+    typealias Fetch = @Sendable (_ page: Int) async throws -> GuidesResponse
+
+    private(set) var items: [Guide] = []
+    private(set) var totalCount = 0
+    private(set) var phase: Phase = .idle
+    private(set) var isLoadingMore = false
+    private(set) var loadMoreFailed = false
+    private(set) var key: String?
+
+    private var page = 0
+    private var totalPages = 0
+    private var generation = 0
+    private var fetch: Fetch?
+
+    var hasMore: Bool { page < totalPages }
+
+    /// `refreshing` reloads even when `key` is already loaded, and keeps the
+    /// current items on screen until the new page arrives.
+    func load(key: String, refreshing: Bool = false, fetch: @escaping Fetch) async {
+        if !refreshing, key == self.key, phase == .loaded { return }
+        generation += 1
+        let current = generation
+        let keepsItems = refreshing && key == self.key && !items.isEmpty
+        self.key = key
+        self.fetch = fetch
+        isLoadingMore = false
+        loadMoreFailed = false
+        if !keepsItems {
+            items = []
+            phase = .loading
+        }
+        do {
+            let response = try await fetch(1)
+            guard current == generation else { return }
+            apply(response, replacing: true)
+            phase = .loaded
+        } catch {
+            guard current == generation, !keepsItems else { return }
+            phase = Task.isCancelled ? .idle : .failed
+        }
+    }
+
+    func loadMore() async {
+        guard phase == .loaded, hasMore, !isLoadingMore, let fetch else { return }
+        let current = generation
+        isLoadingMore = true
+        loadMoreFailed = false
+        defer { if current == generation { isLoadingMore = false } }
+        do {
+            let response = try await fetch(page + 1)
+            guard current == generation else { return }
+            apply(response, replacing: false)
+        } catch {
+            guard current == generation, !Task.isCancelled else { return }
+            loadMoreFailed = true
+        }
+    }
+
+    func reset() {
+        generation += 1
+        items = []
+        totalCount = 0
+        phase = .idle
+        isLoadingMore = false
+        loadMoreFailed = false
+        key = nil
+        page = 0
+        totalPages = 0
+        fetch = nil
+    }
+
+    private func apply(_ response: GuidesResponse, replacing: Bool) {
+        if replacing {
+            items = response.items
+        } else {
+            let known = Set(items.map(\.id))
+            items += response.items.filter { !known.contains($0.id) }
+        }
+        page = response.page ?? (replacing ? 1 : page + 1)
+        totalPages = response.totalPages ?? page
+        totalCount = response.totalCount ?? items.count
+    }
+}
+
 // MARK: - ViewModel
 
 @Observable
 @MainActor
 final class GuidesViewModel {
-    var guides: [Guide] = []
     var categories: [String] = []
-    var isLoading = false
-    var error: String?
-    var searchText = ""
     var selectedCategory: String?
+    var searchText = ""
 
-    private let service = GuidesService.shared
+    let library = GuidePager()
+    let search = GuidePager()
 
-    var filteredGuides: [Guide] {
-        var result = guides
-        if let cat = selectedCategory {
-            result = result.filter { $0.categories?.contains(cat) == true || $0.category == cat }
-        }
-        if !searchText.isEmpty {
-            result = result.filter {
-                $0.title.localizedCaseInsensitiveContains(searchText) ||
-                ($0.excerpt?.localizedCaseInsensitiveContains(searchText) == true)
-            }
-        }
-        return result
-    }
+    private let service: GuidesService
 
-    func load() async {
+    init(service: GuidesService = .shared) { self.service = service }
+
+    var trimmedQuery: String { searchText.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    /// True from a keystroke until the debounced search for it has started,
+    /// so the results area holds its placeholders instead of flashing stale
+    /// results or "No Results".
+    var isSearchPending: Bool { !trimmedQuery.isEmpty && search.key != trimmedQuery }
+
+    func loadCategories() async {
         if VisualSampleData.isEnabled {
-            isLoading = false
-            error = nil
-            guides = VisualSampleData.guides
             categories = VisualSampleData.guideCategories
             return
         }
-
-        if VisualSampleData.isScreenshotCapture {
-            isLoading = false
-            error = nil
-            guides = []
-            categories = []
-            return
-        }
-
-        isLoading = true
-        error = nil
-        defer { isLoading = false }
-
-        // The category filter is a convenience; losing it must not blank the
-        // list, so its failure is kept separate from the guides request.
-        async let fetchedCategories = try? service.categories()
-
-        do {
-            guides = try await service.listGuides()
-        } catch {
-            self.error = error.localizedDescription
-        }
-
-        categories = await fetchedCategories ?? []
+        guard categories.isEmpty, !VisualSampleData.isScreenshotCapture else { return }
+        // The topic chips are a convenience; losing them must not blank the
+        // list, so their failure stays separate from the guides request.
+        categories = (try? await service.categories()) ?? []
     }
 
-    func loadMore() async {
-        guard !isLoading else { return }
-        let nextPage = (guides.count / 20) + 1
-        do {
-            let more = try await service.listGuides(page: nextPage, category: selectedCategory)
-            if !more.isEmpty { guides.append(contentsOf: more) }
-        } catch { }
+    func loadLibrary(refreshing: Bool = false) async {
+        let category = selectedCategory
+        let service = service
+        await library.load(key: category ?? "", refreshing: refreshing) { page in
+            if let sample = Self.sampleResponse(page: page, matching: { category == nil || $0.categories?.contains(category ?? "") == true }) {
+                return sample
+            }
+            return try await service.listGuides(page: page, limit: guidesPageSize, category: category)
+        }
+    }
+
+    /// Debounced: runs from `.task(id: searchText)`, which cancels the wait
+    /// when the user keeps typing.
+    func searchAfterPause() async {
+        guard !trimmedQuery.isEmpty else {
+            search.reset()
+            return
+        }
+        try? await Task.sleep(for: .milliseconds(300))
+        guard !Task.isCancelled else { return }
+        await runSearch()
+    }
+
+    func runSearch() async {
+        let query = trimmedQuery
+        guard !query.isEmpty else { return }
+        let service = service
+        await search.load(key: query) { page in
+            if let sample = Self.sampleResponse(page: page, matching: {
+                $0.title.localizedCaseInsensitiveContains(query)
+                    || $0.excerpt?.localizedCaseInsensitiveContains(query) == true
+            }) {
+                return sample
+            }
+            return try await service.searchGuides(query, page: page, limit: guidesPageSize)
+        }
+    }
+
+    /// Screenshot and visual-QA runs read fixed guides instead of the API.
+    nonisolated private static func sampleResponse(
+        page: Int,
+        matching include: (Guide) -> Bool
+    ) -> GuidesResponse? {
+        let items: [Guide]
+        if VisualSampleData.isEnabled {
+            items = VisualSampleData.guides.filter(include)
+        } else if VisualSampleData.isScreenshotCapture {
+            items = []
+        } else {
+            return nil
+        }
+        return GuidesResponse(items: items, totalCount: items.count, page: page, limit: guidesPageSize, totalPages: 1)
     }
 }
 
@@ -141,152 +294,214 @@ final class GuidesViewModel {
 
 struct GuidesView: View {
     @State private var viewModel = GuidesViewModel()
-    @State private var selectedGuide: Guide?
+    @State private var isSearching = false
     @Environment(AuthManager.self) private var authManager
 
     var body: some View {
         Group {
-            if !authManager.isAuthenticated {
+            if authManager.isAuthenticated {
+                library
+            } else {
                 GuestLimitedView(
                     "Sign In to Read Guides",
                     subtitle: "Gear and packing guides written for the trips you are planning. Your packs and trips stay on this device and keep working without an account.",
                     systemImage: "book"
                 )
-            } else if viewModel.isLoading && viewModel.guides.isEmpty {
-                ProgressView("Loading guides…").frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.error, viewModel.guides.isEmpty {
-                ErrorView(error, retry: { await viewModel.load() })
-            } else if viewModel.filteredGuides.isEmpty && !viewModel.searchText.isEmpty {
-                ContentUnavailableView.search(text: viewModel.searchText)
-            } else if viewModel.filteredGuides.isEmpty {
-                EmptyStateView(
-                    "No Guides",
-                    subtitle: viewModel.selectedCategory != nil ? "No guides in this category" : "Guides will appear here",
-                    systemImage: "book"
-                )
-            } else {
-                guideList
             }
         }
         .navigationTitle("Guides")
-        .searchable(text: $viewModel.searchText, prompt: "Search guides")
-        .task { if authManager.isAuthenticated { await viewModel.load() } }
-        .refreshable { if authManager.isAuthenticated { await viewModel.load() } }
-        .sheet(item: $selectedGuide) { guide in
-            NavigationStack { GuideDetailView(guide: guide) }
-        }
     }
 
-    private var categoryBar: some View {
-        // A .menu Picker already renders its own label and the selected value,
-        // so no trailing Text — that duplicated the selection a third time.
-        Picker("Category", selection: $viewModel.selectedCategory) {
-            Label("All", systemImage: "line.3.horizontal.decrease.circle")
-                .tag(nil as String?)
-            ForEach(viewModel.categories, id: \.self) { cat in
-                Label(cat.capitalized, systemImage: "tag")
-                    .tag(Optional(cat))
+    private var library: some View {
+        libraryContent
+            // Search sits over the library rather than replacing it, so
+            // closing search returns to the same topic and scroll position.
+            .overlay {
+                if isSearching {
+                    GuideSearchResultsView(viewModel: viewModel)
+                        .background(.background)
+                }
+            }
+            #if os(iOS)
+            // Always shown, like the Gear Catalog, so search is never hidden
+            // behind a pull-down.
+            .searchable(
+                text: $viewModel.searchText,
+                isPresented: $isSearching,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "Search guides"
+            )
+            #else
+            .searchable(text: $viewModel.searchText, isPresented: $isSearching, prompt: "Search guides")
+            #endif
+            .task { await viewModel.loadCategories() }
+            .task(id: viewModel.selectedCategory) { await viewModel.loadLibrary() }
+            .task(id: viewModel.searchText) { await viewModel.searchAfterPause() }
+    }
+
+    /// One List for every phase, with states laid over it: swapping the
+    /// scroll view underneath the navigation bar loses its large title.
+    private var libraryContent: some View {
+        let pager = viewModel.library
+        return List {
+            // The first row rather than a pinned strip: a pinned strip under
+            // a large title renders the title blurred on iOS 26.
+            GuideTopicChips(topics: viewModel.categories, selection: $viewModel.selectedCategory)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+            switch pager.phase {
+            case .idle, .loading: GuidePlaceholderRows()
+            case .loaded: GuideRows(pager: pager)
+            case .failed: EmptyView()
             }
         }
-        .pickerStyle(.menu)
-        .accessibilityIdentifier("guides_category_filter")
-        .padding(.vertical, 2)
+        .listStyle(.plain)
+        .refreshable { await viewModel.loadLibrary(refreshing: true) }
+        .accessibilityIdentifier("guides_list")
+        .overlay {
+            if pager.phase == .failed {
+                GuidesLoadFailedView(title: "Couldn’t Load Guides") {
+                    await viewModel.loadLibrary()
+                }
+            } else if pager.phase == .loaded, pager.items.isEmpty {
+                emptyLibrary
+            }
+        }
     }
 
-    private var guideList: some View {
+    @ViewBuilder
+    private var emptyLibrary: some View {
+        if let topic = viewModel.selectedCategory {
+            ContentUnavailableView {
+                Label("No \(GuideTopic.label(for: topic)) Guides Yet", systemImage: "book")
+            } actions: {
+                Button("Show All Guides") {
+                    withAnimation(.snappy) { viewModel.selectedCategory = nil }
+                }
+            }
+        } else {
+            ContentUnavailableView(
+                "No Guides Yet",
+                systemImage: "book",
+                description: Text("Check back soon for new guides.")
+            )
+        }
+    }
+}
+
+// MARK: - Search
+
+private struct GuideSearchResultsView: View {
+    let viewModel: GuidesViewModel
+
+    var body: some View {
+        let pager = viewModel.search
+        let isWaiting = viewModel.isSearchPending || pager.phase == .loading || pager.phase == .idle
         List {
-            if !viewModel.categories.isEmpty {
+            if viewModel.trimmedQuery.isEmpty {
+                EmptyView()
+            } else if isWaiting {
+                GuidePlaceholderRows()
+            } else if pager.phase == .loaded, !pager.items.isEmpty {
                 Section {
-                    categoryBar
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                        .listRowSeparator(.hidden)
+                    GuideRows(pager: pager)
+                } header: {
+                    Text("^[\(pager.totalCount) result](inflect: true)")
                 }
             }
-
-            ForEach(viewModel.filteredGuides) { guide in
-                Button { selectedGuide = guide } label: { GuideRowView(guide: guide) }
-                    .buttonStyle(.plain)
-                    .task {
-                        if guide.id == viewModel.filteredGuides.last?.id { await viewModel.loadMore() }
-                    }
+        }
+        .listStyle(.plain)
+        .accessibilityIdentifier("guides_search_results")
+        .overlay {
+            if viewModel.trimmedQuery.isEmpty {
+                ContentUnavailableView(
+                    "Search Guides",
+                    systemImage: "magnifyingglass",
+                    description: Text("Search by topic, gear or destination.")
+                )
+            } else if isWaiting {
+                EmptyView()
+            } else if pager.phase == .failed {
+                GuidesLoadFailedView(title: "Couldn’t Load Guides") {
+                    await viewModel.runSearch()
+                }
+            } else if pager.items.isEmpty {
+                ContentUnavailableView {
+                    Label("No Results for “\(viewModel.trimmedQuery)”", systemImage: "magnifyingglass")
+                } description: {
+                    Text("Try another word, or browse by topic.")
+                }
             }
         }
     }
 }
 
-private struct GuideRowView: View {
-    let guide: Guide
+// MARK: - Shared list pieces
+
+/// The guide rows of a pager, then a footer that loads the next page as the
+/// user nears the end, or offers to retry it in place if it failed.
+private struct GuideRows: View {
+    let pager: GuidePager
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(guide.title)
-                    .font(.headline)
-                    .lineLimit(2)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+        ForEach(pager.items) { guide in
+            // A destination link, not `NavigationLink(value:)`: the iPhone
+            // Home stack binds a typed `[NavItem]` path, which cannot hold a Guide.
+            NavigationLink {
+                GuideDetailView(guide: guide)
+            } label: {
+                GuideRowView(guide: guide)
             }
-            if let excerpt = guide.excerpt {
-                Text(excerpt)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-            if let cat = guide.category {
-                Label(cat.capitalized, systemImage: "tag")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            .accessibilityIdentifier("guide_row_\(guide.id)")
+            .task {
+                if guide.id == pager.items.last?.id { await pager.loadMore() }
             }
         }
-        .padding(.vertical, 4)
+
+        if pager.isLoadingMore {
+            ProgressView()
+                .frame(maxWidth: .infinity)
+                .listRowSeparator(.hidden)
+        } else if pager.loadMoreFailed {
+            VStack(spacing: 6) {
+                Text("Couldn’t load more guides.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Button("Try Again") { Task { await pager.loadMore() } }
+                    .font(.footnote.weight(.semibold))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .listRowSeparator(.hidden)
+        }
     }
 }
 
-// MARK: - Guide Detail View
+/// Placeholder rows in the same shape as real ones, so nothing moves when the
+/// first page arrives.
+private struct GuidePlaceholderRows: View {
+    var body: some View {
+        ForEach(GuideRowView.placeholders) { guide in
+            GuideRowView(guide: guide)
+        }
+        .redacted(reason: .placeholder)
+        .disabled(true)
+        .accessibilityHidden(true)
+    }
+}
 
-struct GuideDetailView: View {
-    let guide: Guide
-    @State private var fullGuide: Guide?
-    @State private var isLoading = false
-    @Environment(\.dismiss) private var dismiss
-
-    private var displayGuide: Guide { fullGuide ?? guide }
+struct GuidesLoadFailedView: View {
+    let title: String
+    let retry: () async -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                if let cat = displayGuide.category {
-                    Label(cat.capitalized, systemImage: "tag")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal)
-                }
-                if let content = displayGuide.content {
-                    Markdown(content)
-                        .markdownTheme(.gitHub)
-                        .padding(.horizontal)
-                } else if isLoading {
-                    ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
-                } else if let excerpt = displayGuide.excerpt {
-                    Text(excerpt)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal)
-                }
-            }
-            .padding(.bottom, 24)
-        }
-        .navigationTitle(displayGuide.title)
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.large)
-        #endif
-        .task {
-            guard guide.content == nil else { return }
-            isLoading = true
-            defer { isLoading = false }
-            fullGuide = try? await GuidesService.shared.getGuide(guide.id)
+        ContentUnavailableView {
+            Label(title, systemImage: "wifi.exclamationmark")
+        } description: {
+            Text("Check your connection and try again.")
+        } actions: {
+            Button("Try Again") { Task { await retry() } }
+                .buttonStyle(.bordered)
         }
     }
 }

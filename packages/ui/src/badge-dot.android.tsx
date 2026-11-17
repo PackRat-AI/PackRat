@@ -1,9 +1,10 @@
-import { Badge as JCBadge, Host as JCHost } from '@expo/ui/jetpack-compose';
+import { Badge as JCBadge } from '@expo/ui/jetpack-compose';
 import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { cssInterop } from 'nativewind';
 import type { ComponentProps } from 'react';
 import type { BadgeDotProps } from './badge-dot-props';
+import { ThemedHost as JCHost } from './themed-host';
 
 cssInterop(JCHost, { className: 'style' });
 

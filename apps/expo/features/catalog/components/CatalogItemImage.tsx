@@ -27,6 +27,9 @@ export function CatalogItemImage({ imageUrl, ...imageProps }: PackItemImageProps
           Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
         },
       }}
+      // Decode at the view's size, not the source's: retailer photos run to several thousand
+      // pixels and full-size bitmaps exhaust memory on Android.
+      resizeMethod="resize"
       {...imageProps}
       className={`bg-muted ${imageProps.className}`}
     />

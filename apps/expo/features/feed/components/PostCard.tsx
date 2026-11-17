@@ -1,129 +1,293 @@
+import { createDropdownItem, DropdownMenu } from '@packrat/ui/src/dropdown-menu';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useRouter } from 'expo-router';
-import { useCallback } from 'react';
-import {
-  Dimensions,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import type { Post } from '../types';
-import { buildPostImageUrl, formatAuthorName, formatRelativeDate } from '../utils';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
+import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
+import { useRef, useState } from 'react';
+import { Pressable, View } from 'react-native';
+import Animated, { FadeOut, ZoomIn } from 'react-native-reanimated';
+import { useTogglePostLike, useTogglePostSave } from '../hooks/usePostMutations';
+import type { Post, PostAuthor } from '../types';
+import { displayName, taggedSummary } from '../utils/mentions';
+import { postShareUrl } from '../utils/share';
+import { MentionText } from './MentionText';
+import { PersonAvatar } from './PersonAvatar';
+import { PhotoCarousel } from './PhotoCarousel';
+import { PhotoViewer } from './PhotoViewer';
+import type { usePostActions } from './usePostActions';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
+const LONG_CAPTION_CHARS = 220;
+const LONG_CAPTION_LINES = 4;
 
-interface PostCardProps {
+/**
+ * One post in the feed: author, photos, actions, caption, who was tagged, and a way into the
+ * comments. `actions` comes from the hosting screen so its dialogs render once.
+ */
+export function PostCard({
+  post,
+  actions,
+  onOpenComments,
+  showCommentsLink = true,
+}: {
   post: Post;
-  onLike: (postId: number) => void;
-  onDelete?: (postId: number) => void;
-  currentUserId?: string;
-}
-
-export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, currentUserId }) => {
+  actions: ReturnType<typeof usePostActions>;
+  onOpenComments: (post: Post) => void;
+  showCommentsLink?: boolean;
+}) {
+  const { t } = useTranslation();
   const { colors } = useColorScheme();
-  const router = useRouter();
+  const like = useTogglePostLike();
+  const save = useTogglePostSave();
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const [captionExpanded, setCaptionExpanded] = useState(false);
+  const [heartBurst, setHeartBurst] = useState(0);
+  const burstTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const handlePress = useCallback(() => {
-    router.push({ pathname: '/feed/[id]', params: { id: post.id } });
-  }, [router, post.id]);
+  const tags = post.tags ?? [];
+  const caption = post.caption?.trim() ? post.caption : null;
+  const isLongCaption =
+    !!caption &&
+    (caption.length > LONG_CAPTION_CHARS || caption.split('\n').length > LONG_CAPTION_LINES + 1);
+  const authorName = post.author
+    ? displayName(post.author) || t('feed.packratMember')
+    : t('feed.unknownPerson');
+  const tagged = taggedSummary(tags);
+  const nameOf = (person: PostAuthor) => displayName(person) || t('feed.packratMember');
+  const tagLine = !tagged
+    ? null
+    : tagged.second
+      ? t('feed.taggedTwo', { first: nameOf(tagged.first), second: nameOf(tagged.second) })
+      : tagged.others > 0
+        ? t('feed.taggedMore', { first: nameOf(tagged.first), count: tagged.others })
+        : nameOf(tagged.first);
+  const shareUrl = postShareUrl(post);
 
-  const handleLike = useCallback(() => {
-    onLike(post.id);
-  }, [onLike, post.id]);
+  // Double-tap only ever likes; undoing a like is the heart button's job.
+  const likeFromPhoto = () => {
+    setHeartBurst((n) => n + 1);
+    clearTimeout(burstTimer.current);
+    burstTimer.current = setTimeout(() => setHeartBurst(0), 650);
+    if (!post.likedByMe) like.mutate(post);
+  };
 
-  const isOwner = currentUserId === post.userId;
+  const shareItems = [
+    ...(shareUrl
+      ? [
+          createDropdownItem({
+            actionKey: 'link',
+            title: t('feed.shareLink'),
+            icon: { name: 'link' },
+          }),
+        ]
+      : []),
+    ...(post.images[photoIndex]
+      ? [
+          createDropdownItem({
+            actionKey: 'photo',
+            title: post.images.length > 1 ? t('feed.shareThisPhoto') : t('feed.sharePhoto'),
+            icon: { name: 'image-outline' },
+          }),
+        ]
+      : []),
+  ];
+
+  const captionText = (variant: 'body' | 'callout') =>
+    caption ? (
+      <View className="gap-0.5">
+        <MentionText
+          text={caption}
+          people={tags}
+          variant={variant}
+          numberOfLines={isLongCaption && !captionExpanded ? LONG_CAPTION_LINES : undefined}
+          selectable
+          testID={testIds.feed.postCaption(post.id)}
+        />
+        {isLongCaption ? (
+          <Pressable
+            onPress={() => setCaptionExpanded((v) => !v)}
+            className="min-h-[32px] justify-center self-start"
+            accessibilityRole="button"
+            testID={testIds.feed.captionMore(post.id)}
+          >
+            <Text variant="callout" className="font-medium text-muted-foreground">
+              {captionExpanded ? t('feed.captionLess') : t('feed.captionMore')}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
+    ) : null;
 
   return (
-    <View className="mb-4 bg-card rounded-2xl overflow-hidden border border-border/50">
+    <View
+      className="overflow-hidden rounded-xl border border-border bg-card"
+      testID={testIds.feed.post(post.id)}
+    >
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-3 pb-2">
-        <View className="flex-row items-center gap-2">
-          <View className="h-9 w-9 rounded-full bg-primary/20 items-center justify-center">
-            <Icon name="account-circle" size={22} color={colors.primary} />
-          </View>
-          <View>
-            <Text className="font-semibold text-sm">{formatAuthorName(post)}</Text>
-            <Text className="text-xs text-muted-foreground">
-              {formatRelativeDate({ dateValue: post.createdAt })}
-            </Text>
-          </View>
+      <View className="flex-row items-center gap-3 py-2 pl-4 pr-1">
+        <PersonAvatar person={post.author} size={40} />
+        <View className="flex-1">
+          <Text variant="callout" className="font-semibold" numberOfLines={1}>
+            {authorName}
+          </Text>
+          <Text variant="caption1" className="text-muted-foreground">
+            {getRelativeTime({ dateValue: post.createdAt })}
+            {post.captionEditedAt ? ` · ${t('feed.edited')}` : ''}
+          </Text>
         </View>
-        {isOwner && onDelete && (
-          <TouchableOpacity onPress={() => onDelete(post.id)} hitSlop={8}>
-            <Icon name="trash-can-outline" size={20} color={colors.grey2} />
-          </TouchableOpacity>
-        )}
+        <DropdownMenu
+          items={actions.menuItems(post)}
+          onItemPress={({ actionKey }) => actions.onMenuItemPress({ post, actionKey })}
+          testID={testIds.feed.postMenu(post.id)}
+        >
+          <View
+            accessibilityRole="button"
+            accessibilityLabel={t('feed.more')}
+            className="h-12 w-12 items-center justify-center"
+          >
+            <Icon name="dots-vertical" size={24} color={colors.grey} />
+          </View>
+        </DropdownMenu>
       </View>
 
-      {/* Images */}
-      {post.images.length > 0 && (
-        <Pressable onPress={handlePress}>
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            style={styles.imageScroll}
-          >
-            {post.images.map((img) => (
-              <Image
-                key={img}
-                source={{ uri: buildPostImageUrl(img) }}
-                style={[styles.image, { width: SCREEN_WIDTH - 32 }]}
-                resizeMode="cover"
-              />
-            ))}
-          </ScrollView>
-          {post.images.length > 1 && (
-            <View className="absolute bottom-2 right-3 bg-black/50 rounded-full px-2 py-0.5">
-              <Text className="text-white text-xs">{post.images.length} photos</Text>
+      {post.images.length === 0 ? (
+        <View className="px-4 pb-1">{captionText('body')}</View>
+      ) : (
+        <View>
+          <PhotoCarousel
+            images={post.images}
+            index={photoIndex}
+            onIndexChange={setPhotoIndex}
+            onOpen={setViewerIndex}
+            onDoubleTap={likeFromPhoto}
+          />
+          {heartBurst > 0 ? (
+            <View pointerEvents="none" className="absolute inset-0 items-center justify-center">
+              <Animated.View key={heartBurst} entering={ZoomIn.springify()} exiting={FadeOut}>
+                <Icon name="heart" size={88} color="white" />
+              </Animated.View>
             </View>
-          )}
-        </Pressable>
-      )}
-
-      {/* Caption */}
-      {post.caption && (
-        <Pressable onPress={handlePress}>
-          <Text className="px-4 pt-2 text-sm" numberOfLines={3} wrap>
-            {post.caption}
-          </Text>
-        </Pressable>
+          ) : null}
+        </View>
       )}
 
       {/* Actions */}
-      <View className="flex-row items-center gap-4 px-4 py-3">
-        <TouchableOpacity onPress={handleLike} className="flex-row items-center gap-1">
+      <View className="flex-row items-center px-1">
+        <Pressable
+          onPress={() => like.mutate(post)}
+          className="h-12 min-w-[48px] flex-row items-center justify-center gap-1.5 px-3"
+          accessibilityRole="button"
+          accessibilityLabel={
+            post.likedByMe
+              ? t('feed.unlike', { count: post.likeCount })
+              : t('feed.like', { count: post.likeCount })
+          }
+          android_ripple={{ color: colors.grey5, borderless: true }}
+          testID={testIds.feed.likeButton(post.id)}
+        >
           <Icon
             name={post.likedByMe ? 'heart' : 'heart-outline'}
-            size={22}
-            color={post.likedByMe ? '#ef4444' : colors.grey2}
+            size={24}
+            color={post.likedByMe ? colors.destructive : colors.grey}
           />
-          {post.likeCount > 0 && (
-            <Text className="text-sm text-muted-foreground">{post.likeCount}</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={handlePress} className="flex-row items-center gap-1">
-          <Icon name="message-outline" size={22} color={colors.grey2} />
-          {post.commentCount > 0 && (
-            <Text className="text-sm text-muted-foreground">{post.commentCount}</Text>
-          )}
-        </TouchableOpacity>
+          <Text variant="callout" className="text-muted-foreground">
+            {post.likeCount}
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => onOpenComments(post)}
+          className="h-12 min-w-[48px] flex-row items-center justify-center gap-1.5 px-3"
+          accessibilityRole="button"
+          accessibilityLabel={t('feed.commentsA11y', { count: post.commentCount })}
+          android_ripple={{ color: colors.grey5, borderless: true }}
+          testID={testIds.feed.commentsButton(post.id)}
+        >
+          <Icon name="comment-outline" size={24} color={colors.grey} />
+          <Text variant="callout" className="text-muted-foreground">
+            {post.commentCount}
+          </Text>
+        </Pressable>
+        {shareItems.length > 0 ? (
+          <DropdownMenu
+            items={shareItems}
+            onItemPress={({ actionKey }) => {
+              if (actionKey === 'link') actions.share.shareLink(post);
+              const image = post.images[photoIndex];
+              if (actionKey === 'photo' && image)
+                actions.share.sharePhoto({ post, imageKey: image });
+            }}
+            enabled={!actions.share.isPreparingPhoto}
+            testID={testIds.feed.shareButton(post.id)}
+          >
+            <View
+              accessibilityRole="button"
+              accessibilityLabel={t('feed.share')}
+              className="h-12 w-12 items-center justify-center"
+            >
+              <Icon name="share-variant-outline" size={24} color={colors.grey} />
+            </View>
+          </DropdownMenu>
+        ) : null}
+        <View className="flex-1" />
+        <Pressable
+          onPress={() => save.mutate(post)}
+          className="h-12 w-12 items-center justify-center"
+          accessibilityRole="button"
+          accessibilityLabel={post.savedByMe ? t('feed.unsave') : t('feed.save')}
+          android_ripple={{ color: colors.grey5, borderless: true }}
+          testID={testIds.feed.saveButton(post.id)}
+        >
+          <Icon
+            name={post.savedByMe ? 'bookmark' : 'bookmark-outline'}
+            size={24}
+            color={post.savedByMe ? colors.primary : colors.grey}
+          />
+        </Pressable>
       </View>
+
+      {/* Details */}
+      <View className="gap-1.5 px-4 pb-3">
+        {post.images.length > 0 ? captionText('callout') : null}
+        {tagLine ? (
+          <View
+            className="flex-row items-center gap-1.5"
+            accessible
+            testID={testIds.feed.postTags(post.id)}
+          >
+            <Icon name="account-multiple" size={16} color={colors.grey} />
+            <Text variant="footnote" numberOfLines={1} className="flex-1">
+              <Text variant="footnote" className="text-muted-foreground">
+                {t('feed.with')}
+              </Text>
+              <Text variant="footnote" className="font-semibold">
+                {tagLine}
+              </Text>
+            </Text>
+          </View>
+        ) : null}
+        {showCommentsLink && post.commentCount > 0 ? (
+          <Pressable
+            onPress={() => onOpenComments(post)}
+            className="min-h-[32px] justify-center self-start"
+            accessibilityRole="button"
+            testID={testIds.feed.viewComments(post.id)}
+          >
+            <Text variant="callout" className="text-muted-foreground">
+              {post.commentCount === 1
+                ? t('feed.viewOneComment')
+                : t('feed.viewAllComments', { count: post.commentCount })}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
+
+      <PhotoViewer
+        images={post.images}
+        startIndex={viewerIndex}
+        onClose={() => setViewerIndex(null)}
+      />
     </View>
   );
-};
-
-const styles = StyleSheet.create({
-  imageScroll: {
-    height: 260,
-  },
-  image: {
-    height: 260,
-  },
-});
+}

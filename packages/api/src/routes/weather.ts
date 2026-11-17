@@ -1,4 +1,5 @@
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { extendForecastWithWeatherKit } from '@packrat/api/services/weatherKit';
 import {
   buildStubForecast,
   defaultStubLocation,
@@ -199,13 +200,14 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
         if (!response.ok) throw new Error(`WeatherAPI HTTP ${response.status}`);
 
         const data = (await response.json()) as WeatherAPIForecastResponse; // safe-cast: WeatherAPI.com response shape matches this type
-        return WeatherAPIForecastResponseSchema.parse({
+        const forecast = WeatherAPIForecastResponseSchema.parse({
           ...data,
           location: {
             ...data.location,
             id: Number(id),
           },
         });
+        return extendForecastWithWeatherKit({ env: getEnv(), forecast, userId: user?.userId });
       } catch (error) {
         if (error instanceof ZodError) {
           const invalidPaths = error.errors.map((e) => e.path.join('.')).join(', ');
@@ -279,10 +281,11 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
         );
         if (!forecastResponse.ok) throw new Error(`WeatherAPI HTTP ${forecastResponse.status}`);
         const data = (await forecastResponse.json()) as WeatherAPIForecastResponse; // safe-cast: WeatherAPI.com response shape matches this type
-        return {
-          ...data,
-          location: { ...data.location, id: Number(firstMatch.id) },
-        };
+        return extendForecastWithWeatherKit({
+          env: getEnv(),
+          forecast: { ...data, location: { ...data.location, id: Number(firstMatch.id) } },
+          userId: user?.userId,
+        });
       } catch (error) {
         captureApiException({
           error: error,

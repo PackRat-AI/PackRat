@@ -175,6 +175,10 @@ export function useAuthInit() {
           return;
         }
 
+        // Stay loading after redirecting: mounting the app Stack while the replace to /auth
+        // is in flight makes its navigators queue ROUTE_NAMES_CHANGED / PRELOAD actions and
+        // then unmount, so React Navigation reports them as unhandled. Auth always returns
+        // with router.replace('/'), which mounts a fresh AppLayout.
         navigate({
           pathname: '/auth',
           params: { showSkipLoginBtn: 'true', redirectTo: '/' },
@@ -183,8 +187,6 @@ export function useAuthInit() {
         Sentry.captureException(error, { tags: { auth_action: 'init' } });
         console.error('Failed to initialize auth:', error);
         navigate('/auth');
-      } finally {
-        setIsLoading(false);
       }
     };
 

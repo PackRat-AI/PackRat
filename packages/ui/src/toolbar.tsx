@@ -67,7 +67,7 @@ function ToolbarIcon({
   className,
   androidRootClassName,
   ...props
-}: ButtonProps & { icon: ExpoIconProps }) {
+}: Omit<ButtonProps, 'icon'> & { icon: ExpoIconProps }) {
   const { colors } = useColorScheme();
   return (
     <Button
@@ -87,7 +87,7 @@ function ToolbarCTA({
   className,
   androidRootClassName,
   ...props
-}: ButtonProps & { icon: ExpoIconProps }) {
+}: Omit<ButtonProps, 'icon'> & { icon: ExpoIconProps }) {
   const { colors } = useColorScheme();
   return (
     <Button

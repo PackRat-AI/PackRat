@@ -5,6 +5,36 @@ struct ChatView: View {
     @Environment(AuthManager.self) private var authManager
     @Bindable var viewModel: ChatViewModel
     @FocusState private var isInputFocused: Bool
+    @Environment(\.scenePhase) private var scenePhase
+    /// Re-read on appear and on return to the foreground: Apple Intelligence can
+    /// be switched on in Settings while PackRat is in the background.
+    @State private var onDeviceAvailability = OnDeviceAIAvailability.current
+    @State private var isOnDeviceOffered = ChatViewModel.isOnDeviceOffered
+    private var qwenStore = QwenModelStore.shared
+
+    init(viewModel: ChatViewModel) {
+        self.viewModel = viewModel
+    }
+
+    private var isOnDevice: Bool { isOnDeviceOffered && viewModel.mode == .onDevice }
+
+    private var isOnDeviceReady: Bool {
+        switch onDeviceAvailability {
+        case .apple: return true
+        case .qwen: return qwenStore.isDownloaded
+        default: return false
+        }
+    }
+
+    private var canSend: Bool { viewModel.canSend && (!isOnDevice || isOnDeviceReady) }
+
+    private func refreshOnDeviceAvailability() {
+        onDeviceAvailability = .current
+        isOnDeviceOffered = ChatViewModel.isOnDeviceOffered
+        if !isOnDeviceOffered, viewModel.mode == .onDevice, !viewModel.isStreaming {
+            viewModel.mode = .cloud
+        }
+    }
 
     private var showSuggestions: Bool {
         authManager.isAuthenticated && viewModel.messages.count <= 1 && !viewModel.isStreaming
@@ -14,6 +44,7 @@ struct ChatView: View {
     /// behind it. The composer is multi-line (`axis: .vertical`), so Return
     /// inserts a newline and never dismisses on its own.
     private func send() {
+        guard canSend else { return }
         isInputFocused = false
         viewModel.sendMessage()
     }
@@ -48,7 +79,11 @@ struct ChatView: View {
             if authManager.isAuthenticated {
                 VStack(spacing: 0) {
                     messageList
-                    if showSuggestions {
+                    if isOnDevice && !isOnDeviceReady {
+                        OnDeviceAISetupCard(availability: onDeviceAvailability)
+                            .padding(.bottom, 8)
+                    }
+                    if showSuggestions && (!isOnDevice || isOnDeviceReady) {
                         suggestionsBar
                     }
                     Divider()
@@ -63,6 +98,12 @@ struct ChatView: View {
             }
         }
         .navigationTitle(navigationTitleText)
+        .modeTitleMenu(isOffered: isOnDeviceOffered && authManager.isAuthenticated) { modePicker }
+        .modeSubtitle(isOnDeviceOffered && authManager.isAuthenticated ? viewModel.mode.title : nil)
+        .onAppear(perform: refreshOnDeviceAvailability)
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { refreshOnDeviceAvailability() }
+        }
         .toolbar {
             if authManager.isAuthenticated {
                 ToolbarItem(placement: .automatic) {
@@ -76,6 +117,20 @@ struct ChatView: View {
         // landed on top of the send button. Chat already has two dismissal
         // paths — `dismissesKeyboardOnScroll` on the message list, and `send()`
         // clearing `isInputFocused` — so the accessory bar was pure overlap.
+    }
+
+    // MARK: - Mode
+
+    /// Lives in the navigation title's menu, the system place for choosing how
+    /// a screen behaves (a segmented control is for switching views of content).
+    private var modePicker: some View {
+        Picker("Answers from", selection: $viewModel.mode) {
+            ForEach(ChatAIMode.allCases) { mode in
+                Text(mode.title).tag(mode)
+            }
+        }
+        .disabled(viewModel.isStreaming)
+        .accessibilityIdentifier("chat_mode_picker")
     }
 
     // MARK: - Message List
@@ -116,6 +171,9 @@ struct ChatView: View {
         }
         if let itemName = viewModel.context.itemName {
             return "Ask about \(itemName) — alternatives, weight savings, or how to care for it"
+        }
+        if isOnDevice {
+            return "Answers come from this device, so they work with no signal"
         }
         return "Ask me anything about gear, trips, or packing strategy"
     }
@@ -212,10 +270,10 @@ struct ChatView: View {
                     Button(action: send) {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.title2)
-                            .foregroundStyle(viewModel.canSend ? Color.accentColor : Color.secondary)
+                            .foregroundStyle(canSend ? Color.accentColor : Color.secondary)
                     }
                     .buttonStyle(.plain)
-                    .disabled(!viewModel.canSend)
+                    .disabled(!canSend)
                     .keyboardShortcut(.return, modifiers: .command)
                     .accessibilityIdentifier("chat_send")
                 }
@@ -224,6 +282,55 @@ struct ChatView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(.background)
+    }
+}
+
+// MARK: - Mode title menu
+
+private extension View {
+    /// Where the mode menu lives. On iPhone, tapping the title opens it (the
+    /// title goes inline, since iOS only shows a title menu there) and the
+    /// current mode sits under the title. iPad and the iPhone app on a Mac
+    /// show no title subtitle, and a Mac window title is not a menu outside
+    /// document apps, so those get a toolbar pop-up that names the mode itself.
+    @ViewBuilder
+    func modeTitleMenu<Content: View>(isOffered: Bool, @ViewBuilder content: () -> Content) -> some View {
+        if isOffered {
+            #if os(iOS)
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                toolbarTitleMenu { content().pickerStyle(.inline) }
+                    .navigationBarTitleDisplayMode(.inline)
+            } else {
+                modeToolbarPopUp(content())
+            }
+            #else
+            modeToolbarPopUp(content())
+            #endif
+        } else {
+            self
+        }
+    }
+
+    func modeToolbarPopUp<Menu: View>(_ menu: Menu) -> some View {
+        toolbar {
+            ToolbarItem(placement: .navigation) { menu.pickerStyle(.menu).fixedSize() }
+        }
+    }
+
+    /// The current mode under the title, so the choice is visible without
+    /// opening the menu. iPad and the iPhone app on a Mac do not show a title
+    /// subtitle; their pop-up names the mode instead.
+    @ViewBuilder
+    func modeSubtitle(_ subtitle: String?) -> some View {
+        #if os(iOS)
+        if let subtitle, UIDevice.current.userInterfaceIdiom == .phone, #available(iOS 26.0, *) {
+            navigationSubtitle(subtitle)
+        } else {
+            self
+        }
+        #else
+        if let subtitle { navigationSubtitle(subtitle) } else { self }
+        #endif
     }
 }
 
@@ -275,11 +382,13 @@ struct MessageBubble: View {
                 }
                 if !message.content.isEmpty {
                     Markdown(message.content)
-                        .markdownTheme(.gitHub)
+                        .markdownTheme(.chatBubble)
                         .textSelection(.enabled)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
             }
-            .padding(.vertical, 4)
         }
     }
 
@@ -303,6 +412,15 @@ struct MessageBubble: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+    }
+}
+
+private extension Theme {
+    /// GitHub's markdown styling without its page background, which drew a
+    /// hard-edged rectangle behind every reply instead of letting the bubble show.
+    static let chatBubble = Theme.gitHub.text {
+        ForegroundColor(.primary)
+        FontSize(16)
     }
 }
 

@@ -136,6 +136,9 @@ struct TripReadinessCard: View {
                     Text("Forecast covers \(conditions.coveredDays) of \(conditions.tripDays) days so far.")
                         .font(.caption)
                 }
+                if let attribution = conditions.attribution {
+                    WeatherAttributionView(attribution: attribution)
+                }
             }
         }
         .accessibilityIdentifier("trip_readiness_forecast")

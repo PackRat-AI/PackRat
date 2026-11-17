@@ -16,11 +16,11 @@ export function CatalogCategoriesFilter({
     <TouchableOpacity
       key={filter}
       onPress={() => onFilter(filter)}
-      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === filter ? 'bg-primary' : 'bg-card'}`}
+      className={`mr-2 h-8 justify-center rounded-lg border px-4 ${activeFilter === filter ? 'border-transparent bg-secondary' : 'border-border'}`}
     >
       <Text
         className={`text-sm font-medium ${
-          activeFilter === filter ? 'text-primary-foreground' : 'text-foreground'
+          activeFilter === filter ? 'text-secondary-foreground' : 'text-muted-foreground'
         }`}
       >
         {decodeHtmlEntities(filter)}
@@ -35,7 +35,7 @@ export function CatalogCategoriesFilter({
           ? Array.from({ length: 10 }).map((_, i) => (
               <View
                 key={i}
-                className="h-8 w-20 rounded-full mr-2 bg-neutral-300 dark:bg-neutral-600 animate-pulse"
+                className="h-8 w-20 rounded-lg mr-2 bg-neutral-300 dark:bg-neutral-600 animate-pulse"
               />
             ))
           : /** biome-ignore lint/style/noNonNullAssertion: will always be defined because we return fallback categories on client */

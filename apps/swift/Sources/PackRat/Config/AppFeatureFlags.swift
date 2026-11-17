@@ -4,6 +4,7 @@
 import Foundation
 
 enum AppFeatureFlags {
+    static let enableAppleLocalAI = false
     static let enableFeed = false
     static let enableLocalAI = true
     static let enableOAuth = true
@@ -26,6 +27,7 @@ enum AppFeatureFlags {
     /// Coded defaults keyed by wire name. Defines the known key set that
     /// `FeatureFlagResolution` normalizes a fetched or cached map against.
     static let codedDefaults: [String: Bool] = [
+        "enableAppleLocalAI": false,
         "enableFeed": false,
         "enableLocalAI": true,
         "enableOAuth": true,

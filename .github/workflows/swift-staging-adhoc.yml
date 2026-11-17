@@ -27,15 +27,18 @@ permissions:
 jobs:
   build-adhoc:
     name: Build & publish ad-hoc IPA
-    runs-on: macos-15
+    runs-on: macos-26
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Select Xcode
         run: |
           sudo xcode-select -switch /Applications/Xcode.app
           xcodebuild -version
+          # mlx-swift (on-device AI) compiles Metal shaders, and Xcode 26 ships
+          # the Metal toolchain as a separate component.
+          xcodebuild -downloadComponent MetalToolchain
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -150,7 +153,7 @@ jobs:
           echo "IPA_PATH=$IPA" >> "$GITHUB_ENV"
 
       - name: Publish GitHub pre-release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: "Staging Ad-Hoc ${{ steps.tag.outputs.tag }}"

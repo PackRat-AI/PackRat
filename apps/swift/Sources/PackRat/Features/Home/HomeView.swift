@@ -379,7 +379,7 @@ struct HomeView: View {
                 subtitle: "Forecasts & alerts",
                 symbol: "cloud.sun.fill",
                 color: .cyan,
-                showsAlertBadge: appState.weatherVM.hasAnyUnseenAlert
+                showsAlertBadge: authManager.isAuthenticated && appState.weatherVM.hasAnyUnseenAlert
             ) { appState.navItem = .weather },
             HomeAction(title: "Trips", subtitle: upcomingTripsSubtitle, symbol: "map.fill", color: .green) { appState.navItem = .trips },
             HomeAction(title: "AI Assistant", subtitle: "Ask about gear & trips", symbol: "bubble.left.and.text.bubble.right", color: .purple) {

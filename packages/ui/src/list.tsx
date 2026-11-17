@@ -18,6 +18,7 @@ import {
   StyleSheet,
   type TextStyle,
   View,
+  type ViewInstance,
   type ViewProps,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -307,7 +308,7 @@ function ListItem<T extends ListDataItem>({
 type ListSectionHeaderProps<T extends ListDataItem> = ViewProps &
   ListRenderItemProps<T> & {
     textClassName?: string;
-    ref?: React.Ref<View>;
+    ref?: React.Ref<ViewInstance>;
   };
 
 function ListSectionHeader<T extends ListDataItem>({

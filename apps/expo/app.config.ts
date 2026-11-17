@@ -3,7 +3,12 @@ import * as path from 'node:path';
 import { isString } from '@packrat/guards';
 import { withSentry } from '@sentry/react-native/expo';
 import type { ExpoConfig } from 'expo/config';
-import { type ConfigPlugin, withDangerousMod, withXcodeProject } from 'expo/config-plugins';
+import {
+  type ConfigPlugin,
+  withDangerousMod,
+  withGradleProperties,
+  withXcodeProject,
+} from 'expo/config-plugins';
 
 const IS_DEV = process.env.APP_VARIANT === 'development';
 const IS_PREVIEW = process.env.APP_VARIANT === 'preview';
@@ -148,13 +153,28 @@ const withSwiftUICoreFix: ConfigPlugin<void> = (config) => {
   return patched;
 };
 
+// SDK 58 runs R8 on Android release builds, and R8 overruns the template's 2 GB Gradle heap.
+const withR8Heap: ConfigPlugin<void> = (config) =>
+  withGradleProperties(config, (c) => {
+    const key = 'org.gradle.jvmargs';
+    c.modResults = c.modResults.filter((item) => item.type !== 'property' || item.key !== key);
+    c.modResults.push({
+      type: 'property',
+      key,
+      value: '-Xmx6144m -XX:MaxMetaspaceSize=1024m',
+    });
+    return c;
+  });
+
+const withNativeFixes: ConfigPlugin<void> = (config) => withR8Heap(withSwiftUICoreFix(config));
+
 export default (): ExpoConfig =>
-  withSwiftUICoreFix(
+  withNativeFixes(
     withSentry(
       {
         name: getAppName(),
         slug: 'packrat',
-        version: '2.3.0',
+        version: '2.4.0',
         scheme: 'packrat',
         web: {
           bundler: 'metro',
@@ -166,6 +186,7 @@ export default (): ExpoConfig =>
           'expo-sqlite',
           'expo-font',
           'expo-image',
+          'expo-background-task',
           'react-native-fast-tflite',
           [
             '@react-native-google-signin/google-signin',
@@ -212,6 +233,22 @@ export default (): ExpoConfig =>
           ],
           'expo-status-bar',
           ['expo-splash-screen', { image: './assets/splash.png' }],
+          // Safety check-in: follows a trip in progress, with the user's permission, so their
+          // emergency contacts see where they are.
+          [
+            'expo-location',
+            {
+              locationAlwaysAndWhenInUsePermission:
+                'PackRat shares your location with your emergency contacts while a trip is in progress.',
+              isAndroidBackgroundLocationEnabled: true,
+              isAndroidForegroundServiceEnabled: true,
+            },
+          ],
+          // Safety check-in: fills an emergency contact from the phone's contacts.
+          [
+            'expo-contacts',
+            { contactsPermission: 'PackRat uses a contact you choose as an emergency contact.' },
+          ],
         ],
         experiments: {
           typedRoutes: true,
@@ -295,7 +332,23 @@ export default (): ExpoConfig =>
             backgroundColor: '#026A9F',
           },
           package: getAndroidPackage(),
+          // expo-contacts adds write access; choosing an emergency contact only reads one.
+          blockedPermissions: ['android.permission.WRITE_CONTACTS'],
           googleServicesFile: getGoogleServicesFile(),
+          // Shared post links open the post in the app. `autoVerify` checks
+          // packratai.com/.well-known/assetlinks.json, which lists the Play signing key, so
+          // only Play builds verify; dev and preview builds fall back to the disambiguation sheet.
+          intentFilters: [
+            {
+              action: 'VIEW',
+              autoVerify: true,
+              data: [
+                { scheme: 'https', host: 'packratai.com', pathPrefix: '/p/' },
+                { scheme: 'https', host: 'www.packratai.com', pathPrefix: '/p/' },
+              ],
+              category: ['BROWSABLE', 'DEFAULT'],
+            },
+          ],
           config: {
             googleMaps: {
               apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,

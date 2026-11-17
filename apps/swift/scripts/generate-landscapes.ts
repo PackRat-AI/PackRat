@@ -31,11 +31,15 @@
  * raw DEFLATE, which is what Apple's `NSData.decompressed(using: .zlib)`
  * reads. Row 0 is the northern edge (90°N), column 0 is 180°W.
  *
+ * The Android app bundles the same runs, uncompressed and base64-encoded in a
+ * JSON file, since Metro bundles JSON and Hermes has no inflate.
+ *
  * Run from repo root:
  *   bun apps/swift/scripts/generate-landscapes.ts
  *
  * Output:
  *   apps/swift/Resources/Landscapes.bin
+ *   apps/expo/features/trip-stats/data/landscapes.json
  */
 
 import { execFileSync } from 'node:child_process';
@@ -44,10 +48,11 @@ import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateRawSync } from 'node:zlib';
-import { safeJsonParse } from '@packrat/utils';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const outputPath = resolve(__dir, '../Resources/Landscapes.bin');
+const expoOutputPath = resolve(__dir, '../../expo/features/trip-stats/data/landscapes.json');
 
 const NATURAL_EARTH =
   'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson';
@@ -408,6 +413,10 @@ async function main() {
   }, 0);
   const compressed = deflateRawSync(runs, { level: 9 });
   writeFileSync(outputPath, compressed);
+  writeFileSync(
+    expoOutputPath,
+    safeJsonStringify({ width: WIDTH, height: HEIGHT, runs: Buffer.from(runs).toString('base64') }),
+  );
   const counts = Object.entries(Code).map(
     ([name, value]) => `${name} ${grid.filter((v) => v === value).length}`,
   );

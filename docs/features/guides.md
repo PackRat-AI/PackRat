@@ -12,7 +12,7 @@ The Dashboard has a Guides row, "How-tos for planning, packing and the trail", t
 
 ## Browsing the library
 
-The Guides screen opens on every guide, newest first. A row of topic chips sits under the screen title and stays put while the list scrolls. **All** is selected to begin with; choosing a topic shows only guides in it, and the selected chip carries a checkmark. Only one topic is selected at a time.
+The Guides screen opens on every guide, newest first. A row of topic chips sits under the screen title. On Android it stays put while the list scrolls; on iPhone, iPad and Mac it scrolls away with the list, under a large title. **All** is selected to begin with; choosing a topic shows only guides in it, and the selected chip carries a checkmark. Only one topic is selected at a time.
 
 Each guide is a card that shows, from top to bottom:
 

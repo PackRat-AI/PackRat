@@ -1,11 +1,11 @@
 import {
-  Host,
   Text as JCText,
   SegmentedButton,
   SingleChoiceSegmentedButtonRow,
 } from '@expo/ui/jetpack-compose';
 import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
 import { Text } from '@packrat/ui/src/text';
+import { ThemedHost as Host } from '@packrat/ui/src/themed-host';
 import { View } from 'react-native';
 
 interface OptionSegmentedControlProps<T extends string> {

@@ -15,10 +15,9 @@ import * as React from 'react';
 import {
   Dimensions,
   Image,
-  type NativeSyntheticEvent,
   Platform,
   Pressable,
-  type TextInputContentSizeChangeEventData,
+  type TextInputContentSizeChangeEvent,
   type TextStyle,
   View,
   type ViewStyle,
@@ -494,8 +493,7 @@ function ChatBubble({
                 <Pressable>
                   <Image
                     source={{ uri: item.attachments[0].url }}
-                    style={{ width: 200, height: 200, resizeMode: 'cover' }}
-                    borderRadius={12}
+                    style={{ width: 200, height: 200, resizeMode: 'cover', borderRadius: 12 }}
                   />
                 </Pressable>
               </ContextMenu>
@@ -693,7 +691,7 @@ function Composer({
   const insets = useSafeAreaInsets();
   const [message, setMessage] = React.useState('');
 
-  function onContentSizeChange(event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) {
+  function onContentSizeChange(event: TextInputContentSizeChangeEvent) {
     textInputHeight.value = Math.max(
       Math.min(event.nativeEvent.contentSize.height, 280),
       Platform.select({ ios: 20, default: 38 }),

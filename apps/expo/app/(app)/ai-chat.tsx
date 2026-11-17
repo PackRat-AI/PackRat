@@ -60,10 +60,10 @@ import * as React from 'react';
 import {
   AppState,
   Dimensions,
-  type NativeSyntheticEvent,
   Platform,
   ScrollView,
-  type TextInputContentSizeChangeEventData,
+  type ScrollViewInstance,
+  type TextInputContentSizeChangeEvent,
   type TextStyle,
   TouchableOpacity,
   View,
@@ -98,7 +98,7 @@ export default function AIChat() {
   const params = useLocalSearchParams();
   const { activeLocation } = useActiveLocation();
   const [location, setLocation] = React.useState<WeatherLocation | null>(activeLocation);
-  const scrollViewRef = React.useRef<ScrollView>(null);
+  const scrollViewRef = React.useRef<ScrollViewInstance>(null);
   const { t } = useTranslation();
 
   const aiMode = useAtomValue(aiModeAtom);
@@ -725,7 +725,7 @@ function Composer({
   const { colors, isDarkColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
 
-  function onContentSizeChange(event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) {
+  function onContentSizeChange(event: TextInputContentSizeChangeEvent) {
     textInputHeight.value = Math.max(
       Math.min(event.nativeEvent.contentSize.height, 280),
       Platform.select({ ios: 20, default: 38 }),
@@ -767,7 +767,7 @@ function Composer({
               variant="primary"
               className="h-7 w-7 rounded-full"
             >
-              <Icon name="stop" size={18} color="white" />
+              <Icon name="stop" size={18} />
             </Button>
           ) : (
             <Button
@@ -777,7 +777,7 @@ function Composer({
               size="icon"
               className="ios:rounded-full h-7 w-7 rounded-full"
             >
-              <Icon name="arrow-up" size={18} color="white" />
+              <Icon name="arrow-up" size={18} />
             </Button>
           )}
         </View>

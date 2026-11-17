@@ -1,3 +1,5 @@
+import { showAlert } from '@packrat/ui/src/alert-host';
+import { Button } from '@packrat/ui/src/button';
 import { Snackbar, type SnackbarHandle } from '@packrat/ui/src/snackbar';
 import { Text } from '@packrat/ui/src/text';
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
@@ -15,13 +17,12 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Keyboard,
   Linking,
   Platform,
   Pressable,
-  type TextInput,
+  type TextInputInstance,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -40,7 +41,7 @@ export default function LocationSearchScreen() {
   const [query, setQuery] = useState('');
   const { isLoading, results, error, search, addSearchResult, searchByCoordinates } =
     useLocationSearch();
-  const searchInputRef = useRef<TextInput>(null);
+  const searchInputRef = useRef<TextInputInstance>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [addingLocationId, setAddingLocationId] = useState<number | null>(null);
@@ -137,7 +138,7 @@ export default function LocationSearchScreen() {
           message: t('weather.addedToLocations', { name: location.name }),
         });
       } else {
-        Alert.alert(t('common.error'), t('weather.errorAddingLocation'));
+        showAlert({ title: t('common.error'), message: t('weather.errorAddingLocation') });
       }
     } catch (err) {
       console.error('Error adding location:', err);
@@ -145,7 +146,7 @@ export default function LocationSearchScreen() {
         tags: { feature: 'weather', action: 'handleAddLocation' },
         extra: { locationId: location.id, locationName: location.name },
       });
-      Alert.alert(t('common.error'), t('weather.unexpectedError'));
+      showAlert({ title: t('common.error'), message: t('weather.unexpectedError') });
     } finally {
       setIsAdding(false);
       setAddingLocationId(null);
@@ -193,19 +194,23 @@ export default function LocationSearchScreen() {
 
       if (status !== 'granted') {
         setLocationPermissionDenied(true);
-        Alert.alert(t('weather.permissionDenied'), t('weather.permissionDeniedMessage'), [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('weather.openSettings'),
-            onPress: () => {
-              if (Platform.OS === 'ios') {
-                Linking.openURL('app-settings:');
-              } else {
-                Linking.openSettings();
-              }
+        showAlert({
+          title: t('weather.permissionDenied'),
+          message: t('weather.permissionDeniedMessage'),
+          buttons: [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+              text: t('weather.openSettings'),
+              onPress: () => {
+                if (Platform.OS === 'ios') {
+                  Linking.openURL('app-settings:');
+                } else {
+                  Linking.openSettings();
+                }
+              },
             },
-          },
-        ]);
+          ],
+        });
         return;
       }
 
@@ -238,13 +243,17 @@ export default function LocationSearchScreen() {
 
       // Provide more specific error messages
       if (err instanceof Error && err.message === 'Location request timed out') {
-        Alert.alert(t('weather.locationTimeout'), t('weather.locationTimeoutMessage'), [
-          { text: t('common.ok') },
-        ]);
+        showAlert({
+          title: t('weather.locationTimeout'),
+          message: t('weather.locationTimeoutMessage'),
+          buttons: [{ text: t('common.ok') }],
+        });
       } else {
-        Alert.alert(t('weather.locationError'), t('weather.locationErrorMessage'), [
-          { text: t('common.ok') },
-        ]);
+        showAlert({
+          title: t('weather.locationError'),
+          message: t('weather.locationErrorMessage'),
+          buttons: [{ text: t('common.ok') }],
+        });
       }
     } finally {
       setIsGettingLocation(false);
@@ -327,12 +336,11 @@ export default function LocationSearchScreen() {
         <View className="flex-1 items-center justify-center p-8">
           <Icon name="exclamation" size={48} color={colors.destructive} />
           <Text className="mt-4 text-center text-destructive">{error}</Text>
-          <TouchableOpacity
-            className="mt-6 rounded-full bg-primary px-4 py-2"
+          <Button
+            className="mt-6"
             onPress={() => (query.length > 0 ? debouncedSearch(query) : handleUseDeviceLocation())}
-          >
-            <Text className="text-white">{t('weather.tryAgain')}</Text>
-          </TouchableOpacity>
+            label={t('weather.tryAgain')}
+          />
         </View>
       );
     }

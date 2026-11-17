@@ -1,21 +1,14 @@
-export interface PostAuthor {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-}
+import type { FeedComment, FeedPost, SocialSettingsValues } from '@packrat/schemas/feed';
 
-export interface Post {
-  id: number;
-  userId: string;
-  caption: string | null;
-  images: string[];
-  createdAt: string;
-  updatedAt: string;
-  author?: PostAuthor;
-  likeCount: number;
-  commentCount: number;
-  likedByMe: boolean;
-}
+export type { FeedReportReason } from '@packrat/schemas/feed';
+
+export type Post = FeedPost;
+export type Comment = FeedComment;
+export type PostAuthor = NonNullable<FeedPost['author']>;
+export type SocialSettings = SocialSettingsValues;
+
+/** Which list of posts a screen shows: everyone's, the viewer's saved posts, or posts they are tagged in. */
+export type FeedScope = 'all' | 'saved' | 'tagged';
 
 export interface FeedResponse {
   items: Post[];
@@ -23,19 +16,6 @@ export interface FeedResponse {
   limit: number;
   total: number;
   totalPages: number;
-}
-
-export interface Comment {
-  id: number;
-  postId: number;
-  userId: string;
-  content: string;
-  parentCommentId: number | null;
-  createdAt: string;
-  updatedAt: string;
-  author?: PostAuthor;
-  likeCount: number;
-  likedByMe: boolean;
 }
 
 export interface CommentsResponse {

@@ -1,13 +1,13 @@
 import {
   DropdownMenu as JCDropdownMenu,
   DropdownMenuItem as JCDropdownMenuItem,
-  Host as JCHost,
   Text as JCText,
   RNHostView,
 } from '@expo/ui/jetpack-compose';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as React from 'react';
 import { Pressable } from 'react-native';
+import { ThemedHost as JCHost } from '../themed-host';
 import type { DropdownItem, DropdownMenuProps, DropdownSubMenu } from './types';
 
 /**

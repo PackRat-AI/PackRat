@@ -1,8 +1,9 @@
-import { Host as JCHost, Switch as JCSwitch } from '@expo/ui/jetpack-compose';
+import { Switch as JCSwitch } from '@expo/ui/jetpack-compose';
 import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { cssInterop } from 'nativewind';
 import type { ComponentProps } from 'react';
+import { ThemedHost as JCHost } from './themed-host';
 import type { ToggleProps } from './toggle-props';
 
 cssInterop(JCHost, { className: 'style' });

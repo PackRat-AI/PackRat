@@ -1,6 +1,8 @@
+import { use$ } from '@legendapp/state/react';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { SegmentedControl } from '@packrat/ui/src/segmented-control';
 import { Text } from '@packrat/ui/src/text';
+import { Toggle } from '@packrat/ui/src/toggle';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
@@ -29,7 +31,12 @@ import {
   useRestorePurchases,
 } from 'expo-app/features/purchases';
 import { FEATURE_ACCESS_QUERY_KEY } from 'expo-app/features/purchases/hooks/useFeatureAccess';
-import { FEATURE_FLAGS_QUERY_KEY } from 'expo-app/hooks/useFeatureFlags';
+import {
+  useTrailReportAlertsEnabled,
+  useTrailReportNotificationsSetting,
+} from 'expo-app/features/trail-conditions/hooks/useTrailReportAlerts';
+import { tripReminderSettingsStore } from 'expo-app/features/trips/store/tripReminders';
+import { FEATURE_FLAGS_QUERY_KEY, useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -55,6 +62,14 @@ export default function SettingsScreen() {
   const { unit: weightUnit, setWeightUnit } = useWeightUnit();
   const { unit: temperatureUnit, setTemperatureUnit } = useTemperatureUnit();
   const { unit: speedUnit, setSpeedUnit } = useSpeedUnit();
+  const enableTripReminders = useFeatureFlag('enableTripReminders');
+  const showsFeedSettings = useFeatureFlag('enableFeed') && isAuthenticated;
+  const enableSafetyCheckIn = useFeatureFlag('enableSafetyCheckIn');
+  const tripRemindersEnabled = use$(tripReminderSettingsStore.enabled);
+  const showsTrailReportToggle = useTrailReportAlertsEnabled() && isAuthenticated;
+  const trailReports = useTrailReportNotificationsSetting({ active: showsTrailReportToggle });
+  // The toggle waits for the server's value rather than guessing one.
+  const trailReportsLoaded = trailReports.enabled !== undefined;
 
   const { isProMember } = useEntitlement();
   const { mutate: restorePurchases, isPending: isRestoring } = useRestorePurchases();
@@ -215,6 +230,93 @@ export default function SettingsScreen() {
             </View>
           </View>
         </View>
+
+        {enableSafetyCheckIn && (
+          <View>
+            <Text variant="subhead" className="mb-3">
+              {t('safetyCheckIn.settings.section')}
+            </Text>
+            <TouchableOpacity
+              className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4"
+              onPress={() => router.push('/emergency-contacts')}
+              testID={testIds.safetyCheckIn.settingsRow}
+            >
+              <Icon name="shield-account-outline" size={22} color={colors.primary} />
+              <View className="flex-1">
+                <Text className="font-medium">{t('safetyCheckIn.contacts.title')}</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                  {t('safetyCheckIn.settings.subtitle')}
+                </Text>
+              </View>
+              <Icon name="chevron-right" size={20} color={colors.grey} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {(enableTripReminders || trailReportsLoaded) && (
+          <View>
+            <Text variant="subhead" className="mb-3">
+              {t('settings.notifications')}
+            </Text>
+            <View className="rounded-xl border border-border bg-card">
+              {enableTripReminders && (
+                <View className="flex-row items-center justify-between gap-4 p-4">
+                  <View className="flex-1">
+                    <Text className="font-medium">{t('trips.reminders.title')}</Text>
+                    <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                      {t('settings.tripRemindersSubtitle')}
+                    </Text>
+                  </View>
+                  <Toggle
+                    value={tripRemindersEnabled}
+                    onValueChange={(on) => tripReminderSettingsStore.enabled.set(on)}
+                    testID={testIds.settings.tripRemindersToggle}
+                  />
+                </View>
+              )}
+              {trailReportsLoaded && (
+                <View
+                  className={`flex-row items-center justify-between gap-4 p-4${
+                    enableTripReminders ? ' border-t border-border' : ''
+                  }`}
+                >
+                  <View className="flex-1">
+                    <Text className="font-medium">{t('settings.trailReports')}</Text>
+                    <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                      {t('settings.trailReportsSubtitle')}
+                    </Text>
+                  </View>
+                  <Toggle
+                    value={trailReports.enabled === true}
+                    onValueChange={trailReports.setEnabled}
+                    testID={testIds.settings.trailReportNotificationsToggle}
+                  />
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        {showsFeedSettings && (
+          <View>
+            <Text variant="subhead" className="mb-3">
+              {t('feed.feed')}
+            </Text>
+            <TouchableOpacity
+              className="flex-row items-center gap-4 rounded-xl border border-border bg-card p-4"
+              onPress={() => router.push('/feed/settings')}
+              testID={testIds.feed.settingsEntry}
+            >
+              <View className="flex-1">
+                <Text className="font-medium">{t('feed.feedAndSharing')}</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                  {t('feed.feedAndSharingBody')}
+                </Text>
+              </View>
+              <Icon name="chevron-right" size={20} color={colors.grey} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View>
           <Text variant="subhead" className="mb-3">

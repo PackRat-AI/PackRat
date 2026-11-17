@@ -144,6 +144,33 @@ struct WatchWeatherSnapshot: Codable, Equatable, Sendable {
     var temperatureText: String
     var conditionText: String
     var symbolName: String
+    /// The most severe weather alert the user has not yet opened on the phone,
+    /// across every saved location. `nil` when nothing is unread. Optional so
+    /// a payload from a phone build that predates alerts decodes as "no alert".
+    var alert: WatchWeatherAlertSnapshot? = nil
+}
+
+/// An unread weather alert, mirrored from the phone's unread state so the
+/// wrist and the phone agree about what the user has already seen.
+struct WatchWeatherAlertSnapshot: Codable, Equatable, Sendable {
+    var headline: String
+    /// The provider's severity word ("Extreme", "Severe", "Moderate", "Minor").
+    var severity: String?
+    var locationName: String
+    /// Other saved locations also carrying an unread alert.
+    var otherCount: Int
+
+    /// Ranks a severity word so the watch can lead with the worst hazard.
+    /// Unknown or missing severities rank lowest.
+    static func rank(_ severity: String?) -> Int {
+        switch severity?.lowercased() {
+        case "extreme": return 4
+        case "severe": return 3
+        case "moderate": return 2
+        case "minor": return 1
+        default: return 0
+        }
+    }
 }
 
 struct WatchTrailSnapshot: Codable, Equatable, Sendable {

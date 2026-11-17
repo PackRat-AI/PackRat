@@ -1,7 +1,9 @@
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { Button } from '@packrat/ui/src/button';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
+import { useUnreadTripIds } from 'expo-app/features/trail-conditions/hooks/useTrailReportAlerts';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -58,6 +60,7 @@ export function TripsListScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const trips = useTrips();
+  const unreadTripIds = useUnreadTripIds();
   const [searchValue, setSearchValue] = useState('');
 
   const filteredTrips = useMemo(() => {
@@ -98,14 +101,12 @@ export function TripsListScreen() {
         </View>
         <Text className="mb-1 text-lg font-medium text-foreground">{t('trips.noTripsFound')}</Text>
         <Text className="mb-6 text-center text-muted-foreground">{t('trips.noTripsYet')}</Text>
-        <Pressable
+        <Button
           testID={testIds.trips.emptyCreateBtn}
           accessibilityLabel={testIds.trips.emptyCreateBtn}
-          className="rounded-lg bg-primary px-4 py-2"
           onPress={handleCreateTrip}
-        >
-          <Text className="font-medium text-primary-foreground">{t('trips.createNewTrip')}</Text>
-        </Pressable>
+          label={t('trips.createNewTrip')}
+        />
       </View>
     );
   };
@@ -134,7 +135,11 @@ export function TripsListScreen() {
 
         {filteredTrips.map((trip: Trip) => (
           <View className="px-4 pt-4" key={trip.id}>
-            <TripCard trip={trip} onPress={handleTripPress} />
+            <TripCard
+              trip={trip}
+              onPress={handleTripPress}
+              hasUnreadReport={unreadTripIds.has(trip.id)}
+            />
           </View>
         ))}
 
@@ -179,7 +184,11 @@ export function TripsListScreen() {
         contentInsetAdjustmentBehavior="automatic"
         renderItem={({ item: trip }) => (
           <View className="px-4 pt-4">
-            <TripCard trip={trip} onPress={handleTripPress} />
+            <TripCard
+              trip={trip}
+              onPress={handleTripPress}
+              hasUnreadReport={unreadTripIds.has(trip.id)}
+            />
           </View>
         )}
         ListEmptyComponent={renderEmptyState()}

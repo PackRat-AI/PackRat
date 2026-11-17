@@ -60,6 +60,16 @@ packages:
   RevenueCat:
     url: https://github.com/RevenueCat/purchases-ios
     from: "5.14.0"
+  # On-device AI on devices without Apple Intelligence: runs Qwen3 through
+  # MLX. Linked by iOS and macOS only — the watch has neither the memory nor
+  # the GPU for a language model. Tokenizers is the tokenizer half that
+  # mlx-swift-lm 3.x deliberately leaves to the app.
+  MLXSwiftLM:
+    url: https://github.com/ml-explore/mlx-swift-lm
+    from: "3.32.3"
+  SwiftTransformers:
+    url: https://github.com/huggingface/swift-transformers
+    from: "1.3.0"
 
 targets:
   PackRat-iOS:
@@ -104,6 +114,10 @@ targets:
         # in the app. The site serves the matching apple-app-site-association.
         com.apple.developer.associated-domains:
           - applinks:packratai.com
+        # On-device AI keeps a ~2.6 GB language model resident. Without this
+        # the default per-app memory limit on 6 GB iPhones kills the app the
+        # moment the model loads.
+        com.apple.developer.kernel.increased-memory-limit: true
     info:
       path: Resources/Info-iOS.plist
       properties:
@@ -182,6 +196,12 @@ targets:
         product: RevenueCat
       - package: RevenueCat
         product: RevenueCatUI
+      - package: MLXSwiftLM
+        product: MLXLLM
+      - package: MLXSwiftLM
+        product: MLXLMCommon
+      - package: SwiftTransformers
+        product: Tokenizers
       # The watch app ships from 2.2.1 on, so it is embedded in the iOS app.
       # WKCompanionAppBundleIdentifier must resolve to the iOS bundle id or
       # installs fail with "Unable to Install PackRat".
@@ -190,7 +210,7 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "2.3.0"
+        MARKETING_VERSION: "2.4.0"
         CURRENT_PROJECT_VERSION: "2026081101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
@@ -219,6 +239,9 @@ targets:
     info:
       path: Resources/Info-watchOS.plist
       properties:
+        CFBundleURLTypes:
+          - CFBundleURLName: com.andrewbierman.packrat.watchkitapp
+            CFBundleURLSchemes: [packratwatch]
         CFBundleDisplayName: $(PACKRAT_DISPLAY_NAME)
         CFBundleIconName: WatchAppIcon
         CFBundleShortVersionString: $(MARKETING_VERSION)
@@ -226,10 +249,18 @@ targets:
         WKApplication: true
         WKCompanionAppBundleIdentifier: $(PACKRAT_COMPANION_BUNDLE_IDENTIFIER)
         ITSAppUsesNonExemptEncryption: false
+    entitlements:
+      path: Resources/PackRat-Watch.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.andrewbierman.packrat.watch
+    dependencies:
+      - target: PackRat-WatchComplications
+        embed: true
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "2.3.0"
+        MARKETING_VERSION: "2.4.0"
         CURRENT_PROJECT_VERSION: "2026081101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
@@ -239,6 +270,44 @@ targets:
         PACKRAT_DISPLAY_NAME: PackRat
         PRODUCT_MODULE_NAME: PackRatWatch
         ASSETCATALOG_COMPILER_APPICON_NAME: WatchAppIcon
+
+  # Watch-face complications (WidgetKit). Reads the weather state the watch app
+  # writes into the shared App Group, since an extension cannot see the app's
+  # WatchConnectivity session.
+  PackRat-WatchComplications:
+    type: app-extension
+    platform: watchOS
+    deploymentTarget: "10.0"
+    sources:
+      - Sources/PackRatWatchComplications
+      - Sources/PackRatShared
+    info:
+      path: Resources/Info-WatchComplications.plist
+      properties:
+        CFBundleDisplayName: $(PACKRAT_DISPLAY_NAME)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Resources/PackRat-WatchComplications.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.andrewbierman.packrat.watch
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        MARKETING_VERSION: "2.4.0"
+        CURRENT_PROJECT_VERSION: "2026081101"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 666HGMV2LU
+        PACKRAT_WATCH_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.watchkitapp
+        # An extension's id must extend its host app's, so it follows any
+        # override of the watch app's id (archive builds pass one).
+        PRODUCT_BUNDLE_IDENTIFIER: $(PACKRAT_WATCH_BUNDLE_IDENTIFIER).complications
+        PACKRAT_DISPLAY_NAME: PackRat
+        PRODUCT_MODULE_NAME: PackRatWatchComplications
+        SKIP_INSTALL: YES
 
   PackRat-macOS:
     type: application
@@ -327,10 +396,16 @@ targets:
         product: RevenueCat
       - package: RevenueCat
         product: RevenueCatUI
+      - package: MLXSwiftLM
+        product: MLXLLM
+      - package: MLXSwiftLM
+        product: MLXLMCommon
+      - package: SwiftTransformers
+        product: Tokenizers
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "2.3.0"
+        MARKETING_VERSION: "2.4.0"
         CURRENT_PROJECT_VERSION: "2026081101"
         # Real distribution signing: the target previously used an ad-hoc
         # identity with no team, which cannot produce a TestFlight build. E2E

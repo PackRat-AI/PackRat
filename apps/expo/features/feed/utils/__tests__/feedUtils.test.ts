@@ -123,3 +123,10 @@ describe('feed/utils', () => {
     });
   });
 });
+
+describe('buildPostImageUrl with full URLs', () => {
+  it('passes http and file URLs through unchanged', () => {
+    expect(buildPostImageUrl('https://x.test/a.jpg')).toBe('https://x.test/a.jpg');
+    expect(buildPostImageUrl('file:///tmp/a.jpg')).toBe('file:///tmp/a.jpg');
+  });
+});

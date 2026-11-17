@@ -1,5 +1,5 @@
-import { TripForm } from '../components/TripForm';
+import { type StartingTrail, TripForm } from '../components/TripForm';
 
-export function CreateTripScreen() {
-  return <TripForm />;
+export function CreateTripScreen({ startingTrail }: { startingTrail?: StartingTrail }) {
+  return <TripForm startingTrail={startingTrail} />;
 }

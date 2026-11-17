@@ -59,7 +59,9 @@ jobs:
     name: Web E2E Tests
     needs: e2e-gate
     if: needs.e2e-gate.outputs.ready == 'true'
-    runs-on: ubuntu-latest
+    # Pinned: Playwright ships no Chromium build for ubuntu-26.04, which
+    # ubuntu-latest now resolves to.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     env:
@@ -77,7 +79,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2

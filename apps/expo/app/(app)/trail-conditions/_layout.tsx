@@ -1,7 +1,8 @@
 import { Stack } from 'expo-router';
 
 /**
- * Trail conditions stack: the searchable list, a report's detail, and the submit form.
+ * Trail conditions stack: the searchable feed, a report's detail, a trail's page, and the submit
+ * form.
  *
  * Mirrors the Swift app's navigation, where `TrailConditionsListView` pushes
  * `TrailConditionDetailView` and presents `SubmitTrailConditionView` as a sheet.
@@ -11,9 +12,10 @@ import { Stack } from 'expo-router';
  */
 export default function TrailConditionsLayout() {
   return (
-    <Stack>
+    <Stack screenOptions={{ title: '' }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="[reportId]" />
+      <Stack.Screen name="trail/[trailId]" />
       <Stack.Screen
         name="submit"
         options={{

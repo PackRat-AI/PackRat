@@ -1,4 +1,4 @@
-import { useActionSheet } from '@expo/react-native-action-sheet';
+import { useActionSheet } from '@packrat/ui/src/action-sheet';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Button } from '@packrat/ui/src/button';
 import { DropdownMenu } from '@packrat/ui/src/dropdown-menu';
@@ -207,11 +207,8 @@ function LocationsScreen() {
               <Text className="text-center text-muted-foreground">
                 {t('weather.noSavedLocationsBody')}
               </Text>
-              <Button className="mt-2" onPress={openSearch}>
-                <Icon name="plus" size={18} color="white" />
-                <Text className="font-medium text-primary-foreground">
-                  {t('weather.addLocation')}
-                </Text>
+              <Button className="mt-2" icon="plus" onPress={openSearch}>
+                <Text>{t('weather.addLocation')}</Text>
               </Button>
             </View>
           }

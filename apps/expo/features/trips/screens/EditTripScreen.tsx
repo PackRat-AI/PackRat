@@ -1,10 +1,11 @@
 import { assertDefined } from '@packrat/guards';
+import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { useTripDetailsFromStore } from 'expo-app/features/trips/hooks/useTripDetailsFromStore';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, SafeAreaView, Text } from 'react-native';
+import { SafeAreaView, Text } from 'react-native';
 import { TripForm } from '../components/TripForm';
 
 const TRIP_LOAD_TIMEOUT_MS = 10_000;
@@ -31,9 +32,7 @@ export function EditTripScreen() {
         {timedOut ? (
           <>
             <Text className="text-foreground text-base">{t('errors.notFound')}</Text>
-            <Pressable onPress={() => router.back()} className="rounded-lg bg-primary px-4 py-2">
-              <Text className="text-primary-foreground font-semibold">{t('common.back')}</Text>
-            </Pressable>
+            <Button onPress={() => router.back()} label={t('common.back')} />
           </>
         ) : (
           <ActivityIndicator />

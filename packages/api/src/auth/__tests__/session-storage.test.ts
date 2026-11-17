@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   admin: vi.fn(() => ({ id: 'admin' })),
   bearer: vi.fn(() => ({ id: 'bearer' })),
-  betterAuth: vi.fn(() => ({ handler: vi.fn() })),
+  betterAuth: vi.fn((_options: { secondaryStorage?: SecondaryStorage }) => ({ handler: vi.fn() })),
   createConnection: vi.fn(() => ({ db: true })),
   drizzleAdapter: vi.fn(() => ({ adapter: true })),
   expo: vi.fn(() => ({ id: 'expo' })),
@@ -61,6 +61,12 @@ const { getAuth } = await import('../index');
 const authKv = {
   delete: vi.fn(async () => {}),
   get: vi.fn(async () => null),
+  getWithMetadata: vi.fn(
+    async (): Promise<{ value: string | null; metadata: { expiresAt?: number } | null }> => ({
+      value: null,
+      metadata: null,
+    }),
+  ),
   put: vi.fn(async () => {}),
 };
 
@@ -97,5 +103,75 @@ describe('getAuth session storage config', () => {
       }),
     );
     expect(mocks.oauthProvider).toHaveBeenCalled();
+  });
+});
+
+type SecondaryStorage = { increment: (key: string, ttl: number) => Promise<number> };
+
+async function secondaryStorage(): Promise<SecondaryStorage> {
+  await getAuth(makeEnv());
+  const storage = mocks.betterAuth.mock.lastCall?.[0].secondaryStorage;
+  if (!storage) throw new Error('secondaryStorage was not configured');
+  return storage;
+}
+
+describe('secondaryStorage.increment', () => {
+  const now = 1_800_000_000;
+
+  beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(now * 1000);
+  });
+
+  it('starts a window that ends ttl seconds from now', async () => {
+    const storage = await secondaryStorage();
+
+    await expect(storage.increment('ip|/sign-in/email', 60)).resolves.toBe(1);
+
+    expect(authKv.put).toHaveBeenCalledWith('ip|/sign-in/email', '1', {
+      expiration: now + 60,
+      metadata: { expiresAt: now + 60 },
+    });
+  });
+
+  it('keeps the original window end on later increments', async () => {
+    const storage = await secondaryStorage();
+    authKv.getWithMetadata.mockResolvedValueOnce({
+      value: '3',
+      metadata: { expiresAt: now + 90 },
+    });
+
+    await expect(storage.increment('ip|/sign-in/email', 300)).resolves.toBe(4);
+
+    expect(authKv.put).toHaveBeenCalledWith('ip|/sign-in/email', '4', {
+      expiration: now + 90,
+      metadata: { expiresAt: now + 90 },
+    });
+  });
+
+  it('holds the expiration at the 60-second KV minimum near the window end', async () => {
+    const storage = await secondaryStorage();
+    authKv.getWithMetadata.mockResolvedValueOnce({
+      value: '2',
+      metadata: { expiresAt: now + 10 },
+    });
+
+    await storage.increment('ip|/sign-in/email', 60);
+
+    expect(authKv.put).toHaveBeenCalledWith('ip|/sign-in/email', '3', {
+      expiration: now + 60,
+      metadata: { expiresAt: now + 10 },
+    });
+  });
+
+  it('resets a counter left without an expiry by the old code', async () => {
+    const storage = await secondaryStorage();
+    authKv.getWithMetadata.mockResolvedValueOnce({ value: '500', metadata: null });
+
+    await expect(storage.increment('ip|/sign-in/email', 60)).resolves.toBe(1);
+
+    expect(authKv.put).toHaveBeenCalledWith('ip|/sign-in/email', '1', {
+      expiration: now + 60,
+      metadata: { expiresAt: now + 60 },
+    });
   });
 });

@@ -5,6 +5,7 @@ import {
   type StyleProp,
   type TextStyle,
 } from 'react-native';
+import { useButtonContent } from './lib/button-content';
 import { splitTextClassName } from './lib/text-class-parser';
 
 type TextVariant =
@@ -78,6 +79,9 @@ type TextProps = {
   style?: StyleProp<TextStyle>;
 } & Omit<RNTextProps, 'style' | 'children'>;
 
+/** MD3 label-large, the type every button label uses. */
+const BUTTON_LABEL_STYLE: TextStyle = { fontSize: 14, lineHeight: 20, fontWeight: '500' };
+
 /**
  * A plain React Native `Text`, deliberately NOT `@expo/ui`'s Text.
  *
@@ -95,8 +99,8 @@ type TextProps = {
  */
 function Text({
   children,
-  variant = 'body',
-  color = 'primary',
+  variant: variantProp,
+  color: colorProp,
   textColor,
   textStyle,
   wrap: _wrap,
@@ -105,6 +109,14 @@ function Text({
   ...rest
 }: TextProps) {
   const { colors } = useColorScheme();
+  // Inside a Button, a Text with no colour or variant of its own is the button's label: it takes
+  // the button's content colour and MD3 label type. This is what keeps an icon + label button from
+  // painting its label in the page foreground (black on the blue filled button).
+  const buttonContent = useButtonContent();
+  const variant = variantProp ?? 'body';
+  const color = colorProp ?? 'primary';
+  const asButtonLabel = buttonContent !== null && variantProp === undefined;
+  const contentColor = colorProp === undefined ? buttonContent?.color : undefined;
   // NativeWind merges className-derived styles before the `style` prop, so anything put in
   // `style` would silently beat the call site's own classes. The parser is used here purely to
   // see *which* text properties `className` already sets, so the variant/color defaults only
@@ -115,19 +127,32 @@ function Text({
     wrap: false,
     baseFontSize: VARIANT_FONT_SIZE[variant],
   });
-  const defaults: TextStyle = {
-    ...(fromClassName.fontSize === undefined && { fontSize: VARIANT_FONT_SIZE[variant] }),
-    // The variant's line height is only meaningful for the variant's own font size. If className
-    // resizes the text (e.g. `text-3xl` on a default `body`), keeping it would leave a line box
-    // shorter than the glyphs and visibly clip their tops and bottoms — seen on the iOS auth
-    // headline. Falling back to the platform's natural line height is correct there.
-    ...(fromClassName.lineHeight === undefined &&
-      fromClassName.fontSize === undefined && { lineHeight: VARIANT_LINE_HEIGHT[variant] }),
-    ...(fromClassName.fontWeight === undefined && { fontWeight: VARIANT_WEIGHT[variant] }),
-    ...((textColor !== undefined || fromClassName.color === undefined) && {
-      color: textColor ?? colors[COLOR_KEY[color]],
-    }),
-  };
+  const defaults: TextStyle = asButtonLabel
+    ? {
+        ...(fromClassName.fontSize === undefined && {
+          fontSize: BUTTON_LABEL_STYLE.fontSize,
+          lineHeight: BUTTON_LABEL_STYLE.lineHeight,
+        }),
+        ...(fromClassName.fontWeight === undefined && {
+          fontWeight: BUTTON_LABEL_STYLE.fontWeight,
+        }),
+        ...((textColor !== undefined || fromClassName.color === undefined) && {
+          color: textColor ?? contentColor ?? colors[COLOR_KEY[color]],
+        }),
+      }
+    : {
+        ...(fromClassName.fontSize === undefined && { fontSize: VARIANT_FONT_SIZE[variant] }),
+        // The variant's line height is only meaningful for the variant's own font size. If className
+        // resizes the text (e.g. `text-3xl` on a default `body`), keeping it would leave a line box
+        // shorter than the glyphs and visibly clip their tops and bottoms — seen on the iOS auth
+        // headline. Falling back to the platform's natural line height is correct there.
+        ...(fromClassName.lineHeight === undefined &&
+          fromClassName.fontSize === undefined && { lineHeight: VARIANT_LINE_HEIGHT[variant] }),
+        ...(fromClassName.fontWeight === undefined && { fontWeight: VARIANT_WEIGHT[variant] }),
+        ...((textColor !== undefined || fromClassName.color === undefined) && {
+          color: textColor ?? contentColor ?? colors[COLOR_KEY[color]],
+        }),
+      };
   return (
     <RNText className={className} style={[defaults, textStyle, style]} {...rest}>
       {children}

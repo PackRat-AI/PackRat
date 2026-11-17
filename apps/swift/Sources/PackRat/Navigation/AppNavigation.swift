@@ -120,7 +120,10 @@ struct AppNavigation: View {
     /// the SwiftData cache for a location the user has not saved locally.
     /// The badge counts *unseen* rather than *active*: an alert the user has
     /// already opened still exists, but no longer needs to shout.
+    /// Zero when signed out: Weather is sign-in only, so any cached state is
+    /// left over from an earlier session and points at nothing to open.
     private var activeWeatherAlertCount: Int {
+        guard authManager.isAuthenticated else { return 0 }
         let unseenSaved = appState.weatherVM.savedLocations
             .filter { appState.weatherVM.hasUnseenAlert(locationId: $0.id) }
             .map(\.id)
@@ -330,7 +333,8 @@ struct AppNavigation: View {
         case .feed:
             FeedView(viewModel: appState.feedVM)
         case .guides:
-            GuidesView()
+            // Its own stack so a guide pushes its article in the column.
+            NavigationStack { GuidesView() }
         case .gearInventory:
             GearInventoryView().environment(appState)
         case .wildlife:
@@ -609,6 +613,19 @@ private extension View {
             WatchCompanionService.shared.publishSnapshot(from: appState)
         }
         .onChange(of: appState.selectedTripId) { _, _ in
+            WatchCompanionService.shared.publishSnapshot(from: appState)
+        }
+        // Push the wrist an alert the moment it lands, and clear it the moment
+        // the forecast is opened, rather than waiting for the next tick.
+        .onChange(of: appState.weatherVM.watchAlert) { _, _ in
+            WatchCompanionService.shared.publishSnapshot(from: appState)
+        }
+        // Likewise when the place the complication shows changes or is
+        // deleted, so the face never holds a place that is gone.
+        .onChange(of: appState.weatherVM.selectedLocation?.id) { _, _ in
+            WatchCompanionService.shared.publishSnapshot(from: appState)
+        }
+        .onChange(of: appState.weatherVM.forecast?.current?.tempC) { _, _ in
             WatchCompanionService.shared.publishSnapshot(from: appState)
         }
     }

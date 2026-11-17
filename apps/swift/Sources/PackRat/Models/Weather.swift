@@ -18,6 +18,16 @@ struct WeatherForecastResponse: Codable, Sendable {
     let current: WeatherCurrent?
     let forecast: WeatherForecast?
     let alerts: WeatherAlertsWrapper?
+    /// Set when some forecast days came from Apple Weather, whose terms
+    /// require its mark and legal link wherever those days are shown.
+    var attribution: WeatherAttribution? = nil
+}
+
+struct WeatherAttribution: Codable, Equatable, Hashable, Sendable {
+    let serviceName: String
+    let legalPageUrl: URL
+    let logoLightUrl: URL
+    let logoDarkUrl: URL
 }
 
 struct WeatherAlertsWrapper: Codable, Sendable {

@@ -42,7 +42,8 @@ export function PackDetailScreen() {
 
   const DEFAULT_TAB = 'all';
   const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
-  const [isPackingMode, setIsPackingMode] = useState(false);
+  // `?packing=1` opens straight into packing mode, e.g. from a trip's Start Packing button.
+  const [isPackingMode, setIsPackingMode] = useState(() => params.packing === '1' && isOwnedByUser);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
     obs({ store: packingModeStore, id: id }).get() || {},
   );
@@ -689,11 +690,11 @@ export function PackDetailScreen() {
             </View>
             <View className="flex-row items-center gap-2">
               {/* Reset Button */}
-              <Button variant="plain" size="sm" onPress={handleResetPackingMode}>
+              <Button variant="plain" onPress={handleResetPackingMode}>
                 <Text>Reset</Text>
               </Button>
               {/* Save Button */}
-              <Button variant="plain" size="sm" onPress={handleSavePackingMode}>
+              <Button variant="plain" onPress={handleSavePackingMode}>
                 <Text>Save</Text>
               </Button>
             </View>

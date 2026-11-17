@@ -1,5 +1,6 @@
 import type { AlertMethods } from '@packrat/ui/src/alert';
 import { AlertAnchor } from '@packrat/ui/src/alert';
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Button } from '@packrat/ui/src/button';
 import { Checkbox } from '@packrat/ui/src/checkbox';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
@@ -13,7 +14,7 @@ import type { TranslationKeys } from 'expo-app/lib/i18n/types';
 import { testIds } from 'expo-app/lib/testIds';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
-import { Alert, Image, Platform, View } from 'react-native';
+import { Image, Platform, View } from 'react-native';
 import {
   KeyboardAwareScrollView,
   KeyboardController,
@@ -139,18 +140,22 @@ export default function ResetPasswordScreen() {
         });
 
         // Show success message and navigate to login
-        Alert.alert(t('common.success'), t('auth.resetPasswordSuccess'), [
-          {
-            text: t('auth.login'),
-            onPress: () => router.replace('/auth'),
-          },
-        ]);
+        showAlert({
+          title: t('common.success'),
+          message: t('auth.resetPasswordSuccess'),
+          buttons: [
+            {
+              text: t('auth.login'),
+              onPress: () => router.replace('/auth'),
+            },
+          ],
+        });
       } catch (error) {
         console.log('Reset password error:', error);
-        Alert.alert(
-          t('common.error'),
-          error instanceof Error ? error.message : t('auth.resetPasswordFailed'),
-        );
+        showAlert({
+          title: t('common.error'),
+          message: error instanceof Error ? error.message : t('auth.resetPasswordFailed'),
+        });
       } finally {
         setIsLoading(false);
       }

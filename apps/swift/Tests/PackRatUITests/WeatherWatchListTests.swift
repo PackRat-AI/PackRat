@@ -175,8 +175,8 @@ final class WeatherWatchListTests: AppUITestCase {
         XCTAssertTrue(app.navigationBars["Weather Alerts Watch List"].waitForExistence(timeout: 5))
     }
 
-    /// Alert Preferences/Watch List collapse into the nav-bar overflow menu on
-    /// iPhone (.secondaryAction placement) — same pattern as WeatherSubFlowTests.
+    /// Watch List collapses into the nav-bar overflow menu on iPhone
+    /// (.secondaryAction placement).
     private func openOverflowMenuIfNeeded() {
         let overflow = app.navigationBars.firstMatch.buttons.matching(
             NSPredicate(format: "label == 'More' OR label CONTAINS 'ellipsis'")

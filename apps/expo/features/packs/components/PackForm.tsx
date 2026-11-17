@@ -11,15 +11,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Switch, Text, View } from 'react-native';
 import { z } from 'zod';
 import { useCreatePack, useUpdatePack } from '../hooks';
 import type { Pack } from '../types';
@@ -223,25 +215,21 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
 
         <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <Pressable
+            <Button
               testID={testIds.packs.submitBtn}
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
-              className={`mt-6 rounded-lg px-4 py-3.5 ${
-                !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
-              }`}
-            >
-              <Text className="text-center text-base font-semibold text-primary-foreground">
-                {isSubmitting
+              className="mt-6 w-full"
+              label={
+                isSubmitting
                   ? isEditingExistingPack
                     ? t('packs.updating')
                     : t('packs.creating')
                   : isEditingExistingPack
                     ? t('packs.updatePack')
-                    : t('packs.createPack')}
-                {/* TODO use activity indicator */}
-              </Text>
-            </Pressable>
+                    : t('packs.createPack')
+              }
+            />
           )}
         </form.Subscribe>
       </ScrollView>

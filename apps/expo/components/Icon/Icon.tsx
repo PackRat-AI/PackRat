@@ -1,5 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useButtonContent } from '@packrat/ui/src/lib/button-content';
 import type { ComponentProps } from 'react';
 import { useMemo } from 'react';
 import { getIconNames } from './get-icon-names';
@@ -7,11 +8,14 @@ import type { IconProps } from './types';
 
 function Icon({
   name,
-  color = '#000000',
+  color: colorProp,
   namingScheme = 'material',
   size = 27,
   materialIcon,
 }: IconProps) {
+  // Inside a Button an icon with no colour of its own takes the button's content colour.
+  const buttonContent = useButtonContent();
+  const color = colorProp ?? buttonContent?.color ?? '#000000';
   const iconNames = useMemo(() => getIconNames({ namingScheme, name }), [namingScheme, name]);
 
   const prefersMaterialIcons = materialIcon?.type === 'MaterialIcons';

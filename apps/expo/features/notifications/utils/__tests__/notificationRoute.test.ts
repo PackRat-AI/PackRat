@@ -23,6 +23,20 @@ describe('notificationRoute', () => {
     });
   });
 
+  it('opens a trail report over its trip', () => {
+    expect(notificationRoute({ tripId: 'trip-9', reportId: 'rep-3' })).toEqual({
+      pathname: '/trip/[id]',
+      params: { id: 'trip-9', reportId: 'rep-3' },
+    });
+  });
+
+  it('opens just the trip when the report id is blank', () => {
+    expect(notificationRoute({ tripId: 'trip-9', reportId: ' ' })).toEqual({
+      pathname: '/trip/[id]',
+      params: { id: 'trip-9' },
+    });
+  });
+
   it('opens the post for a feed notification, ahead of any other id', () => {
     expect(notificationRoute({ postId: '7', tripId: 'trip-9' })).toEqual({
       pathname: '/feed/[id]',

@@ -1,4 +1,4 @@
-import { useActionSheet } from '@expo/react-native-action-sheet';
+import { useActionSheet } from '@packrat/ui/src/action-sheet';
 import { Text } from '@packrat/ui/src/text';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';

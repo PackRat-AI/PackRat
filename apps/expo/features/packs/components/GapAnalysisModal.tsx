@@ -211,15 +211,14 @@ function SwapSheet({
                       <Text className="text-xs font-semibold text-foreground">Current</Text>
                     </View>
                   ) : (
-                    <TouchableOpacity
+                    <Button
+                      size="sm"
                       onPress={() => {
                         onSelect(item);
                         onClose();
                       }}
-                      className="rounded-full bg-primary px-3 py-1.5"
-                    >
-                      <Text className="text-xs font-semibold text-white">Select</Text>
-                    </TouchableOpacity>
+                      label="Select"
+                    />
                   )}
                 </View>
               );
@@ -630,7 +629,7 @@ export function GapAnalysisModal({
               disabled={selectedCount === 0 || isAdding}
               className="w-full"
             >
-              {isAdding && <ActivityIndicator size="small" color="#fff" />}
+              {isAdding && <ActivityIndicator size="small" color={colors.primaryForeground} />}
               <Text>
                 {isAdding
                   ? 'Adding...'

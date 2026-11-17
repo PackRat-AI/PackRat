@@ -55,11 +55,8 @@ export function PackSelectionScreen() {
       <Text variant="body" className="mb-4 text-center" wrap>
         {t('catalog.createPackMessage')}
       </Text>
-      <Button onPress={handleCreatePack}>
-        <Icon name="plus" size={18} color="text-primary-foreground" />
-        <Text variant="body" color="primary">
-          {t('catalog.createPack')}
-        </Text>
+      <Button icon="plus" onPress={handleCreatePack}>
+        <Text>{t('catalog.createPack')}</Text>
       </Button>
     </View>
   );

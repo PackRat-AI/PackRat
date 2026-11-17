@@ -4,7 +4,7 @@ import { Tabs } from 'expo-router';
 
 /**
  * Web version of the tabs layout.
- * Replaces NativeTabs (expo-router/unstable-native-tabs) with standard Expo Router Tabs.
+ * Replaces NativeTabs (expo-router/native-tabs) with standard Expo Router Tabs.
  * NativeTabs uses native UITabBarController and cannot run on web.
  * Metro automatically picks this file over _layout.tsx for web builds.
  */

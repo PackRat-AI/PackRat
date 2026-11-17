@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 @main
 struct PackRatWatchApp: App {
@@ -13,8 +14,32 @@ struct PackRatWatchApp: App {
                         return
                     }
                     connectivity.activate()
+                    await WatchBackgroundRefresh.schedule()
                 }
         }
+        .backgroundTask(.watchConnectivity) {
+            await connectivity.receivePendingContent()
+        }
+        // The complication wake above is the fast path, but it only fires when
+        // the phone sees a PackRat complication on the face and has budget
+        // left. This periodic refresh catches the face up regardless.
+        .backgroundTask(.appRefresh(WatchBackgroundRefresh.identifier)) {
+            await connectivity.receivePendingContent()
+            await WatchBackgroundRefresh.schedule()
+        }
+    }
+}
+
+enum WatchBackgroundRefresh {
+    static let identifier = "packrat.weather.refresh"
+
+    /// Four refreshes an hour is the budget watchOS gives an app with a
+    /// complication on the active face.
+    @MainActor static func schedule() {
+        WKApplication.shared().scheduleBackgroundRefresh(
+            withPreferredDate: Date(timeIntervalSinceNow: 15 * 60),
+            userInfo: identifier as NSString
+        ) { _ in }
     }
 }
 
@@ -55,6 +80,10 @@ private struct WatchDashboardView: View {
                 .tag(3)
         }
         .tabViewStyle(.verticalPage)
+        // A weather complication opens straight onto the Weather page.
+        .onOpenURL { url in
+            if url == WatchDeepLink.weather { selectedTab = 2 }
+        }
     }
 }
 
@@ -90,7 +119,12 @@ private struct TrailReadyView: View {
                                 value: "\(snapshot.pack.packedItemCount)/\(snapshot.pack.totalItemCount)",
                                 symbol: "backpack"
                             )
-                            WatchMetricRow(title: "Weather", value: snapshot.weather.temperatureText, symbol: snapshot.weather.symbolName)
+                            WatchMetricRow(
+                                title: "Weather",
+                                value: snapshot.weather.temperatureText,
+                                symbol: snapshot.weather.symbolName,
+                                showsAlertMarker: snapshot.weather.alert != nil
+                            )
                         }
                     }
                 } else {
@@ -157,6 +191,11 @@ private struct WatchWeatherView: View {
     var body: some View {
         NavigationStack {
             List {
+                if let alert = weather.alert {
+                    Section {
+                        WatchWeatherAlertCard(alert: alert)
+                    }
+                }
                 Section {
                     VStack(alignment: .leading, spacing: 4) {
                         Label(weather.locationName, systemImage: "location.fill")
@@ -243,10 +282,48 @@ private struct WatchTrailReportView: View {
     }
 }
 
+/// Leads the Weather page while any saved location has an alert the user has
+/// not opened on the phone. Severity sits on the leading edge, as it does in
+/// the phone's forecast, so the card reads as a hazard without flooding red.
+private struct WatchWeatherAlertCard: View {
+    let alert: WatchWeatherAlertSnapshot
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(alert.severityColor)
+                .frame(width: 4)
+            VStack(alignment: .leading, spacing: 2) {
+                Label(alert.headline, systemImage: "exclamationmark.triangle.fill")
+                    .font(.headline)
+                    .foregroundStyle(alert.severityColor)
+                    .lineLimit(3)
+                if let severity = alert.severity, !severity.isEmpty {
+                    Text(severity.capitalized)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+                Text(alert.locationName)
+                    .font(.caption)
+                    .lineLimit(2)
+                if let othersText = alert.othersText {
+                    Text(othersText)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+    }
+}
+
 private struct WatchMetricRow: View {
     let title: String
     let value: String
     let symbol: String
+    var showsAlertMarker = false
 
     var body: some View {
         HStack(spacing: 8) {
@@ -261,6 +338,12 @@ private struct WatchMetricRow: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
+            if showsAlertMarker {
+                Circle()
+                    .fill(.red)
+                    .frame(width: 7, height: 7)
+                    .accessibilityLabel("New weather alert")
+            }
         }
         .font(.caption)
     }

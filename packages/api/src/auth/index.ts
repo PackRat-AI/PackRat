@@ -158,13 +158,23 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
           // per-route authorization. Moving rate limiting to a Durable Object
           // is the fix if it ever needs to be exact.
           increment: async (key: string, ttl: number) => {
-            const current = await env.AUTH_KV.get(key);
-            const next = (current === null ? 0 : Number.parseInt(current, 10) || 0) + 1;
+            const { value: current, metadata } = await env.AUTH_KV.getWithMetadata<{
+              expiresAt?: number;
+            }>(key);
+            const now = Math.floor(Date.now() / 1000);
+            // An existing counter must expire a fixed window after it started,
+            // per the interface contract. A KV put replaces the expiration too,
+            // so carry the window's end in metadata and re-send it on every
+            // put. A counter without one (written before this fix, with no
+            // TTL) starts a fresh window.
+            const windowEnd = metadata?.expiresAt;
+            const continuing = current !== null && windowEnd !== undefined;
+            const next = (continuing ? Number.parseInt(current, 10) || 0 : 0) + 1;
+            const expiresAt = continuing ? windowEnd : now + Math.max(60, ttl);
             await env.AUTH_KV.put(key, String(next), {
-              // TTL applies on creation only, per the interface contract: an
-              // existing counter must expire a fixed window after it started,
-              // so don't extend it on later increments.
-              ...(current === null ? { expirationTtl: Math.max(60, ttl) } : {}),
+              // KV rejects an expiration less than 60 seconds away.
+              expiration: Math.max(expiresAt, now + 60),
+              metadata: { expiresAt },
             });
             return next;
           },

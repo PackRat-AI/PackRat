@@ -209,6 +209,7 @@ function MessageRow({
   selectedMessages: string[];
   setSelectedMessages: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
+  const { colors } = useColorScheme();
   function onListItemPress() {
     if (selectedMessages.length > 0) {
       setSelectedMessages((prev) => {
@@ -257,7 +258,7 @@ function MessageRow({
                       <Icon
                         size={Platform.select({ ios: 24, default: 27 })}
                         name="check"
-                        color="white"
+                        color={colors.primaryForeground}
                       />
                     </AvatarFallback>
                   ) : (
@@ -322,9 +323,8 @@ function StartChatButton() {
   return (
     <View style={{ bottom: insets.bottom + 12 }} className="absolute bottom-24 right-4 z-50">
       <View className="rounded-xl bg-background shadow-xl">
-        <Button size="lg">
-          <Icon color="white" size={24} name="message-outline" />
-          <Text className="py-1 text-[15px]">Start chat</Text>
+        <Button icon="message-outline">
+          <Text>Start chat</Text>
         </Button>
       </View>
     </View>
@@ -405,6 +405,7 @@ const ACTION_BUTTON_STYLE: ViewStyle = {
 };
 
 function Swipeable({ children }: { children: React.ReactNode }) {
+  const { colors } = useColorScheme();
   const translateX = useSharedValue(0);
   const previousTranslateX = useSharedValue(0);
   const initialTouchLocation = useSharedValue<{ x: number; y: number } | null>(null);
@@ -526,7 +527,7 @@ function Swipeable({ children }: { children: React.ReactNode }) {
               style={ACTION_BUTTON_STYLE}
               className="absolute bottom-0 right-0 top-0 items-center justify-center"
             >
-              <Icon name="archive-arrow-up-outline" size={24} color="white" />
+              <Icon name="archive-arrow-up-outline" size={24} color={colors.primaryForeground} />
             </View>
           </Animated.View>
         </Animated.View>
@@ -536,7 +537,7 @@ function Swipeable({ children }: { children: React.ReactNode }) {
               style={ACTION_BUTTON_STYLE}
               className="absolute bottom-0 right-0 top-0 items-center justify-center"
             >
-              <Icon name="archive-arrow-up-outline" size={24} color="white" />
+              <Icon name="archive-arrow-up-outline" size={24} color={colors.primaryForeground} />
             </View>
           </Animated.View>
         </Animated.View>

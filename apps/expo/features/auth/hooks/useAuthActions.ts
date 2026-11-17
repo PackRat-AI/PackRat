@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/react-native';
 import { AuthClientError, toAuthError } from 'expo-app/features/auth/lib/authErrors';
 import { userStore } from 'expo-app/features/auth/store';
 import type { User } from 'expo-app/features/profile/types';
+import { resetSafetyCheckIn } from 'expo-app/features/safety-check-in';
 import * as AppleAuthentication from 'expo-app/lib/appleAuthentication';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { authClient } from 'expo-app/lib/auth-client';
@@ -23,12 +24,15 @@ import {
   suppressSignOutNavAtom,
 } from '../atoms/authAtoms';
 
+// dismissTo, not replace: when an auth wall pushed /auth over the app, replace would stack a
+// second app screen on top of the first and leave a back button on it. dismissTo pops back to
+// the existing screen, and falls back to a replace when /auth is the root (cold start, sign-out).
 function redirect(route: string) {
   try {
     const parsedRoute = safeJsonParse<Href>(route, { strict: true });
-    return router.replace(parsedRoute);
+    return router.dismissTo(parsedRoute);
   } catch {
-    router.replace(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
+    router.dismissTo(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
   }
 }
 
@@ -285,6 +289,7 @@ export function useAuthActions() {
       console.error('Sign out error:', error);
     } finally {
       userStore.set(null);
+      await resetSafetyCheckIn();
       await clearLocalData();
       setNeedsReauth(false);
       // isLoadingAtom intentionally left true — the caller (profile/handleSignOut)
@@ -396,6 +401,7 @@ export function useAuthActions() {
       if (error) throw toAuthError({ source: error, fallback: 'Delete account failed' });
       Sentry.setUser(null);
       userStore.set(null);
+      await resetSafetyCheckIn();
       await clearLocalData();
       await Updates.reloadAsync();
     } catch (error) {

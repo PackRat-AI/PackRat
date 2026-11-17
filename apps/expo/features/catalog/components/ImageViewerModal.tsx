@@ -5,6 +5,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  type ListViewToken,
   Modal,
   Platform,
   ScrollView,
@@ -40,7 +41,7 @@ function ZoomablePage({ uri, width, height }: { uri: string; width: number; heig
 
   return (
     <View style={{ width, height, alignItems: 'center', justifyContent: 'center' }}>
-      <Image source={source} style={{ width, height }} resizeMode="contain" />
+      <Image source={source} style={{ width, height }} resizeMode="contain" resizeMethod="resize" />
     </View>
   );
 }
@@ -64,7 +65,7 @@ export function ImageViewerModal({ visible, images, initialIndex = 0, onClose }:
   }, [visible, initialIndex]);
 
   const handleViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: { index: number | null }[] }) => {
+    ({ viewableItems }: { viewableItems: ListViewToken[] }) => {
       if (viewableItems[0]?.index != null) {
         setCurrentIndex(viewableItems[0].index);
       }
@@ -103,6 +104,10 @@ export function ImageViewerModal({ visible, images, initialIndex = 0, onClose }:
           viewabilityConfig={viewabilityConfig.current}
           getItemLayout={getItemLayout}
           initialScrollIndex={initialIndex}
+          // Keep only the current page and its neighbours mounted so decoded photos are released.
+          initialNumToRender={1}
+          maxToRenderPerBatch={1}
+          windowSize={3}
           removeClippedSubviews
         />
 

@@ -43,7 +43,6 @@ final class AppPreferences: ObservableObject {
 /// 6. **Developer** — non-production API controls and local-data wipe, matching
 ///    Apple's own placement of developer affordances at the bottom. Absent
 ///    entirely from production builds.
-/// 7. **Debug** — `#if DEBUG` only, below everything shippable.
 struct PreferencesView: View {
     @Environment(AuthManager.self) private var authManager
     @AppStorage("defaultAppWeightUnit") private var defaultAppWeightUnit: AppWeightUnit = .grams
@@ -74,10 +73,10 @@ struct PreferencesView: View {
                 .tabItem { Label("Units", systemImage: "scalemass") }
             advancedTab
                 .tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver") }
-            #if DEBUG
-            debugTab
-                .tabItem { Label("Debug", systemImage: "ladybug") }
-            #endif
+            if ChatViewModel.isOnDeviceOffered {
+                NavigationStack { OnDeviceAISettingsView() }
+                    .tabItem { Label("On-device AI", systemImage: "cpu") }
+            }
         }
         .padding(20)
         .frame(width: 460, height: 360)
@@ -94,14 +93,14 @@ struct PreferencesView: View {
             notificationSection
             safetySection
             communitySection
+            if ChatViewModel.isOnDeviceOffered {
+                Section {
+                    NavigationLink("On-device AI") { OnDeviceAISettingsView() }
+                }
+            }
             advancedSection
             aboutSection
             developerSection
-            #if DEBUG
-            Section("Debug") {
-                NavigationLink("On-device AI") { OfflineAIView() }
-            }
-            #endif
         }
         .navigationTitle("Settings")
         .clearDataConfirmation(isPresented: $showingClearDataConfirm, onConfirm: clearAppData)
@@ -118,13 +117,6 @@ struct PreferencesView: View {
     }
 
     #if os(macOS)
-    #if DEBUG
-    private var debugTab: some View {
-        NavigationStack {
-            OfflineAIView()
-        }
-    }
-    #endif
 
     /// Carries `SubscriptionSettingsSection` too: it lived in the old `generalTab`,
     /// which this tab replaced, and macOS has no other Settings surface that would

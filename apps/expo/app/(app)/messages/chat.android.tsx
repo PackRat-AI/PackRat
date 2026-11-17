@@ -14,10 +14,9 @@ import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import {
   Image,
-  type NativeSyntheticEvent,
   Platform,
   Pressable,
-  type TextInputContentSizeChangeEventData,
+  type TextInputContentSizeChangeEvent,
   type TextStyle,
   View,
   type ViewStyle,
@@ -413,11 +412,14 @@ function ChatBubble({
                       height: 300,
                       resizeMode: 'cover',
                       opacity: isSelected ? 0.5 : 1,
+                      borderTopLeftRadius:
+                        item.sender !== ME ? (isSamePreviousSender ? 6 : 12) : 12,
+                      borderTopRightRadius:
+                        item.sender === ME ? (isSamePreviousSender ? 6 : 12) : 12,
+                      borderBottomLeftRadius: item.sender !== ME ? (isSameNextSender ? 6 : 12) : 12,
+                      borderBottomRightRadius:
+                        item.sender === ME ? (isSameNextSender ? 6 : 12) : 12,
                     }}
-                    borderTopLeftRadius={item.sender !== ME ? (isSamePreviousSender ? 6 : 12) : 12}
-                    borderTopRightRadius={item.sender === ME ? (isSamePreviousSender ? 6 : 12) : 12}
-                    borderBottomLeftRadius={item.sender !== ME ? (isSameNextSender ? 6 : 12) : 12}
-                    borderBottomRightRadius={item.sender === ME ? (isSameNextSender ? 6 : 12) : 12}
                   />
                 </Pressable>
               </ContextMenu>
@@ -473,7 +475,7 @@ function ChatBubble({
                       isSameNextSender && (item.sender === ME ? 'rounded-br-md' : 'rounded-bl-md'),
                     )}
                   >
-                    <Text className={cn(isSelected && 'text-white')}>{item.text}</Text>
+                    <Text className={cn(isSelected && 'text-primary-foreground')}>{item.text}</Text>
                   </View>
                 </Pressable>
               </ContextMenu>
@@ -527,7 +529,7 @@ function Composer({
   const [message, setMessage] = React.useState('');
   const [showOptions, setShowOptions] = React.useState(true);
 
-  function onContentSizeChange(event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) {
+  function onContentSizeChange(event: TextInputContentSizeChangeEvent) {
     textInputHeight.value = Math.max(
       Math.min(event.nativeEvent.contentSize.height, 280),
       Platform.select({ ios: 24, default: 44 }),

@@ -1,12 +1,12 @@
 import {
   Card,
   Column,
-  Host,
   ListItem,
   SegmentedButton,
   SingleChoiceSegmentedButtonRow,
   Text,
 } from '@expo/ui/jetpack-compose';
+import { ThemedHost as Host } from '@packrat/ui/src/themed-host';
 import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';

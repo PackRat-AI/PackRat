@@ -1,6 +1,6 @@
-import DateTimePicker from '@expo/ui/community/datetime-picker';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
+import { DateTimePicker } from 'expo-app/lib/DateTimePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -19,12 +19,17 @@ export function FullScreenDialogHeader({
   onClose,
   onSave,
   canSave,
+  saveLabel,
+  saveTestID = testIds.tripStats.dialogSaveBtn,
 }: {
   title: string;
   onClose: () => void;
   /** Left out when the screen's main action sits at the bottom instead. */
   onSave?: () => void;
   canSave?: boolean;
+  /** The confirm action's label, when it does something other than save ("Send"). */
+  saveLabel?: string;
+  saveTestID?: string;
 }) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
@@ -54,14 +59,14 @@ export function FullScreenDialogHeader({
             accessibilityRole="button"
             accessibilityState={{ disabled: !canSave }}
             android_ripple={{ color: colors.grey5 }}
-            testID={testIds.tripStats.dialogSaveBtn}
+            testID={saveTestID}
           >
             <Text
               variant="callout"
               className="font-medium"
               style={{ color: canSave ? colors.primary : colors.grey }}
             >
-              {t('tripStats.dialog.save')}
+              {saveLabel ?? t('tripStats.dialog.save')}
             </Text>
           </Pressable>
         ) : null}

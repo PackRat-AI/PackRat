@@ -109,7 +109,14 @@ export default function WatchListScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 96 }}
-          refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={false}
+              onRefresh={() => {
+                refetch();
+              }}
+            />
+          }
           ListEmptyComponent={
             <View className="flex-1 items-center justify-center gap-3 px-8 pb-24">
               <Icon name="bell-off-outline" size={56} color={colors.grey} />
@@ -119,11 +126,8 @@ export default function WatchListScreen() {
               <Text className="text-center text-muted-foreground">
                 {t('weather.noWatchedLocationsDesc')}
               </Text>
-              <Button className="mt-2" onPress={openSearch}>
-                <Icon name="plus" size={18} color="white" />
-                <Text className="font-medium text-primary-foreground">
-                  {t('weather.addLocation')}
-                </Text>
+              <Button className="mt-2" icon="plus" onPress={openSearch}>
+                <Text>{t('weather.addLocation')}</Text>
               </Button>
             </View>
           }

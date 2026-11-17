@@ -1,4 +1,4 @@
-import type { View, ViewProps } from 'react-native';
+import type { ViewInstance, ViewProps } from 'react-native';
 
 type DropdownIcon = { name: string; color?: string };
 
@@ -42,7 +42,7 @@ type DropdownMenuConfig = {
   iOSItemSize?: 'small' | 'medium' | 'large';
 };
 
-type DropdownMenuMethods = View & {
+type DropdownMenuMethods = ViewInstance & {
   presentMenu?: () => void;
   dismissMenu?: () => void;
 };

@@ -1,5 +1,6 @@
 import type { AlertMethods } from '@packrat/ui/src/alert';
 import { AlertAnchor } from '@packrat/ui/src/alert';
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Button } from '@packrat/ui/src/button';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { Text } from '@packrat/ui/src/text';
@@ -11,7 +12,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
-import { Alert, Image, Platform, View } from 'react-native';
+import { Image, Platform, View } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
@@ -52,10 +53,10 @@ export default function ForgotPasswordScreen() {
           params: { email: value.email, mode: 'reset-password' },
         });
       } catch (error) {
-        Alert.alert(
-          t('errors.error'),
-          error instanceof Error ? error.message : t('auth.failedToSendCode'),
-        );
+        showAlert({
+          title: t('errors.error'),
+          message: error instanceof Error ? error.message : t('auth.failedToSendCode'),
+        });
       } finally {
         setIsLoading(false);
       }

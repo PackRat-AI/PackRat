@@ -250,6 +250,18 @@ export const WeatherAPICurrentResponseSchema = z.object({
   current: WeatherCurrentSchema,
 });
 
+/**
+ * Credit for forecast days that came from a provider whose terms require it
+ * (Apple Weather). Present only when such days are in the response; clients
+ * show the mark and the legal link wherever those days appear.
+ */
+export const WeatherAttributionSchema = z.object({
+  serviceName: z.string(),
+  legalPageUrl: z.string().url(),
+  logoLightUrl: z.string().url(),
+  logoDarkUrl: z.string().url(),
+});
+
 export const WeatherAPIForecastResponseSchema = z.object({
   location: WeatherAPILocationSchema,
   current: WeatherCurrentSchema,
@@ -257,6 +269,7 @@ export const WeatherAPIForecastResponseSchema = z.object({
     forecastday: z.array(WeatherForecastDaySchema),
   }),
   alerts: WeatherAlertSchema.optional(),
+  attribution: WeatherAttributionSchema.optional(),
 });
 
 export const LocationSearchResponseSchema = z.array(LocationSchema);
@@ -276,6 +289,7 @@ export type WeatherForecast = z.infer<typeof WeatherForecastSchema>;
 export type WeatherAPISearchResponse = z.infer<typeof WeatherAPISearchResponseSchema>;
 export type WeatherAPICurrentResponse = z.infer<typeof WeatherAPICurrentResponseSchema>;
 export type WeatherAPIForecastResponse = z.infer<typeof WeatherAPIForecastResponseSchema>;
+export type WeatherAttribution = z.infer<typeof WeatherAttributionSchema>;
 export type LocationSearchResponse = z.infer<typeof LocationSearchResponseSchema>;
 
 // ─── OpenWeather (api.openweathermap.org) response ────────────────────────────

@@ -97,6 +97,14 @@ export const apiEnvObjectSchema = z.object({
   // Weather Services
   OPENWEATHER_KEY: z.string(),
   WEATHER_API_KEY: z.string(),
+  // Apple WeatherKit REST API — extends forecasts to the full 10 days that the
+  // WeatherAPI plan cuts off at 3. An Apple Auth Key with WeatherKit enabled,
+  // plus the service identifier registered for it. Optional: forecasts fall
+  // back to WeatherAPI's days alone when unset.
+  WEATHERKIT_KEY_ID: z.string().optional(),
+  WEATHERKIT_TEAM_ID: z.string().optional(),
+  WEATHERKIT_SERVICE_ID: z.string().optional(),
+  WEATHERKIT_PRIVATE_KEY: z.string().optional(), // .p8 key contents — store via wrangler secret
 
   // APNs push delivery (weather alert monitoring). A distinct Apple Auth Key
   // from APPLE_PRIVATE_KEY above — that one signs Sign in with Apple tokens,

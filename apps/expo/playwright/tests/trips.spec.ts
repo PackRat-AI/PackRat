@@ -308,8 +308,8 @@ test.describe('Trips list', () => {
 
     const tripId = await createTrip(page, {
       name: tripName,
-      startDate: '2026-11-01',
-      endDate: '2026-11-03',
+      startDate: '2025-11-01',
+      endDate: '2025-11-03',
     });
 
     await page.goto(`${BASE_URL}/trips`);

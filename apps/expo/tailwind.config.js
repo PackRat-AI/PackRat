@@ -66,11 +66,13 @@ function withOpacity(variableName) {
       return platformSelect({
         ios: `rgb(var(--${variableName}) / ${opacityValue})`,
         android: `rgb(var(--android-${variableName}) / ${opacityValue})`,
+        default: `rgb(var(--${variableName}) / ${opacityValue})`,
       });
     }
     return platformSelect({
       ios: `rgb(var(--${variableName}))`,
       android: `rgb(var(--android-${variableName}))`,
+      default: `rgb(var(--${variableName}))`,
     });
   };
 }
