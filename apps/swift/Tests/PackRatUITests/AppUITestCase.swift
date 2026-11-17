@@ -134,7 +134,17 @@ class AppUITestCase: XCTestCase {
 
         submitLoginForm()
 
-        let loggedIn = waitForLoggedIn(timeout: 20)
+        var loggedIn = waitForLoggedIn(timeout: 20)
+        // Every suite signs in fresh, and the API allows only a few sign-ins
+        // per account in a short window; the CI runner's network also drops
+        // out briefly. Either shows a sign-in error, so back off and retry
+        // instead of failing the test on a transient failure.
+        let loginError = app.descendants(matching: .any)["login_error"].firstMatch
+        for backoff in [15.0, 30.0, 45.0] where !loggedIn && loginError.exists {
+            Thread.sleep(forTimeInterval: backoff)
+            submitLoginForm()
+            loggedIn = waitForLoggedIn(timeout: 20)
+        }
         XCTAssertTrue(
             loggedIn,
             "Logged-in landmark must appear after login — \(visibleLoginFailureMessage())"
@@ -197,9 +207,11 @@ class AppUITestCase: XCTestCase {
     }
 
     func visibleLoginFailureMessage() -> String {
-        let loginError = app.staticTexts["login_error"]
-        if loginError.exists, !loginError.label.isEmpty {
-            return "visible login error: \(loginError.label)"
+        let loginError = app.descendants(matching: .any)["login_error"].firstMatch
+        if loginError.exists {
+            let text = loginError.staticTexts.firstMatch
+            let message = text.exists ? (text.value as? String).flatMap { $0.isEmpty ? nil : $0 } ?? text.label : ""
+            return "visible login error: \(message.isEmpty ? loginError.label : message)"
         }
 
         let inlineError = app.staticTexts["inline_error"]
@@ -292,6 +304,24 @@ class AppUITestCase: XCTestCase {
         } else {
             any.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
         }
+    }
+
+    /// Clicks `button` in the alert a destructive action raises. SwiftUI shows
+    /// a macOS alert as a window sheet or a dialog depending on the window, so
+    /// both are searched. Returns false when no alert appeared.
+    @discardableResult
+    func confirmMacAlert(button: String, timeout: TimeInterval = 5) -> Bool {
+        let inSheet = app.sheets.buttons[button].firstMatch
+        let inDialog = app.dialogs.buttons[button].firstMatch
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            for candidate in [inSheet, inDialog] where candidate.exists {
+                candidate.click()
+                return true
+            }
+            usleep(250_000)
+        }
+        return false
     }
     #endif
 
