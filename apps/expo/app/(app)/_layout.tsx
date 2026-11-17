@@ -116,6 +116,9 @@ export default function AppLayout() {
           name="emergency-contacts/index"
           options={{ title: t('safetyCheckIn.contacts.title') }}
         />
+        <Stack.Screen name="offline-maps/index" options={{ title: t('offlineMaps.title') }} />
+        <Stack.Screen name="offline-maps/pick" options={OFFLINE_AREA_PICKER_OPTIONS} />
+        <Stack.Screen name="offline-maps/[areaId]" options={{ title: '' }} />
         <Stack.Screen name="consent-modal" options={CONSENT_MODAL_OPTIONS} />
         <Stack.Screen
           name="pack/[id]/index"
@@ -394,6 +397,11 @@ const getTripLocationSearchOptions = (t: TranslationFunction) =>
     presentation: 'modal',
     animation: 'slide_from_bottom',
   }) as const;
+
+const OFFLINE_AREA_PICKER_OPTIONS = {
+  presentation: 'modal',
+  animation: 'fade_from_bottom',
+} as const;
 
 const CONSENT_MODAL_OPTIONS = {
   presentation: 'modal',
