@@ -32,6 +32,10 @@ final class VoiceCommandController {
     private let listener = VoiceListener()
     private let speaker = VoiceSpeaker.shared
     private var run: Task<Void, Never>?
+    /// "Finding where you are…", said once when a fix is slow, because with the
+    /// phone locked the banner can't be seen.
+    private var progressLine: Task<Void, Never>?
+    private var sayingProgressLine = false
     /// Set while Siri runs a command: Siri asks the yes-or-no question and
     /// says the answer, so PackRat neither listens nor speaks.
     private var siri: SiriTurn?
@@ -136,6 +140,8 @@ final class VoiceCommandController {
 
     func dismiss() {
         run?.cancel()
+        progressLine?.cancel()
+        progressLine = nil
         listener.cancel()
         speaker.stop()
         phase = .idle
@@ -188,6 +194,7 @@ final class VoiceCommandController {
         SentrySDK.addBreadcrumb(crumb)
         phase = .working
         status = command.needsLocation ? VoiceAnswers.locating : VoiceAnswers.working
+        if command.needsLocation { sayWhenSlow() }
         await perform(command, context)
     }
 
@@ -414,6 +421,7 @@ final class VoiceCommandController {
         if let siri { return await siri.confirm(question) }
         phase = .confirming
         answer = question
+        await settleProgressLine()
         if speaksAnswers { await speaker.say(question) }
         guard !Task.isCancelled else { return false }
         VoiceTone.start()
@@ -435,8 +443,32 @@ final class VoiceCommandController {
         phase = .answering
         status = ""
         answer = text
+        await settleProgressLine()
         if speaksAnswers { await speaker.say(text) }
         VoiceAudioSession.deactivate()
+    }
+
+    /// An answer within this long needs no word that PackRat is on it.
+    private static let slowAnswer: Duration = .milliseconds(1200)
+
+    private func sayWhenSlow() {
+        progressLine?.cancel()
+        progressLine = Task { [weak self] in
+            try? await Task.sleep(for: Self.slowAnswer)
+            guard let self, !Task.isCancelled, self.phase == .working, self.siri == nil, self.speaksAnswers else { return }
+            self.sayingProgressLine = true
+            await self.speaker.say(VoiceAnswers.locating)
+            self.sayingProgressLine = false
+        }
+    }
+
+    /// Lets the progress line finish rather than cut it off, and drops it if
+    /// it isn't due yet.
+    private func settleProgressLine() async {
+        guard let line = progressLine else { return }
+        progressLine = nil
+        if !sayingProgressLine { line.cancel() }
+        await line.value
     }
 
     private func finishQuietly() {
