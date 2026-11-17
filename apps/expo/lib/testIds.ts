@@ -438,6 +438,8 @@ export const testIds = Object.freeze({
     watchedLocation: (id: string | number) => `weather:watched-${id}`,
     watchedTrip: (id: string) => `weather:watched-trip-${id}`,
     watchListTripAlertsOff: 'weather:watch-list-trip-alerts-off',
+    watchListTripAlertsError: 'weather:watch-list-trip-alerts-error',
+    watchListRetryBtn: 'weather:watch-list-retry-btn',
     watchListTurnOnAlertsBtn: 'weather:watch-list-turn-on-alerts',
     watchListEmpty: 'weather:watch-list-empty',
     removeWatched: (id: string | number) => `weather:remove-watched-${id}`,

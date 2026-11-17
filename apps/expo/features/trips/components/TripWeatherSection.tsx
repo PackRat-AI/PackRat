@@ -56,7 +56,7 @@ export function TripWeatherSection({ trip }: { trip: Trip }) {
   const { colors } = useColorScheme();
   const { displayTemperature } = useTemperatureUnit();
   const setTripWeatherAlerts = useSetTripWeatherAlerts();
-  const storedAlerts = use$(() => tripConditionsStore[trip.id]?.alerts.get());
+  const stored = use$(() => tripConditionsStore[trip.id]?.get());
 
   const now = new Date();
   const q = trip.location ? `${trip.location.latitude},${trip.location.longitude}` : '';
@@ -70,22 +70,29 @@ export function TripWeatherSection({ trip }: { trip: Trip }) {
   const forecast = query.data;
 
   const alerts = useMemo(() => destinationAlerts(forecast?.alerts?.alert ?? []), [forecast]);
-
-  // The trip list's marker clears once the alerts have been on screen here,
-  // including any the list learned about from an earlier fetch.
-  useEffect(() => {
-    if (!forecast) return;
-    markTripAlertsSeen({
-      tripId: trip.id,
-      alertIds: [...alerts.map(alertId), ...(storedAlerts ?? []).map((alert) => alert.id)],
-    });
-  }, [forecast, alerts, storedAlerts, trip.id]);
-
   const plan = tripWeatherPlan({
     trip,
     forecastDates: forecast?.forecast.forecastday.map((day) => day.date) ?? [],
     now,
   });
+  const showsAlerts = plan.kind === 'days' && !!forecast;
+
+  // The trip list's marker clears once the alerts have been on screen here. Alerts the
+  // list learned about from an earlier fetch count too, since this forecast replaced them;
+  // a newer background fetch reloads this forecast first, so nothing is cleared unseen.
+  const { dataUpdatedAt, refetch } = query;
+  useEffect(() => {
+    if (!showsAlerts) return;
+    if (stored && stored.fetchedAt > dataUpdatedAt) {
+      refetch();
+      return;
+    }
+    markTripAlertsSeen({
+      tripId: trip.id,
+      alertIds: [...alerts.map(alertId), ...(stored?.alerts ?? []).map((alert) => alert.id)],
+    });
+  }, [showsAlerts, alerts, stored, dataUpdatedAt, refetch, trip.id]);
+
   if (plan.kind === 'hidden') return null;
 
   const card = 'rounded-xl border border-border bg-card';

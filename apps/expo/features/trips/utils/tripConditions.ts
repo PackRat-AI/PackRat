@@ -82,17 +82,22 @@ export function isConditionsFresh({
   );
 }
 
-/** The provider repeats one alert per affected zone; keeps the first per event. */
-export function destinationAlerts<T extends Pick<WeatherAlertItem, 'event' | 'headline'>>(
+/**
+ * The provider repeats one alert per affected zone; keeps one per event, in first-seen
+ * order. The zone kept is the one whose areas sort first, so the alert's id stays the
+ * same when the provider returns the zones in a different order.
+ */
+export function destinationAlerts<T extends Pick<WeatherAlertItem, 'event' | 'headline' | 'areas'>>(
   alerts: readonly T[],
 ): T[] {
-  const seenEvents = new Set<string>();
-  return alerts.filter((alert) => {
+  const byEvent = new Map<string, T>();
+  for (const alert of alerts) {
     const event = (alert.event || alert.headline)?.toLowerCase();
-    if (!event || seenEvents.has(event)) return false;
-    seenEvents.add(event);
-    return true;
-  });
+    if (!event) continue;
+    const kept = byEvent.get(event);
+    if (!kept || alert.areas < kept.areas) byEvent.set(event, alert);
+  }
+  return [...byEvent.values()];
 }
 
 /** Summarises `forecast` over the trip's days; null when no forecast day falls inside the trip yet. */

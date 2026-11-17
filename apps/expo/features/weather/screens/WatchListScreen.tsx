@@ -16,9 +16,16 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { parseLocalDate } from 'expo-app/lib/utils/dateUtils';
-import { router, Stack } from 'expo-router';
-import { useRef } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, SectionList, View } from 'react-native';
+import { router, Stack, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  AppState,
+  Pressable,
+  RefreshControl,
+  SectionList,
+  View,
+} from 'react-native';
 import ReanimatedSwipeable, {
   type SwipeableMethods,
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -131,8 +138,18 @@ export default function WatchListScreen() {
   const trips = useTrips();
   const { unwatchPlace } = useWatchFeedback(snackbar);
 
-  const watchedTrips =
-    tripAlerts.enabled === true ? tripsInWatchWindow({ trips, now: new Date() }) : [];
+  // Trips enter and leave the window by date, so the clock is reread whenever the list
+  // comes back into view or is pulled to refresh.
+  const [now, setNow] = useState(() => new Date());
+  useFocusEffect(useCallback(() => setNow(new Date()), []));
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') setNow(new Date());
+    });
+    return () => subscription.remove();
+  }, []);
+
+  const watchedTrips = tripAlerts.enabled === true ? tripsInWatchWindow({ trips, now }) : [];
   const tripAlertsLoading =
     tripAlerts.active && tripAlerts.enabled === undefined && !tripAlerts.isError;
   const isLoading =
@@ -225,7 +242,32 @@ export default function WatchListScreen() {
     );
   };
 
+  const refresh = () => {
+    setNow(new Date());
+    if (showsLocations) refetchLocations();
+    if (tripAlerts.active) tripAlerts.refetch();
+  };
+
   const emptyState = () => {
+    if (tripAlerts.active && tripAlerts.enabled === undefined && tripAlerts.isError) {
+      return (
+        <EmptyState
+          icon="cloud-alert-outline"
+          title={t('weather.tripAlertsLoadFailedTitle')}
+          body={t('weather.tripAlertsLoadFailedDesc')}
+          testID={testIds.weather.watchListTripAlertsError}
+        >
+          <Button
+            className="mt-2"
+            variant="tonal"
+            onPress={() => tripAlerts.refetch()}
+            testID={testIds.weather.watchListRetryBtn}
+          >
+            <Text>{t('common.retry')}</Text>
+          </Button>
+        </EmptyState>
+      );
+    }
     if (tripAlerts.enabled === false) {
       return (
         <EmptyState
@@ -316,14 +358,7 @@ export default function WatchListScreen() {
           }
           stickySectionHeadersEnabled={false}
           contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 96 }}
-          refreshControl={
-            <RefreshControl
-              refreshing={false}
-              onRefresh={() => {
-                if (showsLocations) refetchLocations();
-              }}
-            />
-          }
+          refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}
           ListEmptyComponent={emptyState()}
         />
       )}

@@ -1412,7 +1412,9 @@
     "noWatchedTrips": "No Trips Being Watched",
     "noWatchedTripsDesc": "Trips with a destination appear here 3 days before they start.",
     "turnOnFailedTitle": "Alerts Couldn't Be Turned On",
-    "turnOnFailedDesc": "Check your connection and try again."
+    "turnOnFailedDesc": "Check your connection and try again.",
+    "tripAlertsLoadFailedTitle": "Your Trips Couldn't Be Loaded",
+    "tripAlertsLoadFailedDesc": "Check your connection and try again."
   },
   "location": {
     "location": "Location",

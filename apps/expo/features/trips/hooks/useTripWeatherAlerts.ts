@@ -28,17 +28,20 @@ export function useTripAlertsSetting() {
   });
   const mutation = useMutation({
     mutationFn: setTripAlertsEnabled,
+    // One scope runs quick toggles in order, so the last tap is the one the server keeps.
+    scope: { id: 'trip-alerts-setting' },
     onMutate: async (enabled) => {
       await queryClient.cancelQueries({ queryKey: tripAlertsSettingQueryKey });
       queryClient.setQueryData(tripAlertsSettingQueryKey, enabled);
     },
-    // A save that failed puts the switch back to what the server holds.
-    onError: () => {
+    // A save that failed flips the switch back, then reloads what the server holds.
+    onError: (_error, enabled) => {
       Sentry.addBreadcrumb({
         category: 'tripWeather',
         message: 'Trip Weather Alerts setting failed to save; reloading',
         level: 'warning',
       });
+      queryClient.setQueryData(tripAlertsSettingQueryKey, !enabled);
       queryClient.invalidateQueries({ queryKey: tripAlertsSettingQueryKey });
     },
   });
@@ -46,6 +49,7 @@ export function useTripAlertsSetting() {
     active,
     enabled: active ? query.data : undefined,
     isError: query.isError,
+    refetch: query.refetch,
     setEnabled: mutation.mutate,
     setEnabledAsync: mutation.mutateAsync,
   };
