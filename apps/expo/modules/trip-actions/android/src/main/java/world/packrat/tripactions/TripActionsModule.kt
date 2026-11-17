@@ -28,7 +28,7 @@ class TripActionsModule : Module() {
       val manager = AppFunctionManager.getInstance(context) ?: return@Coroutine false
       try {
         manager.setAppFunctionEnabled(
-          TripActionsServiceIds.RUN_TRIP_COMMAND_ID,
+          RUN_TRIP_COMMAND_ID,
           if (enabled) AppFunctionManager.APP_FUNCTION_STATE_ENABLED else AppFunctionManager.APP_FUNCTION_STATE_DISABLED,
         )
         true
@@ -38,3 +38,6 @@ class TripActionsModule : Module() {
     }
   }
 }
+
+/** The id the AppFunctions compiler gives [TripActionsService.runTripCommand]. */
+private const val RUN_TRIP_COMMAND_ID = "world.packrat.tripactions.TripActionsService#runTripCommand"
