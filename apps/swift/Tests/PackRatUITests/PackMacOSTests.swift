@@ -176,6 +176,7 @@ final class PackMacOSTests: AppUITestCase {
         let deleteButton = rowDeleteMenuItem()
         waitFor(deleteButton, timeout: 5)
         deleteButton.click()
+        XCTAssertTrue(confirmMacAlert(button: "Delete"), "Delete confirmation must appear")
 
         waitForAbsence(app.staticTexts[packName], timeout: 10)
     }
@@ -204,8 +205,7 @@ final class PackMacOSTests: AppUITestCase {
     }
 
     private func addItem(named name: String) {
-        let addButton = app.buttons["Add Item"].firstMatch
-        waitFor(addButton).click()
+        openAddItemForm()
 
         let nameField = app.textFields["pack_item_name"]
         waitFor(nameField)
@@ -219,12 +219,22 @@ final class PackMacOSTests: AppUITestCase {
         }
 
         app.buttons["Add"].click()
-
-        // Wait for the form sheet to dismiss (Add Item button visible again).
-        waitFor(app.buttons["Add Item"].firstMatch, timeout: 10)
+        waitForAbsence(nameField, timeout: 10)
 
         let target = packItemRow(containing: name)
         waitFor(target, timeout: 10, message: "Item '\(name)' must appear in pack detail")
+    }
+
+    /// An empty pack offers an "Add Item" button in its body; once it has
+    /// items, adding goes through the toolbar "+" menu's "Add Manually".
+    private func openAddItemForm() {
+        let emptyStateButton = app.buttons["Add Item"].firstMatch
+        if emptyStateButton.waitForExistence(timeout: 3) {
+            emptyStateButton.click()
+            return
+        }
+        waitFor(app.menuButtons["pack_detail_add_item_button"].firstMatch).click()
+        waitFor(app.menuItems["pack_detail_add_manually"].firstMatch, timeout: 3).click()
     }
 
     private func cleanupPack(named name: String) {
@@ -235,6 +245,7 @@ final class PackMacOSTests: AppUITestCase {
         let deleteButton = rowDeleteMenuItem()
         guard deleteButton.waitForExistence(timeout: 3) else { return }
         deleteButton.click()
+        confirmMacAlert(button: "Delete")
     }
 
     private func rowDeleteMenuItem() -> XCUIElement {

@@ -305,6 +305,24 @@ class AppUITestCase: XCTestCase {
             any.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
         }
     }
+
+    /// Clicks `button` in the alert a destructive action raises. SwiftUI shows
+    /// a macOS alert as a window sheet or a dialog depending on the window, so
+    /// both are searched. Returns false when no alert appeared.
+    @discardableResult
+    func confirmMacAlert(button: String, timeout: TimeInterval = 5) -> Bool {
+        let inSheet = app.sheets.buttons[button].firstMatch
+        let inDialog = app.dialogs.buttons[button].firstMatch
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            for candidate in [inSheet, inDialog] where candidate.exists {
+                candidate.click()
+                return true
+            }
+            usleep(250_000)
+        }
+        return false
+    }
     #endif
 
     #if os(iOS)
