@@ -397,10 +397,13 @@ final class VoiceListener {
 
 /// The start and end tones around listening, played through the voice
 /// session so they're heard while the microphone is open, with a tap.
+///
+/// The tones are made here at full scale rather than borrowed from iOS's own
+/// record sounds, which are mixed for a quiet room and get lost outdoors.
 @MainActor
 enum VoiceTone {
-    private static let startPlayer = player("begin_record")
-    private static let endPlayer = player("end_record")
+    private static let startPlayer = player(notes: [880, 1_320])
+    private static let endPlayer = player(notes: [1_320, 880])
 
     /// How long the start tone plays; the microphone opens after it.
     static let startDuration: Duration = .milliseconds(200)
@@ -415,10 +418,46 @@ enum VoiceTone {
     static func start() { play(startPlayer, fallback: 1113, haptic: .medium) }
     static func end() { play(endPlayer, fallback: 1114, haptic: .light) }
 
-    private static func player(_ name: String) -> AVAudioPlayer? {
-        let player = try? AVAudioPlayer(contentsOf: URL(filePath: "/System/Library/Audio/UISounds/\(name).caf"))
+    private static func player(notes: [Double]) -> AVAudioPlayer? {
+        let player = try? AVAudioPlayer(data: wav(notes: notes))
+        player?.volume = 1
         player?.prepareToPlay()
         return player
+    }
+
+    /// Two quick notes as a 16-bit mono WAV, each faded in and out so it
+    /// doesn't click.
+    nonisolated static func wav(notes: [Double], noteLength: Double = 0.08, gap: Double = 0.02) -> Data {
+        let rate = 44_100.0
+        let fade = 0.008
+        var samples: [Int16] = []
+        for (index, frequency) in notes.enumerated() {
+            let count = Int(noteLength * rate)
+            for n in 0 ..< count {
+                let t = Double(n) / rate
+                let envelope = min(1, t / fade, (noteLength - t) / fade)
+                let value = sin(2 * .pi * frequency * t) * envelope * 0.95
+                samples.append(Int16(value * Double(Int16.max)))
+            }
+            if index < notes.count - 1 { samples += Array(repeating: 0, count: Int(gap * rate)) }
+        }
+        var data = Data()
+        func append<T: FixedWidthInteger>(_ value: T) { withUnsafeBytes(of: value.littleEndian) { data.append(contentsOf: $0) } }
+        let bytes = UInt32(samples.count * 2)
+        data.append(contentsOf: Array("RIFF".utf8))
+        append(36 + bytes)
+        data.append(contentsOf: Array("WAVEfmt ".utf8))
+        append(UInt32(16)) // format chunk size
+        append(UInt16(1)) // PCM
+        append(UInt16(1)) // mono
+        append(UInt32(rate))
+        append(UInt32(rate) * 2) // bytes per second
+        append(UInt16(2)) // bytes per frame
+        append(UInt16(16)) // bits per sample
+        data.append(contentsOf: Array("data".utf8))
+        append(bytes)
+        for sample in samples { append(sample) }
+        return data
     }
 
     private static func play(_ player: AVAudioPlayer?, fallback: SystemSoundID, haptic: UIImpactFeedbackGenerator.FeedbackStyle) {
