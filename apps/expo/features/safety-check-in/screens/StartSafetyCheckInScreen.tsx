@@ -156,7 +156,12 @@ export function StartSafetyCheckInScreen() {
         {
           text: t('safetyCheckIn.tracking.disclosureAccept'),
           style: 'default',
-          onPress: async () => send(await requestBackgroundPermission()),
+          // Sharing stays on even if the phone refuses: the trip shows the way to Settings, and
+          // tracking starts once the permission is granted.
+          onPress: async () => {
+            await requestBackgroundPermission();
+            send(true);
+          },
         },
       ],
     });

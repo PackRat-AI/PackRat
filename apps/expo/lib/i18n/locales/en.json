@@ -2173,7 +2173,9 @@
       "lastCheckIn": "You last checked in at {{time}}",
       "pendingUpdates_one": "{{count}} update will be sent as soon as you have signal",
       "pendingUpdates_other": "{{count}} updates will be sent as soon as you have signal",
-      "sharingProgress": "Your location is being shared with your contacts"
+      "sharingProgress": "Your location is being shared with your contacts",
+      "progressNotShared": "Your progress isn't being shared. Allow location all the time in Settings to share it.",
+      "notificationsOff": "Notifications are off for PackRat. Turn them on in Settings to get your return reminder."
     },
     "checkIn": {
       "title": "Check in",

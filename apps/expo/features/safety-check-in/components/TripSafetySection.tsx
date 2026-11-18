@@ -6,15 +6,22 @@ import { createDropdownItem, DropdownMenu } from '@packrat/ui/src/dropdown-menu'
 import { Text } from '@packrat/ui/src/text';
 import { format } from 'date-fns';
 import { Icon } from 'expo-app/components/Icon';
+import { PermissionNotice } from 'expo-app/components/PermissionNotice';
 import type { Trip } from 'expo-app/features/trips/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import {
+  useNotificationsGranted,
+  usePermissionGranted,
+} from 'expo-app/lib/permissions/usePermissionGranted';
 import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Share, View } from 'react-native';
 import { capitalizeFirst, contactSummary } from '../lib/copy';
+import { hasBackgroundPermission, startTracking } from '../lib/locationTracking';
 import { endSafetyCheckIn, refreshSafetyCheckIn } from '../lib/safetyActions';
+import { scheduleSafetyNotifications } from '../lib/safetyNotifications';
 import { setTripLifecycle } from '../lib/tripLifecycle';
 import { safetySendBlocked, safetyStore } from '../store/safetyCheckIn';
 import type { LocalSafetyCheckIn } from '../types';
@@ -24,6 +31,7 @@ import {
   countdown,
   countdownText,
   isOverdue,
+  missingSafetyPermissions,
   overdueAt,
 } from '../utils/safetyCheckIn';
 import { pendingCount } from '../utils/safetyQueue';
@@ -164,6 +172,27 @@ function SafetyCheckInCard({
   const alertRef = useRef<AlertMethods>(null);
   const pending = use$(() => pendingCount({ state: safetyStore.get(), tripId: trip.id }));
   const sendBlocked = use$(safetySendBlocked);
+  const backgroundLocation = usePermissionGranted({
+    check: hasBackgroundPermission,
+    enabled: checkIn.trackingEnabled,
+    name: 'backgroundLocation',
+  });
+  const notifications = useNotificationsGranted();
+  const missing = missingSafetyPermissions({
+    trackingEnabled: checkIn.trackingEnabled,
+    backgroundLocationGranted: backgroundLocation.granted,
+    notificationsGranted: notifications.granted,
+  });
+
+  // Back from Settings with the permission on: start what it was missing for.
+  const wasMissing = useRef(missing);
+  useEffect(() => {
+    if (wasMissing.current.progress && backgroundLocation.granted) void startTracking();
+    if (wasMissing.current.notifications && notifications.granted) {
+      void scheduleSafetyNotifications(checkIn);
+    }
+    wasMissing.current = missing;
+  });
 
   const overdue = isOverdue({ checkIn, now });
   const tint = overdue ? colors.destructive : colors.primary;
@@ -212,7 +241,7 @@ function SafetyCheckInCard({
     pending > 0 && notified && sendBlocked
       ? t('safetyCheckIn.card.pendingUpdates', { count: pending })
       : null,
-    checkIn.trackingEnabled ? t('safetyCheckIn.card.sharingProgress') : null,
+    checkIn.trackingEnabled && !missing.progress ? t('safetyCheckIn.card.sharingProgress') : null,
   ].filter((line): line is string => line !== null);
 
   const remaining = countdownText(countdown({ target: overdueAt(checkIn), now }));
@@ -342,6 +371,19 @@ function SafetyCheckInCard({
         <Icon name="shield-check" size={22} color="white" />
         <Text className="text-lg font-bold text-white">{t('safetyCheckIn.card.imSafe')}</Text>
       </Button>
+
+      {missing.progress ? (
+        <PermissionNotice
+          message={t('safetyCheckIn.card.progressNotShared')}
+          testID={testIds.safetyCheckIn.progressOpenSettingsBtn}
+        />
+      ) : null}
+      {missing.notifications ? (
+        <PermissionNotice
+          message={t('safetyCheckIn.card.notificationsOff')}
+          testID={testIds.safetyCheckIn.notificationsOpenSettingsBtn}
+        />
+      ) : null}
 
       {footer.length > 0 ? (
         <View className="gap-1">
