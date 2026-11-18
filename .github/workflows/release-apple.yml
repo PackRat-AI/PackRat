@@ -33,6 +33,12 @@ on:
         description: 'Release tag to build (e.g. v2.2.5)'
         required: true
         type: string
+      platforms:
+        description: 'Platforms to build and submit. Use one to retry a platform that failed without re-shipping the other.'
+        required: false
+        type: choice
+        options: [both, ios, macos]
+        default: both
 
 concurrency:
   group: release-apple-${{ inputs.ref }}
@@ -187,6 +193,7 @@ jobs:
       # upload-testflight.ts refuses to upload without the current App Store
       # build number to compare against, so read it from App Store Connect.
       - name: Read current App Store build number · iOS
+        if: inputs.platforms != 'macos'
         run: |
           set -euo pipefail
           CURRENT=$(bun apps/swift/scripts/latest-app-store-build.ts --platform IOS)
@@ -194,6 +201,7 @@ jobs:
           echo "Current App Store build: $CURRENT"
 
       - name: Build + upload · iOS
+        if: inputs.platforms != 'macos'
         env:
           XCODE_XCCONFIG_FILE: ${{ runner.temp }}/ios-signing.xcconfig
           EXPORT_PROVISIONING_PROFILE: PackRat iOS AppStore 2026-10
@@ -202,6 +210,7 @@ jobs:
         run: bun apps/swift/scripts/upload-testflight.ts --production
 
       - name: Build + upload · macOS
+        if: inputs.platforms != 'ios'
         env:
           XCODE_XCCONFIG_FILE: ${{ runner.temp }}/mac-signing.xcconfig
         working-directory: apps/swift
@@ -213,13 +222,23 @@ jobs:
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID"
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/PackRat-mac.xcarchive" \
             -exportPath "$RUNNER_TEMP/mac-export" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions-mac.plist"
-          xcrun altool --upload-app --type osx --file "$RUNNER_TEMP/mac-export/PackRat.pkg" \
-            --apiKey "$APPLE_ASC_API_KEY_ID" --apiIssuer "$APPLE_ASC_API_ISSUER_ID"
+          # App Store Connect returns sporadic 500s; retry before failing the release.
+          for attempt in 1 2 3; do
+            if xcrun altool --upload-app --type osx --file "$RUNNER_TEMP/mac-export/PackRat.pkg" \
+              --apiKey "$APPLE_ASC_API_KEY_ID" --apiIssuer "$APPLE_ASC_API_ISSUER_ID"; then
+              exit 0
+            fi
+            echo "Upload attempt $attempt failed"
+            sleep 60
+          done
+          exit 1
 
       - name: Submit for review · iOS
+        if: inputs.platforms != 'macos'
         run: bun apps/swift/scripts/submit-app-store-review.ts --platform IOS --version "$MARKETING_VERSION" --build "$BUILD_NUMBER"
 
       - name: Submit for review · macOS
+        if: inputs.platforms != 'ios'
         run: bun apps/swift/scripts/submit-app-store-review.ts --platform MAC_OS --version "$MARKETING_VERSION" --build "$BUILD_NUMBER"
 
       - name: Clean up keychain, profiles and API key
