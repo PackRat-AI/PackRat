@@ -49,6 +49,8 @@ can be added or removed there too.
 
 Trips watching their destination sit in their own Trips section at the top of the watch list, from three days before the trip starts until the day after it ends. Tapping a trip opens it, and swiping it turns that trip's alerts off or back on. A trip switched off stays in the list marked "Alerts off", so turning alerts off never reads as deleting the trip. When the list is empty it says why: if trip alerts are off for the whole account it says so and offers to turn them on, and otherwise it explains when trips will appear.
 
+When notifications are turned off for PackRat on the phone, trip alerts can't arrive, and the two places that control them say so: the Trips section of the watch list and the Weather Alerts switch on a trip each show a short notice with a button that opens the phone's notification settings. The notice goes away as soon as notifications are back on. Nothing else in the app mentions it, so the trip list and the Weather screen stay free of reminders.
+
 ## Getting notified
 
 A push notification arrives the moment a new hazard is detected for a

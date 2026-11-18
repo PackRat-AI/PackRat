@@ -4,6 +4,9 @@ import { Button } from '@packrat/ui/src/button';
 import { Snackbar, type SnackbarHandle } from '@packrat/ui/src/snackbar';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
+import { NotificationsOffNotice } from 'expo-app/features/notifications/components/NotificationsOffNotice';
+import { useNotificationPermission } from 'expo-app/features/notifications/hooks/useNotificationPermission';
+import { showsNotificationsOffNotice } from 'expo-app/features/notifications/utils/notificationsOffNotice';
 import { useTrips } from 'expo-app/features/trips/hooks/useTrips';
 import {
   tripSendsWeatherAlerts,
@@ -137,6 +140,7 @@ export default function WatchListScreen() {
   const tripAlerts = useTripAlertsSetting();
   const trips = useTrips();
   const { unwatchPlace } = useWatchFeedback(snackbar);
+  const notifications = useNotificationPermission();
 
   // Trips enter and leave the window by date, so the clock is reread whenever the list
   // comes back into view or is pulled to refresh.
@@ -155,12 +159,18 @@ export default function WatchListScreen() {
   const isLoading =
     (showsLocations && locationsLoading) || (tripAlertsLoading && watchedTrips.length === 0);
 
+  const showsNotice = showsNotificationsOffNotice({
+    granted: notifications.granted,
+    alertsOn: watchedTrips.some(tripSendsWeatherAlerts),
+  });
+
   const sections = [
     ...(watchedTrips.length > 0
       ? [
           {
             key: 'trips',
             title: t('weather.watchListTrips'),
+            notice: showsNotice,
             data: watchedTrips.map((trip): Row => ({ kind: 'trip', trip })),
           },
         ]
@@ -346,16 +356,25 @@ export default function WatchListScreen() {
               renderLocation(item.location)
             )
           }
-          renderSectionHeader={({ section }) =>
-            section.title ? (
-              <Text
-                variant="subhead"
-                className="bg-background px-4 pb-2 pt-4 font-medium text-primary"
-              >
-                {section.title}
-              </Text>
-            ) : null
-          }
+          renderSectionHeader={({ section }) => (
+            <>
+              {section.title ? (
+                <Text
+                  variant="subhead"
+                  className="bg-background px-4 pb-2 pt-4 font-medium text-primary"
+                >
+                  {section.title}
+                </Text>
+              ) : null}
+              {'notice' in section && section.notice ? (
+                <NotificationsOffNotice
+                  onOpenSettings={notifications.openSettings}
+                  className="mx-4 mb-2"
+                  testID={testIds.weather.watchListNotificationsOff}
+                />
+              ) : null}
+            </>
+          )}
           stickySectionHeadersEnabled={false}
           contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 96 }}
           refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}
