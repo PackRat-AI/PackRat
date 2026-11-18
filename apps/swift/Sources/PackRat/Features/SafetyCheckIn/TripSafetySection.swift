@@ -179,7 +179,7 @@ struct SafetyCheckInCard: View {
         .accessibilityIdentifier("safety_check_in_card")
         .sheet(isPresented: $showingCheckIn) {
             CheckInSheet(tripId: trip.id)
-                .presentationDetents([.height(330)])
+                .presentationDetents([.medium])
         }
         .sheet(isPresented: $showingExtend) {
             ExtendReturnSheet(tripId: trip.id, current: checkIn.expectedReturnAt)
@@ -329,6 +329,7 @@ private struct CheckInSheet: View {
                 Text("Sends your location and the time to your contacts. With no signal it's saved and sent as soon as you have some.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 TextField("Add a note (optional)", text: $note, axis: .vertical)
                     .lineLimit(1...3)
                     .textFieldStyle(.roundedBorder)

@@ -15,6 +15,7 @@ struct PermissionNotice: View {
             Label(message, systemImage: systemImage)
                 .font(.callout)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             Button("Open Settings") { PermissionSettings.open() }
                 .font(.callout.weight(.semibold))
                 .accessibilityIdentifier("permission_notice_open_settings")
