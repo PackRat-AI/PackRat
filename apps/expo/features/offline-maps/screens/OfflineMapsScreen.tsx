@@ -99,14 +99,12 @@ export function OfflineMapsScreen() {
             </Text>
             <Button
               variant="filled"
-              className="mt-2 gap-2"
+              icon="download-outline"
+              className="mt-2"
               onPress={addArea}
               testID={testIds.offlineMaps.emptyAdd}
             >
-              <Icon name="download-outline" size={18} color="white" />
-              <Text className="font-medium text-primary-foreground">
-                {t('offlineMaps.saveArea')}
-              </Text>
+              <Text>{t('offlineMaps.saveArea')}</Text>
             </Button>
           </View>
         ) : (
