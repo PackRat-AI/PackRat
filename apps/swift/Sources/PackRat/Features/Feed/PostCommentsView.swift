@@ -167,7 +167,9 @@ struct PostCommentsView: View {
                 }
             }
         }
+        #if os(macOS)
         .frame(minWidth: 380, minHeight: 460)
+        #endif
         #if os(iOS)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
