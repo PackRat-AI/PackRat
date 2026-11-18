@@ -26,7 +26,8 @@ export function OutdoorsMap({
     <View className="flex-1" pointerEvents="none">
       <Mapbox.MapView style={{ flex: 1 }} styleURL={OUTDOORS_STYLE} scaleBarEnabled={false}>
         <Mapbox.Camera
-          key={lineBounds ? 'line' : 'pin'}
+          // Keyed on the target: changing defaultSettings alone does not move a mounted camera.
+          key={lineBounds ? `line-${Object.values(lineBounds).join()}` : `pin-${pin?.join()}`}
           defaultSettings={
             lineBounds
               ? { bounds: cameraBounds(lineBounds, 24) }

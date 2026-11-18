@@ -9,7 +9,7 @@ import { Pressable, View } from 'react-native';
 import { useDownloadState, useOfflineAreaFor } from '../hooks/useOfflineAreas';
 import { updateArea } from '../lib/offlineMapManager';
 import type { OfflineArea } from '../types';
-import { ProgressLine, WaitingLine } from './DownloadStatus';
+import { failureText, ProgressLine, WaitingLine } from './DownloadStatus';
 
 /**
  * On a trip or trail page: offers to save the map around it, then shows the download and a
@@ -50,7 +50,8 @@ function SavedArea({ area, idPrefix }: { area: OfflineArea; idPrefix: string }) 
   const { colors } = useColorScheme();
   const { progress, failure, waiting } = useDownloadState(area.id);
 
-  if (progress || waiting) {
+  // A download restored before the manager reports on it is still a download, not a saved map.
+  if (progress || waiting || (!failure && !area.isComplete)) {
     return (
       <View className="gap-2" testID={testIds.offlineMaps.progress(idPrefix)}>
         <View className="flex-row items-center gap-2">
@@ -58,6 +59,17 @@ function SavedArea({ area, idPrefix }: { area: OfflineArea; idPrefix: string }) 
           <Text variant="subhead">{t('offlineMaps.savingForOffline')}</Text>
         </View>
         {progress ? <ProgressLine progress={progress} t={t} /> : <WaitingLine t={t} />}
+      </View>
+    );
+  }
+  if (failure === 'tooLarge') {
+    // Saving the same area again would fail the same way; the Offline maps screen offers the fix.
+    return (
+      <View className="flex-row items-center gap-2">
+        <Icon name="alert-outline" size={18} color={colors.destructive} />
+        <Text variant="subhead" className="flex-1 text-destructive" wrap>
+          {failureText({ area, failure, t })}
+        </Text>
       </View>
     );
   }

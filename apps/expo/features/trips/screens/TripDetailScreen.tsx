@@ -7,7 +7,10 @@ import { Text } from '@packrat/ui/src/text';
 import { OfflineMapRow, OutdoorsMap } from 'expo-app/features/offline-maps';
 import { PlannedRouteSection, TripSafetySection } from 'expo-app/features/safety-check-in';
 import { TripTrailConditionsSection } from 'expo-app/features/trail-conditions/components/TripTrailConditionsSection';
-import { TripLogSection } from 'expo-app/features/trip-stats/components/TripLogSection';
+import {
+  isTripFinished,
+  TripLogSection,
+} from 'expo-app/features/trip-stats/components/TripLogSection';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -73,7 +76,7 @@ export function TripDetailScreen() {
 
   const tripEnd = trip.endDate ?? trip.startDate;
   const tripEndsAt = tripEnd ? new Date(tripEnd).getTime() : undefined;
-  const tripIsFinished = tripEndsAt !== undefined && tripEndsAt < Date.now();
+  const tripIsFinished = isTripFinished(trip);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '—';

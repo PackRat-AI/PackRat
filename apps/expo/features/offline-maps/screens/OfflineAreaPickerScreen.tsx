@@ -52,6 +52,8 @@ export function OfflineAreaPickerScreen() {
   const lines = trail.data?.lines ?? [];
 
   const [bounds, setBounds] = useState<OfflineAreaBounds | null>(null);
+  // While the map moves, the last settled bounds are no longer what the frame shows.
+  const [isMoving, setIsMoving] = useState(false);
   const [detail, setDetail] = useState<OfflineDetailLevel>('standard');
   const [name, setName] = useState(params.name ?? '');
 
@@ -63,14 +65,16 @@ export function OfflineAreaPickerScreen() {
   const cameraKey = lineBounds ? 'trail' : 'initial';
 
   const fit = useMemo(
-    () =>
-      bounds ? packFit({ bounds, detail, saved: saved.filter((area) => area.isComplete) }) : null,
+    () => (bounds ? packFit({ bounds, detail, saved }) : null),
     [bounds, detail, saved],
   );
   const estimate = bounds && fit?.fitsAlone ? estimateBytes(bounds, detail) : null;
   const isTooLarge = fit?.fitsAlone === false;
   const isOutOfRoom = fit?.fitsAlone === true && !fit.fits;
-  const canSave = estimate !== null && fit?.fits === true && name.trim().length > 0;
+  // An area saved from a trail keeps its line, so wait for it before saving.
+  const trailReady = !params.trailId || trail.isSuccess;
+  const canSave =
+    estimate !== null && fit?.fits === true && name.trim().length > 0 && !isMoving && trailReady;
 
   const footer = isTooLarge
     ? detail === 'trail'
@@ -143,9 +147,11 @@ export function OfflineAreaPickerScreen() {
             style={{ flex: 1 }}
             styleURL={OUTDOORS_STYLE}
             scaleBarEnabled={false}
+            onCameraChanged={() => setIsMoving(true)}
             onMapIdle={(state) => {
               const visible = boundsFromCorners(state.properties.bounds);
               if (visible) setBounds(visible);
+              setIsMoving(false);
             }}
           >
             <Mapbox.Camera

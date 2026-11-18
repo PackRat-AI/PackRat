@@ -29,7 +29,10 @@ type OfflinePackError = Parameters<ErrorListener>[1];
 const running = new Set<string>();
 /** Areas the user agreed to download over cellular even with the setting off. */
 const cellularOnce = new Set<string>();
-let connection: ConnectionKind = 'other';
+/** Each area's native work, run one step at a time so a delete cannot race a start. */
+const queues = new Map<string, Promise<unknown>>();
+// Nothing may download until the first network check says how the phone is connected.
+let connection: ConnectionKind = 'none';
 let started = false;
 
 function connectionKind(state: Network.NetworkState): ConnectionKind {
@@ -51,15 +54,23 @@ export function startOfflineMaps(): () => void {
     connection = connectionKind(state);
     void applyConnection();
   });
+  const stopWatchingSetting = offlineMapsStore.allowCellular.onChange(() => {
+    void applyConnection();
+  });
   if (!started) {
     started = true;
     offlineManager.setProgressEventThrottle(500);
-    void Network.getNetworkStateAsync().then((state) => {
-      connection = connectionKind(state);
-      return resumeIncomplete();
-    });
   }
-  return () => subscription.remove();
+  void Network.getNetworkStateAsync().then((state) => {
+    connection = connectionKind(state);
+    return applyConnection();
+  });
+  return () => {
+    subscription.remove();
+    stopWatchingSetting();
+    // With nothing left watching the connection, a download could drift onto cellular.
+    void pauseAll();
+  };
 }
 
 export function connectionIsCellular(): boolean {
@@ -110,6 +121,8 @@ export function saveArea({
 export async function updateArea(area: OfflineArea): Promise<void> {
   await stop(area.id);
   obs({ store: offlineDownloadsStore.failures, id: area.id }).delete();
+  // The old tiles are replaced, so until the new ones finish the area is a download again.
+  obs({ store: offlineMapsStore.areas, id: area.id }).isComplete.set(false);
   await startOrWait(area, { fresh: true });
 }
 
@@ -131,18 +144,22 @@ export async function deleteArea(area: OfflineArea): Promise<void> {
     level: 'info',
     data: { areaId: area.id },
   });
-  obs({ store: offlineMapsStore.areas, id: area.id }).delete();
-  clearRuntime(area.id);
-  cellularOnce.delete(area.id);
-  await stop(area.id);
-  try {
-    await offlineManager.deletePack(area.id);
-  } catch (error) {
-    Sentry.captureException(error, {
-      tags: { feature: 'offlineMaps', action: 'deletePack' },
-      extra: { areaId: area.id },
-    });
-  }
+  await serially(area.id, async () => {
+    await pause(area.id);
+    try {
+      await offlineManager.deletePack(area.id);
+    } catch (error) {
+      // The record stays, so Delete can be tried again rather than orphaning the tiles.
+      Sentry.captureException(error, {
+        tags: { feature: 'offlineMaps', action: 'deletePack' },
+        extra: { areaId: area.id },
+      });
+      return;
+    }
+    obs({ store: offlineMapsStore.areas, id: area.id }).delete();
+    clearRuntime(area.id);
+    cellularOnce.delete(area.id);
+  });
 }
 
 export async function deleteAllAreas(): Promise<void> {
@@ -153,25 +170,22 @@ export async function deleteAllAreas(): Promise<void> {
 async function applyConnection(): Promise<void> {
   for (const area of areas()) {
     if (area.isComplete && !running.has(area.id)) continue;
-    const allowed = mayRun(area.id);
-    if (running.has(area.id) && !allowed) {
+    if (running.has(area.id)) {
+      if (mayRun(area.id)) continue;
       await stop(area.id);
-      obs({ store: offlineDownloadsStore.waiting, id: area.id }).set(true);
-    } else if (
-      !running.has(area.id) &&
-      allowed &&
-      !obs({ store: offlineDownloadsStore.failures, id: area.id }).peek()
-    ) {
+      // It may have finished, or been deleted, while it was being stopped.
+      if (obs({ store: offlineMapsStore.areas, id: area.id }).peek()?.isComplete === false) {
+        obs({ store: offlineDownloadsStore.waiting, id: area.id }).set(true);
+      }
+    } else if (!obs({ store: offlineDownloadsStore.failures, id: area.id }).peek()) {
+      // Also picks up downloads that stopped when the app was closed.
       await startOrWait(area, { fresh: false });
     }
   }
 }
 
-/** Picks up downloads that stopped when the app was closed. */
-async function resumeIncomplete(): Promise<void> {
-  for (const area of areas()) {
-    if (!area.isComplete && !running.has(area.id)) await startOrWait(area, { fresh: false });
-  }
+async function pauseAll(): Promise<void> {
+  for (const id of [...running]) await stop(id);
 }
 
 function mayRun(id: string): boolean {
@@ -183,7 +197,14 @@ function mayRun(id: string): boolean {
  * replaces whatever the tile store holds for the area; otherwise an existing partial download is
  * resumed where it stopped.
  */
-async function startOrWait(area: OfflineArea, { fresh }: { fresh: boolean }): Promise<void> {
+function startOrWait(area: OfflineArea, { fresh }: { fresh: boolean }): Promise<void> {
+  return serially(area.id, () => begin(area, { fresh }));
+}
+
+async function begin(area: OfflineArea, { fresh }: { fresh: boolean }): Promise<void> {
+  // Deleted while this start waited its turn.
+  if (!obs({ store: offlineMapsStore.areas, id: area.id }).peek()) return;
+  if (running.has(area.id)) return;
   if (!mayRun(area.id)) {
     obs({ store: offlineDownloadsStore.waiting, id: area.id }).set(true);
     return;
@@ -240,6 +261,7 @@ function onProgress(_pack: unknown, status: OfflineProgressStatus): void {
     running.delete(id);
     cellularOnce.delete(id);
     obs({ store: offlineDownloadsStore.progress, id: id }).delete();
+    obs({ store: offlineDownloadsStore.waiting, id: id }).delete();
     obs({ store: offlineMapsStore.areas, id: id }).assign({
       sizeBytes: status.completedResourceSize,
       isComplete: true,
@@ -271,7 +293,11 @@ function onError(_pack: unknown, error: OfflinePackError): void {
 }
 
 /** Stops the tile store's task for an area, if one is running. */
-async function stop(id: string): Promise<void> {
+function stop(id: string): Promise<void> {
+  return serially(id, () => pause(id));
+}
+
+async function pause(id: string): Promise<void> {
   if (!running.delete(id)) return;
   obs({ store: offlineDownloadsStore.progress, id: id }).delete();
   try {
@@ -280,6 +306,16 @@ async function stop(id: string): Promise<void> {
   } catch {
     // Already stopped: the tile store finished or failed between the check and the pause.
   }
+}
+
+function serially(id: string, task: () => Promise<void>): Promise<void> {
+  const next = (queues.get(id) ?? Promise.resolve()).then(task, task);
+  // The next step runs whether this one failed or not; its caller still sees the failure.
+  queues.set(
+    id,
+    next.catch(() => undefined),
+  );
+  return next;
 }
 
 function clearRuntime(id: string): void {
