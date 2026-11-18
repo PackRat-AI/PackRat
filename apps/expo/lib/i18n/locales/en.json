@@ -1019,7 +1019,8 @@
       "nextReminder": "Next reminder {{when}}.",
       "startPacking": "Start Packing",
       "continuePacking": "Continue Packing",
-      "reviewPacking": "Review Packing"
+      "reviewPacking": "Review Packing",
+      "notificationsOff": "Notifications are off for PackRat. Turn them on in Settings to get trip reminders."
     },
     "chooseTrail": "Choose a trail",
     "trailFooter": "Optional. Without a trail, the trip shows conditions from trails near its destination.",
@@ -1256,7 +1257,8 @@
     "trailReports": "Trail Reports",
     "trailReportsSubtitle": "Trail Reports tell you when someone reports on a trail for one of your upcoming trips.",
     "tripWeatherAlerts": "Trip Weather Alerts",
-    "tripWeatherAlertsSubtitle": "Trip Weather Alerts tell you about weather hazards at a trip's destination from 3 days before you leave. Turn them off for one trip from its Weather section."
+    "tripWeatherAlertsSubtitle": "Trip Weather Alerts tell you about weather hazards at a trip's destination from 3 days before you leave. Turn them off for one trip from its Weather section.",
+    "notificationsBlocked": "Notifications are blocked in Settings."
   },
   "weather": {
     "weather": "Weather",

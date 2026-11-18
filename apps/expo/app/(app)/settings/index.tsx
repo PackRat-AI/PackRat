@@ -1,4 +1,5 @@
 import { use$ } from '@legendapp/state/react';
+import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { SegmentedControl } from '@packrat/ui/src/segmented-control';
 import { Text } from '@packrat/ui/src/text';
@@ -41,6 +42,7 @@ import { FEATURE_FLAGS_QUERY_KEY, useFeatureFlag } from 'expo-app/hooks/useFeatu
 import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { useNotificationsGranted } from 'expo-app/lib/permissions/usePermissionGranted';
 import { testIds } from 'expo-app/lib/testIds';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import Constants from 'expo-constants';
@@ -73,6 +75,10 @@ export default function SettingsScreen() {
   const trailReportsLoaded = trailReports.enabled !== undefined;
   const tripWeatherAlerts = useTripAlertsSetting();
   const tripWeatherAlertsLoaded = tripWeatherAlerts.enabled !== undefined;
+  const showsNotificationSettings =
+    enableTripReminders || trailReportsLoaded || tripWeatherAlertsLoaded;
+  const notifications = useNotificationsGranted(showsNotificationSettings);
+  const notificationsBlocked = notifications.granted === false;
 
   const { isProMember } = useEntitlement();
   const { mutate: restorePurchases, isPending: isRestoring } = useRestorePurchases();
@@ -256,14 +262,38 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        {(enableTripReminders || trailReportsLoaded || tripWeatherAlertsLoaded) && (
+        {showsNotificationSettings && (
           <View>
             <Text variant="subhead" className="mb-3">
               {t('settings.notifications')}
             </Text>
             <View className="rounded-xl border border-border bg-card">
+              {notificationsBlocked && (
+                <View
+                  className="flex-row items-center gap-4 p-4"
+                  testID={testIds.settings.notificationsBlockedRow}
+                >
+                  <Icon name="bell-off-outline" size={20} color={colors.grey} />
+                  <Text variant="callout" className="flex-1 text-muted-foreground" wrap>
+                    {t('settings.notificationsBlocked')}
+                  </Text>
+                  <Button
+                    variant="text"
+                    onPress={() => void Linking.openSettings()}
+                    testID={testIds.settings.notificationsOpenSettingsBtn}
+                  >
+                    <Text className="font-medium text-primary">
+                      {t('permissions.openSettings')}
+                    </Text>
+                  </Button>
+                </View>
+              )}
               {enableTripReminders && (
-                <View className="flex-row items-center justify-between gap-4 p-4">
+                <View
+                  className={`flex-row items-center justify-between gap-4 p-4${
+                    notificationsBlocked ? ' border-t border-border' : ''
+                  }`}
+                >
                   <View className="flex-1">
                     <Text className="font-medium">{t('trips.reminders.title')}</Text>
                     <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
@@ -280,7 +310,7 @@ export default function SettingsScreen() {
               {trailReportsLoaded && (
                 <View
                   className={`flex-row items-center justify-between gap-4 p-4${
-                    enableTripReminders ? ' border-t border-border' : ''
+                    notificationsBlocked || enableTripReminders ? ' border-t border-border' : ''
                   }`}
                 >
                   <View className="flex-1">
@@ -299,7 +329,9 @@ export default function SettingsScreen() {
               {tripWeatherAlertsLoaded && (
                 <View
                   className={`flex-row items-center justify-between gap-4 p-4${
-                    enableTripReminders || trailReportsLoaded ? ' border-t border-border' : ''
+                    notificationsBlocked || enableTripReminders || trailReportsLoaded
+                      ? ' border-t border-border'
+                      : ''
                   }`}
                 >
                   <View className="flex-1">
