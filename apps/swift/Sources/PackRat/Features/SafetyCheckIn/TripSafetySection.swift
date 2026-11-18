@@ -130,6 +130,7 @@ struct SafetyCheckInCard: View {
 
     @Environment(\.modelContext) private var modelContext
     private var store: SafetyCheckInStore { .shared }
+    private var tracker: SafetyLocationTracker { .shared }
 
     @State private var showingCheckIn = false
     @State private var showingExtend = false
@@ -164,6 +165,13 @@ struct SafetyCheckInCard: View {
                 .controlSize(.large)
                 .accessibilityIdentifier("safety_im_safe")
                 footer
+                if checkIn.trackingEnabled, tracker.backgroundLocationDenied {
+                    PermissionNotice(
+                        message: "Your progress isn't being shared. Allow location all the time in Settings to share it.",
+                        systemImage: "location.slash.fill"
+                    )
+                    .accessibilityIdentifier("safety_tracking_denied")
+                }
             }
             .safetyCardStyle(tint: overdue ? .red : .green)
         }
@@ -171,7 +179,7 @@ struct SafetyCheckInCard: View {
         .accessibilityIdentifier("safety_check_in_card")
         .sheet(isPresented: $showingCheckIn) {
             CheckInSheet(tripId: trip.id)
-                .presentationDetents([.height(300)])
+                .presentationDetents([.height(330)])
         }
         .sheet(isPresented: $showingExtend) {
             ExtendReturnSheet(tripId: trip.id, current: checkIn.expectedReturnAt)
@@ -281,7 +289,7 @@ struct SafetyCheckInCard: View {
                 : "Waiting for signal — \(checkIn.contactSummary) \(checkIn.contactNames.count == 1 ? "hasn't" : "haven't") been told yet. The countdown starts once they are.",
             checkIn.lastCheckInAt.map { "Last check-in \($0.formatted(date: .omitted, time: .shortened))" },
             pending > 0 && checkIn.contactsNotified ? "\(pending) update\(pending == 1 ? "" : "s") waiting for signal" : nil,
-            checkIn.trackingEnabled ? "Sharing your progress in the background" : nil,
+            checkIn.trackingEnabled && !tracker.backgroundLocationDenied ? "Sharing your progress in the background" : nil,
         ].compactMap { $0 }
         if !lines.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
@@ -312,6 +320,7 @@ private struct CheckInSheet: View {
     @State private var note = ""
     @State private var isLocating = false
     @State private var errorMessage: String?
+    @State private var locationDenied = false
     @State private var locator = SafetyCheckInLocator()
 
     var body: some View {
@@ -324,7 +333,9 @@ private struct CheckInSheet: View {
                     .lineLimit(1...3)
                     .textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier("safety_check_in_note")
-                if let errorMessage {
+                if locationDenied {
+                    PermissionNotice(message: "Allow location for PackRat in Settings to check in.", systemImage: "location.slash.fill")
+                } else if let errorMessage {
                     Text(errorMessage).font(.callout).foregroundStyle(.red)
                 }
                 Button(action: checkIn) {
@@ -356,12 +367,15 @@ private struct CheckInSheet: View {
     private func checkIn() {
         isLocating = true
         errorMessage = nil
+        locationDenied = false
         Task {
             defer { isLocating = false }
             do {
                 let fix = try await locator.currentFix()
                 SafetyCheckInStore.shared.recordCheckIn(tripId: tripId, location: fix, note: note)
                 dismiss()
+            } catch SafetyCheckInLocator.LocatorError.denied {
+                locationDenied = true
             } catch {
                 errorMessage = (error as? LocalizedError)?.errorDescription ?? "Couldn't get your location."
             }
