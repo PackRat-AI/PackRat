@@ -12,6 +12,7 @@ import { SignOutPrompt } from 'expo-app/features/auth/components/SignOutPrompt';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { useNotificationSetup } from 'expo-app/features/notifications/hooks/useNotificationSetup';
+import { useOfflineMapsSync } from 'expo-app/features/offline-maps/hooks/useOfflineMapsSync';
 import { getPackTemplateDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateDetailOptions';
 import { getPackTemplateItemDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateItemDetailOptions';
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
@@ -47,6 +48,7 @@ export default function AppLayout() {
   useTripReminderSync({ isAuthed: isAuthedValue });
   useSafetyCheckInSync({ isAuthed: isAuthedValue });
   useReportOutboxSync({ isAuthed: isAuthedValue });
+  useOfflineMapsSync();
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const isLoadingGlobal = useAtomValue(isLoadingAtom);
@@ -114,6 +116,9 @@ export default function AppLayout() {
           name="emergency-contacts/index"
           options={{ title: t('safetyCheckIn.contacts.title') }}
         />
+        <Stack.Screen name="offline-maps/index" options={{ title: t('offlineMaps.title') }} />
+        <Stack.Screen name="offline-maps/pick" options={OFFLINE_AREA_PICKER_OPTIONS} />
+        <Stack.Screen name="offline-maps/[areaId]" options={{ title: '' }} />
         <Stack.Screen name="consent-modal" options={CONSENT_MODAL_OPTIONS} />
         <Stack.Screen
           name="pack/[id]/index"
@@ -392,6 +397,11 @@ const getTripLocationSearchOptions = (t: TranslationFunction) =>
     presentation: 'modal',
     animation: 'slide_from_bottom',
   }) as const;
+
+const OFFLINE_AREA_PICKER_OPTIONS = {
+  presentation: 'modal',
+  animation: 'fade_from_bottom',
+} as const;
 
 const CONSENT_MODAL_OPTIONS = {
   presentation: 'modal',

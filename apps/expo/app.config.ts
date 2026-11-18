@@ -222,6 +222,8 @@ export default (): ExpoConfig =>
               androidGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
             },
           ],
+          // Offline maps: Mapbox Outdoors, whose tiles can be saved to the device.
+          '@rnmapbox/maps',
           '@sentry/react-native',
           [
             'expo-notifications',
