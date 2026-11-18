@@ -2241,6 +2241,8 @@
     "savedForOffline": "Saved for offline",
     "retrySave": "Map didn't finish saving. Try again.",
     "showMyLocation": "Show my location",
-    "showWholeArea": "Show whole area"
+    "showWholeArea": "Show whole area",
+    "locationOffTitle": "Location is off",
+    "locationOffMessage": "To see where you are on the map, allow PackRat to use your location in Settings."
   }
 }

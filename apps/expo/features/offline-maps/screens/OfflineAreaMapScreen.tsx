@@ -1,13 +1,15 @@
 import { use$ } from '@legendapp/state/react';
+import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import Mapbox from '@rnmapbox/maps';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { obs } from 'expo-app/lib/store';
 import { testIds } from 'expo-app/lib/testIds';
+import * as Location from 'expo-location';
 import { Redirect, Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Linking, Pressable, View } from 'react-native';
 import { AreaOutline, cameraBounds, TrailLines } from '../components/MapLayers';
 import { OUTDOORS_STYLE } from '../lib/offlineMapManager';
 import { offlineMapsStore } from '../store/offlineMaps';
@@ -23,9 +25,30 @@ export function OfflineAreaMapScreen() {
   const { colors } = useColorScheme();
   const area = use$(obs({ store: offlineMapsStore.areas, id: areaId }));
   const [following, setFollowing] = useState(false);
+  const alertRef = useRef<AlertMethods>(null);
 
   if (!area) return <Redirect href="/offline-maps" />;
   const maxZoom = DETAIL_MAX_ZOOM[area.detail];
+
+  const toggleFollowing = async () => {
+    if (following) {
+      setFollowing(false);
+      return;
+    }
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status === Location.PermissionStatus.GRANTED) {
+      setFollowing(true);
+      return;
+    }
+    alertRef.current?.alert({
+      title: t('offlineMaps.locationOffTitle'),
+      message: t('offlineMaps.locationOffMessage'),
+      buttons: [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('permissions.openSettings'), onPress: () => void Linking.openSettings() },
+      ],
+    });
+  };
 
   return (
     <View className="flex-1" testID={testIds.offlineMaps.fullMap}>
@@ -34,7 +57,7 @@ export function OfflineAreaMapScreen() {
           title: area.name,
           headerRight: () => (
             <Pressable
-              onPress={() => setFollowing((on) => !on)}
+              onPress={() => void toggleFollowing()}
               hitSlop={8}
               className="p-2"
               accessibilityRole="button"
@@ -65,6 +88,7 @@ export function OfflineAreaMapScreen() {
         <AreaOutline bounds={area.bounds} />
         <TrailLines id="area-trail" lines={area.trailLines ?? []} />
       </Mapbox.MapView>
+      <Alert title="" buttons={[]} ref={alertRef} />
     </View>
   );
 }
