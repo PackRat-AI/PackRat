@@ -14,16 +14,10 @@ import { KeyboardAvoidingView, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { cameraBounds, TrailLines } from '../components/MapLayers';
 import { useOfflineAreas } from '../hooks/useOfflineAreas';
-import {
-  connectionIsCellular,
-  deleteArea,
-  OUTDOORS_STYLE,
-  saveArea,
-} from '../lib/offlineMapManager';
+import { connectionIsCellular, OUTDOORS_STYLE, saveArea } from '../lib/offlineMapManager';
 import { offlineMapsStore } from '../store/offlineMaps';
 import type { OfflineAreaBounds, OfflineDetailLevel } from '../types';
 import {
-  areasToFree,
   boundsEnclosing,
   boundsFromCorners,
   DETAIL_LEVELS,
@@ -54,7 +48,6 @@ export function OfflineAreaPickerScreen() {
   const alertRef = useRef<AlertMethods>(null);
   const saved = useOfflineAreas();
   const allowCellular = use$(offlineMapsStore.allowCellular);
-  const storageLimit = use$(offlineMapsStore.storageLimitBytes);
   const trail = useTrail(params.trailId ?? '', { enabled: !!params.trailId });
   const lines = trail.data?.lines ?? [];
 
@@ -103,50 +96,15 @@ export function OfflineAreaPickerScreen() {
     router.back();
   };
 
-  const attemptSave = () => {
-    if (estimate === null) return;
-    const toFree = areasToFree({ areas: saved, bytes: estimate, limit: storageLimit });
-    if (toFree === null) {
-      alertRef.current?.alert({
-        title: t('offlineMaps.overLimitTitle'),
-        message: t('offlineMaps.overLimitMessage'),
-        buttons: [{ text: t('common.ok'), style: 'cancel' }],
-      });
-      return;
-    }
-    if (toFree.length > 0) {
-      alertRef.current?.alert({
-        title: t('offlineMaps.freeSpaceTitle'),
-        message: t('offlineMaps.freeSpaceMessage', {
-          names: new Intl.ListFormat(undefined, { type: 'conjunction' }).format(
-            toFree.map((area) => area.name),
-          ),
-        }),
-        buttons: [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('offlineMaps.freeSpaceConfirm'),
-            style: 'destructive',
-            onPress: async () => {
-              for (const area of toFree) await deleteArea(area);
-              confirmNetworkThenSave();
-            },
-          },
-        ],
-      });
-      return;
-    }
-    confirmNetworkThenSave();
-  };
-
   const confirmNetworkThenSave = () => {
+    if (estimate === null) return;
     if (!connectionIsCellular() || allowCellular) {
       startSave(false);
       return;
     }
     alertRef.current?.alert({
       title: t('offlineMaps.cellularTitle'),
-      message: t('offlineMaps.cellularMessage', { size: formatBytes(estimate ?? 0) }),
+      message: t('offlineMaps.cellularMessage', { size: formatBytes(estimate) }),
       buttons: [
         { text: t('offlineMaps.cellularWait'), style: 'cancel', onPress: () => startSave(false) },
         { text: t('offlineMaps.cellularDownload'), onPress: () => startSave(true) },
@@ -161,7 +119,7 @@ export function OfflineAreaPickerScreen() {
           title: t('offlineMaps.pickerTitle'),
           headerRight: () => (
             <Pressable
-              onPress={attemptSave}
+              onPress={confirmNetworkThenSave}
               disabled={!canSave}
               hitSlop={8}
               className="h-10 justify-center px-3"

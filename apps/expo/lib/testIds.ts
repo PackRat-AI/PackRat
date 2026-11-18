@@ -489,7 +489,6 @@ export const testIds = Object.freeze({
     emptyAdd: 'offline-maps:empty-add',
     deleteAll: 'offline-maps:delete-all',
     allowCellular: 'offline-maps:allow-cellular',
-    storageLimit: 'offline-maps:storage-limit',
     areaRow: (id: string) => `offline-maps:area-row-${id}`,
     areaMap: 'offline-maps:area-map',
     detail: 'offline-maps:area-detail',

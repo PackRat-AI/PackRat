@@ -9,11 +9,6 @@ export const DETAIL_MAX_ZOOM = Object.freeze({ standard: 14, trail: 16 } as cons
 
 export const DETAIL_LEVELS = Object.freeze(['standard', 'trail'] as const);
 
-/** Storage limit choices, in bytes. Zero means no limit. */
-export const STORAGE_LIMIT_CHOICES = Object.freeze([
-  0, 500_000_000, 1_000_000_000, 2_000_000_000, 5_000_000_000,
-] as const);
-
 /**
  * Mapbox refuses a download that would take the device past 750 unique tile packs across every
  * saved area. Our count runs a few packs under the SDK's, so keep a margin rather than offer a
@@ -180,32 +175,6 @@ export function packFit({
     fits: used.size + added <= TILE_PACK_BUDGET,
     fitsAlone: adding.size <= TILE_PACK_BUDGET,
   };
-}
-
-/**
- * Saved areas whose removal would make room for `bytes` under the storage limit, oldest first.
- * Empty when no limit is set or the download already fits; null when deleting every area would
- * still not be enough.
- */
-export function areasToFree({
-  areas,
-  bytes,
-  limit,
-}: {
-  areas: OfflineArea[];
-  bytes: number;
-  limit: number;
-}): OfflineArea[] | null {
-  const total = totalBytes(areas);
-  if (limit <= 0 || total + bytes <= limit) return [];
-  let over = total + bytes - limit;
-  const picks: OfflineArea[] = [];
-  for (const area of [...areas].sort((a, b) => a.savedAt - b.savedAt)) {
-    if (over <= 0) break;
-    picks.push(area);
-    over -= area.sizeBytes;
-  }
-  return over > 0 ? null : picks;
 }
 
 export function totalBytes(areas: Pick<OfflineArea, 'sizeBytes'>[]): number {

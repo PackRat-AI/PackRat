@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { OfflineArea, OfflineAreaBounds } from '../../types';
 import {
-  areasToFree,
   BYTES_PER_TILE,
   boundsEnclosing,
   boundsFromCorners,
@@ -169,28 +168,6 @@ describe('packFit', () => {
       fits: false,
       fitsAlone: true,
     });
-  });
-});
-
-describe('areasToFree', () => {
-  const old = area({ id: 'old', savedAt: 1, sizeBytes: 300 });
-  const recent = area({ id: 'recent', savedAt: 2, sizeBytes: 500 });
-
-  it('needs nothing without a limit', () => {
-    expect(areasToFree({ areas: [old, recent], bytes: 10_000, limit: 0 })).toEqual([]);
-  });
-
-  it('needs nothing when the download fits', () => {
-    expect(areasToFree({ areas: [old], bytes: 100, limit: 1000 })).toEqual([]);
-  });
-
-  it('picks the oldest areas until there is room', () => {
-    expect(areasToFree({ areas: [recent, old], bytes: 400, limit: 1000 })).toEqual([old]);
-    expect(areasToFree({ areas: [recent, old], bytes: 900, limit: 1000 })).toEqual([old, recent]);
-  });
-
-  it('returns null when deleting everything is still not enough', () => {
-    expect(areasToFree({ areas: [old], bytes: 2000, limit: 1000 })).toBeNull();
   });
 });
 

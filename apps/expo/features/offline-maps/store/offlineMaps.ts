@@ -11,8 +11,6 @@ export const offlineMapsStore = observable({
   areas: {} as Record<string, OfflineArea>,
   /** Off by default: map downloads run to hundreds of megabytes. */
   allowCellular: false,
-  /** Zero means no limit. */
-  storageLimitBytes: 0,
 });
 
 syncObservable(offlineMapsStore, {

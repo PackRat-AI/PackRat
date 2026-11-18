@@ -10,11 +10,10 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { failureText, ProgressLine, WaitingLine } from '../components/DownloadStatus';
-import { StorageLimitDialog, storageLimitLabel } from '../components/StorageLimitDialog';
 import { useDownloadState, useOfflineAreas } from '../hooks/useOfflineAreas';
 import {
   cancelArea,
@@ -34,9 +33,7 @@ export function OfflineMapsScreen() {
   const { colors } = useColorScheme();
   const areas = useOfflineAreas();
   const allowCellular = use$(offlineMapsStore.allowCellular);
-  const storageLimit = use$(offlineMapsStore.storageLimitBytes);
   const alertRef = useRef<AlertMethods>(null);
-  const [choosingLimit, setChoosingLimit] = useState(false);
 
   const addArea = () => router.push('/offline-maps/pick');
 
@@ -151,30 +148,9 @@ export function OfflineMapsScreen() {
                 testID={testIds.offlineMaps.allowCellular}
               />
             </View>
-            <Pressable
-              className="flex-row items-center justify-between gap-4 border-t border-border p-4"
-              onPress={() => setChoosingLimit(true)}
-              android_ripple={{ color: colors.grey5 }}
-              testID={testIds.offlineMaps.storageLimit}
-            >
-              <Text className="font-medium">{t('offlineMaps.storageLimit')}</Text>
-              <Text className="text-muted-foreground">
-                {storageLimitLabel({ bytes: storageLimit, noLimit: t('offlineMaps.noLimit') })}
-              </Text>
-            </Pressable>
           </View>
         </View>
       </ScrollView>
-      {choosingLimit ? (
-        <StorageLimitDialog
-          value={storageLimit}
-          onChange={(bytes) => {
-            offlineMapsStore.storageLimitBytes.set(bytes);
-            setChoosingLimit(false);
-          }}
-          onDismiss={() => setChoosingLimit(false)}
-        />
-      ) : null}
       <Alert title="" buttons={[]} ref={alertRef} />
     </SafeAreaView>
   );
