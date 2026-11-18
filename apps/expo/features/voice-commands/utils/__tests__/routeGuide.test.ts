@@ -3,9 +3,12 @@ import {
   destinationOptions,
   type GuidancePrompt,
   guidancePlan,
+  isGuideOffRoute,
   maneuver,
   newGuide,
+  nextTurn,
   pathTurns,
+  promptKind,
   type RouteGuide,
   resolveDestination,
   TRAILHEAD,
@@ -13,7 +16,15 @@ import {
 } from '../routeGuide';
 import { compassName, type GeoPoint, geoDistance } from '../routeProgress';
 import type { TripWaypoint } from '../tripWaypoints';
-import { guidancePromptText, navigatingAnswer } from '../voiceAnswers';
+import {
+  alreadyThere,
+  guidancePromptText,
+  guidanceRemaining,
+  navigatingAnswer,
+  navigatingOtherTrip,
+  navigationStopped,
+  unknownDestination,
+} from '../voiceAnswers';
 import { parseVoiceCommand } from '../voiceCommand';
 
 // North for about 1.1 km, then a right turn east for about 1.1 km.
@@ -212,5 +223,64 @@ describe('prompts', () => {
     expect(say(47.021, 0)).toEqual(['Halfway to the lake. 1.3 miles to go, north.']);
     expect(say(47.03, 600)).toEqual(['1 mile to the lake, north.']);
     expect(Math.round(guide.remainingMeters)).toBe(1_112);
+  });
+});
+
+describe('card and answers', () => {
+  it('groups back on route with off route in Settings', () => {
+    expect(promptKind({ kind: 'backOnRoute' })).toBe('offRoute');
+    expect(promptKind({ kind: 'arrived' })).toBe('arrived');
+  });
+
+  it('shows the next turn until it is passed, and whether the user is off route', () => {
+    const walk = walker();
+    expect(nextTurn(walk.guide)).toBeNull();
+    walk.step({ latitude: 47.005, longitude: -120.0 }, 0);
+    const turn = nextTurn(walk.guide);
+    expect(turn && maneuver(turn)).toBe('turn right');
+    expect(isGuideOffRoute(walk.guide)).toBe(false);
+    walk.step({ latitude: 47.01, longitude: -119.995 }, 600);
+    expect(nextTurn(walk.guide)).toBeNull();
+
+    const strayed = walker();
+    strayed.step({ latitude: 47.005, longitude: -119.996 }, 0);
+    strayed.step({ latitude: 47.005, longitude: -119.996 }, 25);
+    expect(isGuideOffRoute(strayed.guide)).toBe(true);
+  });
+
+  it('says how far to go, and how far off the route', () => {
+    const walk = walker();
+    walk.step({ latitude: 47.005, longitude: -120.0 }, 0);
+    expect(guidanceRemaining({ guide: walk.guide, bearing: 0, metric: false })).toBe(
+      '1.1 miles to camp.',
+    );
+    walk.step({ latitude: 47.005, longitude: -119.996 }, 30);
+    expect(guidanceRemaining({ guide: walk.guide, bearing: 0, metric: false })).toBe(
+      "1.1 miles to camp. You're 1,000 feet off your route.",
+    );
+  });
+
+  it('names the places it can navigate to when it cannot find one', () => {
+    expect(unknownDestination({ spoken: 'the bridge', options: ['camp', 'the trailhead'] })).toBe(
+      "I couldn't find the bridge. You can navigate to camp or the trailhead.",
+    );
+    expect(unknownDestination({ spoken: '', options: ['camp', 'the lake', 'the trailhead'] })).toBe(
+      "I couldn't find that place. You can navigate to camp, the lake or the trailhead.",
+    );
+    expect(unknownDestination({ spoken: 'the bridge', options: ['camp'] })).toBe(
+      "I couldn't find the bridge. You can navigate to camp.",
+    );
+    expect(unknownDestination({ spoken: 'the bridge', options: [] })).toBe(
+      "I couldn't find the bridge. There's nowhere to navigate to yet. Mark a waypoint or add a planned route first.",
+    );
+  });
+
+  it('answers stop, another trip and already there', () => {
+    expect(navigationStopped(true)).toBe('Navigation stopped. Tracking carries on.');
+    expect(navigationStopped(false)).toBe('Navigation stopped.');
+    expect(navigatingOtherTrip('Mailbox Peak')).toBe(
+      "You're navigating on Mailbox Peak. Stop that first.",
+    );
+    expect(alreadyThere('camp')).toBe("You're already at camp.");
   });
 });
