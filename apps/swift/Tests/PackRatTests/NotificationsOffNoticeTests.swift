@@ -9,6 +9,11 @@ struct NotificationsOffNoticeTests {
         #expect(NotificationAuthorization.showsNotice(status: .denied, alertsOn: true))
     }
 
+    @Test("shows when notifications were never asked for")
+    func neverAsked() {
+        #expect(NotificationAuthorization.showsNotice(status: .notDetermined, alertsOn: true))
+    }
+
     @Test("hides when notifications are allowed")
     func allowed() {
         #expect(!NotificationAuthorization.showsNotice(status: .authorized, alertsOn: true))

@@ -15,9 +15,23 @@ final class NotificationAuthorization {
     }
 
     /// Only where alerts are on, since an alert that is switched off has
-    /// nothing to miss, and only once notifications are known to be refused.
+    /// nothing to miss, and only once notifications are known to be off:
+    /// refused, or never asked for.
     nonisolated static func showsNotice(status: UNAuthorizationStatus?, alertsOn: Bool) -> Bool {
-        alertsOn && status == .denied
+        alertsOn && (status == .denied || status == .notDetermined)
+    }
+
+    /// Never asked: the system prompt can still be shown, so the notice asks in
+    /// context. Refused: iOS won't prompt again, so it points to Settings.
+    var canAsk: Bool { status == .notDetermined }
+
+    func request() async {
+        #if os(iOS)
+        await PushRegistrationService.registerForPushIfNeeded()
+        #else
+        _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
+        #endif
+        await refresh()
     }
 
     func showsNotice(alertsOn: Bool) -> Bool {
@@ -28,6 +42,7 @@ final class NotificationAuthorization {
 /// Says trip alerts can't arrive while notifications are off for PackRat, with
 /// the way to turn them back on. Product behaviour: docs/features/weather-alerts.md.
 struct NotificationsOffNotice: View {
+    let authorization: NotificationAuthorization
     @Environment(\.openURL) private var openURL
 
     private var settingsURL: URL? {
@@ -47,21 +62,31 @@ struct NotificationsOffNotice: View {
                 Text("Turn on notifications for PackRat to get weather alerts for your trips.")
                     .font(.callout)
                     .fixedSize(horizontal: false, vertical: true)
-                Button("Open Settings") {
-                    SentrySDK.addBreadcrumb(Self.openedSettingsCrumb)
-                    if let settingsURL { openURL(settingsURL) }
+                if authorization.canAsk {
+                    Button("Turn On Notifications") {
+                        SentrySDK.addBreadcrumb(Self.crumb("Asked for notifications from the notifications-off notice"))
+                        Task { await authorization.request() }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .accessibilityIdentifier("notifications_off_notice_ask")
+                } else {
+                    Button("Open Settings") {
+                        SentrySDK.addBreadcrumb(Self.crumb("Opened notification settings from the notifications-off notice"))
+                        if let settingsURL { openURL(settingsURL) }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .accessibilityIdentifier("notifications_off_notice_settings")
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .accessibilityIdentifier("notifications_off_notice_settings")
             }
             Spacer(minLength: 0)
         }
     }
 
-    private static var openedSettingsCrumb: Breadcrumb {
+    private static func crumb(_ message: String) -> Breadcrumb {
         let crumb = Breadcrumb(level: .info, category: "notifications")
-        crumb.message = "Opened notification settings from the notifications-off notice"
+        crumb.message = message
         return crumb
     }
 }

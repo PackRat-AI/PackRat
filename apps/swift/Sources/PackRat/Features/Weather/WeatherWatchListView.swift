@@ -53,7 +53,7 @@ struct WeatherWatchListView: View {
                     if !watchedTrips.isEmpty {
                         Section("Trips") {
                             if notifications.showsNotice(alertsOn: watchedTrips.contains(where: \.sendsWeatherAlerts)) {
-                                NotificationsOffNotice()
+                                NotificationsOffNotice(authorization: notifications)
                                     .padding(.vertical, 4)
                                     .accessibilityIdentifier("weather_watch_list_notifications_off")
                             }

@@ -57,7 +57,7 @@ struct TripWeatherSection: View {
                 content
                 alertsToggle
                 if notifications.showsNotice(alertsOn: trip.sendsWeatherAlerts) {
-                    NotificationsOffNotice()
+                    NotificationsOffNotice(authorization: notifications)
                         .padding(14)
                         .background(.background.secondary, in: card)
                         .accessibilityIdentifier("trip_weather_notifications_off")
