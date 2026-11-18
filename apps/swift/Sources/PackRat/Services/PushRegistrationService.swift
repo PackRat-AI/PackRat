@@ -14,19 +14,22 @@ enum PushRegistrationService {
     /// user who has already granted or denied notifications is a fast no-op
     /// (`requestAuthorization` is safe to call repeatedly); a user who has
     /// never been asked sees the system prompt now, for the first time.
-    static func registerForPushIfNeeded() async {
+    /// Returns false when notifications are off, so the caller can say so.
+    @discardableResult
+    static func registerForPushIfNeeded() async -> Bool {
         #if os(iOS)
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
         guard settings.authorizationStatus == .notDetermined || settings.authorizationStatus == .authorized else {
-            return // denied/restricted/ephemeral — nothing to do, and re-asking would be a no-op anyway
+            return false // denied/restricted/ephemeral — re-asking would be a no-op
         }
         if settings.authorizationStatus == .notDetermined {
             guard let granted = try? await center.requestAuthorization(options: [.alert, .sound, .badge]),
-                  granted else { return }
+                  granted else { return false }
         }
         UIApplication.shared.registerForRemoteNotifications()
         #endif
+        return true
     }
 
     static func handleDeviceToken(_ deviceToken: Data) {

@@ -1,5 +1,5 @@
-#if os(iOS)
 import SwiftUI
+#if os(iOS)
 import UIKit
 import UserNotifications
 
@@ -40,17 +40,6 @@ extension View {
     func onPermissionChange(_ refresh: @escaping () async -> Void) -> some View {
         modifier(PermissionRefresh(refresh: refresh))
     }
-
-    /// The alert shown right after an action whose result depends on
-    /// notifications the user has turned off.
-    func notificationsOffAlert(isPresented: Binding<Bool>, message: String) -> some View {
-        alert("Notifications Are Off", isPresented: isPresented) {
-            Button("Open Settings") { PermissionSettings.open() }
-            Button("Not Now", role: .cancel) {}
-        } message: {
-            Text(message)
-        }
-    }
 }
 
 private struct PermissionRefresh: ViewModifier {
@@ -66,3 +55,22 @@ private struct PermissionRefresh: ViewModifier {
     }
 }
 #endif
+
+extension View {
+    /// The alert shown right after an action whose result depends on
+    /// notifications the user has turned off. iOS only: macOS never reports
+    /// notifications as off to its callers.
+    @ViewBuilder
+    func notificationsOffAlert(isPresented: Binding<Bool>, message: String) -> some View {
+        #if os(iOS)
+        alert("Notifications Are Off", isPresented: isPresented) {
+            Button("Open Settings") { PermissionSettings.open() }
+            Button("Not Now", role: .cancel) {}
+        } message: {
+            Text(message)
+        }
+        #else
+        self
+        #endif
+    }
+}
