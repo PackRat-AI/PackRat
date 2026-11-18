@@ -36,6 +36,7 @@ export function OfflineMapsScreen() {
   const alertRef = useRef<AlertMethods>(null);
 
   const addArea = () => router.push('/offline-maps/pick');
+  const addRegion = () => router.push('/offline-maps/regions');
 
   const rename = (area: OfflineArea) =>
     alertRef.current?.prompt({
@@ -71,16 +72,22 @@ export function OfflineMapsScreen() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <Pressable
-              onPress={addArea}
-              hitSlop={8}
-              className="p-2"
-              accessibilityRole="button"
-              accessibilityLabel={t('offlineMaps.saveArea')}
+            <DropdownMenu
+              items={[
+                createDropdownItem({ actionKey: 'frame', title: t('offlineMaps.addFrame') }),
+                createDropdownItem({ actionKey: 'region', title: t('offlineMaps.addRegion') }),
+              ]}
+              onItemPress={(item) => (item.actionKey === 'region' ? addRegion() : addArea())}
               testID={testIds.offlineMaps.add}
             >
-              <Icon name="plus" size={24} color={colors.foreground} />
-            </Pressable>
+              <View
+                className="p-2"
+                accessibilityRole="button"
+                accessibilityLabel={t('offlineMaps.saveArea')}
+              >
+                <Icon name="plus" size={24} color={colors.foreground} />
+              </View>
+            </DropdownMenu>
           ),
         }}
       />
@@ -102,6 +109,9 @@ export function OfflineMapsScreen() {
               testID={testIds.offlineMaps.emptyAdd}
             >
               <Text>{t('offlineMaps.saveArea')}</Text>
+            </Button>
+            <Button variant="plain" onPress={addRegion} testID={testIds.offlineMaps.emptyAddRegion}>
+              <Text className="text-primary">{t('offlineMaps.addRegion')}</Text>
             </Button>
           </View>
         ) : (

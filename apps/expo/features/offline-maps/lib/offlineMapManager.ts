@@ -4,9 +4,11 @@ import * as Sentry from '@sentry/react-native';
 import { obs } from 'expo-app/lib/store';
 import * as Network from 'expo-network';
 import { nanoid } from 'nanoid';
+import { NativeModules } from 'react-native';
 import { offlineDownloadsStore, offlineMapsStore } from '../store/offlineMaps';
 import type { LonLat, OfflineArea, OfflineAreaBounds, OfflineDetailLevel } from '../types';
 import { type ConnectionKind, failureFromMessage, mayDownload } from '../utils/downloads';
+import { boundaryFeatureCollection } from '../utils/namedRegions';
 import { DETAIL_MAX_ZOOM } from '../utils/offlineArea';
 
 /** The style every in-app Mapbox map uses, so a saved area shows up on all of them. */
@@ -86,6 +88,7 @@ export function saveArea({
   tripEndsAt,
   trailId,
   trailLines,
+  boundary,
   allowCellularOnce,
 }: {
   name: string;
@@ -95,6 +98,8 @@ export function saveArea({
   tripEndsAt?: number;
   trailId?: string;
   trailLines?: LonLat[][];
+  /** A named region's outline: only what lies inside it is saved. */
+  boundary?: LonLat[][];
   /** The user agreed to this one download over cellular. */
   allowCellularOnce?: boolean;
 }): OfflineArea {
@@ -108,6 +113,7 @@ export function saveArea({
     tripEndsAt,
     trailId,
     trailLines: trailLines && trailLines.length > 0 ? trailLines : undefined,
+    boundary: boundary && boundary.length > 0 ? boundary : undefined,
     sizeBytes: 0,
     isComplete: false,
   };
@@ -232,6 +238,10 @@ async function begin({ area, fresh }: { area: OfflineArea; fresh: boolean }): Pr
       return;
     }
     if (existing) await offlineManager.deletePack(area.id);
+    if (area.boundary) {
+      await createOutlinePack({ area, boundary: area.boundary });
+      return;
+    }
     const { south, west, north, east } = area.bounds;
     await offlineManager.createPack(
       {
@@ -257,6 +267,31 @@ async function begin({ area, fresh }: { area: OfflineArea; fresh: boolean }): Pr
       extra: { areaId: area.id },
     });
   }
+}
+
+/**
+ * Starts a download framed by a region's outline. `offlineManager.createPack` only takes a
+ * rectangle, but the native module hands whatever GeoJSON it is given to the tile store, so this
+ * calls it directly with the outline. Listeners go on first, the way `createPack` does it; the
+ * manager re-reads its pack list on the next `getPack`, so resuming and deleting work as usual.
+ */
+async function createOutlinePack({
+  area,
+  boundary,
+}: {
+  area: OfflineArea;
+  boundary: LonLat[][];
+}): Promise<void> {
+  await offlineManager.subscribe(area.id, (_pack, status) => onProgress(status), onError);
+  await NativeModules.RNMBXOfflineModule.createPack({
+    name: area.id,
+    styleURL: OUTDOORS_STYLE,
+    // One feature, never two: the module reads a two-feature collection as a pair of corners.
+    bounds: JSON.stringify(boundaryFeatureCollection(boundary)),
+    minZoom: 0,
+    maxZoom: DETAIL_MAX_ZOOM[area.detail],
+    metadata: JSON.stringify({ areaName: area.name, name: area.id }),
+  });
 }
 
 function onProgress(status: OfflineProgressStatus): void {

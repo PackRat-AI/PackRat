@@ -2219,6 +2219,8 @@
     "emptyTitle": "No saved maps",
     "emptyBody": "Save the map for an area before you go, and it keeps working without signal.",
     "saveArea": "Save a map area",
+    "addFrame": "Frame an area on the map",
+    "addRegion": "Choose a park or region",
     "savedAreas": "Saved areas",
     "used": "{{size}} used",
     "deleteAll": "Delete all saved maps",
@@ -2249,8 +2251,11 @@
     "about": "About {{size}}",
     "tooLarge": "Too large",
     "frameFooter": "Everything inside the frame is saved.",
+    "outlineFooter": "Everything inside the outline is saved.",
     "tooLargeTrail": "This area is too large to save. Zoom in to frame a smaller area, or choose Standard detail.",
     "tooLargeStandard": "This area is too large to save. Zoom in to frame a smaller area.",
+    "tooLargeRegionTrail": "{{name}} is too large to save at Trail detail. Choose Standard detail instead.",
+    "tooLargeRegionStandard": "{{name}} is too large to save in one piece. Save the part you need by framing it on the map.",
     "outOfRoom": "Your saved maps are at their limit. Delete one you no longer need, or save a smaller area.",
     "cellularTitle": "Download over cellular?",
     "cellularMessage": "This map is {{size}} and you're not on Wi-Fi.",
@@ -2267,6 +2272,16 @@
     "showMyLocation": "Show my location",
     "showWholeArea": "Show whole area",
     "locationOffTitle": "Location is off",
-    "locationOffMessage": "To see where you are on the map, allow PackRat to use your location in Settings."
+    "locationOffMessage": "To see where you are on the map, allow PackRat to use your location in Settings.",
+    "regionsTitle": "Parks and regions",
+    "regionsSearch": "Park, forest, state or country",
+    "regionsParks": "National parks",
+    "regionsForests": "National forests and grasslands",
+    "regionsStates": "States and provinces",
+    "regionsCountries": "Countries",
+    "regionsNoMatch": "No places match “{{query}}”.",
+    "tileEmpty": "Maps for no signal",
+    "tileCount_one": "{{count}} saved map",
+    "tileCount_other": "{{count}} saved maps"
   }
 }

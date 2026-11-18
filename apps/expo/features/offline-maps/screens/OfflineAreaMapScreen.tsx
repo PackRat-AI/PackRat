@@ -13,7 +13,7 @@ import { Linking, Pressable, View } from 'react-native';
 import { AreaOutline, cameraBounds, TrailLines } from '../components/MapLayers';
 import { OUTDOORS_STYLE } from '../lib/offlineMapManager';
 import { offlineMapsStore } from '../store/offlineMaps';
-import { DETAIL_MAX_ZOOM } from '../utils/offlineArea';
+import { areaRings, DETAIL_MAX_ZOOM } from '../utils/offlineArea';
 
 /**
  * A saved area full screen, with the user's location and, for an area saved from a trail, the
@@ -85,7 +85,7 @@ export function OfflineAreaMapScreen() {
           maxZoomLevel={maxZoom + 2}
         />
         <Mapbox.LocationPuck puckBearingEnabled puckBearing="heading" />
-        <AreaOutline bounds={area.bounds} />
+        <AreaOutline rings={areaRings(area)} />
         <TrailLines id="area-trail" lines={area.trailLines ?? []} />
       </Mapbox.MapView>
       <Alert title="" buttons={[]} ref={alertRef} />

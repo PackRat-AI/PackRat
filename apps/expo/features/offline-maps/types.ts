@@ -30,6 +30,8 @@ export type OfflineArea = {
   trailId?: string;
   /** The trail's line, kept so the saved map can draw it without signal. */
   trailLines?: LonLat[][];
+  /** A named region's outline. Absent for a hand-framed area, which covers `bounds`. */
+  boundary?: LonLat[][];
   /** Bytes on disk once the download finished. Zero while downloading. */
   sizeBytes: number;
   /** False until every tile has arrived, so an interrupted download is picked up on next launch. */
