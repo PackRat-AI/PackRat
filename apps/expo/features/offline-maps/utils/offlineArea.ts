@@ -1,3 +1,4 @@
+import { clamp } from '@packrat/utils';
 import type { LonLat, OfflineArea, OfflineAreaBounds, OfflineDetailLevel } from '../types';
 
 /**
@@ -84,17 +85,17 @@ type TileRange = { minX: number; maxX: number; minY: number; maxY: number };
 export function tileRange(bounds: OfflineAreaBounds, zoom: number): TileRange {
   const scale = 2 ** zoom;
   const last = scale - 1;
-  const clamp = (value: number) => Math.min(Math.max(Math.floor(value), 0), last);
+  const tile = (value: number) => clamp(Math.floor(value), 0, last);
   const x = (lon: number) => ((lon + 180) / 360) * scale;
   const y = (lat: number) => {
-    const rad = (Math.min(Math.max(lat, -85.0511), 85.0511) * Math.PI) / 180;
+    const rad = (clamp(lat, -85.0511, 85.0511) * Math.PI) / 180;
     return ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * scale;
   };
   return {
-    minX: clamp(x(bounds.west)),
-    maxX: clamp(x(bounds.east)),
-    minY: clamp(y(bounds.north)),
-    maxY: clamp(y(bounds.south)),
+    minX: tile(x(bounds.west)),
+    maxX: tile(x(bounds.east)),
+    minY: tile(y(bounds.north)),
+    maxY: tile(y(bounds.south)),
   };
 }
 
