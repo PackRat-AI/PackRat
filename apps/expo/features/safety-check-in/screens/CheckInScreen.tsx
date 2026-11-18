@@ -3,6 +3,7 @@ import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
+import { PermissionNotice } from 'expo-app/components/PermissionNotice';
 import {
   FullScreenDialogHeader,
   OutlinedField,
@@ -24,16 +25,19 @@ export function CheckInScreen() {
   const [note, setNote] = useState('');
   const [locating, setLocating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [locationDenied, setLocationDenied] = useState(false);
 
   const checkIn = async () => {
     setLocating(true);
     setErrorMessage(null);
+    setLocationDenied(false);
     try {
       const fix = await currentFix();
       recordSafetyCheckIn({ tripId: id, fix, note });
       router.back();
     } catch (error) {
       if (error instanceof LocatorError) {
+        setLocationDenied(error.reason === 'denied');
         setErrorMessage(
           error.reason === 'denied'
             ? t('safetyCheckIn.checkIn.locationDenied')
@@ -78,7 +82,15 @@ export function CheckInScreen() {
               multiline
               testID={testIds.safetyCheckIn.checkInNote}
             />
-            {errorMessage ? (
+            {errorMessage && locationDenied ? (
+              <PermissionNotice
+                message={errorMessage}
+                tone="destructive"
+                variant="callout"
+                className="px-4"
+                testID={testIds.safetyCheckIn.checkInOpenSettingsBtn}
+              />
+            ) : errorMessage ? (
               <Text variant="callout" className="px-4 text-destructive" wrap>
                 {errorMessage}
               </Text>
