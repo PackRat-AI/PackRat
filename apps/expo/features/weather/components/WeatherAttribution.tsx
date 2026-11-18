@@ -29,7 +29,8 @@ export function WeatherAttribution({
     <View className="flex-row items-center gap-2 px-1">
       <Image
         source={{ uri: onDark ? attribution.logoDarkUrl : attribution.logoLightUrl }}
-        style={{ height: LOGO_HEIGHT, width: LOGO_WIDTH }}
+        // Off the sky, the white mark is toned to sit with the muted caption beside it.
+        style={{ height: LOGO_HEIGHT, width: LOGO_WIDTH, opacity: onDark && !onSky ? 0.6 : 1 }}
         resizeMode="contain"
         accessibilityLabel={attribution.serviceName}
       />
