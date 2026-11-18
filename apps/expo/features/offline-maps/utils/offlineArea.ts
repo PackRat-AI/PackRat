@@ -19,10 +19,17 @@ export const TILE_PACK_LIMIT = 750;
 export const TILE_PACK_BUDGET = 700;
 
 /**
- * Average bytes one Outdoors vector tile takes on disk, used to size an area before it downloads.
- * The Android SDK binding offers no size estimate, so the picker counts tiles instead.
+ * Average bytes one Outdoors tile pack takes, by the first zoom of its group, used to size an area
+ * before it downloads. The Android SDK binding offers no size estimate, and a download takes whole
+ * packs, so the picker counts packs. Measured from Outdoors tiles over Yosemite, the Lake District,
+ * Shenandoah and Boulder (2026-11).
  */
-export const BYTES_PER_TILE = 40_000;
+export const BYTES_PER_PACK = Object.freeze({
+  0: 33_400_000,
+  6: 18_500_000,
+  11: 2_100_000,
+  15: 2_600_000,
+} as const);
 
 /** Closed ring around the bounds, counter-clockwise from the south-west corner. */
 export function boundsRing(bounds: OfflineAreaBounds): LonLat[] {
@@ -111,24 +118,6 @@ export function tileRange({
   };
 }
 
-function tileCount({ bounds, zoom }: { bounds: OfflineAreaBounds; zoom: number }): number {
-  const range = tileRange({ bounds, zoom });
-  return (range.maxX - range.minX + 1) * (range.maxY - range.minY + 1);
-}
-
-/** Bytes the area would take on disk at the given detail. */
-export function estimateBytes({
-  bounds,
-  detail,
-}: {
-  bounds: OfflineAreaBounds;
-  detail: OfflineDetailLevel;
-}): number {
-  let tiles = 0;
-  for (let zoom = 0; zoom <= DETAIL_MAX_ZOOM[detail]; zoom++) tiles += tileCount({ bounds, zoom });
-  return tiles * BYTES_PER_TILE;
-}
-
 /** Each pack group's index zoom: one pack per tile at that zoom. */
 const INDEX_ZOOMS = Object.freeze({
   standard: [
@@ -194,6 +183,23 @@ export function packFit({
     fits: used.size + added <= TILE_PACK_BUDGET,
     fitsAlone: adding.size <= TILE_PACK_BUDGET,
   };
+}
+
+/** Bytes the area would take on disk at the given detail. */
+export function estimateBytes({
+  bounds,
+  detail,
+}: {
+  bounds: OfflineAreaBounds;
+  detail: OfflineDetailLevel;
+}): number {
+  let bytes = 0;
+  for (const [group, zoom] of INDEX_ZOOMS[detail]) {
+    const range = tileRange({ bounds, zoom });
+    const packs = (range.maxX - range.minX + 1) * (range.maxY - range.minY + 1);
+    bytes += packs * BYTES_PER_PACK[group];
+  }
+  return bytes;
 }
 
 export function totalBytes(areas: Pick<OfflineArea, 'sizeBytes'>[]): number {
