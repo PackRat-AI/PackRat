@@ -15,6 +15,7 @@ struct TripWeatherSection: View {
     @State private var forecast: WeatherForecastResponse?
     @State private var loadFailed = false
     @State private var pushedLocation: WeatherLocation?
+    @State private var notifications = NotificationAuthorization()
 
     /// Active hazards at the destination, one per event: the provider repeats
     /// an alert for every zone it covers.
@@ -55,8 +56,15 @@ struct TripWeatherSection: View {
                     .foregroundStyle(.secondary)
                 content
                 alertsToggle
+                if notifications.showsNotice(alertsOn: trip.sendsWeatherAlerts) {
+                    NotificationsOffNotice()
+                        .padding(14)
+                        .background(.background.secondary, in: card)
+                        .accessibilityIdentifier("trip_weather_notifications_off")
+                }
             }
             .padding(.horizontal)
+            .tracksNotificationAuthorization(notifications)
             .task(id: TripConditions.sourceKey(for: trip)) { await load() }
             .navigationDestination(item: $pushedLocation) { location in
                 LocationForecastView(location: location, viewModel: appState.weatherVM)
