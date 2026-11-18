@@ -438,14 +438,20 @@ function spokenNumber(word: string): number | null {
  * Lowercase, no punctuation or apostrophes, single spaces, and times like "7:30" split into
  * "7 30".
  */
+const APOSTROPHES = /[’']/g;
+const TIME_SEPARATORS = /[:-]/g;
+const DOTTED_PM = /p\.m\./g;
+const DOTTED_AM = /a\.m\./g;
+const NOT_LETTERS_OR_DIGITS = /[^\p{L}\p{N}]+/gu;
+
 export function normalizeTranscript(transcript: string): string {
   return transcript
     .toLowerCase()
-    .replace(/[’']/g, '')
-    .replace(/[:-]/g, ' ')
-    .replace(/p\.m\./g, 'pm')
-    .replace(/a\.m\./g, 'am')
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(APOSTROPHES, '')
+    .replace(TIME_SEPARATORS, ' ')
+    .replace(DOTTED_PM, 'pm')
+    .replace(DOTTED_AM, 'am')
+    .replace(NOT_LETTERS_OR_DIGITS, ' ')
     .trim();
 }
 

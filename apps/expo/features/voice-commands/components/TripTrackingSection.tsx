@@ -1,4 +1,5 @@
 import { use$ } from '@legendapp/state/react';
+import { isString } from '@packrat/guards';
 import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
 import { Button } from '@packrat/ui/src/button';
 import { Card } from '@packrat/ui/src/card';
@@ -122,7 +123,7 @@ export function TripTrackingSection({ trip }: { trip: Trip }) {
         {
           text: t('common.save'),
           onPress: (text) => {
-            const name = typeof text === 'string' ? text.trim() : '';
+            const name = isString(text) ? text.trim() : '';
             const waypoint = name
               ? { ...marked, name: clipUtf16({ text: name, limit: WAYPOINT_LIMITS.nameLength }) }
               : marked;

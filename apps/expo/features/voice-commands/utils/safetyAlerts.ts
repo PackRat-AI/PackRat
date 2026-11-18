@@ -94,6 +94,8 @@ export function dueSafetyAlerts({
   return alerts;
 }
 
+const WORD_START = /\b\p{L}/gu;
+
 function titleCase(text: string): string {
-  return text.toLowerCase().replace(/\b\p{L}/gu, (letter) => letter.toUpperCase());
+  return text.toLowerCase().replace(WORD_START, (letter) => letter.toUpperCase());
 }

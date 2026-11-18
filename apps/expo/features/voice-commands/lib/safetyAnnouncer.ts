@@ -18,6 +18,7 @@ import * as Network from 'expo-network';
 import * as Notifications from 'expo-notifications';
 import * as Speech from 'expo-speech';
 import { voiceSettingsStore } from '../store/voiceSettings';
+import { voiceStore } from '../store/voiceStore';
 import { lastSample } from '../utils/recordedTrack';
 import {
   batteryKey,
@@ -26,7 +27,6 @@ import {
   type WeatherWarning,
 } from '../utils/safetyAlerts';
 import { trackStore } from './trackRecorder';
-import { voiceStore } from './voiceController';
 import { say } from './voiceIO';
 
 /**

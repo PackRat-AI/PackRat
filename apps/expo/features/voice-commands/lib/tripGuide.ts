@@ -11,6 +11,7 @@ import * as Speech from 'expo-speech';
 import * as TaskManager from 'expo-task-manager';
 import i18next from 'i18next';
 import { voiceSettingsStore } from '../store/voiceSettings';
+import { voiceStore } from '../store/voiceStore';
 import { lastSample } from '../utils/recordedTrack';
 import {
   ARRIVAL_RADIUS_METERS,
@@ -26,7 +27,6 @@ import {
 import { type GeoPoint, geoBearing, geoDistance } from '../utils/routeProgress';
 import { guidancePromptText } from '../utils/voiceAnswers';
 import { askToShowNotification, trackStore, WORST_ACCURACY_METERS } from './trackRecorder';
-import { voiceStore } from './voiceController';
 import { say } from './voiceIO';
 
 /**

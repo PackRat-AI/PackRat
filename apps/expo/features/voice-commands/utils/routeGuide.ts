@@ -112,10 +112,12 @@ export function destinationOptions({
 export function cumulative(path: readonly GeoPoint[]): number[] {
   const result = [0];
   let total = 0;
-  for (let i = 1; i < path.length; i++) {
-    total += geoDistance(path[i - 1] as GeoPoint, path[i] as GeoPoint);
+  path.forEach((point, i) => {
+    const previous = path[i - 1];
+    if (!previous) return;
+    total += geoDistance(previous, point);
     result.push(total);
-  }
+  });
   return result;
 }
 
@@ -167,8 +169,9 @@ export function slicePath({
   const low = Math.min(from, to);
   const high = Math.max(from, to);
   const points = [pointAlong({ along: low, path: route, distances })];
-  distances.forEach((along, i) => {
-    if (along > low && along < high) points.push(route[i] as GeoPoint);
+  route.forEach((point, i) => {
+    const along = distances[i] ?? 0;
+    if (along > low && along < high) points.push(point);
   });
   points.push(pointAlong({ along: high, path: route, distances }));
   return from <= to ? points : points.reverse();

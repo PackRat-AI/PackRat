@@ -1,4 +1,3 @@
-import { observable } from '@legendapp/state';
 import * as Sentry from '@sentry/react-native';
 import { preferencesStore } from 'expo-app/features/auth/store/preferences';
 import { getPackItems } from 'expo-app/features/packs/store/packItems';
@@ -27,6 +26,7 @@ import { getDefaultSpeedUnit } from 'expo-app/lib/unitDefaults';
 import { delay } from 'expo-app/modules/wake-word';
 import * as Network from 'expo-network';
 import { voiceSettingsStore } from '../store/voiceSettings';
+import { voiceStore } from '../store/voiceStore';
 import { lastSample } from '../utils/recordedTrack';
 import { destinationOptions, resolveDestination } from '../utils/routeGuide';
 import { routeProgress } from '../utils/routeProgress';
@@ -87,30 +87,6 @@ import {
 } from './voiceIO';
 import { resumeWakeWord } from './wakeWord';
 import { waypointAt } from './waypointAt';
-
-export type VoicePhase =
-  | 'idle'
-  | 'listening'
-  | 'working'
-  /** Waiting on a spoken yes or no. */
-  | 'confirming'
-  | 'answering';
-
-/**
- * What the trip page's voice bar shows: the phase, what PackRat heard, what it's doing about it,
- * then what it said. One command runs at a time, for the trip on screen.
- */
-export const voiceStore = observable<{
-  phase: VoicePhase;
-  heard: string;
-  status: string;
-  answer: string;
-}>({
-  phase: 'idle',
-  heard: '',
-  status: '',
-  answer: '',
-});
 
 /** Bumped by every new listen or dismiss, so a superseded command stops quietly. */
 let generation = 0;

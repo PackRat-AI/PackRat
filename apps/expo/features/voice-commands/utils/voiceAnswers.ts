@@ -97,8 +97,10 @@ function oneDecimal(value: number): string {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
+const THOUSANDS = /\B(?=(\d{3})+(?!\d))/g;
+
 function grouped(value: number): string {
-  return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return String(value).replace(THOUSANDS, ',');
 }
 
 function capitalizeFirst(text: string): string {
@@ -371,6 +373,8 @@ export function newReturnTime({
 
 const LEADING_AT = /^at /;
 /** "19:00" not already followed by AM or PM. */
+const NO_BREAK_SPACES = /[  ]/g;
+const MERIDIEM = /\b(am|pm)\b/gi;
 const CLOCK_TIME = /\b([01]?\d|2[0-3]):([0-5]\d)\b(?!\s?[AP]M)/g;
 
 // ── Time ──────────────────────────────────────────────────────────────────
@@ -411,8 +415,8 @@ export function spokenTime({
   // ICU puts a narrow no-break space before AM/PM; a plain space reads the same aloud.
   const time = new Intl.DateTimeFormat(locale, options)
     .format(date)
-    .replace(/[  ]/g, ' ')
-    .replace(/\b(am|pm)\b/gi, (m) => m.toUpperCase());
+    .replace(NO_BREAK_SPACES, ' ')
+    .replace(MERIDIEM, (m) => m.toUpperCase());
   if (dayKey(date, timeZone) === dayKey(now, timeZone)) return `at ${time}`;
   if (dayKey(date, timeZone) === dayKey(new Date(now.getTime() + 86_400_000), timeZone)) {
     return `tomorrow at ${time}`;

@@ -17,16 +17,11 @@ import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { askToShowNotification } from '../lib/trackRecorder';
-import {
-  beginListening,
-  dismissVoice,
-  endListening,
-  handleWake,
-  voiceStore,
-} from '../lib/voiceController';
+import { beginListening, dismissVoice, endListening, handleWake } from '../lib/voiceController';
 import { hasVoicePermission, requestVoicePermission, warmUpVoice } from '../lib/voiceIO';
 import { followTrip, isWakeWordAvailable, leaveTrip } from '../lib/wakeWord';
 import { voiceSettingsStore } from '../store/voiceSettings';
+import { voiceStore } from '../store/voiceStore';
 
 /** Shown while the trip is underway, and from its start day so "start my trip" works too. */
 export function useShowsVoiceBar(trip: Trip | undefined): boolean {
