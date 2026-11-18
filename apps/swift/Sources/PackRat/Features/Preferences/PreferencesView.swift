@@ -57,6 +57,7 @@ struct PreferencesView: View {
     @AppStorage(VoiceCommandSettings.offRouteKey) private var guidanceOffRoute = true
     @AppStorage(VoiceCommandSettings.vibrateOnlyKey) private var guidanceVibrateOnly = false
     @AppStorage(VoiceCommandSettings.wakeWordKey) private var wakeWordOn = false
+    @State private var voiceDenied = false
     @AppStorage(VoiceCommandSettings.safetyAlertsSpokenKey) private var safetyAlertsSpoken = true
 
     @State private var showingClearDataConfirm = false
@@ -352,9 +353,19 @@ struct PreferencesView: View {
                         .onChange(of: wakeWordOn) { _, on in
                             // Asked for when switched on, not on the trail.
                             if on, VoiceListener.needsPermission {
-                                Task { try? await VoiceListener.requestPermissions() }
+                                Task {
+                                    try? await VoiceListener.requestPermissions()
+                                    voiceDenied = VoiceListener.isDenied
+                                }
                             }
                         }
+                    if wakeWordOn, voiceDenied {
+                        PermissionNotice(
+                            message: "Allow the microphone and speech recognition for PackRat in Settings to use “Hey PackRat”.",
+                            systemImage: "mic.slash.fill"
+                        )
+                        .accessibilityIdentifier("settings_voice_wake_word_denied")
+                    }
                     Toggle("Spoken Answers", isOn: $voiceSpokenAnswers)
                         .accessibilityIdentifier("settings_voice_spoken_answers_toggle")
                     Toggle("Spoken Safety Alerts", isOn: $safetyAlertsSpoken)
@@ -367,6 +378,7 @@ struct PreferencesView: View {
             } footer: {
                 Text(voiceFooter)
             }
+            .onPermissionChange { voiceDenied = VoiceListener.isDenied }
             if voiceCommandsEnabled, voiceSpokenAnswers || safetyAlertsSpoken {
                 Section {
                     LabeledContent("Speaking Voice", value: VoiceSpeaker.preferredVoice?.name ?? "Default")
