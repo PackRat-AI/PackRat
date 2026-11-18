@@ -10,10 +10,14 @@ import { View } from 'react-native';
  * the way to turn them back on. Product behaviour: docs/features/weather-alerts.md.
  */
 export function NotificationsOffNotice({
+  canAsk,
+  onAsk,
   onOpenSettings,
   className = '',
   testID,
 }: {
+  canAsk: boolean;
+  onAsk: () => void;
   onOpenSettings: () => void;
   className?: string;
   testID?: string;
@@ -28,9 +32,15 @@ export function NotificationsOffNotice({
       <Icon name="bell-off-outline" size={24} color={colors.grey} />
       <View className="flex-1 items-start gap-3">
         <Text wrap>{t('weather.notificationsOffNotice')}</Text>
-        <Button variant="tonal" size="sm" onPress={onOpenSettings} testID={`${testID}-settings`}>
-          <Text>{t('weather.openSettings')}</Text>
-        </Button>
+        {canAsk ? (
+          <Button variant="tonal" size="sm" onPress={onAsk} testID={`${testID}-ask`}>
+            <Text>{t('weather.turnOnNotifications')}</Text>
+          </Button>
+        ) : (
+          <Button variant="tonal" size="sm" onPress={onOpenSettings} testID={`${testID}-settings`}>
+            <Text>{t('weather.openSettings')}</Text>
+          </Button>
+        )}
       </View>
     </View>
   );

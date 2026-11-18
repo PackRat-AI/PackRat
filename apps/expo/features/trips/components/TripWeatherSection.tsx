@@ -248,6 +248,8 @@ export function TripWeatherSection({ trip }: { trip: Trip }) {
         alertsOn: tripSendsWeatherAlerts(trip),
       }) ? (
         <NotificationsOffNotice
+          canAsk={notifications.canAsk}
+          onAsk={notifications.ask}
           onOpenSettings={notifications.openSettings}
           testID={testIds.trips.weatherNotificationsOff}
         />

@@ -1392,6 +1392,7 @@
     "addedToLocations": "{{name}} added to your locations",
     "notificationsOff": "Notifications are off for PackRat",
     "notificationsOffNotice": "Turn on notifications for PackRat to get weather alerts for your trips.",
+    "turnOnNotifications": "Turn On Notifications",
     "settings": "Settings",
     "searchForPlace": "Search for a city or place",
     "noSavedLocationsBody": "Search for a city or place to see its forecast and get hazard alerts.",
