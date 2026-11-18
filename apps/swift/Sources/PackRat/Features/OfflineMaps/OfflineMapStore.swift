@@ -127,21 +127,6 @@ final class OfflineMapStore {
         }.value
     }
 
-    /// Saved areas whose removal would make room for `bytes` under the
-    /// storage limit, oldest first. Empty when no limit is set or the download
-    /// already fits; nil when deleting every area would still not be enough.
-    func areasToFree(forAdditional bytes: Int64) -> [OfflineArea]? {
-        let limit = Defaults[.offlineMapsStorageLimitBytes]
-        guard limit > 0, totalBytes + bytes > limit else { return [] }
-        var over = totalBytes + bytes - limit
-        var picks: [OfflineArea] = []
-        for area in areas.sorted(by: { $0.savedAt < $1.savedAt }) where over > 0 {
-            picks.append(area)
-            over -= area.sizeBytes
-        }
-        return over > 0 ? nil : picks
-    }
-
     // MARK: - Download
 
     /// Starts saving an area. Returns as soon as the download is under way;

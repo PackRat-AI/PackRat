@@ -6,14 +6,11 @@ import SwiftUI
 struct OfflineMapsView: View {
     @State private var store = OfflineMapStore.shared
     @Default(.offlineMapsAllowCellular) private var allowCellular
-    @Default(.offlineMapsStorageLimitBytes) private var storageLimit
     @State private var showingPicker = false
     @State private var showingRegions = false
     @State private var renaming: OfflineArea?
     @State private var newName = ""
     @State private var confirmingDeleteAll = false
-
-    private static let limitChoices: [Int64] = [0, 500_000_000, 1_000_000_000, 2_000_000_000, 5_000_000_000]
 
     var body: some View {
         List {
@@ -64,12 +61,6 @@ struct OfflineMapsView: View {
             Section {
                 Toggle("Download over Cellular", isOn: $allowCellular)
                     .accessibilityIdentifier("offline_maps_allow_cellular")
-                Picker("Storage Limit", selection: $storageLimit) {
-                    ForEach(Self.limitChoices, id: \.self) { bytes in
-                        Text(bytes == 0 ? "No Limit" : bytes.fileSizeText).tag(bytes)
-                    }
-                }
-                .accessibilityIdentifier("offline_maps_storage_limit")
             } header: {
                 Text("Downloads")
             } footer: {
