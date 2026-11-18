@@ -115,7 +115,7 @@ export function cumulative(path: readonly GeoPoint[]): number[] {
   path.forEach((point, i) => {
     const previous = path[i - 1];
     if (!previous) return;
-    total += geoDistance(previous, point);
+    total += geoDistance({ from: previous, to: point });
     result.push(total);
   });
   return result;
@@ -178,7 +178,7 @@ export function slicePath({
 }
 
 /** From one bearing to another, -180…180, negative to the left. */
-export function signedDifference(from: number, to: number): number {
+export function signedDifference({ from, to }: { from: number; to: number }): number {
   let difference = (to - from) % 360;
   if (difference > 180) difference -= 360;
   if (difference <= -180) difference += 360;
@@ -238,10 +238,15 @@ export function guidancePlan({
   ) {
     const path = slicePath({ route, from: here.alongMeters, to: there.alongMeters });
     const end = path[path.length - 1];
-    if (!end || geoDistance(end, to.point) > 10) path.push(to.point);
+    if (!end || geoDistance({ from: end, to: to.point }) > 10) path.push(to.point);
     return { destination: to, path, turns: pathTurns(path), lengthMeters: pathLength(path) };
   }
-  return { destination: to, path: null, turns: [], lengthMeters: geoDistance(from, to.point) };
+  return {
+    destination: to,
+    path: null,
+    turns: [],
+    lengthMeters: geoDistance({ from, to: to.point }),
+  };
 }
 
 /**
@@ -260,8 +265,11 @@ export function pathTurns(path: readonly GeoPoint[]): GuidanceTurn[] {
     const point = path[i] as GeoPoint;
     const before = pointAlong({ along: along - 30, path, distances });
     const after = pointAlong({ along: along + 30, path, distances });
-    const outbound = geoBearing(point, after);
-    const degrees = signedDifference(geoBearing(before, point), outbound);
+    const outbound = geoBearing({ from: point, to: after });
+    const degrees = signedDifference({
+      from: geoBearing({ from: before, to: point }),
+      to: outbound,
+    });
     if (Math.abs(degrees) < 50) continue;
     const turn = { alongMeters: along, degrees, headingAfter: outbound };
     // One bend drawn with several points is one turn: keep its sharpest.
@@ -362,7 +370,7 @@ export function updateGuide({
 }): { guide: RouteGuide; prompts: GuidancePrompt[] } {
   if (guide.hasArrived) return { guide, prompts: [] };
   const { plan } = guide;
-  const direct = geoDistance(position, plan.destination.point);
+  const direct = geoDistance({ from: position, to: plan.destination.point });
   const arrive = () => ({
     guide: { ...guide, hasArrived: true, remainingMeters: 0 },
     prompts: [{ kind: 'arrived' } as const],
@@ -376,7 +384,7 @@ export function updateGuide({
       guide: next,
       remaining: direct,
       metric,
-      bearing: geoBearing(position, plan.destination.point),
+      bearing: geoBearing({ from: position, to: plan.destination.point }),
     });
     return milestone ?? { guide: next, prompts: [] };
   }

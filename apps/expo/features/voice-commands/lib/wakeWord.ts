@@ -26,20 +26,20 @@ export function isWakeWordAvailable(): boolean {
  * Keeps the service in step with the trip and the user's switches. A change in Settings takes
  * effect straight away, without the trip page having to come back on screen.
  */
-export function followTrip(tripId: string, onCommand: () => void): void {
+export function followTrip({ tripId, onCommand }: { tripId: string; onCommand: () => void }): void {
   followed = { tripId, onCommand };
   if (!settingsObserved) {
     settingsObserved = true;
     observe(() => {
       const listen = voiceSettingsStore.wakeWord.get();
       const headset = voiceSettingsStore.headsetShortcut.get() !== false;
-      void applySettings(listen, headset);
+      void applySettings({ listen, headset });
     });
   } else {
-    void applySettings(
-      voiceSettingsStore.wakeWord.peek(),
-      voiceSettingsStore.headsetShortcut.peek() !== false,
-    );
+    void applySettings({
+      listen: voiceSettingsStore.wakeWord.peek(),
+      headset: voiceSettingsStore.headsetShortcut.peek() !== false,
+    });
   }
 }
 
@@ -50,7 +50,13 @@ export function leaveTrip(tripId: string): void {
   disarmWakeWord(tripId);
 }
 
-async function applySettings(listen: boolean, headset: boolean): Promise<void> {
+async function applySettings({
+  listen,
+  headset,
+}: {
+  listen: boolean;
+  headset: boolean;
+}): Promise<void> {
   const trip = followed;
   if (!trip) return;
   if (!listen && !headset) return disarmWakeWord(trip.tripId);

@@ -120,7 +120,7 @@ async function follow(location: Location.LocationObject): Promise<void> {
     guideStore.session.set({
       ...session,
       guide,
-      bearing: geoBearing(position, guide.plan.destination.point),
+      bearing: geoBearing({ from: position, to: guide.plan.destination.point }),
       lastPrompt: text || session.lastPrompt,
     });
     if (guide.hasArrived) await stopGuidance();
@@ -174,7 +174,7 @@ export async function startGuidance({
 }): Promise<{ plan: GuidancePlan; position: GeoPoint }> {
   await when(guideSyncState.isPersistLoaded);
   const position = await currentPosition();
-  if (geoDistance(position, destination.point) <= ARRIVAL_RADIUS_METERS) {
+  if (geoDistance({ from: position, to: destination.point }) <= ARRIVAL_RADIUS_METERS) {
     throw new GuideStartError('alreadyThere');
   }
   const plan = guidancePlan({ from: position, to: destination, route });
@@ -189,7 +189,7 @@ export async function startGuidance({
     tripId,
     tripName,
     guide,
-    bearing: geoBearing(position, destination.point),
+    bearing: geoBearing({ from: position, to: destination.point }),
     lastPrompt: null,
   });
   Sentry.addBreadcrumb({

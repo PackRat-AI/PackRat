@@ -161,7 +161,8 @@ function WakeWordHost({ trip }: { trip: Trip }) {
 
   useEffect(() => {
     if (!isWakeWordAvailable()) return;
-    if (underway) followTrip(trip.id, () => void handleWake(latestTrip.current));
+    if (underway)
+      followTrip({ tripId: trip.id, onCommand: () => void handleWake(latestTrip.current) });
     else leaveTrip(trip.id);
   }, [trip.id, underway]);
 

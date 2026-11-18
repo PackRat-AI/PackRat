@@ -45,9 +45,9 @@ export function routeProgress({
   for (let index = 1; index < route.length; index++) {
     const a = route[index - 1] as GeoPoint;
     const b = route[index] as GeoPoint;
-    const length = geoDistance(a, b);
+    const length = geoDistance({ from: a, to: b });
     const { t, point } = projectOntoSegment({ p: position, a, b });
-    const distance = geoDistance(position, point);
+    const distance = geoDistance({ from: position, to: point });
     if (!best || distance < best.distance)
       best = { distance, along: travelled + t * length, point };
     travelled += length;
@@ -57,14 +57,14 @@ export function routeProgress({
     offRouteMeters: best.distance,
     alongMeters: best.along,
     remainingMeters: Math.max(0, travelled - best.along),
-    bearingToRoute: geoBearing(position, best.point),
+    bearingToRoute: geoBearing({ from: position, to: best.point }),
   };
 }
 
 const EARTH_RADIUS_METERS = 6_371_000;
 const RAD = Math.PI / 180;
 
-export function geoDistance(a: GeoPoint, b: GeoPoint): number {
+export function geoDistance({ from: a, to: b }: { from: GeoPoint; to: GeoPoint }): number {
   const dLat = (b.latitude - a.latitude) * RAD;
   const dLon = (b.longitude - a.longitude) * RAD;
   const h =
@@ -74,7 +74,7 @@ export function geoDistance(a: GeoPoint, b: GeoPoint): number {
 }
 
 /** Initial bearing in degrees, 0 = north, clockwise. */
-export function geoBearing(a: GeoPoint, b: GeoPoint): number {
+export function geoBearing({ from: a, to: b }: { from: GeoPoint; to: GeoPoint }): number {
   const lat1 = a.latitude * RAD;
   const lat2 = b.latitude * RAD;
   const dLon = (b.longitude - a.longitude) * RAD;

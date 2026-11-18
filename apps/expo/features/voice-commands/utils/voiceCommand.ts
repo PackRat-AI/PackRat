@@ -71,90 +71,106 @@ export function parseVoiceCommand(transcript: string): VoiceCommand | null {
   if (extend) return extend;
 
   if (
-    containsAny(text, [
-      'im safe',
-      'i am safe',
-      'im back',
-      'i am back',
-      'im home',
-      'i am home',
-      'end my trip',
-      'end the trip',
-      'finish my trip',
-      'finish the trip',
-    ])
+    containsAny({
+      text,
+      phrases: [
+        'im safe',
+        'i am safe',
+        'im back',
+        'i am back',
+        'im home',
+        'i am home',
+        'end my trip',
+        'end the trip',
+        'finish my trip',
+        'finish the trip',
+      ],
+    })
   ) {
     return { kind: 'imSafe' };
   }
   if (
-    containsAny(text, [
-      'check in',
-      'checkin',
-      'checking in',
-      'send a check',
-      'let them know im ok',
-      'let them know i am ok',
-      'tell them im ok',
-      'tell them i am ok',
-    ])
+    containsAny({
+      text,
+      phrases: [
+        'check in',
+        'checkin',
+        'checking in',
+        'send a check',
+        'let them know im ok',
+        'let them know i am ok',
+        'tell them im ok',
+        'tell them i am ok',
+      ],
+    })
   ) {
     return { kind: 'checkIn' };
   }
   if (
-    containsAny(text, [
-      'start my trip',
-      'start the trip',
-      'start trip',
-      'begin my trip',
-      'begin the trip',
-    ])
+    containsAny({
+      text,
+      phrases: ['start my trip', 'start the trip', 'start trip', 'begin my trip', 'begin the trip'],
+    })
   ) {
     return { kind: 'startTrip' };
   }
   if (
-    containsAny(text, [
-      'on route',
-      'on the route',
-      'on my route',
-      'on track',
-      'off route',
-      'off the route',
-      'off track',
-      'am i lost',
-    ])
+    containsAny({
+      text,
+      phrases: [
+        'on route',
+        'on the route',
+        'on my route',
+        'on track',
+        'off route',
+        'off the route',
+        'off track',
+        'am i lost',
+      ],
+    })
   ) {
     return { kind: 'amIOnRoute' };
   }
   if (
-    containsAny(text, [
-      'how far',
-      'how much further',
-      'how much farther',
-      'distance to',
-      'distance left',
-      'miles left',
-      'kilometers left',
-      'km left',
-      'to go',
-    ])
+    containsAny({
+      text,
+      phrases: [
+        'how far',
+        'how much further',
+        'how much farther',
+        'distance to',
+        'distance left',
+        'miles left',
+        'kilometers left',
+        'km left',
+        'to go',
+      ],
+    })
   ) {
     return { kind: 'howFarToGo' };
   }
-  if (containsAny(text, ['where am i', 'my location', 'where are we', 'current location'])) {
+  if (
+    containsAny({
+      text,
+      phrases: ['where am i', 'my location', 'where are we', 'current location'],
+    })
+  ) {
     return { kind: 'whereAmI' };
   }
   if (
-    containsAny(text, [
-      'due back',
-      'when am i due',
-      'return time',
-      'when do i need to be back',
-      'overdue',
-    ])
+    containsAny({
+      text,
+      phrases: ['due back', 'when am i due', 'return time', 'when do i need to be back', 'overdue'],
+    })
   ) {
     return { kind: 'whenAmIDue' };
   }
-  if (containsAny(text, ['weather', 'forecast', 'going to rain', 'going to snow', 'temperature'])) {
+  if (
+    containsAny({
+      text,
+      phrases: ['weather', 'forecast', 'going to rain', 'going to snow', 'temperature'],
+    })
+  ) {
     return { kind: 'weather' };
   }
   return null;
@@ -166,13 +182,16 @@ export function parseVoiceConfirmation(transcript: string): VoiceConfirmation | 
   const hasWord = (list: readonly string[]) => list.some((word) => words.has(word));
   // Any hesitation is a no: "I'm not sure" must never send an alert.
   if (
-    containsAny(text, ['dont', 'do not', 'cancel', 'stop', 'never mind', 'nevermind', 'hold on']) ||
+    containsAny({
+      text,
+      phrases: ['dont', 'do not', 'cancel', 'stop', 'never mind', 'nevermind', 'hold on'],
+    }) ||
     hasWord(['no', 'nope', 'nah', 'not', 'wait'])
   ) {
     return 'no';
   }
   if (
-    containsAny(text, ['send it', 'go ahead', 'do it', 'confirm']) ||
+    containsAny({ text, phrases: ['send it', 'go ahead', 'do it', 'confirm'] }) ||
     hasWord(['yes', 'yeah', 'yep', 'yup', 'sure', 'ok', 'okay', 'correct', 'send'])
   ) {
     return 'yes';
@@ -193,10 +212,12 @@ const TRACK_SUBJECTS = Object.freeze([
 
 function parseTracking(text: string): VoiceCommand | null {
   const verb = (verbs: readonly string[]) =>
-    verbs.some((v) => TRACK_SUBJECTS.some((subject) => containsAny(text, [`${v} ${subject}`])));
+    verbs.some((v) =>
+      TRACK_SUBJECTS.some((subject) => containsAny({ text, phrases: [`${v} ${subject}`] })),
+    );
   if (
     verb(['start', 'begin', 'record', 'track']) ||
-    containsAny(text, ['track me', 'record my route'])
+    containsAny({ text, phrases: ['track me', 'record my route'] })
   )
     return { kind: 'startTracking' };
   if (verb(['pause']) || text === 'pause') return { kind: 'pauseTracking' };
@@ -204,15 +225,18 @@ function parseTracking(text: string): VoiceCommand | null {
     return { kind: 'resumeTracking' };
   if (verb(['stop', 'end', 'finish'])) return { kind: 'stopTracking' };
   if (
-    containsAny(text, [
-      'how far have i gone',
-      'how far have i come',
-      'how far have i walked',
-      'how far have i hiked',
-      'how far did i',
-      'distance so far',
-      'so far today',
-    ])
+    containsAny({
+      text,
+      phrases: [
+        'how far have i gone',
+        'how far have i come',
+        'how far have i walked',
+        'how far have i hiked',
+        'how far did i',
+        'distance so far',
+        'so far today',
+      ],
+    })
   ) {
     return { kind: 'trackSoFar' };
   }
@@ -244,23 +268,26 @@ const NAVIGATE_PHRASES = Object.freeze([
  */
 function parseNavigation(text: string): VoiceCommand | null {
   if (
-    containsAny(text, [
-      'stop navigating',
-      'stop navigation',
-      'end navigation',
-      'cancel navigation',
-      'stop guidance',
-      'end guidance',
-      'stop directions',
-      'cancel directions',
-      'stop guiding',
-    ])
+    containsAny({
+      text,
+      phrases: [
+        'stop navigating',
+        'stop navigation',
+        'end navigation',
+        'cancel navigation',
+        'stop guidance',
+        'end guidance',
+        'stop directions',
+        'cancel directions',
+        'stop guiding',
+      ],
+    })
   ) {
     return { kind: 'stopNavigating' };
   }
   // "How far to go to camp" is a question, not a request to go there.
   if (text.startsWith('how ')) return null;
-  const rest = afterPhrase(text, NAVIGATE_PHRASES);
+  const rest = afterPhrase({ text, phrases: NAVIGATE_PHRASES });
   return rest === null ? null : { kind: 'navigate', to: rest };
 }
 
@@ -288,7 +315,7 @@ const WAYPOINT_PHRASES = Object.freeze([
  * "mark waypoint" has none.
  */
 function parseWaypoint(text: string): VoiceCommand | null {
-  const rest = afterPhrase(text, WAYPOINT_PHRASES);
+  const rest = afterPhrase({ text, phrases: WAYPOINT_PHRASES });
   if (rest === null) return null;
   let words = rest ? rest.split(' ') : [];
   if (['called', 'named', 'as'].includes(words[0] ?? '')) words = words.slice(1);
@@ -298,7 +325,13 @@ function parseWaypoint(text: string): VoiceCommand | null {
 }
 
 /** What follows the first of `phrases` found as whole words, or null when none is. */
-function afterPhrase(text: string, phrases: readonly string[]): string | null {
+function afterPhrase({
+  text,
+  phrases,
+}: {
+  text: string;
+  phrases: readonly string[];
+}): string | null {
   const padded = ` ${text} `;
   const phrase = phrases.find((p) => padded.includes(` ${p} `));
   if (!phrase) return null;
@@ -335,7 +368,10 @@ function parseExtend(text: string): VoiceCommand | null {
   // "add an hour", "add two hours", "add 30 minutes", "extend by an hour and a half", "push it back
   // two hours", "give me another hour"
   if (
-    !containsAny(text, ['add', 'extend', 'push', 'another', 'more time', 'running late', 'give me'])
+    !containsAny({
+      text,
+      phrases: ['add', 'extend', 'push', 'another', 'more time', 'running late', 'give me'],
+    })
   )
     return null;
   const words = text.split(' ');
@@ -357,7 +393,7 @@ function parseExtend(text: string): VoiceCommand | null {
     minutes += ((previous === undefined ? null : spokenNumber(previous)) ?? 1) * unit;
     if (unit === 60 && words.slice(index + 1, index + 4).join(' ') === 'and a half') minutes += 30;
   });
-  if (minutes === 0 && containsAny(text, ['running late', 'more time'])) minutes = 60;
+  if (minutes === 0 && containsAny({ text, phrases: ['running late', 'more time'] })) minutes = 60;
   if (minutes <= 0) return null;
   return { kind: 'extendBy', minutes: Math.min(minutes, 24 * 60) };
 }
@@ -456,7 +492,7 @@ export function normalizeTranscript(transcript: string): string {
 }
 
 /** Whole words only, so "add" never matches inside "address". */
-function containsAny(text: string, phrases: readonly string[]): boolean {
+function containsAny({ text, phrases }: { text: string; phrases: readonly string[] }): boolean {
   const padded = ` ${text} `;
   return phrases.some((phrase) => padded.includes(` ${phrase} `));
 }

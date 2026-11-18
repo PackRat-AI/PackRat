@@ -94,7 +94,7 @@ async function check(run: number): Promise<void> {
   const trip = watching?.trip;
   if (!trip || run !== generation) return;
   const now = new Date();
-  await refreshWeather(trip, now.getTime());
+  await refreshWeather({ trip, now: now.getTime() });
   if (run !== generation) return;
 
   const checkIn = safetyStore.active.peek()[trip.id];
@@ -116,7 +116,7 @@ async function check(run: number): Promise<void> {
     // A drop straight to 10% skips the 20% warning.
     if (alert.key === batteryKey(10)) announced.add(batteryKey(20));
     announcedStore.set({ tripId: trip.id, keys: [...announced] });
-    await deliver(alert, trip);
+    await deliver({ alert, trip });
   }
 }
 
@@ -145,7 +145,7 @@ async function batteryState(): Promise<{ level: number; charging: boolean } | nu
  * Alerts where the user is now: the recording's latest point, otherwise the trip's destination.
  * Offline, the last result stands.
  */
-async function refreshWeather(trip: Trip, now: number): Promise<void> {
+async function refreshWeather({ trip, now }: { trip: Trip; now: number }): Promise<void> {
   if (now - weatherCheckedAt < WEATHER_INTERVAL_MS || !(await isOnline())) return;
   const track = trackStore.track.peek();
   const sample = track?.tripId === trip.id ? lastSample(track) : null;
@@ -179,14 +179,14 @@ async function isOnline(): Promise<boolean> {
 
 // ── Saying it ─────────────────────────────────────────────────────────────
 
-async function deliver(alert: SafetyAlert, trip: Trip): Promise<void> {
+async function deliver({ alert, trip }: { alert: SafetyAlert; trip: Trip }): Promise<void> {
   Sentry.addBreadcrumb({
     category: 'voiceCommands',
     message: 'Safety alert',
     level: 'info',
     data: { key: alert.key, tripId: trip.id },
   });
-  await notify(alert, trip);
+  await notify({ alert, trip });
   if (voiceSettingsStore.safetyAlertsSpoken.peek() === false) return;
   // Waits for a command or a guidance prompt to finish rather than talking over it.
   for (let step = 0; step < BUSY_WAIT_STEPS; step++) {
@@ -206,7 +206,7 @@ async function deliver(alert: SafetyAlert, trip: Trip): Promise<void> {
  * The overdue reminder is already scheduled; the rest get one now, so there's something to read
  * back if the alert wasn't heard.
  */
-async function notify(alert: SafetyAlert, trip: Trip): Promise<void> {
+async function notify({ alert, trip }: { alert: SafetyAlert; trip: Trip }): Promise<void> {
   if (!alert.title) return;
   try {
     await ensureSafetyChannel();

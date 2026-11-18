@@ -140,7 +140,7 @@ describe('plan', () => {
     const here = { latitude: 47.01, longitude: -119.99 };
     const plan = guidancePlan({ from: here, to: { name: TRAILHEAD, point: routeStart }, route });
     const first = plan.path?.[0];
-    expect(first && geoDistance(first, here)).toBeLessThan(5);
+    expect(first && geoDistance({ from: first, to: here })).toBeLessThan(5);
     expect(plan.path?.at(-1)).toEqual(routeStart);
     expect(plan.turns[0] && maneuver(plan.turns[0])).toBe('turn left');
   });

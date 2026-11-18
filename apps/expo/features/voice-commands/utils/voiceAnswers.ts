@@ -385,7 +385,7 @@ export interface SpeechClock {
   timeZone?: string;
 }
 
-function dayKey(date: Date, timeZone: string | undefined): string {
+function dayKey({ date, timeZone }: { date: Date; timeZone: string | undefined }): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone, dateStyle: 'short' }).format(date);
 }
 
@@ -417,8 +417,10 @@ export function spokenTime({
     .format(date)
     .replace(NO_BREAK_SPACES, ' ')
     .replace(MERIDIEM, (m) => m.toUpperCase());
-  if (dayKey(date, timeZone) === dayKey(now, timeZone)) return `at ${time}`;
-  if (dayKey(date, timeZone) === dayKey(new Date(now.getTime() + 86_400_000), timeZone)) {
+  if (dayKey({ date, timeZone }) === dayKey({ date: now, timeZone })) return `at ${time}`;
+  if (
+    dayKey({ date, timeZone }) === dayKey({ date: new Date(now.getTime() + 86_400_000), timeZone })
+  ) {
     return `tomorrow at ${time}`;
   }
   const day = new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone }).format(date);
@@ -527,7 +529,7 @@ export function navigatingAnswer({
   const { name } = plan.destination;
   const length = spokenDistance({ meters: plan.lengthMeters, metric });
   if (plan.path) return `Navigating to ${name} along your route. ${capitalizeFirst(length)} to go.`;
-  const toward = compassName(geoBearing(from, plan.destination.point));
+  const toward = compassName(geoBearing({ from, to: plan.destination.point }));
   return `${capitalizeFirst(name)} is ${length} ${toward} of you. I'll tell you when you're there.`;
 }
 
