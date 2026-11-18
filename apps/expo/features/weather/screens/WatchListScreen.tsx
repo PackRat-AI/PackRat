@@ -136,7 +136,7 @@ export default function WatchListScreen() {
   } = useWatchList();
   const tripAlerts = useTripAlertsSetting();
   const trips = useTrips();
-  const { unwatchPlace } = useWatchFeedback(snackbar);
+  const { unwatchPlace } = useWatchFeedback(snackbar, { showsNoticeFromSearch: true });
 
   // Trips enter and leave the window by date, so the clock is reread whenever the list
   // comes back into view or is pulled to refresh.
