@@ -177,9 +177,11 @@ async function applyConnection(): Promise<void> {
       if (mayRun(area.id)) continue;
       await stop(area.id);
       // It may have finished, or been deleted, while it was being stopped.
-      if (obs({ store: offlineMapsStore.areas, id: area.id }).peek()?.isComplete === false) {
-        obs({ store: offlineDownloadsStore.waiting, id: area.id }).set(true);
-      }
+      const current = obs({ store: offlineMapsStore.areas, id: area.id }).peek();
+      if (current?.isComplete !== false) continue;
+      // The setting or connection may have flipped back while the stop waited its turn;
+      // resuming re-checks it and marks the area waiting only if it still may not run.
+      await startOrWait({ area: current, fresh: false });
     } else if (!obs({ store: offlineDownloadsStore.failures, id: area.id }).peek()) {
       // Also picks up downloads that stopped when the app was closed.
       await startOrWait({ area, fresh: false });
