@@ -9,6 +9,7 @@ import { TextInput } from 'expo-app/components/TextInput';
 import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { handlePermissionDenied } from 'expo-app/lib/permissions/permissionDeniedAlert';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
@@ -62,6 +63,7 @@ export function IdentificationScreen() {
             setSavedResults(null);
           }
         } catch (err) {
+          if (handlePermissionDenied(err)) return;
           console.error('Error selecting image:', err);
           Sentry.captureException(err, {
             tags: { feature: 'wildlife', action: 'handleSelectImage' },

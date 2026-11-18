@@ -1649,9 +1649,11 @@
     }
   },
   "permissions": {
-    "photoLibraryTitle": "Photo Library Access Required",
-    "photoLibraryMessage": "PackRat needs access to your photo library to update your profile photo. Please enable it in Settings.",
-    "openSettings": "Open Settings"
+    "openSettings": "Open Settings",
+    "cameraOffTitle": "Camera access is off",
+    "cameraOffMessage": "Allow PackRat to use the camera in Settings to take a photo.",
+    "photosOffTitle": "Photo access is off",
+    "photosOffMessage": "Allow PackRat to access your photos in Settings to choose one."
   },
   "trailConditions": {
     "title": "Trail Conditions",
@@ -1923,9 +1925,7 @@
     "discardBody": "Your photos and caption will be lost.",
     "discard": "Discard",
     "keepEditing": "Keep Editing",
-    "permissionRequired": "Permission Required",
     "galleryPermission": "Allow PackRat to access your photos to add them to a post.",
-    "cameraPermission": "Allow PackRat to use the camera to take a photo for your post.",
     "signInToPost": "Sign in to post to the feed.",
     "photosFixed": "Photos can't be changed after posting.",
     "captionSaveFailed": "Your caption couldn't be saved. Try again.",

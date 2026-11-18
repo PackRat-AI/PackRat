@@ -6,6 +6,7 @@ import { userStore } from 'expo-app/features/auth/store';
 import { uploadImage } from 'expo-app/features/packs/utils/uploadImage';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { showPermissionDeniedAlert } from 'expo-app/lib/permissions/permissionDeniedAlert';
 import { testIds } from 'expo-app/lib/testIds';
 import { Image } from 'expo-image';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
@@ -142,11 +143,7 @@ export function CreatePostScreen() {
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        alertRef.current?.alert({
-          title: t('feed.permissionRequired'),
-          message: t('feed.cameraPermission'),
-          buttons: [{ text: t('feed.ok') }],
-        });
+        showPermissionDeniedAlert('camera');
         return;
       }
       const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 });

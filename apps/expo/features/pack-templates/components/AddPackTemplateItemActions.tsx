@@ -13,6 +13,7 @@ import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useImagePicker } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { handlePermissionDenied } from 'expo-app/lib/permissions/permissionDeniedAlert';
 import { router } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
@@ -108,6 +109,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
                 return;
             }
           } catch (err) {
+            if (handlePermissionDenied(err)) return;
             console.error('Error handling image:', err);
             appAlert.current?.alert({
               title: t('packTemplates.error'),

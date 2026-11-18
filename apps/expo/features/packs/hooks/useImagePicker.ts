@@ -1,6 +1,10 @@
 import { assertDefined } from '@packrat/guards';
 import * as Sentry from '@sentry/react-native';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import {
+  isPermissionDeniedError,
+  PermissionDeniedError,
+} from 'expo-app/lib/utils/permissionDenied';
 import * as ImagePicker from 'expo-image-picker';
 import { nanoid } from 'nanoid';
 import { useState } from 'react';
@@ -21,7 +25,7 @@ export function useImagePicker(selectedImageInit?: SelectedImage) {
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permissionResult.granted) {
-        throw new Error('Permission to access media library was denied');
+        throw new PermissionDeniedError('photos');
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -46,10 +50,13 @@ export function useImagePicker(selectedImageInit?: SelectedImage) {
         return { uri, fileName, type };
       }
     } catch (err) {
-      console.error('Error picking image:', err);
-      Sentry.captureException(err, {
-        tags: { feature: 'imagePicker', action: 'pickImage' },
-      });
+      // A refused permission is the user's choice, not a fault; callers point them to Settings.
+      if (!isPermissionDeniedError(err)) {
+        console.error('Error picking image:', err);
+        Sentry.captureException(err, {
+          tags: { feature: 'imagePicker', action: 'pickImage' },
+        });
+      }
       throw err;
     }
   };
@@ -59,7 +66,7 @@ export function useImagePicker(selectedImageInit?: SelectedImage) {
     try {
       const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
       if (!permissionResult.granted) {
-        throw new Error('Permission to access camera was denied');
+        throw new PermissionDeniedError('camera');
       }
 
       const result = await ImagePicker.launchCameraAsync({
@@ -80,10 +87,13 @@ export function useImagePicker(selectedImageInit?: SelectedImage) {
         return { uri, fileName, type };
       }
     } catch (err) {
-      console.error('Error taking photo:', err);
-      Sentry.captureException(err, {
-        tags: { feature: 'imagePicker', action: 'takePhoto' },
-      });
+      // A refused permission is the user's choice, not a fault; callers point them to Settings.
+      if (!isPermissionDeniedError(err)) {
+        console.error('Error taking photo:', err);
+        Sentry.captureException(err, {
+          tags: { feature: 'imagePicker', action: 'takePhoto' },
+        });
+      }
       throw err;
     }
   };
