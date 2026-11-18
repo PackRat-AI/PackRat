@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { OfflineArea, OfflineAreaBounds } from '../../types';
 import {
-  BYTES_PER_TILE,
+  BYTES_PER_PACK,
   boundsEnclosing,
   boundsFromCorners,
   boundsRing,
@@ -123,16 +123,23 @@ describe('tileRange', () => {
 });
 
 describe('estimateBytes', () => {
-  it('prices every tile from zoom 0 to the detail level', () => {
-    // One tile per zoom for a pinpoint area: 15 zooms at Standard, 17 at Trail.
+  it('prices one whole pack per group for a pinpoint area', () => {
     const point = { south: 37.74, west: -119.6, north: 37.74, east: -119.6 };
-    expect(estimateBytes({ bounds: point, detail: 'standard' })).toBe(15 * BYTES_PER_TILE);
-    expect(estimateBytes({ bounds: point, detail: 'trail' })).toBe(17 * BYTES_PER_TILE);
+    const standard = BYTES_PER_PACK[0] + BYTES_PER_PACK[6] + BYTES_PER_PACK[11];
+    expect(estimateBytes({ bounds: point, detail: 'standard' })).toBe(standard);
+    expect(estimateBytes({ bounds: point, detail: 'trail' })).toBe(standard + BYTES_PER_PACK[15]);
+  });
+
+  it('prices each zoom 11 tile the bounds touch as its own pack', () => {
+    // Yosemite Valley spans 2 x 2 tiles at zoom 11 and one tile at zoom 6.
+    expect(estimateBytes({ bounds: yosemiteValley, detail: 'standard' })).toBe(
+      BYTES_PER_PACK[0] + BYTES_PER_PACK[6] + 4 * BYTES_PER_PACK[11],
+    );
   });
 
   it('costs more at Trail detail', () => {
     expect(estimateBytes({ bounds: yosemiteValley, detail: 'trail' })).toBeGreaterThan(
-      estimateBytes({ bounds: yosemiteValley, detail: 'standard' }) * 4,
+      estimateBytes({ bounds: yosemiteValley, detail: 'standard' }),
     );
   });
 });
