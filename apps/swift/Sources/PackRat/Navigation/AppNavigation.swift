@@ -185,6 +185,11 @@ struct AppNavigation: View {
                 Task { await appState.weatherVM.refreshAlertBadgeState() }
             }
             .task { syncTripReminders() }
+            #if os(iOS)
+            // Map downloads cut off when the app was closed pick up where
+            // they stopped.
+            .task { if OfflineMapStore.isEnabled { OfflineMapStore.shared.resumeIncomplete() } }
+            #endif
             .onChange(of: tripReminderSignature) { _, _ in syncTripReminders() }
             // Siri and spoken safety alerts reach the trips from here, with no trip page open.
             .task(id: tripsInProgressSignature) {
@@ -334,7 +339,9 @@ struct AppNavigation: View {
         case .home:
             HomeView().environment(appState)
         case .weather:
-            WeatherView(viewModel: appState.weatherVM)
+            // Its own stack so a location pushes its forecast in the column;
+            // without one the forecast's navigation destination never fires.
+            NavigationStack { WeatherView(viewModel: appState.weatherVM) }
         case .catalog:
             // Its own stack so catalog items push a detail screen in the column.
             NavigationStack { CatalogView().environment(appState) }

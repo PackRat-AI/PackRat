@@ -2,7 +2,7 @@ import { createDbClient } from '@packrat/api/db';
 import { getEnv, type ValidatedEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { trips } from '@packrat/db/schema';
-import { and, eq, gte, isNotNull, lte } from 'drizzle-orm';
+import { and, eq, gte, isNotNull, isNull, lte, or } from 'drizzle-orm';
 import { GRACE_MS, HORIZON_MS, tripWatchFor } from './tripDestinationWatch';
 
 type TripRow = Parameters<typeof tripWatchFor>[0]['trip'];
@@ -14,7 +14,7 @@ function timerFor({ tripId, env = getEnv() }: { tripId: string; env?: ValidatedE
 }
 
 /**
- * Points the trip's timer at its current name, destination and start date, or
+ * Points the trip's timer at its current name, destination and dates, or
  * clears it when the trip has nothing left to watch. Best effort: the trip
  * write has already landed, and the daily re-arm repairs a timer that missed it.
  */
@@ -75,16 +75,22 @@ export async function rearmTripDestinationTimers({
       userId: trips.userId,
       name: trips.name,
       deleted: trips.deleted,
+      weatherAlerts: trips.weatherAlerts,
       location: trips.location,
       startDate: trips.startDate,
+      endDate: trips.endDate,
     })
     .from(trips)
     .where(
       and(
         eq(trips.deleted, false),
+        eq(trips.weatherAlerts, true),
         isNotNull(trips.location),
-        gte(trips.startDate, new Date(now - GRACE_MS)),
         lte(trips.startDate, new Date(now + HORIZON_MS)),
+        or(
+          gte(trips.endDate, new Date(now - GRACE_MS)),
+          and(isNull(trips.endDate), gte(trips.startDate, new Date(now - GRACE_MS))),
+        ),
       ),
     );
 

@@ -3,7 +3,7 @@
  * Workaround for XcodeGen bug: XCLocalSwiftPackageReference entries are generated
  * but not linked back in XCSwiftPackageProductDependency nodes. Run after xcodegen.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const pbxproj = 'PackRat.xcodeproj/project.pbxproj';
 let content = readFileSync(pbxproj, 'utf8');
@@ -22,3 +22,9 @@ for (const [, uuid, name] of content.matchAll(
 
 writeFileSync(pbxproj, content);
 if (patched) console.log(`fix-xcodeproj: patched ${patched} local package reference(s)`);
+
+// xcodegen regenerates the workspace without a Package.resolved, which lets SwiftPM float every
+// `from:` range to the newest release. Seed it from the committed pins instead.
+const resolvedDir = 'PackRat.xcodeproj/project.xcworkspace/xcshareddata/swiftpm';
+mkdirSync(resolvedDir, { recursive: true });
+copyFileSync('Package.resolved', `${resolvedDir}/Package.resolved`);

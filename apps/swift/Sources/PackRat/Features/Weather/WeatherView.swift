@@ -135,7 +135,8 @@ struct WeatherView: View {
             }
             .disabled(viewModel.savedLocations.isEmpty)
 
-            if AppFeatureFlags.enableWeatherMonitoring {
+            if AppFeatureFlags.enableWeatherMonitoring
+                || FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey) {
                 NavigationLink {
                     WeatherWatchListView(viewModel: viewModel)
                 } label: {
@@ -173,6 +174,8 @@ struct WeatherView: View {
                 subtitle: "Search for a city or place to see its forecast and get hazard alerts.",
                 systemImage: "cloud.sun"
             )
+            // Drawn on the dark sky background, like the list below.
+            .environment(\.colorScheme, .dark)
         } else {
             List {
                 ForEach(viewModel.savedLocations) { location in

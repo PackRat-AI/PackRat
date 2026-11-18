@@ -35,6 +35,7 @@ import {
   useTrailReportAlertsEnabled,
   useTrailReportNotificationsSetting,
 } from 'expo-app/features/trail-conditions/hooks/useTrailReportAlerts';
+import { useTripAlertsSetting } from 'expo-app/features/trips/hooks/useTripWeatherAlerts';
 import { tripReminderSettingsStore } from 'expo-app/features/trips/store/tripReminders';
 import { VoiceSettingsSection } from 'expo-app/features/voice-commands';
 import { FEATURE_FLAGS_QUERY_KEY, useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
@@ -71,6 +72,8 @@ export default function SettingsScreen() {
   const trailReports = useTrailReportNotificationsSetting({ active: showsTrailReportToggle });
   // The toggle waits for the server's value rather than guessing one.
   const trailReportsLoaded = trailReports.enabled !== undefined;
+  const tripWeatherAlerts = useTripAlertsSetting();
+  const tripWeatherAlertsLoaded = tripWeatherAlerts.enabled !== undefined;
 
   const { isProMember } = useEntitlement();
   const { mutate: restorePurchases, isPending: isRestoring } = useRestorePurchases();
@@ -256,7 +259,7 @@ export default function SettingsScreen() {
 
         <VoiceSettingsSection />
 
-        {(enableTripReminders || trailReportsLoaded) && (
+        {(enableTripReminders || trailReportsLoaded || tripWeatherAlertsLoaded) && (
           <View>
             <Text variant="subhead" className="mb-3">
               {t('settings.notifications')}
@@ -293,6 +296,25 @@ export default function SettingsScreen() {
                     value={trailReports.enabled === true}
                     onValueChange={trailReports.setEnabled}
                     testID={testIds.settings.trailReportNotificationsToggle}
+                  />
+                </View>
+              )}
+              {tripWeatherAlertsLoaded && (
+                <View
+                  className={`flex-row items-center justify-between gap-4 p-4${
+                    enableTripReminders || trailReportsLoaded ? ' border-t border-border' : ''
+                  }`}
+                >
+                  <View className="flex-1">
+                    <Text className="font-medium">{t('settings.tripWeatherAlerts')}</Text>
+                    <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                      {t('settings.tripWeatherAlertsSubtitle')}
+                    </Text>
+                  </View>
+                  <Toggle
+                    value={tripWeatherAlerts.enabled === true}
+                    onValueChange={tripWeatherAlerts.setEnabled}
+                    testID={testIds.settings.tripWeatherAlertsToggle}
                   />
                 </View>
               )}

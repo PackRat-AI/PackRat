@@ -241,7 +241,7 @@ function ForecastRows({ conditions, celsius }: { conditions: TripConditions; cel
           </Text>
         )}
         {conditions.attribution && (
-          <WeatherAttribution attribution={conditions.attribution} onCard />
+          <WeatherAttribution attribution={conditions.attribution} onSky={false} />
         )}
       </Row>
     </View>

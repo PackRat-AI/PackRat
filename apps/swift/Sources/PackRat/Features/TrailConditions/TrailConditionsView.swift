@@ -539,18 +539,34 @@ struct TrailConditionDetailView: View {
             .accessibilityIdentifier("trail_report_view_trail")
         } else if report.isPinned, let lat = report.latitude, let lon = report.longitude {
             section("Where") {
-                Map(initialPosition: .region(MKCoordinateRegion(
-                    center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
-                    latitudinalMeters: 1_500, longitudinalMeters: 1_500
-                ))) {
-                    Marker(report.trailName, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
-                }
+                reportPinMap(CLLocationCoordinate2D(latitude: lat, longitude: lon))
                 .frame(height: 170)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .allowsHitTesting(false)
                 .accessibilityLabel("Map of the dropped pin")
                 .accessibilityIdentifier("trail_report_pin_map")
             }
+        }
+    }
+
+    @ViewBuilder
+    private func reportPinMap(_ coordinate: CLLocationCoordinate2D) -> some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            MapboxPinMap(coordinate: coordinate)
+        } else {
+            mapKitPinMap(coordinate)
+        }
+        #else
+        mapKitPinMap(coordinate)
+        #endif
+    }
+
+    private func mapKitPinMap(_ coordinate: CLLocationCoordinate2D) -> some View {
+        Map(initialPosition: .region(MKCoordinateRegion(
+            center: coordinate, latitudinalMeters: 1_500, longitudinalMeters: 1_500
+        ))) {
+            Marker(report.trailName, coordinate: coordinate)
         }
     }
 

@@ -12,23 +12,25 @@ const LOGO_WIDTH = 77;
 /**
  * The Apple Weather mark and its legal link, shown under any forecast that
  * includes Apple Weather days — Apple's terms require both wherever that data
- * appears. On the sky gradient it uses the white mark; on a card it follows the colour scheme.
+ * appears. On the sky gradient it uses the white mark; `onSky` false draws it
+ * for the app's ordinary surface, which is dark in dark mode.
  */
 export function WeatherAttribution({
   attribution,
-  onCard = false,
+  onSky = true,
 }: {
   attribution: WeatherAttributionData;
-  onCard?: boolean;
+  onSky?: boolean;
 }) {
   const { t } = useTranslation();
   const { isDarkColorScheme } = useColorScheme();
-  const light = onCard && !isDarkColorScheme;
+  const onDark = onSky || isDarkColorScheme;
   return (
     <View className="flex-row items-center gap-2 px-1">
       <Image
-        source={{ uri: light ? attribution.logoLightUrl : attribution.logoDarkUrl }}
-        style={{ height: LOGO_HEIGHT, width: LOGO_WIDTH }}
+        source={{ uri: onDark ? attribution.logoDarkUrl : attribution.logoLightUrl }}
+        // Off the sky, the white mark is toned to sit with the muted caption beside it.
+        style={{ height: LOGO_HEIGHT, width: LOGO_WIDTH, opacity: onDark && !onSky ? 0.6 : 1 }}
         resizeMode="contain"
         accessibilityLabel={attribution.serviceName}
       />
@@ -40,7 +42,7 @@ export function WeatherAttribution({
       >
         <Text
           variant="caption2"
-          className={`underline ${onCard ? 'text-muted-foreground' : 'text-white/70'}`}
+          className={onSky ? 'text-white/70 underline' : 'text-muted-foreground underline'}
         >
           {t('weather.attributionLegal')}
         </Text>

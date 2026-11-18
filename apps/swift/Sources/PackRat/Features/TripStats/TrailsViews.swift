@@ -239,6 +239,18 @@ struct TrailMap: View {
     let parts: [[CLLocationCoordinate2D]]
 
     var body: some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            MapboxLinesMap(highlighted: parts)
+        } else {
+            mapKitMap
+        }
+        #else
+        mapKitMap
+        #endif
+    }
+
+    private var mapKitMap: some View {
         Map(initialPosition: .automatic, interactionModes: [.pan, .zoom]) {
             ForEach(parts.indices, id: \.self) { index in
                 MapPolyline(coordinates: parts[index])

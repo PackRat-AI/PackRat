@@ -66,6 +66,7 @@ final class TripService: Sendable {
         plannedRoute: [TripRoutePoint]? = nil,
         log: TripLog? = nil,
         excludedFromStats: Bool = false,
+        weatherAlerts: Bool = true,
         trailId: String? = nil,
         trailName: String? = nil
     ) async throws -> Trip {
@@ -86,6 +87,7 @@ final class TripService: Sendable {
             trailName: trailName,
             log: log,
             excludedFromStats: excludedFromStats,
+            weatherAlerts: weatherAlerts,
             localUpdatedAt: Date.iso8601Now()
         )
         let endpoint = Endpoint(.put, "/api/trips/\(tripId)", body: body)

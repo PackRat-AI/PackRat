@@ -34,6 +34,17 @@ struct TrailPageView: View {
                 }
                 header
                 actions
+                #if os(iOS)
+                if OfflineMapStore.isEnabled, let detail, !detail.lines.isEmpty {
+                    OfflineMapRow(area: OfflineMapStore.shared.area(forTrail: trail.id), idPrefix: "trail_page") {
+                        OfflineAreaPickerView(
+                            suggestedName: trail.name,
+                            trailId: trail.id,
+                            lines: TrailLineMap(lines: detail.lines).coordinates
+                        )
+                    }
+                }
+                #endif
                 content
             }
             .padding()
@@ -306,7 +317,7 @@ private struct LatestReportCard: View {
 private struct TrailLineMap: View {
     let lines: [[[Double]]]
 
-    private var coordinates: [[CLLocationCoordinate2D]] {
+    var coordinates: [[CLLocationCoordinate2D]] {
         lines.map { line in
             line.compactMap { pair in
                 pair.count >= 2 ? CLLocationCoordinate2D(latitude: pair[1], longitude: pair[0]) : nil
@@ -334,6 +345,18 @@ private struct TrailLineMap: View {
     }
 
     var body: some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            MapboxTrailLineMap(lines: coordinates)
+        } else {
+            mapKitMap
+        }
+        #else
+        mapKitMap
+        #endif
+    }
+
+    private var mapKitMap: some View {
         Map(initialPosition: region.map { .region($0) } ?? .automatic, interactionModes: []) {
             ForEach(Array(coordinates.enumerated()), id: \.offset) { _, line in
                 MapPolyline(coordinates: line)

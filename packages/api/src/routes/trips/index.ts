@@ -73,6 +73,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
             checklist: data.checklist ?? null,
             log: data.log ?? null,
             excludedFromStats: data.excludedFromStats ?? false,
+            weatherAlerts: data.weatherAlerts ?? true,
             deleted: false,
             localCreatedAt: new Date(data.localCreatedAt),
             localUpdatedAt: new Date(data.localUpdatedAt),
@@ -157,6 +158,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
         if ('plannedRoute' in data) updateData.plannedRoute = data.plannedRoute ?? null;
         if ('log' in data) updateData.log = data.log ?? null;
         if ('excludedFromStats' in data) updateData.excludedFromStats = data.excludedFromStats;
+        if ('weatherAlerts' in data) updateData.weatherAlerts = data.weatherAlerts;
         if ('localUpdatedAt' in data)
           updateData.localUpdatedAt = data.localUpdatedAt ? new Date(data.localUpdatedAt) : null;
         if ('deleted' in data) updateData.deleted = data.deleted;

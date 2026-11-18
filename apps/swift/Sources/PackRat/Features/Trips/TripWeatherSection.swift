@@ -7,8 +7,10 @@ struct TripWeatherSection: View {
     static let flagKey = "enableTripWeather"
 
     let trip: Trip
+    let viewModel: TripsViewModel
 
     @Environment(AppState.self) private var appState
+    @Environment(\.modelContext) private var modelContext
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
     @State private var forecast: WeatherForecastResponse?
     @State private var loadFailed = false
@@ -52,6 +54,7 @@ struct TripWeatherSection: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 content
+                alertsToggle
             }
             .padding(.horizontal)
             .task(id: TripConditions.sourceKey(for: trip)) { await load() }
@@ -101,6 +104,26 @@ struct TripWeatherSection: View {
     }
 
     private var card: RoundedRectangle { RoundedRectangle(cornerRadius: 12, style: .continuous) }
+
+    /// Turns this trip's alert pushes off or back on; see "Watching the destination".
+    private var alertsToggle: some View {
+        Toggle(isOn: Binding(
+            get: { trip.sendsWeatherAlerts },
+            set: { on in
+                Task { await viewModel.setWeatherAlerts(on, for: trip.id, context: modelContext) }
+            }
+        )) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Weather Alerts").font(.callout)
+                Text("Get notified about weather hazards at your destination from 3 days before you leave until your trip ends.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(14)
+        .background(.background.secondary, in: card)
+        .accessibilityIdentifier("trip_weather_alerts_toggle")
+    }
 
     private func forecastCard(dates: [String], underWay: Bool, partial: Bool) -> some View {
         let days = (forecast?.forecast?.forecastday ?? []).filter { day in

@@ -12,6 +12,7 @@ import * as TaskManager from 'expo-task-manager';
 import { tripConditionsStore, tripReminderSettingsStore } from '../store/tripReminders';
 import { tripsStore, tripsSyncState } from '../store/trips';
 import { needsForecast } from '../utils/tripConditions';
+import { needsTripForecast } from '../utils/tripWeatherPlan';
 import { refreshTripConditions, syncTripReminders } from './tripReminderScheduler';
 
 /**
@@ -28,9 +29,9 @@ const INTERVAL_MINUTES = 4 * 60;
 /** Same key `featureFlagsAtom` persists to; no React is running to read the atom. */
 const FEATURE_FLAGS_STORAGE_KEY = 'featureFlags:v1';
 
-async function isFeatureEnabled(): Promise<boolean> {
+async function storedFlags() {
   const stored = await AsyncStorage.getItem(FEATURE_FLAGS_STORAGE_KEY);
-  return normalizeFlags(stored ? safeJsonParse(stored) : null).enableTripReminders;
+  return normalizeFlags(stored ? safeJsonParse(stored) : null);
 }
 
 async function run(): Promise<void> {
@@ -42,11 +43,19 @@ async function run(): Promise<void> {
     when(syncState(tripConditionsStore).isPersistLoaded),
     when(syncState(tripReminderSettingsStore).isPersistLoaded),
   ]);
-  if (!(await isFeatureEnabled())) return;
+  const flags = await storedFlags();
+  if (!flags.enableTripReminders) return;
   const trips = Object.values(tripsStore.peek()).filter((trip) => !trip.deleted);
-  if (!trips.some((trip) => needsForecast({ trip, now: new Date() }))) return;
+  const now = new Date();
+  const due = trips.some(
+    (trip) =>
+      needsForecast({ trip, now }) || (flags.enableTripWeather && needsTripForecast({ trip, now })),
+  );
+  if (!due) return;
   const unit = preferencesStore.temperatureUnit.peek() ?? getDefaultTemperatureUnit();
-  await refreshTripConditions({ trips, force: true });
+  // Trips under way keep their conditions, as the foreground sync does, so trip weather's
+  // unread marker survives a background refresh.
+  await refreshTripConditions({ trips, force: true, includeUnderWay: flags.enableTripWeather });
   await syncTripReminders({ trips, celsius: unit === 'C', featureEnabled: true });
 }
 

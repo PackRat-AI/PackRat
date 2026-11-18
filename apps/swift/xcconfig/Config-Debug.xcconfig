@@ -36,4 +36,9 @@ SENTRY_DSN =
 // therefore stay closed on a build with no key, which is the safe default.
 REVENUECAT_API_KEY =
 
+// MAPBOX_PUBLIC_TOKEN flows xcconfig → Info.plist (MBXAccessToken) → Mapbox SDK.
+// A public (pk.) token ships inside the app binary by design, like the
+// RevenueCat key above. Secret (sk.) tokens must never appear here.
+MAPBOX_PUBLIC_TOKEN = pk.eyJ1IjoiYW5kcmV3Ymllcm1hbiIsImEiOiJjbDhwYTVtc3kwMGprM3Buejg3d2doa2pvIn0.F_D3I0KRlQkQK70DkK7MlQ
+
 #include? "Config-Debug.local.xcconfig"

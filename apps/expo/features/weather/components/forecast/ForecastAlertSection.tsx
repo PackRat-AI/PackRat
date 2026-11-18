@@ -2,6 +2,7 @@ import type { WeatherAlertItem } from '@packrat/schemas/weather';
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { useState } from 'react';
@@ -13,6 +14,8 @@ import {
   alertTitle,
 } from '../../utils/alertState';
 
+const tone = (alert: WeatherAlertItem) => alertSeverityTone(alert.severity);
+
 // Severity stripe colours: the M3 error red for the worst, then the warning
 // ramp, then a neutral info blue.
 const TONE_COLOR: Record<AlertSeverityTone, string> = Object.freeze({
@@ -22,10 +25,25 @@ const TONE_COLOR: Record<AlertSeverityTone, string> = Object.freeze({
   other: '#A8C7FA',
 } as const);
 
-function AlertCard({ alert }: { alert: WeatherAlertItem }) {
+// The same ramp at M3 on-surface strength, for cards on an ordinary background.
+const TONE_COLOR_ON_SURFACE: Record<AlertSeverityTone, string> = Object.freeze({
+  extreme: '#B3261E',
+  severe: '#B45309',
+  moderate: '#8A6D00',
+  other: '#0B57D0',
+} as const);
+
+/**
+ * One alert as an expandable card. `onSky` draws it for the forecast's weather
+ * background; off it, the card sits on the app's ordinary surface.
+ */
+export function AlertCard({ alert, onSky = true }: { alert: WeatherAlertItem; onSky?: boolean }) {
   const { t } = useTranslation();
+  const { colors } = useColorScheme();
+  const toneColor = (onSky ? TONE_COLOR : TONE_COLOR_ON_SURFACE)[tone(alert)];
+  const text = onSky ? 'text-white' : 'text-foreground';
+  const secondary = onSky ? 'text-white/80' : 'text-muted-foreground';
   const [expanded, setExpanded] = useState(false);
-  const tone = alertSeverityTone(alert.severity);
   const title = alertTitle(alert);
 
   return (
@@ -34,33 +52,41 @@ function AlertCard({ alert }: { alert: WeatherAlertItem }) {
       accessibilityRole="button"
       accessibilityState={{ expanded }}
       accessibilityHint={expanded ? t('weather.collapseAlert') : t('weather.expandAlert')}
-      android_ripple={{ color: 'rgba(255,255,255,0.12)' }}
-      className="flex-row overflow-hidden rounded-xl bg-black/25"
+      android_ripple={{ color: onSky ? 'rgba(255,255,255,0.12)' : colors.grey5 }}
+      className={
+        onSky
+          ? 'flex-row overflow-hidden rounded-xl bg-black/25'
+          : 'flex-row overflow-hidden rounded-xl border border-border bg-card'
+      }
     >
-      <View style={{ width: 4, backgroundColor: TONE_COLOR[tone] }} />
+      <View style={{ width: 4, backgroundColor: toneColor }} />
       <View className="flex-1 gap-1 p-4">
         <View className="flex-row items-start gap-3">
-          <Icon name="alert" size={20} color={TONE_COLOR[tone]} />
+          <Icon name="alert" size={20} color={toneColor} />
           <View className="flex-1">
-            <Text className="font-semibold text-white">{title}</Text>
+            <Text className={`font-semibold ${text}`}>{title}</Text>
             {alert.severity ? (
-              <Text variant="footnote" className="capitalize text-white/80">
+              <Text variant="footnote" className={`capitalize ${secondary}`}>
                 {alert.severity.toLowerCase()}
               </Text>
             ) : null}
           </View>
-          <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={22} color="white" />
+          <Icon
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={22}
+            color={onSky ? 'white' : colors.grey}
+          />
         </View>
         {expanded ? (
           <View className="mt-2 gap-2">
             {alert.areas ? (
-              <Text variant="footnote" className="text-white/80">
+              <Text variant="footnote" className={secondary}>
                 {alert.areas}
               </Text>
             ) : null}
-            {alert.desc ? <Text className="text-white">{alert.desc}</Text> : null}
+            {alert.desc ? <Text className={text}>{alert.desc}</Text> : null}
             {alert.instruction ? (
-              <Text className="font-semibold text-white">{alert.instruction}</Text>
+              <Text className={`font-semibold ${text}`}>{alert.instruction}</Text>
             ) : null}
           </View>
         ) : null}

@@ -24,6 +24,7 @@ const FeatureFlag = Object.freeze({
   EnableTripStats: 'enableTripStats',
   EnableVoiceCommands: 'enableVoiceCommands',
   EnableTripWeather: 'enableTripWeather',
+  EnableOfflineMaps: 'enableOfflineMaps',
 });
 
 const DashboardTileId = Object.freeze({
@@ -92,6 +93,7 @@ const APP_CONFIG_SOURCE = {
     [FeatureFlag.EnableTripStats]: false,
     [FeatureFlag.EnableVoiceCommands]: false,
     [FeatureFlag.EnableTripWeather]: false,
+    [FeatureFlag.EnableOfflineMaps]: false,
   },
   dashboard: {
     gapPrefix: GAP_PREFIX,

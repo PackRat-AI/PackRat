@@ -9,18 +9,25 @@
  * `emailVerified=true` flag are refreshed via `db.update`; otherwise the
  * user is created via a direct insert so this script avoids package-export
  * differences in local E2E runtimes.
+ *
+ * It also soft-deletes "E2E…" packs a crashed or timed-out run left behind.
+ * Only packs older than STALE_E2E_PACK_AGE_MS go, because other E2E workflows
+ * share this account and may be mid-run. Hundreds of leaked packs made the
+ * macOS Packs list too slow for UI tests to finish (#2975).
  */
 
 import { neon, neonConfig } from '@neondatabase/serverless';
 import * as schema from '@packrat/db/schema';
 import { nodeEnv } from '@packrat/env/node';
-import { eq } from 'drizzle-orm';
+import { and, eq, like, lt } from 'drizzle-orm';
 import { type BunSQLDatabase, drizzle as drizzleBunSQL } from 'drizzle-orm/bun-sql';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import WebSocket from 'ws';
 import { hashPassword } from '../utils/auth';
 
 neonConfig.webSocketConstructor = WebSocket;
+
+const STALE_E2E_PACK_AGE_MS = 2 * 60 * 60 * 1000;
 
 const isStandardPostgresUrl = (url: string) => {
   try {
@@ -116,6 +123,19 @@ async function seedE2EUser(): Promise<void> {
         },
       });
     console.log(`E2E credential account refreshed: ${normalizedEmail}`);
+
+    await db
+      .update(schema.packs)
+      .set({ deleted: true, updatedAt: new Date() })
+      .where(
+        and(
+          eq(schema.packs.userId, userId),
+          eq(schema.packs.deleted, false),
+          like(schema.packs.name, 'E2E%'),
+          lt(schema.packs.createdAt, new Date(Date.now() - STALE_E2E_PACK_AGE_MS)),
+        ),
+      );
+    console.log('E2E stale packs soft-deleted');
 
     await db
       .insert(schema.catalogItems)

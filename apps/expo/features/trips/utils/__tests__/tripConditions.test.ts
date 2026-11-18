@@ -4,6 +4,7 @@ import {
   CONDITIONS_MAX_AGE_MS,
   type ConditionsTrip,
   conditionsSourceKey,
+  destinationAlerts,
   isConditionsFresh,
   makeTripConditions,
   needsForecast,
@@ -103,6 +104,22 @@ describe('makeTripConditions', () => {
     const days = forecast([day('2026-10-15', { lowF: 40, highF: 60 })]);
     expect(makeTripConditions({ trip: trip({ startDate: null }), forecast: days, now })).toBeNull();
     expect(makeTripConditions({ trip: trip(), forecast: days, now })).toBeNull();
+  });
+});
+
+describe('destinationAlerts', () => {
+  it('keeps the same zone, and so the same alert id, whatever order the zones arrive in', () => {
+    const north = { ...alert('Winter Storm Warning'), areas: 'North Cascades' };
+    const south = { ...alert('Winter Storm Warning'), areas: 'South Cascades' };
+    expect(destinationAlerts([south, north])).toEqual([north]);
+    expect(destinationAlerts([north, south])).toEqual([north]);
+  });
+
+  it('keeps events in the order they first appear', () => {
+    const flood = { ...alert('Flood Watch'), areas: 'B' };
+    const wind = { ...alert('Wind Advisory'), areas: 'A' };
+    const floodAgain = { ...alert('Flood Watch'), areas: 'A' };
+    expect(destinationAlerts([flood, wind, floodAgain])).toEqual([floodAgain, wind]);
   });
 });
 
