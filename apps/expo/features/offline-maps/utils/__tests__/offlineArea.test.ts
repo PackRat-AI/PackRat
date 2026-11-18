@@ -73,7 +73,7 @@ describe('boundsFromCorners', () => {
 
 describe('padBounds', () => {
   it('adds a share of the span on every side', () => {
-    expect(padBounds({ south: 0, west: 0, north: 1, east: 2 }, 0.5)).toEqual({
+    expect(padBounds({ bounds: { south: 0, west: 0, north: 1, east: 2 }, fraction: 0.5 })).toEqual({
       south: -0.5,
       west: -1,
       north: 1.5,
@@ -82,7 +82,7 @@ describe('padBounds', () => {
   });
 
   it('gives a single point a minimum margin', () => {
-    expect(padBounds({ south: 10, west: 20, north: 10, east: 20 })).toEqual({
+    expect(padBounds({ bounds: { south: 10, west: 20, north: 10, east: 20 } })).toEqual({
       south: 9.98,
       west: 19.98,
       north: 10.02,
@@ -91,7 +91,9 @@ describe('padBounds', () => {
   });
 
   it('stays inside the map edges', () => {
-    expect(padBounds({ south: -84.99, west: -179.99, north: 84.99, east: 179.99 })).toEqual({
+    expect(
+      padBounds({ bounds: { south: -84.99, west: -179.99, north: 84.99, east: 179.99 } }),
+    ).toEqual({
       south: -85,
       west: -180,
       north: 85,
@@ -102,11 +104,21 @@ describe('padBounds', () => {
 
 describe('tileRange', () => {
   it('is the single world tile at zoom 0', () => {
-    expect(tileRange(california, 0)).toEqual({ minX: 0, maxX: 0, minY: 0, maxY: 0 });
+    expect(tileRange({ bounds: california, zoom: 0 })).toEqual({
+      minX: 0,
+      maxX: 0,
+      minY: 0,
+      maxY: 0,
+    });
   });
 
   it('puts north on the lower row number', () => {
-    expect(tileRange(yosemiteValley, 12)).toEqual({ minX: 686, maxX: 688, minY: 1583, maxY: 1584 });
+    expect(tileRange({ bounds: yosemiteValley, zoom: 12 })).toEqual({
+      minX: 686,
+      maxX: 688,
+      minY: 1583,
+      maxY: 1584,
+    });
   });
 });
 
@@ -114,13 +126,13 @@ describe('estimateBytes', () => {
   it('prices every tile from zoom 0 to the detail level', () => {
     // One tile per zoom for a pinpoint area: 15 zooms at Standard, 17 at Trail.
     const point = { south: 37.74, west: -119.6, north: 37.74, east: -119.6 };
-    expect(estimateBytes(point, 'standard')).toBe(15 * BYTES_PER_TILE);
-    expect(estimateBytes(point, 'trail')).toBe(17 * BYTES_PER_TILE);
+    expect(estimateBytes({ bounds: point, detail: 'standard' })).toBe(15 * BYTES_PER_TILE);
+    expect(estimateBytes({ bounds: point, detail: 'trail' })).toBe(17 * BYTES_PER_TILE);
   });
 
   it('costs more at Trail detail', () => {
-    expect(estimateBytes(yosemiteValley, 'trail')).toBeGreaterThan(
-      estimateBytes(yosemiteValley, 'standard') * 4,
+    expect(estimateBytes({ bounds: yosemiteValley, detail: 'trail' })).toBeGreaterThan(
+      estimateBytes({ bounds: yosemiteValley, detail: 'standard' }) * 4,
     );
   });
 });
@@ -184,13 +196,13 @@ describe('tripHasEnded and sortAreas', () => {
   const plain = area({ id: 'plain', savedAt: 2 });
 
   it('treats only a past end date as ended', () => {
-    expect(tripHasEnded(ended, now)).toBe(true);
-    expect(tripHasEnded(upcoming, now)).toBe(false);
-    expect(tripHasEnded(plain, now)).toBe(false);
+    expect(tripHasEnded({ area: ended, now })).toBe(true);
+    expect(tripHasEnded({ area: upcoming, now })).toBe(false);
+    expect(tripHasEnded({ area: plain, now })).toBe(false);
   });
 
   it('lists finished trips first, then newest first', () => {
-    expect(sortAreas([plain, upcoming, ended], now).map((a) => a.id)).toEqual([
+    expect(sortAreas({ areas: [plain, upcoming, ended], now }).map((a) => a.id)).toEqual([
       'ended',
       'upcoming',
       'plain',

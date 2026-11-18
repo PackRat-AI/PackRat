@@ -48,7 +48,7 @@ export function OfflineAreaPickerScreen() {
   const alertRef = useRef<AlertMethods>(null);
   const saved = useOfflineAreas();
   const allowCellular = use$(offlineMapsStore.allowCellular);
-  const trail = useTrail(params.trailId ?? '', { enabled: !!params.trailId });
+  const trail = useTrail(params.trailId ?? '');
   const lines = trail.data?.lines ?? [];
 
   const [bounds, setBounds] = useState<OfflineAreaBounds | null>(null);
@@ -68,7 +68,7 @@ export function OfflineAreaPickerScreen() {
     () => (bounds ? packFit({ bounds, detail, saved }) : null),
     [bounds, detail, saved],
   );
-  const estimate = bounds && fit?.fitsAlone ? estimateBytes(bounds, detail) : null;
+  const estimate = bounds && fit?.fitsAlone ? estimateBytes({ bounds, detail }) : null;
   const isTooLarge = fit?.fitsAlone === false;
   const isOutOfRoom = fit?.fitsAlone === true && !fit.fits;
   // An area saved from a trail keeps its line, so wait for it before saving.
@@ -158,7 +158,7 @@ export function OfflineAreaPickerScreen() {
               key={cameraKey}
               defaultSettings={
                 lineBounds
-                  ? { bounds: cameraBounds(lineBounds, 48) }
+                  ? { bounds: cameraBounds({ bounds: lineBounds, padding: 48 }) }
                   : center
                     ? { centerCoordinate: center, zoomLevel: 11 }
                     : { zoomLevel: 11 }

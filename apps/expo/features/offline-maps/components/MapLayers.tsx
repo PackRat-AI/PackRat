@@ -44,7 +44,7 @@ export function AreaOutline({ bounds }: { bounds: OfflineAreaBounds }) {
 }
 
 /** Camera corners for bounds, in the `[northeast, southwest]` order Mapbox takes. */
-export function cameraBounds(bounds: OfflineAreaBounds, padding: number) {
+export function cameraBounds({ bounds, padding }: { bounds: OfflineAreaBounds; padding: number }) {
   return {
     ne: [bounds.east, bounds.north],
     sw: [bounds.west, bounds.south],

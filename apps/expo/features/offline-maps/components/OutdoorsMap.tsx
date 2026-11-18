@@ -30,7 +30,7 @@ export function OutdoorsMap({
           key={lineBounds ? `line-${Object.values(lineBounds).join()}` : `pin-${pin?.join()}`}
           defaultSettings={
             lineBounds
-              ? { bounds: cameraBounds(lineBounds, 24) }
+              ? { bounds: cameraBounds({ bounds: lineBounds, padding: 24 }) }
               : { centerCoordinate: pin, zoomLevel: 11 }
           }
           maxZoomLevel={15}

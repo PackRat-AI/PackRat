@@ -79,7 +79,7 @@ export function OfflineAreaMapScreen() {
         <Mapbox.Camera
           // Remounting snaps back to the whole area when the user stops following.
           key={following ? 'follow' : 'area'}
-          defaultSettings={{ bounds: cameraBounds(area.bounds, 16) }}
+          defaultSettings={{ bounds: cameraBounds({ bounds: area.bounds, padding: 16 }) }}
           followUserLocation={following}
           followZoomLevel={14}
           maxZoomLevel={maxZoom + 2}

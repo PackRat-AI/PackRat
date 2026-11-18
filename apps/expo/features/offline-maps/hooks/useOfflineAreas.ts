@@ -6,7 +6,7 @@ import { sortAreas } from '../utils/offlineArea';
 /** Every saved area, finished trips first, then newest first. */
 export function useOfflineAreas(): OfflineArea[] {
   const areas = use$(offlineMapsStore.areas);
-  return sortAreas(Object.values(areas), Date.now());
+  return sortAreas({ areas: Object.values(areas), now: Date.now() });
 }
 
 /** The area saved for a trip or trail, if any. */

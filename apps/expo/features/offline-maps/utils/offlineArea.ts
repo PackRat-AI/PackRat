@@ -68,7 +68,13 @@ export function boundsFromCorners({
 }
 
 /** Grows the bounds by `fraction` of their span on every side, with a floor for a single point. */
-export function padBounds(bounds: OfflineAreaBounds, fraction = 0.2): OfflineAreaBounds {
+export function padBounds({
+  bounds,
+  fraction = 0.2,
+}: {
+  bounds: OfflineAreaBounds;
+  fraction?: number;
+}): OfflineAreaBounds {
   const latPad = Math.max((bounds.north - bounds.south) * fraction, 0.02);
   const lonPad = Math.max((bounds.east - bounds.west) * fraction, 0.02);
   return {
@@ -82,7 +88,13 @@ export function padBounds(bounds: OfflineAreaBounds, fraction = 0.2): OfflineAre
 type TileRange = { minX: number; maxX: number; minY: number; maxY: number };
 
 /** The tile columns and rows the bounds touch at `zoom`, in Web Mercator tile space. */
-export function tileRange(bounds: OfflineAreaBounds, zoom: number): TileRange {
+export function tileRange({
+  bounds,
+  zoom,
+}: {
+  bounds: OfflineAreaBounds;
+  zoom: number;
+}): TileRange {
   const scale = 2 ** zoom;
   const last = scale - 1;
   const tile = (value: number) => clamp(Math.floor(value), 0, last);
@@ -99,15 +111,21 @@ export function tileRange(bounds: OfflineAreaBounds, zoom: number): TileRange {
   };
 }
 
-function tileCount(bounds: OfflineAreaBounds, zoom: number): number {
-  const range = tileRange(bounds, zoom);
+function tileCount({ bounds, zoom }: { bounds: OfflineAreaBounds; zoom: number }): number {
+  const range = tileRange({ bounds, zoom });
   return (range.maxX - range.minX + 1) * (range.maxY - range.minY + 1);
 }
 
 /** Bytes the area would take on disk at the given detail. */
-export function estimateBytes(bounds: OfflineAreaBounds, detail: OfflineDetailLevel): number {
+export function estimateBytes({
+  bounds,
+  detail,
+}: {
+  bounds: OfflineAreaBounds;
+  detail: OfflineDetailLevel;
+}): number {
   let tiles = 0;
-  for (let zoom = 0; zoom <= DETAIL_MAX_ZOOM[detail]; zoom++) tiles += tileCount(bounds, zoom);
+  for (let zoom = 0; zoom <= DETAIL_MAX_ZOOM[detail]; zoom++) tiles += tileCount({ bounds, zoom });
   return tiles * BYTES_PER_TILE;
 }
 
@@ -141,7 +159,7 @@ export function tilePacks({
 }): Set<string> {
   const keys = new Set<string>();
   for (const [group, zoom] of INDEX_ZOOMS[detail]) {
-    const range = tileRange(bounds, zoom);
+    const range = tileRange({ bounds, zoom });
     for (let x = range.minX; x <= range.maxX; x++) {
       for (let y = range.minY; y <= range.maxY; y++) {
         keys.add(`${group}/${zoom}/${x}/${y}`);
@@ -182,15 +200,21 @@ export function totalBytes(areas: Pick<OfflineArea, 'sizeBytes'>[]): number {
   return areas.reduce((sum, area) => sum + area.sizeBytes, 0);
 }
 
-export function tripHasEnded(area: Pick<OfflineArea, 'tripEndsAt'>, now: number): boolean {
+export function tripHasEnded({
+  area,
+  now,
+}: {
+  area: Pick<OfflineArea, 'tripEndsAt'>;
+  now: number;
+}): boolean {
   return area.tripEndsAt !== undefined && area.tripEndsAt < now;
 }
 
 /** Areas for finished trips first, so they are easy to clear out; then newest first. */
-export function sortAreas(areas: OfflineArea[], now: number): OfflineArea[] {
+export function sortAreas({ areas, now }: { areas: OfflineArea[]; now: number }): OfflineArea[] {
   return [...areas].sort((a, b) => {
-    const aEnded = tripHasEnded(a, now);
-    const bEnded = tripHasEnded(b, now);
+    const aEnded = tripHasEnded({ area: a, now });
+    const bEnded = tripHasEnded({ area: b, now });
     if (aEnded !== bEnded) return aEnded ? -1 : 1;
     return b.savedAt - a.savedAt;
   });

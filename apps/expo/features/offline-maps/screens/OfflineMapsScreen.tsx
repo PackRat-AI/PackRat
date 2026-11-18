@@ -210,7 +210,7 @@ function AreaRow({
             {details}
           </Text>
         )}
-        {tripHasEnded(area, Date.now()) ? (
+        {tripHasEnded({ area, now: Date.now() }) ? (
           <View className="flex-row items-center gap-1">
             <Icon name="flag-checkered" size={14} color={colors.primary} />
             <Text variant="caption1" className="text-primary">
