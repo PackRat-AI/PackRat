@@ -189,6 +189,7 @@ struct TripRemindersRow: View {
 
     @Environment(AppState.self) private var appState
     private var settings = TripReminderSettings.shared
+    @State private var notificationsDenied = false
 
     init(trip: Trip) {
         self.trip = trip
@@ -203,7 +204,11 @@ struct TripRemindersRow: View {
             get: { !settings.isMuted(trip.id) },
             set: { on in
                 settings.setMuted(!on, tripId: trip.id)
-                if on { Task { await TripReminderScheduler.requestAuthorizationIfNeeded() } }
+                guard on else { return }
+                Task {
+                    await TripReminderScheduler.requestAuthorizationIfNeeded()
+                    notificationsDenied = await PermissionSettings.notificationsDenied()
+                }
             }
         )
     }
@@ -224,12 +229,19 @@ struct TripRemindersRow: View {
                 }
                 .disabled(!settings.isEnabled)
                 .accessibilityIdentifier("trip_reminders_toggle")
-                if let caption {
+                if settings.isEnabled, !settings.isMuted(trip.id), notificationsDenied {
+                    PermissionNotice(
+                        message: "Notifications are off for PackRat. Turn them on in Settings to get trip reminders.",
+                        systemImage: "bell.slash.fill"
+                    )
+                    .accessibilityIdentifier("trip_reminders_notifications_off")
+                } else if let caption {
                     Text(caption)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
+            .onPermissionChange { notificationsDenied = await PermissionSettings.notificationsDenied() }
             .padding(14)
             .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .padding(.horizontal)
