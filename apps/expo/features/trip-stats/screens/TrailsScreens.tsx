@@ -4,6 +4,7 @@ import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -12,6 +13,7 @@ import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { FlatList, ScrollView, SectionList, View } from 'react-native';
 import MapView, { Polyline } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { OutdoorsStatsMap } from '../components/OutdoorsStatsMap';
 import { SearchField, StatsRow, StatTile, ValueRow } from '../components/StatsParts';
 import { useDistanceUnit } from '../hooks/useDistanceUnit';
 import {
@@ -156,6 +158,7 @@ export function WalkedTrailScreen() {
   const walked = record.trails.find((item) => item.trail.id === id);
   const isSignedIn = useIsSignedIn();
   const { data: detail, isError, error } = useRegistryTrail(id);
+  const enableOfflineMaps = useFeatureFlag('enableOfflineMaps');
   const parts = useMemo(
     () => (detail?.lines ?? []).map(decodePolyline).filter((part) => part.length >= 2),
     [detail],
@@ -163,7 +166,15 @@ export function WalkedTrailScreen() {
   const title = walked?.trail.name ?? detail?.name ?? t('tripStats.trails.title');
 
   let map: ReactNode;
-  if (detail && parts.length > 0) {
+  if (detail && parts.length > 0 && enableOfflineMaps) {
+    map = (
+      <OutdoorsStatsMap
+        id="walked-trail"
+        region={regionFor(detail.bbox)}
+        lines={parts.map((part) => ({ coordinates: part, color: colors.primary, width: 4 }))}
+      />
+    );
+  } else if (detail && parts.length > 0) {
     map = (
       <MapView
         style={{ flex: 1 }}
