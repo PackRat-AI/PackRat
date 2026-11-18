@@ -20,6 +20,7 @@ import {
   type TripReminder,
   tripReminders,
 } from '../utils/tripReminderPlanner';
+import { needsTripForecast } from '../utils/tripWeatherPlan';
 
 /** Reminders post here, apart from server-pushed alerts, so a user can quiet one without the other. */
 export const TRIP_REMINDERS_CHANNEL_ID = 'trip-reminders';
@@ -49,14 +50,19 @@ function itemsForTrip(trip: Trip) {
 export async function refreshTripConditions({
   trips,
   force = false,
+  includeUnderWay = false,
   now = new Date(),
 }: {
   trips: Trip[];
   /** Ignore the hour-long reuse window (background refresh). */
   force?: boolean;
+  /** Keep trips that have started, so trip weather can mark their alerts. */
+  includeUnderWay?: boolean;
   now?: Date;
 }): Promise<void> {
-  const due = trips.filter((trip) => needsForecast({ trip, now }));
+  const due = trips.filter(
+    (trip) => needsForecast({ trip, now }) || (includeUnderWay && needsTripForecast({ trip, now })),
+  );
   const dueIds = new Set(due.map((trip) => trip.id));
   for (const id of Object.keys(tripConditionsStore.peek())) {
     if (!dueIds.has(id)) obs({ store: tripConditionsStore, id }).delete();

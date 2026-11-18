@@ -23,6 +23,7 @@ import { packingModeStore } from '../../packs/store/packingMode';
 import { TripChecklistSection } from '../components/TripChecklistSection';
 import { TripReadinessCard } from '../components/TripReadinessCard';
 import { TripRemindersRow } from '../components/TripRemindersRow';
+import { TripWeatherSection } from '../components/TripWeatherSection';
 import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
 import type { Trip } from '../types';
 import { isDepartureNear, packedIdsFrom, packState } from '../utils/tripReminderPlanner';
@@ -36,6 +37,7 @@ export function TripDetailScreen() {
   const enableTripReminders = useFeatureFlag('enableTripReminders');
   const enableSafetyCheckIn = useFeatureFlag('enableSafetyCheckIn');
   const enableOfflineMaps = useFeatureFlag('enableOfflineMaps');
+  const enableTripWeather = useFeatureFlag('enableTripWeather');
 
   // safe-cast: trip may be undefined before the store is hydrated; the guard at line ~38 handles
   // the undefined case and returns early, ensuring trip is non-null at render time below.
@@ -219,6 +221,8 @@ export function TripDetailScreen() {
               </Card>
             </View>
           )}
+
+          {enableTripWeather && <TripWeatherSection trip={trip} />}
 
           {/* Pack */}
           {pack && (

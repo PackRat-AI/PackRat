@@ -3,4 +3,6 @@ export * from './useCreateTrip';
 export * from './useDeleteTrip';
 export * from './useTripDetailsFromStore';
 export * from './useTrips';
+export * from './useTripWeatherAlerts';
+export * from './useUnreadTripWeatherAlerts';
 export * from './useUpdateTrip';

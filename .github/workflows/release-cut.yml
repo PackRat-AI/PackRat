@@ -1,7 +1,8 @@
 name: Release Cut
 
 # Manually triggered. Accepts a version, runs pre-flight checks, cuts a
-# release branch from development, bumps the version, generates a changelog,
+# release branch from development (or the `source_ref` input, e.g. the commit QA
+# signed off on), bumps the version, generates a changelog,
 # creates a GitHub release, opens a PR to main, and — if the API hasn't
 # changed since the last release — immediately queues EAS production builds
 # with auto-submit for both stores.
@@ -33,6 +34,11 @@ on:
         required: false
         type: boolean
         default: false
+      source_ref:
+        description: 'Commit, tag or branch to cut from. Use the commit QA signed off on.'
+        required: false
+        type: string
+        default: development
 
 concurrency:
   group: release-cut
@@ -54,7 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: development
+          ref: ${{ inputs.source_ref }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -75,7 +81,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: development
+          ref: ${{ inputs.source_ref }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -96,7 +102,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: development
+          ref: ${{ inputs.source_ref }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -136,7 +142,7 @@ jobs:
 
       - uses: actions/checkout@v7
         with:
-          ref: development
+          ref: ${{ inputs.source_ref }}
           fetch-depth: 0
 
       - name: Configure git identity
@@ -263,6 +269,7 @@ jobs:
         if: ${{ !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_REF: ${{ inputs.source_ref }}
         run: |
           if [ "${{ steps.api_check.outputs.changed }}" = "true" ]; then
             API_NOTE="Yes — EAS build and store submission will trigger automatically after this PR merges."
@@ -276,7 +283,7 @@ jobs:
             --title "Release ${{ steps.norm.outputs.tag }}" \
             --body "## Release ${{ steps.norm.outputs.tag }}
 
-          Automated release PR cut from \`development\`.
+          Automated release PR cut from \`${SOURCE_REF}\`.
 
           **API changed since last release:** ${API_NOTE}
 
@@ -288,6 +295,11 @@ jobs:
       # Always written — gives a clear record of what happened (or would have).
       - name: Write step summary
         if: always()
+        # Commit subjects can hold quotes and parentheses, so the changelog
+        # reaches the shell through env rather than inline interpolation.
+        env:
+          CHANGELOG: ${{ steps.changelog.outputs.body }}
+          SOURCE_REF: ${{ inputs.source_ref }}
         run: |
           DRY="${{ inputs.dry_run }}"
           API_CHANGED="${{ steps.api_check.outputs.changed }}"
@@ -319,12 +331,13 @@ jobs:
             echo "| Version | \`${{ steps.norm.outputs.version }}\` |"
             echo "| Tag | \`${{ steps.norm.outputs.tag }}\` |"
             echo "| Release branch | \`${{ steps.norm.outputs.branch }}\` |"
+            echo "| Cut from | \`${SOURCE_REF}\` |"
             echo "| Previous release | \`${PREV_TAG}\` |"
             echo "| API changed | ${API_CHANGED} |"
             echo ""
             echo "### Changelog preview"
             echo ""
-            echo "${{ steps.changelog.outputs.body }}"
+            echo "$CHANGELOG"
             echo ""
             echo "### Remote actions"
             echo ""

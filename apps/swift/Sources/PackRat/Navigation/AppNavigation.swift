@@ -339,7 +339,9 @@ struct AppNavigation: View {
         case .home:
             HomeView().environment(appState)
         case .weather:
-            WeatherView(viewModel: appState.weatherVM)
+            // Its own stack so a location pushes its forecast in the column;
+            // without one the forecast's navigation destination never fires.
+            NavigationStack { WeatherView(viewModel: appState.weatherVM) }
         case .catalog:
             // Its own stack so catalog items push a detail screen in the column.
             NavigationStack { CatalogView().environment(appState) }
