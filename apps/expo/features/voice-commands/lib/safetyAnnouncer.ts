@@ -40,6 +40,8 @@ import { say } from './voiceIO';
 const CHECK_INTERVAL_MS = 60_000;
 /** Weather where the user is gets refetched this often while online. */
 const WEATHER_INTERVAL_MS = 30 * 60_000;
+/** A failed weather request is tried again this soon instead. */
+const WEATHER_RETRY_MS = 5 * 60_000;
 /** How long an alert waits for a command or a guidance prompt to finish, in steps of two seconds. */
 const BUSY_WAIT_STEPS = 60;
 
@@ -94,7 +96,7 @@ async function check(run: number): Promise<void> {
   const trip = watching?.trip;
   if (!trip || run !== generation) return;
   const now = new Date();
-  await refreshWeather({ trip, now: now.getTime() });
+  await refreshWeather({ trip, now: now.getTime(), run });
   if (run !== generation) return;
 
   const checkIn = safetyStore.active.peek()[trip.id];
@@ -116,7 +118,7 @@ async function check(run: number): Promise<void> {
     // A drop straight to 10% skips the 20% warning.
     if (alert.key === batteryKey(10)) announced.add(batteryKey(20));
     announcedStore.set({ tripId: trip.id, keys: [...announced] });
-    await deliver({ alert, trip });
+    await deliver({ alert, trip, run });
   }
 }
 
@@ -145,7 +147,15 @@ async function batteryState(): Promise<{ level: number; charging: boolean } | nu
  * Alerts where the user is now: the recording's latest point, otherwise the trip's destination.
  * Offline, the last result stands.
  */
-async function refreshWeather({ trip, now }: { trip: Trip; now: number }): Promise<void> {
+async function refreshWeather({
+  trip,
+  now,
+  run,
+}: {
+  trip: Trip;
+  now: number;
+  run: number;
+}): Promise<void> {
   if (now - weatherCheckedAt < WEATHER_INTERVAL_MS || !(await isOnline())) return;
   const track = trackStore.track.peek();
   const sample = track?.tripId === trip.id ? lastSample(track) : null;
@@ -155,7 +165,10 @@ async function refreshWeather({ trip, now }: { trip: Trip; now: number }): Promi
   const { data, error } = await apiClient.weather['by-name'].get({
     query: { q: `${point.latitude},${point.longitude}` },
   });
+  // The watcher moved to another trip while this was in flight: it isn't this trip's weather.
+  if (run !== generation) return;
   if (error || !data) {
+    weatherCheckedAt = now - WEATHER_INTERVAL_MS + WEATHER_RETRY_MS;
     Sentry.captureException(error?.value ?? error, {
       tags: { feature: 'voiceCommands', action: 'safetyAlertWeather' },
       extra: { tripId: trip.id, httpStatus: error?.status },
@@ -179,7 +192,15 @@ async function isOnline(): Promise<boolean> {
 
 // ── Saying it ─────────────────────────────────────────────────────────────
 
-async function deliver({ alert, trip }: { alert: SafetyAlert; trip: Trip }): Promise<void> {
+async function deliver({
+  alert,
+  trip,
+  run,
+}: {
+  alert: SafetyAlert;
+  trip: Trip;
+  run: number;
+}): Promise<void> {
   Sentry.addBreadcrumb({
     category: 'voiceCommands',
     message: 'Safety alert',
@@ -187,9 +208,13 @@ async function deliver({ alert, trip }: { alert: SafetyAlert; trip: Trip }): Pro
     data: { key: alert.key, tripId: trip.id },
   });
   await notify({ alert, trip });
-  if (voiceSettingsStore.safetyAlertsSpoken.peek() === false) return;
+  // The trip ended or spoken alerts were turned off, possibly while waiting below.
+  const cancelled = () =>
+    run !== generation || voiceSettingsStore.safetyAlertsSpoken.peek() === false;
+  if (cancelled()) return;
   // Waits for a command or a guidance prompt to finish rather than talking over it.
   for (let step = 0; step < BUSY_WAIT_STEPS; step++) {
+    if (cancelled()) return;
     const phase = voiceStore.phase.peek();
     const busy =
       phase === 'listening' ||
@@ -199,6 +224,7 @@ async function deliver({ alert, trip }: { alert: SafetyAlert; trip: Trip }): Pro
     if (!busy) break;
     await delay(2_000);
   }
+  if (cancelled()) return;
   await say(alert.text);
 }
 
