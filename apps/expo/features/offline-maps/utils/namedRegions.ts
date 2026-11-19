@@ -109,10 +109,14 @@ export function matchRegions({
   regions: OfflineNamedRegion[];
   query: string;
 }): OfflineNamedRegion[] {
+  // Decomposed, then without the combining marks (U+0300 to U+036F) that carry the accents.
   const fold = (text: string) =>
-    text
-      .normalize('NFD')
-      .replace(/\p{Diacritic}/gu, '')
+    [...text.normalize('NFD')]
+      .filter((char) => {
+        const code = char.charCodeAt(0);
+        return code < 0x300 || code > 0x36f;
+      })
+      .join('')
       .toLowerCase();
   const needle = fold(query.trim());
   if (!needle) return regions;

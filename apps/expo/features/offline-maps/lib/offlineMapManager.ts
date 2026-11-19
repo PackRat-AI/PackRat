@@ -1,4 +1,5 @@
 import { clientEnvs } from '@packrat/env/expo-client';
+import { safeJsonStringify } from '@packrat/utils';
 import Mapbox from '@rnmapbox/maps';
 import * as Sentry from '@sentry/react-native';
 import { obs } from 'expo-app/lib/store';
@@ -288,10 +289,10 @@ async function createOutlinePack({
     name: area.id,
     styleURL: OUTDOORS_STYLE,
     // One feature, never two: the module reads a two-feature collection as a pair of corners.
-    bounds: JSON.stringify(boundaryFeatureCollection(boundary)),
+    bounds: safeJsonStringify(boundaryFeatureCollection(boundary)),
     minZoom: 0,
     maxZoom: DETAIL_MAX_ZOOM[area.detail],
-    metadata: JSON.stringify({ areaName: area.name, name: area.id }),
+    metadata: safeJsonStringify({ areaName: area.name, name: area.id }),
   });
 }
 
