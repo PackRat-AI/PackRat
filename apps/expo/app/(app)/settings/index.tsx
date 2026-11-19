@@ -37,6 +37,7 @@ import {
 } from 'expo-app/features/trail-conditions/hooks/useTrailReportAlerts';
 import { useTripAlertsSetting } from 'expo-app/features/trips/hooks/useTripWeatherAlerts';
 import { tripReminderSettingsStore } from 'expo-app/features/trips/store/tripReminders';
+import { VoiceSettingsSection } from 'expo-app/features/voice-commands';
 import { FEATURE_FLAGS_QUERY_KEY, useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -257,6 +258,7 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        <VoiceSettingsSection />
         {enableOfflineMaps && (
           <View>
             <Text variant="subhead" className="mb-3">

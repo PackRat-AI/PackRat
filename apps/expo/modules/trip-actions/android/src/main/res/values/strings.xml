@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="trip_actions_display_description">Run commands on the trip you\'re on, such as where am I, mark waypoint or check in.</string>
+</resources>

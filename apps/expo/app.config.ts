@@ -251,6 +251,19 @@ export default (): ExpoConfig =>
             'expo-contacts',
             { contactsPermission: 'PackRat uses a contact you choose as an emergency contact.' },
           ],
+          // Voice commands: hears a spoken command on the phone while a trip is in progress.
+          [
+            'expo-speech-recognition',
+            {
+              microphonePermission: 'PackRat listens for a voice command while you hold to talk.',
+              speechRecognitionPermission:
+                'PackRat works out your voice command on your phone, without sending it anywhere.',
+              androidSpeechServicePackages: [
+                'com.google.android.as',
+                'com.google.android.googlequicksearchbox',
+              ],
+            },
+          ],
         ],
         experiments: {
           typedRoutes: true,

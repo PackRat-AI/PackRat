@@ -1,8 +1,10 @@
 import { when } from '@legendapp/state';
 import * as Sentry from '@sentry/react-native';
+import { delay } from 'expo-app/modules/wake-word';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import i18next from 'i18next';
+import { AppState } from 'react-native';
 import { addTrackPoints, safetyStore, safetySyncState } from '../store/safetyCheckIn';
 import type { SafetyLocationFix } from '../types';
 import { hasTrackingCheckIn } from '../utils/safetyQueue';
@@ -26,6 +28,7 @@ function toFix(location: Location.LocationObject): SafetyLocationFix {
     longitude: location.coords.longitude,
     accuracy: location.coords.accuracy ?? null,
     recordedAt: new Date(location.timestamp),
+    altitude: location.coords.altitude ?? null,
   };
 }
 
@@ -129,16 +132,43 @@ export class LocatorError extends Error {
 }
 
 const FIX_TIMEOUT_MS = 30_000;
+/** How accurate a reused recent fix has to be. */
+const RECENT_ACCURACY_METERS = 100;
+
+/** A place name that hasn't arrived by now isn't worth waiting for. */
+const PLACE_NAME_TIMEOUT_MS = 2_500;
 
 /**
  * One accurate fix for a manual check-in, with a place name when the phone can look one up (it
- * can't offline; the coordinates are what matter).
+ * can't offline; the coordinates are what matter). `acceptRecentMs` lets a quick answer reuse a
+ * recent accurate fix rather than wait on the GPS.
  */
-export async function currentFix(): Promise<SafetyLocationFix> {
-  const permission = await Location.requestForegroundPermissionsAsync();
-  if (!permission.granted) throw new LocatorError('denied');
-  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), FIX_TIMEOUT_MS));
+/**
+ * Asks only when it must and only with the app on screen. Android's prompt is a screen of its own,
+ * which it won't open for a command given with the phone locked, so asking then never returns.
+ */
+export async function hasLocationPermission(): Promise<boolean> {
+  const current = await Location.getForegroundPermissionsAsync();
+  if (current.granted) return true;
+  if (!current.canAskAgain || AppState.currentState !== 'active') return false;
+  return (await Location.requestForegroundPermissionsAsync()).granted;
+}
+
+export async function currentFix({
+  acceptRecentMs,
+}: {
+  acceptRecentMs?: number;
+} = {}): Promise<SafetyLocationFix> {
+  if (!(await hasLocationPermission())) throw new LocatorError('denied');
+  const recent = acceptRecentMs
+    ? await Location.getLastKnownPositionAsync({
+        maxAge: acceptRecentMs,
+        requiredAccuracy: RECENT_ACCURACY_METERS,
+      }).catch(() => null)
+    : null;
+  const timeout = delay(FIX_TIMEOUT_MS).then(() => null);
   const location =
+    recent ??
     (await Promise.race([
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null),
       timeout,
@@ -150,7 +180,9 @@ export async function currentFix(): Promise<SafetyLocationFix> {
   if (!location) throw new LocatorError('unavailable');
   const fix = toFix(location);
   try {
-    const [place] = await Location.reverseGeocodeAsync(location.coords);
+    const lookup = Location.reverseGeocodeAsync(location.coords);
+    const giveUp = delay(PLACE_NAME_TIMEOUT_MS).then((): [] => []);
+    const [place] = await Promise.race([lookup, giveUp]);
     fix.placeName = place?.name ?? place?.district ?? place?.city ?? null;
   } catch {
     // Offline: the coordinates are enough.

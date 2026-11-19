@@ -11,6 +11,14 @@ import {
   isTripFinished,
   TripLogSection,
 } from 'expo-app/features/trip-stats/components/TripLogSection';
+import {
+  TripGuidanceCard,
+  TripTrackingSection,
+  TripVoiceBar,
+  useShowsGuidance,
+  useShowsTracking,
+  useShowsVoiceBar,
+} from 'expo-app/features/voice-commands';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -45,6 +53,9 @@ export function TripDetailScreen() {
   // safe-cast: trip may be undefined before the store is hydrated; the guard at line ~38 handles
   // the undefined case and returns early, ensuring trip is non-null at render time below.
   const trip = useTripDetailsFromStore(id as string) as Trip;
+  const showsVoiceBar = useShowsVoiceBar(trip);
+  const showsTracking = useShowsTracking(trip);
+  const showsGuidance = useShowsGuidance(trip);
   const packs = useDetailedPacks();
   const packedRecord = use$(() =>
     trip?.packId ? obs({ store: packingModeStore, id: trip.packId }).get() : null,
@@ -105,6 +116,10 @@ export function TripDetailScreen() {
           <Text className="mb-3 text-3xl font-bold text-foreground">{trip.name}</Text>
 
           {enableSafetyCheckIn && <TripSafetySection trip={trip} />}
+
+          {showsGuidance && <TripGuidanceCard trip={trip} />}
+
+          {showsTracking && <TripTrackingSection trip={trip} />}
 
           {enableTripReminders && isDepartureNear({ trip, now: new Date() }) && (
             <TripReadinessCard trip={trip} />
@@ -291,6 +306,7 @@ export function TripDetailScreen() {
           <TripTrailConditionsSection trip={trip} />
         </View>
       </ScrollView>
+      {showsVoiceBar && <TripVoiceBar trip={trip} />}
     </SafeAreaView>
   );
 }
