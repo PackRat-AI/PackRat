@@ -173,9 +173,11 @@ export async function currentFix({
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null),
       timeout,
     ])) ??
+    // A caller that set an age limit keeps it here too: a waypoint must not land where the user was
+    // five minutes ago.
     (await Location.getLastKnownPositionAsync({
-      maxAge: 5 * 60_000,
-      requiredAccuracy: MAX_ACCURACY_METERS,
+      maxAge: acceptRecentMs ?? 5 * 60_000,
+      requiredAccuracy: acceptRecentMs ? RECENT_ACCURACY_METERS : MAX_ACCURACY_METERS,
     }));
   if (!location) throw new LocatorError('unavailable');
   const fix = toFix(location);
