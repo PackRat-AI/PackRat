@@ -441,6 +441,7 @@ export const testIds = Object.freeze({
     watchToggle: 'weather:watch-toggle',
     saveLocationBtn: 'weather:save-location',
     watchListAddBtn: 'weather:watch-list-add',
+    watchListNotificationsOpenSettingsBtn: 'weather:watch-list-notifications-open-settings',
     watchedLocation: (id: string | number) => `weather:watched-${id}`,
     watchedTrip: (id: string) => `weather:watched-trip-${id}`,
     watchListTripAlertsOff: 'weather:watch-list-trip-alerts-off',

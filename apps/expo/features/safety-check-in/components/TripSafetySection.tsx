@@ -138,7 +138,7 @@ export function TripSafetySection({ trip }: { trip: Trip }) {
           onPress={startTrip}
           testID={testIds.safetyCheckIn.startTripBtn}
         >
-          <Icon name="play" size={18} color="white" />
+          <Icon name="play" size={18} color={colors.primaryForeground} />
           <Text className="font-medium text-primary-foreground">
             {t('safetyCheckIn.start.startTrip')}
           </Text>

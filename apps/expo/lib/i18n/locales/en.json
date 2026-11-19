@@ -1393,6 +1393,7 @@
     "collapseAlert": "Hide details",
     "addedToLocations": "{{name}} added to your locations",
     "notificationsOff": "Notifications are off for PackRat",
+    "watchListNotificationsOff": "Notifications are off for PackRat. Turn them on in Settings to get alerts for the places you watch.",
     "settings": "Settings",
     "searchForPlace": "Search for a city or place",
     "noSavedLocationsBody": "Search for a city or place to see its forecast and get hazard alerts.",
