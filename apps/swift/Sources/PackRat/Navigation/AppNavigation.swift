@@ -382,7 +382,12 @@ struct AppNavigation: View {
         case .trips:
             if let id = appState.selectedTripId,
                let trip = appState.tripsVM.trips.first(where: { $0.id == id }) {
-                TripDetailView(trip: trip, viewModel: appState.tripsVM)
+                // Its own stack so the trip's links (such as Full Forecast)
+                // can push; without one their destinations never fire.
+                NavigationStack {
+                    TripDetailView(trip: trip, viewModel: appState.tripsVM)
+                }
+                .id(id)
             } else {
                 placeholder("Select a Trip", symbol: "map")
             }

@@ -99,14 +99,23 @@ struct TripWeatherSection: View {
                     }
                     .accessibilityIdentifier("trip_weather_alerts")
                 }
-                Button {
-                    pushedLocation = forecastLocation
-                } label: {
-                    forecastCard(dates: dates, underWay: underWay, partial: partial)
+                VStack(alignment: .leading, spacing: 0) {
+                    Button {
+                        pushedLocation = forecastLocation
+                    } label: {
+                        forecastCard(dates: dates, underWay: underWay, partial: partial)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(forecastLocation == nil)
+                    .accessibilityIdentifier("trip_weather_open_forecast")
+                    // Outside the card's button, so the Legal link is a link of its own.
+                    if let attribution = forecast?.attribution {
+                        WeatherAttributionView(attribution: attribution, onDarkBackground: false)
+                            .padding(.horizontal)
+                            .padding(.bottom, 10)
+                    }
                 }
-                .buttonStyle(.plain)
-                .disabled(forecastLocation == nil)
-                .accessibilityIdentifier("trip_weather_open_forecast")
+                .background(.background.secondary, in: card)
             }
         }
     }
@@ -170,13 +179,7 @@ struct TripWeatherSection: View {
                 .padding(.horizontal)
                 .padding(.vertical, 12)
             }
-            if let attribution = forecast?.attribution {
-                WeatherAttributionView(attribution: attribution, onDarkBackground: false)
-                    .padding(.horizontal)
-                    .padding(.bottom, 10)
-            }
         }
-        .background(.background.secondary, in: card)
         .contentShape(card)
     }
 

@@ -109,5 +109,12 @@ private struct NotificationAuthorizationTracking: ViewModifier {
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { Task { await authorization.refresh() } }
             }
+            #if os(macOS)
+            // A Mac window's scene stays active while another app is in front,
+            // so coming back from System Settings never changes scenePhase.
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                Task { await authorization.refresh() }
+            }
+            #endif
     }
 }
