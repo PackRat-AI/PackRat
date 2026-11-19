@@ -219,7 +219,7 @@ export function tilesCovering({
   const scale = 2 ** zoom;
   const last = scale - 1;
   const tiles = new Set<string>();
-  const insert = (x: number, y: number) => tiles.add(`${clamp(x, 0, last)}/${clamp(y, 0, last)}`);
+  const insert = ({ x, y }: TilePoint) => tiles.add(`${clamp(x, 0, last)}/${clamp(y, 0, last)}`);
   for (const ring of rings) {
     const points = ring.map((point) => project({ point, scale }));
     const edges = points.map((a, index) => [a, points[(index + 1) % points.length] ?? a] as const);
@@ -248,7 +248,7 @@ export function tilesCovering({
       for (let pair = 0; pair + 1 < crossings.length; pair += 2) {
         const from = Math.ceil((crossings[pair] ?? 0) - 0.5);
         const to = Math.floor((crossings[pair + 1] ?? 0) - 0.5);
-        for (let x = from; x <= to; x++) insert(x, y);
+        for (let x = from; x <= to; x++) insert({ x, y });
         if (tiles.size > maxTiles) return tiles;
       }
     }
@@ -279,7 +279,7 @@ function insertEdgeTiles({
 }: {
   a: TilePoint;
   b: TilePoint;
-  insert: (x: number, y: number) => void;
+  insert: (tile: TilePoint) => void;
 }): void {
   let x = Math.floor(a.x);
   let y = Math.floor(a.y);
@@ -294,7 +294,7 @@ function insertEdgeTiles({
   // How far along the edge (0...1) the next vertical and horizontal grid lines are.
   let nextX = dx === 0 ? Number.POSITIVE_INFINITY : (dx > 0 ? x + 1 - a.x : a.x - x) / Math.abs(dx);
   let nextY = dy === 0 ? Number.POSITIVE_INFINITY : (dy > 0 ? y + 1 - a.y : a.y - y) / Math.abs(dy);
-  insert(x, y);
+  insert({ x, y });
   while (x !== endX || y !== endY) {
     if (y === endY || (x !== endX && nextX < nextY)) {
       x += stepX;
@@ -303,14 +303,14 @@ function insertEdgeTiles({
       y += stepY;
       nextY += deltaY;
     } else {
-      insert(x + stepX, y);
-      insert(x, y + stepY);
+      insert({ x: x + stepX, y });
+      insert({ x, y: y + stepY });
       x += stepX;
       y += stepY;
       nextX += deltaX;
       nextY += deltaY;
     }
-    insert(x, y);
+    insert({ x, y });
   }
 }
 
