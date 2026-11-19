@@ -212,7 +212,7 @@ struct PreferencesView: View {
                     Spacer()
                     #if os(iOS)
                     Button("Open Settings") {
-                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                        if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
                             openURL(url)
                         }
                     }

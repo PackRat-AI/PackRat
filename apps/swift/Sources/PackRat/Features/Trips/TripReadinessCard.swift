@@ -232,7 +232,8 @@ struct TripRemindersRow: View {
                 if settings.isEnabled, !settings.isMuted(trip.id), notificationsDenied {
                     PermissionNotice(
                         message: "Notifications are off for PackRat. Turn them on in Settings to get trip reminders.",
-                        systemImage: "bell.slash.fill"
+                        systemImage: "bell.slash.fill",
+                        settings: .notifications
                     )
                     .accessibilityIdentifier("trip_reminders_notifications_off")
                 } else if let caption {
