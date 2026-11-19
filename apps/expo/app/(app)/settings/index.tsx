@@ -67,6 +67,7 @@ export default function SettingsScreen() {
   const enableTripReminders = useFeatureFlag('enableTripReminders');
   const showsFeedSettings = useFeatureFlag('enableFeed') && isAuthenticated;
   const enableSafetyCheckIn = useFeatureFlag('enableSafetyCheckIn');
+  const enableOfflineMaps = useFeatureFlag('enableOfflineMaps');
   const tripRemindersEnabled = use$(tripReminderSettingsStore.enabled);
   const showsTrailReportToggle = useTrailReportAlertsEnabled() && isAuthenticated;
   const trailReports = useTrailReportNotificationsSetting({ active: showsTrailReportToggle });
@@ -258,6 +259,27 @@ export default function SettingsScreen() {
         )}
 
         <VoiceSettingsSection />
+        {enableOfflineMaps && (
+          <View>
+            <Text variant="subhead" className="mb-3">
+              {t('offlineMaps.title')}
+            </Text>
+            <TouchableOpacity
+              className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4"
+              onPress={() => router.push('/offline-maps')}
+              testID={testIds.offlineMaps.settingsRow}
+            >
+              <Icon name="map-outline" size={22} color={colors.primary} />
+              <View className="flex-1">
+                <Text className="font-medium">{t('offlineMaps.title')}</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                  {t('offlineMaps.settingsSubtitle')}
+                </Text>
+              </View>
+              <Icon name="chevron-right" size={20} color={colors.grey} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {(enableTripReminders || trailReportsLoaded || tripWeatherAlertsLoaded) && (
           <View>

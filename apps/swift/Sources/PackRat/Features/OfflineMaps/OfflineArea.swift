@@ -263,8 +263,6 @@ extension Defaults.Keys {
     static let offlineAreas = Key<[OfflineArea]>("offlineAreas", default: [])
     /// Off by default: map downloads run to hundreds of megabytes.
     static let offlineMapsAllowCellular = Key<Bool>("offlineMapsAllowCellular", default: false)
-    /// Zero means no limit.
-    static let offlineMapsStorageLimitBytes = Key<Int64>("offlineMapsStorageLimitBytes", default: 0)
 }
 
 extension Int64 {

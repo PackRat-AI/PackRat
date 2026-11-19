@@ -21,6 +21,7 @@ config.resolver = {
 // Add new entries here when a package crashes on web.
 const WEB_STUBS = {
   'react-native-maps': 'mocks/react-native-maps.tsx',
+  '@rnmapbox/maps': 'mocks/rnmapbox-maps.tsx',
   'react-native-blob-util': 'mocks/react-native-blob-util.ts',
   '@react-native-ai/llama': 'mocks/react-native-ai-llama.ts',
   'llama.rn': 'mocks/react-native-ai-llama.ts',

@@ -174,7 +174,7 @@ export default (): ExpoConfig =>
       {
         name: getAppName(),
         slug: 'packrat',
-        version: '2.3.0',
+        version: '2.4.0',
         scheme: 'packrat',
         web: {
           bundler: 'metro',
@@ -222,6 +222,8 @@ export default (): ExpoConfig =>
               androidGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
             },
           ],
+          // Offline maps: Mapbox Outdoors, whose tiles can be saved to the device.
+          '@rnmapbox/maps',
           '@sentry/react-native',
           [
             'expo-notifications',

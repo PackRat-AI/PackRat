@@ -6,6 +6,7 @@ import {
   Text as JCText,
   TextButton as JCTextButton,
   type TextFieldKeyboardType,
+  type TextFieldRef,
 } from '@expo/ui/jetpack-compose';
 import { fillMaxWidth } from '@expo/ui/jetpack-compose/modifiers';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -46,6 +47,15 @@ function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<Alert
   const fallbackRef = React.useRef<AlertMethods>(null);
   const [text, setText] = React.useState('');
   const { colors } = useColorScheme();
+  // The Compose field keeps its own text, so a prompt's default value is written into it as it
+  // mounts. Stable per prompt: a fresh callback each render would reset the text while typing.
+  const defaultValue = current.prompt?.defaultValue ?? '';
+  const seedField = React.useCallback(
+    (field: TextFieldRef | null) => {
+      if (field && defaultValue) void field.setText(defaultValue);
+    },
+    [defaultValue],
+  );
 
   // A login-password prompt needs two fields; the dialog builds only the single-field kinds.
   const needsFallback = (args: AlertProps) => args.prompt?.type === 'login-password';
@@ -141,6 +151,7 @@ function Alert({ ref, children, ...props }: AlertProps & { ref?: React.Ref<Alert
                     <JCText style={{ typography: 'bodyMedium' }}>{current.message}</JCText>
                   )}
                   <JCOutlinedTextField
+                    ref={seedField}
                     autoFocus
                     singleLine
                     onValueChange={setText}
