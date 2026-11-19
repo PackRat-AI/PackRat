@@ -1,5 +1,6 @@
 #if os(iOS)
 import Foundation
+import UIKit
 import WatchConnectivity
 
 @MainActor
@@ -53,12 +54,19 @@ final class WatchCompanionService: NSObject {
         let snapshot = makeSnapshot(from: appState)
         guard snapshot != lastSnapshot else { return }
         let weatherChanged = snapshot.weather != lastSnapshot?.weather
-        lastSnapshot = snapshot
-        send(snapshot, weatherChanged: weatherChanged)
+        // Only a delivered snapshot counts, so the next publish retries once a watch is there.
+        if send(snapshot, weatherChanged: weatherChanged) { lastSnapshot = snapshot }
     }
 
-    private func send(_ snapshot: PackRatWatchSnapshot, weatherChanged: Bool) {
-        guard let session else { return }
+    @discardableResult
+    private func send(_ snapshot: PackRatWatchSnapshot, weatherChanged: Bool) -> Bool {
+        // With no watch to receive it, a transfer only queues on disk; leaving
+        // the app mid-queue suspends it holding a file claim, and iOS kills it.
+        guard let session, session.activationState == .activated,
+              session.isPaired, session.isWatchAppInstalled else { return false }
+        // Let the queue write finish if the app is backgrounded mid-send.
+        let task = UIApplication.shared.beginBackgroundTask(withName: "watch-snapshot")
+        defer { UIApplication.shared.endBackgroundTask(task) }
         do {
             let data = try encoder.encode(snapshot)
             let payload = [WatchCompanionMessage.snapshot: data]
@@ -71,8 +79,10 @@ final class WatchCompanionService: NSObject {
             } else {
                 session.transferUserInfo(payload)
             }
+            return true
         } catch {
             print("[Watch] Failed to publish snapshot: \(error.localizedDescription)")
+            return false
         }
     }
 
