@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react-native';
-import Constants from 'expo-constants';
+import * as Application from 'expo-application';
 import { Linking, Platform } from 'react-native';
 
 /** Where an Open Settings button lands: the app's notification page, or its main settings page. */
@@ -10,7 +10,8 @@ export type PermissionSettingsTarget = 'notifications' | 'app';
  * notifications; location, camera and photos only go as deep as the app's own settings page.
  */
 export async function openPermissionSettings(target: PermissionSettingsTarget): Promise<void> {
-  const packageName = Constants.expoConfig?.android?.package;
+  // The installed package, not the config's: a dev or preview build has its own id.
+  const packageName = Application.applicationId;
   if (target === 'notifications' && Platform.OS === 'android' && packageName) {
     try {
       await Linking.sendIntent('android.settings.APP_NOTIFICATION_SETTINGS', [

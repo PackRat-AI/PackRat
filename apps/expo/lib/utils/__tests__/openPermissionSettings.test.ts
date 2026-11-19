@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { sendIntent, openSettings, captureException, platform, expoConfig } = vi.hoisted(() => ({
+const { sendIntent, openSettings, captureException, platform, application } = vi.hoisted(() => ({
   sendIntent: vi.fn(),
   openSettings: vi.fn(),
   captureException: vi.fn(),
   platform: { OS: 'android' },
-  expoConfig: { android: { package: 'com.packratai.mobile' } as { package?: string } },
+  application: { applicationId: 'com.packratai.mobile' as string | null },
 }));
 
 vi.mock('react-native', () => ({ Linking: { sendIntent, openSettings }, Platform: platform }));
-vi.mock('expo-constants', () => ({ default: { expoConfig } }));
+vi.mock('expo-application', () => application);
 vi.mock('@sentry/react-native', () => ({ captureException }));
 
 import { openPermissionSettings } from '../openPermissionSettings';
@@ -18,7 +18,7 @@ describe('openPermissionSettings', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     platform.OS = 'android';
-    expoConfig.android.package = 'com.packratai.mobile';
+    application.applicationId = 'com.packratai.mobile';
   });
 
   it("opens the app's notification page for notifications on Android", async () => {
@@ -47,7 +47,7 @@ describe('openPermissionSettings', () => {
   });
 
   it('falls back when the package name is unknown', async () => {
-    expoConfig.android.package = undefined;
+    application.applicationId = null;
     await openPermissionSettings('notifications');
     expect(sendIntent).not.toHaveBeenCalled();
     expect(openSettings).toHaveBeenCalledTimes(1);
