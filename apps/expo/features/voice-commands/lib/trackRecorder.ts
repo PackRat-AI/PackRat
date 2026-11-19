@@ -39,6 +39,11 @@ syncObservable(trackStore, {
 
 const trackSyncState = syncState(trackStore);
 
+/** Resolves once a recording saved before PackRat closed is back in the store. */
+export function whenTrackLoaded(): Promise<unknown> {
+  return when(trackSyncState.isPersistLoaded);
+}
+
 function toSample(location: Location.LocationObject): TrackSample {
   const verticalAccuracy = location.coords.altitudeAccuracy;
   const usableAltitude =
@@ -133,9 +138,24 @@ export async function stopRecording(): Promise<RecordedTrack | null> {
   return finished;
 }
 
+/** Set while signed out or with voice commands off: no location is collected, nothing resumes. */
+let suspended = false;
+
+/**
+ * Signed out, or voice commands switched off: stops collecting location but keeps the recording,
+ * so it carries on when they're back.
+ */
+export async function suspendRecording(): Promise<void> {
+  suspended = true;
+  await stopUpdates();
+}
+
 /** At launch: carries on a recording PackRat was closed in the middle of. */
 export async function resumeRecordingIfNeeded(): Promise<void> {
+  suspended = false;
   await when(trackSyncState.isPersistLoaded);
+  // Suspended again while the recording loaded.
+  if (suspended) return;
   const track = trackStore.track.peek();
   // A failure is already reported, and this runs again at the next launch.
   if (track && !track.isPaused) await startUpdates().catch(() => undefined);

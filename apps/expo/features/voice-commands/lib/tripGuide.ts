@@ -54,6 +54,11 @@ syncObservable(guideStore, {
 
 const guideSyncState = syncState(guideStore);
 
+/** Resolves once guidance saved before PackRat closed is back in the store. */
+export function whenGuideLoaded(): Promise<unknown> {
+  return when(guideSyncState.isPersistLoaded);
+}
+
 function isMetric(): boolean {
   return (preferencesStore.speedUnit.peek() ?? getDefaultSpeedUnit()) === 'kmh';
 }
@@ -225,9 +230,21 @@ export async function stopGuidance(): Promise<void> {
   });
 }
 
+/** Set while signed out or with voice commands off: no location is collected, nothing resumes. */
+let suspended = false;
+
+/** Signed out, or voice commands switched off: stops following location but keeps the session. */
+export async function suspendGuidance(): Promise<void> {
+  suspended = true;
+  await stopUpdates();
+}
+
 /** At launch: carries on guidance PackRat was closed in the middle of. */
 export async function resumeGuidanceIfNeeded(): Promise<void> {
+  suspended = false;
   await when(guideSyncState.isPersistLoaded);
+  // Suspended again while the session loaded.
+  if (suspended) return;
   const session = guideStore.session.peek();
   // A failure is already reported, and this runs again at the next launch.
   if (session) await startUpdates(session.guide.plan.destination.name).catch(() => undefined);

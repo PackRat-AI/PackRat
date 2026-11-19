@@ -1,10 +1,11 @@
+import { when } from '@legendapp/state';
 import * as Sentry from '@sentry/react-native';
-import { tripsStore } from 'expo-app/features/trips/store/trips';
+import { tripsStore, tripsSyncState } from 'expo-app/features/trips/store/trips';
 import { TripActions, type TripCommandTaskData } from 'expo-app/modules/trip-actions';
 import { activeTrip } from '../utils/activeTrip';
 import { VoiceAnswers } from '../utils/voiceAnswers';
-import { trackStore } from './trackRecorder';
-import { guideStore } from './tripGuide';
+import { trackStore, whenTrackLoaded } from './trackRecorder';
+import { guideStore, whenGuideLoaded } from './tripGuide';
 import { type AssistantResult, runForAssistant } from './voiceController';
 
 /** Shows or hides the trip commands to Gemini and other assistants. */
@@ -27,6 +28,9 @@ export async function syncAssistantCommands(enabled: boolean): Promise<void> {
 export async function runAssistantCommandTask(data: TripCommandTaskData): Promise<void> {
   let result: AssistantResult = { answer: VoiceAnswers.commandFailed, needsConfirmation: false };
   try {
+    // A cold headless start has empty stores until they load from the phone; reading them sooner
+    // finds no trip, or picks another while a recording is still loading.
+    await Promise.all([when(tripsSyncState.isPersistLoaded), whenTrackLoaded(), whenGuideLoaded()]);
     const busyTripIds = [trackStore.track.peek()?.tripId, guideStore.session.peek()?.tripId].filter(
       (id): id is string => id != null,
     );

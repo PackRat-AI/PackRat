@@ -1,5 +1,7 @@
-import { observe } from '@legendapp/state';
+import { observable, observe } from '@legendapp/state';
 import * as Sentry from '@sentry/react-native';
+import { tripsStore } from 'expo-app/features/trips/store/trips';
+import { obs } from 'expo-app/lib/store';
 import { WakeWord } from 'expo-app/modules/wake-word';
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
 import i18next from 'i18next';
@@ -14,7 +16,11 @@ let armed: { tripId: string; listen: boolean } | null = null;
 let onStart: (() => void) | null = null;
 /** The trip underway, while the trip page has it open or left it in the background. */
 let followed: { tripId: string; onCommand: () => void } | null = null;
+/** The followed trip's id, observable so its status is watched as the trip changes. */
+const followedTripId = observable<string | null>(null);
 let settingsObserved = false;
+/** Bumped by every settings application, so one that waited on a permission lookup can tell it's stale. */
+let applyRun = 0;
 /** The native events are subscribed once, for the life of the app. */
 let subscribed = false;
 
@@ -28,18 +34,24 @@ export function isWakeWordAvailable(): boolean {
  */
 export function followTrip({ tripId, onCommand }: { tripId: string; onCommand: () => void }): void {
   followed = { tripId, onCommand };
+  followedTripId.set(tripId);
   if (!settingsObserved) {
     settingsObserved = true;
     observe(() => {
-      const listen = voiceSettingsStore.wakeWord.get();
-      const headset = voiceSettingsStore.headsetShortcut.get() !== false;
-      void applySettings({ listen, headset });
+      voiceSettingsStore.enabled.get();
+      voiceSettingsStore.wakeWord.get();
+      voiceSettingsStore.headsetShortcut.get();
+      // Hands-free ends with the trip, wherever it was ended from.
+      const id = followedTripId.get();
+      const trip = id ? obs({ store: tripsStore, id }).get() : undefined;
+      if (id && (!trip || trip.status === 'complete')) {
+        leaveTrip(id);
+        return;
+      }
+      void applySettings();
     });
   } else {
-    void applySettings({
-      listen: voiceSettingsStore.wakeWord.peek(),
-      headset: voiceSettingsStore.headsetShortcut.peek() !== false,
-    });
+    void applySettings();
   }
 }
 
@@ -47,22 +59,30 @@ export function followTrip({ tripId, onCommand }: { tripId: string; onCommand: (
 export function leaveTrip(tripId: string): void {
   if (followed?.tripId !== tripId) return;
   followed = null;
+  followedTripId.set(null);
   disarmWakeWord(tripId);
 }
 
-async function applySettings({
-  listen,
-  headset,
-}: {
-  listen: boolean;
-  headset: boolean;
-}): Promise<void> {
+/** The switches as they stand: both off while voice commands as a whole are off. */
+function currentSettings(): { listen: boolean; headset: boolean } {
+  const enabled = voiceSettingsStore.enabled.peek() !== false;
+  return {
+    listen: enabled && voiceSettingsStore.wakeWord.peek(),
+    headset: enabled && voiceSettingsStore.headsetShortcut.peek() !== false,
+  };
+}
+
+/** Arms or disarms for the followed trip. The trip stays followed, so switching back on restores it. */
+async function applySettings(): Promise<void> {
+  const run = ++applyRun;
   const trip = followed;
   if (!trip) return;
+  const { listen, headset } = currentSettings();
   if (!listen && !headset) return disarmWakeWord(trip.tripId);
   // The service needs the microphone permission before Android lets it start.
   const { granted } = await ExpoSpeechRecognitionModule.getPermissionsAsync();
-  if (!granted || followed !== trip) return;
+  // A newer change has applied itself meanwhile; arming now would undo it.
+  if (!granted || followed !== trip || run !== applyRun) return;
   armWakeWord({ tripId: trip.tripId, listen, headset, onCommand: trip.onCommand });
 }
 
