@@ -383,7 +383,9 @@ export function updateGuide({
   if (guide.hasArrived) return { guide, prompts: [] };
   const { plan } = guide;
   const direct = geoDistance({ from: position, to: plan.destination.point });
-  const progress = plan.path ? routeProgress({ position, route: plan.path }) : null;
+  const progress = plan.path
+    ? routeProgress({ position, route: plan.path, previousAlong: guide.progress?.alongMeters })
+    : null;
   // Keep the latest progress, so the next turn isn't one already passed on the way in.
   const arrive = () => ({
     guide: { ...guide, progress: progress ?? guide.progress, hasArrived: true, remainingMeters: 0 },
