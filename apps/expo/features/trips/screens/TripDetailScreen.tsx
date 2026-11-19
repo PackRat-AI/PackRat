@@ -166,6 +166,7 @@ export function TripDetailScreen() {
                     <OutdoorsMap
                       id="trip-map"
                       pin={[trip.location.longitude, trip.location.latitude]}
+                      interactive
                     />
                   ) : (
                     <MapView
