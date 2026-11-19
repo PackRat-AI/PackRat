@@ -1,5 +1,6 @@
 import { use$ } from '@legendapp/state/react';
 import { Alert, type AlertMethods } from '@packrat/ui/src/alert';
+import { Button } from '@packrat/ui/src/button';
 import { SegmentedControl } from '@packrat/ui/src/segmented-control';
 import { Text } from '@packrat/ui/src/text';
 import { TextField } from '@packrat/ui/src/text-field';
@@ -43,7 +44,8 @@ type PickerParams = {
  * Frame an area on the map, choose the detail, see the size, and save it. The visible map is the
  * frame: what the user sees is what gets saved. A trip opens on its destination; a trail opens
  * framed on its line, which is drawn on the map and kept with the saved area. A named region
- * instead saves what lies inside its outline, wherever the map is panned.
+ * instead saves what lies inside its outline, wherever the map is panned; one too large to save
+ * whole offers to frame part of it right here, with its outline left on the map as a guide.
  */
 export function OfflineAreaPickerScreen() {
   const params = useLocalSearchParams<PickerParams>();
@@ -63,6 +65,9 @@ export function OfflineAreaPickerScreen() {
   const [isMoving, setIsMoving] = useState(false);
   const [detail, setDetail] = useState<OfflineDetailLevel>('standard');
   const [name, setName] = useState(params.name ?? region?.name ?? '');
+  // The region is too large, so the user is framing part of it instead of saving its outline.
+  const [framingPart, setFramingPart] = useState(false);
+  const outline = framingPart ? undefined : region;
 
   const lat = Number(params.lat);
   const lon = Number(params.lon);
@@ -73,8 +78,8 @@ export function OfflineAreaPickerScreen() {
 
   // What gets saved: the region's outline, or the visible frame.
   const rings = useMemo(
-    () => region?.rings ?? (bounds ? [boundsRing(bounds)] : null),
-    [region, bounds],
+    () => outline?.rings ?? (bounds ? [boundsRing(bounds)] : null),
+    [outline, bounds],
   );
   const fit = useMemo(
     () => (rings ? packFit({ rings, detail, saved }) : null),
@@ -89,25 +94,25 @@ export function OfflineAreaPickerScreen() {
     estimate !== null &&
     fit?.fits === true &&
     name.trim().length > 0 &&
-    (region !== undefined || !isMoving) &&
+    (outline !== undefined || !isMoving) &&
     trailReady;
 
   const footer = isTooLarge
-    ? tooLargeMessage({ named: region !== undefined, detail, name: name.trim(), t })
+    ? tooLargeMessage({ named: outline !== undefined, detail, name: name.trim(), t })
     : isOutOfRoom
       ? t('offlineMaps.outOfRoom')
-      : region
+      : outline
         ? t('offlineMaps.outlineFooter')
         : t('offlineMaps.frameFooter');
 
   const startSave = (allowCellularOnce: boolean) => {
-    const savedBounds = regionBounds ?? bounds;
+    const savedBounds = outline ? regionBounds : bounds;
     if (!savedBounds) return;
     const tripEndsAt = Number(params.tripEndsAt);
     saveArea({
       name: name.trim(),
       bounds: savedBounds,
-      boundary: region?.rings,
+      boundary: outline?.rings,
       detail,
       tripId: params.tripId,
       tripEndsAt: Number.isFinite(tripEndsAt) ? tripEndsAt : undefined,
@@ -170,7 +175,7 @@ export function OfflineAreaPickerScreen() {
             onCameraChanged={() => setIsMoving(true)}
             onMapIdle={(state) => {
               setIsMoving(false);
-              if (region) return;
+              // Kept for a region too, so framing part of it starts from what is on screen.
               const visible = boundsFromCorners(state.properties.bounds);
               if (visible) setBounds(visible);
             }}
@@ -192,10 +197,10 @@ export function OfflineAreaPickerScreen() {
             />
             <Mapbox.LocationPuck />
             <TrailLines id="picker-trail" lines={lines} />
-            {region ? <AreaOutline rings={region.rings} filled /> : null}
+            {region ? <AreaOutline rings={region.rings} filled={!framingPart} /> : null}
           </Mapbox.MapView>
           {/* The frame: everything inside it is saved. */}
-          {region ? null : (
+          {outline ? null : (
             <View
               pointerEvents="none"
               className="absolute inset-0 rounded border-[3px]"
@@ -245,6 +250,17 @@ export function OfflineAreaPickerScreen() {
           >
             {footer}
           </Text>
+          {outline && isTooLarge ? (
+            <Button
+              variant="tonal"
+              icon="crop-free"
+              className="self-start"
+              onPress={() => setFramingPart(true)}
+              testID={testIds.offlineMaps.framePart}
+            >
+              <Text>{t('offlineMaps.framePart')}</Text>
+            </Button>
+          ) : null}
         </View>
       </KeyboardAvoidingView>
       <Alert title="" buttons={[]} ref={alertRef} />

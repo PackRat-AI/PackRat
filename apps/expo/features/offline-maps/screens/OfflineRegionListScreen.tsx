@@ -89,10 +89,13 @@ export function OfflineRegionListScreen() {
         renderItem={({ item: { region, fits } }) => (
           <StatsRow
             title={region.name}
-            subtitle={
-              [region.subtitle, fits ? null : t('offlineMaps.regionTooLarge')]
-                .filter(Boolean)
-                .join(' · ') || null
+            subtitle={region.subtitle || null}
+            trailing={
+              fits ? undefined : (
+                <Text variant="footnote" className="text-muted-foreground">
+                  {t('offlineMaps.regionTooLarge')}
+                </Text>
+              )
             }
             onPress={() =>
               router.push({ pathname: '/offline-maps/pick', params: { regionId: region.id } })

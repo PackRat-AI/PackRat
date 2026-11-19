@@ -2254,8 +2254,8 @@
     "outlineFooter": "Everything inside the outline is saved.",
     "tooLargeTrail": "This area is too large to save. Zoom in to frame a smaller area, or choose Standard detail.",
     "tooLargeStandard": "This area is too large to save. Zoom in to frame a smaller area.",
-    "tooLargeRegionTrail": "{{name}} is too large to save at Trail detail. Choose Standard detail instead.",
-    "tooLargeRegionStandard": "{{name}} is too large to save in one piece. Save the part you need by framing it on the map.",
+    "tooLargeRegionTrail": "{{name}} is too large to save at Trail detail. Choose Standard detail, or save part of it.",
+    "tooLargeRegionStandard": "{{name}} is too large to save in one piece.",
     "outOfRoom": "Your saved maps are at their limit. Delete one you no longer need, or save a smaller area.",
     "cellularTitle": "Download over cellular?",
     "cellularMessage": "This map is {{size}} and you're not on Wi-Fi.",
@@ -2282,6 +2282,7 @@
     "regionsNoMatch": "No places match “{{query}}”.",
     "tileCount_one": "{{count}} saved map",
     "tileCount_other": "{{count}} saved maps",
-    "regionTooLarge": "Too large to save in one piece"
+    "regionTooLarge": "Too large",
+    "framePart": "Choose part of it"
   }
 }
