@@ -2,9 +2,9 @@ import type { WatchedLocation } from '@packrat/schemas/weatherMonitoring';
 import type { SnackbarHandle } from '@packrat/ui/src/snackbar';
 import { registerForPushIfNeeded } from 'expo-app/features/notifications/lib/pushRegistration';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { openPermissionSettings } from 'expo-app/lib/utils/openPermissionSettings';
 import { useAtom } from 'jotai';
 import { type RefObject, useCallback, useEffect } from 'react';
-import { Linking } from 'react-native';
 import { notificationsBlockedNoticeAtom } from '../atoms/watchNoticeAtoms';
 import { useWatchMutations, type WatchablePlace } from './useWatchList';
 
@@ -31,7 +31,7 @@ export function useWatchFeedback(
       message: t('weather.notificationsOff'),
       actionLabel: t('weather.settings'),
     });
-    if (result === 'actionPerformed') Linking.openSettings();
+    if (result === 'actionPerformed') void openPermissionSettings('notifications');
   }, [snackbar, t]);
 
   // A watch made from search lands here after search has closed.

@@ -45,6 +45,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useNotificationsGranted } from 'expo-app/lib/permissions/usePermissionGranted';
 import { testIds } from 'expo-app/lib/testIds';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { openPermissionSettings } from 'expo-app/lib/utils/openPermissionSettings';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -279,7 +280,7 @@ export default function SettingsScreen() {
                   </Text>
                   <Button
                     variant="text"
-                    onPress={() => void Linking.openSettings()}
+                    onPress={() => void openPermissionSettings('notifications')}
                     testID={testIds.settings.notificationsOpenSettingsBtn}
                   >
                     <Text className="font-medium text-primary">

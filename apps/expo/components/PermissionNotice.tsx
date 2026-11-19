@@ -1,7 +1,11 @@
 import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { Linking, View } from 'react-native';
+import {
+  openPermissionSettings,
+  type PermissionSettingsTarget,
+} from 'expo-app/lib/utils/openPermissionSettings';
+import { View } from 'react-native';
 
 /**
  * A line saying a phone permission is off, with the way to Settings to turn it back on. Sits in
@@ -13,8 +17,11 @@ export function PermissionNotice({
   tone = 'muted',
   variant = 'footnote',
   className,
+  settings = 'app',
 }: {
   message: string;
+  /** Which settings page Open Settings lands on. */
+  settings?: PermissionSettingsTarget;
   /** For the Open Settings button. */
   testID: string;
   tone?: 'muted' | 'destructive';
@@ -34,7 +41,7 @@ export function PermissionNotice({
       <Button
         variant="text"
         className="self-start px-0"
-        onPress={() => void Linking.openSettings()}
+        onPress={() => void openPermissionSettings(settings)}
         testID={testID}
       >
         <Text className="font-medium text-primary">{t('permissions.openSettings')}</Text>

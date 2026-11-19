@@ -59,7 +59,11 @@ export function TripRemindersRow({ trip }: { trip: Trip }) {
           />
         </View>
         {caption && captionKind === 'notificationsOff' ? (
-          <PermissionNotice message={caption} testID={testIds.trips.remindersOpenSettingsBtn} />
+          <PermissionNotice
+            message={caption}
+            settings="notifications"
+            testID={testIds.trips.remindersOpenSettingsBtn}
+          />
         ) : caption ? (
           <Text variant="footnote" className="text-muted-foreground">
             {caption}

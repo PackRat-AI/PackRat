@@ -381,6 +381,7 @@ function SafetyCheckInCard({
       {missing.notifications ? (
         <PermissionNotice
           message={t('safetyCheckIn.card.notificationsOff')}
+          settings="notifications"
           testID={testIds.safetyCheckIn.notificationsOpenSettingsBtn}
         />
       ) : null}
