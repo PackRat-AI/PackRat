@@ -53,6 +53,9 @@ export const VoiceAnswers = Object.freeze({
   trackingPaused: 'Tracking paused. Say resume tracking when you set off again.',
   alreadyPaused: 'Tracking is already paused.',
   trackingResumed: 'Tracking resumed.',
+  trackingNotSaved:
+    "Tracking stopped, but the trip it belongs to is gone, so the hike wasn't saved.",
+  trackingNotStarted: "I couldn't start tracking. Open PackRat and try again.",
   notPaused: "Tracking isn't paused.",
   waypointLimit:
     'This trip has 500 waypoints already. Delete one on the trip page to mark another.',

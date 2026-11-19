@@ -33,8 +33,11 @@ export function removeWaypoint({ tripId, id }: { tripId: string; id: string }) {
   updateLog({ tripId, change: (log) => removeWaypointFromLog({ log, id }) });
 }
 
-/** Puts a finished recording's distance, climbing and route in the trip log. */
-export function saveRecording(track: RecordedTrack) {
-  if (!trackLogRoute(track)) return;
-  updateLog({ tripId: track.tripId, change: (log) => applyTrackToLog({ track, log }) });
+/**
+ * Puts a finished recording's distance, climbing and route in the trip log. False when the trip is
+ * gone, so the recording had nowhere to go; a recording too short to keep counts as saved.
+ */
+export function saveRecording(track: RecordedTrack): boolean {
+  if (!trackLogRoute(track)) return true;
+  return updateLog({ tripId: track.tripId, change: (log) => applyTrackToLog({ track, log }) });
 }

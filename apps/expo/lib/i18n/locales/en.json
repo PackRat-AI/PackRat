@@ -2282,6 +2282,8 @@
       "openSettings": "Open Settings",
       "noFixTitle": "Couldn't Find Your Location",
       "noFixMessage": "Try again with a clear view of the sky.",
+      "startFailedTitle": "Couldn't Start Tracking",
+      "startFailedMessage": "Something stopped PackRat from recording your location. Try again.",
       "waypoints": "Waypoints",
       "deleteWaypoint": "Delete Waypoint",
       "waypointMore": "More options for {{name}}"

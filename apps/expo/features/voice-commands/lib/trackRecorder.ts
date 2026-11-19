@@ -76,8 +76,9 @@ TaskManager.defineTask<{ locations: Location.LocationObject[] }>(
 );
 
 export class TrackStartError extends Error {
-  constructor() {
-    super('Location permission denied');
+  /** `unavailable`: Android refused the location service, e.g. started with the app in the background. */
+  constructor(readonly reason: 'denied' | 'unavailable') {
+    super(reason === 'denied' ? 'Location permission denied' : 'Location updates did not start');
     this.name = 'TrackStartError';
   }
 }
@@ -91,11 +92,16 @@ export async function startRecording({
 }): Promise<void> {
   await when(trackSyncState.isPersistLoaded);
   if (trackStore.track.peek()) return;
-  if (!(await hasLocationPermission())) throw new TrackStartError();
+  if (!(await hasLocationPermission())) throw new TrackStartError('denied');
   trackStore.track.set(newTrack({ tripId, tripName }));
   breadcrumb({ message: 'Tracking started', tripId });
   await askToShowNotification();
-  await startUpdates();
+  try {
+    await startUpdates();
+  } catch {
+    trackStore.track.set(null);
+    throw new TrackStartError('unavailable');
+  }
 }
 
 export async function pauseRecording(): Promise<void> {
@@ -109,7 +115,12 @@ export async function resumeRecording(): Promise<void> {
   const track = trackStore.track.peek();
   if (!track?.isPaused) return;
   trackStore.track.set(resumeTrack(track));
-  await startUpdates();
+  try {
+    await startUpdates();
+  } catch {
+    trackStore.track.set(track);
+    throw new TrackStartError('unavailable');
+  }
 }
 
 /** Ends the recording and hands it back for the trip log. */
@@ -126,7 +137,8 @@ export async function stopRecording(): Promise<RecordedTrack | null> {
 export async function resumeRecordingIfNeeded(): Promise<void> {
   await when(trackSyncState.isPersistLoaded);
   const track = trackStore.track.peek();
-  if (track && !track.isPaused) await startUpdates();
+  // A failure is already reported, and this runs again at the next launch.
+  if (track && !track.isPaused) await startUpdates().catch(() => undefined);
   else await stopUpdates();
 }
 
@@ -163,6 +175,7 @@ async function startUpdates(): Promise<void> {
     });
   } catch (error) {
     Sentry.captureException(error, { tags: { feature: 'voiceCommands', action: 'startTrack' } });
+    throw error;
   }
 }
 

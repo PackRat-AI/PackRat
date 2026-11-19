@@ -68,6 +68,7 @@ import {
   resumeRecording,
   startRecording,
   stopRecording,
+  TrackStartError,
   trackStore,
   WORST_ACCURACY_METERS,
 } from './trackRecorder';
@@ -569,8 +570,12 @@ async function performTracking({
       if (status === 'complete') return answer(VoiceAnswers.tripEnded);
       try {
         await startRecording({ tripId: trip.id, tripName: trip.name });
-      } catch {
-        return answer(VoiceAnswers.locationDenied);
+      } catch (error) {
+        return answer(
+          error instanceof TrackStartError && error.reason === 'unavailable'
+            ? VoiceAnswers.trackingNotStarted
+            : VoiceAnswers.locationDenied,
+        );
       }
       // Tracking a trip that hasn't started starts it.
       if (status === 'planned') {
@@ -587,12 +592,16 @@ async function performTracking({
     case 'resumeTracking':
       if (!track) return answer(VoiceAnswers.notTracking);
       if (!track.isPaused) return answer(VoiceAnswers.notPaused);
-      await resumeRecording();
+      try {
+        await resumeRecording();
+      } catch {
+        return answer(VoiceAnswers.trackingNotStarted);
+      }
       return answer(VoiceAnswers.trackingResumed);
     case 'stopTracking': {
       const finished = await stopRecording();
       if (!finished) return answer(VoiceAnswers.notTracking);
-      saveRecording(finished);
+      if (!saveRecording(finished)) return answer(VoiceAnswers.trackingNotSaved);
       return answer(trackingStopped({ track: finished, metric }));
     }
     case 'trackSoFar':
