@@ -136,9 +136,15 @@ private struct TrailReadyView: View {
                 case .awaitingPhone:
                     Section {
                         if isPhoneReachable {
-                            ProgressView("Getting your pack from iPhone…")
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 8)
+                            VStack(spacing: 8) {
+                                ProgressView()
+                                Text("Getting your pack from iPhone…")
+                                    .font(.footnote)
+                                    .multilineTextAlignment(.center)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
                         } else {
                             ContentUnavailableView(
                                 "Open PackRat on iPhone",
