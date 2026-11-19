@@ -221,7 +221,7 @@ describe('prompts', () => {
       );
     };
     expect(say(47.021, 0)).toEqual(['Halfway to the lake. 1.3 miles to go, north.']);
-    expect(say(47.03, 600)).toEqual(['1 mile to the lake, north.']);
+    expect(say(47.03, 600)).toEqual(['Three quarters of a mile to the lake, north.']);
     expect(Math.round(guide.remainingMeters)).toBe(1_112);
   });
 });

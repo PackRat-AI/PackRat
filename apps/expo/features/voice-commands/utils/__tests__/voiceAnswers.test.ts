@@ -166,6 +166,9 @@ describe('where am I', () => {
     expect(remainingAnswer({ progress: atEnd, metric: false })).toBe(
       "You're at the end of your route.",
     );
+    const besideEnd = routeProgress({ position: { latitude: 47.02, longitude: -119.99 }, route });
+    if (!besideEnd) throw new Error('expected progress');
+    expect(remainingAnswer({ progress: besideEnd, metric: false })).toMatch(/off it\.$/);
   });
 });
 
@@ -205,7 +208,9 @@ describe('times', () => {
     ).toBe('You were due back at 7 PM. Your contacts get an overdue alert in 1 hour 30 minutes.');
     expect(
       dueBackAnswer({ expectedReturn: date(19), graceMinutes: 120, now: date(22), clock: pacific }),
-    ).toBe('You were due back at 7 PM. Your contacts have been sent an overdue alert.');
+    ).toBe(
+      "You were due back at 7 PM. You're past your grace period, so your contacts get an overdue alert.",
+    );
   });
 
   it('reads a spoken time already past today as tomorrow', () => {

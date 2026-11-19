@@ -160,7 +160,8 @@ export function remainingAnswer({
   progress: RouteProgress;
   metric: boolean;
 }): string {
-  if (progress.remainingMeters < 50) return "You're at the end of your route.";
+  if (progress.remainingMeters < 50 && isOnRoute(progress))
+    return "You're at the end of your route.";
   let sentence = `${capitalizeFirst(spokenDistance({ meters: progress.remainingMeters, metric }))} to go to the end of your route.`;
   if (!isOnRoute(progress)) {
     sentence += ` You're ${spokenDistance({ meters: progress.offRouteMeters, metric })} off it.`;
@@ -195,7 +196,7 @@ export function dueBackAnswer({
   const alertAt = new Date(expectedReturn.getTime() + graceMinutes * 60_000);
   const when = spokenTime({ date: expectedReturn, now, clock });
   if (alertAt <= now) {
-    return `You were due back ${when}. Your contacts have been sent an overdue alert.`;
+    return `You were due back ${when}. You're past your grace period, so your contacts get an overdue alert.`;
   }
   if (expectedReturn <= now) {
     return `You were due back ${when}. Your contacts get an overdue alert in ${spokenDuration(alertAt.getTime() - now.getTime())}.`;
@@ -595,7 +596,8 @@ export function guidancePromptText({
         const left = capitalizeFirst(spokenDistance({ meters: prompt.remainingMeters, metric }));
         return `Halfway to ${destination}. ${left} to go${direction}.`;
       }
-      return `${metric ? '1 kilometre' : '1 mile'} to ${destination}${direction}.`;
+      const left = capitalizeFirst(spokenDistance({ meters: prompt.remainingMeters, metric }));
+      return `${left} to ${destination}${direction}.`;
     }
     case 'offRoute':
       return offRouteAnswer({ progress: prompt.progress, metric });
