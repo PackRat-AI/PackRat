@@ -2308,7 +2308,8 @@
       "toDestination": "to {{name}}",
       "problemTitle": "Couldn't Start Directions",
       "locationOff": "Allow location for PackRat in Settings to be guided.",
-      "noFix": "Your location isn't available right now. Try again with a clear view of the sky."
+      "noFix": "Your location isn't available right now. Try again with a clear view of the sky.",
+      "startFailed": "Something stopped PackRat from following your location. Try again."
     },
     "wake": {
       "offerTitle": "Talk to PackRat Hands-Free?",

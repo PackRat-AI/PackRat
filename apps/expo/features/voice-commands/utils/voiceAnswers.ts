@@ -55,6 +55,7 @@ export const VoiceAnswers = Object.freeze({
   trackingResumed: 'Tracking resumed.',
   trackingNotSaved:
     "Tracking stopped, but the trip it belongs to is gone, so the hike wasn't saved.",
+  guidanceNotStarted: "I couldn't start directions. Open PackRat and try again.",
   trackingNotStarted: "I couldn't start tracking. Open PackRat and try again.",
   notPaused: "Tracking isn't paused.",
   waypointLimit:

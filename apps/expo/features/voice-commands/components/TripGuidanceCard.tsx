@@ -55,7 +55,8 @@ export function useShowsGuidance(trip: Trip | undefined): boolean {
   const shows = useShowsTracking(trip);
   const guiding = use$(() => guideStore.session.get()?.tripId === trip?.id);
   if (!trip || !shows) return false;
-  if (trip.status !== 'in_progress') return guiding;
+  // Running guidance keeps its card, and its End button, even once nothing else is left to pick.
+  if (guiding || trip.status !== 'in_progress') return guiding;
   return (trip.plannedRoute?.length ?? 0) >= 2 || (trip.log?.waypoints?.length ?? 0) > 0;
 }
 
@@ -121,6 +122,7 @@ export function TripGuidanceCard({ trip }: { trip: Trip }) {
       const reason = error instanceof GuideStartError ? error.reason : 'noFix';
       if (reason === 'denied') showProblem(t('voiceCommands.guidance.locationOff'));
       else if (reason === 'alreadyThere') showProblem(alreadyThere(destination.name));
+      else if (reason === 'unavailable') showProblem(t('voiceCommands.guidance.startFailed'));
       else showProblem(t('voiceCommands.guidance.noFix'));
     } finally {
       setStarting(false);

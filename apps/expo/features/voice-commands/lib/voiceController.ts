@@ -546,6 +546,9 @@ async function navigate({
     if (error instanceof GuideStartError && error.reason === 'alreadyThere') {
       return answer(alreadyThere(destination.name));
     }
+    if (error instanceof GuideStartError && error.reason === 'unavailable') {
+      return answer(VoiceAnswers.guidanceNotStarted);
+    }
     return answer(VoiceAnswers.noFix);
   }
 }
