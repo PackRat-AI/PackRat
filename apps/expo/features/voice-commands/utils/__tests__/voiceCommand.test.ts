@@ -39,6 +39,7 @@ describe('parseVoiceCommand', () => {
     ['give me another 15 mins', 15],
     ["I'm running late", 60],
     ['add 30 hours', 24 * 60],
+    ['add twenty five minutes', 25],
   ])('reads "%s" as %i more minutes', (transcript, minutes) => {
     expect(parseVoiceCommand(transcript)).toEqual({ kind: 'extendBy', minutes });
   });
@@ -74,6 +75,20 @@ describe('parseVoiceCommand', () => {
       kind: 'extendUntil',
       hour: 20,
       minute: 0,
+    });
+    expect(parseVoiceCommand('back at eight in the morning')).toEqual({
+      kind: 'extendUntil',
+      hour: 8,
+      minute: 0,
+    });
+  });
+
+  it('never acts on a negated instruction, but keeps it in a note', () => {
+    expect(parseVoiceCommand("don't stop recording")).toBeNull();
+    expect(parseVoiceCommand('do not check in')).toBeNull();
+    expect(parseVoiceCommand("note: don't stop recording")).toEqual({
+      kind: 'note',
+      text: "Don't stop recording",
     });
   });
 
@@ -169,6 +184,8 @@ describe('parseVoiceConfirmation', () => {
     expect(parseVoiceConfirmation("don't send it")).toBe('no');
     expect(parseVoiceConfirmation('cancel')).toBe('no');
     expect(parseVoiceConfirmation("yes, I'm not sure")).toBe('no');
+    expect(parseVoiceConfirmation('I never said yes')).toBe('no');
+    expect(parseVoiceConfirmation("I didn't say yes")).toBe('no');
     expect(parseVoiceConfirmation('')).toBeNull();
     expect(parseVoiceConfirmation('hmm')).toBeNull();
   });
