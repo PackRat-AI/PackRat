@@ -37,7 +37,7 @@ export type PushRegistrationStatus = 'registered' | 'blocked' | 'unavailable';
  * the caller can point them to system settings instead.
  */
 export async function registerForPushIfNeeded(): Promise<PushRegistrationStatus> {
-  if (Platform.OS !== 'android' || !Device.isDevice) return 'unavailable';
+  if (Platform.OS !== 'android') return 'unavailable';
   try {
     await ensureAlertsChannel();
     let permission = await Notifications.getPermissionsAsync();
@@ -45,6 +45,9 @@ export async function registerForPushIfNeeded(): Promise<PushRegistrationStatus>
       permission = await Notifications.requestPermissionsAsync();
     }
     if (!permission.granted) return 'blocked';
+    // Permission is asked for on emulators too, so the prompt is never a dead
+    // button there; only the push token is device-only.
+    if (!Device.isDevice) return 'unavailable';
     await sendToken();
     return 'registered';
   } catch (error) {
