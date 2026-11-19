@@ -32,9 +32,6 @@ struct OfflineAreaPickerView: View {
     @State private var estimateFailed = false
     @State private var packFit: (fits: Bool, fitsAlone: Bool)?
     @State private var confirmingCellular = false
-    @State private var areasToFree: [OfflineArea] = []
-    @State private var confirmingFreeSpace = false
-    @State private var overLimit = false
 
     init(
         initialCenter: CLLocationCoordinate2D? = nil,
@@ -177,20 +174,6 @@ struct OfflineAreaPickerView: View {
         } message: {
             Text("This map is \(estimate?.fileSizeText ?? "large") and you're not on Wi-Fi.")
         }
-        .alert("Free up space first", isPresented: $confirmingFreeSpace) {
-            Button("Delete and Save", role: .destructive) {
-                for area in areasToFree { store.delete(area) }
-                attemptSave()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This map needs more room than your offline maps limit allows. Deleting \(ListFormatter.localizedString(byJoining: areasToFree.map(\.name))) makes room for it.")
-        }
-        .alert("Over your storage limit", isPresented: $overLimit) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("This map is larger than your offline maps limit. Raise the limit in Offline Maps, or save a smaller area.")
-        }
     }
 
     private var tooLargeMessage: String {
@@ -241,16 +224,7 @@ struct OfflineAreaPickerView: View {
     }
 
     private func attemptSave() {
-        guard let estimate else { return }
-        guard let toFree = store.areasToFree(forAdditional: estimate) else {
-            overLimit = true
-            return
-        }
-        guard toFree.isEmpty else {
-            areasToFree = toFree
-            confirmingFreeSpace = true
-            return
-        }
+        guard estimate != nil else { return }
         let onCellular = NetworkMonitor.shared.connectionType == .cellular
         if onCellular && !Defaults[.offlineMapsAllowCellular] {
             confirmingCellular = true

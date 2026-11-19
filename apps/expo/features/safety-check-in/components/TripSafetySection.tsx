@@ -22,7 +22,7 @@ import { capitalizeFirst, contactSummary } from '../lib/copy';
 import { hasBackgroundPermission, startTracking } from '../lib/locationTracking';
 import { endSafetyCheckIn, refreshSafetyCheckIn } from '../lib/safetyActions';
 import { scheduleSafetyNotifications } from '../lib/safetyNotifications';
-import { setTripLifecycle } from '../lib/tripLifecycle';
+import { setTripLifecycle, tripStartPromptOpen } from '../lib/tripLifecycle';
 import { safetySendBlocked, safetyStore } from '../store/safetyCheckIn';
 import type { LocalSafetyCheckIn } from '../types';
 import {
@@ -65,14 +65,26 @@ export function TripSafetySection({ trip }: { trip: Trip }) {
   const openSetup = () => router.push(`/trip/${trip.id}/safety-start`);
 
   const startTrip = () => {
+    tripStartPromptOpen.set(true);
     setTripLifecycle({ tripId: trip.id, status: 'in_progress' });
     alertRef.current?.alert({
       title: t('safetyCheckIn.start.askTitle'),
       message: t('safetyCheckIn.start.askMessage'),
       materialIcon: { name: 'shield-outline' },
       buttons: [
-        { text: t('safetyCheckIn.start.withoutNotifying'), style: 'cancel' },
-        { text: t('safetyCheckIn.start.notify'), style: 'default', onPress: openSetup },
+        {
+          text: t('safetyCheckIn.start.withoutNotifying'),
+          style: 'cancel',
+          onPress: () => tripStartPromptOpen.set(false),
+        },
+        {
+          text: t('safetyCheckIn.start.notify'),
+          style: 'default',
+          onPress: () => {
+            tripStartPromptOpen.set(false);
+            openSetup();
+          },
+        },
       ],
     });
   };
@@ -98,26 +110,22 @@ export function TripSafetySection({ trip }: { trip: Trip }) {
         <Text variant="callout" className="text-muted-foreground" wrap>
           {t('safetyCheckIn.trail.noOneTold')}
         </Text>
-        <View className="flex-row gap-2">
+        <View className="gap-2">
           <Button
             variant="filled"
-            className="flex-1"
             onPress={openSetup}
             testID={testIds.safetyCheckIn.notifyContactsBtn}
           >
-            <Text className="font-medium text-primary-foreground" numberOfLines={1}>
+            <Text className="font-medium text-primary-foreground">
               {t('safetyCheckIn.start.notify')}
             </Text>
           </Button>
           <Button
             variant="outlined"
-            className="flex-1"
             onPress={() => setTripLifecycle({ tripId: trip.id, status: 'complete' })}
             testID={testIds.safetyCheckIn.finishTripBtn}
           >
-            <Text className="font-medium text-primary" numberOfLines={1}>
-              {t('safetyCheckIn.trail.finish')}
-            </Text>
+            <Text className="font-medium text-primary">{t('safetyCheckIn.trail.finish')}</Text>
           </Button>
         </View>
       </Card>
@@ -338,26 +346,20 @@ function SafetyCheckInCard({
         </View>
       )}
 
-      <View className="flex-row gap-2">
+      <View className="gap-2">
         <Button
           variant="outlined"
-          className="flex-1"
           onPress={() => router.push(`/trip/${trip.id}/check-in`)}
           testID={testIds.safetyCheckIn.checkInBtn}
         >
-          <Text className="font-medium text-primary" numberOfLines={1}>
-            {t('safetyCheckIn.card.checkIn')}
-          </Text>
+          <Text className="font-medium text-primary">{t('safetyCheckIn.card.checkIn')}</Text>
         </Button>
         <Button
           variant="outlined"
-          className="flex-1"
           onPress={() => router.push(`/trip/${trip.id}/running-late`)}
           testID={testIds.safetyCheckIn.runningLateBtn}
         >
-          <Text className="font-medium text-primary" numberOfLines={1}>
-            {t('safetyCheckIn.card.runningLate')}
-          </Text>
+          <Text className="font-medium text-primary">{t('safetyCheckIn.card.runningLate')}</Text>
         </Button>
       </View>
 

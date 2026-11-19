@@ -5,6 +5,9 @@ import { Snackbar, type SnackbarHandle } from '@packrat/ui/src/snackbar';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { PermissionNotice } from 'expo-app/components/PermissionNotice';
+import { NotificationsOffNotice } from 'expo-app/features/notifications/components/NotificationsOffNotice';
+import { useNotificationPermission } from 'expo-app/features/notifications/hooks/useNotificationPermission';
+import { showsNotificationsOffNotice } from 'expo-app/features/notifications/utils/notificationsOffNotice';
 import { useTrips } from 'expo-app/features/trips/hooks/useTrips';
 import {
   tripSendsWeatherAlerts,
@@ -15,7 +18,6 @@ import type { Trip } from 'expo-app/features/trips/types';
 import { tripsInWatchWindow } from 'expo-app/features/trips/utils/tripWeatherPlan';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { useNotificationsGranted } from 'expo-app/lib/permissions/usePermissionGranted';
 import { testIds } from 'expo-app/lib/testIds';
 import { parseLocalDate } from 'expo-app/lib/utils/dateUtils';
 import { router, Stack, useFocusEffect } from 'expo-router';
@@ -139,7 +141,7 @@ export default function WatchListScreen() {
   const tripAlerts = useTripAlertsSetting();
   const trips = useTrips();
   const { unwatchPlace } = useWatchFeedback(snackbar, { showsNoticeFromSearch: true });
-  const notifications = useNotificationsGranted();
+  const notifications = useNotificationPermission();
 
   // Trips enter and leave the window by date, so the clock is reread whenever the list
   // comes back into view or is pulled to refresh.
@@ -158,12 +160,18 @@ export default function WatchListScreen() {
   const isLoading =
     (showsLocations && locationsLoading) || (tripAlertsLoading && watchedTrips.length === 0);
 
+  const showsNotice = showsNotificationsOffNotice({
+    granted: notifications.granted,
+    alertsOn: watchedTrips.some(tripSendsWeatherAlerts),
+  });
+
   const sections = [
     ...(watchedTrips.length > 0
       ? [
           {
             key: 'trips',
             title: t('weather.watchListTrips'),
+            notice: showsNotice,
             data: watchedTrips.map((trip): Row => ({ kind: 'trip', trip })),
           },
         ]
@@ -349,22 +357,35 @@ export default function WatchListScreen() {
               renderLocation(item.location)
             )
           }
-          renderSectionHeader={({ section }) =>
-            section.title ? (
-              <Text
-                variant="subhead"
-                className="bg-background px-4 pb-2 pt-4 font-medium text-primary"
-              >
-                {section.title}
-              </Text>
-            ) : null
-          }
+          renderSectionHeader={({ section }) => (
+            <>
+              {section.title ? (
+                <Text
+                  variant="subhead"
+                  className="bg-background px-4 pb-2 pt-4 font-medium text-primary"
+                >
+                  {section.title}
+                </Text>
+              ) : null}
+              {'notice' in section && section.notice ? (
+                <NotificationsOffNotice
+                  onOpenSettings={notifications.openSettings}
+                  className="mx-4 mb-2"
+                  testID={testIds.weather.watchListNotificationsOff}
+                />
+              ) : null}
+            </>
+          )}
           stickySectionHeadersEnabled={false}
           contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 96 }}
           refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}
           ListEmptyComponent={emptyState()}
           ListHeaderComponent={
-            notifications.granted === false && sections.length > 0 ? (
+            // The trips section carries its own notice; this one covers watched places.
+            notifications.granted === false &&
+            !showsNotice &&
+            showsLocations &&
+            watched.length > 0 ? (
               <PermissionNotice
                 message={t('weather.watchListNotificationsOff')}
                 settings="notifications"

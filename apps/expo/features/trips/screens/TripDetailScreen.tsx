@@ -4,9 +4,21 @@ import { Button } from '@packrat/ui/src/button';
 import { Card } from '@packrat/ui/src/card';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
+import { OfflineMapRow, OutdoorsMap } from 'expo-app/features/offline-maps';
 import { PlannedRouteSection, TripSafetySection } from 'expo-app/features/safety-check-in';
 import { TripTrailConditionsSection } from 'expo-app/features/trail-conditions/components/TripTrailConditionsSection';
-import { TripLogSection } from 'expo-app/features/trip-stats/components/TripLogSection';
+import {
+  isTripFinished,
+  TripLogSection,
+} from 'expo-app/features/trip-stats/components/TripLogSection';
+import {
+  TripGuidanceCard,
+  TripTrackingSection,
+  TripVoiceBar,
+  useShowsGuidance,
+  useShowsTracking,
+  useShowsVoiceBar,
+} from 'expo-app/features/voice-commands';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -35,11 +47,15 @@ export function TripDetailScreen() {
 
   const enableTripReminders = useFeatureFlag('enableTripReminders');
   const enableSafetyCheckIn = useFeatureFlag('enableSafetyCheckIn');
+  const enableOfflineMaps = useFeatureFlag('enableOfflineMaps');
   const enableTripWeather = useFeatureFlag('enableTripWeather');
 
   // safe-cast: trip may be undefined before the store is hydrated; the guard at line ~38 handles
   // the undefined case and returns early, ensuring trip is non-null at render time below.
   const trip = useTripDetailsFromStore(id as string) as Trip;
+  const showsVoiceBar = useShowsVoiceBar(trip);
+  const showsTracking = useShowsTracking(trip);
+  const showsGuidance = useShowsGuidance(trip);
   const packs = useDetailedPacks();
   const packedRecord = use$(() =>
     trip?.packId ? obs({ store: packingModeStore, id: trip.packId }).get() : null,
@@ -69,6 +85,10 @@ export function TripDetailScreen() {
     packedItemIds: packedIdsFrom(packedRecord),
   });
 
+  const tripEnd = trip.endDate ?? trip.startDate;
+  const tripEndsAt = tripEnd ? new Date(tripEnd).getTime() : undefined;
+  const tripIsFinished = isTripFinished(trip);
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return '—';
     return new Date(dateString).toISOString().split('T')[0];
@@ -96,6 +116,10 @@ export function TripDetailScreen() {
           <Text className="mb-3 text-3xl font-bold text-foreground">{trip.name}</Text>
 
           {enableSafetyCheckIn && <TripSafetySection trip={trip} />}
+
+          {showsGuidance && <TripGuidanceCard trip={trip} />}
+
+          {showsTracking && <TripTrackingSection trip={trip} />}
 
           {enableTripReminders && isDepartureNear({ trip, now: new Date() }) && (
             <TripReadinessCard trip={trip} />
@@ -153,18 +177,25 @@ export function TripDetailScreen() {
                 </View>
 
                 <View className="h-36">
-                  <MapView
-                    key={mapKey}
-                    style={{ flex: 1 }}
-                    initialRegion={{
-                      latitude: trip.location.latitude,
-                      longitude: trip.location.longitude,
-                      latitudeDelta: 0.05,
-                      longitudeDelta: 0.05,
-                    }}
-                  >
-                    <Marker coordinate={trip.location} />
-                  </MapView>
+                  {enableOfflineMaps ? (
+                    <OutdoorsMap
+                      id="trip-map"
+                      pin={[trip.location.longitude, trip.location.latitude]}
+                    />
+                  ) : (
+                    <MapView
+                      key={mapKey}
+                      style={{ flex: 1 }}
+                      initialRegion={{
+                        latitude: trip.location.latitude,
+                        longitude: trip.location.longitude,
+                        latitudeDelta: 0.05,
+                        longitudeDelta: 0.05,
+                      }}
+                    >
+                      <Marker coordinate={trip.location} />
+                    </MapView>
+                  )}
                 </View>
 
                 <View className="p-3 flex-row justify-center gap-2">
@@ -186,6 +217,25 @@ export function TripDetailScreen() {
                     <Text>{t('trips.viewWeather')}</Text>
                   </Button>
                 </View>
+
+                {enableOfflineMaps && !tripIsFinished ? (
+                  <View className="border-t border-border p-3">
+                    <OfflineMapRow
+                      tripId={trip.id}
+                      idPrefix="trip"
+                      picker={{
+                        pathname: '/offline-maps/pick',
+                        params: {
+                          name: trip.name,
+                          tripId: trip.id,
+                          lat: String(trip.location.latitude),
+                          lon: String(trip.location.longitude),
+                          ...(tripEndsAt !== undefined ? { tripEndsAt: String(tripEndsAt) } : {}),
+                        },
+                      }}
+                    />
+                  </View>
+                ) : null}
               </Card>
             </View>
           )}
@@ -256,6 +306,7 @@ export function TripDetailScreen() {
           <TripTrailConditionsSection trip={trip} />
         </View>
       </ScrollView>
+      {showsVoiceBar && <TripVoiceBar trip={trip} />}
     </SafeAreaView>
   );
 }

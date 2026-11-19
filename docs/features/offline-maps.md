@@ -34,13 +34,10 @@ The Offline maps screen lists each saved area with its name, size, detail level 
 
 Areas saved for a trip are marked with that trip. After a trip ends, its area stays until the user deletes it; the screen highlights areas tied to trips that have finished so they are easy to clear out.
 
-The user can set a storage limit for offline maps. A download that would exceed the limit asks the user to free space first and shows which areas would cover it.
-
 ## What the user controls
 
 - Which areas are saved, how large, and at what detail.
 - Whether downloads can use cellular data.
-- The storage limit for offline maps.
 - Renaming, updating and deleting saved areas.
 
 ## What this feature does not do
