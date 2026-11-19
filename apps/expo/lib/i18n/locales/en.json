@@ -2280,8 +2280,8 @@
     "regionsStates": "States and provinces",
     "regionsCountries": "Countries",
     "regionsNoMatch": "No places match “{{query}}”.",
-    "tileEmpty": "Maps for no signal",
     "tileCount_one": "{{count}} saved map",
-    "tileCount_other": "{{count}} saved maps"
+    "tileCount_other": "{{count}} saved maps",
+    "regionTooLarge": "Too large to save in one piece"
   }
 }

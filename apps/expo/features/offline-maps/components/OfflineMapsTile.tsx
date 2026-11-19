@@ -11,7 +11,7 @@ import { useOfflineAreas } from '../hooks/useOfflineAreas';
 
 /**
  * The dashboard's Offline maps row, one tap from Home like the maps apps hikers already use, with
- * the saved-map count on the right. Settings keeps its entry too.
+ * the saved-map count on the right once there is one. Settings keeps its entry too.
  */
 export function OfflineMapsTile() {
   const { t } = useTranslation();
@@ -35,11 +35,11 @@ export function OfflineMapsTile() {
       }
       rightView={
         <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-          <Text className="mr-2 text-muted-foreground">
-            {areas.length === 0
-              ? t('offlineMaps.tileEmpty')
-              : t('offlineMaps.tileCount', { count: areas.length })}
-          </Text>
+          {areas.length > 0 ? (
+            <Text className="mr-2 text-muted-foreground">
+              {t('offlineMaps.tileCount', { count: areas.length })}
+            </Text>
+          ) : null}
           <Icon name="chevron-right" size={17} color={colors.grey} />
         </View>
       }

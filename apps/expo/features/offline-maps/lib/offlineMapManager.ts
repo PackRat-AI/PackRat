@@ -271,8 +271,9 @@ async function begin({ area, fresh }: { area: OfflineArea; fresh: boolean }): Pr
 
 /**
  * Starts a download framed by a region's outline. `offlineManager.createPack` only takes a
- * rectangle, but the native module hands whatever GeoJSON it is given to the tile store, so this
- * calls it directly with the outline. Listeners go on first, the way `createPack` does it; the
+ * rectangle, so this calls the native module directly with the outline; the
+ * `patches/@rnmapbox%2Fmaps` patch makes it pass a one-feature MultiPolygon to the tile store as
+ * is, and restore it when a download resumes. Listeners go on first, the way `createPack` does it; the
  * manager re-reads its pack list on the next `getPack`, so resuming and deleting work as usual.
  */
 async function createOutlinePack({

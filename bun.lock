@@ -873,6 +873,9 @@
   "trustedDependencies": [
     "@sentry/cli",
   ],
+  "patchedDependencies": {
+    "@rnmapbox/maps@10.3.18": "patches/@rnmapbox%2Fmaps@10.3.18.patch",
+  },
   "overrides": {
     "@sinclair/typebox": "^0.34.15",
     "elysia": "^1.4.0",

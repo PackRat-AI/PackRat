@@ -8,7 +8,10 @@ import {
 } from '../utils/namedRegions';
 
 let all: OfflineNamedRegion[] | null = null;
-let saveable: Promise<OfflineNamedRegion[]> | null = null;
+let measured: Promise<MeasuredRegion[]> | null = null;
+
+/** A region and whether it fits whole at Standard detail. */
+export type MeasuredRegion = { region: OfflineNamedRegion; fits: boolean };
 
 /**
  * Every park, forest, state, province and country the app carries an outline for. Parsed on first
@@ -34,26 +37,26 @@ export function getNamedRegion(id: string): OfflineNamedRegion | undefined {
 }
 
 /**
- * The regions small enough to save whole at Standard detail. Counting tiles over hundreds of
- * outlines takes a moment, so it yields between batches to keep the list's spinner moving, and the
- * answer is kept for the rest of the session.
+ * Every region, marked with whether it is small enough to save whole at Standard detail, so the
+ * list can say so up front. Counting tiles over hundreds of outlines takes a moment, so it yields
+ * between batches to keep the list's spinner moving, and the answer is kept for the session.
  */
-export function getSaveableRegions(): Promise<OfflineNamedRegion[]> {
-  if (!saveable) {
-    saveable = (async () => {
+export function getMeasuredRegions(): Promise<MeasuredRegion[]> {
+  if (!measured) {
+    measured = (async () => {
       const regions = getNamedRegions();
-      const kept: OfflineNamedRegion[] = [];
+      const result: MeasuredRegion[] = [];
       for (let index = 0; index < regions.length; index++) {
         if (index % 20 === 0) await new Promise((resolve) => setTimeout(resolve, 0));
         const region = regions[index];
-        if (region && isSaveable(region)) kept.push(region);
+        if (region) result.push({ region, fits: isSaveable(region) });
       }
-      return kept;
+      return result;
     })();
     // A failed count is tried again the next time the list opens.
-    saveable.catch(() => {
-      saveable = null;
+    measured.catch(() => {
+      measured = null;
     });
   }
-  return saveable;
+  return measured;
 }

@@ -8,13 +8,8 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { SectionList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getSaveableRegions } from '../lib/namedRegions';
-import {
-  matchRegions,
-  NAMED_REGION_KINDS,
-  type NamedRegionKind,
-  type OfflineNamedRegion,
-} from '../utils/namedRegions';
+import { getMeasuredRegions, type MeasuredRegion } from '../lib/namedRegions';
+import { matchRegions, NAMED_REGION_KINDS, type NamedRegionKind } from '../utils/namedRegions';
 
 const SECTION_TITLE_KEYS = Object.freeze({
   park: 'offlineMaps.regionsParks',
@@ -23,18 +18,21 @@ const SECTION_TITLE_KEYS = Object.freeze({
   country: 'offlineMaps.regionsCountries',
 } as const satisfies Record<NamedRegionKind, string>);
 
-/** Find a park, forest, state or country by name, then save the map inside its outline. */
+/**
+ * Find a park, forest, state or country by name, then save the map inside its outline. Places too
+ * big to save whole stay listed with a note, and open on the picker's explanation of the fix.
+ */
 export function OfflineRegionListScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useColorScheme();
   const [query, setQuery] = useState('');
-  const [regions, setRegions] = useState<OfflineNamedRegion[] | null>(null);
+  const [measured, setMeasured] = useState<MeasuredRegion[] | null>(null);
 
   useEffect(() => {
     let live = true;
-    void getSaveableRegions().then((found) => {
-      if (live) setRegions(found);
+    void getMeasuredRegions().then((found) => {
+      if (live) setMeasured(found);
     });
     return () => {
       live = false;
@@ -42,13 +40,16 @@ export function OfflineRegionListScreen() {
   }, []);
 
   const sections = useMemo(() => {
-    const matches = matchRegions({ regions: regions ?? [], query });
+    const fits = new Map(measured?.map((item) => [item.region.id, item.fits]));
+    const matches = matchRegions({ regions: measured?.map((item) => item.region) ?? [], query });
     return NAMED_REGION_KINDS.map((kind) => ({
       kind,
       title: t(SECTION_TITLE_KEYS[kind]),
-      data: matches.filter((region) => region.kind === kind),
+      data: matches
+        .filter((region) => region.kind === kind)
+        .map((region) => ({ region, fits: fits.get(region.id) ?? true })),
     })).filter((section) => section.data.length > 0);
-  }, [regions, query, t]);
+  }, [measured, query, t]);
 
   return (
     <SafeAreaView
@@ -58,7 +59,7 @@ export function OfflineRegionListScreen() {
     >
       <SectionList
         sections={sections}
-        keyExtractor={(region) => region.id}
+        keyExtractor={(item) => item.region.id}
         keyboardShouldPersistTaps="handled"
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={
@@ -70,7 +71,7 @@ export function OfflineRegionListScreen() {
           />
         }
         ListEmptyComponent={
-          regions === null ? (
+          measured === null ? (
             <View className="items-center pt-10">
               <ActivityIndicator color={colors.primary} />
             </View>
@@ -85,10 +86,14 @@ export function OfflineRegionListScreen() {
             {section.title}
           </Text>
         )}
-        renderItem={({ item: region }) => (
+        renderItem={({ item: { region, fits } }) => (
           <StatsRow
             title={region.name}
-            subtitle={region.subtitle || null}
+            subtitle={
+              [region.subtitle, fits ? null : t('offlineMaps.regionTooLarge')]
+                .filter(Boolean)
+                .join(' · ') || null
+            }
             onPress={() =>
               router.push({ pathname: '/offline-maps/pick', params: { regionId: region.id } })
             }
