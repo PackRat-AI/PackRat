@@ -226,6 +226,16 @@ describe('prompts', () => {
   });
 });
 
+describe('arrival', () => {
+  it('waits for the destination radius, then keeps the latest progress', () => {
+    const walk = walker();
+    // About 60 m past the end of the route: on its last point, but not at camp yet.
+    expect(walk.step({ latitude: 47.01, longitude: -119.9842 }, 0).kinds).not.toContain('arrived');
+    expect(walk.step(routeEnd, 30).kinds).toEqual(['arrived']);
+    expect(walk.guide.progress?.remainingMeters).toBe(0);
+  });
+});
+
 describe('card and answers', () => {
   it('groups back on route with off route in Settings', () => {
     expect(promptKind({ kind: 'backOnRoute' })).toBe('offRoute');

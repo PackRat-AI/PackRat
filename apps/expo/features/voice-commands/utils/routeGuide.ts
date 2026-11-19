@@ -125,6 +125,18 @@ export function pathLength(path: readonly GeoPoint[]): number {
   return cumulative(path).at(-1) ?? 0;
 }
 
+/** Index of the first value at or past `target` in an ascending list, or -1. Binary search. */
+function firstAtLeast({ values, target }: { values: readonly number[]; target: number }): number {
+  let low = 0;
+  let high = values.length;
+  while (low < high) {
+    const mid = (low + high) >> 1;
+    if ((values[mid] ?? 0) < target) low = mid + 1;
+    else high = mid;
+  }
+  return low < values.length ? low : -1;
+}
+
 /** The point `along` metres down the path, clamped to its ends. */
 export function pointAlong({
   along,
@@ -139,7 +151,7 @@ export function pointAlong({
   const last = path[path.length - 1];
   if (!first || !last) return { latitude: 0, longitude: 0 };
   if (along <= 0) return first;
-  const index = distances.findIndex((d) => d >= along);
+  const index = firstAtLeast({ values: distances, target: along });
   if (index <= 0) return last;
   const a = path[index - 1] as GeoPoint;
   const b = path[index] as GeoPoint;
@@ -371,12 +383,12 @@ export function updateGuide({
   if (guide.hasArrived) return { guide, prompts: [] };
   const { plan } = guide;
   const direct = geoDistance({ from: position, to: plan.destination.point });
+  const progress = plan.path ? routeProgress({ position, route: plan.path }) : null;
+  // Keep the latest progress, so the next turn isn't one already passed on the way in.
   const arrive = () => ({
-    guide: { ...guide, hasArrived: true, remainingMeters: 0 },
+    guide: { ...guide, progress: progress ?? guide.progress, hasArrived: true, remainingMeters: 0 },
     prompts: [{ kind: 'arrived' } as const],
   });
-
-  const progress = plan.path ? routeProgress({ position, route: plan.path }) : null;
   if (!progress) {
     if (direct <= ARRIVAL_RADIUS_METERS) return arrive();
     const next = { ...guide, remainingMeters: direct };
@@ -392,7 +404,8 @@ export function updateGuide({
   let next: RouteGuide = { ...guide, progress, remainingMeters: progress.remainingMeters };
   if (
     direct <= ARRIVAL_RADIUS_METERS ||
-    (isOnRoute(progress) && progress.remainingMeters <= ARRIVAL_RADIUS_METERS)
+    (progress.offRouteMeters <= ARRIVAL_RADIUS_METERS &&
+      progress.remainingMeters <= ARRIVAL_RADIUS_METERS)
   ) {
     return arrive();
   }
