@@ -54,6 +54,21 @@ struct PackRatWatchSnapshot: Codable, Equatable, Sendable {
         isPro = try container.decodeIfPresent(Bool.self, forKey: .isPro) ?? false
     }
 
+    /// What the watch's pack card can show. Kept apart from "nothing synced"
+    /// so a phone with no packs isn't mistaken for a sync that failed.
+    enum PackState: Equatable {
+        /// The phone has never sent anything.
+        case awaitingPhone
+        /// The phone synced, but its account has no pack.
+        case noPack
+        case pack
+    }
+
+    var packState: PackState {
+        if updatedAt == Self.fallback.updatedAt { return .awaitingPhone }
+        return pack.packId == nil ? .noPack : .pack
+    }
+
     static let fallback = PackRatWatchSnapshot(
         updatedAt: Date(timeIntervalSince1970: 0),
         pack: WatchPackSnapshot(

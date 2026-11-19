@@ -224,4 +224,16 @@ struct WatchWeatherAlertTests {
         weather.alert = WatchWeatherAlertSnapshot(headline: "Flood Warning", severity: "Severe", locationName: "Boulder", otherCount: 0)
         #expect(WatchComplicationStore.save(weather) == true)
     }
+
+    @Test("a synced phone with no pack reads as no pack, not as never synced")
+    func packStateSeparatesNoPackFromNeverSynced() {
+        var snapshot = PackRatWatchSnapshot.fallback
+        #expect(snapshot.packState == .awaitingPhone)
+
+        snapshot.updatedAt = Date()
+        #expect(snapshot.packState == .noPack)
+
+        snapshot.pack.packId = "pack-1"
+        #expect(snapshot.packState == .pack)
+    }
 }
