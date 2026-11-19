@@ -13,15 +13,14 @@ import { useWatchMutations, type WatchablePlace } from './useWatchList';
  * snackbar with Undo, a failure says so and leaves the state as it was, and a
  * first watch with notifications blocked offers the way to system settings.
  */
-export function useWatchFeedback(
-  snackbar: RefObject<SnackbarHandle | null>,
-  {
-    showsNoticeFromSearch = false,
-  }: {
-    /** The screen search returns to after a watch shows search's blocked-notifications notice. */
-    showsNoticeFromSearch?: boolean;
-  } = {},
-) {
+export function useWatchFeedback({
+  snackbar,
+  showsNoticeFromSearch = false,
+}: {
+  snackbar: RefObject<SnackbarHandle | null>;
+  /** The screen search returns to after a watch shows search's blocked-notifications notice. */
+  showsNoticeFromSearch?: boolean;
+}) {
   const { t } = useTranslation();
   const { watch, unwatch } = useWatchMutations();
   const [noticePending, setNoticePending] = useAtom(notificationsBlockedNoticeAtom);
