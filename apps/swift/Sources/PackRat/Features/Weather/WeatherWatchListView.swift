@@ -45,7 +45,7 @@ struct WeatherWatchListView: View {
     var body: some View {
         Group {
             if isLoading && watchedTrips.isEmpty {
-                ProgressView("Loading watch list…")
+                ProgressView("Loading watch list…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if watchedLocations.isEmpty && watchedTrips.isEmpty {
                 emptyState
             } else {
