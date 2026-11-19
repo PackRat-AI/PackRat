@@ -34,6 +34,8 @@ export function OutdoorsMap({
         scaleBarEnabled={false}
         rotateEnabled={false}
         pitchEnabled={false}
+        // Inside a scrolling page, so a drag on the map pans it instead of scrolling the page.
+        requestDisallowInterceptTouchEvent={interactive}
       >
         <Mapbox.Camera
           // Keyed on the target: changing defaultSettings alone does not move a mounted camera.

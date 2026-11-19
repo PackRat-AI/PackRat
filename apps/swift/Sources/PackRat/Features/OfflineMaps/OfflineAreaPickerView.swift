@@ -97,8 +97,10 @@ struct OfflineAreaPickerView: View {
                     if let region {
                         PolygonAnnotationGroup(Array(region.rings.enumerated()), id: \.offset) { _, ring in
                             PolygonAnnotation(polygon: Polygon([ring]))
-                                .fillColor(UIColor.tintColor)
-                                .fillOpacity(framingPart ? 0 : 0.15)
+                                // Fill opacity dims the outline too, so framing part
+                                // clears the fill colour instead and keeps the outline.
+                                .fillColor(framingPart ? UIColor.clear : UIColor.tintColor)
+                                .fillOpacity(framingPart ? 1 : 0.15)
                                 .fillOutlineColor(UIColor.tintColor)
                         }
                     }

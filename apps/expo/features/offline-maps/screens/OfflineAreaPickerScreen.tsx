@@ -85,7 +85,10 @@ export function OfflineAreaPickerScreen() {
     () => (rings ? packFit({ rings, detail, saved }) : null),
     [rings, detail, saved],
   );
-  const estimate = rings && fit?.fitsAlone ? estimateBytes({ rings, detail }) : null;
+  const estimate = useMemo(
+    () => (rings && fit?.fitsAlone ? estimateBytes({ rings, detail }) : null),
+    [rings, fit, detail],
+  );
   const isTooLarge = fit?.fitsAlone === false;
   const isOutOfRoom = fit?.fitsAlone === true && !fit.fits;
   // An area saved from a trail keeps its line, so wait for it before saving.

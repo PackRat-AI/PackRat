@@ -274,8 +274,9 @@ async function begin({ area, fresh }: { area: OfflineArea; fresh: boolean }): Pr
  * Starts a download framed by a region's outline. `offlineManager.createPack` only takes a
  * rectangle, so this calls the native module directly with the outline; the
  * `patches/@rnmapbox%2Fmaps` patch makes it pass a one-feature MultiPolygon to the tile store as
- * is, and restore it when a download resumes. Listeners go on first, the way `createPack` does it; the
- * manager re-reads its pack list on the next `getPack`, so resuming and deleting work as usual.
+ * is, and restore it when a download resumes. Listeners go on first, the way `createPack` does it.
+ * The manager drops progress for a pack missing from its own list, which only `createPack` fills,
+ * so the new pack is added to that list straight after.
  */
 async function createOutlinePack({
   area,
@@ -294,6 +295,13 @@ async function createOutlinePack({
     maxZoom: DETAIL_MAX_ZOOM[area.detail],
     metadata: safeJsonStringify({ areaName: area.name, name: area.id }),
   });
+  // `getPack` re-reads the native list. The tile store can take a moment to list a new region, and
+  // a download takes far longer than this to report its first progress.
+  for (let attempt = 0; attempt < 10; attempt++) {
+    if (await offlineManager.getPack(area.id)) return;
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+  throw new Error('The new outline pack never appeared in the tile store');
 }
 
 function onProgress(status: OfflineProgressStatus): void {

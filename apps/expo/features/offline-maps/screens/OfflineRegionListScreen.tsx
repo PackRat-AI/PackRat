@@ -1,5 +1,7 @@
+import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
+import * as Sentry from '@sentry/react-native';
 import { SearchField, StatsRow } from 'expo-app/features/trip-stats/components/StatsParts';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -28,16 +30,28 @@ export function OfflineRegionListScreen() {
   const { colors } = useColorScheme();
   const [query, setQuery] = useState('');
   const [measured, setMeasured] = useState<MeasuredRegion[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  // Bumped by Try again, which re-runs the load below.
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let live = true;
-    void getMeasuredRegions().then((found) => {
-      if (live) setMeasured(found);
-    });
+    setFailed(false);
+    getMeasuredRegions().then(
+      (found) => {
+        if (live) setMeasured(found);
+      },
+      (error: unknown) => {
+        Sentry.captureException(error, {
+          tags: { feature: 'offlineMaps', action: 'measureRegions' },
+        });
+        if (live) setFailed(true);
+      },
+    );
     return () => {
       live = false;
     };
-  }, []);
+  }, [attempt]);
 
   const sections = useMemo(() => {
     const fits = new Map(measured?.map((item) => [item.region.id, item.fits]));
@@ -71,7 +85,16 @@ export function OfflineRegionListScreen() {
           />
         }
         ListEmptyComponent={
-          measured === null ? (
+          failed ? (
+            <View className="items-center gap-3 px-6 pt-10">
+              <Text variant="callout" className="text-center text-muted-foreground" wrap>
+                {t('offlineMaps.regionsFailed')}
+              </Text>
+              <Button variant="tonal" onPress={() => setAttempt((count) => count + 1)}>
+                <Text>{t('offlineMaps.tryAgain')}</Text>
+              </Button>
+            </View>
+          ) : measured === null ? (
             <View className="items-center pt-10">
               <ActivityIndicator color={colors.primary} />
             </View>

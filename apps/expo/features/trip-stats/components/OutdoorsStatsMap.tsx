@@ -1,6 +1,7 @@
 import Mapbox from '@rnmapbox/maps';
 import { OUTDOORS_STYLE } from 'expo-app/features/offline-maps/lib/offlineMapManager';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { View } from 'react-native';
 import type { Coordinate } from '../utils/polyline';
 
 type Region = {
@@ -16,7 +17,7 @@ const lonLat = (point: Coordinate): [number, number] => [point.longitude, point.
 
 /**
  * A Trip Stats map on Mapbox Outdoors, so it draws from saved offline maps without signal: lines,
- * filled outlines and trip pins, framed on `region` like the Google map it stands in for. Used when
+ * filled outlines and named trip pins, framed on `region` like the Google map it stands in for. Used when
  * offline maps are on; the screens keep their Google map otherwise.
  */
 export function OutdoorsStatsMap({
@@ -33,7 +34,8 @@ export function OutdoorsStatsMap({
   lines?: StatsMapLine[];
   /** Filled in the primary colour. */
   outlines?: readonly (readonly Coordinate[])[];
-  pins?: readonly Coordinate[];
+  /** Trips, each named in a callout when its pin is tapped. */
+  pins?: readonly (Coordinate & { id: string; name: string })[];
   /** Pinch to zoom; dragging always scrolls the page instead. */
   zoomEnabled?: boolean;
 }) {
@@ -102,26 +104,28 @@ export function OutdoorsStatsMap({
           />
         </Mapbox.ShapeSource>
       ))}
-      {pins.length > 0 ? (
-        <Mapbox.ShapeSource
-          id={`${id}-pins`}
-          shape={{
-            type: 'Feature',
-            properties: {},
-            geometry: { type: 'MultiPoint', coordinates: pins.map(lonLat) },
-          }}
+      {pins.map((pin) => (
+        // An annotation per trip, so tapping a pin names its trip like the Google map's marker.
+        <Mapbox.PointAnnotation
+          key={pin.id}
+          id={`${id}-pin-${pin.id}`}
+          coordinate={lonLat(pin)}
+          title={pin.name}
         >
-          <Mapbox.CircleLayer
-            id={`${id}-pins-layer`}
+          <View
+            accessibilityLabel={pin.name}
             style={{
-              circleRadius: 7,
-              circleColor: colors.destructive,
-              circleStrokeColor: '#FFFFFF',
-              circleStrokeWidth: 2,
+              width: 14,
+              height: 14,
+              borderRadius: 7,
+              backgroundColor: colors.destructive,
+              borderColor: '#FFFFFF',
+              borderWidth: 2,
             }}
           />
-        </Mapbox.ShapeSource>
-      ) : null}
+          <Mapbox.Callout title={pin.name} />
+        </Mapbox.PointAnnotation>
+      ))}
     </Mapbox.MapView>
   );
 }
