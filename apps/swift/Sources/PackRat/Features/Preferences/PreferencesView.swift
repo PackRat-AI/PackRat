@@ -81,6 +81,8 @@ struct PreferencesView: View {
                 .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
             unitsTab
                 .tabItem { Label("Units", systemImage: "scalemass") }
+            notificationsTab
+                .tabItem { Label("Notifications", systemImage: "bell.badge") }
             advancedTab
                 .tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver") }
             if ChatViewModel.isOnDeviceOffered {
@@ -145,6 +147,14 @@ struct PreferencesView: View {
     private var unitsTab: some View {
         Form { unitsSection }
             .packRatFormStyle()
+    }
+
+    private var notificationsTab: some View {
+        Form { notificationSection }
+            .packRatFormStyle()
+            .onPermissionChange { await refreshNotificationStatus() }
+            .task { await loadTrailReportNotifications() }
+            .task { await loadTripWeatherAlerts() }
     }
 
     private var advancedTab: some View {
