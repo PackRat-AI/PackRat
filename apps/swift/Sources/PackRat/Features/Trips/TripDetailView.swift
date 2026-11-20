@@ -257,10 +257,13 @@ struct TripDetailView: View {
                                 .font(.footnote.weight(.semibold))
                                 .foregroundStyle(.secondary)
                         }
+                        // Padding, background and shape inside the label, so the
+                        // whole card clicks on a Mac, not just its text.
+                        .padding(14)
+                        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)
-                    .padding(14)
-                    .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                     Button {
                         pushedPack = PackRoute(packId: pack.id, packing: true)
