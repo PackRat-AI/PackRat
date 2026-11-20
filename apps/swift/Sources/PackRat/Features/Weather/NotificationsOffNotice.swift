@@ -26,7 +26,7 @@ final class NotificationAuthorization {
     var canAsk: Bool { status == .notDetermined }
 
     func request() async {
-        #if os(iOS)
+        #if os(iOS) || os(macOS)
         await PushRegistrationService.registerForPushIfNeeded()
         #else
         _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
