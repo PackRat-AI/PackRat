@@ -77,6 +77,13 @@ private struct PermissionRefresh: ViewModifier {
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { Task { await refresh() } }
             }
+            #if os(macOS)
+            // The Settings window's scene phase stays put while the user is in
+            // System Settings, so coming back is caught at the app level.
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                Task { await refresh() }
+            }
+            #endif
     }
 }
 
