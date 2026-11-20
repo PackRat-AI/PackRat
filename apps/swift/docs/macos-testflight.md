@@ -72,7 +72,7 @@ and is cleanly distinguishable from a transport failure.
   <key>signingCertificate</key><string>Apple Distribution</string>
   <key>installerSigningCertificate</key><string>3rd Party Mac Developer Installer</string>
   <key>provisioningProfiles</key>
-  <dict><key>com.andrewbierman.packrat</key><string>PackRat macOS App Store</string></dict>
+  <dict><key>com.andrewbierman.packrat</key><string>PackRat macOS App Store 2026-11</string></dict>
   <key>uploadSymbols</key><true/>
 </dict></plist>
 ```
@@ -114,7 +114,7 @@ explicitly. It needs three things to exist:
 |---|---|
 | App signing cert | `Apple Distribution: Bierman Collective LLC (666HGMV2LU)` |
 | Installer signing cert | `3rd Party Mac Developer Installer: Bierman Collective LLC` |
-| Provisioning profile | `PackRat macOS App Store` (MAC_APP_STORE, for `com.andrewbierman.packrat`) |
+| Provisioning profile | `PackRat macOS App Store 2026-11` (MAC_APP_STORE, for `com.andrewbierman.packrat`) |
 
 Verify all three before archiving:
 
