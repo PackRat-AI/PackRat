@@ -196,6 +196,7 @@ struct AppNavigation: View {
                 VoiceCommandHost.shared.attach(appState, modelContext: modelContext)
                 TripSafetyAnnouncer.shared.sync()
             }
+            #endif
             .onReceive(NotificationCenter.default.publisher(for: .weatherAlertNotificationTapped)) { notification in
                 guard let weatherLocationId = notification.userInfo?["weatherLocationId"] as? Int else { return }
                 appState.apply(.weatherAlert(weatherLocationId: weatherLocationId))
@@ -205,11 +206,10 @@ struct AppNavigation: View {
                 appState.apply(.post(id: postId))
             }
             .onReceive(NotificationCenter.default.publisher(for: .tripReminderNotificationTapped)) { notification in
-                guard let tripId = notification.userInfo?[TripReminderScheduler.tripIdKey] as? String else { return }
+                guard let tripId = notification.userInfo?[PushNotificationRouter.tripIdKey] as? String else { return }
                 appState.pendingTrailReport = (notification.userInfo?["reportId"] as? String).map { (tripId, $0) }
                 appState.apply(.trip(id: tripId))
             }
-            #endif
     }
 
     /// Connectivity and sync state are reported in Settings rather than in the

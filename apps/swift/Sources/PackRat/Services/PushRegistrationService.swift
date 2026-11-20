@@ -2,6 +2,8 @@ import Foundation
 import UserNotifications
 #if os(iOS)
 import UIKit
+#elseif os(macOS)
+import AppKit
 #endif
 
 /// Requests notification permission and registers this device for weather
@@ -17,7 +19,7 @@ enum PushRegistrationService {
     /// Returns false when notifications are off, so the caller can say so.
     @discardableResult
     static func registerForPushIfNeeded() async -> Bool {
-        #if os(iOS)
+        #if os(iOS) || os(macOS)
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
         guard settings.authorizationStatus == .notDetermined || settings.authorizationStatus == .authorized else {
@@ -27,16 +29,26 @@ enum PushRegistrationService {
             guard let granted = try? await center.requestAuthorization(options: [.alert, .sound, .badge]),
                   granted else { return false }
         }
+        #if os(iOS)
         UIApplication.shared.registerForRemoteNotifications()
+        #else
+        NSApplication.shared.registerForRemoteNotifications()
+        #endif
         #endif
         return true
     }
+
+    #if os(macOS)
+    private static let platform = "macos"
+    #else
+    private static let platform = "ios"
+    #endif
 
     static func handleDeviceToken(_ deviceToken: Data) {
         let tokenString = deviceToken.map { String(format: "%02x", $0) }.joined()
         Task {
             try? await WeatherMonitoringService.shared.registerDeviceToken(
-                RegisterDeviceTokenRequest(platform: "ios", deviceToken: tokenString)
+                RegisterDeviceTokenRequest(platform: platform, deviceToken: tokenString)
             )
         }
     }

@@ -1463,9 +1463,8 @@ export const tripDestinationAlertState = pgTable('trip_destination_alert_state',
 export type NewWeatherLocationAlertState = InferInsertModel<typeof weatherLocationAlertState>;
 
 // A device registered to receive push notifications. Genuinely new — no push
-// infrastructure predates this feature. 'ios' is the only platform in use
-// today; 'android' is reserved for when the Expo app adopts the same
-// monitoring pipeline.
+// infrastructure predates this feature. 'ios' and 'macos' tokens go to APNs
+// (same bundle ID, so the same topic); 'android' tokens go to FCM.
 export const userDeviceTokens = pgTable(
   'user_device_tokens',
   {
@@ -1473,7 +1472,7 @@ export const userDeviceTokens = pgTable(
     userId: text('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
-    platform: text('platform', { enum: ['ios', 'android'] }).notNull(),
+    platform: text('platform', { enum: ['ios', 'android', 'macos'] }).notNull(),
     deviceToken: text('device_token').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     lastSeenAt: timestamp('last_seen_at').defaultNow().notNull(),

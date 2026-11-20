@@ -12,7 +12,7 @@ import UserNotifications
 @MainActor
 enum TripReminderScheduler {
     static let flagKey = TripReminderPlanner.flagKey
-    static let tripIdKey = "tripId"
+    static let tripIdKey = PushNotificationRouter.tripIdKey
 
     /// iOS keeps at most 64 pending local notifications per app; leave headroom
     /// for anything else the app schedules.
