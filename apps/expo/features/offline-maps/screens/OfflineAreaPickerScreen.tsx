@@ -81,9 +81,13 @@ export function OfflineAreaPickerScreen() {
     () => outline?.rings ?? (bounds ? [boundsRing(bounds)] : null),
     [outline, bounds],
   );
+  // The saved areas' tile coverage only changes when an area is added, removed or re-detailed, so
+  // typing a name or a download's progress does not recount it.
+  const savedKey = saved.map((area) => `${area.id}:${area.detail}`).join(',');
   const fit = useMemo(
     () => (rings ? packFit({ rings, detail, saved }) : null),
-    [rings, detail, saved],
+    // `savedKey` stands in for `saved`, a new array on every render.
+    [rings, detail, savedKey],
   );
   const estimate = useMemo(
     () => (rings && fit?.fitsAlone ? estimateBytes({ rings, detail }) : null),

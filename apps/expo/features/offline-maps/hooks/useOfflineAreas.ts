@@ -1,5 +1,4 @@
 import { use$ } from '@legendapp/state/react';
-import { useMemo } from 'react';
 import { offlineDownloadsStore, offlineMapsStore } from '../store/offlineMaps';
 import type { OfflineArea } from '../types';
 import { sortAreas } from '../utils/offlineArea';
@@ -7,8 +6,8 @@ import { sortAreas } from '../utils/offlineArea';
 /** Every saved area, finished trips first, then newest first. */
 export function useOfflineAreas(): OfflineArea[] {
   const areas = use$(offlineMapsStore.areas);
-  // A stable array while the store is unchanged, so screens can memoize on it.
-  return useMemo(() => sortAreas({ areas: Object.values(areas), now: Date.now() }), [areas]);
+  // Not memoized on `areas`: the store updates that object in place, so its reference never changes.
+  return sortAreas({ areas: Object.values(areas), now: Date.now() });
 }
 
 /** The area saved for a trip or trail, if any. */
