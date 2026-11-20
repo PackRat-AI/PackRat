@@ -1,5 +1,6 @@
 import { clientEnvs } from '@packrat/env/expo-client';
-import { safeJsonStringify } from '@packrat/utils';
+import { isArray, isNumber, isObject, isString } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import Mapbox from '@rnmapbox/maps';
 import * as Sentry from '@sentry/react-native';
 import { obs } from 'expo-app/lib/store';
@@ -298,7 +299,11 @@ async function createOutlinePack({
   // `getPack` re-reads the native list. The tile store can take a moment to list a new region, and
   // a download takes far longer than this to report its first progress.
   for (let attempt = 0; attempt < 10; attempt++) {
-    if (await offlineManager.getPack(area.id)) return;
+    const found = await offlineManager.getPack(area.id);
+    if (found) {
+      await reportIfAlreadyComplete(area.id);
+      return;
+    }
     await new Promise((resolve) => setTimeout(resolve, 300));
   }
   throw new Error('The new outline pack never appeared in the tile store');
@@ -308,15 +313,7 @@ function onProgress(status: OfflineProgressStatus): void {
   const id = status.name;
   if (!obs({ store: offlineMapsStore.areas, id: id }).peek() || status.percentage === null) return;
   if (status.state === 'complete') {
-    running.delete(id);
-    cellularOnce.delete(id);
-    obs({ store: offlineDownloadsStore.progress, id: id }).delete();
-    obs({ store: offlineDownloadsStore.waiting, id: id }).delete();
-    obs({ store: offlineMapsStore.areas, id: id }).assign({
-      sizeBytes: status.completedResourceSize,
-      isComplete: true,
-      savedAt: Date.now(),
-    });
+    markComplete({ id, sizeBytes: status.completedResourceSize });
     return;
   }
   if (!running.has(id)) return;
@@ -324,6 +321,37 @@ function onProgress(status: OfflineProgressStatus): void {
     fraction: Math.min(status.percentage / 100, 1),
     bytes: status.completedResourceSize,
   });
+}
+
+function markComplete({ id, sizeBytes }: { id: string; sizeBytes: number }): void {
+  running.delete(id);
+  cellularOnce.delete(id);
+  obs({ store: offlineDownloadsStore.progress, id: id }).delete();
+  obs({ store: offlineDownloadsStore.waiting, id: id }).delete();
+  obs({ store: offlineMapsStore.areas, id: id }).assign({
+    sizeBytes,
+    isComplete: true,
+    savedAt: Date.now(),
+  });
+}
+
+/**
+ * Marks an outline download done if it finished before the manager knew of its pack. Tiles another
+ * saved or deleted map left in the store make that near-instant, and its completion event is
+ * dropped. Any later event reaches `onProgress` as usual.
+ */
+async function reportIfAlreadyComplete(id: string): Promise<void> {
+  const packs: unknown = await NativeModules.RNMBXOfflineModule.getPacks();
+  if (!isArray(packs)) return;
+  for (const pack of packs) {
+    if (!isObject(pack) || !('state' in pack) || pack.state !== 'complete') continue;
+    if (!('metadata' in pack) || !isString(pack.metadata)) continue;
+    const metadata = safeJsonParse<unknown>(pack.metadata);
+    if (!isObject(metadata) || !('name' in metadata) || metadata.name !== id) continue;
+    const size = 'completedResourceSize' in pack ? pack.completedResourceSize : 0;
+    if (running.has(id)) markComplete({ id, sizeBytes: isNumber(size) ? size : 0 });
+    return;
+  }
 }
 
 function onError(_pack: unknown, error: OfflinePackError): void {
