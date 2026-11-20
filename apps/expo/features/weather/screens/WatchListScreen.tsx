@@ -369,6 +369,8 @@ export default function WatchListScreen() {
               ) : null}
               {'notice' in section && section.notice ? (
                 <NotificationsOffNotice
+                  canAsk={notifications.canAsk}
+                  onAsk={notifications.ask}
                   onOpenSettings={notifications.openSettings}
                   className="mx-4 mb-2"
                   testID={testIds.weather.watchListNotificationsOff}

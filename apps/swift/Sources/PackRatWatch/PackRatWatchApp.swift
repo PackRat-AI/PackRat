@@ -90,14 +90,12 @@ private struct WatchDashboardView: View {
 private struct TrailReadyView: View {
     let snapshot: PackRatWatchSnapshot
     let isPhoneReachable: Bool
-    private var hasSyncedPack: Bool {
-        snapshot.pack.totalItemCount > 0 || !snapshot.pack.checklist.isEmpty
-    }
 
     var body: some View {
         NavigationStack {
             List {
-                if hasSyncedPack {
+                switch snapshot.packState {
+                case .pack:
                     Section {
                         VStack(alignment: .leading, spacing: 10) {
                             Label(snapshot.pack.name, systemImage: "checkmark.seal.fill")
@@ -127,20 +125,42 @@ private struct TrailReadyView: View {
                             )
                         }
                     }
-                } else {
+                case .noPack:
                     Section {
                         ContentUnavailableView(
-                            "Sync from iPhone",
-                            systemImage: "iphone",
-                            description: Text("Open PackRat on iPhone to send your active pack, weather, and trail context.")
+                            "No Packs Yet",
+                            systemImage: "backpack",
+                            description: Text("Create a pack in PackRat on your iPhone to see it here.")
                         )
+                    }
+                case .awaitingPhone:
+                    Section {
+                        if isPhoneReachable {
+                            VStack(spacing: 8) {
+                                ProgressView()
+                                Text("Getting your pack from iPhone…")
+                                    .font(.footnote)
+                                    .multilineTextAlignment(.center)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                        } else {
+                            ContentUnavailableView(
+                                "Open PackRat on iPhone",
+                                systemImage: "iphone",
+                                description: Text("Your pack, trip, and weather appear here once PackRat on your iPhone is open.")
+                            )
+                        }
                     }
                 }
 
-                Section {
-                    Label(isPhoneReachable ? "iPhone Nearby" : "Last Synced", systemImage: isPhoneReachable ? "iphone" : "clock")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                if snapshot.packState != .awaitingPhone {
+                    Section {
+                        Label(isPhoneReachable ? "iPhone Nearby" : "Last Synced", systemImage: isPhoneReachable ? "iphone" : "clock")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .navigationTitle("PackRat")
@@ -169,7 +189,7 @@ private struct WatchChecklistView: View {
             List {
                 Section("Pack") {
                     if pack.checklist.isEmpty {
-                        ContentUnavailableView("No Items", systemImage: "checklist", description: Text("Open a pack on iPhone to sync checklist items."))
+                        ContentUnavailableView("No Items", systemImage: "checklist", description: Text(emptyChecklistText))
                     } else {
                         Text("\(pack.packedItemCount) of \(pack.totalItemCount) packed")
                             .font(.caption)
@@ -181,6 +201,14 @@ private struct WatchChecklistView: View {
                 }
             }
             .navigationTitle("Checklist")
+        }
+    }
+
+    private var emptyChecklistText: String {
+        switch connectivity.snapshot.packState {
+        case .pack: "Add items to this pack on your iPhone to check them off here."
+        case .noPack: "Create a pack in PackRat on your iPhone to check it off here."
+        case .awaitingPhone: "Open PackRat on your iPhone to see your pack here."
         }
     }
 }

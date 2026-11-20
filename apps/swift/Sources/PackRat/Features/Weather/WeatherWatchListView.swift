@@ -13,6 +13,7 @@ struct WeatherWatchListView: View {
     /// The account-level Trip Weather Alerts setting; nil until it loads.
     @State private var tripAlertsOn: Bool?
     @State private var turnOnFailed = false
+    @State private var notifications = NotificationAuthorization()
 
     /// Trips watching their destination right now. They belong to the trip,
     /// not the list, so they end on their own; docs/features/trip-weather.md
@@ -44,13 +45,18 @@ struct WeatherWatchListView: View {
     var body: some View {
         Group {
             if isLoading && watchedTrips.isEmpty {
-                ProgressView("Loading watch list…")
+                ProgressView("Loading watch list…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if watchedLocations.isEmpty && watchedTrips.isEmpty {
                 emptyState
             } else {
                 List {
                     if !watchedTrips.isEmpty {
                         Section("Trips") {
+                            if notifications.showsNotice(alertsOn: watchedTrips.contains(where: \.sendsWeatherAlerts)) {
+                                NotificationsOffNotice(authorization: notifications)
+                                    .padding(.vertical, 4)
+                                    .accessibilityIdentifier("weather_watch_list_notifications_off")
+                            }
                             ForEach(watchedTrips) { trip in
                                 NavigationLink {
                                     TripDetailView(trip: trip, viewModel: appState.tripsVM)
@@ -119,6 +125,7 @@ struct WeatherWatchListView: View {
         }
         .task { await viewModel.loadWatchedLocations() }
         .task { await loadTripWatches() }
+        .tracksNotificationAuthorization(notifications)
     }
 
     @ViewBuilder

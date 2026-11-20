@@ -15,6 +15,7 @@ struct TripWeatherSection: View {
     @State private var forecast: WeatherForecastResponse?
     @State private var loadFailed = false
     @State private var pushedLocation: WeatherLocation?
+    @State private var notifications = NotificationAuthorization()
 
     /// Active hazards at the destination, one per event: the provider repeats
     /// an alert for every zone it covers.
@@ -55,8 +56,15 @@ struct TripWeatherSection: View {
                     .foregroundStyle(.secondary)
                 content
                 alertsToggle
+                if notifications.showsNotice(alertsOn: trip.sendsWeatherAlerts) {
+                    NotificationsOffNotice(authorization: notifications)
+                        .padding(14)
+                        .background(.background.secondary, in: card)
+                        .accessibilityIdentifier("trip_weather_notifications_off")
+                }
             }
             .padding(.horizontal)
+            .tracksNotificationAuthorization(notifications)
             .task(id: TripConditions.sourceKey(for: trip)) { await load() }
             .navigationDestination(item: $pushedLocation) { location in
                 LocationForecastView(location: location, viewModel: appState.weatherVM)
@@ -91,14 +99,23 @@ struct TripWeatherSection: View {
                     }
                     .accessibilityIdentifier("trip_weather_alerts")
                 }
-                Button {
-                    pushedLocation = forecastLocation
-                } label: {
-                    forecastCard(dates: dates, underWay: underWay, partial: partial)
+                VStack(alignment: .leading, spacing: 0) {
+                    Button {
+                        pushedLocation = forecastLocation
+                    } label: {
+                        forecastCard(dates: dates, underWay: underWay, partial: partial)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(forecastLocation == nil)
+                    .accessibilityIdentifier("trip_weather_open_forecast")
+                    // Outside the card's button, so the Legal link is a link of its own.
+                    if let attribution = forecast?.attribution {
+                        WeatherAttributionView(attribution: attribution, onDarkBackground: false)
+                            .padding(.horizontal)
+                            .padding(.bottom, 10)
+                    }
                 }
-                .buttonStyle(.plain)
-                .disabled(forecastLocation == nil)
-                .accessibilityIdentifier("trip_weather_open_forecast")
+                .background(.background.secondary, in: card)
             }
         }
     }
@@ -162,13 +179,7 @@ struct TripWeatherSection: View {
                 .padding(.horizontal)
                 .padding(.vertical, 12)
             }
-            if let attribution = forecast?.attribution {
-                WeatherAttributionView(attribution: attribution, onDarkBackground: false)
-                    .padding(.horizontal)
-                    .padding(.bottom, 10)
-            }
         }
-        .background(.background.secondary, in: card)
         .contentShape(card)
     }
 
