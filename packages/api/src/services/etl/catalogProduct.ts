@@ -15,8 +15,13 @@ export function catalogProductKey({
   brand?: string | null;
   name: string;
 }): string {
-  return `${(brand ?? '').toLowerCase()}|${name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+  return `${(brand ?? '').toLowerCase()}|${keepAlphanumeric(name.toLowerCase())}`;
 }
+
+const keepAlphanumeric = (value: string): string =>
+  [...value]
+    .filter((char) => (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9'))
+    .join('');
 
 const GRAMS_PER_UNIT = Object.freeze({ g: 1, oz: 28.3495, lb: 453.592, kg: 1000 } as const);
 
