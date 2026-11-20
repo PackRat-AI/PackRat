@@ -49,7 +49,7 @@ can be added or removed there too.
 
 Trips watching their destination sit in their own Trips section at the top of the watch list, from three days before the trip starts until the day after it ends. Tapping a trip opens it, and swiping it turns that trip's alerts off or back on. A trip switched off stays in the list marked "Alerts off", so turning alerts off never reads as deleting the trip. When the list is empty it says why: if trip alerts are off for the whole account it says so and offers to turn them on, and otherwise it explains when trips will appear.
 
-When notifications are turned off for PackRat on the phone, trip alerts can't arrive, and the two places that control them say so: the Trips section of the watch list and the Weather Alerts switch on a trip each show a short notice. If PackRat has never asked for notifications, its button asks right there; if they were turned off, it opens the phone's notification settings. The notice goes away as soon as notifications are back on. Nothing else in the app mentions it, so the trip list and the Weather screen stay free of reminders.
+When notifications are turned off for PackRat on a phone or Mac, trip alerts can't arrive there, and the two places that control them say so: the Trips section of the watch list and the Weather Alerts switch on a trip each show a short notice. If PackRat has never asked for notifications, its button asks right there; if they were turned off, it opens that device's notification settings. The notice goes away as soon as notifications are back on. Nothing else in the app mentions it, so the trip list and the Weather screen stay free of reminders.
 
 ## Getting notified
 
@@ -57,6 +57,8 @@ A push notification arrives the moment a new hazard is detected for a
 watched location — what it is, how severe, and which location it affects.
 Tapping it opens that location's forecast, where the alert section is already
 on screen (ADR-009).
+
+The notification reaches every phone and Mac the user is signed in on and has allowed PackRat's notifications on. On a Mac it appears in Notification Center like any other app's, and clicking it brings PackRat forward on that location's forecast.
 
 Notifications are sent once per new hazard, never repeated for one that's
 still ongoing. When a hazard passes, nothing is sent — the markers simply

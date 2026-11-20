@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 #if os(macOS)
 import AppKit
+import UserNotifications
 #endif
 
 @main
@@ -116,8 +117,9 @@ struct PackRatApp: App {
 }
 
 #if os(macOS)
-final class PackRatMacAppDelegate: NSObject, NSApplicationDelegate {
+final class PackRatMacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        UNUserNotificationCenter.current().delegate = self
         guard ProcessInfo.processInfo.arguments.contains("--reset-auth") else { return }
 
         NSApp.setActivationPolicy(.regular)
@@ -137,6 +139,35 @@ final class PackRatMacAppDelegate: NSObject, NSApplicationDelegate {
             Self.openMainWindow()
         }
         return true
+    }
+
+    func application(_ application: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        PushRegistrationService.handleDeviceToken(deviceToken)
+    }
+
+    /// Not reported to Sentry, as on iOS: a registration failure (no network,
+    /// unsigned build) only means no push until the next successful attempt.
+    func application(_ application: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {}
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        PushNotificationRouter.foregroundPresentation
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        await PushNotificationRouter.routeTap(response.notification.request.content.userInfo)
+        // With every window closed the app keeps running, and a tap brings it
+        // forward with nothing to show the route in.
+        await MainActor.run {
+            if !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeMain }) {
+                Self.openMainWindow()
+            }
+        }
     }
 
     /// SwiftUI installs a responder for `newWindow:` for each `WindowGroup`, so

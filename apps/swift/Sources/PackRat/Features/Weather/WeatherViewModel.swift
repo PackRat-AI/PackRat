@@ -225,9 +225,13 @@ final class WeatherViewModel {
         do {
             forecast = try await service.getForecast(locationId: location.id)
         } catch {
+            // A torn-down screen cancels its own load; that is not a failure,
+            // and reporting it left "cancelled" on the forecast it reopened to.
+            guard !Self.isCancellation(error) else { return }
             do {
                 forecast = try await service.getForecast(query: location.displayName)
             } catch {
+                guard !Self.isCancellation(error) else { return }
                 forecastError = error.localizedDescription
             }
         }
