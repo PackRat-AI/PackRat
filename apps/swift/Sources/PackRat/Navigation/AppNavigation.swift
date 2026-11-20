@@ -288,14 +288,16 @@ struct AppNavigation: View {
                 detailColumn
             }
         } else {
+            // A fresh split view per section, so a page pushed in one section
+            // (Feed's Tagged, say) doesn't sit on top of the next one. On a Mac
+            // the detail column keeps its pushed page through an id change on
+            // its content, so the id has to sit on the split view itself.
             NavigationSplitView {
                 sidebar
             } detail: {
-                // A fresh stack per section, so a page pushed in one section
-                // (Feed's Tagged, say) doesn't sit on top of the next one.
                 primaryColumn
-                    .id(appState.navItem)
             }
+            .id(appState.navItem)
         }
     }
 
