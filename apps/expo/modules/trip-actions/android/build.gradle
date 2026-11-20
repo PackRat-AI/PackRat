@@ -1,0 +1,32 @@
+buildscript {
+  dependencies {
+    classpath "com.google.devtools.ksp:symbol-processing-gradle-plugin:${rootProject["kspVersion"]}"
+  }
+}
+
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+apply plugin: 'com.google.devtools.ksp'
+
+group = 'world.packrat.tripactions'
+version = '1.0.0'
+
+android {
+  namespace 'world.packrat.tripactions'
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  implementation 'com.facebook.react:react-android'
+  implementation 'androidx.appfunctions:appfunctions:1.0.0-rc01'
+  ksp 'androidx.appfunctions:appfunctions-compiler:1.0.0-rc01'
+}

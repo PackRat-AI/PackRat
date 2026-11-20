@@ -12,6 +12,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { handlePermissionDenied } from 'expo-app/lib/permissions/permissionDeniedAlert';
 import { testIds } from 'expo-app/lib/testIds';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { useRouter } from 'expo-router';
@@ -188,6 +189,7 @@ export const CreatePackItemForm = ({
               return;
           }
         } catch (err) {
+          if (handlePermissionDenied(err)) return;
           console.error('Error handling image:', err);
           Sentry.captureException(err, {
             tags: { feature: 'packs', action: 'handleAddImage' },

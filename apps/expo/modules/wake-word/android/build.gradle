@@ -1,0 +1,40 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'world.packrat.wakeword'
+version = '1.0.0'
+
+android {
+  namespace 'world.packrat.wakeword'
+  ndkVersion rootProject.ext.ndkVersion
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+    externalNativeBuild {
+      cmake {
+        // 16 KB page sizes, required for Android 15+ devices.
+        arguments '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON'
+      }
+    }
+  }
+  externalNativeBuild {
+    cmake {
+      path 'src/main/cpp/CMakeLists.txt'
+      version '3.22.1'
+    }
+  }
+  // The model is memory-mapped straight out of the APK.
+  androidResources {
+    noCompress 'tflite'
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  implementation 'androidx.media:media:1.7.0'
+  implementation 'androidx.core:core-ktx:1.13.1'
+}

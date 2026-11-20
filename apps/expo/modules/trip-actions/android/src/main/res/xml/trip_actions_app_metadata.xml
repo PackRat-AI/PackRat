@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AppFunctionAppMetadata xmlns:appfn="http://schemas.android.com/apk/androidx.appfunctions"
+  appfn:instructions="PackRat plans and runs hiking and backpacking trips. While a trip is in progress, runTripCommand carries out one spoken trip command on the phone, such as where am I, how far to go, mark waypoint, start tracking, navigate to camp, check in, add an hour, or I'm safe, and returns the sentence to say back to the user. Pass the user's words as they said them. Check in, I'm safe and changing the return time tell the user's emergency contacts something: the first call returns a question with needsConfirmation set; read it to the user and call again with the same request and confirmed set to true only if they clearly say yes."
+  appfn:displayDescription="@string/trip_actions_display_description" />

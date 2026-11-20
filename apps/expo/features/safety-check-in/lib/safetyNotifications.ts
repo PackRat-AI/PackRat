@@ -10,7 +10,7 @@ import { capitalizeFirst, contactSummary } from './copy';
 /** Its own channel, so a user who quiets trip reminders still hears that they're overdue. */
 export const SAFETY_CHANNEL_ID = 'safety-check-in';
 
-async function ensureChannel(): Promise<void> {
+export async function ensureSafetyChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(SAFETY_CHANNEL_ID, {
     name: i18next.t('safetyCheckIn.notifications.channelName'),
@@ -76,7 +76,7 @@ async function scheduleNow(checkIn: LocalSafetyCheckIn): Promise<void> {
   try {
     await cancelNow(checkIn.id);
     // Android 13 shows the notification permission prompt only once a channel exists.
-    await ensureChannel();
+    await ensureSafetyChannel();
     let permission = await Notifications.getPermissionsAsync();
     if (!permission.granted && permission.canAskAgain) {
       permission = await Notifications.requestPermissionsAsync();

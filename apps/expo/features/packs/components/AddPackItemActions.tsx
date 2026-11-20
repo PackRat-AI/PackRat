@@ -11,6 +11,7 @@ import { useRecentlyUsedCatalogItems } from 'expo-app/features/catalog/hooks/use
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { handlePermissionDenied } from 'expo-app/lib/permissions/permissionDeniedAlert';
 import { testIds } from 'expo-app/lib/testIds';
 import { router } from 'expo-router';
 import React from 'react';
@@ -87,6 +88,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
                 return;
             }
           } catch (err) {
+            if (handlePermissionDenied(err)) return;
             console.error('Error handling image:', err);
           }
         },

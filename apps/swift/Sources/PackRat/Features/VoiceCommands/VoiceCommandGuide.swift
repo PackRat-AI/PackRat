@@ -23,6 +23,7 @@ enum VoiceExamples {
 /// the hint under Hold to Talk, and from the Voice settings.
 struct VoiceCommandsList: View {
     @AppStorage(VoiceCommandSettings.wakeWordKey) private var wakeWordOn = false
+    @State private var voiceDenied = false
 
     private struct Group: Identifiable {
         let title: String
@@ -61,9 +62,19 @@ struct VoiceCommandsList: View {
                     .accessibilityIdentifier("voice_commands_wake_word_toggle")
                     .onChange(of: wakeWordOn) { _, on in
                         if on, VoiceListener.needsPermission {
-                            Task { try? await VoiceListener.requestPermissions() }
+                            Task {
+                                try? await VoiceListener.requestPermissions()
+                                voiceDenied = VoiceListener.isDenied
+                            }
                         }
                     }
+                if wakeWordOn, voiceDenied {
+                    PermissionNotice(
+                        message: "Allow the microphone and speech recognition for PackRat in Settings to use “Hey PackRat”.",
+                        systemImage: "mic.slash.fill"
+                    )
+                    .accessibilityIdentifier("voice_commands_wake_word_denied")
+                }
             } header: {
                 Text("Hands-Free")
             } footer: {
@@ -79,6 +90,7 @@ struct VoiceCommandsList: View {
                 Text("Say “Hey Siri, ask PackRat where am I” from the lock screen or with AirPods.")
             }
         }
+        .onPermissionChange { voiceDenied = VoiceListener.isDenied }
         .navigationTitle("What You Can Say")
         .navigationBarTitleDisplayMode(.inline)
     }

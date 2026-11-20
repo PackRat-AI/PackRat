@@ -14,6 +14,7 @@ import {
   initialContactIds,
   isOverdue,
   looksLikeEmail,
+  missingSafetyPermissions,
   overdueAt,
   plannedNotifications,
   upsertContact,
@@ -290,5 +291,51 @@ describe('plannedNotifications', () => {
   it('holds back the alert-sent notice until the contacts have been told', () => {
     const result = plannedNotifications({ checkIn: checkIn(), now: new Date(2026, 8, 13) });
     expect(result.map((n) => n.kind)).toEqual(['reminder']);
+  });
+});
+
+describe('missingSafetyPermissions', () => {
+  it('flags progress sharing only for a check-in that asked for it', () => {
+    expect(
+      missingSafetyPermissions({
+        trackingEnabled: true,
+        backgroundLocationGranted: false,
+        notificationsGranted: true,
+      }),
+    ).toEqual({ progress: true, notifications: false });
+    expect(
+      missingSafetyPermissions({
+        trackingEnabled: false,
+        backgroundLocationGranted: false,
+        notificationsGranted: true,
+      }).progress,
+    ).toBe(false);
+  });
+
+  it('flags blocked notifications', () => {
+    expect(
+      missingSafetyPermissions({
+        trackingEnabled: false,
+        backgroundLocationGranted: null,
+        notificationsGranted: false,
+      }),
+    ).toEqual({ progress: false, notifications: true });
+  });
+
+  it('reports nothing while permissions are granted or still being checked', () => {
+    expect(
+      missingSafetyPermissions({
+        trackingEnabled: true,
+        backgroundLocationGranted: null,
+        notificationsGranted: null,
+      }),
+    ).toEqual({ progress: false, notifications: false });
+    expect(
+      missingSafetyPermissions({
+        trackingEnabled: true,
+        backgroundLocationGranted: true,
+        notificationsGranted: true,
+      }),
+    ).toEqual({ progress: false, notifications: false });
   });
 });

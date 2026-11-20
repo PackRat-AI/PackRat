@@ -12,6 +12,7 @@ import { useImageDetection } from 'expo-app/features/packs/hooks/useImageDetecti
 import { type SelectedImage, useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { handlePermissionDenied } from 'expo-app/lib/permissions/permissionDeniedAlert';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
@@ -105,6 +106,7 @@ export function ItemsScanScreen() {
           }
           handleAnalyzeImage();
         } catch (err) {
+          if (handlePermissionDenied(err)) return;
           console.error('Error handling image:', err);
           appAlert.current?.alert({
             title: t('packTemplates.error'),

@@ -10,18 +10,29 @@ import Foundation
 /// the app is suspended or relaunched in the background. Points are queued
 /// offline and uploaded whenever there is signal.
 @MainActor
+@Observable
 final class SafetyLocationTracker: NSObject, CLLocationManagerDelegate {
     static let shared = SafetyLocationTracker()
 
-    private let manager = CLLocationManager()
+    @ObservationIgnored private let manager = CLLocationManager()
     private(set) var isTracking = false
+    private(set) var authorization: CLAuthorizationStatus = .notDetermined
 
     override init() {
         super.init()
         manager.delegate = self
+        authorization = manager.authorizationStatus
     }
 
-    var authorization: CLAuthorizationStatus { manager.authorizationStatus }
+    /// The user turned down background location, so a check-in that asked to
+    /// follow their progress can't. "While Using" counts: iOS only grants it
+    /// once the user has declined Always.
+    var backgroundLocationDenied: Bool {
+        switch authorization {
+        case .denied, .restricted, .authorizedWhenInUse: true
+        default: false
+        }
+    }
 
     func start() {
         guard CLLocationManager.significantLocationChangeMonitoringAvailable() else { return }
@@ -67,8 +78,13 @@ final class SafetyLocationTracker: NSObject, CLLocationManagerDelegate {
 
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor in
-            if self.isTracking, manager.authorizationStatus == .authorizedAlways {
+            self.authorization = manager.authorizationStatus
+            guard manager.authorizationStatus == .authorizedAlways else { return }
+            if self.isTracking {
                 manager.startMonitoringSignificantLocationChanges()
+            } else {
+                // Allowed from Settings after a check-in started without it.
+                self.resumeIfNeeded()
             }
         }
     }

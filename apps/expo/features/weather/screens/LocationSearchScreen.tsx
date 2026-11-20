@@ -14,6 +14,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import * as Location from 'expo-location';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useSetAtom } from 'jotai';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -29,6 +30,7 @@ import {
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDebouncedCallback } from 'use-debounce';
+import { notificationsBlockedNoticeAtom } from '../atoms/watchNoticeAtoms';
 import { useLocationSearch, useLocations, useWatchMutations } from '../hooks';
 import type { LocationSearchResult } from '../types';
 
@@ -49,6 +51,7 @@ export default function LocationSearchScreen() {
   // `mode=watch` is the watch list's add flow: choosing a place watches it.
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isWatchMode = mode === 'watch';
+  const showNotificationsBlockedOnReturn = useSetAtom(notificationsBlockedNoticeAtom);
   const snackbar = useRef<SnackbarHandle>(null);
   const { locationsState } = useLocations();
   const { watch } = useWatchMutations();
@@ -166,7 +169,7 @@ export default function LocationSearchScreen() {
     try {
       await watch.mutateAsync(location);
       router.back();
-      registerForPushIfNeeded();
+      if ((await registerForPushIfNeeded()) === 'blocked') showNotificationsBlockedOnReturn(true);
     } catch {
       snackbar.current?.show({ message: t('weather.watchFailed', { name: location.name }) });
     } finally {

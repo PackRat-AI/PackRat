@@ -3,12 +3,16 @@ import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
+import { PermissionNotice } from 'expo-app/components/PermissionNotice';
 import {
   FullScreenDialogHeader,
   OutlinedField,
 } from 'expo-app/features/trip-stats/components/DialogParts';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { usePermissionGranted } from 'expo-app/lib/permissions/usePermissionGranted';
 import { testIds } from 'expo-app/lib/testIds';
+import * as Location from 'expo-location';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, View } from 'react-native';
@@ -24,16 +28,27 @@ export function CheckInScreen() {
   const [note, setNote] = useState('');
   const [locating, setLocating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [locationDenied, setLocationDenied] = useState(false);
+  const { colors } = useColorScheme();
+  // Back from Settings with location on: the notice has done its job.
+  const location = usePermissionGranted({
+    check: async () => (await Location.getForegroundPermissionsAsync()).granted,
+    enabled: locationDenied,
+    name: 'location',
+  });
+  const showsLocationDenied = locationDenied && location.granted !== true;
 
   const checkIn = async () => {
     setLocating(true);
     setErrorMessage(null);
+    setLocationDenied(false);
     try {
       const fix = await currentFix();
       recordSafetyCheckIn({ tripId: id, fix, note });
       router.back();
     } catch (error) {
       if (error instanceof LocatorError) {
+        setLocationDenied(error.reason === 'denied');
         setErrorMessage(
           error.reason === 'denied'
             ? t('safetyCheckIn.checkIn.locationDenied')
@@ -78,7 +93,15 @@ export function CheckInScreen() {
               multiline
               testID={testIds.safetyCheckIn.checkInNote}
             />
-            {errorMessage ? (
+            {errorMessage && showsLocationDenied ? (
+              <PermissionNotice
+                message={errorMessage}
+                tone="destructive"
+                variant="callout"
+                className="px-4"
+                testID={testIds.safetyCheckIn.checkInOpenSettingsBtn}
+              />
+            ) : errorMessage && !locationDenied ? (
               <Text variant="callout" className="px-4 text-destructive" wrap>
                 {errorMessage}
               </Text>
@@ -95,14 +118,14 @@ export function CheckInScreen() {
             >
               {locating ? (
                 <>
-                  <ActivityIndicator size="small" color="white" />
+                  <ActivityIndicator size="small" color={colors.primaryForeground} />
                   <Text className="font-medium text-primary-foreground">
                     {t('safetyCheckIn.checkIn.locating')}
                   </Text>
                 </>
               ) : (
                 <>
-                  <Icon name="map-marker-check" size={18} color="white" />
+                  <Icon name="map-marker-check" size={18} color={colors.primaryForeground} />
                   <Text className="font-medium text-primary-foreground">
                     {t('safetyCheckIn.checkIn.send')}
                   </Text>

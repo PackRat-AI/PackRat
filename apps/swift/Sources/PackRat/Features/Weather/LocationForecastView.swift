@@ -177,6 +177,7 @@ struct LocationForecastView: View {
             viewModel.pendingAlertDeepLinkLocationId = nil
         }
         .animation(.spring(duration: 0.3), value: viewModel.watchStatusMessage)
+        .notificationsOffAlert(isPresented: $viewModel.showingNotificationsOff, message: "Turn them on in Settings to get weather alerts for the places you watch.")
     }
 
     private var isSaved: Bool {

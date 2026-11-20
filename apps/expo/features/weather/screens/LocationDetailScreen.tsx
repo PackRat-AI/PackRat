@@ -73,7 +73,7 @@ export default function LocationDetailScreen() {
   const { locationsState, addLocation, updateLocation } = useLocations();
   const { markSeen } = useSeenAlerts();
   const { enabled: monitoringEnabled, watchedFor } = useWatchList();
-  const { watchPlace, unwatchPlace, isUpdating } = useWatchFeedback(snackbar);
+  const { watchPlace, unwatchPlace, isUpdating } = useWatchFeedback({ snackbar });
 
   const saved =
     locationsState.state === 'hasData'

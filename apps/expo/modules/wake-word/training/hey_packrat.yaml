@@ -1,0 +1,138 @@
+# "Hey PackRat" wake word, trained with microWakeWord from synthetic speech.
+# Run with: modal run --detach train_modal.py::main (see train_modal.py).
+model_name: hey_packrat
+wake_word: "Hey PackRat"
+author: PackRat
+trained_languages: ["en"]
+version: 1
+
+target_phrases:
+  - Hey PackRat
+  - Hey Pack Rat
+  - Hey, Pack Rat.
+  - Hey Pack Rat!
+  - Hey Pack Rat?
+  - Hey, PackRat,
+
+training:
+  n_samples: 50000
+  n_samples_val: 10000
+
+# Many speakers matter more than many clips: the multi-speaker voices are sampled across all their
+# speakers (see the speaker patch in train_modal.py).
+voices:
+  primary:
+    base_url: https://huggingface.co/rhasspy/piper-voices/resolve/main/en
+    models:
+      en_US-libritts_r-medium: en_US/libritts_r/medium
+      en_GB-vctk-medium: en_GB/vctk/medium
+      en_US-l2arctic-medium: en_US/l2arctic/medium
+      en_US-arctic-medium: en_US/arctic/medium
+      en_GB-aru-medium: en_GB/aru/medium
+      en_GB-semaine-medium: en_GB/semaine/medium
+      en_US-amy-medium: en_US/amy/medium
+      en_US-joe-medium: en_US/joe/medium
+      en_US-kristin-medium: en_US/kristin/medium
+      en_US-ryan-medium: en_US/ryan/medium
+      en_US-kusal-medium: en_US/kusal/medium
+      en_US-norman-medium: en_US/norman/medium
+      en_US-hfc_female-medium: en_US/hfc_female/medium
+      en_US-hfc_male-medium: en_US/hfc_male/medium
+      en_GB-alba-medium: en_GB/alba/medium
+      en_GB-northern_english_male-medium: en_GB/northern_english_male/medium
+      en_GB-cori-medium: en_GB/cori/medium
+  # The trainer speaks Latin-script negatives with the secondary voices, so for an English wake word
+  # they are the same set.
+  secondary:
+    base_url: https://huggingface.co/rhasspy/piper-voices/resolve/main/en
+    models:
+      en_US-libritts_r-medium: en_US/libritts_r/medium
+      en_GB-vctk-medium: en_GB/vctk/medium
+      en_US-l2arctic-medium: en_US/l2arctic/medium
+      en_US-arctic-medium: en_US/arctic/medium
+      en_GB-aru-medium: en_GB/aru/medium
+      en_US-amy-medium: en_US/amy/medium
+      en_US-joe-medium: en_US/joe/medium
+      en_US-ryan-medium: en_US/ryan/medium
+
+negative_phrases:
+  # Pieces of the phrase
+  - Hey
+  - Pack
+  - Rat
+  - Hey pack
+  - Pack rat
+  - A pack rat
+  - Packrats
+  # Sounds like it
+  - Hey Patrick
+  - Hey Pat
+  - Hey Jack
+  - Hey Matt
+  - Hey back there
+  - Hey that's that
+  - Hey packet
+  - Hey rabbit
+  - Hey racket
+  - Hey Rachel
+  - Hey black hat
+  - Backpack
+  - Jackrabbit
+  - Acrobat
+  - Habitat
+  - Pack it up
+  - Packed it
+  - Hey track
+  - Pick that up
+  - Hey check that
+  - A pack of rats
+  # Other assistants
+  - Hey Siri
+  - Hey Google
+  - OK Google
+  - Alexa
+  # What people say on a trail and to the app
+  - Hey everybody
+  - Hey man
+  - Hey buddy
+  - Hey wait up
+  - Start tracking
+  - Mark waypoint
+  - Where am I
+  - Navigate to camp
+  - I'm safe
+  - Check in
+  - Packing list
+  - How far to go
+  - Grab your pack
+  - Take a break
+
+augmentation:
+  enabled: true
+  rir_dir: training/mit_rirs/16khz
+  background_dir: training/background
+  rir_probability: 0.7
+  background_probability: 0.8
+  background_snr_db: [-5, 20]
+
+microwakeword:
+  architecture: mixednet
+  pointwise_filters: "64,64,64,64"
+  repeat_in_block: "1,1,1,1"
+  mixconv_kernel_sizes: "[5], [7,11], [9,15], [23]"
+  first_conv_filters: 32
+  first_conv_kernel_size: 5
+  stride: 3
+  spectrogram_length: 204
+  clip_duration_ms: 1500
+  training_steps: 20000
+  batch_size: 128
+  learning_rate: 0.001
+  positive_class_weight: 1.5
+  negative_class_weight: 1
+  time_mask_max_size: 5
+  time_mask_count: 2
+  freq_mask_max_size: 5
+  freq_mask_count: 2
+  probability_cutoff: 0.9
+  sliding_window_size: 10

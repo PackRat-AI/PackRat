@@ -66,8 +66,16 @@ final class VoiceCommandController {
         guard phase == .idle || phase == .answering else { return }
         // The first press only asks for the microphone and speech recognition.
         // The alert takes the touch away, so listening starts on the next hold.
+        // A refusal is said out loud: one permission can be refused while the
+        // other is still unasked, and that press would otherwise do nothing.
         if VoiceListener.needsPermission {
-            Task { try? await VoiceListener.requestPermissions() }
+            Task { [weak self] in
+                do {
+                    try await VoiceListener.requestPermissions()
+                } catch {
+                    await self?.respond((error as? LocalizedError)?.errorDescription ?? VoiceAnswers.notHeard)
+                }
+            }
             return
         }
         speaker.stop()
