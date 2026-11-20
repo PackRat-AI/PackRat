@@ -120,7 +120,6 @@ struct PackRatApp: App {
 final class PackRatMacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         UNUserNotificationCenter.current().delegate = self
-        Task { await PushRegistrationService.refreshRegistrationIfAuthorized() }
         guard ProcessInfo.processInfo.arguments.contains("--reset-auth") else { return }
 
         NSApp.setActivationPolicy(.regular)
@@ -161,7 +160,14 @@ final class PackRatMacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotifi
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
-        PushNotificationRouter.routeTap(response.notification.request.content.userInfo)
+        await PushNotificationRouter.routeTap(response.notification.request.content.userInfo)
+        // With every window closed the app keeps running, and a tap brings it
+        // forward with nothing to show the route in.
+        await MainActor.run {
+            if !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeMain }) {
+                Self.openMainWindow()
+            }
+        }
     }
 
     /// SwiftUI installs a responder for `newWindow:` for each `WindowGroup`, so

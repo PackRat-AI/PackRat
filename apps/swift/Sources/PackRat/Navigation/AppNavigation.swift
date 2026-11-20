@@ -197,19 +197,29 @@ struct AppNavigation: View {
                 TripSafetyAnnouncer.shared.sync()
             }
             #endif
-            .onReceive(NotificationCenter.default.publisher(for: .weatherAlertNotificationTapped)) { notification in
-                guard let weatherLocationId = notification.userInfo?["weatherLocationId"] as? Int else { return }
-                appState.apply(.weatherAlert(weatherLocationId: weatherLocationId))
+            .onReceive(NotificationCenter.default.publisher(for: .pushNotificationTapped)) { _ in
+                applyPendingPushRoute()
             }
-            .onReceive(NotificationCenter.default.publisher(for: .feedPostNotificationTapped)) { notification in
-                guard let postId = notification.userInfo?["postId"] as? Int else { return }
-                appState.apply(.post(id: postId))
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .tripReminderNotificationTapped)) { notification in
-                guard let tripId = notification.userInfo?[PushNotificationRouter.tripIdKey] as? String else { return }
-                appState.pendingTrailReport = (notification.userInfo?["reportId"] as? String).map { (tripId, $0) }
-                appState.apply(.trip(id: tripId))
-            }
+            // A tap that arrived before this window was up waits in the router.
+            .task { applyPendingPushRoute() }
+            #if os(macOS)
+            // Mounted only once signed in, so the token goes up with a session,
+            // after launch and again after every sign-in.
+            .task { await PushRegistrationService.refreshRegistrationIfAuthorized() }
+            #endif
+    }
+
+    private func applyPendingPushRoute() {
+        switch PushNotificationRouter.takePendingRoute() {
+        case .deepLink(let link):
+            if case .trip = link { appState.pendingTrailReport = nil }
+            appState.apply(link)
+        case .trailReport(let tripId, let reportId):
+            appState.pendingTrailReport = (tripId, reportId)
+            appState.apply(.trip(id: tripId))
+        case nil:
+            break
+        }
     }
 
     /// Connectivity and sync state are reported in Settings rather than in the

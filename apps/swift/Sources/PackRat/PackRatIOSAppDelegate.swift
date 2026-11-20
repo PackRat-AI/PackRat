@@ -50,7 +50,7 @@ final class PackRatIOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
-        PushNotificationRouter.routeTap(response.notification.request.content.userInfo)
+        await PushNotificationRouter.routeTap(response.notification.request.content.userInfo)
     }
 }
 #endif

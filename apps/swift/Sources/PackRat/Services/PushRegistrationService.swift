@@ -39,7 +39,7 @@ enum PushRegistrationService {
     }
 
     #if os(macOS)
-    /// At launch, when notifications are already allowed. A Mac allowed them
+    /// Once signed in, when notifications are already allowed. A Mac allowed them
     /// in an earlier session would otherwise never send its token: no prompt
     /// shows, so nothing above runs. Apple also expects the token to be
     /// fetched every launch, since it can change.
