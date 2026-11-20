@@ -68,6 +68,7 @@ import {
   resumeRecording,
   startRecording,
   stopRecording,
+  TrackStartError,
   trackStore,
   WORST_ACCURACY_METERS,
 } from './trackRecorder';
@@ -90,6 +91,8 @@ import { waypointAt } from './waypointAt';
 
 /** Bumped by every new listen or dismiss, so a superseded command stops quietly. */
 let generation = 0;
+/** Bumped by every hold, release and dismiss, so a release during the permission check cancels that hold. */
+let hold = 0;
 
 function goIdle() {
   voiceStore.assign({ phase: 'idle', status: '' });
@@ -102,12 +105,15 @@ function goIdle() {
 export async function beginListening(trip: Trip): Promise<void> {
   const phase = voiceStore.phase.peek();
   if (phase !== 'idle' && phase !== 'answering') return;
+  const thisHold = ++hold;
   // The first press only asks for the microphone. The dialog takes the touch away, so listening
   // starts on the next hold.
   if (!(await hasVoicePermission())) {
     await requestVoicePermission();
     return;
   }
+  // Let go, or the page closed, while that was checked.
+  if (thisHold !== hold) return;
   stopSpeaking();
   const run = ++generation;
   voiceStore.set({ phase: 'listening', heard: '', status: '', answer: '' });
@@ -162,6 +168,7 @@ export async function handleWake(trip: Trip): Promise<void> {
  * once, so the wait for the recogniser's last words doesn't look like nothing happened.
  */
 export function endListening(): void {
+  hold++;
   if (voiceStore.phase.peek() !== 'listening') return;
   void playTone('end');
   voiceStore.assign({ phase: 'working', status: t('voiceCommands.status.working') });
@@ -171,6 +178,7 @@ export function endListening(): void {
 /** The banner was closed, or the trip page went away. */
 export function dismissVoice(): void {
   generation++;
+  hold++;
   cancelListening();
   stopSpeaking();
   voiceStore.set({ phase: 'idle', heard: '', status: '', answer: '' });
@@ -545,6 +553,9 @@ async function navigate({
     if (error instanceof GuideStartError && error.reason === 'alreadyThere') {
       return answer(alreadyThere(destination.name));
     }
+    if (error instanceof GuideStartError && error.reason === 'unavailable') {
+      return answer(VoiceAnswers.guidanceNotStarted);
+    }
     return answer(VoiceAnswers.noFix);
   }
 }
@@ -569,8 +580,12 @@ async function performTracking({
       if (status === 'complete') return answer(VoiceAnswers.tripEnded);
       try {
         await startRecording({ tripId: trip.id, tripName: trip.name });
-      } catch {
-        return answer(VoiceAnswers.locationDenied);
+      } catch (error) {
+        return answer(
+          error instanceof TrackStartError && error.reason === 'unavailable'
+            ? VoiceAnswers.trackingNotStarted
+            : VoiceAnswers.locationDenied,
+        );
       }
       // Tracking a trip that hasn't started starts it.
       if (status === 'planned') {
@@ -587,12 +602,16 @@ async function performTracking({
     case 'resumeTracking':
       if (!track) return answer(VoiceAnswers.notTracking);
       if (!track.isPaused) return answer(VoiceAnswers.notPaused);
-      await resumeRecording();
+      try {
+        await resumeRecording();
+      } catch {
+        return answer(VoiceAnswers.trackingNotStarted);
+      }
       return answer(VoiceAnswers.trackingResumed);
     case 'stopTracking': {
       const finished = await stopRecording();
       if (!finished) return answer(VoiceAnswers.notTracking);
-      saveRecording(finished);
+      if (!saveRecording(finished)) return answer(VoiceAnswers.trackingNotSaved);
       return answer(trackingStopped({ track: finished, metric }));
     }
     case 'trackSoFar':

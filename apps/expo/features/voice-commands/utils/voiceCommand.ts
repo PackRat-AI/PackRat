@@ -58,6 +58,8 @@ export function parseVoiceCommand(transcript: string): VoiceCommand | null {
   // camp") can read as a command.
   const note = parseNote(transcript);
   if (note !== null) return { kind: 'note', text: note };
+  // "Don't stop recording" must not stop it: a negated instruction is never acted on.
+  if (containsAny({ text, phrases: NEGATIONS })) return null;
   const navigation = parseNavigation(text);
   if (navigation) return navigation;
   const waypoint = parseWaypoint(text);
@@ -186,7 +188,7 @@ export function parseVoiceConfirmation(transcript: string): VoiceConfirmation | 
       text,
       phrases: ['dont', 'do not', 'cancel', 'stop', 'never mind', 'nevermind', 'hold on'],
     }) ||
-    hasWord(['no', 'nope', 'nah', 'not', 'wait'])
+    hasWord(['no', 'nope', 'nah', 'not', 'wait', 'never', 'didnt'])
   ) {
     return 'no';
   }
@@ -198,6 +200,8 @@ export function parseVoiceConfirmation(transcript: string): VoiceConfirmation | 
   }
   return null;
 }
+
+const NEGATIONS = Object.freeze(['dont', 'do not', 'never', 'didnt', 'did not'] as const);
 
 // ── Tracking and waypoints ────────────────────────────────────────────────
 
@@ -390,7 +394,7 @@ function parseExtend(text: string): VoiceCommand | null {
       minutes += 30;
       return;
     }
-    minutes += ((previous === undefined ? null : spokenNumber(previous)) ?? 1) * unit;
+    minutes += (spokenAmount(words.slice(0, index)) ?? 1) * unit;
     if (unit === 60 && words.slice(index + 1, index + 4).join(' ') === 'and a half') minutes += 30;
   });
   if (minutes === 0 && containsAny({ text, phrases: ['running late', 'more time'] })) minutes = 60;
@@ -429,7 +433,8 @@ function timeOfDay(words: readonly string[]): { hour: number; minute: number } |
       rest.shift();
     }
   }
-  const meridiem = rest[0];
+  // "8 am", "eight in the morning"
+  const meridiem = rest.find((word) => word !== 'in' && word !== 'the');
   if (meridiem === 'am' || meridiem === 'morning') {
     if (hour === 12) hour = 0;
   } else if (meridiem === 'pm' || (hour >= 1 && hour <= 11)) {
@@ -462,6 +467,17 @@ const NUMBER_WORDS: Readonly<Record<string, number>> = Object.freeze({
   another: 1,
   couple: 2,
 });
+
+/** The number said just before a unit, including "twenty five" as 25. */
+function spokenAmount(before: readonly string[]): number | null {
+  const last = before.at(-1);
+  const ones = last === undefined ? null : spokenNumber(last);
+  if (ones === null) return null;
+  const tensWord = before.at(-2);
+  const tens = tensWord === undefined ? null : spokenNumber(tensWord);
+  if (ones >= 1 && ones <= 9 && tens !== null && tens >= 20 && tens % 10 === 0) return tens + ones;
+  return ones;
+}
 
 function spokenNumber(word: string): number | null {
   if (DIGITS.test(word)) return Number(word);

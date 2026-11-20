@@ -98,14 +98,17 @@ export function listen({
   pauseWakeWord();
   return new Promise((resolve, reject) => {
     let transcript = '';
+    /** Segments already finished. Android's continuous mode starts each new segment from empty. */
+    let finished = '';
     let settled = false;
     const startedAt = Date.now();
     const subscriptions = [
       ExpoSpeechRecognitionModule.addListener('result', (event) => {
         const text = event.results[0]?.transcript ?? '';
         if (!text) return;
-        transcript = text;
-        onPartial(text);
+        transcript = finished ? `${finished} ${text}` : text;
+        if (event.isFinal) finished = transcript;
+        onPartial(transcript);
         // When PackRat records itself the recogniser hears in segments and only stops when told:
         // the first finished segment is the whole answer.
         if (event.isFinal && mode === 'untilSilence') ExpoSpeechRecognitionModule.stop();

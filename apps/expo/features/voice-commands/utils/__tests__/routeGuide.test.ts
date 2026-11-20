@@ -14,7 +14,7 @@ import {
   TRAILHEAD,
   updateGuide,
 } from '../routeGuide';
-import { compassName, type GeoPoint, geoDistance } from '../routeProgress';
+import { compassName, type GeoPoint, geoDistance, routeProgress } from '../routeProgress';
 import type { TripWaypoint } from '../tripWaypoints';
 import {
   alreadyThere,
@@ -221,8 +221,36 @@ describe('prompts', () => {
       );
     };
     expect(say(47.021, 0)).toEqual(['Halfway to the lake. 1.3 miles to go, north.']);
-    expect(say(47.03, 600)).toEqual(['1 mile to the lake, north.']);
+    expect(say(47.03, 600)).toEqual(['Three quarters of a mile to the lake, north.']);
     expect(Math.round(guide.remainingMeters)).toBe(1_112);
+  });
+});
+
+describe('out-and-back routes', () => {
+  // Out 2.2 km east, back to the start, then 1.1 km west: the first stretch is walked twice.
+  const outAndBack: GeoPoint[] = [
+    { latitude: 0, longitude: 0 },
+    { latitude: 0, longitude: 0.02 },
+    { latitude: 0, longitude: 0 },
+    { latitude: 0, longitude: -0.01 },
+  ];
+  const position = { latitude: 0, longitude: 0.01 };
+
+  it('reads the pass the user is on from where they last were', () => {
+    const out = routeProgress({ position, route: outAndBack, previousAlong: 500 });
+    const back = routeProgress({ position, route: outAndBack, previousAlong: 2_224 });
+    expect(Math.round((out?.remainingMeters ?? 0) / 100)).toBe(44);
+    expect(Math.round((back?.remainingMeters ?? 0) / 100)).toBe(22);
+  });
+});
+
+describe('arrival', () => {
+  it('waits for the destination radius, then keeps the latest progress', () => {
+    const walk = walker();
+    // About 60 m past the end of the route: on its last point, but not at camp yet.
+    expect(walk.step({ latitude: 47.01, longitude: -119.9842 }, 0).kinds).not.toContain('arrived');
+    expect(walk.step(routeEnd, 30).kinds).toEqual(['arrived']);
+    expect(walk.guide.progress?.remainingMeters).toBe(0);
   });
 });
 

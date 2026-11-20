@@ -28,30 +28,52 @@ export function isOnRoute(progress: Pick<RouteProgress, 'offRouteMeters'>): bool
   return progress.offRouteMeters <= OFF_ROUTE_THRESHOLD_METERS;
 }
 
+/** Segments this much further away than the nearest still count as the same stretch of trail. */
+const OVERLAP_TOLERANCE_METERS = 15;
+/** How far back along the route a GPS wobble may put the user. */
+const BACKTRACK_SLACK_METERS = 100;
+
 /**
  * Works on a local flat projection around each segment, which is accurate to well under a metre
  * over the few hundred metres between route points. Null for a route under two points.
+ *
+ * On an out-and-back route the same trail is on the route twice. `previousAlong`, where the user
+ * last was along it, picks the pass they're on: the first one at or ahead of it.
  */
 export function routeProgress({
   position,
   route,
+  previousAlong,
 }: {
   position: GeoPoint;
   route: readonly GeoPoint[];
+  previousAlong?: number;
 }): RouteProgress | null {
   if (route.length < 2) return null;
-  let best: { distance: number; along: number; point: GeoPoint } | null = null;
+  const candidates: { distance: number; along: number; point: GeoPoint }[] = [];
   let travelled = 0;
   for (let index = 1; index < route.length; index++) {
     const a = route[index - 1] as GeoPoint;
     const b = route[index] as GeoPoint;
     const length = geoDistance({ from: a, to: b });
     const { t, point } = projectOntoSegment({ p: position, a, b });
-    const distance = geoDistance({ from: position, to: point });
-    if (!best || distance < best.distance)
-      best = { distance, along: travelled + t * length, point };
+    candidates.push({
+      distance: geoDistance({ from: position, to: point }),
+      along: travelled + t * length,
+      point,
+    });
     travelled += length;
   }
+  const nearest = Math.min(...candidates.map((c) => c.distance));
+  const close = candidates.filter((c) => c.distance <= nearest + OVERLAP_TOLERANCE_METERS);
+  const ahead =
+    previousAlong == null
+      ? []
+      : close.filter((c) => c.along >= previousAlong - BACKTRACK_SLACK_METERS);
+  const best =
+    ahead.length > 0
+      ? ahead.reduce((a, b) => (b.along < a.along ? b : a))
+      : candidates.find((c) => c.distance === nearest);
   if (!best) return null;
   return {
     offRouteMeters: best.distance,

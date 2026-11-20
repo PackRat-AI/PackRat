@@ -69,9 +69,27 @@ export function TripTrackingSection({ trip }: { trip: Trip }) {
     try {
       await startRecording({ tripId: trip.id, tripName: trip.name });
     } catch (error) {
-      if (error instanceof TrackStartError) showLocationDenied();
+      if (error instanceof TrackStartError && error.reason === 'denied') showLocationDenied();
+      else showStartFailed();
     }
   };
+
+  const pauseOrResume = async () => {
+    if (!track?.isPaused) return pauseRecording();
+    try {
+      await resumeRecording();
+    } catch {
+      showStartFailed();
+    }
+  };
+
+  const showStartFailed = () =>
+    alertRef.current?.alert({
+      title: t('voiceCommands.tracking.startFailedTitle'),
+      message: t('voiceCommands.tracking.startFailedMessage'),
+      materialIcon: { name: 'map-marker-alert-outline' },
+      buttons: [{ text: t('common.ok'), style: 'cancel' }],
+    });
 
   const confirmStop = () =>
     alertRef.current?.alert({
@@ -148,7 +166,7 @@ export function TripTrackingSection({ trip }: { trip: Trip }) {
           otherTripName={otherTrack?.tripName ?? null}
           isMarking={isMarking}
           onStart={() => void start()}
-          onPauseOrResume={() => void (track?.isPaused ? resumeRecording() : pauseRecording())}
+          onPauseOrResume={() => void pauseOrResume()}
           onStop={confirmStop}
           onMark={() => void markWaypoint()}
         />

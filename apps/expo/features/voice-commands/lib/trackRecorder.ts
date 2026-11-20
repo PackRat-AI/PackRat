@@ -39,6 +39,11 @@ syncObservable(trackStore, {
 
 const trackSyncState = syncState(trackStore);
 
+/** Resolves once a recording saved before PackRat closed is back in the store. */
+export function whenTrackLoaded(): Promise<unknown> {
+  return when(trackSyncState.isPersistLoaded);
+}
+
 function toSample(location: Location.LocationObject): TrackSample {
   const verticalAccuracy = location.coords.altitudeAccuracy;
   const usableAltitude =
@@ -76,8 +81,9 @@ TaskManager.defineTask<{ locations: Location.LocationObject[] }>(
 );
 
 export class TrackStartError extends Error {
-  constructor() {
-    super('Location permission denied');
+  /** `unavailable`: Android refused the location service, e.g. started with the app in the background. */
+  constructor(readonly reason: 'denied' | 'unavailable') {
+    super(reason === 'denied' ? 'Location permission denied' : 'Location updates did not start');
     this.name = 'TrackStartError';
   }
 }
@@ -91,11 +97,16 @@ export async function startRecording({
 }): Promise<void> {
   await when(trackSyncState.isPersistLoaded);
   if (trackStore.track.peek()) return;
-  if (!(await hasLocationPermission())) throw new TrackStartError();
+  if (!(await hasLocationPermission())) throw new TrackStartError('denied');
   trackStore.track.set(newTrack({ tripId, tripName }));
   breadcrumb({ message: 'Tracking started', tripId });
   await askToShowNotification();
-  await startUpdates();
+  try {
+    await startUpdates();
+  } catch {
+    trackStore.track.set(null);
+    throw new TrackStartError('unavailable');
+  }
 }
 
 export async function pauseRecording(): Promise<void> {
@@ -109,7 +120,12 @@ export async function resumeRecording(): Promise<void> {
   const track = trackStore.track.peek();
   if (!track?.isPaused) return;
   trackStore.track.set(resumeTrack(track));
-  await startUpdates();
+  try {
+    await startUpdates();
+  } catch {
+    trackStore.track.set(track);
+    throw new TrackStartError('unavailable');
+  }
 }
 
 /** Ends the recording and hands it back for the trip log. */
@@ -122,11 +138,27 @@ export async function stopRecording(): Promise<RecordedTrack | null> {
   return finished;
 }
 
+/** Set while signed out or with voice commands off: no location is collected, nothing resumes. */
+let suspended = false;
+
+/**
+ * Signed out, or voice commands switched off: stops collecting location but keeps the recording,
+ * so it carries on when they're back.
+ */
+export async function suspendRecording(): Promise<void> {
+  suspended = true;
+  await stopUpdates();
+}
+
 /** At launch: carries on a recording PackRat was closed in the middle of. */
 export async function resumeRecordingIfNeeded(): Promise<void> {
+  suspended = false;
   await when(trackSyncState.isPersistLoaded);
+  // Suspended again while the recording loaded.
+  if (suspended) return;
   const track = trackStore.track.peek();
-  if (track && !track.isPaused) await startUpdates();
+  // A failure is already reported, and this runs again at the next launch.
+  if (track && !track.isPaused) await startUpdates().catch(() => undefined);
   else await stopUpdates();
 }
 
@@ -163,6 +195,7 @@ async function startUpdates(): Promise<void> {
     });
   } catch (error) {
     Sentry.captureException(error, { tags: { feature: 'voiceCommands', action: 'startTrack' } });
+    throw error;
   }
 }
 

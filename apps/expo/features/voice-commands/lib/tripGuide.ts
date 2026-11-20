@@ -54,6 +54,11 @@ syncObservable(guideStore, {
 
 const guideSyncState = syncState(guideStore);
 
+/** Resolves once guidance saved before PackRat closed is back in the store. */
+export function whenGuideLoaded(): Promise<unknown> {
+  return when(guideSyncState.isPersistLoaded);
+}
+
 function isMetric(): boolean {
   return (preferencesStore.speedUnit.peek() ?? getDefaultSpeedUnit()) === 'kmh';
 }
@@ -100,9 +105,11 @@ async function follow(location: Location.LocationObject): Promise<void> {
   // Never talk over a command in progress or an answer being said. The guide isn't advanced
   // either, so the prompt comes on the next fix.
   if (voiceStore.phase.peek() !== 'idle' && voiceStore.phase.peek() !== 'answering') return;
-  if (await Speech.isSpeakingAsync()) return;
   following = true;
   try {
+    if (await Speech.isSpeakingAsync()) return;
+    // Guidance stopped or restarted while that was checked: this fix belongs to nothing now.
+    if (guideStore.session.peek()?.guide.plan !== session.guide.plan) return;
     const position = { latitude: location.coords.latitude, longitude: location.coords.longitude };
     const metric = isMetric();
     const { guide, prompts } = updateGuide({
@@ -147,7 +154,8 @@ async function deliver(text: string): Promise<void> {
 // ── Start and stop ────────────────────────────────────────────────────────
 
 export class GuideStartError extends Error {
-  constructor(readonly reason: 'denied' | 'noFix' | 'alreadyThere') {
+  /** `unavailable`: Android refused the location service, e.g. started with the app in the background. */
+  constructor(readonly reason: 'denied' | 'noFix' | 'alreadyThere' | 'unavailable') {
     super(`Guidance couldn't start: ${reason}`);
     this.name = 'GuideStartError';
   }
@@ -199,7 +207,13 @@ export async function startGuidance({
     data: { tripId },
   });
   await askToShowNotification();
-  await startUpdates(destination.name);
+  try {
+    await startUpdates(destination.name);
+  } catch {
+    // Roll back only this start's session; a newer one may have replaced it meanwhile.
+    if (guideStore.session.peek()?.guide.plan === guide.plan) guideStore.session.set(null);
+    throw new GuideStartError('unavailable');
+  }
   return { plan, position };
 }
 
@@ -216,11 +230,24 @@ export async function stopGuidance(): Promise<void> {
   });
 }
 
+/** Set while signed out or with voice commands off: no location is collected, nothing resumes. */
+let suspended = false;
+
+/** Signed out, or voice commands switched off: stops following location but keeps the session. */
+export async function suspendGuidance(): Promise<void> {
+  suspended = true;
+  await stopUpdates();
+}
+
 /** At launch: carries on guidance PackRat was closed in the middle of. */
 export async function resumeGuidanceIfNeeded(): Promise<void> {
+  suspended = false;
   await when(guideSyncState.isPersistLoaded);
+  // Suspended again while the session loaded.
+  if (suspended) return;
   const session = guideStore.session.peek();
-  if (session) await startUpdates(session.guide.plan.destination.name);
+  // A failure is already reported, and this runs again at the next launch.
+  if (session) await startUpdates(session.guide.plan.destination.name).catch(() => undefined);
   else await stopUpdates();
 }
 
@@ -258,6 +285,7 @@ async function startUpdates(destination: string): Promise<void> {
     });
   } catch (error) {
     Sentry.captureException(error, { tags: { feature: 'voiceCommands', action: 'startGuide' } });
+    throw error;
   }
 }
 
