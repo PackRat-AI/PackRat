@@ -296,17 +296,24 @@ async function createOutlinePack({
     maxZoom: DETAIL_MAX_ZOOM[area.detail],
     metadata: safeJsonStringify({ areaName: area.name, name: area.id }),
   });
-  // `getPack` re-reads the native list. The tile store can take a moment to list a new region, and
-  // a download takes far longer than this to report its first progress.
-  for (let attempt = 0; attempt < 10; attempt++) {
-    const found = await offlineManager.getPack(area.id);
-    if (found) {
-      await reportIfAlreadyComplete(area.id);
-      return;
+  try {
+    // `getPack` re-reads the native list. The tile store can take a moment to list a new region,
+    // and a download takes far longer than this to report its first progress.
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const found = await offlineManager.getPack(area.id);
+      if (found) {
+        await reportIfAlreadyComplete(area.id);
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    throw new Error('The new outline pack never appeared in the tile store');
+  } catch (error) {
+    // The native task is already loading; stop it before `begin` gives up ownership, or a Wi-Fi-only
+    // download would carry on with nothing left to pause it.
+    await NativeModules.RNMBXOfflineModule.pausePackDownload(area.id).catch(() => undefined);
+    throw error;
   }
-  throw new Error('The new outline pack never appeared in the tile store');
 }
 
 function onProgress(status: OfflineProgressStatus): void {
