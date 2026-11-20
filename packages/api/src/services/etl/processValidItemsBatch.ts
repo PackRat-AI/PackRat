@@ -7,6 +7,7 @@ import { isString } from '@packrat/guards';
 import { eq, sql } from 'drizzle-orm';
 import { CatalogService } from '../catalogService';
 import { generateManyEmbeddings } from '../embeddingService';
+import { groupItemsByProduct } from './catalogProduct';
 import { mergeItemsBySku } from './mergeItemsBySku';
 import { updateEtlJobProgress } from './updateEtlJobProgress';
 
@@ -21,7 +22,10 @@ export async function processValidItemsBatch({
 }): Promise<void> {
   const catalogService = new CatalogService({ explicitEnv: env, useHttpDriver: true });
 
-  const mergedItems = mergeItemsBySku(items as NewCatalogItem[]); // safe-cast: items are Partial<NewCatalogItem> at the type level, but all required fields have been confirmed present by CatalogItemValidator before reaching here
+  const mergedListings = mergeItemsBySku(items as NewCatalogItem[]); // safe-cast: items are Partial<NewCatalogItem> at the type level, but all required fields have been confirmed present by CatalogItemValidator before reaching here
+  // One catalog row per product; every listing is kept as an offer.
+  const productGroups = groupItemsByProduct(mergedListings);
+  const mergedItems = productGroups.map((group) => group.product);
 
   // Source-text diff: skip OpenAI calls when an existing row has byte-identical
   // embedding-source text. Fixes the F4 embedding-regen anomaly (see
@@ -31,8 +35,8 @@ export async function processValidItemsBatch({
   // HNSW index on every re-ingest. text-embedding-3 is deterministic on
   // identical input, so reusing the existing embedding for unchanged rows
   // is byte-equivalent to regenerating.
-  const existingBySku = await catalogService.fetchExistingForRegen(
-    mergedItems.map((item) => item.sku).filter(isString),
+  const existingByProductKey = await catalogService.fetchExistingForRegen(
+    mergedItems.map((item) => item.productKey).filter(isString),
   );
 
   // Partition: "needs fresh embedding" (new items + existing-but-changed) vs
@@ -42,7 +46,7 @@ export async function processValidItemsBatch({
     | { kind: 'reuse'; item: NewCatalogItem; existingEmbedding: number[] | null };
 
   const partitioned: Partitioned[] = mergedItems.map((item): Partitioned => {
-    const existing = existingBySku.get(item.sku);
+    const existing = item.productKey ? existingByProductKey.get(item.productKey) : undefined;
     if (!existing) {
       return { kind: 'fresh', item, sourceText: getEmbeddingText({ item }) };
     }
@@ -114,6 +118,7 @@ export async function processValidItemsBatch({
     });
 
     const upsertedItems = await catalogService.upsertCatalogItems(itemsWithEmbeddings);
+    await upsertOffers({ catalogService, productGroups, upsertedItems });
     // Track the ETL job that processed these items
     await catalogService.trackEtlJob({ itemIds: upsertedItems, jobId });
     // Update the ETL job progress — processed is incremented atomically with valid to prevent
@@ -141,6 +146,7 @@ export async function processValidItemsBatch({
     });
 
     const upsertedItems = await catalogService.upsertCatalogItems(mergedItems);
+    await upsertOffers({ catalogService, productGroups, upsertedItems });
     await catalogService.trackEtlJob({ itemIds: upsertedItems, jobId });
     await updateEtlJobProgress({
       env,
@@ -162,4 +168,24 @@ export async function processValidItemsBatch({
   } finally {
     logger.info({ event: 'etl.valid_items.batch_complete', ctx: { jobId, count: items.length } });
   }
+}
+
+async function upsertOffers({
+  catalogService,
+  productGroups,
+  upsertedItems,
+}: {
+  catalogService: CatalogService;
+  productGroups: ReturnType<typeof groupItemsByProduct>;
+  upsertedItems: { id: number; productKey: string | null }[];
+}): Promise<void> {
+  const idByProductKey = new Map(upsertedItems.map((item) => [item.productKey, item.id]));
+  await catalogService.upsertCatalogOffers(
+    productGroups.flatMap((group) => {
+      const catalogItemId = idByProductKey.get(group.productKey);
+      return catalogItemId === undefined
+        ? []
+        : group.offers.map((offer) => ({ ...offer, catalogItemId }));
+    }),
+  );
 }

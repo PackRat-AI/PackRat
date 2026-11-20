@@ -5,8 +5,10 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 import {
   type CatalogItem,
   catalogItemEtlJobs,
+  catalogItemOffers,
   catalogItems,
   type NewCatalogItem,
+  type NewCatalogItemOffer,
 } from '@packrat/db/schema';
 import {
   and,
@@ -93,7 +95,7 @@ export class CatalogService {
     // qas/faqs). Detail endpoints (/catalog/:id) still return full rows.
     items: Omit<
       CatalogItem,
-      'embedding' | 'variants' | 'techs' | 'links' | 'reviews' | 'qas' | 'faqs'
+      'embedding' | 'productKey' | 'variants' | 'techs' | 'links' | 'reviews' | 'qas' | 'faqs'
     >[];
     total: number;
     limit: number;
@@ -505,7 +507,12 @@ export class CatalogService {
 
   async upsertCatalogItems(
     items: NewCatalogItem[],
-  ): Promise<Pick<CatalogItem, 'id' | 'sku' | 'name' | 'description' | 'categories' | 'brand'>[]> {
+  ): Promise<
+    Pick<
+      CatalogItem,
+      'id' | 'sku' | 'productKey' | 'name' | 'description' | 'categories' | 'brand'
+    >[]
+  > {
     const columns = getTableColumns(catalogItems);
 
     // Project only the fields downstream needs: id + sku for tracking, plus the
@@ -522,6 +529,7 @@ export class CatalogService {
     const returningFields = {
       id: catalogItems.id,
       sku: catalogItems.sku,
+      productKey: catalogItems.productKey,
       name: catalogItems.name,
       description: catalogItems.description,
       categories: catalogItems.categories,
@@ -533,9 +541,13 @@ export class CatalogService {
       .insert(catalogItems)
       .values(items)
       .onConflictDoUpdate({
-        target: catalogItems.sku,
+        target: catalogItems.productKey,
         set: Object.values(columns).reduce<Record<string, SQL>>((acc, col) => {
-          if (col.name === 'id' || col.name === 'created_at') {
+          if (col.name === 'sku' || col.name === 'product_url') {
+            // The product keeps the listing it was created from; other
+            // listings of the same product are stored as offers.
+            acc[col.name] = sql`${col}`;
+          } else if (col.name === 'id' || col.name === 'created_at') {
             // Never overwrite PK or original creation timestamp
             acc[col.name] = sql`COALESCE(${col}, excluded.${sql.identifier(col.name)})`;
           } else if (col.name === 'weight') {
@@ -570,7 +582,10 @@ export class CatalogService {
         returning: (
           fields: typeof returningFields,
         ) => Promise<
-          Pick<CatalogItem, 'id' | 'sku' | 'name' | 'description' | 'categories' | 'brand'>[]
+          Pick<
+            CatalogItem,
+            'id' | 'sku' | 'productKey' | 'name' | 'description' | 'categories' | 'brand'
+          >[]
         >;
       }
     ).returning(returningFields);
@@ -585,6 +600,34 @@ export class CatalogService {
     // See docs/brainstorms/2026-06-01-embedding-regen-anomaly-requirements.md.
 
     return upsertedItems;
+  }
+
+  /**
+   * Upsert retailer listings by SKU. Offers carry no embedding, so these
+   * writes never touch the catalog HNSW index.
+   */
+  async upsertCatalogOffers(offers: NewCatalogItemOffer[]): Promise<void> {
+    if (offers.length === 0) return;
+    await this.db
+      .tag('catalog.upsertOffers')
+      .insert(catalogItemOffers)
+      .values(offers)
+      .onConflictDoUpdate({
+        target: catalogItemOffers.sku,
+        set: {
+          catalogItemId: sql`excluded.catalog_item_id`,
+          productUrl: sql`excluded.product_url`,
+          price: sql`excluded.price`,
+          currency: sql`excluded.currency`,
+          seller: sql`excluded.seller`,
+          availability: sql`excluded.availability`,
+          color: sql`excluded.color`,
+          size: sql`excluded.size`,
+          condition: sql`excluded.condition`,
+          productSku: sql`excluded.product_sku`,
+          updatedAt: sql`now()`,
+        },
+      });
   }
 
   async trackEtlJob({
@@ -619,14 +662,14 @@ export class CatalogService {
    * Projection is explicit (not getTableColumns) per the U9 lint discipline.
    */
   async fetchExistingForRegen(
-    skus: string[],
+    productKeys: string[],
   ): Promise<
     Map<
       string,
       Pick<
         CatalogItem,
         | 'id'
-        | 'sku'
+        | 'productKey'
         | 'embedding'
         | 'name'
         | 'description'
@@ -644,12 +687,12 @@ export class CatalogService {
       >
     >
   > {
-    if (skus.length === 0) return new Map();
+    if (productKeys.length === 0) return new Map();
     const rows = await this.db
       .tag('catalog.fetchForEmbeddingRegen')
       .select({
         id: catalogItems.id,
-        sku: catalogItems.sku,
+        productKey: catalogItems.productKey,
         embedding: catalogItems.embedding,
         name: catalogItems.name,
         description: catalogItems.description,
@@ -666,8 +709,8 @@ export class CatalogService {
         faqs: catalogItems.faqs,
       })
       .from(catalogItems)
-      .where(inArray(catalogItems.sku, skus));
-    return new Map(rows.map((r) => [r.sku, r]));
+      .where(inArray(catalogItems.productKey, productKeys));
+    return new Map(rows.map((r) => [r.productKey ?? '', r]));
   }
 
   async queueEmbeddingJobs(): Promise<{ count: number }> {
