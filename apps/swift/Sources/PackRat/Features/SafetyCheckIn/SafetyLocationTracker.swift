@@ -20,8 +20,11 @@ final class SafetyLocationTracker: NSObject, CLLocationManagerDelegate {
 
     override init() {
         super.init()
+        // No `manager.authorizationStatus` read here: it's a synchronous call
+        // to locationd that blocked launch for minutes on a cold simulator.
+        // Setting the delegate makes CoreLocation deliver the status through
+        // `locationManagerDidChangeAuthorization`.
         manager.delegate = self
-        authorization = manager.authorizationStatus
     }
 
     /// The user turned down background location, so a check-in that asked to
