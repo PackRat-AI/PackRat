@@ -64,7 +64,6 @@ struct PreferencesView: View {
     /// Owned here, at the screen root, so the paywall presents reliably —
     /// `SubscriptionSettingsSection` only requests it. See `PaywallTrigger`.
     @State private var paywallTrigger = PaywallTrigger()
-    @Environment(\.openURL) private var openURL
     @State private var notificationsEnabled = false
     @State private var notificationAuthStatus: UNAuthorizationStatus = .notDetermined
     @Bindable private var tripReminders = TripReminderSettings.shared
@@ -210,14 +209,9 @@ struct PreferencesView: View {
                         .font(.callout)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    #if os(iOS)
-                    Button("Open Settings") {
-                        if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
-                            openURL(url)
-                        }
-                    }
-                    .font(.callout)
-                    #endif
+                    Button("Open Settings") { PermissionSettings.open(.notifications) }
+                        .font(.callout)
+                        .accessibilityIdentifier("settings_notifications_open_settings")
                 }
             } else {
                 Toggle("Push Notifications", isOn: $notificationsEnabled)

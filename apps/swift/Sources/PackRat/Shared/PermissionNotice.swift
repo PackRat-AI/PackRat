@@ -1,7 +1,10 @@
 import SwiftUI
+import UserNotifications
 #if os(iOS)
 import UIKit
-import UserNotifications
+#elseif os(macOS)
+import AppKit
+#endif
 
 /// Tells the user a feature is held back by a permission they turned off, with
 /// the one action that fixes it. Used inline wherever a denied permission would
@@ -33,11 +36,21 @@ enum PermissionSettings {
     }
 
     static func open(_ page: Page = .app) {
+        #if os(iOS)
         let string = page == .notifications
             ? UIApplication.openNotificationSettingsURLString
             : UIApplication.openSettingsURLString
         guard let url = URL(string: string) else { return }
         UIApplication.shared.open(url)
+        #else
+        // System Settings has no page per app: notifications open on this app's
+        // row, everything else on Privacy & Security.
+        let string = page == .notifications
+            ? "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=\(Bundle.main.bundleIdentifier ?? "")"
+            : "x-apple.systempreferences:com.apple.preference.security?Privacy"
+        guard let url = URL(string: string) else { return }
+        NSWorkspace.shared.open(url)
+        #endif
     }
 
     /// True only once the user has said no; an unasked permission isn't off yet.
@@ -66,23 +79,16 @@ private struct PermissionRefresh: ViewModifier {
             }
     }
 }
-#endif
 
 extension View {
     /// The alert shown right after an action whose result depends on
-    /// notifications the user has turned off. iOS only: macOS never reports
-    /// notifications as off to its callers.
-    @ViewBuilder
+    /// notifications the user has turned off.
     func notificationsOffAlert(isPresented: Binding<Bool>, message: String) -> some View {
-        #if os(iOS)
         alert("Notifications Are Off", isPresented: isPresented) {
             Button("Open Settings") { PermissionSettings.open(.notifications) }
             Button("Not Now", role: .cancel) {}
         } message: {
             Text(message)
         }
-        #else
-        self
-        #endif
     }
 }

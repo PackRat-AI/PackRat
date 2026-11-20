@@ -164,11 +164,9 @@ struct TripDetailView: View {
                     TripChecklistSection(trip: trip, viewModel: viewModel)
                 }
 
-                #if os(iOS)
                 if remindersEnabled {
                     TripRemindersRow(trip: trip)
                 }
-                #endif
             }
             .padding(.bottom)
         }

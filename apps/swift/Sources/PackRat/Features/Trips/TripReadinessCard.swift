@@ -182,7 +182,7 @@ struct TripReadinessCard: View {
     }
 }
 
-#if os(iOS)
+#if os(iOS) || os(macOS)
 /// Per-trip off switch for pre-trip reminders, with when the next one lands.
 struct TripRemindersRow: View {
     let trip: Trip
