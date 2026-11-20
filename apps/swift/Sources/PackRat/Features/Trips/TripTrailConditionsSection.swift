@@ -126,7 +126,7 @@ struct TripTrailConditionsSection: View {
             .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         } else {
             HStack(spacing: 10) {
-                ProgressView()
+                ProgressView().controlSize(.small)
                 Text("Checking recent reports…").font(.callout).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
