@@ -120,6 +120,7 @@ struct PackRatApp: App {
 final class PackRatMacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         UNUserNotificationCenter.current().delegate = self
+        Task { await PushRegistrationService.refreshRegistrationIfAuthorized() }
         guard ProcessInfo.processInfo.arguments.contains("--reset-auth") else { return }
 
         NSApp.setActivationPolicy(.regular)

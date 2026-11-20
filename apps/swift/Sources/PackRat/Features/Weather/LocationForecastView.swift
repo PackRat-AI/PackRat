@@ -159,6 +159,10 @@ struct LocationForecastView: View {
         .task {
             if viewModel.selectedLocation?.id != location.id {
                 await viewModel.selectLocation(location, clearingSearch: !openedFromSearch)
+            } else if viewModel.forecast == nil, !viewModel.isLoadingForecast {
+                // The Mac rebuilds this screen as it is pushed, cancelling the
+                // first load after the location is already selected.
+                await viewModel.loadForecast(for: location)
             }
             // Opening the forecast is the moment the alert has actually been
             // put in front of the user, so it stops counting as new — for the

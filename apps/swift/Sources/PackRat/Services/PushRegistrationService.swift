@@ -39,6 +39,18 @@ enum PushRegistrationService {
     }
 
     #if os(macOS)
+    /// At launch, when notifications are already allowed. A Mac allowed them
+    /// in an earlier session would otherwise never send its token: no prompt
+    /// shows, so nothing above runs. Apple also expects the token to be
+    /// fetched every launch, since it can change.
+    static func refreshRegistrationIfAuthorized() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        guard settings.authorizationStatus == .authorized else { return }
+        NSApplication.shared.registerForRemoteNotifications()
+    }
+    #endif
+
+    #if os(macOS)
     private static let platform = "macos"
     #else
     private static let platform = "ios"
