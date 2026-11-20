@@ -4,6 +4,7 @@ import { Button } from '@packrat/ui/src/button';
 import { Snackbar, type SnackbarHandle } from '@packrat/ui/src/snackbar';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
+import { PermissionNotice } from 'expo-app/components/PermissionNotice';
 import { NotificationsOffNotice } from 'expo-app/features/notifications/components/NotificationsOffNotice';
 import { useNotificationPermission } from 'expo-app/features/notifications/hooks/useNotificationPermission';
 import { showsNotificationsOffNotice } from 'expo-app/features/notifications/utils/notificationsOffNotice';
@@ -139,7 +140,7 @@ export default function WatchListScreen() {
   } = useWatchList();
   const tripAlerts = useTripAlertsSetting();
   const trips = useTrips();
-  const { unwatchPlace } = useWatchFeedback(snackbar);
+  const { unwatchPlace } = useWatchFeedback({ snackbar, showsNoticeFromSearch: true });
   const notifications = useNotificationPermission();
 
   // Trips enter and leave the window by date, so the clock is reread whenever the list
@@ -379,6 +380,21 @@ export default function WatchListScreen() {
           contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 96 }}
           refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}
           ListEmptyComponent={emptyState()}
+          ListHeaderComponent={
+            // The trips section carries its own notice; this one covers watched places.
+            notifications.granted === false &&
+            !showsNotice &&
+            showsLocations &&
+            watched.length > 0 ? (
+              <PermissionNotice
+                message={t('weather.watchListNotificationsOff')}
+                settings="notifications"
+                variant="callout"
+                className="px-4 pt-4"
+                testID={testIds.weather.watchListNotificationsOpenSettingsBtn}
+              />
+            ) : undefined
+          }
         />
       )}
       <Snackbar ref={snackbar} testID={testIds.weather.snackbar} bottomOffset={insets.bottom} />

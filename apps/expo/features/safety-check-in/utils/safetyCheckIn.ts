@@ -248,3 +248,23 @@ export function plannedNotifications({
       n.fireAt.getTime() > now.getTime() && (n.kind === 'reminder' || contactsNotified(checkIn)),
   );
 }
+
+/**
+ * Which phone permissions an active check-in is missing. Progress sharing is the user's choice at
+ * setup, so only a check-in that asked for it can be missing background location. A permission
+ * still being checked (`null`) is not reported, so nothing flashes on screen while it loads.
+ */
+export function missingSafetyPermissions({
+  trackingEnabled,
+  backgroundLocationGranted,
+  notificationsGranted,
+}: {
+  trackingEnabled: boolean;
+  backgroundLocationGranted: boolean | null;
+  notificationsGranted: boolean | null;
+}): { progress: boolean; notifications: boolean } {
+  return {
+    progress: trackingEnabled && backgroundLocationGranted === false,
+    notifications: notificationsGranted === false,
+  };
+}

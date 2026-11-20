@@ -291,6 +291,12 @@ final class VoiceListener {
             || AVAudioApplication.shared.recordPermission == .undetermined
     }
 
+    /// The user turned off the microphone or speech recognition for PackRat.
+    static var isDenied: Bool {
+        let speech = SFSpeechRecognizer.authorizationStatus()
+        return speech == .denied || speech == .restricted || AVAudioApplication.shared.recordPermission == .denied
+    }
+
     static func requestPermissions() async throws {
         let speech = await withCheckedContinuation { continuation in
             SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) }

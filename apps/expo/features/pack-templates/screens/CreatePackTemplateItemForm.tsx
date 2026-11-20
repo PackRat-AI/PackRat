@@ -14,6 +14,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { handlePermissionDenied } from 'expo-app/lib/permissions/permissionDeniedAlert';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
@@ -171,6 +172,7 @@ export const CreatePackTemplateItemForm = ({
           else if (selectedIndex === 1) await pickImage();
           if (selectedIndex === 0 || selectedIndex === 1) setImageChanged(true);
         } catch (err) {
+          if (handlePermissionDenied(err)) return;
           console.error('Image error:', err);
           showAlert({
             title: t('packTemplates.error'),

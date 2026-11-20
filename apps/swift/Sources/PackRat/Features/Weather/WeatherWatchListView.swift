@@ -111,6 +111,7 @@ struct WeatherWatchListView: View {
         .sheet(isPresented: $isAddingLocation) {
             WatchListAddLocationView(viewModel: viewModel)
         }
+        .notificationsOffAlert(isPresented: $viewModel.showingNotificationsOff, message: "Turn them on in Settings to get weather alerts for the places you watch.")
         .alert("Alerts Couldn't Be Turned On", isPresented: $turnOnFailed) {
             Button("OK", role: .cancel) {}
         } message: {

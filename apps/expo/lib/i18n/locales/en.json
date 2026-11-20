@@ -1019,7 +1019,8 @@
       "nextReminder": "Next reminder {{when}}.",
       "startPacking": "Start Packing",
       "continuePacking": "Continue Packing",
-      "reviewPacking": "Review Packing"
+      "reviewPacking": "Review Packing",
+      "notificationsOff": "Notifications are off for PackRat. Turn them on in Settings to get trip reminders."
     },
     "chooseTrail": "Choose a trail",
     "trailFooter": "Optional. Without a trail, the trip shows conditions from trails near its destination.",
@@ -1256,7 +1257,8 @@
     "trailReports": "Trail Reports",
     "trailReportsSubtitle": "Trail Reports tell you when someone reports on a trail for one of your upcoming trips.",
     "tripWeatherAlerts": "Trip Weather Alerts",
-    "tripWeatherAlertsSubtitle": "Trip Weather Alerts tell you about weather hazards at a trip's destination from 3 days before you leave. Turn them off for one trip from its Weather section."
+    "tripWeatherAlertsSubtitle": "Trip Weather Alerts tell you about weather hazards at a trip's destination from 3 days before you leave. Turn them off for one trip from its Weather section.",
+    "notificationsBlocked": "Notifications are blocked in Settings."
   },
   "weather": {
     "weather": "Weather",
@@ -1391,6 +1393,7 @@
     "collapseAlert": "Hide details",
     "addedToLocations": "{{name}} added to your locations",
     "notificationsOff": "Notifications are off for PackRat",
+    "watchListNotificationsOff": "Notifications are off for PackRat. Turn them on in Settings to get alerts for the places you watch.",
     "notificationsOffNotice": "Turn on notifications for PackRat to get weather alerts for your trips.",
     "settings": "Settings",
     "searchForPlace": "Search for a city or place",
@@ -1650,9 +1653,11 @@
     }
   },
   "permissions": {
-    "photoLibraryTitle": "Photo Library Access Required",
-    "photoLibraryMessage": "PackRat needs access to your photo library to update your profile photo. Please enable it in Settings.",
-    "openSettings": "Open Settings"
+    "openSettings": "Open Settings",
+    "cameraOffTitle": "Camera access is off",
+    "cameraOffMessage": "Allow PackRat to use the camera in Settings to take a photo.",
+    "photosOffTitle": "Photo access is off",
+    "photosOffMessage": "Allow PackRat to access your photos in Settings to choose one."
   },
   "trailConditions": {
     "title": "Trail Conditions",
@@ -1924,9 +1929,7 @@
     "discardBody": "Your photos and caption will be lost.",
     "discard": "Discard",
     "keepEditing": "Keep Editing",
-    "permissionRequired": "Permission Required",
     "galleryPermission": "Allow PackRat to access your photos to add them to a post.",
-    "cameraPermission": "Allow PackRat to use the camera to take a photo for your post.",
     "signInToPost": "Sign in to post to the feed.",
     "photosFixed": "Photos can't be changed after posting.",
     "captionSaveFailed": "Your caption couldn't be saved. Try again.",
@@ -2172,7 +2175,9 @@
       "lastCheckIn": "You last checked in at {{time}}",
       "pendingUpdates_one": "{{count}} update will be sent as soon as you have signal",
       "pendingUpdates_other": "{{count}} updates will be sent as soon as you have signal",
-      "sharingProgress": "Your location is being shared with your contacts"
+      "sharingProgress": "Your location is being shared with your contacts",
+      "progressNotShared": "Your progress isn't being shared. Allow location all the time in Settings to share it.",
+      "notificationsOff": "Notifications are off for PackRat. Turn them on in Settings to get your return reminder."
     },
     "checkIn": {
       "title": "Check in",

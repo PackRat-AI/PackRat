@@ -1,7 +1,8 @@
 import * as Sentry from '@sentry/react-native';
+import { openPermissionSettings } from 'expo-app/lib/utils/openPermissionSettings';
 import * as Notifications from 'expo-notifications';
 import { useCallback, useEffect, useState } from 'react';
-import { AppState, Linking, Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 /**
  * Whether PackRat may post notifications on this phone, reread whenever the
@@ -40,7 +41,7 @@ export function useNotificationPermission() {
       message: 'Opened notification settings from the notifications-off notice',
       level: 'info',
     });
-    Linking.openSettings();
+    void openPermissionSettings('notifications');
   }, []);
 
   return { granted, openSettings };

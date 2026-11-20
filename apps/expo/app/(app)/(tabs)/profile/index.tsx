@@ -25,6 +25,7 @@ import { cn } from 'expo-app/lib/cn';
 import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { handlePermissionDenied } from 'expo-app/lib/permissions/permissionDeniedAlert';
 import { testIds } from 'expo-app/lib/testIds';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import { getRemoteImageCacheKey } from 'expo-app/lib/utils/getRemoteImageCacheKey';
@@ -32,7 +33,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Link, router, Stack } from 'expo-router';
 import { useSetAtom } from 'jotai';
 import { useState } from 'react';
-import { Linking, Platform, Pressable, TouchableOpacity, View } from 'react-native';
+import { Platform, Pressable, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -226,16 +227,7 @@ function ListHeaderComponent() {
         }
       }
     } catch (err) {
-      if (err instanceof Error && err.message === 'Permission to access media library was denied') {
-        showAlert({
-          title: t('permissions.photoLibraryTitle'),
-          message: t('permissions.photoLibraryMessage'),
-          buttons: [
-            { text: t('common.cancel'), style: 'cancel' },
-            { text: t('permissions.openSettings'), onPress: () => Linking.openSettings() },
-          ],
-        });
-      } else {
+      if (!handlePermissionDenied(err)) {
         Sentry.captureException(err, {
           tags: { feature: 'profile', action: 'handleAvatarPress' },
         });

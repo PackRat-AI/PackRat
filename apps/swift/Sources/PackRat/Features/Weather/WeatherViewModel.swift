@@ -57,6 +57,9 @@ final class WeatherViewModel {
     /// A short-lived message shown over the forecast after a watch action, so
     /// a successful subscription says so rather than only flipping an icon.
     var watchStatusMessage: String?
+    /// A place was just watched while notifications are off, so its alerts
+    /// can't arrive until the user turns them on.
+    var showingNotificationsOff = false
 
     private let service: any WeatherServicing
     private let monitoringService: any WeatherMonitoringServicing
@@ -356,7 +359,11 @@ final class WeatherViewModel {
             }
         } else {
             if await watchSelectedLocation() {
-                watchStatusMessage = "You'll get alerts for \(selectedLocation.name)"
+                // The notifications-off alert speaks for itself; a toast
+                // promising alerts would contradict it.
+                if !showingNotificationsOff {
+                    watchStatusMessage = "You'll get alerts for \(selectedLocation.name)"
+                }
             } else {
                 watchStatusMessage = "Couldn't watch \(selectedLocation.name). Try again."
             }
@@ -399,7 +406,7 @@ final class WeatherViewModel {
         do {
             let watched = try await monitoringService.addWatchedLocation(request)
             watchedLocations.append(watched)
-            await PushRegistrationService.registerForPushIfNeeded()
+            showingNotificationsOff = await !PushRegistrationService.registerForPushIfNeeded()
             return true
         } catch {
             return false

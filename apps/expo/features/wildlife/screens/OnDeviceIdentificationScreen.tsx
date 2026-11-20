@@ -8,6 +8,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { handlePermissionDenied } from 'expo-app/lib/permissions/permissionDeniedAlert';
 import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
@@ -93,6 +94,7 @@ export function OnDeviceIdentificationScreen() {
                 : null;
           if (picked) reset();
         } catch (err) {
+          if (handlePermissionDenied(err)) return;
           Sentry.captureException(err, {
             tags: { feature: 'wildlife', action: 'handleSelectImage' },
           });
