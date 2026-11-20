@@ -107,8 +107,15 @@ struct HomeView: View {
         .homeSheets(
             showingSeasonSuggestions: $showingSeasonSuggestions,
             showingShoppingList: $showingShoppingList,
-            showingOfflineMaps: $showingOfflineMaps
+            showingOfflineMaps: .constant(false)
         )
+        #if os(iOS)
+        // Pushed like the rest of Home's rows on iPhone, so it gets a Back
+        // button and its own sheets present normally.
+        .navigationDestination(isPresented: $showingOfflineMaps) {
+            OfflineMapsView()
+        }
+        #endif
     }
 
     private var regularBody: some View {

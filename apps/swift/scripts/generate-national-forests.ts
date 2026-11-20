@@ -13,8 +13,9 @@
  * Run from repo root:
  *   bun apps/swift/scripts/generate-national-forests.ts
  *
- * Output:
+ * Output (the same file for both apps):
  *   apps/swift/Resources/NationalForests.json
+ *   apps/expo/features/offline-maps/data/nationalForests.json
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -23,7 +24,10 @@ import { fileURLToPath } from 'node:url';
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const outputPath = resolve(__dir, '../Resources/NationalForests.json');
+const outputPaths = [
+  resolve(__dir, '../Resources/NationalForests.json'),
+  resolve(__dir, '../../expo/features/offline-maps/data/nationalForests.json'),
+];
 const placesPath = resolve(__dir, '../Resources/Places.json');
 
 const SERVICE =
@@ -188,5 +192,7 @@ if (forests.length < MINIMUM_COUNT)
 const empty = forests.filter((f) => f.rings.length === 0).map((f) => f.name);
 if (empty.length > 0) throw new Error(`Forests without a boundary: ${empty.join(', ')}`);
 
-writeFileSync(outputPath, `${safeJsonStringify(forests)}\n`);
-console.log(`Wrote ${forests.length} forests to ${outputPath}`);
+for (const outputPath of outputPaths) {
+  writeFileSync(outputPath, `${safeJsonStringify(forests)}\n`);
+  console.log(`Wrote ${forests.length} forests to ${outputPath}`);
+}

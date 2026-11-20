@@ -12,6 +12,7 @@ import { appConfig } from 'expo-app/config';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
 import { FeedTile } from 'expo-app/features/feed/components/FeedTile';
 import { GuidesTile } from 'expo-app/features/guides/components/GuidesTile';
+import { OfflineMapsTile } from 'expo-app/features/offline-maps/components/OfflineMapsTile';
 import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
@@ -88,6 +89,11 @@ const tileInfo = {
     title: 'Trail Conditions',
     keywords: ['trail', 'conditions', 'terrain', 'path'],
     component: TrailConditionsTile,
+  },
+  'offline-maps': {
+    title: 'Offline Maps',
+    keywords: ['offline', 'maps', 'download', 'signal', 'save'],
+    component: OfflineMapsTile,
   },
   weather: {
     title: 'Weather',
@@ -203,6 +209,9 @@ export default function DashboardScreen() {
         : []),
       ...(featureFlags.enableTrailConditions
         ? [appConfig.dashboard.layout.conditional.trailConditions]
+        : []),
+      ...(featureFlags.enableOfflineMaps
+        ? [appConfig.dashboard.layout.conditional.offlineMaps]
         : []),
       ...appConfig.dashboard.layout.gearSection,
       ...(featureFlags.enableShoppingList

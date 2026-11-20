@@ -537,8 +537,14 @@ export const testIds = Object.freeze({
   // ── Offline maps ──────────────────────────────────────────────────────────
   offlineMaps: Object.freeze({
     settingsRow: 'offline-maps:settings-row',
+    dashboardTile: 'offline-maps:dashboard-tile',
     add: 'offline-maps:add',
     emptyAdd: 'offline-maps:empty-add',
+    emptyAddRegion: 'offline-maps:empty-add-region',
+    regionList: 'offline-maps:region-list',
+    framePart: 'offline-maps:frame-part',
+    regionSearch: 'offline-maps:region-search',
+    regionRow: (id: string) => `offline-maps:region-${id}`,
     deleteAll: 'offline-maps:delete-all',
     allowCellular: 'offline-maps:allow-cellular',
     areaRow: (id: string) => `offline-maps:area-row-${id}`,

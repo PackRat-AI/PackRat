@@ -78,38 +78,42 @@ struct OfflineNamedRegion: Identifiable, Sendable {
 
     /// The ones small enough to save whole at Standard detail. Big states and
     /// countries are left out rather than offered and then refused.
-    static func saveable() async -> [OfflineNamedRegion] {
+    /// Every region, marked with whether it is small enough to save whole at
+    /// Standard detail, so the list can say so up front instead of leaving it out.
+    static func measured() async -> [(region: OfflineNamedRegion, fits: Bool)] {
         await Task.detached(priority: .userInitiated) {
-            all.filter { OfflineTilePacks.packs(for: $0.rings, detail: .standard).count <= OfflineTilePacks.budget }
+            all.map { ($0, OfflineTilePacks.packs(for: $0.rings, detail: .standard).count <= OfflineTilePacks.budget) }
         }.value
     }
 }
 
-/// Find a park, forest, state or country by name, then save the map inside its outline.
+/// Find a park, forest, state or country by name, then save the map inside its
+/// outline. Places too big to save whole stay listed, marked in the trailing
+/// slot, and open on the picker's offer to save part of them.
 struct OfflineRegionListView: View {
     /// Closes the whole flow once a download starts.
     var onSaved: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
-    @State private var regions: [OfflineNamedRegion]?
+    @State private var regions: [(region: OfflineNamedRegion, fits: Bool)]?
 
-    private var matches: [OfflineNamedRegion] {
+    private var matches: [(region: OfflineNamedRegion, fits: Bool)] {
         let regions = regions ?? []
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return regions }
         return regions.filter {
-            $0.name.localizedStandardContains(trimmed) || $0.subtitle.localizedStandardContains(trimmed)
+            $0.region.name.localizedStandardContains(trimmed) || $0.region.subtitle.localizedStandardContains(trimmed)
         }
     }
 
     var body: some View {
         let matches = matches
         List {
-            section("National Parks", matches.filter { $0.kind == .park })
-            section("National Forests and Grasslands", matches.filter { $0.kind == .forest })
-            section("States and Provinces", matches.filter { $0.kind == .region })
-            section("Countries", matches.filter { $0.kind == .country })
+            section("National Parks", matches.filter { $0.region.kind == .park })
+            section("National Forests and Grasslands", matches.filter { $0.region.kind == .forest })
+            section("States and Provinces", matches.filter { $0.region.kind == .region })
+            section("Countries", matches.filter { $0.region.kind == .country })
         }
         .overlay {
             if regions == nil {
@@ -118,7 +122,7 @@ struct OfflineRegionListView: View {
                 ContentUnavailableView.search(text: query)
             }
         }
-        .task { regions = await OfflineNamedRegion.saveable() }
+        .task { regions = await OfflineNamedRegion.measured() }
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Park, forest, state or country")
         .navigationTitle("Parks and Regions")
         .navigationBarTitleDisplayMode(.inline)
@@ -131,19 +135,19 @@ struct OfflineRegionListView: View {
     }
 
     @ViewBuilder
-    private func section(_ title: String, _ regions: [OfflineNamedRegion]) -> some View {
+    private func section(_ title: String, _ regions: [(region: OfflineNamedRegion, fits: Bool)]) -> some View {
         if !regions.isEmpty {
             Section(title) {
-                ForEach(regions) { region in
+                ForEach(regions, id: \.region.id) { region, fits in
                     NavigationLink {
                         OfflineAreaPickerView(region: region, onSaved: onSaved)
                     } label: {
-                        VStack(alignment: .leading, spacing: 2) {
+                        LabeledContent {
+                            if !fits { Text("Too large") }
+                        } label: {
                             Text(region.name)
                             if !region.subtitle.isEmpty {
                                 Text(region.subtitle)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
                             }
                         }
                     }

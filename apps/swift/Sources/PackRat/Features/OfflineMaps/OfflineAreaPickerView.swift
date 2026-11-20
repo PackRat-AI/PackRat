@@ -8,7 +8,8 @@ import SwiftUI
 ///
 /// The visible map is the frame: what the user sees is what gets saved. A
 /// named region instead saves what lies inside its outline, wherever the map
-/// is panned.
+/// is panned; one too large to save whole offers to frame part of it right
+/// here, with its outline left on the map as a guide.
 struct OfflineAreaPickerView: View {
     /// Where the map opens. A trip or trail passes its destination.
     var initialCenter: CLLocationCoordinate2D?
@@ -31,6 +32,10 @@ struct OfflineAreaPickerView: View {
     @State private var estimate: Int64?
     @State private var estimateFailed = false
     @State private var packFit: (fits: Bool, fitsAlone: Bool)?
+    /// What the map shows, kept for a region too so framing part of it starts there.
+    @State private var visibleBounds: OfflineAreaBounds?
+    /// The region is too large, so the user is framing part of it instead.
+    @State private var framingPart = false
     @State private var confirmingCellular = false
 
     init(
@@ -63,9 +68,12 @@ struct OfflineAreaPickerView: View {
             : .followPuck(zoom: 11))
     }
 
+    /// The region whose outline gets saved; nil once the user frames part of it.
+    private var outline: OfflineNamedRegion? { framingPart ? nil : region }
+
     /// What gets saved: the region's outline, or the visible frame.
     private var rings: [[CLLocationCoordinate2D]] {
-        region?.rings ?? bounds.map { [$0.ring] } ?? []
+        outline?.rings ?? bounds.map { [$0.ring] } ?? []
     }
 
     private var isTooLarge: Bool { packFit?.fitsAlone == false }
@@ -89,26 +97,29 @@ struct OfflineAreaPickerView: View {
                     if let region {
                         PolygonAnnotationGroup(Array(region.rings.enumerated()), id: \.offset) { _, ring in
                             PolygonAnnotation(polygon: Polygon([ring]))
-                                .fillColor(UIColor.tintColor)
-                                .fillOpacity(0.15)
+                                // Fill opacity dims the outline too, so framing part
+                                // clears the fill colour instead and keeps the outline.
+                                .fillColor(framingPart ? UIColor.clear : UIColor.tintColor)
+                                .fillOpacity(framingPart ? 1 : 0.15)
                                 .fillOutlineColor(UIColor.tintColor)
                         }
                     }
                 }
                 .mapStyle(.outdoors)
                 .onMapIdle { _ in
-                    guard region == nil, let map = proxy.map else { return }
+                    guard let map = proxy.map else { return }
                     let visible = map.coordinateBounds(for: CameraOptions(cameraState: map.cameraState))
-                    bounds = OfflineAreaBounds(
+                    visibleBounds = OfflineAreaBounds(
                         south: visible.southwest.latitude,
                         west: visible.southwest.longitude,
                         north: visible.northeast.latitude,
                         east: visible.northeast.longitude
                     )
+                    if outline == nil { bounds = visibleBounds }
                 }
             }
             .overlay {
-                if region == nil {
+                if outline == nil {
                     RoundedRectangle(cornerRadius: 4)
                         .strokeBorder(Color.accentColor, lineWidth: 3)
                         .allowsHitTesting(false)
@@ -140,7 +151,17 @@ struct OfflineAreaPickerView: View {
                         Text("Your saved maps are at their limit. Delete one you no longer need, or save a smaller area.")
                             .foregroundStyle(.red)
                     } else {
-                        Text(region == nil ? "Everything inside the frame is saved." : "Everything inside the outline is saved.")
+                        Text(outline == nil ? "Everything inside the frame is saved." : "Everything inside the outline is saved.")
+                    }
+                }
+
+                if outline != nil && isTooLarge {
+                    Section {
+                        Button("Choose Part of It", systemImage: "crop") {
+                            framingPart = true
+                            bounds = visibleBounds ?? bounds
+                        }
+                        .accessibilityIdentifier("offline_area_frame_part")
                     }
                 }
             }
@@ -161,7 +182,7 @@ struct OfflineAreaPickerView: View {
                     .accessibilityIdentifier("offline_area_save")
             }
         }
-        .task(id: EstimateKey(bounds: bounds, detail: detail)) {
+        .task(id: EstimateKey(bounds: bounds, detail: detail, framingPart: framingPart)) {
             await refreshEstimate()
         }
         .confirmationDialog(
@@ -177,11 +198,11 @@ struct OfflineAreaPickerView: View {
     }
 
     private var tooLargeMessage: String {
-        switch (region == nil, detail) {
+        switch (outline == nil, detail) {
         case (true, .trail): return "This area is too large to save. Zoom in to frame a smaller area, or choose Standard detail."
         case (true, .standard): return "This area is too large to save. Zoom in to frame a smaller area."
-        case (false, .trail): return "\(name) is too large to save at Trail detail. Choose Standard detail instead."
-        case (false, .standard): return "\(name) is too large to save in one piece. Save the part you need by framing it on the map."
+        case (false, .trail): return "\(name) is too large to save at Trail detail. Choose Standard detail, or save part of it."
+        case (false, .standard): return "\(name) is too large to save in one piece."
         }
     }
 
@@ -243,7 +264,7 @@ struct OfflineAreaPickerView: View {
             tripEndDate: tripEndDate,
             trailId: trailId,
             trailLines: lines,
-            boundary: region?.rings ?? [],
+            boundary: outline?.rings ?? [],
             allowCellular: allowCellular
         )
         if let onSaved { onSaved() } else { dismiss() }
@@ -253,5 +274,6 @@ struct OfflineAreaPickerView: View {
 private struct EstimateKey: Equatable {
     var bounds: OfflineAreaBounds?
     var detail: OfflineDetailLevel
+    var framingPart: Bool
 }
 #endif

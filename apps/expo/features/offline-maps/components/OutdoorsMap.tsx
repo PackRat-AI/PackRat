@@ -7,24 +7,36 @@ import { boundsEnclosing } from '../utils/offlineArea';
 import { cameraBounds, TrailLines } from './MapLayers';
 
 /**
- * A small, still Mapbox Outdoors map for a trip or trail page. It draws from saved areas when the
- * phone is offline, which the Google map it replaces cannot.
+ * A small Mapbox Outdoors map for a trip or trail page. It draws from saved areas when the phone is
+ * offline, which the Google map it replaces cannot. Still unless `interactive`, matching the map
+ * each page had before.
  */
 export function OutdoorsMap({
   id,
   lines = [],
   pin,
+  interactive = false,
 }: {
   id: string;
   lines?: LonLat[][];
   /** A destination to mark and centre on when there is no line. */
   pin?: LonLat;
+  /** Pan and pinch to zoom, like the trip page's map. */
+  interactive?: boolean;
 }) {
   const { colors } = useColorScheme();
   const lineBounds = boundsEnclosing(lines);
   return (
-    <View className="flex-1" pointerEvents="none">
-      <Mapbox.MapView style={{ flex: 1 }} styleURL={OUTDOORS_STYLE} scaleBarEnabled={false}>
+    <View className="flex-1" pointerEvents={interactive ? 'auto' : 'none'}>
+      <Mapbox.MapView
+        style={{ flex: 1 }}
+        styleURL={OUTDOORS_STYLE}
+        scaleBarEnabled={false}
+        rotateEnabled={false}
+        pitchEnabled={false}
+        // Inside a scrolling page, so a drag on the map pans it instead of scrolling the page.
+        requestDisallowInterceptTouchEvent={interactive}
+      >
         <Mapbox.Camera
           // Keyed on the target: changing defaultSettings alone does not move a mounted camera.
           key={lineBounds ? `line-${Object.values(lineBounds).join()}` : `pin-${pin?.join()}`}

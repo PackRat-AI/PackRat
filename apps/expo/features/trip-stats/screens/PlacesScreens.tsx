@@ -1,6 +1,7 @@
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -9,6 +10,7 @@ import { useMemo } from 'react';
 import { FlatList, Pressable, ScrollView, View } from 'react-native';
 import MapView, { Marker, Polygon } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { OutdoorsStatsMap } from '../components/OutdoorsStatsMap';
 import { StatsRow } from '../components/StatsParts';
 import { useTripPlaces, useTripStatsRecord } from '../hooks/useTripStats';
 import { getPlaceAtlas } from '../lib/places';
@@ -243,6 +245,7 @@ export function PlaceDetailScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const { scope, places } = useScopedPlaces();
   const record = useTripStatsRecord(scope);
+  const enableOfflineMaps = useFeatureFlag('enableOfflineMaps');
   const { country, region } = findPlace({ places, code: code ?? '' });
   const place = country ?? region;
 
@@ -279,34 +282,44 @@ export function PlaceDetailScreen() {
       <ScrollView contentContainerClassName="pb-8">
         {initialRegion ? (
           <View style={{ height: MAP_HEIGHT }} testID={testIds.tripStats.placeDetailMap}>
-            <MapView
-              style={{ flex: 1 }}
-              initialRegion={initialRegion}
-              scrollEnabled={false}
-              zoomEnabled={false}
-              rotateEnabled={false}
-              pitchEnabled={false}
-              toolbarEnabled={false}
-            >
-              {shapes.flatMap((shape) =>
-                shape.rings.map((ring, index) => (
-                  <Polygon
-                    key={`${shape.code}-${index}`}
-                    coordinates={ring}
-                    strokeColor={colors.primary}
-                    strokeWidth={1.5}
-                    fillColor={translucent({ color: colors.primary, alpha: 0.18 })}
+            {enableOfflineMaps ? (
+              <OutdoorsStatsMap
+                id="place"
+                region={initialRegion}
+                outlines={shapes.flatMap((shape) => shape.rings)}
+                pins={pins}
+                zoomEnabled={false}
+              />
+            ) : (
+              <MapView
+                style={{ flex: 1 }}
+                initialRegion={initialRegion}
+                scrollEnabled={false}
+                zoomEnabled={false}
+                rotateEnabled={false}
+                pitchEnabled={false}
+                toolbarEnabled={false}
+              >
+                {shapes.flatMap((shape) =>
+                  shape.rings.map((ring, index) => (
+                    <Polygon
+                      key={`${shape.code}-${index}`}
+                      coordinates={ring}
+                      strokeColor={colors.primary}
+                      strokeWidth={1.5}
+                      fillColor={translucent({ color: colors.primary, alpha: 0.18 })}
+                    />
+                  )),
+                )}
+                {pins.map((pin) => (
+                  <Marker
+                    key={pin.id}
+                    coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
+                    title={pin.name}
                   />
-                )),
-              )}
-              {pins.map((pin) => (
-                <Marker
-                  key={pin.id}
-                  coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
-                  title={pin.name}
-                />
-              ))}
-            </MapView>
+                ))}
+              </MapView>
+            )}
           </View>
         ) : null}
 

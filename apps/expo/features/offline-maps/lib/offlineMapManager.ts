@@ -1,12 +1,16 @@
 import { clientEnvs } from '@packrat/env/expo-client';
+import { isArray, isNumber, isObject, isString } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import Mapbox from '@rnmapbox/maps';
 import * as Sentry from '@sentry/react-native';
 import { obs } from 'expo-app/lib/store';
 import * as Network from 'expo-network';
 import { nanoid } from 'nanoid';
+import { NativeModules } from 'react-native';
 import { offlineDownloadsStore, offlineMapsStore } from '../store/offlineMaps';
 import type { LonLat, OfflineArea, OfflineAreaBounds, OfflineDetailLevel } from '../types';
 import { type ConnectionKind, failureFromMessage, mayDownload } from '../utils/downloads';
+import { boundaryFeatureCollection } from '../utils/namedRegions';
 import { DETAIL_MAX_ZOOM } from '../utils/offlineArea';
 
 /** The style every in-app Mapbox map uses, so a saved area shows up on all of them. */
@@ -86,6 +90,7 @@ export function saveArea({
   tripEndsAt,
   trailId,
   trailLines,
+  boundary,
   allowCellularOnce,
 }: {
   name: string;
@@ -95,6 +100,8 @@ export function saveArea({
   tripEndsAt?: number;
   trailId?: string;
   trailLines?: LonLat[][];
+  /** A named region's outline: only what lies inside it is saved. */
+  boundary?: LonLat[][];
   /** The user agreed to this one download over cellular. */
   allowCellularOnce?: boolean;
 }): OfflineArea {
@@ -108,6 +115,7 @@ export function saveArea({
     tripEndsAt,
     trailId,
     trailLines: trailLines && trailLines.length > 0 ? trailLines : undefined,
+    boundary: boundary && boundary.length > 0 ? boundary : undefined,
     sizeBytes: 0,
     isComplete: false,
   };
@@ -232,6 +240,10 @@ async function begin({ area, fresh }: { area: OfflineArea; fresh: boolean }): Pr
       return;
     }
     if (existing) await offlineManager.deletePack(area.id);
+    if (area.boundary) {
+      await createOutlinePack({ area, boundary: area.boundary });
+      return;
+    }
     const { south, west, north, east } = area.bounds;
     await offlineManager.createPack(
       {
@@ -259,19 +271,56 @@ async function begin({ area, fresh }: { area: OfflineArea; fresh: boolean }): Pr
   }
 }
 
+/**
+ * Starts a download framed by a region's outline. `offlineManager.createPack` only takes a
+ * rectangle, so this calls the native module directly with the outline; the
+ * `patches/@rnmapbox%2Fmaps` patch makes it pass a one-feature MultiPolygon to the tile store as
+ * is, and restore it when a download resumes. Listeners go on first, the way `createPack` does it.
+ * The manager drops progress for a pack missing from its own list, which only `createPack` fills,
+ * so the new pack is added to that list straight after.
+ */
+async function createOutlinePack({
+  area,
+  boundary,
+}: {
+  area: OfflineArea;
+  boundary: LonLat[][];
+}): Promise<void> {
+  await offlineManager.subscribe(area.id, (_pack, status) => onProgress(status), onError);
+  await NativeModules.RNMBXOfflineModule.createPack({
+    name: area.id,
+    styleURL: OUTDOORS_STYLE,
+    // One feature, never two: the module reads a two-feature collection as a pair of corners.
+    bounds: safeJsonStringify(boundaryFeatureCollection(boundary)),
+    minZoom: 0,
+    maxZoom: DETAIL_MAX_ZOOM[area.detail],
+    metadata: safeJsonStringify({ areaName: area.name, name: area.id }),
+  });
+  try {
+    // `getPack` re-reads the native list. The tile store can take a moment to list a new region,
+    // and a download takes far longer than this to report its first progress.
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const found = await offlineManager.getPack(area.id);
+      if (found) {
+        await reportIfAlreadyComplete(area.id);
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+    throw new Error('The new outline pack never appeared in the tile store');
+  } catch (error) {
+    // The native task is already loading; stop it before `begin` gives up ownership, or a Wi-Fi-only
+    // download would carry on with nothing left to pause it.
+    await NativeModules.RNMBXOfflineModule.pausePackDownload(area.id).catch(() => undefined);
+    throw error;
+  }
+}
+
 function onProgress(status: OfflineProgressStatus): void {
   const id = status.name;
   if (!obs({ store: offlineMapsStore.areas, id: id }).peek() || status.percentage === null) return;
   if (status.state === 'complete') {
-    running.delete(id);
-    cellularOnce.delete(id);
-    obs({ store: offlineDownloadsStore.progress, id: id }).delete();
-    obs({ store: offlineDownloadsStore.waiting, id: id }).delete();
-    obs({ store: offlineMapsStore.areas, id: id }).assign({
-      sizeBytes: status.completedResourceSize,
-      isComplete: true,
-      savedAt: Date.now(),
-    });
+    markComplete({ id, sizeBytes: status.completedResourceSize });
     return;
   }
   if (!running.has(id)) return;
@@ -279,6 +328,37 @@ function onProgress(status: OfflineProgressStatus): void {
     fraction: Math.min(status.percentage / 100, 1),
     bytes: status.completedResourceSize,
   });
+}
+
+function markComplete({ id, sizeBytes }: { id: string; sizeBytes: number }): void {
+  running.delete(id);
+  cellularOnce.delete(id);
+  obs({ store: offlineDownloadsStore.progress, id: id }).delete();
+  obs({ store: offlineDownloadsStore.waiting, id: id }).delete();
+  obs({ store: offlineMapsStore.areas, id: id }).assign({
+    sizeBytes,
+    isComplete: true,
+    savedAt: Date.now(),
+  });
+}
+
+/**
+ * Marks an outline download done if it finished before the manager knew of its pack. Tiles another
+ * saved or deleted map left in the store make that near-instant, and its completion event is
+ * dropped. Any later event reaches `onProgress` as usual.
+ */
+async function reportIfAlreadyComplete(id: string): Promise<void> {
+  const packs: unknown = await NativeModules.RNMBXOfflineModule.getPacks();
+  if (!isArray(packs)) return;
+  for (const pack of packs) {
+    if (!isObject(pack) || !('state' in pack) || pack.state !== 'complete') continue;
+    if (!('metadata' in pack) || !isString(pack.metadata)) continue;
+    const metadata = safeJsonParse<unknown>(pack.metadata);
+    if (!isObject(metadata) || !('name' in metadata) || metadata.name !== id) continue;
+    const size = 'completedResourceSize' in pack ? pack.completedResourceSize : 0;
+    if (running.has(id)) markComplete({ id, sizeBytes: isNumber(size) ? size : 0 });
+    return;
+  }
 }
 
 function onError(_pack: unknown, error: OfflinePackError): void {

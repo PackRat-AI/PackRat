@@ -126,6 +126,10 @@ export default function AppLayout() {
         />
         <Stack.Screen name="offline-maps/index" options={{ title: t('offlineMaps.title') }} />
         <Stack.Screen name="offline-maps/pick" options={OFFLINE_AREA_PICKER_OPTIONS} />
+        <Stack.Screen
+          name="offline-maps/regions"
+          options={{ ...OFFLINE_AREA_PICKER_OPTIONS, title: t('offlineMaps.regionsTitle') }}
+        />
         <Stack.Screen name="offline-maps/[areaId]" options={{ title: '' }} />
         <Stack.Screen name="consent-modal" options={CONSENT_MODAL_OPTIONS} />
         <Stack.Screen

@@ -4,6 +4,7 @@ import { Button } from '@packrat/ui/src/button';
 import { createDropdownItem, DropdownMenu } from '@packrat/ui/src/dropdown-menu';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
+import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { obs } from 'expo-app/lib/store';
@@ -14,6 +15,7 @@ import { ScrollView, View } from 'react-native';
 import MapView, { Polyline } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLongTrailSummary } from '../components/LongTrailCards';
+import { OutdoorsStatsMap } from '../components/OutdoorsStatsMap';
 import { ProgressBar, StatsRow } from '../components/StatsParts';
 import { useDistanceUnit } from '../hooks/useDistanceUnit';
 import {
@@ -49,6 +51,7 @@ export function LongTrailDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useColorScheme();
+  const enableOfflineMaps = useFeatureFlag('enableOfflineMaps');
   const unit = useDistanceUnit();
   const summary = useLongTrailSummary(unit);
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -162,32 +165,43 @@ export function LongTrailDetailScreen() {
           testID={testIds.tripStats.longTrailMap}
           accessibilityLabel={t('tripStats.longTrails.mapLabel', { trail: trail.name })}
         >
-          <MapView
-            style={{ flex: 1 }}
-            initialRegion={regionFor(trail)}
-            scrollEnabled={false}
-            rotateEnabled={false}
-            pitchEnabled={false}
-            toolbarEnabled={false}
-          >
-            {trail.lines.map((line, index) => (
-              <Polyline
-                key={`line-${index}`}
-                coordinates={[...line]}
-                strokeColor={colors.grey}
-                strokeWidth={3}
-              />
-            ))}
-            {walked.map((line, index) => (
-              <Polyline
-                key={`walked-${index}`}
-                coordinates={line}
-                strokeColor={colors.primary}
-                strokeWidth={6}
-                zIndex={1}
-              />
-            ))}
-          </MapView>
+          {enableOfflineMaps ? (
+            <OutdoorsStatsMap
+              id="long-trail"
+              region={regionFor(trail)}
+              lines={[
+                ...trail.lines.map((line) => ({ coordinates: line, color: colors.grey, width: 3 })),
+                ...walked.map((line) => ({ coordinates: line, color: colors.primary, width: 6 })),
+              ]}
+            />
+          ) : (
+            <MapView
+              style={{ flex: 1 }}
+              initialRegion={regionFor(trail)}
+              scrollEnabled={false}
+              rotateEnabled={false}
+              pitchEnabled={false}
+              toolbarEnabled={false}
+            >
+              {trail.lines.map((line, index) => (
+                <Polyline
+                  key={`line-${index}`}
+                  coordinates={[...line]}
+                  strokeColor={colors.grey}
+                  strokeWidth={3}
+                />
+              ))}
+              {walked.map((line, index) => (
+                <Polyline
+                  key={`walked-${index}`}
+                  coordinates={line}
+                  strokeColor={colors.primary}
+                  strokeWidth={6}
+                  zIndex={1}
+                />
+              ))}
+            </MapView>
+          )}
         </View>
 
         <View className="gap-2 px-4 pt-4" accessible>

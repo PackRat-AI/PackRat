@@ -89,8 +89,9 @@ struct OfflineMapsTests {
         let forests = OfflineNamedRegion.all.filter { $0.kind == .forest }
         #expect(forests.count >= 140)
         #expect(forests.allSatisfy { !$0.rings.isEmpty && !$0.subtitle.isEmpty })
-        let saveable = await OfflineNamedRegion.saveable().filter { $0.kind == .forest }
-        #expect(saveable.count > forests.count / 2)
+        let measured = await OfflineNamedRegion.measured().filter { $0.region.kind == .forest }
+        #expect(measured.count == forests.count)
+        #expect(measured.filter(\.fits).count > forests.count / 2)
     }
     #endif
 

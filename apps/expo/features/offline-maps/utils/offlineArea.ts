@@ -133,50 +133,52 @@ const INDEX_ZOOMS = Object.freeze({
   ],
 } as const);
 
+/** The shape an area's tiles cover: a named region's outline, or its rectangle. */
+export function areaRings(area: Pick<OfflineArea, 'bounds' | 'boundary'>): LonLat[][] {
+  return area.boundary ?? [boundsRing(area.bounds)];
+}
+
 /**
- * The tile packs covering the bounds at the given detail, as stable keys. Stops early past
+ * The tile packs covering the rings at the given detail, as stable keys. Stops early past
  * `maxPacks`: by then the area is far over the limit and the exact count no longer matters.
  */
 export function tilePacks({
-  bounds,
+  rings,
   detail,
   maxPacks = TILE_PACK_LIMIT * 4,
 }: {
-  bounds: OfflineAreaBounds;
+  rings: LonLat[][];
   detail: OfflineDetailLevel;
   maxPacks?: number;
 }): Set<string> {
   const keys = new Set<string>();
   for (const [group, zoom] of INDEX_ZOOMS[detail]) {
-    const range = tileRange({ bounds, zoom });
-    for (let x = range.minX; x <= range.maxX; x++) {
-      for (let y = range.minY; y <= range.maxY; y++) {
-        keys.add(`${group}/${zoom}/${x}/${y}`);
-        if (keys.size > maxPacks) return keys;
-      }
+    for (const tile of tilesCovering({ rings, zoom, maxTiles: maxPacks })) {
+      keys.add(`${group}/${zoom}/${tile}`);
+      if (keys.size > maxPacks) return keys;
     }
   }
   return keys;
 }
 
 /**
- * Whether the bounds fit under the tile-pack cap alongside the areas already saved, and whether
+ * Whether the rings fit under the tile-pack cap alongside the areas already saved, and whether
  * they would fit on their own.
  */
 export function packFit({
-  bounds,
+  rings,
   detail,
   saved,
 }: {
-  bounds: OfflineAreaBounds;
+  rings: LonLat[][];
   detail: OfflineDetailLevel;
-  saved: Pick<OfflineArea, 'bounds' | 'detail'>[];
+  saved: Pick<OfflineArea, 'bounds' | 'boundary' | 'detail'>[];
 }): { fits: boolean; fitsAlone: boolean } {
   const used = new Set<string>();
   for (const area of saved) {
-    for (const key of tilePacks(area)) used.add(key);
+    for (const key of tilePacks({ rings: areaRings(area), detail: area.detail })) used.add(key);
   }
-  const adding = tilePacks({ bounds, detail });
+  const adding = tilePacks({ rings, detail });
   let added = 0;
   for (const key of adding) if (!used.has(key)) added++;
   return {
@@ -185,21 +187,131 @@ export function packFit({
   };
 }
 
-/** Bytes the area would take on disk at the given detail. */
+/** Bytes the rings would take on disk at the given detail. */
 export function estimateBytes({
-  bounds,
+  rings,
   detail,
 }: {
-  bounds: OfflineAreaBounds;
+  rings: LonLat[][];
   detail: OfflineDetailLevel;
 }): number {
   let bytes = 0;
   for (const [group, zoom] of INDEX_ZOOMS[detail]) {
-    const range = tileRange({ bounds, zoom });
-    const packs = (range.maxX - range.minX + 1) * (range.maxY - range.minY + 1);
-    bytes += packs * BYTES_PER_PACK[group];
+    bytes += tilesCovering({ rings, zoom }).size * BYTES_PER_PACK[group];
   }
   return bytes;
+}
+
+/**
+ * Every tile at `zoom` the rings touch, as `x/y` keys: tiles any edge passes through, plus tiles
+ * whose centre lies inside a ring (even-odd, so holes and islands sort themselves out). Stops early
+ * past `maxTiles`. Same count as `OfflineTilePacks.tiles` in the Swift app.
+ */
+export function tilesCovering({
+  rings,
+  zoom,
+  maxTiles = TILE_PACK_LIMIT * 4,
+}: {
+  rings: LonLat[][];
+  zoom: number;
+  maxTiles?: number;
+}): Set<string> {
+  const scale = 2 ** zoom;
+  const last = scale - 1;
+  const tiles = new Set<string>();
+  const insert = ({ x, y }: TilePoint) => tiles.add(`${clamp(x, 0, last)}/${clamp(y, 0, last)}`);
+  for (const ring of rings) {
+    const points = ring.map((point) => project({ point, scale }));
+    const edges = points.map((a, index) => [a, points[(index + 1) % points.length] ?? a] as const);
+    for (const [a, b] of edges) {
+      insertEdgeTiles({ a, b, insert });
+      if (tiles.size > maxTiles) return tiles;
+    }
+    // Interior: for each row of tile centres, fill between the points where the ring crosses it.
+    // A loop, not Math.min(...): a country's outline runs to more points than the stack holds.
+    let top = Number.POSITIVE_INFINITY;
+    let bottom = Number.NEGATIVE_INFINITY;
+    for (const point of points) {
+      top = Math.min(top, point.y);
+      bottom = Math.max(bottom, point.y);
+    }
+    const minY = Math.floor(top);
+    const maxY = Math.floor(bottom);
+    for (let y = minY + 1; y < maxY; y++) {
+      const rowY = y + 0.5;
+      const crossings: number[] = [];
+      for (const [a, b] of edges) {
+        if (a.y > rowY !== b.y > rowY)
+          crossings.push(a.x + ((rowY - a.y) / (b.y - a.y)) * (b.x - a.x));
+      }
+      crossings.sort((left, right) => left - right);
+      for (let pair = 0; pair + 1 < crossings.length; pair += 2) {
+        const from = Math.ceil((crossings[pair] ?? 0) - 0.5);
+        const to = Math.floor((crossings[pair + 1] ?? 0) - 0.5);
+        for (let x = from; x <= to; x++) insert({ x, y });
+        if (tiles.size > maxTiles) return tiles;
+      }
+    }
+  }
+  return tiles;
+}
+
+type TilePoint = { x: number; y: number };
+
+/** Web Mercator tile space at the given scale (tiles across the world). */
+function project({ point: [lon, lat], scale }: { point: LonLat; scale: number }): TilePoint {
+  const rad = (clamp(lat, -85.0511, 85.0511) * Math.PI) / 180;
+  return {
+    x: ((lon + 180) / 360) * scale,
+    y: ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * scale,
+  };
+}
+
+/**
+ * Every tile an edge passes through, walked one grid line at a time (Amanatides and Woo). An edge
+ * through a tile corner takes both tiles beside it, so the count errs high rather than letting an
+ * area through.
+ */
+function insertEdgeTiles({
+  a,
+  b,
+  insert,
+}: {
+  a: TilePoint;
+  b: TilePoint;
+  insert: (tile: TilePoint) => void;
+}): void {
+  let x = Math.floor(a.x);
+  let y = Math.floor(a.y);
+  const endX = Math.floor(b.x);
+  const endY = Math.floor(b.y);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const stepX = dx > 0 ? 1 : -1;
+  const stepY = dy > 0 ? 1 : -1;
+  const deltaX = dx === 0 ? Number.POSITIVE_INFINITY : Math.abs(1 / dx);
+  const deltaY = dy === 0 ? Number.POSITIVE_INFINITY : Math.abs(1 / dy);
+  // How far along the edge (0...1) the next vertical and horizontal grid lines are.
+  let nextX = dx === 0 ? Number.POSITIVE_INFINITY : (dx > 0 ? x + 1 - a.x : a.x - x) / Math.abs(dx);
+  let nextY = dy === 0 ? Number.POSITIVE_INFINITY : (dy > 0 ? y + 1 - a.y : a.y - y) / Math.abs(dy);
+  insert({ x, y });
+  while (x !== endX || y !== endY) {
+    if (y === endY || (x !== endX && nextX < nextY)) {
+      x += stepX;
+      nextX += deltaX;
+    } else if (x === endX || nextY < nextX) {
+      y += stepY;
+      nextY += deltaY;
+    } else {
+      insert({ x: x + stepX, y });
+      insert({ x, y: y + stepY });
+      x += stepX;
+      y += stepY;
+      nextX += deltaX;
+      nextY += deltaY;
+    }
+    insert({ x, y });
+  }
 }
 
 export function totalBytes(areas: Pick<OfflineArea, 'sizeBytes'>[]): number {

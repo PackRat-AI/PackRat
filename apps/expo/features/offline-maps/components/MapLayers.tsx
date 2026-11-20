@@ -1,7 +1,6 @@
 import Mapbox from '@rnmapbox/maps';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import type { LonLat, OfflineAreaBounds } from '../types';
-import { boundsRing } from '../utils/offlineArea';
 
 /** A route drawn as a solid orange line, the style every in-app map uses. */
 export function TrailLines({ id, lines }: { id: string; lines: LonLat[][] }) {
@@ -23,8 +22,11 @@ export function TrailLines({ id, lines }: { id: string; lines: LonLat[][] }) {
   );
 }
 
-/** The edge of a saved area, faint so the map inside stays readable. */
-export function AreaOutline({ bounds }: { bounds: OfflineAreaBounds }) {
+/**
+ * The edge of a saved area or named region, faint so the map inside stays readable. `filled`
+ * tints the inside too, for the picker, where it shows what will be saved.
+ */
+export function AreaOutline({ rings, filled = false }: { rings: LonLat[][]; filled?: boolean }) {
   const { colors } = useColorScheme();
   return (
     <Mapbox.ShapeSource
@@ -32,9 +34,13 @@ export function AreaOutline({ bounds }: { bounds: OfflineAreaBounds }) {
       shape={{
         type: 'Feature',
         properties: {},
-        geometry: { type: 'LineString', coordinates: boundsRing(bounds) },
+        geometry: { type: 'MultiPolygon', coordinates: rings.map((ring) => [ring]) },
       }}
     >
+      <Mapbox.FillLayer
+        id="area-outline-fill"
+        style={{ fillColor: colors.primary, fillOpacity: filled ? 0.15 : 0 }}
+      />
       <Mapbox.LineLayer
         id="area-outline-line"
         style={{ lineColor: colors.primary, lineWidth: 2, lineOpacity: 0.6 }}
