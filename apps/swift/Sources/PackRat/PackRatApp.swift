@@ -80,6 +80,7 @@ struct PackRatApp: App {
                 .environment(authManager)
                 .providesWeightUnitPreference()
         }
+        .modelContainer(PersistenceController.shared.container)
 
         // These windows host the same detail views as the main window, so they
         // can queue writes on their own. Flush from here too — a standalone

@@ -82,6 +82,10 @@ struct PreferencesView: View {
                 .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
             unitsTab
                 .tabItem { Label("Units", systemImage: "scalemass") }
+            if showsCommunity {
+                NavigationStack { Form { communitySection }.packRatFormStyle() }
+                    .tabItem { Label("Community", systemImage: "person.2") }
+            }
             advancedTab
                 .tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver") }
             if ChatViewModel.isOnDeviceOffered {
@@ -90,7 +94,7 @@ struct PreferencesView: View {
             }
         }
         .padding(20)
-        .frame(width: 460, height: 360)
+        .frame(minWidth: 460, idealWidth: 520, minHeight: 360, idealHeight: 480)
         .clearDataConfirmation(isPresented: $showingClearDataConfirm, onConfirm: clearAppData)
         .hostsPaywall(paywallTrigger)
         #else
@@ -430,6 +434,12 @@ struct PreferencesView: View {
     }
 
     // MARK: - Community
+
+    private var showsCommunity: Bool {
+        authManager.isAuthenticated
+            && (FeatureFlagStore.shared.isEnabled("enableFeed")
+                || FeatureFlagStore.shared.isEnabled("enableTrailConditions"))
+    }
 
     /// Feed tagging, notification and blocking controls. Only when the feed is
     /// on and there is an account for them to belong to.
