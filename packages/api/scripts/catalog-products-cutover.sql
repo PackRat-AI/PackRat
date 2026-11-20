@@ -32,6 +32,9 @@ begin
   end if;
 end $$;
 
+-- Leftovers from an aborted run; the live table is untouched until step 5.
+drop table if exists cutover_keys, cutover_canonical, catalog_items_new, catalog_item_offers_new;
+
 \echo 1/5 product keys
 -- Must stay byte-identical to catalogProductKey() in
 -- src/services/etl/catalogProduct.ts.
@@ -121,9 +124,9 @@ where p.catalog_item_id = k.id and k.id <> c.id;
 -- Import-history links are retired (approved 2026-11-20).
 truncate catalog_item_etl_jobs;
 
-alter table pack_items drop constraint pack_items_catalog_item_id_catalog_items_id_fk;
-alter table pack_template_items drop constraint pack_template_items_catalog_item_id_catalog_items_id_fk;
-alter table catalog_item_etl_jobs drop constraint catalog_item_etl_jobs_catalog_item_id_catalog_items_id_fk;
+alter table pack_items drop constraint if exists pack_items_catalog_item_id_catalog_items_id_fk;
+alter table pack_template_items drop constraint if exists pack_template_items_catalog_item_id_catalog_items_id_fk;
+alter table catalog_item_etl_jobs drop constraint if exists catalog_item_etl_jobs_catalog_item_id_catalog_items_id_fk;
 
 alter table catalog_items rename to catalog_items_old;
 alter table catalog_items_old rename constraint catalog_items_pkey to catalog_items_old_pkey;
@@ -152,10 +155,12 @@ alter sequence catalog_item_offers_id_seq owned by catalog_item_offers.id;
 
 alter table catalog_item_offers add constraint catalog_item_offers_catalog_item_id_catalog_items_id_fk
   foreign key (catalog_item_id) references catalog_items (id) on delete cascade;
+-- not valid: enforced for new writes; older environments carry orphaned
+-- references that predate the constraint.
 alter table pack_items add constraint pack_items_catalog_item_id_catalog_items_id_fk
-  foreign key (catalog_item_id) references catalog_items (id);
+  foreign key (catalog_item_id) references catalog_items (id) not valid;
 alter table pack_template_items add constraint pack_template_items_catalog_item_id_catalog_items_id_fk
-  foreign key (catalog_item_id) references catalog_items (id);
+  foreign key (catalog_item_id) references catalog_items (id) not valid;
 alter table catalog_item_etl_jobs add constraint catalog_item_etl_jobs_catalog_item_id_catalog_items_id_fk
   foreign key (catalog_item_id) references catalog_items (id) on delete cascade;
 commit;
