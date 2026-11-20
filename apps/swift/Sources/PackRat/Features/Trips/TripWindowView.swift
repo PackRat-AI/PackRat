@@ -18,7 +18,10 @@ struct TripWindowView: View {
                 ProgressView("Loading…")
                     .frame(minWidth: 600, minHeight: 400)
             } else if let trip {
-                TripDetailView(trip: trip, viewModel: appState.tripsVM)
+                // Its own stack so the detail's links can push.
+                NavigationStack {
+                    TripDetailView(trip: trip, viewModel: appState.tripsVM)
+                }
             } else {
                 ContentUnavailableView("Trip not found", systemImage: "map")
                     .frame(minWidth: 600, minHeight: 400)

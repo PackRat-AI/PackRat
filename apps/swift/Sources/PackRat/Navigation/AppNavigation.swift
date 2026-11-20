@@ -106,6 +106,7 @@ private enum PhoneTab: Hashable {
 struct AppNavigation: View {
     @Environment(AuthManager.self) private var authManager
     @State private var appState = AppState()
+    @State private var isProfilePresented = false
 
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -248,6 +249,21 @@ struct AppNavigation: View {
             GlobalSearchView()
                 .environment(appState)
         }
+        // The sidebar column has no stack to push into, so Profile opens as a sheet.
+        .sheet(isPresented: $isProfilePresented) {
+            NavigationStack {
+                ProfileView()
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { isProfilePresented = false }
+                        }
+                    }
+            }
+            .environment(appState)
+            #if os(macOS)
+            .frame(minWidth: 480, idealWidth: 540, minHeight: 560, idealHeight: 680)
+            #endif
+        }
         .background {
             Button("") { state.isGlobalSearchPresented.toggle() }
                 .keyboardShortcut("f", modifiers: .command)
@@ -308,6 +324,12 @@ struct AppNavigation: View {
 
     @ViewBuilder
     private var listColumn: some View {
+        // Its own stack so the list's links (Recent, Official templates) can push.
+        NavigationStack { listColumnContent }
+    }
+
+    @ViewBuilder
+    private var listColumnContent: some View {
         @Bindable var state = appState
 
         switch appState.navItem {
@@ -337,7 +359,7 @@ struct AppNavigation: View {
     private var primaryColumn: some View {
         switch appState.navItem {
         case .home:
-            HomeView().environment(appState)
+            NavigationStack { HomeView().environment(appState) }
         case .weather:
             // Its own stack so a location pushes its forecast in the column;
             // without one the forecast's navigation destination never fires.
@@ -348,7 +370,8 @@ struct AppNavigation: View {
         case .chat:
             ChatView(viewModel: appState.chatVM)
         case .feed:
-            FeedView(viewModel: appState.feedVM)
+            // Its own stack so Saved, Tagged and Feed Settings can push.
+            NavigationStack { FeedView(viewModel: appState.feedVM) }
         case .guides:
             // Its own stack so a guide pushes its article in the column.
             NavigationStack { GuidesView() }
@@ -359,11 +382,14 @@ struct AppNavigation: View {
             // and the server enforces the same gate on /wildlife/identify — so
             // gating the UI here keeps the client from offering something the
             // API will refuse. Matches how Expo wraps a gated screen.
-            EarlyAccessGate(featureKey: "wildlife-identification") {
-                WildlifeDestination()
+            NavigationStack {
+                EarlyAccessGate(featureKey: "wildlife-identification") {
+                    WildlifeDestination()
+                }
             }
         case .tripStats:
-            TripStatsView().environment(appState)
+            // Its own stack so the Parks, Peaks and Trails drill-downs can push.
+            NavigationStack { TripStatsView().environment(appState) }
         case .packs, .trips, .templates, .trailConditions:
             EmptyView()
         }
@@ -375,7 +401,11 @@ struct AppNavigation: View {
         case .packs:
             if let id = appState.selectedPackId,
                let pack = appState.packsVM.packs.first(where: { $0.id == id }) {
-                PackDetailView(pack: pack, viewModel: appState.packsVM)
+                // Its own stack so Weight Analysis and other pack links can push.
+                NavigationStack {
+                    PackDetailView(pack: pack, viewModel: appState.packsVM)
+                }
+                .id(id)
             } else {
                 placeholder("Select a Pack", symbol: "backpack")
             }
@@ -400,7 +430,10 @@ struct AppNavigation: View {
                 )
             } else if let id = appState.selectedTemplateId,
                let t = appState.templatesVM.templates.first(where: { $0.id == id }) {
-                PackTemplateDetailView(template: t, viewModel: appState.templatesVM, packsVM: appState.packsVM)
+                NavigationStack {
+                    PackTemplateDetailView(template: t, viewModel: appState.templatesVM, packsVM: appState.packsVM)
+                }
+                .id(id)
             } else {
                 placeholder("Select a Template", symbol: "doc.on.doc")
             }
@@ -579,7 +612,9 @@ struct AppNavigation: View {
             .help(email)
             Spacer()
             Menu {
-                NavigationLink(destination: ProfileView()) {
+                Button {
+                    isProfilePresented = true
+                } label: {
                     Label("Profile", systemImage: "person.circle")
                 }
                 Divider()

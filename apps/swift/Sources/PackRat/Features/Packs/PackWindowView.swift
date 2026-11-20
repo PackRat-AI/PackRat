@@ -18,7 +18,10 @@ struct PackWindowView: View {
                 ProgressView("Loading…")
                     .frame(minWidth: 600, minHeight: 400)
             } else if let pack {
-                PackDetailView(pack: pack, viewModel: viewModel)
+                // Its own stack so the detail's links can push.
+                NavigationStack {
+                    PackDetailView(pack: pack, viewModel: viewModel)
+                }
             } else {
                 ContentUnavailableView("Pack not found", systemImage: "backpack")
                     .frame(minWidth: 600, minHeight: 400)
