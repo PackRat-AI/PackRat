@@ -37,7 +37,8 @@ struct ParksCard: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
+        // No `.accessibilityElement(children: .combine)`: on a Mac it shrinks the
+        // link's click area to the card's text. The link is one element already.
         .accessibilityLabel("National Parks, \(visited.count) of \(NationalParks.count) visited")
         .accessibilityIdentifier("trip_stats_parks_card")
     }

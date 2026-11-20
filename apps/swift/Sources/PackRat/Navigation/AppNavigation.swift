@@ -291,7 +291,10 @@ struct AppNavigation: View {
             NavigationSplitView {
                 sidebar
             } detail: {
+                // A fresh stack per section, so a page pushed in one section
+                // (Feed's Tagged, say) doesn't sit on top of the next one.
                 primaryColumn
+                    .id(appState.navItem)
             }
         }
     }
