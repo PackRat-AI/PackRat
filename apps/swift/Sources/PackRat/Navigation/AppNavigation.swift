@@ -154,13 +154,13 @@ struct AppNavigation: View {
     }
 
     private func syncTripReminders() {
-        let trips = appState.tripsVM.trips
-        let packs = appState.packsVM.packs
         Task {
             // Throttled per trip, so a sync on every foreground costs nothing
             // until a forecast is an hour old.
-            await TripConditionsStore.shared.refresh(trips: trips)
-            await TripReminderScheduler.sync(trips: trips, packs: packs)
+            await TripConditionsStore.shared.refresh(trips: appState.tripsVM.trips)
+            // Read after the refresh so the trips scheduled are the newest ones,
+            // whichever of two overlapping syncs reaches the scheduler last.
+            await TripReminderScheduler.sync(trips: appState.tripsVM.trips, packs: appState.packsVM.packs)
         }
     }
     #endif

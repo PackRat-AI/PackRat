@@ -478,11 +478,13 @@ struct PreferencesView: View {
 
     private func toggleNotifications(_ enable: Bool) async {
         let center = UNUserNotificationCenter.current()
-        if enable {
-            let status = await center.notificationSettings().authorizationStatus
-            if status == .notDetermined {
-                _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
-            }
+        let status = await center.notificationSettings().authorizationStatus
+        if enable, status == .notDetermined {
+            _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+        } else if !enable, status != .notDetermined, status != .denied {
+            // Only the system can revoke permission, so switching off sends the
+            // user there; the switch follows once they come back.
+            PermissionSettings.open(.notifications)
         }
         await refreshNotificationStatus()
     }
