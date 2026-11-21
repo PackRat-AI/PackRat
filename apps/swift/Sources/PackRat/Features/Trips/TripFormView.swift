@@ -30,6 +30,7 @@ struct TripFormView: View {
     @State private var trail: (id: String, name: String)?
     @State private var showingTrailPicker = false
     @State private var trailLocation = TrailReportLocationProvider()
+    @State private var didPrefill = false
     @FocusState private var isInputFocused: Bool
 
     private var isEditing: Bool { existingTrip != nil }
@@ -98,7 +99,12 @@ struct TripFormView: View {
                         .disabled(!isValid || isLoading)
                 }
             }
-            .onAppear { prefill() }
+            .onAppear {
+                // onAppear fires again when a pushed picker pops; fill only once so choices stick.
+                guard !didPrefill else { return }
+                didPrefill = true
+                prefill()
+            }
             .navigationDestination(isPresented: $showingTrailPicker) {
                 ReportTrailPickerView(
                     selectedTrailId: trail?.id,
