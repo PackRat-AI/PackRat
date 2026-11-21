@@ -4,7 +4,7 @@ Lets a user set where a trip happens and see it on a map, from a glance on the t
 
 ## The model in one paragraph
 
-Every trip can have one place: a trailhead, a park, a town. The user picks it while creating or editing the trip, either by searching for it or by moving the map until the pin sits where they want. Once set, the trip page shows the place as a compact map preview with its name underneath. Tapping the preview opens a full-screen map where the user can pan, zoom and switch to satellite imagery, then hand the place off to their maps app for directions. A finished trip with a recorded route shows that route on both the preview and the full-screen map.
+Every trip can have one place: a trailhead, a park, a town. The user picks it while creating or editing the trip, either by searching for it or by moving the map until the pin sits where they want. Once set, the trip page shows the place as a compact map preview with its name underneath. Expanding the preview opens a full-screen map where the user can pan, zoom and switch to satellite imagery, then hand the place off to their maps app for directions. A finished trip with a recorded route shows that route on both the preview and the full-screen map.
 
 ## Picking the place
 
@@ -19,9 +19,9 @@ A trip that already has a place opens the picker centred on it.
 
 ## On the trip page
 
-The trip page shows the place as a map preview with rounded corners, sized so the place and its surroundings are recognisable without dominating the page. The pin marks the place; a finished trip with a recorded route draws the route instead and fits it in view. The place's name and region sit below the map, with **Directions** alongside to open it in the user's maps app.
+The trip page shows the place as a map preview with rounded corners, sized so the place and its surroundings are recognisable without dominating the page. The pin marks the place; a finished trip with a recorded route draws the route instead and fits it in view. Two controls sit in the map's corner: **Expand**, which opens the full-screen map, and **Directions**, which opens the place in the user's maps app. The place's name and region sit below the map, with **Save for offline** beside them for an upcoming trip.
 
-The preview is for looking, not exploring: it does not pan or zoom by itself. Tapping anywhere on it, or its expand button in the corner, opens the full-screen map.
+The preview can be panned and zoomed in place for a quick look around.
 
 ## Full-screen map
 

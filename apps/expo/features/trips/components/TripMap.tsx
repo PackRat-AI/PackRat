@@ -117,6 +117,8 @@ function OutdoorsTripMap({
         zoomEnabled={interactive}
         rotateEnabled={interactive}
         pitchEnabled={false}
+        // Inside a scrolling page, so a drag on the map pans it instead of scrolling the page.
+        requestDisallowInterceptTouchEvent={interactive}
       >
         <Mapbox.Camera
           key={center.join()}

@@ -14,13 +14,12 @@ type TripMapCardProps = {
   outdoors: boolean;
   onExpand: () => void;
   onWeather: () => void;
-  /** Extra rows under the actions, e.g. the offline map download row. */
+  /** Sits beside Weather under the map, e.g. the offline map download row. */
   footer?: ReactNode;
 };
 
-/** The trip page's map: a still preview that opens the full-screen map, with the place below. */
+/** The trip page's map: an interactive preview with Expand and Directions over it, and the place below. */
 export function TripMapCard({ location, outdoors, onExpand, onWeather, footer }: TripMapCardProps) {
-  const { colors } = useColorScheme();
   const { t } = useTranslation();
   const { title, region } = location.name
     ? splitPlaceName(location.name)
@@ -31,22 +30,27 @@ export function TripMapCard({ location, outdoors, onExpand, onWeather, footer }:
 
   return (
     <View className="overflow-hidden rounded-3xl border border-border bg-card">
-      <Pressable
-        onPress={onExpand}
-        accessibilityRole="button"
-        accessibilityLabel={t('trips.map.expand')}
-        testID={testIds.trips.mapPreview}
-        className="h-48"
-      >
-        <TripMap location={location} outdoors={outdoors} />
+      <View className="h-52">
+        <TripMap location={location} outdoors={outdoors} interactive />
         <View
-          pointerEvents="none"
-          className="absolute right-3 top-3 h-10 w-10 items-center justify-center rounded-full bg-card"
+          className="absolute right-3 top-3 overflow-hidden rounded-2xl bg-card"
           style={{ elevation: 3 }}
         >
-          <Icon name="arrow-expand" size={20} color={colors.foreground} />
+          <MapControl
+            icon="arrow-expand"
+            label={t('trips.map.expand')}
+            onPress={onExpand}
+            testID={testIds.trips.mapPreview}
+          />
+          <View className="mx-2 h-px bg-border" />
+          <MapControl
+            icon="directions"
+            label={t('trips.map.directions')}
+            onPress={() => openDirections(location)}
+            testID={testIds.trips.mapDirections}
+          />
         </View>
-      </Pressable>
+      </View>
 
       <View className="gap-3 p-4">
         <View>
@@ -59,15 +63,8 @@ export function TripMapCard({ location, outdoors, onExpand, onWeather, footer }:
             </Text>
           ) : null}
         </View>
-        <View className="flex-row gap-2">
-          <Button
-            variant="tonal"
-            icon="directions"
-            onPress={() => openDirections(location)}
-            testID={testIds.trips.mapDirections}
-          >
-            <Text>{t('trips.map.directions')}</Text>
-          </Button>
+        <View className="flex-row items-center gap-2">
+          {footer ? <View className="flex-1">{footer}</View> : null}
           <Button
             variant="outlined"
             icon="weather-partly-cloudy"
@@ -78,8 +75,33 @@ export function TripMapCard({ location, outdoors, onExpand, onWeather, footer }:
           </Button>
         </View>
       </View>
-
-      {footer ? <View className="border-t border-border p-3">{footer}</View> : null}
     </View>
+  );
+}
+
+/** A 40dp icon button in the control stack laid over the map. */
+function MapControl({
+  icon,
+  label,
+  onPress,
+  testID,
+}: {
+  icon: string;
+  label: string;
+  onPress: () => void;
+  testID: string;
+}) {
+  const { colors } = useColorScheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      testID={testID}
+      android_ripple={{ color: colors.grey4 }}
+      className="h-11 w-11 items-center justify-center"
+    >
+      <Icon name={icon} size={22} color={colors.foreground} />
+    </Pressable>
   );
 }

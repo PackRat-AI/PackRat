@@ -167,33 +167,33 @@ private struct TripMapKitMap: View {
 
 // MARK: - Preview card
 
-/// The trip page's map: a still preview with the place underneath. Tapping it
-/// opens the full-screen map.
-struct TripMapCard: View {
+/// The trip page's map: an interactive preview with Expand and Directions
+/// laid over it, the place underneath, and an optional footer such as the
+/// offline map row.
+struct TripMapCard<Footer: View>: View {
     let model: TripMapModel
     let onExpand: () -> Void
+    @ViewBuilder var footer: () -> Footer
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button(action: onExpand) {
-                TripMapSurface(model: model)
-                    .allowsHitTesting(false)
-                    .frame(height: 200)
-                    .overlay(alignment: .topTrailing) {
-                        Image(systemName: "arrow.up.left.and.arrow.down.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .frame(width: 34, height: 34)
-                            .background(.regularMaterial, in: Circle())
-                            .padding(10)
+            TripMapSurface(model: model)
+                .frame(height: 220)
+                .overlay(alignment: .topTrailing) {
+                    VStack(spacing: 0) {
+                        overlayButton("Expand map", symbol: "arrow.up.left.and.arrow.down.right", action: onExpand)
+                            .accessibilityIdentifier("trip_detail_map_expand")
+                        Divider().frame(width: 24)
+                        overlayButton("Directions", symbol: "arrow.triangle.turn.up.right.diamond.fill") {
+                            model.openInMaps()
+                        }
+                        .accessibilityIdentifier("trip_detail_directions")
                     }
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Expand map")
-            .accessibilityIdentifier("trip_detail_map_expand")
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .padding(10)
+                }
 
-            HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.title)
                         .font(.callout.bold())
@@ -205,22 +205,32 @@ struct TripMapCard: View {
                             .lineLimit(1)
                     }
                 }
-                Spacer(minLength: 8)
-                Button {
-                    model.openInMaps()
-                } label: {
-                    Label("Directions", systemImage: "arrow.triangle.turn.up.right.diamond.fill")
-                        .font(.footnote.weight(.semibold))
-                }
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.capsule)
-                .accessibilityIdentifier("trip_detail_directions")
+                footer()
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
         }
         .background(.fill.quaternary)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private func overlayButton(_ label: String, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 40, height: 40)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+}
+
+extension TripMapCard where Footer == EmptyView {
+    init(model: TripMapModel, onExpand: @escaping () -> Void) {
+        self.init(model: model, onExpand: onExpand) { EmptyView() }
     }
 }
 

@@ -105,22 +105,21 @@ struct TripDetailView: View {
 
                 // Map — shown when the trip has coordinates
                 if let model = mapModel {
-                    TripMapCard(model: model) { showingFullScreenMap = true }
-                        .padding(.horizontal)
-
-                    #if os(iOS)
-                    if OfflineMapStore.isEnabled, !isFinished {
-                        OfflineMapRow(area: OfflineMapStore.shared.area(forTrip: trip.id), idPrefix: "trip") {
-                            OfflineAreaPickerView(
-                                initialCenter: model.coordinate,
-                                suggestedName: trip.name,
-                                tripId: trip.id,
-                                tripEndDate: (trip.endDate ?? trip.startDate)?.toDate()
-                            )
+                    TripMapCard(model: model, onExpand: { showingFullScreenMap = true }) {
+                        #if os(iOS)
+                        if OfflineMapStore.isEnabled, !isFinished {
+                            OfflineMapRow(area: OfflineMapStore.shared.area(forTrip: trip.id), idPrefix: "trip") {
+                                OfflineAreaPickerView(
+                                    initialCenter: model.coordinate,
+                                    suggestedName: trip.name,
+                                    tripId: trip.id,
+                                    tripEndDate: (trip.endDate ?? trip.startDate)?.toDate()
+                                )
+                            }
                         }
-                        .padding(.horizontal)
+                        #endif
                     }
-                    #endif
+                    .padding(.horizontal)
                 }
 
                 TripTrailConditionsSection(trip: trip)
