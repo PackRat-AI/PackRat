@@ -1,4 +1,3 @@
-import { Button } from '@packrat/ui/src/button';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -13,13 +12,12 @@ type TripMapCardProps = {
   location: Coords & { name?: string };
   outdoors: boolean;
   onExpand: () => void;
-  onWeather: () => void;
-  /** Sits beside Weather under the map, e.g. the offline map download row. */
-  footer?: ReactNode;
+  /** Sits beside the place name, e.g. Save for offline. */
+  trailing?: ReactNode;
 };
 
 /** The trip page's map: an interactive preview with Expand and Directions over it, and the place below. */
-export function TripMapCard({ location, outdoors, onExpand, onWeather, footer }: TripMapCardProps) {
+export function TripMapCard({ location, outdoors, onExpand, trailing }: TripMapCardProps) {
   const { t } = useTranslation();
   const { title, region } = location.name
     ? splitPlaceName(location.name)
@@ -52,8 +50,8 @@ export function TripMapCard({ location, outdoors, onExpand, onWeather, footer }:
         </View>
       </View>
 
-      <View className="gap-3 p-4">
-        <View>
+      <View className="flex-row items-center gap-3 p-4">
+        <View className="flex-1">
           <Text variant="heading" numberOfLines={1}>
             {title}
           </Text>
@@ -63,17 +61,7 @@ export function TripMapCard({ location, outdoors, onExpand, onWeather, footer }:
             </Text>
           ) : null}
         </View>
-        <View className="flex-row items-center gap-2">
-          {footer ? <View className="flex-1">{footer}</View> : null}
-          <Button
-            variant="outlined"
-            icon="weather-partly-cloudy"
-            onPress={onWeather}
-            testID={testIds.trips.mapWeather}
-          >
-            <Text>{t('trips.map.weather')}</Text>
-          </Button>
-        </View>
+        {trailing}
       </View>
     </View>
   );

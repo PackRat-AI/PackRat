@@ -55,41 +55,48 @@ export function TripMapScreen() {
         location={location}
         outdoors={enableOfflineMaps}
         interactive
+        fullScreen={{
+          top: insets.top + 8 + FAB_SIZE + 12,
+          bottom: insets.bottom + PLACE_BAR_CLEARANCE,
+        }}
         satellite={satellite}
         showsUserLocation={showsUserLocation}
       />
 
-      <View
-        pointerEvents="box-none"
-        className="absolute left-4 right-4 flex-row items-start justify-between"
-        style={{ top: insets.top + 8 }}
-      >
+      <View className="absolute left-4" style={{ top: insets.top + 8 }}>
         <MapFab
           icon="close"
           label={t('common.close')}
           onPress={() => router.back()}
           testID={testIds.trips.fullMapClose}
         />
-        <View className="gap-3">
-          <MapFab
-            icon={satellite ? 'map-outline' : 'satellite-variant'}
-            label={satellite ? t('trips.map.showMap') : t('trips.map.showSatellite')}
-            onPress={() => setSatellite((on) => !on)}
-            testID={testIds.trips.fullMapStyle}
-          />
-          <MapFab
-            icon="crosshairs-gps"
-            label={t('trips.map.myLocation')}
-            onPress={showMyLocation}
-            testID={testIds.trips.fullMapMyLocation}
-          />
-          <MapFab
-            icon="map-marker-radius-outline"
-            label={t('trips.map.recentre')}
-            onPress={() => mapRef.current?.recentre()}
-            testID={testIds.trips.fullMapRecentre}
-          />
-        </View>
+      </View>
+
+      {/* One grouped stack of map controls, like the trip page's preview. */}
+      <View
+        className="absolute right-4 overflow-hidden rounded-2xl bg-card"
+        style={{ top: insets.top + 8, elevation: 4 }}
+      >
+        <MapControl
+          icon={satellite ? 'map-outline' : 'layers-outline'}
+          label={satellite ? t('trips.map.showMap') : t('trips.map.showSatellite')}
+          onPress={() => setSatellite((on) => !on)}
+          testID={testIds.trips.fullMapStyle}
+        />
+        <View className="mx-2 h-px bg-border" />
+        <MapControl
+          icon="crosshairs-gps"
+          label={t('trips.map.myLocation')}
+          onPress={showMyLocation}
+          testID={testIds.trips.fullMapMyLocation}
+        />
+        <View className="mx-2 h-px bg-border" />
+        <MapControl
+          icon="image-filter-center-focus"
+          label={t('trips.map.recentre')}
+          onPress={() => mapRef.current?.recentre()}
+          testID={testIds.trips.fullMapRecentre}
+        />
       </View>
 
       <View
@@ -120,7 +127,11 @@ export function TripMapScreen() {
   );
 }
 
-/** A small MD3 floating action button laid over the map. */
+const FAB_SIZE = 48;
+/** Height of the place panel at the bottom plus its margins. */
+const PLACE_BAR_CLEARANCE = 104;
+
+/** A standalone MD3 small floating action button laid over the map. */
 function MapFab({
   icon,
   label,
@@ -139,9 +150,37 @@ function MapFab({
       accessibilityRole="button"
       accessibilityLabel={label}
       testID={testID}
-      android_ripple={{ color: colors.grey4, borderless: false }}
-      className="h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-card"
-      style={{ elevation: 4 }}
+      android_ripple={{ color: colors.grey4 }}
+      className="items-center justify-center overflow-hidden rounded-2xl bg-card"
+      style={{ width: FAB_SIZE, height: FAB_SIZE, elevation: 4 }}
+    >
+      <Icon name={icon} size={24} color={colors.foreground} />
+    </Pressable>
+  );
+}
+
+/** One button in the grouped control stack. */
+function MapControl({
+  icon,
+  label,
+  onPress,
+  testID,
+}: {
+  icon: string;
+  label: string;
+  onPress: () => void;
+  testID: string;
+}) {
+  const { colors } = useColorScheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      testID={testID}
+      android_ripple={{ color: colors.grey4 }}
+      className="items-center justify-center"
+      style={{ width: FAB_SIZE, height: FAB_SIZE }}
     >
       <Icon name={icon} size={24} color={colors.foreground} />
     </Pressable>

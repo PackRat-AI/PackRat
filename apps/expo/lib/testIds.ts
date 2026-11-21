@@ -298,7 +298,6 @@ export const testIds = Object.freeze({
     packAllPacked: 'trips:pack-all-packed',
     mapPreview: 'trips:map-preview',
     mapDirections: 'trips:map-directions',
-    mapWeather: 'trips:map-weather',
     fullMapScreen: 'trips:full-map',
     fullMapClose: 'trips:full-map-close',
     fullMapStyle: 'trips:full-map-style',

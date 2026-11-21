@@ -17,8 +17,14 @@ type TripMapProps = {
   location: Coords;
   /** Mapbox Outdoors, which draws from saved offline areas; Google Maps otherwise. */
   outdoors: boolean;
-  /** Pan, pinch and rotate. A still preview when false. */
+  /** Pan and pinch to zoom. A still map when false. */
   interactive?: boolean;
+  /**
+   * Full-screen use: rotation and a compass, with the map's own chrome kept clear of the controls
+   * laid over it. `top` is where the compass sits on the left edge; `bottom` keeps the logo and
+   * attribution above a bottom panel.
+   */
+  fullScreen?: { top: number; bottom: number };
   satellite?: boolean;
   showsUserLocation?: boolean;
   ref?: Ref<TripMapHandle>;
@@ -36,6 +42,7 @@ export function TripMap(props: TripMapProps) {
 function GoogleTripMap({
   location,
   interactive = false,
+  fullScreen,
   satellite = false,
   showsUserLocation = false,
   ref,
@@ -63,13 +70,19 @@ function GoogleTripMap({
         mapType={satellite ? 'hybrid' : 'standard'}
         showsUserLocation={showsUserLocation}
         showsMyLocationButton={false}
-        showsCompass={interactive}
+        showsCompass={!!fullScreen}
         toolbarEnabled={false}
         liteMode={!interactive}
         scrollEnabled={interactive}
         zoomEnabled={interactive}
-        rotateEnabled={interactive}
-        pitchEnabled={interactive}
+        rotateEnabled={!!fullScreen}
+        pitchEnabled={!!fullScreen}
+        // The compass draws at the top left of the padded area: below the close button.
+        mapPadding={
+          fullScreen
+            ? { top: fullScreen.top, right: 0, bottom: fullScreen.bottom, left: 8 }
+            : undefined
+        }
       >
         <Marker coordinate={location} />
       </MapView>
@@ -80,6 +93,7 @@ function GoogleTripMap({
 function OutdoorsTripMap({
   location,
   interactive = false,
+  fullScreen,
   satellite = false,
   showsUserLocation = false,
   ref,
@@ -110,12 +124,13 @@ function OutdoorsTripMap({
         style={{ flex: 1 }}
         styleURL={satellite ? Mapbox.StyleURL.SatelliteStreet : OUTDOORS_STYLE}
         scaleBarEnabled={false}
-        compassEnabled={interactive}
-        logoPosition={{ bottom: 8, left: 8 }}
-        attributionPosition={{ bottom: 8, right: 8 }}
+        compassEnabled={!!fullScreen}
+        compassPosition={fullScreen ? { top: fullScreen.top, left: 16 } : undefined}
+        logoPosition={{ bottom: (fullScreen?.bottom ?? 0) + 8, left: 8 }}
+        attributionPosition={{ bottom: (fullScreen?.bottom ?? 0) + 8, right: 8 }}
         scrollEnabled={interactive}
         zoomEnabled={interactive}
-        rotateEnabled={interactive}
+        rotateEnabled={!!fullScreen}
         pitchEnabled={false}
         // Inside a scrolling page, so a drag on the map pans it instead of scrolling the page.
         requestDisallowInterceptTouchEvent={interactive}

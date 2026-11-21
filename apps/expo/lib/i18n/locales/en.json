@@ -1041,7 +1041,6 @@
     "map": {
       "expand": "Expand map",
       "directions": "Directions",
-      "weather": "Weather",
       "showMap": "Show map",
       "showSatellite": "Show satellite",
       "myLocation": "Show my location",
@@ -2403,7 +2402,7 @@
     "failedTooLarge": "Too large to save alongside your other maps. Delete it, then delete another map or save a smaller area.",
     "failedDiskFull": "Your phone is out of space. Free some up and try again.",
     "failedOther": "The map couldn't be saved. Check your connection and try again.",
-    "saveForOffline": "Save map for offline",
+    "saveForOffline": "Save for offline",
     "savingForOffline": "Saving map for offline",
     "savedForOffline": "Saved for offline",
     "retrySave": "Map didn't finish saving. Try again.",

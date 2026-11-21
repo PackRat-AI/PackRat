@@ -108,7 +108,7 @@ struct TripDetailView: View {
                     TripMapCard(model: model, onExpand: { showingFullScreenMap = true }) {
                         #if os(iOS)
                         if OfflineMapStore.isEnabled, !isFinished {
-                            OfflineMapRow(area: OfflineMapStore.shared.area(forTrip: trip.id), idPrefix: "trip") {
+                            OfflineMapRow(area: OfflineMapStore.shared.area(forTrip: trip.id), idPrefix: "trip", compact: true) {
                                 OfflineAreaPickerView(
                                     initialCenter: model.coordinate,
                                     suggestedName: trip.name,

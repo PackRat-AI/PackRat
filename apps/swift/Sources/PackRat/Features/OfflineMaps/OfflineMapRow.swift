@@ -8,6 +8,8 @@ struct OfflineMapRow: View {
     let area: OfflineArea?
     /// Prefixes the accessibility identifiers, e.g. `trip` or `trail_page`.
     let idPrefix: String
+    /// Sized to its content to sit beside other content on one line, instead of filling the width.
+    var compact = false
     @ViewBuilder let picker: () -> OfflineAreaPickerView
 
     @State private var store = OfflineMapStore.shared
@@ -21,10 +23,12 @@ struct OfflineMapRow: View {
                 Button {
                     showingPicker = true
                 } label: {
-                    Label("Save Map for Offline", systemImage: "arrow.down.circle")
-                        .frame(maxWidth: .infinity)
+                    Label("Save for Offline", systemImage: "arrow.down.circle")
+                        .font(compact ? .subheadline.weight(.semibold) : .body)
+                        .frame(maxWidth: compact ? nil : .infinity)
                 }
                 .buttonStyle(.bordered)
+                .buttonBorderShape(compact ? .capsule : .automatic)
                 .accessibilityIdentifier("\(idPrefix)_save_offline_map")
             }
         }
@@ -45,6 +49,7 @@ struct OfflineMapRow: View {
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
+            .frame(maxWidth: compact ? 140 : .infinity, alignment: .leading)
             .accessibilityIdentifier("\(idPrefix)_offline_map_progress")
         } else if store.failures[area.id] != nil {
             Button {

@@ -82,17 +82,6 @@ export function TripDetailScreen() {
     return new Date(dateString).toISOString().split('T')[0];
   };
 
-  const handleWeatherPress = () => {
-    if (!trip.location) return;
-
-    const { latitude, longitude, name } = trip.location;
-    const locationName = name || trip.name;
-
-    router.push(
-      `/weather/geo?lat=${latitude}&lon=${longitude}&locationName=${encodeURIComponent(locationName)}`,
-    );
-  };
-
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['bottom']}>
       <ScrollView
@@ -159,8 +148,7 @@ export function TripDetailScreen() {
                 location={trip.location}
                 outdoors={enableOfflineMaps}
                 onExpand={() => router.push(`/trip/${trip.id}/map`)}
-                onWeather={handleWeatherPress}
-                footer={
+                trailing={
                   enableOfflineMaps && !tripIsFinished ? (
                     <OfflineMapRow
                       tripId={trip.id}
