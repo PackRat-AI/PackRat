@@ -110,10 +110,13 @@ struct AppNavigation: View {
 
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.modelContext) private var modelContext
     @State private var phoneTab: PhoneTab = .home
     @State private var phoneHomePath: [NavItem] = []
+    #endif
+
+    #if os(iOS) || os(macOS)
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.modelContext) private var modelContext
     // Count, not the rows themselves — the Weather tab badge only needs
     // "how many watched locations currently have an active alert."
     @Query(filter: #Predicate<CachedWeatherAlertState> { $0.hasActiveAlert })
@@ -135,9 +138,7 @@ struct AppNavigation: View {
             .map(\.weatherLocationId)
         return Set(unseenSaved).union(cachedOnly).count
     }
-    #endif
 
-    #if os(iOS)
     /// Changes whenever a trip's reminders would: added, removed, re-dated,
     /// re-linked to another pack, Before-you-go list changed, or switched off.
     private var tripReminderSignature: [String] {
@@ -154,13 +155,13 @@ struct AppNavigation: View {
     }
 
     private func syncTripReminders() {
-        let trips = appState.tripsVM.trips
-        let packs = appState.packsVM.packs
         Task {
             // Throttled per trip, so a sync on every foreground costs nothing
             // until a forecast is an hour old.
-            await TripConditionsStore.shared.refresh(trips: trips)
-            await TripReminderScheduler.sync(trips: trips, packs: packs)
+            await TripConditionsStore.shared.refresh(trips: appState.tripsVM.trips)
+            // Read after the refresh so the trips scheduled are the newest ones,
+            // whichever of two overlapping syncs reaches the scheduler last.
+            await TripReminderScheduler.sync(trips: appState.tripsVM.trips, packs: appState.packsVM.packs)
         }
     }
     #endif
@@ -171,7 +172,7 @@ struct AppNavigation: View {
                 appState.apply(DeepLink.parse(url))
             }
             .modifier(PostLinkPresenter(appState: appState))
-            #if os(iOS)
+            #if os(iOS) || os(macOS)
             // The alert badge has to be right before the user has been
             // anywhere — its whole job is to catch a hazard whose push was
             // missed. Checking here, at the navigation root, means it is
@@ -181,17 +182,19 @@ struct AppNavigation: View {
                 // Rescheduling on background as well as foreground means the
                 // reminders carry the packing progress the user just made.
                 if phase == .active || phase == .background { syncTripReminders() }
+                #if os(iOS)
                 if phase == .background { TripConditionsBackgroundRefresh.schedule() }
+                #endif
                 guard phase == .active else { return }
                 Task { await appState.weatherVM.refreshAlertBadgeState() }
             }
             .task { syncTripReminders() }
+            .onChange(of: tripReminderSignature) { _, _ in syncTripReminders() }
+            #endif
             #if os(iOS)
             // Map downloads cut off when the app was closed pick up where
             // they stopped.
             .task { if OfflineMapStore.isEnabled { OfflineMapStore.shared.resumeIncomplete() } }
-            #endif
-            .onChange(of: tripReminderSignature) { _, _ in syncTripReminders() }
             // Siri and spoken safety alerts reach the trips from here, with no trip page open.
             .task(id: tripsInProgressSignature) {
                 VoiceCommandHost.shared.attach(appState, modelContext: modelContext)
@@ -325,6 +328,7 @@ struct AppNavigation: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("nav_\(item.rawValue)")
+            .badge(item == .weather ? activeWeatherAlertCount : 0)
             .listRowBackground(state.navItem == item ? Color.accentColor.opacity(0.16) : Color.clear)
         }
         .accessibilityIdentifier("app_sidebar")
