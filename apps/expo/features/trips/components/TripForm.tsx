@@ -1,6 +1,7 @@
 import { isString } from '@packrat/guards';
 import { Button } from '@packrat/ui/src/button';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { TextField } from '@packrat/ui/src/text-field';
 import * as Sentry from '@sentry/react-native';
@@ -235,6 +236,23 @@ export const TripForm = ({
       <Stack.Screen
         options={{
           title: isEditingExistingTrip ? t('trips.editTrip') : t('trips.newTrip'),
+          headerRight: () => (
+            <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
+              {([canSubmit, isSubmitting]) =>
+                isSubmitting ? (
+                  <ActivityIndicator size="small" className="px-4" />
+                ) : (
+                  <Button
+                    variant="text"
+                    testID={testIds.trips.submitBtn}
+                    onPress={() => form.handleSubmit()}
+                    disabled={!canSubmit}
+                    label={t('common.save')}
+                  />
+                )
+              }
+            </form.Subscribe>
+          ),
         }}
       />
 
@@ -400,25 +418,6 @@ export const TripForm = ({
         </Form>
 
         {/* Submit Button */}
-        <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
-          {([canSubmit, isSubmitting]) => (
-            <Button
-              testID={testIds.trips.submitBtn}
-              onPress={() => form.handleSubmit()}
-              disabled={!canSubmit || isSubmitting}
-              className="mt-6 w-full"
-              label={
-                isSubmitting
-                  ? isEditingExistingTrip
-                    ? t('trips.updating')
-                    : t('trips.creating')
-                  : isEditingExistingTrip
-                    ? t('trips.updateTrip')
-                    : t('trips.createTrip')
-              }
-            />
-          )}
-        </form.Subscribe>
       </KeyboardAwareScrollView>
     </>
   );
