@@ -172,9 +172,10 @@ struct SyncStatusSection: View {
 
     // MARK: - Status row
 
-    /// One line naming the current state, in priority order: failures first
-    /// (actionable and data-losing), then in-flight, then queued, then offline,
-    /// then healthy.
+    /// Failures get their own line (actionable and data-losing), and the queue
+    /// still shows beneath them: a failed change must not hide new ones waiting
+    /// to sync. Otherwise one line naming the state: in-flight, then queued,
+    /// then offline, then healthy.
     @ViewBuilder
     private func statusRow(isConnected: Bool, pending: Int, failed: Int, isFlushing: Bool) -> some View {
         if failed > 0 {
@@ -183,7 +184,8 @@ struct SyncStatusSection: View {
                 symbol: "exclamationmark.triangle.fill",
                 tint: .red
             )
-        } else if isFlushing {
+        }
+        if isFlushing {
             LabeledContent {
                 ProgressView().controlSize(.small)
             } label: {
@@ -196,6 +198,8 @@ struct SyncStatusSection: View {
                 symbol: "clock.arrow.circlepath",
                 tint: .orange
             )
+        } else if failed > 0 {
+            EmptyView()
         } else if !isConnected {
             // Not "You're offline": non-technical readers misread the word, and
             // the useful fact is that nothing is stranded, not the radio state.
@@ -225,18 +229,18 @@ struct SyncStatusSection: View {
     /// hold. Phrased around the outcome ("will be sent") rather than the network,
     /// because reassurance is what a user with queued work is looking for.
     private func footerText(isConnected: Bool, pending: Int, failed: Int) -> String {
+        let queued = isConnected
+            ? "Your changes are being sent to your account now."
+            : "Your changes are saved on this device and will be sent to your account when you reconnect."
         if failed > 0 {
-            return """
-            These changes were rejected by the server and won't be retried. They \
-            still exist on this device. Discarding removes them for good, leaving \
-            this device and your account out of sync.
+            let rejected = """
+            Changes the server rejected won't be retried. They still exist on this \
+            device. Discarding removes them for good, leaving this device and your \
+            account out of sync.
             """
+            return pending > 0 ? "\(rejected) \(queued)" : rejected
         }
-        if pending > 0 {
-            return isConnected
-                ? "Your changes are being sent to your account now."
-                : "Your changes are saved on this device and will be sent to your account when you reconnect."
-        }
+        if pending > 0 { return queued }
         return "Changes you make offline are saved on this device and sent to your account automatically when you reconnect."
     }
 
