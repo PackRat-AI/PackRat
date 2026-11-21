@@ -7,6 +7,7 @@ struct FeedSettingsView: View {
     @State private var loadError: String?
     @State private var isLoading = false
     @State private var alert: FeedAlert?
+    @State private var showingBlocked = false
 
     private let service = FeedService.shared
 
@@ -67,6 +68,26 @@ struct FeedSettingsView: View {
             }
 
             Section {
+                #if os(macOS)
+                // The Mac Settings window has no navigation stack to push onto.
+                LabeledContent("Blocked People") {
+                    Button(blocked.isEmpty ? "None" : blocked.count == 1 ? "1 Person" : "\(blocked.count) People") { showingBlocked = true }
+                        .monospacedDigit()
+                        .disabled(blocked.isEmpty)
+                }
+                .accessibilityIdentifier("feed_settings_blocked_link")
+                .sheet(isPresented: $showingBlocked) {
+                    NavigationStack {
+                        BlockedPeopleView(people: $blocked)
+                            .toolbar {
+                                ToolbarItem(placement: .confirmationAction) {
+                                    Button("Done") { showingBlocked = false }
+                                }
+                            }
+                    }
+                    .frame(minWidth: 380, minHeight: 320)
+                }
+                #else
                 NavigationLink {
                     BlockedPeopleView(people: $blocked)
                 } label: {
@@ -76,6 +97,7 @@ struct FeedSettingsView: View {
                     }
                 }
                 .accessibilityIdentifier("feed_settings_blocked_link")
+                #endif
             } footer: {
                 Text("Blocked people can't see your posts or comments, and you won't see theirs.")
             }

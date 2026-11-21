@@ -61,6 +61,9 @@ struct PreferencesView: View {
     @AppStorage(VoiceCommandSettings.safetyAlertsSpokenKey) private var safetyAlertsSpoken = true
 
     @State private var showingClearDataConfirm = false
+    #if os(macOS)
+    @State private var settingsTab: SettingsTab = .sync
+    #endif
     /// Owned here, at the screen root, so the paywall presents reliably —
     /// `SubscriptionSettingsSection` only requests it. See `PaywallTrigger`.
     @State private var paywallTrigger = PaywallTrigger()
@@ -77,24 +80,36 @@ struct PreferencesView: View {
         #if os(macOS)
         // Fixed-size tabbed layout for the macOS Settings window (Cmd+,). Tab
         // order mirrors the iOS section order.
-        TabView {
+        // Explicit tags: Community and On-device AI come and go, and untagged
+        // tabs are matched by position, so the highlight and the content drift
+        // apart. Each tab sizes the window to its own content, as Mac settings
+        // windows do, instead of one fixed size for every tab.
+        TabView(selection: $settingsTab) {
             syncTab
+                .frame(width: 500, height: 320)
                 .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
+                .tag(SettingsTab.sync)
             unitsTab
+                .frame(width: 500, height: 340)
                 .tabItem { Label("Units", systemImage: "scalemass") }
+                .tag(SettingsTab.units)
             if showsCommunity {
-                NavigationStack { Form { communitySection }.packRatFormStyle() }
+                communityTab
+                    .frame(width: 500, height: 480)
                     .tabItem { Label("Community", systemImage: "person.2") }
+                    .tag(SettingsTab.community)
             }
             advancedTab
+                .frame(width: 500, height: 360)
                 .tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver") }
+                .tag(SettingsTab.advanced)
             if ChatViewModel.isOnDeviceOffered {
                 NavigationStack { OnDeviceAISettingsView() }
+                    .frame(width: 500, height: 420)
                     .tabItem { Label("On-device AI", systemImage: "cpu") }
+                    .tag(SettingsTab.onDeviceAI)
             }
         }
-        .padding(20)
-        .frame(minWidth: 460, idealWidth: 520, minHeight: 360, idealHeight: 480)
         .clearDataConfirmation(isPresented: $showingClearDataConfirm, onConfirm: clearAppData)
         .hostsPaywall(paywallTrigger)
         #else
@@ -150,6 +165,17 @@ struct PreferencesView: View {
     private var unitsTab: some View {
         Form { unitsSection }
             .packRatFormStyle()
+    }
+
+    /// Shown in place rather than behind a link: a navigation stack in a
+    /// Settings tab puts its back button and title in the tab bar.
+    @ViewBuilder
+    private var communityTab: some View {
+        if FeatureFlagStore.shared.isEnabled("enableFeed") {
+            FeedSettingsView()
+        } else {
+            BlockedPeopleScreen()
+        }
     }
 
     private var advancedTab: some View {
@@ -597,6 +623,12 @@ struct PreferencesView: View {
         tripReminders.isEnabled = true
     }
 }
+
+#if os(macOS)
+private enum SettingsTab: Hashable {
+    case sync, units, community, advanced, onDeviceAI
+}
+#endif
 
 private extension View {
     /// Shared confirmation dialog for the destructive "Clear App Data" action.
