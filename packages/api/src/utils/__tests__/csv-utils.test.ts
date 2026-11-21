@@ -70,7 +70,7 @@ describe('csv-utils', () => {
 
       expect(result).toMatchObject({
         weight: 2500,
-        weightUnit: 'kg',
+        weightUnit: 'g',
       });
     });
 
@@ -486,7 +486,7 @@ describe('csv-utils', () => {
         productUrl: 'http://example.com/product',
         currency: 'USD',
         weight: 2500,
-        weightUnit: 'kg',
+        weightUnit: 'g',
         price: 199.99,
         ratingValue: 4.7,
         reviewCount: 456,
@@ -526,21 +526,30 @@ describe('csv-utils', () => {
     });
 
     it('parses ounces correctly', () => {
-      expect(parseWeight({ weightStr: '10', unitStr: 'oz' })).toEqual({ weight: 284, unit: 'oz' });
-      expect(parseWeight({ weightStr: '5 oz' })).toEqual({ weight: 142, unit: 'oz' });
+      expect(parseWeight({ weightStr: '10', unitStr: 'oz' })).toEqual({ weight: 284, unit: 'g' });
+      expect(parseWeight({ weightStr: '5 oz' })).toEqual({ weight: 142, unit: 'g' });
     });
 
     it('parses pounds correctly', () => {
-      expect(parseWeight({ weightStr: '2', unitStr: 'lb' })).toEqual({ weight: 907, unit: 'lb' });
-      expect(parseWeight({ weightStr: '3 lbs' })).toEqual({ weight: 1361, unit: 'lb' });
+      expect(parseWeight({ weightStr: '2', unitStr: 'lb' })).toEqual({ weight: 907, unit: 'g' });
+      expect(parseWeight({ weightStr: '3 lbs' })).toEqual({ weight: 1361, unit: 'g' });
+    });
+
+    it('stores converted weights in grams, not the source unit', () => {
+      // A 332 g shoe stored as "332 oz" displayed as 9.41 kg (#2725).
+      expect(parseWeight({ weightStr: '11.7 oz' })).toEqual({ weight: 332, unit: 'g' });
+      expect(parseWeight({ weightStr: '0.35', unitStr: 'lbs' })).toEqual({
+        weight: 159,
+        unit: 'g',
+      });
     });
 
     it('parses kilograms correctly', () => {
       expect(parseWeight({ weightStr: '1.5', unitStr: 'kg' })).toEqual({
         weight: 1500,
-        unit: 'kg',
+        unit: 'g',
       });
-      expect(parseWeight({ weightStr: '2 kg' })).toEqual({ weight: 2000, unit: 'kg' });
+      expect(parseWeight({ weightStr: '2 kg' })).toEqual({ weight: 2000, unit: 'g' });
     });
 
     it('handles empty or invalid input', () => {
@@ -554,8 +563,8 @@ describe('csv-utils', () => {
     });
 
     it('is case-insensitive for units', () => {
-      expect(parseWeight({ weightStr: '10', unitStr: 'OZ' })).toEqual({ weight: 284, unit: 'oz' });
-      expect(parseWeight({ weightStr: '1', unitStr: 'KG' })).toEqual({ weight: 1000, unit: 'kg' });
+      expect(parseWeight({ weightStr: '10', unitStr: 'OZ' })).toEqual({ weight: 284, unit: 'g' });
+      expect(parseWeight({ weightStr: '1', unitStr: 'KG' })).toEqual({ weight: 1000, unit: 'g' });
     });
   });
 
