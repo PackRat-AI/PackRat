@@ -75,12 +75,6 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
     },
   });
 
-  const chipColors = {
-    selectedContainerColor: colors.primary,
-    selectedLabelColor: '#FFFFFF',
-    labelColor: colors.foreground,
-  };
-
   return (
     <>
       <Stack.Screen
@@ -152,7 +146,6 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                       key={category.value}
                       selected={field.state.value === category.value}
                       onClick={() => field.handleChange(category.value)}
-                      colors={chipColors}
                       modifiers={[testIDModifier(testIds.packs.categoryChip(category.value))]}
                     >
                       <FilterChip.Label>
