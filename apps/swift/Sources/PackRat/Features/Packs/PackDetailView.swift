@@ -97,6 +97,26 @@ struct PackDetailView: View {
         URL(string: "https://packrat.world/packs/\(currentPack.id)")
     }
 
+    /// The ways to add gear, shared by the toolbar's Add Item menu and the
+    /// empty pack's button.
+    @ViewBuilder
+    private var addItemOptions: some View {
+        Button("Add Manually", systemImage: "square.and.pencil") {
+            showingAddItemSheet = true
+        }
+        .accessibilityIdentifier("pack_detail_add_manually")
+
+        Button("Scan Items from Photo", systemImage: "camera.viewfinder") {
+            showingItemsScan = true
+        }
+        .accessibilityIdentifier("pack_detail_scan_photo")
+
+        Button("Add from Catalog", systemImage: "magnifyingglass") {
+            showingCatalogBrowser = true
+        }
+        .accessibilityIdentifier("pack_detail_add_from_catalog")
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -159,14 +179,22 @@ struct PackDetailView: View {
                         // than nothing in the pack), and the way out is the same
                         // — add gear — so the action stays. See #2696.
                         let empty = EmptyPackPresentation(isPackingMode: isPackingMode)
-                        EmptyStateView(
-                            empty.title,
+                        // Same choices as the toolbar's Add Item menu: there is
+                        // more than one way to add gear, so offer them all.
+                        UnavailableStateView(
+                            title: empty.title,
                             subtitle: empty.subtitle,
                             systemImage: empty.systemImage,
-                            actionLabel: empty.actionLabel,
-                            accessibilityIdentifier: empty.accessibilityIdentifier,
-                            action: { showingAddItemSheet = true }
-                        )
+                            accessibilityIdentifier: empty.accessibilityIdentifier
+                        ) {
+                            Menu {
+                                addItemOptions
+                            } label: {
+                                Text(empty.actionLabel)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .accessibilityIdentifier("pack_empty_add_item_menu")
+                        }
                         .frame(minHeight: 200)
                     } else if visibleItems.isEmpty {
                         // Packing filter matched nothing — distinct from an
@@ -207,20 +235,7 @@ struct PackDetailView: View {
                     // find "Add Manually". Expo shows the same three in a bottom
                     // sheet; a pull-down menu is the iOS-idiomatic equivalent.
                     Menu {
-                        Button("Add Manually", systemImage: "square.and.pencil") {
-                            showingAddItemSheet = true
-                        }
-                        .accessibilityIdentifier("pack_detail_add_manually")
-
-                        Button("Scan Items from Photo", systemImage: "camera.viewfinder") {
-                            showingItemsScan = true
-                        }
-                        .accessibilityIdentifier("pack_detail_scan_photo")
-
-                        Button("Add from Catalog", systemImage: "magnifyingglass") {
-                            showingCatalogBrowser = true
-                        }
-                        .accessibilityIdentifier("pack_detail_add_from_catalog")
+                        addItemOptions
                     } label: {
                         // .iconOnly matches the More menu below, so the two
                         // toolbar controls are declared consistently.
