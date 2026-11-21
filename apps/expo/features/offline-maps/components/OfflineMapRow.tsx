@@ -53,7 +53,7 @@ function SavedArea({ area, idPrefix }: { area: OfflineArea; idPrefix: string }) 
   // A download restored before the manager reports on it is still a download, not a saved map.
   if (progress || waiting || (!failure && !area.isComplete)) {
     return (
-      <View className="gap-2" testID={testIds.offlineMaps.progress(idPrefix)}>
+      <View className="gap-2 self-stretch" testID={testIds.offlineMaps.progress(idPrefix)}>
         <View className="flex-row items-center gap-2">
           <Icon name="download-outline" size={18} color={colors.foreground} />
           <Text variant="subhead">{t('offlineMaps.savingForOffline')}</Text>

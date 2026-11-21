@@ -45,13 +45,14 @@ struct OfflineMapRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Label("Saving map for offline", systemImage: "arrow.down.circle")
                     .font(.subheadline)
+                    .lineLimit(1)
                 ProgressView(value: progress.fraction)
                 Text("\(Int(progress.fraction * 100))% · \(progress.bytes.fileSizeText)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
-            .frame(maxWidth: compact ? 140 : .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityIdentifier("\(idPrefix)_offline_map_progress")
         } else if store.failures[area.id] != nil {
             Button {

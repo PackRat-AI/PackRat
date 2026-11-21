@@ -61,7 +61,7 @@ export function TripMapCard({ location, outdoors, onExpand, actions }: TripMapCa
             </Text>
           ) : null}
         </View>
-        {actions ? <View className="flex-row">{actions}</View> : null}
+        {actions ? <View className="items-start">{actions}</View> : null}
       </View>
     </View>
   );
