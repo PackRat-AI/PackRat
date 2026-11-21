@@ -27,7 +27,10 @@ export async function processValidItemsBatch({
   const existingProductKeyBySku = await catalogService.fetchProductKeysBySku(
     mergedListings.map((item) => item.sku),
   );
-  const productGroups = groupItemsByProduct(mergedListings, existingProductKeyBySku);
+  const productGroups = groupItemsByProduct({
+    items: mergedListings,
+    existingProductKeyBySku,
+  });
   const mergedItems = productGroups.map((group) => group.product);
 
   // Source-text diff: skip OpenAI calls when an existing row has byte-identical

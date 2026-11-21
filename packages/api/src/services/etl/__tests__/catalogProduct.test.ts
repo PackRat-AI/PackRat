@@ -71,17 +71,19 @@ describe('normalizeCatalogWeight', () => {
 
 describe('groupItemsByProduct', () => {
   it('collapses listings of one product and keeps every listing as an offer', () => {
-    const groups = groupItemsByProduct([
-      listing('A', { color: 'Green', price: 499.95 }),
-      listing('B', {
-        name: 'FreeLite 2 tent',
-        color: 'Red',
-        price: 342,
-        weight: 1049,
-        weightUnit: 'g',
-      }),
-      listing('C', { brand: 'Big Agnes', name: 'Copper Spur' }),
-    ]);
+    const groups = groupItemsByProduct({
+      items: [
+        listing('A', { color: 'Green', price: 499.95 }),
+        listing('B', {
+          name: 'FreeLite 2 tent',
+          color: 'Red',
+          price: 342,
+          weight: 1049,
+          weightUnit: 'g',
+        }),
+        listing('C', { brand: 'Big Agnes', name: 'Copper Spur' }),
+      ],
+    });
 
     expect(groups.map((g) => [g.productKey, g.offers.map((o) => o.sku)])).toEqual([
       ['msr|freelite2tent', ['A', 'B']],
@@ -98,13 +100,13 @@ describe('groupItemsByProduct', () => {
   });
 
   it('keeps a renamed listing with the product it is already stored under', () => {
-    const groups = groupItemsByProduct(
-      [
+    const groups = groupItemsByProduct({
+      items: [
         listing('A', { name: 'FreeLite 2 Tent (2026)' }),
         listing('B', { name: 'FreeLite 2 Tent (2026)', color: 'Red' }),
       ],
-      new Map([['A', 'msr|freelite2tent']]),
-    );
+      existingProductKeyBySku: new Map([['A', 'msr|freelite2tent']]),
+    });
 
     expect(groups.map((g) => [g.productKey, g.offers.map((o) => o.sku)])).toEqual([
       ['msr|freelite2tent', ['A', 'B']],

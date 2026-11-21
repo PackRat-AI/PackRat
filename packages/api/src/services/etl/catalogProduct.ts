@@ -65,10 +65,13 @@ type ProductGroup = {
  * listing seeds the product row; later listings fill fields it left empty.
  * Every listing becomes an offer.
  */
-export function groupItemsByProduct(
-  items: NewCatalogItem[],
-  existingProductKeyBySku: ReadonlyMap<string, string> = new Map(),
-): ProductGroup[] {
+export function groupItemsByProduct({
+  items,
+  existingProductKeyBySku = new Map(),
+}: {
+  items: NewCatalogItem[];
+  existingProductKeyBySku?: ReadonlyMap<string, string>;
+}): ProductGroup[] {
   // A listing already stored as an offer stays with its product even if the
   // store has since renamed it, and pulls same-named listings in this batch
   // along with it.
