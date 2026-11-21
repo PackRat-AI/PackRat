@@ -1037,6 +1037,25 @@
       "alertsToggle": "Weather Alerts",
       "alertsToggleDesc": "Get notified about weather hazards at your destination from 3 days before you leave until your trip ends.",
       "alertLabel": "Weather alert"
+    },
+    "map": {
+      "expand": "Expand map",
+      "directions": "Directions",
+      "weather": "Weather",
+      "showMap": "Show map",
+      "showSatellite": "Show satellite",
+      "myLocation": "Show my location",
+      "recentre": "Back to trip location",
+      "locationOffTitle": "Location is off",
+      "locationOffMessage": "Turn on location access for PackRat in Settings to see where you are on the map."
+    },
+    "locationPicker": {
+      "moveMap": "Move the map to choose a place",
+      "finding": "Finding this place…",
+      "droppedPin": "Dropped pin",
+      "useThisLocation": "Use this location",
+      "noResults": "No places match that search.",
+      "searchFailed": "Couldn't search. Check your connection and try again."
     }
   },
   "catalog": {

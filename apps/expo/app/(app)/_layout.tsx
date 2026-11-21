@@ -138,7 +138,8 @@ export default function AppLayout() {
         />
         <Stack.Screen name="pack/[id]/edit" options={getPackEditOptions(t)} />
         <Stack.Screen name="pack/new" options={getPackNewOptions(t)} />
-        <Stack.Screen name="trip/location-search" options={getTripLocationSearchOptions(t)} />
+        <Stack.Screen name="trip/location-search" options={FULL_SCREEN_MAP_OPTIONS} />
+        <Stack.Screen name="trip/[id]/map" options={FULL_SCREEN_MAP_OPTIONS} />
 
         <Stack.Screen
           name="trip/[id]/index"
@@ -403,12 +404,12 @@ const getTripEditOptions = (t: TranslationFunction) =>
     animation: 'slide_from_bottom',
   }) as const;
 
-const getTripLocationSearchOptions = (t: TranslationFunction) =>
-  ({
-    title: t('location.searchLocation'),
-    presentation: 'modal',
-    animation: 'slide_from_bottom',
-  }) as const;
+/** Map screens that draw their own controls over an edge-to-edge map. */
+const FULL_SCREEN_MAP_OPTIONS = {
+  headerShown: false,
+  presentation: 'fullScreenModal',
+  animation: 'slide_from_bottom',
+} as const;
 
 const OFFLINE_AREA_PICKER_OPTIONS = {
   presentation: 'modal',

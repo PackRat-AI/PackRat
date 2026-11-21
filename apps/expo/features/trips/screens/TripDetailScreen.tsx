@@ -1,10 +1,9 @@
 import { use$ } from '@legendapp/state/react';
-import { assertDefined } from '@packrat/guards';
 import { Button } from '@packrat/ui/src/button';
 import { Card } from '@packrat/ui/src/card';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
-import { OfflineMapRow, OutdoorsMap } from 'expo-app/features/offline-maps';
+import { OfflineMapRow } from 'expo-app/features/offline-maps';
 import { PlannedRouteSection, TripSafetySection } from 'expo-app/features/safety-check-in';
 import { TripTrailConditionsSection } from 'expo-app/features/trail-conditions/components/TripTrailConditionsSection';
 import {
@@ -25,13 +24,12 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { obs } from 'expo-app/lib/store';
 import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo } from 'react';
 import { ScrollView, View } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
 import { packingModeStore } from '../../packs/store/packingMode';
 import { TripChecklistSection } from '../components/TripChecklistSection';
+import { TripMapCard } from '../components/TripMapCard';
 import { TripReadinessCard } from '../components/TripReadinessCard';
 import { TripRemindersRow } from '../components/TripRemindersRow';
 import { TripWeatherSection } from '../components/TripWeatherSection';
@@ -59,16 +57,6 @@ export function TripDetailScreen() {
   const packs = useDetailedPacks();
   const packedRecord = use$(() =>
     trip?.packId ? obs({ store: packingModeStore, id: trip.packId }).get() : null,
-  );
-
-  // Create a stable key for MapView based on location coordinates
-  // This forces remount when location changes, fixing iOS initialRegion issue
-  const mapKey = useMemo(
-    () =>
-      trip?.location
-        ? `map-${trip.location.latitude}-${trip.location.longitude}`
-        : 'map-no-location',
-    [trip?.location?.latitude, trip?.location?.longitude],
   );
 
   if (!trip) {
@@ -167,60 +155,13 @@ export function TripDetailScreen() {
                 {t('trips.location')}
               </Text>
 
-              <Card className="rounded-xl bg-card border border-border">
-                <View className="p-3 border-b border-border">
-                  <Text className="text-center font-semibold">
-                    {trip.location.name
-                      ? trip.location.name.split(',')[0]
-                      : `${trip.location.latitude.toFixed(3)}, ${trip.location.longitude.toFixed(3)}`}
-                  </Text>
-                </View>
-
-                <View className="h-36">
-                  {enableOfflineMaps ? (
-                    <OutdoorsMap
-                      id="trip-map"
-                      pin={[trip.location.longitude, trip.location.latitude]}
-                      interactive
-                    />
-                  ) : (
-                    <MapView
-                      key={mapKey}
-                      style={{ flex: 1 }}
-                      initialRegion={{
-                        latitude: trip.location.latitude,
-                        longitude: trip.location.longitude,
-                        latitudeDelta: 0.05,
-                        longitudeDelta: 0.05,
-                      }}
-                    >
-                      <Marker coordinate={trip.location} />
-                    </MapView>
-                  )}
-                </View>
-
-                <View className="p-3 flex-row justify-center gap-2">
-                  {/* Open Maps */}
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onPress={() => {
-                      assertDefined(trip.location);
-                      const { latitude, longitude } = trip.location;
-                      router.push(`https://www.google.com/maps?q=${latitude},${longitude}`);
-                    }}
-                  >
-                    <Text>{t('trips.openInMaps')}</Text>
-                  </Button>
-
-                  {/* Weather */}
-                  <Button variant="secondary" onPress={handleWeatherPress}>
-                    <Text>{t('trips.viewWeather')}</Text>
-                  </Button>
-                </View>
-
-                {enableOfflineMaps && !tripIsFinished ? (
-                  <View className="border-t border-border p-3">
+              <TripMapCard
+                location={trip.location}
+                outdoors={enableOfflineMaps}
+                onExpand={() => router.push(`/trip/${trip.id}/map`)}
+                onWeather={handleWeatherPress}
+                footer={
+                  enableOfflineMaps && !tripIsFinished ? (
                     <OfflineMapRow
                       tripId={trip.id}
                       idPrefix="trip"
@@ -235,9 +176,9 @@ export function TripDetailScreen() {
                         },
                       }}
                     />
-                  </View>
-                ) : null}
-              </Card>
+                  ) : undefined
+                }
+              />
             </View>
           )}
 
