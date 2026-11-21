@@ -148,7 +148,7 @@ export function TripDetailScreen() {
                 location={trip.location}
                 outdoors={enableOfflineMaps}
                 onExpand={() => router.push(`/trip/${trip.id}/map`)}
-                trailing={
+                actions={
                   enableOfflineMaps && !tripIsFinished ? (
                     <OfflineMapRow
                       tripId={trip.id}

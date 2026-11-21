@@ -2,7 +2,7 @@
 import SwiftUI
 
 /// On a trip or trail page: offers to save the map around it, then shows the
-/// download and a "Saved for offline" badge once it is done.
+/// download and an "Available offline" status once it is done.
 struct OfflineMapRow: View {
     /// The area already saved for this trip or trail, if any.
     let area: OfflineArea?
@@ -25,6 +25,8 @@ struct OfflineMapRow: View {
                 } label: {
                     Label("Save for Offline", systemImage: "arrow.down.circle")
                         .font(compact ? .subheadline.weight(.semibold) : .body)
+                        .lineLimit(1)
+                        .fixedSize()
                         .frame(maxWidth: compact ? nil : .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -61,9 +63,9 @@ struct OfflineMapRow: View {
             .tint(.orange)
             .accessibilityIdentifier("\(idPrefix)_offline_map_retry")
         } else {
-            Label("Saved for offline", systemImage: "checkmark.circle.fill")
+            Label("Available offline", systemImage: "checkmark.circle")
                 .font(.subheadline)
-                .foregroundStyle(.green)
+                .foregroundStyle(.secondary)
                 .accessibilityIdentifier("\(idPrefix)_offline_map_saved")
         }
     }

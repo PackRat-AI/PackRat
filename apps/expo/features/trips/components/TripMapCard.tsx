@@ -12,12 +12,12 @@ type TripMapCardProps = {
   location: Coords & { name?: string };
   outdoors: boolean;
   onExpand: () => void;
-  /** Sits beside the place name, e.g. Save for offline. */
-  trailing?: ReactNode;
+  /** An action row under the place name, e.g. Save for offline. */
+  actions?: ReactNode;
 };
 
 /** The trip page's map: an interactive preview with Expand and Directions over it, and the place below. */
-export function TripMapCard({ location, outdoors, onExpand, trailing }: TripMapCardProps) {
+export function TripMapCard({ location, outdoors, onExpand, actions }: TripMapCardProps) {
   const { t } = useTranslation();
   const { title, region } = location.name
     ? splitPlaceName(location.name)
@@ -50,8 +50,8 @@ export function TripMapCard({ location, outdoors, onExpand, trailing }: TripMapC
         </View>
       </View>
 
-      <View className="flex-row items-center gap-3 p-4">
-        <View className="flex-1">
+      <View className="gap-3 p-4">
+        <View>
           <Text variant="heading" numberOfLines={1}>
             {title}
           </Text>
@@ -61,7 +61,7 @@ export function TripMapCard({ location, outdoors, onExpand, trailing }: TripMapC
             </Text>
           ) : null}
         </View>
-        {trailing}
+        {actions ? <View className="flex-row">{actions}</View> : null}
       </View>
     </View>
   );

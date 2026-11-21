@@ -168,8 +168,8 @@ private struct TripMapKitMap: View {
 // MARK: - Preview card
 
 /// The trip page's map: an interactive preview with Expand and Directions
-/// laid over it, and the place underneath with an optional trailing control
-/// such as Save for Offline.
+/// laid over it, the place underneath, and an optional action row below the
+/// name such as Save for Offline, the way place cards put actions under the title.
 struct TripMapCard<Footer: View>: View {
     let model: TripMapModel
     let onExpand: () -> Void
@@ -193,7 +193,7 @@ struct TripMapCard<Footer: View>: View {
                     .padding(10)
                 }
 
-            HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.title)
                         .font(.callout.bold())
@@ -205,9 +205,9 @@ struct TripMapCard<Footer: View>: View {
                             .lineLimit(1)
                     }
                 }
-                Spacer(minLength: 0)
                 footer()
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
         }

@@ -2404,7 +2404,7 @@
     "failedOther": "The map couldn't be saved. Check your connection and try again.",
     "saveForOffline": "Save for offline",
     "savingForOffline": "Saving map for offline",
-    "savedForOffline": "Saved for offline",
+    "savedForOffline": "Available offline",
     "retrySave": "Map didn't finish saving. Try again.",
     "showMyLocation": "Show my location",
     "showWholeArea": "Show whole area",

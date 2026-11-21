@@ -13,7 +13,7 @@ import { failureText, ProgressLine, WaitingLine } from './DownloadStatus';
 
 /**
  * On a trip or trail page: offers to save the map around it, then shows the download and a
- * "Saved for offline" badge once it is done.
+ * "Available offline" status once it is done.
  */
 export function OfflineMapRow({
   tripId,
@@ -90,8 +90,8 @@ function SavedArea({ area, idPrefix }: { area: OfflineArea; idPrefix: string }) 
   }
   return (
     <View className="flex-row items-center gap-2" testID={testIds.offlineMaps.saved(idPrefix)}>
-      <Icon name="check-circle" size={18} color={colors.green} />
-      <Text variant="subhead" textColor={colors.green}>
+      <Icon name="check-circle-outline" size={18} color={colors.grey} />
+      <Text variant="subhead" className="text-muted-foreground">
         {t('offlineMaps.savedForOffline')}
       </Text>
     </View>
