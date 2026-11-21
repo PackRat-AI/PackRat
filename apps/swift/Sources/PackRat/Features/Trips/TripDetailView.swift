@@ -38,7 +38,7 @@ struct TripDetailView: View {
         let packId: String
         let packing: Bool
     }
-    @State private var mapPosition: MapCameraPosition = .automatic
+    @State private var showingFullScreenMap = false
     @Environment(AppState.self) private var appState
     @Environment(\.weightUnit) private var weightUnit
 
@@ -47,6 +47,12 @@ struct TripDetailView: View {
               lat != 0 || lon != 0
         else { return nil }
         return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+    }
+
+    private var mapModel: TripMapModel? {
+        coordinate.map {
+            TripMapModel(trip: trip, coordinate: $0, loggedRoute: route, plannedRoute: plannedRouteCoordinates)
+        }
     }
 
     private var hasOverviewDetails: Bool {
@@ -98,17 +104,15 @@ struct TripDetailView: View {
                 }
 
                 // Map — shown when the trip has coordinates
-                if let coord = coordinate {
-                    tripMap(coord: coord)
-                        .frame(height: 220)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                if let model = mapModel {
+                    TripMapCard(model: model) { showingFullScreenMap = true }
                         .padding(.horizontal)
 
                     #if os(iOS)
                     if OfflineMapStore.isEnabled, !isFinished {
                         OfflineMapRow(area: OfflineMapStore.shared.area(forTrip: trip.id), idPrefix: "trip") {
                             OfflineAreaPickerView(
-                                initialCenter: coord,
+                                initialCenter: model.coordinate,
                                 suggestedName: trip.name,
                                 tripId: trip.id,
                                 tripEndDate: (trip.endDate ?? trip.startDate)?.toDate()
@@ -206,19 +210,18 @@ struct TripDetailView: View {
         .sheet(isPresented: $showingEditSheet) {
             TripFormView(viewModel: viewModel, existingTrip: trip)
         }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $showingFullScreenMap) {
+            if let model = mapModel { TripFullScreenMap(model: model) }
+        }
+        #else
+        .sheet(isPresented: $showingFullScreenMap) {
+            if let model = mapModel { TripFullScreenMap(model: model) }
+        }
+        #endif
         .navigationDestination(item: $pushedPack) { route in
             if let pack = appState.packsVM.packs.first(where: { $0.id == route.packId }) {
                 PackDetailView(pack: pack, viewModel: appState.packsVM, startInPackingMode: route.packing)
-            }
-        }
-        .onAppear {
-            if route.count >= 2 {
-                mapPosition = .automatic
-            } else if let coord = coordinate {
-                mapPosition = .region(MKCoordinateRegion(
-                    center: coord,
-                    span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
-                ))
             }
         }
     }
@@ -328,12 +331,12 @@ struct TripDetailView: View {
 
     @ViewBuilder
     private var metaCards: some View {
-        if !trip.dateRange.isEmpty || trip.location?.name?.isEmpty == false {
+        if !trip.dateRange.isEmpty || (coordinate == nil && trip.location?.name?.isEmpty == false) {
             HStack(spacing: 10) {
                 if !trip.dateRange.isEmpty {
                     metaCard("Dates", trip.dateRange, symbol: "calendar", color: .blue)
                 }
-                if let loc = trip.location?.name, !loc.isEmpty {
+                if coordinate == nil, let loc = trip.location?.name, !loc.isEmpty {
                     metaCard("Location", loc, symbol: "mappin.circle.fill", color: .red)
                 }
             }
@@ -355,111 +358,6 @@ struct TripDetailView: View {
         (trip.plannedRoute ?? []).map {
             CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
         }
-    }
-
-    private func tripMap(coord: CLLocationCoordinate2D) -> some View {
-        tripMapContent(coord: coord)
-            .overlay(alignment: .bottomTrailing) {
-                Button {
-                    openInMaps(coord: coord)
-                } label: {
-                    Label("Open in Maps", systemImage: "map.fill")
-                        .font(.caption.bold())
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(.regularMaterial, in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .padding(10)
-            }
-    }
-
-    @ViewBuilder
-    private func tripMapContent(coord: CLLocationCoordinate2D) -> some View {
-        #if os(iOS)
-        if OfflineMapStore.isEnabled {
-            TripMapboxMap(
-                destination: coord,
-                destinationName: trip.location?.name ?? trip.name,
-                plannedRoute: plannedRouteCoordinates,
-                loggedRoute: route
-            )
-        } else {
-            mapKitTripMap(coord: coord)
-        }
-        #else
-        mapKitTripMap(coord: coord)
-        #endif
-    }
-
-    private func mapKitTripMap(coord: CLLocationCoordinate2D) -> some View {
-        Map(position: $mapPosition) {
-            // The route they meant to follow, dashed, under the one they logged.
-            if plannedRouteCoordinates.count >= 2 {
-                MapPolyline(coordinates: plannedRouteCoordinates)
-                    .stroke(.orange, style: StrokeStyle(lineWidth: 3, dash: [6, 4]))
-            }
-            if route.count >= 2 {
-                MapPolyline(coordinates: route)
-                    .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
-            }
-            #if os(iOS)
-            // The path so far while this trip is being recorded.
-            if let live = TrackRecorder.shared.track, live.tripId == trip.id, live.samples.count >= 2 {
-                MapPolyline(coordinates: live.samples.map(\.trackPoint.coordinate))
-                    .stroke(.red, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
-            }
-            // Where the user is and where guidance is taking them.
-            if TrackRecorder.shared.isRecording(tripId: trip.id) || TripGuide.shared.isGuiding(tripId: trip.id) {
-                UserAnnotation()
-            }
-            if let destination = TripGuide.shared.session.flatMap({ $0.tripId == trip.id ? $0.guide.plan.destination : nil }) {
-                Marker(
-                    destination.name.prefix(1).uppercased() + destination.name.dropFirst(),
-                    systemImage: "flag.checkered",
-                    coordinate: CLLocationCoordinate2D(latitude: destination.point.latitude, longitude: destination.point.longitude)
-                )
-                .tint(.blue)
-            }
-            #endif
-            ForEach(trip.log?.waypoints ?? []) { waypoint in
-                Marker(
-                    waypoint.name,
-                    systemImage: waypoint.note == nil ? "mappin" : "note.text",
-                    coordinate: CLLocationCoordinate2D(latitude: waypoint.latitude, longitude: waypoint.longitude)
-                )
-                .tint(.orange)
-            }
-            Annotation(trip.location?.name ?? trip.name, coordinate: coord) {
-                ZStack {
-                    Circle().fill(.red).frame(width: 36, height: 36)
-                    Image(systemName: "mappin.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(.white)
-                }
-                .shadow(radius: 4)
-            }
-        }
-        .mapStyle(.standard(elevation: .realistic))
-        .mapControls {
-            #if os(macOS)
-            MapZoomStepper()
-            #else
-            if TrackRecorder.shared.isRecording(tripId: trip.id) || TripGuide.shared.isGuiding(tripId: trip.id) {
-                MapUserLocationButton()
-            }
-            #endif
-            MapCompass()
-        }
-    }
-
-    private func openInMaps(coord: CLLocationCoordinate2D) {
-        let placemark = MKPlacemark(coordinate: coord)
-        let item = MKMapItem(placemark: placemark)
-        item.name = trip.location?.name ?? trip.name
-        item.openInMaps(launchOptions: [
-            MKLaunchOptionsMapTypeKey: MKMapType.standard.rawValue
-        ])
     }
 
     private func labeledSection(_ title: String, @ViewBuilder content: () -> some View) -> some View {

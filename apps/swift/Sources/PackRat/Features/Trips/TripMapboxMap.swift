@@ -10,6 +10,9 @@ struct TripMapboxMap: View {
     let destinationName: String
     var plannedRoute: [CLLocationCoordinate2D] = []
     var loggedRoute: [CLLocationCoordinate2D] = []
+    var satellite = false
+    var showsUserLocation = false
+    var focus = TripMapFocus()
 
     @State private var viewport: Viewport
 
@@ -17,8 +20,14 @@ struct TripMapboxMap: View {
         destination: CLLocationCoordinate2D,
         destinationName: String,
         plannedRoute: [CLLocationCoordinate2D] = [],
-        loggedRoute: [CLLocationCoordinate2D] = []
+        loggedRoute: [CLLocationCoordinate2D] = [],
+        satellite: Bool = false,
+        showsUserLocation: Bool = false,
+        focus: TripMapFocus = TripMapFocus()
     ) {
+        self.satellite = satellite
+        self.showsUserLocation = showsUserLocation
+        self.focus = focus
         self.destination = destination
         self.destinationName = destinationName
         self.plannedRoute = plannedRoute
@@ -60,9 +69,22 @@ struct TripMapboxMap: View {
                 .accessibilityLabel(destinationName)
             }
             .allowOverlap(true)
+            if showsUserLocation {
+                Puck2D(bearing: .heading)
+            }
         }
-        .mapStyle(.outdoors)
+        .mapStyle(satellite ? .satelliteStreets : .outdoors)
         .ornamentOptions(OrnamentOptions(scaleBar: ScaleBarViewOptions(visibility: .hidden)))
+        .onChange(of: focus) { _, focus in
+            withViewportAnimation(.easeOut(duration: 0.4)) {
+                switch focus.target {
+                case .trip:
+                    viewport = Self.initialViewport(destination: destination, routes: [plannedRoute, loggedRoute])
+                case .user:
+                    viewport = .followPuck(zoom: 13)
+                }
+            }
+        }
         .accessibilityIdentifier("trip_detail_map")
     }
 
