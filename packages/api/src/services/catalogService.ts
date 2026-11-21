@@ -603,6 +603,23 @@ export class CatalogService {
   }
 
   /**
+   * Product key each already-stored listing belongs to, so a renamed listing
+   * updates its product instead of colliding with it as a new one.
+   */
+  async fetchProductKeysBySku(skus: string[]): Promise<Map<string, string>> {
+    if (skus.length === 0) return new Map();
+    const rows = await this.db
+      .tag('catalog.productKeysBySku')
+      .select({ sku: catalogItemOffers.sku, productKey: catalogItems.productKey })
+      .from(catalogItemOffers)
+      .innerJoin(catalogItems, eq(catalogItems.id, catalogItemOffers.catalogItemId))
+      .where(inArray(catalogItemOffers.sku, skus));
+    return new Map(
+      rows.flatMap((row) => (row.productKey === null ? [] : [[row.sku, row.productKey] as const])),
+    );
+  }
+
+  /**
    * Upsert retailer listings by SKU. Offers carry no embedding, so these
    * writes never touch the catalog HNSW index.
    */

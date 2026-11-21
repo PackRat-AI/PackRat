@@ -24,7 +24,10 @@ export async function processValidItemsBatch({
 
   const mergedListings = mergeItemsBySku(items as NewCatalogItem[]); // safe-cast: items are Partial<NewCatalogItem> at the type level, but all required fields have been confirmed present by CatalogItemValidator before reaching here
   // One catalog row per product; every listing is kept as an offer.
-  const productGroups = groupItemsByProduct(mergedListings);
+  const existingProductKeyBySku = await catalogService.fetchProductKeysBySku(
+    mergedListings.map((item) => item.sku),
+  );
+  const productGroups = groupItemsByProduct(mergedListings, existingProductKeyBySku);
   const mergedItems = productGroups.map((group) => group.product);
 
   // Source-text diff: skip OpenAI calls when an existing row has byte-identical

@@ -4,9 +4,9 @@ One-off rebuild of `catalog_items` to one row per product, with every retailer l
 
 ## What it does
 
-- Keys every row by lower-cased brand + name stripped to `[a-z0-9]` (same rule as `catalogProductKey()` in the ETL).
+- Keys every row by brand + name, each stripped to ASCII letters and digits and lower-cased (same rule as `catalogProductKey()` in the ETL).
 - Keeps one row per product (has an embedding, then a weight, then the oldest id) and copies it into a new table beside the live one, so reads keep working.
-- Fixes weights on the way: oz/lb/kg values are relabelled as grams (the pre-fix parser stored grams under the source unit), and anything outside 3 g to 25 kg is cleared.
+- Fixes weights on the way: oz/lb/kg values are relabelled as grams (the pre-fix parser stored grams under the source unit), and anything with no unit or outside 3 g to 25 kg is cleared.
 - Copies every listing into `catalog_item_offers`.
 - In one short transaction: re-points `pack_items` and `pack_template_items` at the surviving row, empties `catalog_item_etl_jobs` (import-history links, retired with approval on 2026-11-20), and swaps the tables. The old table stays as `catalog_items_old`.
 

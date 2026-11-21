@@ -40,7 +40,8 @@ drop table if exists cutover_keys, cutover_canonical, catalog_items_new, catalog
 -- src/services/etl/catalogProduct.ts.
 create unlogged table cutover_keys as
 select id,
-       lower(coalesce(brand, '')) || '|' || regexp_replace(lower(name), '[^a-z0-9]', '', 'g') as product_key,
+       lower(regexp_replace(coalesce(brand, ''), '[^a-zA-Z0-9]', '', 'g')) || '|' ||
+       lower(regexp_replace(name, '[^a-zA-Z0-9]', '', 'g')) as product_key,
        embedding is not null as has_embedding,
        weight is not null as has_weight
 from catalog_items;
@@ -60,7 +61,8 @@ create table catalog_items_new (like catalog_items including defaults);
 
 -- oz/lb/kg rows were written by the pre-fix parser, which stored a gram value
 -- under the source unit (#2725), so their number is already grams. Weights
--- outside 3 g to 25 kg are dropped, matching normalizeCatalogWeight().
+-- with no unit or outside 3 g to 25 kg are dropped, matching
+-- normalizeCatalogWeight().
 insert into catalog_items_new (
   id, name, product_url, sku, product_key, weight, weight_unit, description, categories,
   images, brand, model, rating_value, color, size, price, availability, seller, product_sku,
@@ -68,7 +70,7 @@ insert into catalog_items_new (
   embedding, created_at, updated_at
 )
 select ci.id, ci.name, ci.product_url, ci.sku, c.product_key,
-       case when ci.weight between 3 and 25000 then ci.weight end,
+       case when ci.weight between 3 and 25000 and ci.weight_unit is not null then ci.weight end,
        case when ci.weight between 3 and 25000 and ci.weight_unit is not null then 'g' end,
        ci.description, ci.categories, ci.images, ci.brand, ci.model, ci.rating_value, ci.color,
        ci.size, ci.price, ci.availability, ci.seller, ci.product_sku, ci.material, ci.currency,

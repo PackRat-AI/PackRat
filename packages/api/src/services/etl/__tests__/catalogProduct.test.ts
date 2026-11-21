@@ -20,6 +20,18 @@ describe('catalogProductKey', () => {
     );
   });
 
+  it('ignores spacing and punctuation in the brand', () => {
+    expect(catalogProductKey({ brand: 'Black-Diamond ', name: 'Spot 400' })).toBe(
+      catalogProductKey({ brand: 'black diamond', name: 'Spot 400' }),
+    );
+  });
+
+  it('drops non-ASCII characters rather than lower-casing them', () => {
+    expect(catalogProductKey({ brand: 'KÜHL', name: 'Renegade™ Shorts' })).toBe(
+      'khl|renegadeshorts',
+    );
+  });
+
   it('treats a missing brand as empty', () => {
     expect(catalogProductKey({ brand: null, name: 'Spork' })).toBe('|spork');
   });
@@ -73,7 +85,7 @@ describe('groupItemsByProduct', () => {
 
     expect(groups.map((g) => [g.productKey, g.offers.map((o) => o.sku)])).toEqual([
       ['msr|freelite2tent', ['A', 'B']],
-      ['big agnes|copperspur', ['C']],
+      ['bigagnes|copperspur', ['C']],
     ]);
     expect(groups[0]?.product).toMatchObject({
       sku: 'A',
@@ -83,5 +95,20 @@ describe('groupItemsByProduct', () => {
       weightUnit: 'g',
       productKey: 'msr|freelite2tent',
     });
+  });
+
+  it('keeps a renamed listing with the product it is already stored under', () => {
+    const groups = groupItemsByProduct(
+      [
+        listing('A', { name: 'FreeLite 2 Tent (2026)' }),
+        listing('B', { name: 'FreeLite 2 Tent (2026)', color: 'Red' }),
+      ],
+      new Map([['A', 'msr|freelite2tent']]),
+    );
+
+    expect(groups.map((g) => [g.productKey, g.offers.map((o) => o.sku)])).toEqual([
+      ['msr|freelite2tent', ['A', 'B']],
+    ]);
+    expect(groups[0]?.product.productKey).toBe('msr|freelite2tent');
   });
 });

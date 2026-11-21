@@ -14,6 +14,7 @@ const mockFetchExistingForRegen = vi.fn();
 const mockUpsertCatalogItems = vi.fn();
 const mockTrackEtlJob = vi.fn();
 const mockUpsertCatalogOffers = vi.fn();
+const mockFetchProductKeysBySku = vi.fn();
 
 vi.mock('../../catalogService', () => ({
   CatalogService: vi.fn().mockImplementation(function (this: unknown) {
@@ -22,6 +23,7 @@ vi.mock('../../catalogService', () => ({
       upsertCatalogItems: mockUpsertCatalogItems,
       trackEtlJob: mockTrackEtlJob,
       upsertCatalogOffers: mockUpsertCatalogOffers,
+      fetchProductKeysBySku: mockFetchProductKeysBySku,
     };
   }),
 }));
@@ -97,6 +99,7 @@ describe('processValidItemsBatch — source-text diff', () => {
     mockUpsertCatalogItems.mockReset();
     mockTrackEtlJob.mockReset();
     mockUpsertCatalogOffers.mockReset();
+    mockFetchProductKeysBySku.mockReset().mockResolvedValue(new Map());
     mockGenerateManyEmbeddings.mockReset();
     mockUpsertCatalogItems.mockResolvedValue([{ id: 1, sku: 'A' }]);
     mockTrackEtlJob.mockResolvedValue(undefined);
@@ -252,6 +255,7 @@ describe('processValidItemsBatch — one row per product', () => {
     mockUpsertCatalogItems.mockReset();
     mockTrackEtlJob.mockReset();
     mockUpsertCatalogOffers.mockReset();
+    mockFetchProductKeysBySku.mockReset().mockResolvedValue(new Map());
     mockGenerateManyEmbeddings.mockReset();
   });
 

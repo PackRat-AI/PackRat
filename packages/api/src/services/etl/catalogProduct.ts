@@ -1,12 +1,13 @@
 import type { NewCatalogItem, NewCatalogItemOffer } from '@packrat/db/schema';
 
 /**
- * Identity of a catalog product across retailers and variants:
- * lower-cased brand + name with everything but [a-z0-9] removed.
+ * Identity of a catalog product across retailers and variants: brand and
+ * name, each reduced to ASCII letters and digits, then lower-cased.
  *
- * Must stay byte-identical to the SQL expression in
- * scripts/catalog-products-cutover.sql, which keys the existing rows:
- *   lower(coalesce(brand,'')) || '|' || regexp_replace(lower(name), '[^a-z0-9]', '', 'g')
+ * Stripping before lower-casing keeps the result independent of locale, so it
+ * matches the SQL in scripts/catalog-products-cutover.sql exactly:
+ *   lower(regexp_replace(coalesce(brand, ''), '[^a-zA-Z0-9]', '', 'g')) || '|' ||
+ *   lower(regexp_replace(name, '[^a-zA-Z0-9]', '', 'g'))
  */
 export function catalogProductKey({
   brand,
@@ -15,12 +16,17 @@ export function catalogProductKey({
   brand?: string | null;
   name: string;
 }): string {
-  return `${(brand ?? '').toLowerCase()}|${keepAlphanumeric(name.toLowerCase())}`;
+  return `${asciiAlphanumeric(brand ?? '').toLowerCase()}|${asciiAlphanumeric(name).toLowerCase()}`;
 }
 
-const keepAlphanumeric = (value: string): string =>
+const asciiAlphanumeric = (value: string): string =>
   [...value]
-    .filter((char) => (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9'))
+    .filter(
+      (char) =>
+        (char >= 'a' && char <= 'z') ||
+        (char >= 'A' && char <= 'Z') ||
+        (char >= '0' && char <= '9'),
+    )
     .join('');
 
 const GRAMS_PER_UNIT = Object.freeze({ g: 1, oz: 28.3495, lb: 453.592, kg: 1000 } as const);
@@ -59,11 +65,29 @@ type ProductGroup = {
  * listing seeds the product row; later listings fill fields it left empty.
  * Every listing becomes an offer.
  */
-export function groupItemsByProduct(items: NewCatalogItem[]): ProductGroup[] {
+export function groupItemsByProduct(
+  items: NewCatalogItem[],
+  existingProductKeyBySku: ReadonlyMap<string, string> = new Map(),
+): ProductGroup[] {
+  // A listing already stored as an offer stays with its product even if the
+  // store has since renamed it, and pulls same-named listings in this batch
+  // along with it.
+  const existingKeyByComputedKey = new Map<string, string>();
+  for (const item of items) {
+    const existingKey = existingProductKeyBySku.get(item.sku);
+    if (existingKey !== undefined) {
+      existingKeyByComputedKey.set(catalogProductKey(item), existingKey);
+    }
+  }
+
   const groups = new Map<string, ProductGroup>();
 
   for (const item of items) {
-    const productKey = catalogProductKey(item);
+    const computedKey = catalogProductKey(item);
+    const productKey =
+      existingProductKeyBySku.get(item.sku) ??
+      existingKeyByComputedKey.get(computedKey) ??
+      computedKey;
     const offer = {
       sku: item.sku,
       productUrl: item.productUrl,
