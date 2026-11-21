@@ -311,6 +311,12 @@ export const testIds = Object.freeze({
     locationPickerResult: (index: number) => `trips:location-picker-result-${index}`,
     locationPickerMyLocation: 'trips:location-picker-my-location',
     locationPickerConfirm: 'trips:location-picker-confirm',
+    locationButton: 'trips:location-button',
+    packButton: 'trips:pack-button',
+    packPicker: 'trips:pack-picker',
+    packNew: 'trips:pack-new',
+    packNone: 'trips:pack-none',
+    packOption: (id: string) => `trips:pack-option-${id}`,
   }),
 
   // ── Safety check-in ───────────────────────────────────────────────────────

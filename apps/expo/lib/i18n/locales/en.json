@@ -1055,6 +1055,26 @@
       "useThisLocation": "Use this location",
       "noResults": "No places match that search.",
       "searchFailed": "Couldn't search. Check your connection and try again."
+    },
+    "form": {
+      "where": "Where",
+      "when": "When",
+      "pack": "Pack",
+      "notes": "Notes",
+      "addLocation": "Add location",
+      "addTrail": "Add trail",
+      "addDates": "Add dates",
+      "addPack": "Add pack",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "items_one": "{{count}} item",
+      "items_other": "{{count}} items",
+      "choosePack": "Choose a pack",
+      "searchPacks": "Search packs",
+      "newPack": "New pack",
+      "noPack": "None",
+      "noPacksMatch": "No packs match that search.",
+      "trailFooter": "Add a trail to see conditions reported on it. Without one, the trip shows conditions from trails nearby."
     }
   },
   "catalog": {
