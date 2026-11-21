@@ -78,6 +78,8 @@ struct TripFormView: View {
                             Spacer()
                             Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
                         }
+                        // Plain buttons only hit-test their glyphs; make the whole row tappable.
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("trip_location_search_button")
@@ -177,7 +179,7 @@ struct TripFormView: View {
                 }
             }
             .sheet(isPresented: $showingLocationSearch) {
-                LocationSearchView { result in
+                LocationSearchView(initial: pickedLocation) { result in
                     locationName = result.name
                     locationLat = result.latitude
                     locationLon = result.longitude
@@ -185,6 +187,16 @@ struct TripFormView: View {
             }
         }
         .formSheetSize(minWidth: 560, minHeight: 620)
+    }
+
+    /// The place already chosen, so the location picker opens on it.
+    private var pickedLocation: LocationSearchResult? {
+        guard locationLat != 0 || locationLon != 0 else { return nil }
+        let parts = locationName.split(separator: ",", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+        return LocationSearchResult(
+            name: parts.first ?? locationName, subtitle: parts.count > 1 ? parts[1] : "",
+            latitude: locationLat, longitude: locationLon
+        )
     }
 
     /// The destination, once one is chosen, so the picker lists trails there.
