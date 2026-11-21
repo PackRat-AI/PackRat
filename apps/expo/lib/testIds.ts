@@ -118,6 +118,8 @@ export const testIds = Object.freeze({
     askAIBtn: 'ask-ai-button', // keep Maestro value
     moreActionsBtn: 'pack-more-actions', // keep Maestro value
     listItem: (id: string | number) => `packs:list-item-${id}`,
+    categoryChip: (category: string) => `packs:category-chip-${category}`,
+    publicToggle: 'packs:public-toggle',
   }),
 
   // ── Pack items ────────────────────────────────────────────────────────────

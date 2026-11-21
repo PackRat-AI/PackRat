@@ -392,6 +392,11 @@
       "custom": "Custom",
       "waterSports": "Water Sports",
       "skiing": "Skiing"
+    },
+    "form": {
+      "name": "Pack name",
+      "activity": "Activity",
+      "public": "Public"
     }
   },
   "items": {

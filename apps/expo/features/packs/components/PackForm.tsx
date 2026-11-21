@@ -1,74 +1,62 @@
-import { fromZod } from '@packrat/guards';
+import { FilterChip, FlowRow, Text as JCText } from '@expo/ui/jetpack-compose';
+import { testID as testIDModifier } from '@expo/ui/jetpack-compose/modifiers';
 import { PackCategorySchema } from '@packrat/schemas/constants';
 import { Button } from '@packrat/ui/src/button';
-import { createDropdownItem, DropdownMenu } from '@packrat/ui/src/dropdown-menu';
-import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
+import { Text } from '@packrat/ui/src/text';
 import { TextField } from '@packrat/ui/src/text-field';
+import { ThemedHost as Host } from '@packrat/ui/src/themed-host';
+import { Toggle } from '@packrat/ui/src/toggle';
 import { useForm } from '@tanstack/react-form';
-import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
-import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Switch, Text, View } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
+import { Pressable, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreatePack, useUpdatePack } from '../hooks';
 import type { Pack } from '../types';
 
-// Define Zod schema
+const PACK_CATEGORIES = Object.freeze([
+  { value: 'hiking', labelKey: 'packs.categories.hiking' },
+  { value: 'backpacking', labelKey: 'packs.categories.backpacking' },
+  { value: 'camping', labelKey: 'packs.categories.camping' },
+  { value: 'climbing', labelKey: 'packs.categories.climbing' },
+  { value: 'winter', labelKey: 'packs.categories.winter' },
+  { value: 'desert', labelKey: 'packs.categories.desert' },
+  { value: 'water sports', labelKey: 'packs.categories.waterSports' },
+  { value: 'skiing', labelKey: 'packs.categories.skiing' },
+  { value: 'custom', labelKey: 'packs.categories.custom' },
+] as const);
+
 const packFormSchema = z.object({
-  name: z.string().min(1, 'Pack name is required'),
+  name: z.string().trim().min(1, 'Give your pack a name.'),
   description: z.string(),
-  category: z.enum([
-    'hiking',
-    'backpacking',
-    'camping',
-    'climbing',
-    'winter',
-    'desert',
-    'custom',
-    'water sports',
-    'skiing',
-  ]),
+  category: PackCategorySchema,
   isPublic: z.boolean(),
   tags: z.array(z.string()),
 });
 
-// Type inference
-// type PackFormValues = z.infer<typeof packFormSchema>;
+function Heading({ title }: { title: string }) {
+  return (
+    <Text variant="subhead" className="mb-1 px-1 font-medium text-primary">
+      {title}
+    </Text>
+  );
+}
 
+/**
+ * Creates or edits a pack: name and description, the activity it's for as Material 3 filter
+ * chips, and visibility as a switch row. Saving is in the top app bar.
+ */
 export const PackForm = ({ pack }: { pack?: Pack }) => {
   const { t } = useTranslation();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { colors } = useColorScheme();
   const createPack = useCreatePack();
   const updatePack = useUpdatePack();
-  const isEditingExistingPack = !!pack;
-
-  // Categories with icons and labels
-  const CATEGORIES = [
-    { value: 'hiking', label: t('packs.categories.hiking') },
-    { value: 'backpacking', label: t('packs.categories.backpacking') },
-    { value: 'camping', label: t('packs.categories.camping') },
-    { value: 'climbing', label: t('packs.categories.climbing') },
-    { value: 'winter', label: t('packs.categories.winter') },
-    { value: 'desert', label: t('packs.categories.desert') },
-    { value: 'custom', label: t('packs.categories.custom') },
-    { value: 'water sports', label: t('packs.categories.waterSports') },
-    { value: 'skiing', label: t('packs.categories.skiing') },
-  ];
-
-  const [descriptionHeight, setDescriptionHeight] = useState(40);
-
-  const hasMounted = useRef(false);
-
-  useEffect(() => {
-    hasMounted.current = true;
-    return () => {
-      hasMounted.current = false;
-    };
-  }, []);
 
   const form = useForm({
     defaultValues: {
@@ -78,161 +66,133 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
       isPublic: pack?.isPublic || false,
       tags: pack?.tags || [],
     },
-    validators: {
-      onChange: packFormSchema,
-    },
+    validators: { onChange: packFormSchema },
     onSubmit: async ({ value }) => {
-      if (isEditingExistingPack) {
-        updatePack({ ...pack, ...value });
-      } else {
-        createPack({ ...value, category: value.category });
-      }
-
+      const values = { ...value, name: value.name.trim() };
+      if (pack) updatePack({ ...pack, ...values });
+      else createPack(values);
       router.back();
     },
   });
 
+  const chipColors = {
+    selectedContainerColor: colors.primary,
+    selectedLabelColor: '#FFFFFF',
+    labelColor: colors.foreground,
+  };
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1"
-    >
-      <ScrollView contentContainerClassName="p-8">
-        <Form>
-          <FormSection ios={{ title: t('packs.packDetails') }} footnote={t('packs.enterBasicInfo')}>
-            <form.Field name="name">
-              {(field) => (
-                <FormItem>
-                  <TextField
-                    testID={testIds.packs.nameInput}
-                    containerTestID={testIds.packs.nameInputContainer}
-                    placeholder={t('packs.packName')}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChangeText={field.handleChange}
-                    errorMessage={field.state.meta.errors.map((err) => err?.message).join(', ')}
-                    leftView={
-                      <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="folder" size={16} color={colors.grey3} />
-                      </View>
-                    }
-                  />
-                </FormItem>
+    <>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting, s.values.name] as const}>
+              {([canSubmit, isSubmitting, name]) => (
+                <Button
+                  variant="text"
+                  testID={testIds.packs.submitBtn}
+                  onPress={() => form.handleSubmit()}
+                  disabled={!canSubmit || isSubmitting || !name.trim()}
+                  label={t('common.save')}
+                />
               )}
-            </form.Field>
+            </form.Subscribe>
+          ),
+        }}
+      />
+      <KeyboardAwareScrollView
+        className="flex-1 bg-background"
+        bottomOffset={8}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 32, gap: 32 }}
+      >
+        <View className="gap-4">
+          <form.Field name="name">
+            {(field) => (
+              <TextField
+                testID={testIds.packs.nameInput}
+                containerTestID={testIds.packs.nameInputContainer}
+                placeholder={t('packs.form.name')}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChangeText={field.handleChange}
+                errorMessage={
+                  field.state.meta.isTouched ? field.state.meta.errors[0]?.message : undefined
+                }
+              />
+            )}
+          </form.Field>
+          <form.Field name="description">
+            {(field) => (
+              <TextField
+                testID={testIds.packs.descriptionInput}
+                containerTestID={testIds.packs.descriptionInputContainer}
+                placeholder={t('packs.description')}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChangeText={field.handleChange}
+                multiline
+                textAlignVertical="top"
+              />
+            )}
+          </form.Field>
+        </View>
 
-            <form.Field name="description">
-              {(field) => (
-                <FormItem>
-                  <TextField
-                    testID={testIds.packs.descriptionInput}
-                    containerTestID={testIds.packs.descriptionInputContainer}
-                    placeholder={t('packs.description')}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChangeText={field.handleChange}
-                    multiline
-                    onLayout={(e) => {
-                      const h = e.nativeEvent.layout.height;
-                      if (hasMounted.current && h !== descriptionHeight) {
-                        setDescriptionHeight(h);
-                      }
-                    }}
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                    leftView={
-                      <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="newspaper" size={16} color={colors.grey3} />
-                      </View>
-                    }
-                  />
-                </FormItem>
-              )}
-            </form.Field>
+        <View className="gap-3">
+          <Heading title={t('packs.form.activity')} />
+          <form.Field name="category">
+            {(field) => (
+              <Host matchContents={{ vertical: true, horizontal: false }} style={{ width: '100%' }}>
+                <FlowRow
+                  horizontalArrangement={{ spacedBy: 8 }}
+                  verticalArrangement={{ spacedBy: 8 }}
+                >
+                  {PACK_CATEGORIES.map((category) => (
+                    <FilterChip
+                      key={category.value}
+                      selected={field.state.value === category.value}
+                      onClick={() => field.handleChange(category.value)}
+                      colors={chipColors}
+                      modifiers={[testIDModifier(testIds.packs.categoryChip(category.value))]}
+                    >
+                      <FilterChip.Label>
+                        <JCText>{t(category.labelKey)}</JCText>
+                      </FilterChip.Label>
+                    </FilterChip>
+                  ))}
+                </FlowRow>
+              </Host>
+            )}
+          </form.Field>
+        </View>
 
-            <form.Field name="category">
-              {(field) => (
-                <FormItem iosSeparatorClassName="hidden">
-                  <DropdownMenu
-                    items={CATEGORIES.map((category) =>
-                      createDropdownItem({
-                        actionKey: category.value,
-                        title: category.label,
-                      }),
-                    )}
-                    onItemPress={(item) => {
-                      const cat = fromZod(PackCategorySchema)(item.actionKey);
-                      if (cat) field.handleChange(cat);
-                    }}
-                  >
-                    <Button className="my-2 w-full" variant="plain">
-                      <View className="w-full flex-row items-center justify-between capitalize">
-                        <Text className="text-zinc-800 dark:text-zinc-200">
-                          {field.state.value || t('packs.selectCategory')}
-                        </Text>
-                        <Icon name="chevron-down" size={16} color={colors.grey2} />
-                      </View>
-                    </Button>
-                  </DropdownMenu>
-                </FormItem>
-              )}
-            </form.Field>
-          </FormSection>
-
-          <FormSection
-            ios={{ title: t('packs.visibility') }}
-            footnote={t('packs.publicPacksVisible')}
-          >
-            <form.Field name="isPublic">
-              {(field) => (
-                <FormItem>
-                  <View className="flex-row items-center justify-between p-4">
-                    <View className="flex-row items-center">
-                      {field.state.value ? (
-                        <Icon name="eye" size={18} color={colors.foreground} />
-                      ) : (
-                        <Icon name="eye-off" size={18} color={colors.foreground} />
-                      )}
-                      <Text className="ml-2 font-medium text-foreground">
-                        {t('packs.makePackPublic')}
-                      </Text>
-                    </View>
-                    <Switch
-                      value={field.state.value}
-                      onValueChange={field.handleChange}
-                      trackColor={{
-                        false: 'hsl(var(--muted))',
-                        true: 'hsl(var(--primary))',
-                      }}
-                      ios_backgroundColor="hsl(var(--muted))"
-                    />
-                  </View>
-                </FormItem>
-              )}
-            </form.Field>
-          </FormSection>
-        </Form>
-
-        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-          {([canSubmit, isSubmitting]) => (
-            <Button
-              testID={testIds.packs.submitBtn}
-              onPress={() => form.handleSubmit()}
-              disabled={!canSubmit || isSubmitting}
-              className="mt-6 w-full"
-              label={
-                isSubmitting
-                  ? isEditingExistingPack
-                    ? t('packs.updating')
-                    : t('packs.creating')
-                  : isEditingExistingPack
-                    ? t('packs.updatePack')
-                    : t('packs.createPack')
-              }
-            />
-          )}
-        </form.Subscribe>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <View className="gap-3">
+          <Heading title={t('packs.visibility')} />
+          <form.Field name="isPublic">
+            {(field) => (
+              <Pressable
+                onPress={() => field.handleChange(!field.state.value)}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: field.state.value }}
+                android_ripple={{ color: colors.grey4 }}
+                className="min-h-16 flex-row items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card px-4 py-3"
+              >
+                <View className="flex-1">
+                  <Text variant="body">{t('packs.form.public')}</Text>
+                  <Text variant="subhead" className="text-muted-foreground">
+                    {t('packs.publicPacksVisible')}
+                  </Text>
+                </View>
+                <Toggle
+                  value={field.state.value}
+                  onValueChange={field.handleChange}
+                  testID={testIds.packs.publicToggle}
+                />
+              </Pressable>
+            )}
+          </form.Field>
+        </View>
+      </KeyboardAwareScrollView>
+    </>
   );
 };
