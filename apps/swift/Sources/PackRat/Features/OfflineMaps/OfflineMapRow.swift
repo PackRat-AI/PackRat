@@ -2,12 +2,14 @@
 import SwiftUI
 
 /// On a trip or trail page: offers to save the map around it, then shows the
-/// download and a "Saved for offline" badge once it is done.
+/// download and an "Available offline" status once it is done.
 struct OfflineMapRow: View {
     /// The area already saved for this trip or trail, if any.
     let area: OfflineArea?
     /// Prefixes the accessibility identifiers, e.g. `trip` or `trail_page`.
     let idPrefix: String
+    /// Sized to its content to sit beside other content on one line, instead of filling the width.
+    var compact = false
     @ViewBuilder let picker: () -> OfflineAreaPickerView
 
     @State private var store = OfflineMapStore.shared
@@ -21,10 +23,14 @@ struct OfflineMapRow: View {
                 Button {
                     showingPicker = true
                 } label: {
-                    Label("Save Map for Offline", systemImage: "arrow.down.circle")
-                        .frame(maxWidth: .infinity)
+                    Label("Save for Offline", systemImage: "arrow.down.circle")
+                        .font(compact ? .subheadline.weight(.semibold) : .body)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .frame(maxWidth: compact ? nil : .infinity)
                 }
                 .buttonStyle(.bordered)
+                .buttonBorderShape(compact ? .capsule : .automatic)
                 .accessibilityIdentifier("\(idPrefix)_save_offline_map")
             }
         }
@@ -39,12 +45,14 @@ struct OfflineMapRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Label("Saving map for offline", systemImage: "arrow.down.circle")
                     .font(.subheadline)
+                    .lineLimit(1)
                 ProgressView(value: progress.fraction)
                 Text("\(Int(progress.fraction * 100))% · \(progress.bytes.fileSizeText)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityIdentifier("\(idPrefix)_offline_map_progress")
         } else if store.failures[area.id] != nil {
             Button {
@@ -56,9 +64,9 @@ struct OfflineMapRow: View {
             .tint(.orange)
             .accessibilityIdentifier("\(idPrefix)_offline_map_retry")
         } else {
-            Label("Saved for offline", systemImage: "checkmark.circle.fill")
+            Label("Available offline", systemImage: "checkmark.circle")
                 .font(.subheadline)
-                .foregroundStyle(.green)
+                .foregroundStyle(.secondary)
                 .accessibilityIdentifier("\(idPrefix)_offline_map_saved")
         }
     }

@@ -1,30 +1,33 @@
-import { assertDefined, isString } from '@packrat/guards';
+import { isString } from '@packrat/guards';
 import { Button } from '@packrat/ui/src/button';
 import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
+import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
+import { Text } from '@packrat/ui/src/text';
 import { TextField } from '@packrat/ui/src/text-field';
 import * as Sentry from '@sentry/react-native';
 import { useForm } from '@tanstack/react-form';
 import * as Burnt from 'burnt';
-import { Icon } from 'expo-app/components/Icon';
 import { registerForPushIfNeeded } from 'expo-app/features/notifications/lib/pushRegistration';
-import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
+import { useDetailedPacks } from 'expo-app/features/packs/hooks/useDetailedPacks';
 import { TrailPicker } from 'expo-app/features/trail-conditions/components/TrailPicker';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
-import { DateTimePicker } from 'expo-app/lib/DateTimePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { Picker } from 'expo-app/lib/Picker';
 import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
+import { splitPlaceName } from '../lib/places';
 import { requestTripReminderPermission } from '../lib/tripReminderScheduler';
 import { tripLocationStore, useTripLocation } from '../store/tripLocationStore';
 import type { Trip } from '../types';
+import { TripDatesField } from './TripDatesField';
+import { TripFormHeading, TripFormRow } from './TripFormRow';
+import { TripPackPicker, usePackSummary } from './TripPackPicker';
 
 const tripFormSchema = z
   .object({
@@ -75,7 +78,11 @@ export const TripForm = ({
   const isEditingExistingTrip = !!trip;
 
   const { location, setLocation } = useTripLocation();
-  const packs = usePacks();
+  const detailedPacks = useDetailedPacks();
+  const packSummary = usePackSummary();
+  /** Pack ids before New pack opened, so the pack it creates gets linked on return. */
+  const packIdsBeforeNew = useRef<Set<string> | null>(null);
+  const [locationCleared, setLocationCleared] = useState(false);
 
   // Initialize location store with trip's location when component mounts or
   // trip ID changes. We intentionally depend only on trip?.id (not trip?.location)
@@ -100,8 +107,6 @@ export const TripForm = ({
   const [showTrailPicker, setShowTrailPicker] = useState(false);
 
   const [showPackModal, setShowPackModal] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
-  const [showStartPicker, setShowStartPicker] = useState(false);
 
   // Reset the shared location store on mount (to clear stale state from any
   // previous edit session) and on unmount (to clean up for future forms), so
@@ -201,6 +206,26 @@ export const TripForm = ({
     },
   });
 
+  const shownLocation = location ?? (locationCleared ? null : (trip?.location ?? null));
+  const pickedLocation = shownLocation
+    ? shownLocation.name
+      ? splitPlaceName(shownLocation.name)
+      : {
+          title: `${shownLocation.latitude.toFixed(4)}, ${shownLocation.longitude.toFixed(4)}`,
+          region: undefined,
+        }
+    : null;
+
+  // Back from New pack: link the pack it created.
+  useEffect(() => {
+    const before = packIdsBeforeNew.current;
+    if (!before) return;
+    const created = detailedPacks.find((p) => !before.has(p.id));
+    if (!created) return;
+    packIdsBeforeNew.current = null;
+    form.setFieldValue('packId', created.id);
+  }, [detailedPacks, form]);
+
   const contentContainerStyle = useMemo(
     () => ({ padding: 32, paddingBottom: insets.bottom + 32 }),
     [insets.bottom],
@@ -211,6 +236,23 @@ export const TripForm = ({
       <Stack.Screen
         options={{
           title: isEditingExistingTrip ? t('trips.editTrip') : t('trips.newTrip'),
+          headerRight: () => (
+            <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
+              {([canSubmit, isSubmitting]) =>
+                isSubmitting ? (
+                  <ActivityIndicator size="small" className="px-4" />
+                ) : (
+                  <Button
+                    variant="text"
+                    testID={testIds.trips.submitBtn}
+                    onPress={() => form.handleSubmit()}
+                    disabled={!canSubmit}
+                    label={t('common.save')}
+                  />
+                )
+              }
+            </form.Subscribe>
+          ),
         }}
       />
 
@@ -222,8 +264,7 @@ export const TripForm = ({
         contentContainerStyle={contentContainerStyle}
       >
         <Form>
-          <FormSection ios={{ title: t('trips.tripDetails') }}>
-            {/* Trip Name */}
+          <FormSection>
             <form.Field name="name">
               {(field) => (
                 <FormItem>
@@ -235,17 +276,10 @@ export const TripForm = ({
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
                     errorMessage={field.state.meta.errors[0]?.message}
-                    leftView={
-                      <View className="pl-2 justify-center">
-                        <Icon name="map" size={16} color={colors.grey3} />
-                      </View>
-                    }
                   />
                 </FormItem>
               )}
             </form.Field>
-
-            {/* Description */}
             <form.Field name="description">
               {(field) => (
                 <FormItem>
@@ -261,86 +295,39 @@ export const TripForm = ({
                 </FormItem>
               )}
             </form.Field>
+          </FormSection>
 
-            {/* Notes */}
-            <form.Field name="notes">
-              {(field) => (
-                <FormItem>
-                  <TextField
-                    placeholder={t('trips.notes')}
-                    value={field.state.value}
-                    onChangeText={field.handleChange}
-                    onBlur={field.handleBlur}
-                    multiline
-                  />
-                </FormItem>
-              )}
-            </form.Field>
-
-            {/* Location */}
-            <FormItem>
-              <View className="flex-row justify-between items-center">
-                <Pressable
-                  onPress={() => router.push('/trip/location-search')}
-                  className="flex-1 p-3 border border-border rounded-lg mr-2 bg-card"
-                >
-                  <Text
-                    className={
-                      location || trip?.location
-                        ? 'text-foreground'
-                        : 'text-muted-foreground font-medium'
-                    }
-                  >
-                    {location
-                      ? location.name
-                        ? location.name.split(',')[0]
-                        : `${location.latitude.toFixed(3)}, ${location.longitude.toFixed(3)}`
-                      : trip?.location
-                        ? trip.location.name?.split(',')[0]
-                        : t('trips.addLocation')}
-                  </Text>
-                </Pressable>
-                {(location || trip?.location) && (
-                  <Button
-                    variant="text"
-                    onPress={() => {
-                      setLocation(null);
-                      form.setFieldValue('location', undefined);
-                    }}
-                    label={t('common.clear')}
-                  />
-                )}
-              </View>
-            </FormItem>
-
-            {/* Trail */}
+          {/* Where */}
+          <View className="gap-3">
+            <TripFormHeading title={t('trips.form.where')} />
+            <TripFormRow
+              icon="map-marker"
+              iconColor={colors.destructive}
+              title={pickedLocation ? pickedLocation.title : t('trips.form.addLocation')}
+              supporting={pickedLocation?.region}
+              isSet={!!pickedLocation}
+              onPress={() => router.push('/trip/location-search')}
+              onClear={() => {
+                setLocation(null);
+                setLocationCleared(true);
+                form.setFieldValue('location', undefined);
+              }}
+              clearLabel={t('common.clear')}
+              testID={testIds.trips.locationButton}
+            />
             {enableTrailConditions ? (
-              <FormItem>
-                <View className="flex-row items-center justify-between">
-                  <Pressable
-                    onPress={() => setShowTrailPicker(true)}
-                    testID={testIds.trips.trailButton}
-                    accessibilityRole="button"
-                    className="mr-2 flex-1 flex-row items-center gap-2 rounded-lg border border-border bg-card p-3"
-                  >
-                    <Icon name="hiking" size={16} color={trail ? colors.primary : colors.grey3} />
-                    <Text
-                      className={trail ? 'text-foreground' : 'font-medium text-muted-foreground'}
-                      numberOfLines={1}
-                    >
-                      {trail?.name || t('trips.chooseTrail')}
-                    </Text>
-                  </Pressable>
-                  {trail ? (
-                    <Button
-                      variant="text"
-                      onPress={() => setTrail(null)}
-                      label={t('common.clear')}
-                    />
-                  ) : null}
-                </View>
-                <Text className="mt-1 text-xs text-muted-foreground">
-                  {trail ? t('trips.trailFooterChosen') : t('trips.trailFooter')}
+              <>
+                <TripFormRow
+                  icon="hiking"
+                  title={trail?.name || t('trips.form.addTrail')}
+                  isSet={!!trail}
+                  onPress={() => setShowTrailPicker(true)}
+                  onClear={() => setTrail(null)}
+                  clearLabel={t('common.clear')}
+                  testID={testIds.trips.trailButton}
+                />
+                <Text variant="footnote" className="px-4 text-muted-foreground">
+                  {trail ? t('trips.trailFooterChosen') : t('trips.form.trailFooter')}
                 </Text>
                 <TrailPicker
                   visible={showTrailPicker}
@@ -353,166 +340,84 @@ export const TripForm = ({
                   }}
                   onClose={() => setShowTrailPicker(false)}
                 />
-              </FormItem>
+              </>
             ) : null}
+          </View>
 
-            {/* Pack Picker */}
-            <form.Field name="packId">
-              {(field) => (
-                <FormItem>
-                  <Pressable
+          {/* When */}
+          <View className="gap-3">
+            <TripFormHeading title={t('trips.form.when')} />
+            <form.Subscribe selector={(s) => [s.values.startDate, s.values.endDate] as const}>
+              {([startDate, endDate]) => (
+                <form.Field name="endDate">
+                  {(endField) => (
+                    <TripDatesField
+                      startDate={startDate}
+                      endDate={endDate}
+                      error={endField.state.meta.errors[0]?.message}
+                      onChange={(dates) => {
+                        form.setFieldValue('startDate', dates.startDate);
+                        form.setFieldValue('endDate', dates.endDate);
+                      }}
+                    />
+                  )}
+                </form.Field>
+              )}
+            </form.Subscribe>
+          </View>
+
+          {/* Pack */}
+          <form.Field name="packId">
+            {(field) => {
+              const pack = detailedPacks.find((p) => p.id === field.state.value);
+              return (
+                <View className="gap-3">
+                  <TripFormHeading title={t('trips.form.pack')} />
+                  <TripFormRow
+                    icon="bag-personal"
+                    title={pack ? pack.name : t('trips.form.addPack')}
+                    supporting={pack ? packSummary(pack) : undefined}
+                    isSet={!!pack}
                     onPress={() => setShowPackModal(true)}
-                    className="border border-border rounded-lg p-3 bg-card flex-row items-center justify-between"
-                  >
-                    <View className="flex-row items-center">
-                      <Icon name="archive" size={16} color={colors.grey3} />
-                      <Text className="ml-2 text-foreground">
-                        {field.state.value
-                          ? packs.find((p) => p.id === field.state.value)?.name
-                          : t('trips.selectPack')}
-                      </Text>
-                    </View>
-                    <Icon name="chevron-right" size={16} color={colors.grey3} />
-                  </Pressable>
+                    onClear={() => field.handleChange(null)}
+                    clearLabel={t('common.clear')}
+                    testID={testIds.trips.packButton}
+                  />
+                  <TripPackPicker
+                    visible={showPackModal}
+                    packs={detailedPacks}
+                    selectedId={field.state.value ?? null}
+                    onSelect={(id) => field.handleChange(id)}
+                    onNewPack={() => {
+                      packIdsBeforeNew.current = new Set(detailedPacks.map((p) => p.id));
+                      setShowPackModal(false);
+                      router.push('/pack/new');
+                    }}
+                    onClose={() => setShowPackModal(false)}
+                  />
+                </View>
+              );
+            }}
+          </form.Field>
 
-                  <Modal visible={showPackModal} animationType="slide" transparent>
-                    <SafeAreaView className="flex-1 justify-end bg-black/40">
-                      <View className="bg-background rounded-t-2xl p-4">
-                        <View className="flex-row justify-between items-center mb-2">
-                          <Text className="text-lg font-semibold">{t('trips.selectPack')}</Text>
-                          <Button
-                            variant="text"
-                            onPress={() => setShowPackModal(false)}
-                            label={t('common.close')}
-                          />
-                        </View>
-
-                        <Picker
-                          selectedValue={field.state.value || ''}
-                          onValueChange={(value) => field.handleChange(value)}
-                        >
-                          <Picker.Item label={t('trips.noPackSelected')} value="" />
-                          {packs.map((pack) => (
-                            <Picker.Item key={pack.id} label={pack.name} value={pack.id} />
-                          ))}
-                        </Picker>
-                      </View>
-                    </SafeAreaView>
-                  </Modal>
-                </FormItem>
+          {/* Notes */}
+          <View className="gap-3">
+            <TripFormHeading title={t('trips.form.notes')} />
+            <form.Field name="notes">
+              {(field) => (
+                <TextField
+                  placeholder={t('trips.notes')}
+                  value={field.state.value}
+                  onChangeText={field.handleChange}
+                  onBlur={field.handleBlur}
+                  multiline
+                />
               )}
             </form.Field>
-
-            {/* Start Date */}
-            <form.Field name="startDate">
-              {(field) => {
-                return (
-                  <FormItem>
-                    <Pressable
-                      testID={testIds.trips.startDateBtn}
-                      onPress={() => setShowStartPicker(true)}
-                      className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
-                        field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
-                      }`}
-                    >
-                      <Text className="text-foreground font-medium">{t('trips.startDate')}</Text>
-                      <Text className="text-muted-foreground">
-                        {field.state.value || t('trips.selectDate')}
-                      </Text>
-                    </Pressable>
-                    {field.state.meta.errors[0]?.message && (
-                      <Text className="text-destructive text-sm mt-1">
-                        {field.state.meta.errors[0].message}
-                      </Text>
-                    )}
-
-                    {showStartPicker && (
-                      <DateTimePicker
-                        testID={testIds.trips.startDateInput}
-                        value={field.state.value ? new Date(field.state.value) : new Date()}
-                        mode="date"
-                        display="default"
-                        onChange={(_event, date) => {
-                          setShowStartPicker(false);
-                          if (date) {
-                            const dateStr = date.toISOString().split('T')[0];
-                            assertDefined(dateStr);
-                            field.handleChange(dateStr);
-                          }
-                        }}
-                      />
-                    )}
-                  </FormItem>
-                );
-              }}
-            </form.Field>
-
-            {/* End Date */}
-            <form.Field name="endDate">
-              {(field) => {
-                return (
-                  <FormItem>
-                    <Pressable
-                      testID={testIds.trips.endDateBtn}
-                      onPress={() => setShowEndPicker(true)}
-                      className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
-                        field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
-                      }`}
-                    >
-                      <Text className="text-foreground font-medium">{t('trips.endDate')}</Text>
-                      <Text className="text-muted-foreground">
-                        {field.state.value || t('trips.selectDate')}
-                      </Text>
-                    </Pressable>
-                    {field.state.meta.errors[0]?.message && (
-                      <Text className="text-destructive text-sm mt-1">
-                        {field.state.meta.errors[0].message}
-                      </Text>
-                    )}
-
-                    {showEndPicker && (
-                      <DateTimePicker
-                        testID={testIds.trips.endDateInput}
-                        value={field.state.value ? new Date(field.state.value) : new Date()}
-                        mode="date"
-                        display="default"
-                        onChange={(_event, date) => {
-                          setShowEndPicker(false);
-                          if (date) {
-                            const dateStr = date.toISOString().split('T')[0];
-                            assertDefined(dateStr);
-                            field.handleChange(dateStr);
-                          }
-                        }}
-                      />
-                    )}
-                  </FormItem>
-                );
-              }}
-            </form.Field>
-          </FormSection>
+          </View>
         </Form>
 
         {/* Submit Button */}
-        <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
-          {([canSubmit, isSubmitting]) => (
-            <Button
-              testID={testIds.trips.submitBtn}
-              onPress={() => form.handleSubmit()}
-              disabled={!canSubmit || isSubmitting}
-              className="mt-6 w-full"
-              label={
-                isSubmitting
-                  ? isEditingExistingTrip
-                    ? t('trips.updating')
-                    : t('trips.creating')
-                  : isEditingExistingTrip
-                    ? t('trips.updateTrip')
-                    : t('trips.createTrip')
-              }
-            />
-          )}
-        </form.Subscribe>
       </KeyboardAwareScrollView>
     </>
   );

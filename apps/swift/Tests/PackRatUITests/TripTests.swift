@@ -68,8 +68,8 @@ final class TripTests: AppUITestCase {
         nameField.tap()
         nameField.typeText(tripName)
 
-        // Toggle "Set trip dates"
-        let dateToggle = app.switches["Set trip dates"]
+        // Toggle Dates
+        let dateToggle = app.switches["trip_dates_toggle"]
         if dateToggle.waitForExistence(timeout: 3) { dateToggle.tap() }
 
         app.buttons["Create"].tap()

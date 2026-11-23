@@ -393,6 +393,11 @@
       "custom": "Custom",
       "waterSports": "Water Sports",
       "skiing": "Skiing"
+    },
+    "form": {
+      "name": "Pack name",
+      "activity": "Activity",
+      "public": "Public"
     }
   },
   "items": {
@@ -405,7 +410,30 @@
     "removeFromInventory": "Remove from Inventory",
     "consumable": "Consumable",
     "worn": "Worn",
-    "quantity": "Qty: {{quantity}}"
+    "quantity": "Qty: {{quantity}}",
+    "form": {
+      "name": "Name",
+      "category": "Category, like Shelter or Cooking",
+      "description": "Description",
+      "weightHeading": "Weight and quantity",
+      "weight": "Weight",
+      "quantity": "Quantity",
+      "decrease": "Decrease quantity",
+      "increase": "Increase quantity",
+      "tripHeading": "On the trip",
+      "consumable": "Consumable",
+      "worn": "Worn",
+      "photoHeading": "Photo",
+      "takePhoto": "Take photo",
+      "choosePhoto": "Choose photo",
+      "removePhoto": "Remove photo",
+      "notesHeading": "Notes",
+      "notes": "Anything else about this item",
+      "errorTitle": "Something went wrong",
+      "saveFailed": "The item couldn't be saved. Try again.",
+      "photoSaveFailed": "The photo couldn't be saved. Try again.",
+      "photoFailed": "The photo couldn't be added. Try again."
+    }
   },
   "tripStats": {
     "title": "Trip Stats",
@@ -1038,6 +1066,44 @@
       "alertsToggle": "Weather Alerts",
       "alertsToggleDesc": "Get notified about weather hazards at your destination from 3 days before you leave until your trip ends.",
       "alertLabel": "Weather alert"
+    },
+    "map": {
+      "expand": "Expand map",
+      "directions": "Directions",
+      "showMap": "Show map",
+      "showSatellite": "Show satellite",
+      "myLocation": "Show my location",
+      "recentre": "Back to trip location",
+      "locationOffTitle": "Location is off",
+      "locationOffMessage": "Turn on location access for PackRat in Settings to see where you are on the map."
+    },
+    "locationPicker": {
+      "moveMap": "Move the map to choose a place",
+      "finding": "Finding this place…",
+      "droppedPin": "Dropped pin",
+      "useThisLocation": "Use this location",
+      "noResults": "No places match that search.",
+      "searchFailed": "Couldn't search. Check your connection and try again."
+    },
+    "form": {
+      "where": "Where",
+      "when": "When",
+      "pack": "Pack",
+      "notes": "Notes",
+      "addLocation": "Add location",
+      "addTrail": "Add trail",
+      "addDates": "Add dates",
+      "addPack": "Add pack",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "items_one": "{{count}} item",
+      "items_other": "{{count}} items",
+      "choosePack": "Choose a pack",
+      "searchPacks": "Search packs",
+      "newPack": "New pack",
+      "noPack": "None",
+      "noPacksMatch": "No packs match that search.",
+      "trailFooter": "Add a trail to see conditions reported on it. Without one, the trip shows conditions from trails nearby."
     }
   },
   "catalog": {
@@ -2385,9 +2451,9 @@
     "failedTooLarge": "Too large to save alongside your other maps. Delete it, then delete another map or save a smaller area.",
     "failedDiskFull": "Your phone is out of space. Free some up and try again.",
     "failedOther": "The map couldn't be saved. Check your connection and try again.",
-    "saveForOffline": "Save map for offline",
+    "saveForOffline": "Save for offline",
     "savingForOffline": "Saving map for offline",
-    "savedForOffline": "Saved for offline",
+    "savedForOffline": "Available offline",
     "retrySave": "Map didn't finish saving. Try again.",
     "showMyLocation": "Show my location",
     "showWholeArea": "Show whole area",

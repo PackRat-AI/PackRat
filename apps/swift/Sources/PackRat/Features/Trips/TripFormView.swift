@@ -30,6 +30,7 @@ struct TripFormView: View {
     @State private var trail: (id: String, name: String)?
     @State private var showingTrailPicker = false
     @State private var trailLocation = TrailReportLocationProvider()
+    @State private var didPrefill = false
     @FocusState private var isInputFocused: Bool
 
     private var isEditing: Bool { existingTrip != nil }
@@ -54,90 +55,26 @@ struct TripFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Details") {
-                    TextField("Name", text: $name)
+                Section {
+                    TextField("Trip name", text: $name)
+                        .font(.title3.weight(.semibold))
                         .focused($isInputFocused)
                         .submitLabel(.done)
                         .onSubmit { isInputFocused = false }
                         .accessibilityIdentifier("trip_name")
                     TextField("Description", text: $description, axis: .vertical)
-                        .lineLimit(3, reservesSpace: true)
+                        .lineLimit(1...4)
                         .focused($isInputFocused)
                         .accessibilityIdentifier("trip_description")
                 }
 
-                Section("Location") {
-                    Button {
-                        showingLocationSearch = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "mappin.circle.fill")
-                                .foregroundStyle(locationName.isEmpty ? Color.secondary : Color.red)
-                            Text(locationName.isEmpty ? "Search for a location…" : locationName)
-                                .foregroundStyle(locationName.isEmpty ? Color.secondary : Color.primary)
-                            Spacer()
-                            Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("trip_location_search_button")
-                    if !locationName.isEmpty {
-                        Button("Clear Location", systemImage: "xmark.circle") {
-                            locationName = ""; locationLat = 0; locationLon = 0
-                        }
-                        .foregroundStyle(.red)
-                    }
-                    if locationLat != 0 || locationLon != 0 {
-                        Label(String(format: "%.4f, %.4f", locationLat, locationLon),
-                              systemImage: "location.fill")
-                            .font(.caption2.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                if NavItem.trailConditions.isFeatureEnabled {
-                    trailSection
-                }
-
-                Section("Dates") {
-                    Toggle("Set trip dates", isOn: $hasDates.animation())
-                    if hasDates {
-                        DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
-                        DatePicker("End Date", selection: $endDate, in: startDate..., displayedComponents: .date)
-                    }
-                }
-
-                Section("Pack") {
-                    Picker("Pack", selection: $selectedPackId) {
-                        Text("None").tag(String?.none)
-                        ForEach(availablePacks) { pack in
-                            Label(pack.name, systemImage: "backpack")
-                                .tag(Optional(pack.id))
-                        }
-                    }
-                    if availablePacks.isEmpty {
-                        Text("Create a pack first if you want to connect gear to this trip.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                    if let packId = selectedPackId,
-                       let pack = availablePacks.first(where: { $0.id == packId }) {
-                        HStack {
-                            Label("\(pack.itemCount) items", systemImage: "archivebox")
-                                .font(.caption).foregroundStyle(.secondary)
-                            Spacer()
-                            if let total = pack.totalWeight {
-                                Text(pack.formattedWeight(total, in: weightUnit))
-                                    .font(.caption.monospacedDigit())
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
+                whereSection
+                whenSection
+                packSection
 
                 Section("Notes") {
-                    TextField("Notes", text: $notes, axis: .vertical)
-                        .lineLimit(4, reservesSpace: true)
+                    TextField("Add notes", text: $notes, axis: .vertical)
+                        .lineLimit(3...8)
                         .focused($isInputFocused)
                         .accessibilityIdentifier("trip_notes")
                 }
@@ -162,7 +99,12 @@ struct TripFormView: View {
                         .disabled(!isValid || isLoading)
                 }
             }
-            .onAppear { prefill() }
+            .onAppear {
+                // onAppear fires again when a pushed picker pops; fill only once so choices stick.
+                guard !didPrefill else { return }
+                didPrefill = true
+                prefill()
+            }
             .navigationDestination(isPresented: $showingTrailPicker) {
                 ReportTrailPickerView(
                     selectedTrailId: trail?.id,
@@ -177,7 +119,7 @@ struct TripFormView: View {
                 }
             }
             .sheet(isPresented: $showingLocationSearch) {
-                LocationSearchView { result in
+                LocationSearchView(initial: pickedLocation) { result in
                     locationName = result.name
                     locationLat = result.latitude
                     locationLon = result.longitude
@@ -187,40 +129,151 @@ struct TripFormView: View {
         .formSheetSize(minWidth: 560, minHeight: 620)
     }
 
+    /// The place already chosen, so the location picker opens on it.
+    private var pickedLocation: LocationSearchResult? {
+        guard locationLat != 0 || locationLon != 0 else { return nil }
+        let parts = locationName.split(separator: ",", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+        return LocationSearchResult(
+            name: parts.first ?? locationName, subtitle: parts.count > 1 ? parts[1] : "",
+            latitude: locationLat, longitude: locationLon
+        )
+    }
+
     /// The destination, once one is chosen, so the picker lists trails there.
     private var destination: CLLocationCoordinate2D? {
         guard locationLat != 0 || locationLon != 0 else { return nil }
         return CLLocationCoordinate2D(latitude: locationLat, longitude: locationLon)
     }
 
-    private var trailSection: some View {
+    private var whereSection: some View {
         Section {
-            Button {
-                showingTrailPicker = true
-            } label: {
-                HStack {
-                    Image(systemName: "figure.hiking")
-                        .foregroundStyle(trail == nil ? Color.secondary : Color.accentColor)
-                    Text(trail?.name ?? "Choose a trail…")
-                        .foregroundStyle(trail == nil ? Color.secondary : Color.primary)
-                    Spacer()
-                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                Button {
+                    showingLocationSearch = true
+                } label: {
+                    pickerRow(
+                        symbol: "mappin.circle.fill",
+                        tint: .red,
+                        title: locationName.isEmpty ? "Add location" : locationName,
+                        isSet: !locationName.isEmpty
+                    )
                 }
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("trip_location_search_button")
+                if !locationName.isEmpty {
+                    clearButton("Clear Location") { locationName = ""; locationLat = 0; locationLon = 0 }
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("trip_trail_button")
-            if trail != nil {
-                Button("Remove Trail", systemImage: "xmark.circle") { trail = nil }
-                    .foregroundStyle(.red)
+
+            if NavItem.trailConditions.isFeatureEnabled {
+                HStack(spacing: 12) {
+                    Button {
+                        showingTrailPicker = true
+                    } label: {
+                        pickerRow(
+                            symbol: "figure.hiking",
+                            tint: .green,
+                            title: trail?.name ?? "Add trail",
+                            isSet: trail != nil
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("trip_trail_button")
+                    if trail != nil {
+                        clearButton("Remove Trail") { trail = nil }
+                    }
+                }
             }
         } header: {
-            Text("Trail")
+            Text("Where")
         } footer: {
-            Text(trail == nil
-                 ? "Optional. Without a trail, the trip shows conditions from trails near its destination."
-                 : "The trip shows conditions reported on this trail.")
+            if NavItem.trailConditions.isFeatureEnabled {
+                Text(trail == nil
+                     ? "Add a trail to see conditions reported on it. Without one, the trip shows conditions from trails nearby."
+                     : "The trip shows conditions reported on this trail.")
+            }
         }
+    }
+
+    private var whenSection: some View {
+        Section("When") {
+            Toggle("Dates", isOn: $hasDates.animation())
+                .accessibilityIdentifier("trip_dates_toggle")
+            if hasDates {
+                DatePicker("Starts", selection: $startDate, displayedComponents: .date)
+                    .accessibilityIdentifier("trip_start_date")
+                DatePicker("Ends", selection: $endDate, in: startDate..., displayedComponents: .date)
+                    .accessibilityIdentifier("trip_end_date")
+            }
+        }
+        .onChange(of: startDate) { old, new in
+            // Moving the start keeps the trip's length, like Calendar does.
+            let length = endDate.timeIntervalSince(old)
+            endDate = new.addingTimeInterval(max(length, 0))
+        }
+    }
+
+    private var packSection: some View {
+        Section("Pack") {
+            NavigationLink {
+                TripPackChooserView(selectedPackId: $selectedPackId, packsViewModel: packsViewModel ?? appState.packsVM)
+            } label: {
+                if let pack = selectedPack {
+                    HStack(spacing: 12) {
+                        Image(systemName: pack.category?.symbol ?? "backpack")
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(pack.name).foregroundStyle(.primary).lineLimit(1)
+                            Text(packDetail(pack))
+                                .font(.subheadline.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } else {
+                    pickerRow(symbol: "backpack", tint: .accentColor, title: "Add pack", isSet: false)
+                }
+            }
+            .accessibilityIdentifier("trip_pack_button")
+        }
+    }
+
+    private var selectedPack: Pack? {
+        guard let selectedPackId else { return nil }
+        return availablePacks.first { $0.id == selectedPackId }
+    }
+
+    private func packDetail(_ pack: Pack) -> String {
+        let items = pack.itemCount == 1 ? "1 item" : "\(pack.itemCount) items"
+        guard let total = pack.totalWeight, total > 0 else { return items }
+        return "\(items) · \(pack.formattedWeight(total, in: weightUnit))"
+    }
+
+    /// A full-width tappable row for a Where field: icon, value or prompt.
+    private func pickerRow(symbol: String, tint: Color, title: String, isSet: Bool) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol)
+                .foregroundStyle(isSet ? tint : Color.secondary)
+                .frame(width: 28)
+            Text(title)
+                .foregroundStyle(isSet ? Color.primary : Color.accentColor)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // Plain buttons only hit-test their glyphs; make the whole row tappable.
+        .contentShape(Rectangle())
+    }
+
+    private func clearButton(_ label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "xmark.circle.fill")
+                .font(.title3)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 
     private func prefill() {

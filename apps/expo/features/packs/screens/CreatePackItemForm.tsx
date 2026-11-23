@@ -1,11 +1,11 @@
 import type { WeightUnit } from '@packrat/constants';
 import { safeIndexOf } from '@packrat/guards';
-import { useActionSheet } from '@packrat/ui/src/action-sheet';
 import { showAlert } from '@packrat/ui/src/alert-host';
 import { Button } from '@packrat/ui/src/button';
-import { Form, FormItem, FormSection } from '@packrat/ui/src/form';
 import { SegmentedControl } from '@packrat/ui/src/segmented-control';
+import { Text } from '@packrat/ui/src/text';
 import { TextField } from '@packrat/ui/src/text-field';
+import { Toggle } from '@packrat/ui/src/toggle';
 import * as Sentry from '@sentry/react-native';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
@@ -15,9 +15,10 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { handlePermissionDenied } from 'expo-app/lib/permissions/permissionDeniedAlert';
 import { testIds } from 'expo-app/lib/testIds';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
+import type { ReactNode } from 'react';
+import { useRef, useState } from 'react';
+import { Image, Pressable, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
@@ -25,13 +26,12 @@ import { useCreatePackItem, useUpdatePackItem } from '../hooks';
 import { useImagePicker } from '../hooks/useImagePicker';
 import type { PackItem } from '../types';
 
-// Define Zod schema
 const itemFormSchema = z.object({
-  name: z.string().min(1, 'Item name is required'),
+  name: z.string().trim().min(1, 'Give your item a name.'),
   description: z.string(),
-  weight: z.number().min(0, 'Weight cannot be negative'),
+  weight: z.number().min(0, "Weight can't be negative."),
   weightUnit: z.enum(['g', 'oz', 'kg', 'lb']),
-  quantity: z.number().int().min(1, 'Quantity must be at least 1'),
+  quantity: z.number().int().min(1, 'Bring at least one.'),
   category: z.string(),
   consumable: z.boolean(),
   worn: z.boolean(),
@@ -39,9 +39,58 @@ const itemFormSchema = z.object({
   image: z.string().nullable(),
 });
 
-// Weight units
 const WEIGHT_UNITS: WeightUnit[] = ['g', 'oz', 'kg', 'lb'];
 
+/** A small, quiet section label: it names the group without competing with the fields. */
+function Heading({ title }: { title: string }) {
+  const { colors } = useColorScheme();
+  return (
+    <Text variant="footnote" textColor={colors.grey3} className="px-1 font-medium">
+      {title}
+    </Text>
+  );
+}
+
+/** A tappable row with a title and a switch, like Material 3 list items. */
+function SwitchRow({
+  title,
+  value,
+  onValueChange,
+  testID,
+}: {
+  title: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+  testID: string;
+}) {
+  const { colors } = useColorScheme();
+  return (
+    <Pressable
+      onPress={() => onValueChange(!value)}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      android_ripple={{ color: colors.grey4 }}
+      className="min-h-14 flex-row items-center gap-4 px-4 py-2"
+    >
+      <Text variant="body" className="flex-1">
+        {title}
+      </Text>
+      <Toggle value={value} onValueChange={onValueChange} testID={testID} />
+    </Pressable>
+  );
+}
+
+/** Rows grouped in one outlined card, separated by dividers. */
+function Group({ children }: { children: ReactNode }) {
+  return (
+    <View className="overflow-hidden rounded-2xl border border-border bg-card">{children}</View>
+  );
+}
+
+/**
+ * Adds or edits a pack item: name, category and description; weight with its unit and a quantity
+ * stepper; consumable and worn as switch rows; a photo; notes. Saving is in the top app bar.
+ */
 export const CreatePackItemForm = ({
   packId,
   existingItem,
@@ -51,8 +100,6 @@ export const CreatePackItemForm = ({
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { colors } = useColorScheme();
-  const { showActionSheetWithOptions } = useActionSheet();
   const { unit: preferredWeightUnit } = useWeightUnit();
   const createPackItem = useCreatePackItem();
   const updatePackItem = useUpdatePackItem();
@@ -72,19 +119,9 @@ export const CreatePackItemForm = ({
 
   // Track if the image has been changed
   const [imageChanged, setImageChanged] = useState(false);
-  const [descriptionHeight, setDescriptionHeight] = useState(40);
   const [weightText, setWeightText] = useState(
     existingItem?.weight != null ? String(existingItem.weight) : '0',
   );
-
-  const hasMounted = useRef(false);
-
-  useEffect(() => {
-    hasMounted.current = true;
-    return () => {
-      hasMounted.current = false;
-    };
-  }, []);
 
   const form = useForm({
     defaultValues: existingItem
@@ -117,8 +154,7 @@ export const CreatePackItemForm = ({
     },
     onSubmit: async ({ value }) => {
       try {
-        // Validate the form data before processing
-        const validatedData = itemFormSchema.parse(value);
+        const validatedData = itemFormSchema.parse({ ...value, name: value.name.trim() });
 
         let imageUrl = validatedData.image;
         const oldImageUrl = initialImageUrl.current;
@@ -127,7 +163,10 @@ export const CreatePackItemForm = ({
         if (selectedImage) {
           imageUrl = await permanentlyPersistImageLocally();
           if (!imageUrl) {
-            showAlert({ title: 'Error', message: 'Failed to save item image. Please try again.' });
+            showAlert({
+              title: t('items.form.errorTitle'),
+              message: t('items.form.photoSaveFailed'),
+            });
             return;
           }
           validatedData.image = imageUrl;
@@ -147,57 +186,28 @@ export const CreatePackItemForm = ({
           deleteImage(oldImageUrl); // delete old image from local storage
         }
       } catch (err) {
-        console.error('Error submitting form:', err);
         Sentry.captureException(err, {
           tags: { feature: 'packs', action: 'createPackItem' },
           extra: { packId, isEditing },
         });
-        showAlert({ title: 'Error', message: 'Failed to save item. Please try again.' });
+        showAlert({ title: t('items.form.errorTitle'), message: t('items.form.saveFailed') });
       }
     },
   });
 
-  const handleAddImage = async () => {
-    const options = ['Take Photo', 'Choose from Library', 'Cancel'];
-    const cancelButtonIndex = 2;
-
-    showActionSheetWithOptions(
-      {
-        options,
-        cancelButtonIndex,
-        containerStyle: {
-          backgroundColor: colors.card,
-          paddingBottom: insets.bottom,
-        },
-        textStyle: {
-          color: colors.foreground,
-        },
-      },
-      async (selectedIndex) => {
-        try {
-          switch (selectedIndex) {
-            case 0: // Take Photo
-              await takePhoto();
-              setImageChanged(true);
-              break;
-            case 1: // Choose from Library
-              await pickImage();
-              setImageChanged(true);
-              break;
-            case cancelButtonIndex:
-              // Canceled
-              return;
-          }
-        } catch (err) {
-          if (handlePermissionDenied(err)) return;
-          console.error('Error handling image:', err);
-          Sentry.captureException(err, {
-            tags: { feature: 'packs', action: 'handleAddImage' },
-          });
-          showAlert({ title: 'Error', message: 'Failed to process image. Please try again.' });
-        }
-      },
-    );
+  const addPhoto = async (source: 'camera' | 'library') => {
+    try {
+      if (source === 'camera') await takePhoto();
+      else await pickImage();
+      setImageChanged(true);
+    } catch (err) {
+      if (handlePermissionDenied(err)) return;
+      Sentry.captureException(err, {
+        tags: { feature: 'packs', action: 'addItemPhoto' },
+        extra: { source },
+      });
+      showAlert({ title: t('items.form.errorTitle'), message: t('items.form.photoFailed') });
+    }
   };
 
   const handleRemoveImage = () => {
@@ -221,288 +231,226 @@ export const CreatePackItemForm = ({
       ? { uri: ImageCacheManager.cacheDirectory + imageFieldValue }
       : null;
 
-  const contentContainerStyle = useMemo(
-    () => ({ padding: 32, paddingBottom: insets.bottom + 32 }),
-    [insets.bottom],
-  );
-
   return (
-    <KeyboardAwareScrollView
-      bottomOffset={8}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="interactive"
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={contentContainerStyle}
-    >
-      <Form>
-        <FormSection
-          ios={{ title: t('items.itemDetails') }}
-          footnote="Enter the basic information about your item"
-        >
+    <>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting, s.values.name] as const}>
+              {([canSubmit, isSubmitting, name]) => (
+                <Button
+                  variant="text"
+                  testID={testIds.items.submitBtn}
+                  onPress={() => form.handleSubmit()}
+                  disabled={!canSubmit || isSubmitting || !name.trim()}
+                  label={t('common.save')}
+                />
+              )}
+            </form.Subscribe>
+          ),
+        }}
+      />
+      <KeyboardAwareScrollView
+        className="flex-1 bg-background"
+        bottomOffset={8}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 32, gap: 32 }}
+      >
+        <View className="gap-4">
           <form.Field name="name">
             {(field) => (
-              <FormItem>
-                <TextField
-                  testID={testIds.items.nameInput}
-                  containerTestID={testIds.items.nameInputContainer}
-                  placeholder={t('packs.itemName')}
-                  autoFocus
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChangeText={field.handleChange}
-                  errorMessage={field.state.meta.errors[0]?.message}
-                  leftView={
-                    <View className="ios:pl-2 justify-center pl-2">
-                      <Icon name="backpack" size={16} color={colors.grey3} />
-                    </View>
-                  }
-                />
-              </FormItem>
+              <TextField
+                testID={testIds.items.nameInput}
+                containerTestID={testIds.items.nameInputContainer}
+                placeholder={t('items.form.name')}
+                autoFocus={!isEditing}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChangeText={field.handleChange}
+                errorMessage={
+                  field.state.meta.isTouched ? field.state.meta.errors[0]?.message : undefined
+                }
+              />
             )}
           </form.Field>
-
-          <form.Field name="description">
-            {(field) => (
-              <FormItem>
-                <TextField
-                  testID={testIds.items.descriptionInput}
-                  containerTestID={testIds.items.descriptionInputContainer}
-                  placeholder={t('packs.description')}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChangeText={field.handleChange}
-                  multiline
-                  onLayout={(e) => {
-                    const h = e.nativeEvent.layout.height;
-                    if (hasMounted.current && h !== descriptionHeight) {
-                      setDescriptionHeight(h);
-                    }
-                  }}
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                  leftView={
-                    <View className="ios:pl-2 justify-center pl-2">
-                      <Icon name="information" size={16} color={colors.grey3} />
-                    </View>
-                  }
-                />
-              </FormItem>
-            )}
-          </form.Field>
-
           <form.Field name="category">
             {(field) => (
-              <FormItem>
-                <TextField
-                  placeholder={t('packs.categoryExample')}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChangeText={field.handleChange}
-                  leftView={
-                    <View className="ios:pl-2 justify-center pl-2">
-                      <Icon name="tag" size={16} color={colors.grey3} />
-                    </View>
-                  }
-                />
-              </FormItem>
+              <TextField
+                testID={testIds.items.categoryInput}
+                placeholder={t('items.form.category')}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChangeText={field.handleChange}
+              />
             )}
           </form.Field>
-        </FormSection>
+          <form.Field name="description">
+            {(field) => (
+              <TextField
+                testID={testIds.items.descriptionInput}
+                containerTestID={testIds.items.descriptionInputContainer}
+                placeholder={t('items.form.description')}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChangeText={field.handleChange}
+                multiline
+                textAlignVertical="top"
+              />
+            )}
+          </form.Field>
+        </View>
 
-        <FormSection
-          ios={{ title: t('packs.weightAndQuantity') }}
-          footnote="Specify the weight details"
-        >
+        <View className="gap-3">
+          <Heading title={t('items.form.weightHeading')} />
           <form.Field name="weight">
             {(field) => (
-              <FormItem>
-                <TextField
-                  testID={testIds.items.weightInput}
-                  containerTestID={testIds.items.weightInputContainer}
-                  placeholder={t('packs.weight')}
-                  value={weightText}
-                  onBlur={field.handleBlur}
-                  onChangeText={(text) => {
-                    setWeightText(text);
-                    const parsed = parseFloat(text);
-                    field.handleChange(Number.isFinite(parsed) ? parsed : 0);
-                  }}
-                  keyboardType="decimal-pad"
-                  errorMessage={field.state.meta.errors[0]?.message}
-                  leftView={
-                    <View className="ios:pl-2 justify-center pl-2">
-                      <Icon name="dumbbell" size={16} color={colors.grey3} />
-                    </View>
-                  }
-                />
-              </FormItem>
+              <TextField
+                testID={testIds.items.weightInput}
+                containerTestID={testIds.items.weightInputContainer}
+                placeholder={t('items.form.weight')}
+                value={weightText}
+                onBlur={field.handleBlur}
+                onChangeText={(text) => {
+                  setWeightText(text);
+                  const parsed = parseFloat(text);
+                  field.handleChange(Number.isFinite(parsed) ? parsed : 0);
+                }}
+                keyboardType="decimal-pad"
+                errorMessage={field.state.meta.errors[0]?.message}
+              />
             )}
           </form.Field>
-
           <form.Field name="weightUnit">
             {(field) => (
-              <FormItem>
-                <View className="px-2 py-2">
-                  <Text className="text-foreground/70 mb-2 text-sm">{t('packs.unit')}</Text>
-                  <SegmentedControl
-                    values={WEIGHT_UNITS}
-                    selectedIndex={safeIndexOf({ array: WEIGHT_UNITS, value: field.state.value })}
-                    onIndexChange={(index) => {
-                      const selectedUnit = WEIGHT_UNITS[index];
-                      if (selectedUnit) {
-                        field.handleChange(selectedUnit);
-                      }
-                    }}
-                  />
-                </View>
-              </FormItem>
+              <View testID={testIds.items.weightUnitControl}>
+                <SegmentedControl
+                  values={WEIGHT_UNITS}
+                  selectedIndex={safeIndexOf({ array: WEIGHT_UNITS, value: field.state.value })}
+                  onIndexChange={(index) => {
+                    const selectedUnit = WEIGHT_UNITS[index];
+                    if (selectedUnit) field.handleChange(selectedUnit);
+                  }}
+                />
+              </View>
             )}
           </form.Field>
-
           <form.Field name="quantity">
             {(field) => (
-              <FormItem>
-                <TextField
-                  placeholder={t('packs.quantity')}
-                  value={field.state.value === 0 ? '' : field.state.value.toString()}
-                  onBlur={field.handleBlur}
-                  onChangeText={(text) => {
-                    const intValue = text === '' ? 0 : parseInt(text, 10);
-                    field.handleChange(intValue);
-                  }}
-                  keyboardType="numeric"
-                  errorMessage={field.state.meta.errors[0]?.message}
-                  leftView={
-                    <View className="ios:pl-2 justify-center pl-2">
-                      <Icon name="circle-outline" size={16} color={colors.grey3} />
-                    </View>
-                  }
-                />
-              </FormItem>
-            )}
-          </form.Field>
-        </FormSection>
-
-        <FormSection ios={{ title: t('packs.properties') }} footnote="Special item properties">
-          <form.Field name="consumable">
-            {(field) => (
-              <FormItem>
-                <View className="flex-row items-center justify-between p-4">
-                  <View className="flex-row items-center">
-                    <Icon name="silverware-fork-knife" size={18} color={colors.foreground} />
-                    <Text className="ml-2 font-medium text-foreground">
-                      {t('packs.consumable')}
-                    </Text>
-                  </View>
-                  <Switch
-                    value={field.state.value}
-                    onValueChange={field.handleChange}
-                    trackColor={{
-                      false: 'hsl(var(--muted))',
-                      true: 'hsl(var(--primary))',
-                    }}
-                    ios_backgroundColor="hsl(var(--muted))"
+              <Group>
+                <View className="min-h-16 flex-row items-center gap-2 px-4 py-2">
+                  <Text variant="body" className="flex-1">
+                    {t('items.form.quantity')}
+                  </Text>
+                  <Button
+                    variant="outlined"
+                    size="icon"
+                    icon="minus"
+                    accessibilityLabel={t('items.form.decrease')}
+                    disabled={field.state.value <= 1}
+                    onPress={() => field.handleChange(Math.max(1, field.state.value - 1))}
                   />
-                </View>
-              </FormItem>
-            )}
-          </form.Field>
-
-          <form.Field name="worn">
-            {(field) => (
-              <FormItem>
-                <View className="flex-row items-center justify-between p-4">
-                  <View className="flex-row items-center">
-                    <Icon name="account-circle" size={18} color={colors.foreground} />
-                    <Text className="ml-2 font-medium text-foreground">
-                      {t('packs.wornNotCarried')}
-                    </Text>
-                  </View>
-                  <Switch
-                    value={field.state.value}
-                    onValueChange={field.handleChange}
-                    trackColor={{
-                      false: 'hsl(var(--muted))',
-                      true: 'hsl(var(--primary))',
-                    }}
-                    ios_backgroundColor="hsl(var(--muted))"
-                  />
-                </View>
-              </FormItem>
-            )}
-          </form.Field>
-        </FormSection>
-
-        <FormSection
-          ios={{ title: t('packs.image') }}
-          footnote="Add an image of your item (optional)"
-        >
-          <form.Field name="image">
-            {(_field) => (
-              <FormItem>
-                {displayImage ? (
-                  <View className="relative">
-                    <Image
-                      source={displayImage}
-                      className="h-48 w-full rounded-lg"
-                      resizeMode="cover"
-                    />
-                    <TouchableOpacity
-                      className="absolute right-2 top-2 rounded-full bg-black bg-opacity-50 p-1"
-                      onPress={handleRemoveImage}
-                    >
-                      <Icon name="close" size={20} color="#ffffff" />
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    className="h-48 items-center justify-center rounded-lg border border-dashed border-input bg-background p-4"
-                    onPress={handleAddImage}
+                  <Text
+                    variant="heading"
+                    className="min-w-10 text-center"
+                    testID={testIds.items.quantityInput}
                   >
-                    <Icon name="camera" size={32} color={colors.foreground} />
-                    <Text className="mt-2 text-muted-foreground">{t('packs.tapToAddImage')}</Text>
-                  </TouchableOpacity>
-                )}
-              </FormItem>
+                    {field.state.value}
+                  </Text>
+                  <Button
+                    variant="outlined"
+                    size="icon"
+                    icon="plus"
+                    accessibilityLabel={t('items.form.increase')}
+                    onPress={() => field.handleChange(field.state.value + 1)}
+                  />
+                </View>
+              </Group>
             )}
           </form.Field>
-        </FormSection>
+        </View>
 
-        <FormSection ios={{ title: t('packs.notes') }} footnote="Additional information">
+        <View className="gap-3">
+          <Heading title={t('items.form.tripHeading')} />
+          <Group>
+            <form.Field name="consumable">
+              {(field) => (
+                <SwitchRow
+                  title={t('items.form.consumable')}
+                  value={field.state.value}
+                  onValueChange={field.handleChange}
+                  testID={testIds.items.consumableToggle}
+                />
+              )}
+            </form.Field>
+            <View className="mx-4 h-px bg-border" />
+            <form.Field name="worn">
+              {(field) => (
+                <SwitchRow
+                  title={t('items.form.worn')}
+                  value={field.state.value}
+                  onValueChange={field.handleChange}
+                  testID={testIds.items.wornToggle}
+                />
+              )}
+            </form.Field>
+          </Group>
+        </View>
+
+        <View className="gap-3">
+          <Heading title={t('items.form.photoHeading')} />
+          {displayImage ? (
+            <View>
+              <Image source={displayImage} className="h-48 w-full rounded-2xl" resizeMode="cover" />
+              <Pressable
+                onPress={handleRemoveImage}
+                accessibilityRole="button"
+                accessibilityLabel={t('items.form.removePhoto')}
+                testID={testIds.items.removePhotoBtn}
+                className="absolute right-2 top-2 h-10 w-10 items-center justify-center rounded-full bg-black/60"
+              >
+                <Icon name="close" size={20} color="#ffffff" />
+              </Pressable>
+            </View>
+          ) : (
+            <View className="flex-row gap-2">
+              <Button
+                variant="outlined"
+                icon="camera-outline"
+                className="flex-1"
+                label={t('items.form.takePhoto')}
+                testID={testIds.items.takePhotoBtn}
+                onPress={() => addPhoto('camera')}
+              />
+              <Button
+                variant="outlined"
+                icon="image-outline"
+                className="flex-1"
+                label={t('items.form.choosePhoto')}
+                testID={testIds.items.choosePhotoBtn}
+                onPress={() => addPhoto('library')}
+              />
+            </View>
+          )}
+        </View>
+
+        <View className="gap-3">
+          <Heading title={t('items.form.notesHeading')} />
           <form.Field name="notes">
             {(field) => (
-              <FormItem>
-                <TextField
-                  placeholder={t('packs.additionalNotes')}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChangeText={field.handleChange}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                  leftView={
-                    <View className="ios:pl-2 justify-center pl-2">
-                      <Icon name="note-text-outline" size={16} color={colors.grey3} />
-                    </View>
-                  }
-                />
-              </FormItem>
+              <TextField
+                placeholder={t('items.form.notes')}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChangeText={field.handleChange}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
             )}
           </form.Field>
-        </FormSection>
-      </Form>
-
-      <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-        {([canSubmit, isSubmitting]) => (
-          <Button
-            testID={testIds.items.submitBtn}
-            onPress={form.handleSubmit}
-            disabled={!canSubmit || isSubmitting}
-            className="mt-6 w-full"
-            label={isSubmitting ? 'Saving...' : isEditing ? 'Update Item' : 'Add Item'}
-          />
-        )}
-      </form.Subscribe>
-    </KeyboardAwareScrollView>
+        </View>
+      </KeyboardAwareScrollView>
+    </>
   );
 };

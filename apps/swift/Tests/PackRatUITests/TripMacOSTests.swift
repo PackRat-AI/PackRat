@@ -69,9 +69,9 @@ final class TripMacOSTests: AppUITestCase {
         nameField.click()
         nameField.typeText(tripName)
 
-        // "Set trip dates" toggle — on macOS Toggle renders as a checkbox.
-        let dateToggle = app.switches["Set trip dates"]
-        let dateCheck = app.checkBoxes["Set trip dates"]
+        // Dates toggle — on macOS Toggle renders as a checkbox.
+        let dateToggle = app.switches["trip_dates_toggle"]
+        let dateCheck = app.checkBoxes["trip_dates_toggle"]
         if dateToggle.waitForExistence(timeout: 3) { dateToggle.click() }
         else if dateCheck.waitForExistence(timeout: 2) { dateCheck.click() }
 

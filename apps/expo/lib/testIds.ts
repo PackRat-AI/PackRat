@@ -118,6 +118,8 @@ export const testIds = Object.freeze({
     askAIBtn: 'ask-ai-button', // keep Maestro value
     moreActionsBtn: 'pack-more-actions', // keep Maestro value
     listItem: (id: string | number) => `packs:list-item-${id}`,
+    categoryChip: (category: string) => `packs:category-chip-${category}`,
+    publicToggle: 'packs:public-toggle',
   }),
 
   // ── Pack items ────────────────────────────────────────────────────────────
@@ -134,6 +136,11 @@ export const testIds = Object.freeze({
     weightUnitControl: 'items:weight-unit',
     quantityInput: 'items:quantity-input',
     categoryInput: 'items:category-input',
+    consumableToggle: 'items:consumable-toggle',
+    wornToggle: 'items:worn-toggle',
+    takePhotoBtn: 'items:take-photo',
+    choosePhotoBtn: 'items:choose-photo',
+    removePhotoBtn: 'items:remove-photo',
     submitBtn: 'items:submit',
     deleteBtn: 'items:delete',
     editBtn: 'items:edit',
@@ -296,6 +303,27 @@ export const testIds = Object.freeze({
     remindersOpenSettingsBtn: 'trips:reminders-open-settings',
     startPackingBtn: 'trips:start-packing',
     packAllPacked: 'trips:pack-all-packed',
+    mapPreview: 'trips:map-preview',
+    mapDirections: 'trips:map-directions',
+    fullMapScreen: 'trips:full-map',
+    fullMapClose: 'trips:full-map-close',
+    fullMapStyle: 'trips:full-map-style',
+    fullMapMyLocation: 'trips:full-map-my-location',
+    fullMapRecentre: 'trips:full-map-recentre',
+    fullMapDirections: 'trips:full-map-directions',
+    locationPickerScreen: 'trips:location-picker',
+    locationPickerBack: 'trips:location-picker-back',
+    locationPickerSearch: 'trips:location-picker-search',
+    locationPickerClear: 'trips:location-picker-clear',
+    locationPickerResult: (index: number) => `trips:location-picker-result-${index}`,
+    locationPickerMyLocation: 'trips:location-picker-my-location',
+    locationPickerConfirm: 'trips:location-picker-confirm',
+    locationButton: 'trips:location-button',
+    packButton: 'trips:pack-button',
+    packPicker: 'trips:pack-picker',
+    packNew: 'trips:pack-new',
+    packNone: 'trips:pack-none',
+    packOption: (id: string) => `trips:pack-option-${id}`,
   }),
 
   // ── Safety check-in ───────────────────────────────────────────────────────
