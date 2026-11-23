@@ -1,10 +1,22 @@
-# Trip location and map
+# Trip location, map and form
 
-Lets a user set where a trip happens and see it on a map, from a glance on the trip page to a full-screen view they can explore.
+Lets a user plan a trip in one form, set where it happens, and see that place on a map, from a glance on the trip page to a full-screen view they can explore.
 
 ## The model in one paragraph
 
 Every trip can have one place: a trailhead, a park, a town. The user picks it while creating or editing the trip, either by searching for it or by moving the map until the pin sits where they want. Once set, the trip page shows the place as a compact map preview with its name underneath. Expanding the preview opens a full-screen map where the user can pan, zoom and switch to satellite imagery, then hand the place off to their maps app for directions. A finished trip with a recorded route shows that route on both the preview and the full-screen map.
+
+## The trip form
+
+Creating and editing a trip happen in the same single-screen form, grouped the way the user thinks about a trip:
+
+- **Name** at the top.
+- **Where**: the trip's place and, optionally, a trail. Each is a whole row the user taps to choose, with a clear button to remove what is set.
+- **When**: the start and end dates. On Android one date-range picker sets both; on iPhone, Starts and Ends work like Calendar.
+- **Pack**: a chooser lists every pack with its item count and weight, plus **None** and **New Pack**. A pack created from here is linked to the trip straight away.
+- **Notes** for anything else.
+
+Saving is in the top bar.
 
 ## Picking the place
 
@@ -19,7 +31,7 @@ A trip that already has a place opens the picker centred on it.
 
 ## On the trip page
 
-The trip page shows the place as a map preview with rounded corners, sized so the place and its surroundings are recognisable without dominating the page. The pin marks the place; a finished trip with a recorded route draws the route instead and fits it in view. Two controls sit in the map's corner: **Expand**, which opens the full-screen map, and **Directions**, which opens the place in the user's maps app. The place's name and region sit below the map, with **Save for offline** beside them for an upcoming trip.
+The trip page shows the place as a map preview with rounded corners, sized so the place and its surroundings are recognisable without dominating the page. The pin marks the place; a finished trip with a recorded route draws the route instead and fits it in view. Two controls sit in the map's corner: **Expand**, which opens the full-screen map, and **Directions**, which opens the place in the user's maps app. The place's name and region sit below the map. For an upcoming trip, **Save for offline** sits on its own row under the name; once the map is saved, that row reads **Available offline**.
 
 The preview can be panned and zoomed in place for a quick look around.
 
@@ -36,6 +48,7 @@ The full-screen map shows the same place or route edge to edge.
 
 ## What the user controls
 
+- The trip's name, place, trail, dates, pack and notes, all from the trip form.
 - The trip's place, set and changed from the trip form.
 - The map style in the full-screen view.
 - Whether to open the place in their maps app.
