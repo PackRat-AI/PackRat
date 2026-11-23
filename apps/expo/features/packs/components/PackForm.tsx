@@ -40,7 +40,7 @@ const packFormSchema = z.object({
 
 function Heading({ title }: { title: string }) {
   return (
-    <Text variant="subhead" className="mb-1 px-1 font-medium text-primary">
+    <Text variant="subhead" className="mb-1 px-1 font-medium text-muted-foreground">
       {title}
     </Text>
   );

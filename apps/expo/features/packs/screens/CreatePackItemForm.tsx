@@ -43,22 +43,20 @@ const WEIGHT_UNITS: WeightUnit[] = ['g', 'oz', 'kg', 'lb'];
 
 function Heading({ title }: { title: string }) {
   return (
-    <Text variant="subhead" className="mb-1 px-1 font-medium text-primary">
+    <Text variant="subhead" className="mb-1 px-1 font-medium text-muted-foreground">
       {title}
     </Text>
   );
 }
 
-/** A tappable row with a title, supporting text and a switch, like Material 3 list items. */
+/** A tappable row with a title and a switch, like Material 3 list items. */
 function SwitchRow({
   title,
-  supporting,
   value,
   onValueChange,
   testID,
 }: {
   title: string;
-  supporting: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
   testID: string;
@@ -70,14 +68,11 @@ function SwitchRow({
       accessibilityRole="switch"
       accessibilityState={{ checked: value }}
       android_ripple={{ color: colors.grey4 }}
-      className="min-h-16 flex-row items-center gap-4 px-4 py-3"
+      className="min-h-14 flex-row items-center gap-4 px-4 py-2"
     >
-      <View className="flex-1">
-        <Text variant="body">{title}</Text>
-        <Text variant="subhead" className="text-muted-foreground">
-          {supporting}
-        </Text>
-      </View>
+      <Text variant="body" className="flex-1">
+        {title}
+      </Text>
       <Toggle value={value} onValueChange={onValueChange} testID={testID} />
     </Pressable>
   );
@@ -380,7 +375,6 @@ export const CreatePackItemForm = ({
               {(field) => (
                 <SwitchRow
                   title={t('items.form.consumable')}
-                  supporting={t('items.form.consumableHint')}
                   value={field.state.value}
                   onValueChange={field.handleChange}
                   testID={testIds.items.consumableToggle}
@@ -392,7 +386,6 @@ export const CreatePackItemForm = ({
               {(field) => (
                 <SwitchRow
                   title={t('items.form.worn')}
-                  supporting={t('items.form.wornHint')}
                   value={field.state.value}
                   onValueChange={field.handleChange}
                   testID={testIds.items.wornToggle}
