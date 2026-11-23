@@ -183,9 +183,16 @@ class AppUITestCase: XCTestCase {
         #else
         if submitButton.isHittable {
             submitButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-            Thread.sleep(forTimeInterval: 0.25)
-            if submitButton.exists, submitButton.isHittable, submitButton.isEnabled {
-                submitButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            // A fast sign-in replaces the login screen between any two queries,
+            // and isHittable fails the test outright once the button is gone.
+            // Retry only if the button is still there after a moment; snapshot()
+            // throws instead of failing, so a vanished button just skips the retry.
+            if !submitButton.waitForNonExistence(timeout: 1.5),
+               let snapshot = try? submitButton.snapshot(),
+               snapshot.isEnabled {
+                app.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: snapshot.frame.midX, dy: snapshot.frame.midY))
+                    .tap()
             }
         } else {
             let goButton = app.keyboards.buttons["Go"]
