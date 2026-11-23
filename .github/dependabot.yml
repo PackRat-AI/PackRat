@@ -4,6 +4,7 @@ updates:
   # GitHub Actions
   - package-ecosystem: 'github-actions'
     directory: '/'
+    target-branch: 'development'
     schedule:
       interval: 'weekly'
       day: 'monday'
@@ -16,6 +17,7 @@ updates:
   # bun workspaces — root
   - package-ecosystem: 'bun'
     directory: '/'
+    target-branch: 'development'
     schedule:
       interval: 'weekly'
       day: 'monday'
@@ -51,6 +53,7 @@ updates:
   # bun — API package
   - package-ecosystem: 'bun'
     directory: '/packages/api'
+    target-branch: 'development'
     schedule:
       interval: 'weekly'
       day: 'monday'
@@ -63,6 +66,7 @@ updates:
   # bun — Expo app
   - package-ecosystem: 'bun'
     directory: '/apps/expo'
+    target-branch: 'development'
     schedule:
       interval: 'weekly'
       day: 'monday'
@@ -75,6 +79,7 @@ updates:
   # bun — Landing page
   - package-ecosystem: 'bun'
     directory: '/apps/landing'
+    target-branch: 'development'
     schedule:
       interval: 'weekly'
       day: 'monday'
@@ -87,6 +92,7 @@ updates:
   # bun — Guides site
   - package-ecosystem: 'bun'
     directory: '/apps/guides'
+    target-branch: 'development'
     schedule:
       interval: 'weekly'
       day: 'monday'
