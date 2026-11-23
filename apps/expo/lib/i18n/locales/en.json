@@ -409,7 +409,32 @@
     "removeFromInventory": "Remove from Inventory",
     "consumable": "Consumable",
     "worn": "Worn",
-    "quantity": "Qty: {{quantity}}"
+    "quantity": "Qty: {{quantity}}",
+    "form": {
+      "name": "Name",
+      "category": "Category, like Shelter or Cooking",
+      "description": "Description",
+      "weightHeading": "Weight and quantity",
+      "weight": "Weight",
+      "quantity": "Quantity",
+      "decrease": "Decrease quantity",
+      "increase": "Increase quantity",
+      "tripHeading": "On the trip",
+      "consumable": "Consumable",
+      "consumableHint": "Used up during the trip, like food or fuel.",
+      "worn": "Worn",
+      "wornHint": "Worn rather than carried, so it stays out of your carried weight.",
+      "photoHeading": "Photo",
+      "takePhoto": "Take photo",
+      "choosePhoto": "Choose photo",
+      "removePhoto": "Remove photo",
+      "notesHeading": "Notes",
+      "notes": "Anything else about this item",
+      "errorTitle": "Something went wrong",
+      "saveFailed": "The item couldn't be saved. Try again.",
+      "photoSaveFailed": "The photo couldn't be saved. Try again.",
+      "photoFailed": "The photo couldn't be added. Try again."
+    }
   },
   "tripStats": {
     "title": "Trip Stats",
