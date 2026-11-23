@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { catalogProductKey } from '../catalogProduct';
 import { processValidItemsBatch } from '../processValidItemsBatch';
 
 // ---------------------------------------------------------------------------
@@ -12,6 +13,8 @@ import { processValidItemsBatch } from '../processValidItemsBatch';
 const mockFetchExistingForRegen = vi.fn();
 const mockUpsertCatalogItems = vi.fn();
 const mockTrackEtlJob = vi.fn();
+const mockUpsertCatalogOffers = vi.fn();
+const mockFetchProductKeysBySku = vi.fn();
 
 vi.mock('../../catalogService', () => ({
   CatalogService: vi.fn().mockImplementation(function (this: unknown) {
@@ -19,6 +22,8 @@ vi.mock('../../catalogService', () => ({
       fetchExistingForRegen: mockFetchExistingForRegen,
       upsertCatalogItems: mockUpsertCatalogItems,
       trackEtlJob: mockTrackEtlJob,
+      upsertCatalogOffers: mockUpsertCatalogOffers,
+      fetchProductKeysBySku: mockFetchProductKeysBySku,
     };
   }),
 }));
@@ -79,6 +84,8 @@ const makeItem = (sku: string, overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+const keyOf = (sku: string) => catalogProductKey(makeItem(sku));
+
 const fakeEmbedding = (seed: number): number[] =>
   Array.from({ length: 1536 }, (_, i) => (i + seed) / 1536);
 
@@ -91,6 +98,8 @@ describe('processValidItemsBatch — source-text diff', () => {
     mockFetchExistingForRegen.mockReset();
     mockUpsertCatalogItems.mockReset();
     mockTrackEtlJob.mockReset();
+    mockUpsertCatalogOffers.mockReset();
+    mockFetchProductKeysBySku.mockReset().mockResolvedValue(new Map());
     mockGenerateManyEmbeddings.mockReset();
     mockUpsertCatalogItems.mockResolvedValue([{ id: 1, sku: 'A' }]);
     mockTrackEtlJob.mockResolvedValue(undefined);
@@ -107,10 +116,10 @@ describe('processValidItemsBatch — source-text diff', () => {
     mockFetchExistingForRegen.mockResolvedValue(
       new Map([
         [
-          'CHANGED-1',
+          keyOf('CHANGED-1'),
           { ...makeItem('CHANGED-1', { description: 'OLD desc' }), embedding: fakeEmbedding(1) },
         ],
-        ['UNCHANGED-1', { ...existingForUnchanged, embedding: fakeEmbedding(2) }],
+        [keyOf('UNCHANGED-1'), { ...existingForUnchanged, embedding: fakeEmbedding(2) }],
       ]),
     );
 
@@ -146,8 +155,8 @@ describe('processValidItemsBatch — source-text diff', () => {
 
     mockFetchExistingForRegen.mockResolvedValue(
       new Map([
-        ['U1', { ...makeItem('U1'), embedding: fakeEmbedding(1) }],
-        ['U2', { ...makeItem('U2'), embedding: fakeEmbedding(2) }],
+        [keyOf('U1'), { ...makeItem('U1'), embedding: fakeEmbedding(1) }],
+        [keyOf('U2'), { ...makeItem('U2'), embedding: fakeEmbedding(2) }],
       ]),
     );
 
@@ -173,7 +182,7 @@ describe('processValidItemsBatch — source-text diff', () => {
     const items = [makeItem('NULL-EMB')];
 
     mockFetchExistingForRegen.mockResolvedValue(
-      new Map([['NULL-EMB', { ...makeItem('NULL-EMB'), embedding: null }]]),
+      new Map([[keyOf('NULL-EMB'), { ...makeItem('NULL-EMB'), embedding: null }]]),
     );
     mockGenerateManyEmbeddings.mockResolvedValue([fakeEmbedding(42)]);
 
@@ -237,5 +246,43 @@ describe('processValidItemsBatch — source-text diff', () => {
     // None of the fallback items should carry one of the partial fresh
     // embeddings — that would mean we silently shipped NULL on the third.
     expect(upserted.some((u) => u.embedding === fakeEmbedding(1))).toBe(false);
+  });
+});
+
+describe('processValidItemsBatch — one row per product', () => {
+  beforeEach(() => {
+    mockFetchExistingForRegen.mockReset().mockResolvedValue(new Map());
+    mockUpsertCatalogItems.mockReset();
+    mockTrackEtlJob.mockReset();
+    mockUpsertCatalogOffers.mockReset();
+    mockFetchProductKeysBySku.mockReset().mockResolvedValue(new Map());
+    mockGenerateManyEmbeddings.mockReset();
+  });
+
+  it('upserts listings of the same product once and keeps each listing as an offer', async () => {
+    const items = [
+      makeItem('TENT-GREEN', { name: 'FreeLite 2 Tent', color: 'Green', price: 499.95 }),
+      makeItem('TENT-RED', { name: 'FreeLite 2 Tent', color: 'Red', price: 342 }),
+    ];
+    const productKey = catalogProductKey(items[0] ?? makeItem('x'));
+    mockGenerateManyEmbeddings.mockResolvedValue([fakeEmbedding(1)]);
+    mockUpsertCatalogItems.mockResolvedValue([{ id: 7, sku: 'TENT-GREEN', productKey }]);
+
+    await processValidItemsBatch({ jobId: 'jobGroup', items, env: TEST_ENV });
+
+    const upserted = mockUpsertCatalogItems.mock.calls[0]?.[0] as Array<{
+      sku: string;
+      productKey: string;
+    }>;
+    expect(upserted.map((u) => [u.sku, u.productKey])).toEqual([['TENT-GREEN', productKey]]);
+    expect(mockUpsertCatalogOffers).toHaveBeenCalledWith([
+      expect.objectContaining({
+        catalogItemId: 7,
+        sku: 'TENT-GREEN',
+        color: 'Green',
+        price: 499.95,
+      }),
+      expect.objectContaining({ catalogItemId: 7, sku: 'TENT-RED', color: 'Red', price: 342 }),
+    ]);
   });
 });

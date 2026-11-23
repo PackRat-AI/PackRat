@@ -323,10 +323,8 @@ struct TripFormView: View {
                 let location = locationName.isEmpty ? nil : TripLocationBody(
                     latitude: locationLat, longitude: locationLon, name: locationName
                 )
-                #if os(iOS)
-                if hasDates { await TripReminderScheduler.requestAuthorizationIfNeeded() }
-                #endif
                 #if os(iOS) || os(macOS)
+                if hasDates { await TripReminderScheduler.requestAuthorizationIfNeeded() }
                 // Trips with a destination watch it for weather alerts, pushed by the server.
                 if hasDates, location != nil, FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey) {
                     await PushRegistrationService.registerForPushIfNeeded()
