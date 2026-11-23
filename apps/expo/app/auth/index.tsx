@@ -1,5 +1,6 @@
 import type { AlertMethods } from '@packrat/ui/src/alert';
 import { AlertAnchor } from '@packrat/ui/src/alert';
+import { showAlert } from '@packrat/ui/src/alert-host';
 import { Button } from '@packrat/ui/src/button';
 import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
@@ -9,8 +10,10 @@ import {
   redirectToAtom,
 } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { AuthClientError } from 'expo-app/features/auth/lib/authErrors';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
+import { isErrorWithCode, statusCodes } from 'expo-app/lib/googleSignin';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, useLocalSearchParams } from 'expo-router';
@@ -42,6 +45,25 @@ export default function AuthIndexScreen() {
   } = useLocalSearchParams<RouteParams>();
   const needsReauth = useAtomValue(needsReauthAtom);
   const enableOAuth = useFeatureFlag('enableOAuth');
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      // signInWithGoogle already reports to Sentry; here we only tell the user.
+      if (
+        isErrorWithCode(error) &&
+        (error.code === statusCodes.SIGN_IN_CANCELLED || error.code === statusCodes.IN_PROGRESS)
+      ) {
+        return;
+      }
+      showAlert({
+        title: t('auth.failedToSignInWithGoogle'),
+        message:
+          error instanceof AuthClientError ? error.message : t('auth.googleSignInFailedMessage'),
+      });
+    }
+  };
 
   const handleSkipLogin = async () => {
     await AsyncStorage.setItem('skipped_login', 'true');
@@ -121,7 +143,7 @@ export default function AuthIndexScreen() {
                 variant="secondary"
                 className="ios:border-foreground/60"
                 size={Platform.select({ ios: 'lg', default: 'md' })}
-                onPress={signInWithGoogle}
+                onPress={handleGoogleSignIn}
               >
                 <Image
                   source={GOOGLE_SOURCE}
