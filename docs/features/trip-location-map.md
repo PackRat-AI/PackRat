@@ -49,7 +49,6 @@ The full-screen map shows the same place or route edge to edge.
 ## What the user controls
 
 - The trip's name, place, trail, dates, pack and notes, all from the trip form.
-- The trip's place, set and changed from the trip form.
 - The map style in the full-screen view.
 - Whether to open the place in their maps app.
 
