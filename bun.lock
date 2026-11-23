@@ -879,6 +879,7 @@
     "@sentry/cli",
   ],
   "patchedDependencies": {
+    "@expo/ui@58.0.25": "patches/@expo%2Fui@58.0.25.patch",
     "@rnmapbox/maps@10.3.18": "patches/@rnmapbox%2Fmaps@10.3.18.patch",
   },
   "overrides": {

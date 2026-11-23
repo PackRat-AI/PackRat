@@ -1,0 +1,25 @@
+diff --git a/build/jetpack-compose/MaterialSymbolsAssetsTransformer.fx.js b/build/jetpack-compose/MaterialSymbolsAssetsTransformer.fx.js
+index 770c1b5230a3111aa35b1c7586d830cd57608c9a..77b36fb9b3f8ad2c3d39bd2500a10d7c470d06c3 100644
+--- a/build/jetpack-compose/MaterialSymbolsAssetsTransformer.fx.js
++++ b/build/jetpack-compose/MaterialSymbolsAssetsTransformer.fx.js
+@@ -1,6 +1,6 @@
+ import { Image } from 'react-native';
+ // @ts-expect-error: addCustomSourceTransformer type is not exported
+-if (typeof Image.resolveAssetSource.addCustomSourceTransformer === 'function') {
++if (typeof Image.resolveAssetSource?.addCustomSourceTransformer === 'function') {
+     // @ts-expect-error: addCustomSourceTransformer type is not exported
+     Image.resolveAssetSource.addCustomSourceTransformer((resolver)=>{
+         if (process.env.EXPO_OS === 'android' && resolver.asset.type === 'xml' && resolver.serverUrl != null && resolver.serverUrl !== '') {
+diff --git a/src/jetpack-compose/MaterialSymbolsAssetsTransformer.fx.ts b/src/jetpack-compose/MaterialSymbolsAssetsTransformer.fx.ts
+index bd2abd9021b94e755eb74f65882a251c1a895b45..67953bb47e7a9e90a9ceede8c6ade4d447a16de4 100644
+--- a/src/jetpack-compose/MaterialSymbolsAssetsTransformer.fx.ts
++++ b/src/jetpack-compose/MaterialSymbolsAssetsTransformer.fx.ts
+@@ -6,7 +6,7 @@ type AssetResolver = AssetSourceResolver & {
+ };
+ 
+ // @ts-expect-error: addCustomSourceTransformer type is not exported
+-if (typeof Image.resolveAssetSource.addCustomSourceTransformer === 'function') {
++if (typeof Image.resolveAssetSource?.addCustomSourceTransformer === 'function') {
+   // @ts-expect-error: addCustomSourceTransformer type is not exported
+   Image.resolveAssetSource.addCustomSourceTransformer((resolver: AssetResolver) => {
+     if (
