@@ -38,9 +38,11 @@ const packFormSchema = z.object({
   tags: z.array(z.string()),
 });
 
+/** A small, quiet section label: it names the group without competing with the fields. */
 function Heading({ title }: { title: string }) {
+  const { colors } = useColorScheme();
   return (
-    <Text variant="subhead" className="mb-1 px-1 font-medium text-muted-foreground">
+    <Text variant="footnote" textColor={colors.grey3} className="px-1 font-medium">
       {title}
     </Text>
   );
