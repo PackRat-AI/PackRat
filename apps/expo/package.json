@@ -156,7 +156,7 @@
     "react-native-keyboard-controller": "1.22.7",
     "react-native-maps": "1.29.11",
     "react-native-nitro-modules": "^0.37.1",
-    "react-native-pager-view": "9.0.7",
+    "react-native-pager-view": "10.0.3",
     "react-native-purchases": "*",
     "react-native-purchases-ui": "*",
     "react-native-reanimated": "4.7.1",
