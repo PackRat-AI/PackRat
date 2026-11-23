@@ -380,9 +380,8 @@ function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
     LOGS_QUEUE: (rawEnv.LOGS_QUEUE ?? validated.data.LOGS_QUEUE) as Queue, // safe-cast: Cloudflare Worker binding injected by runtime
     EMBEDDINGS_QUEUE: (rawEnv.EMBEDDINGS_QUEUE ?? validated.data.EMBEDDINGS_QUEUE) as Queue, // safe-cast: Cloudflare Worker binding injected by runtime
     ETL_WORKFLOW: (rawEnv.ETL_WORKFLOW ?? validated.data.ETL_WORKFLOW) as Workflow, // safe-cast: Cloudflare Worker binding injected by runtime
-    // safe-cast: Cloudflare Worker binding injected by runtime
     APP_CONTAINER: (rawEnv.APP_CONTAINER ??
-      validated.data.APP_CONTAINER) as DurableObjectNamespace<AppContainer>,
+      validated.data.APP_CONTAINER) as DurableObjectNamespace<AppContainer>, // safe-cast: Cloudflare Worker binding injected by runtime
     POST_LIVE_ROOM: rawEnv.POST_LIVE_ROOM as DurableObjectNamespace<PostLiveRoom> | undefined, // safe-cast: Cloudflare Worker binding injected by runtime
     // safe-cast: Cloudflare Worker binding injected by runtime
     SAFETY_CHECK_IN_TIMER: rawEnv.SAFETY_CHECK_IN_TIMER as
