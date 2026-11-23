@@ -1,4 +1,4 @@
-#if os(iOS)
+#if os(iOS) || os(macOS)
 import Foundation
 import Sentry
 import UserNotifications
@@ -12,12 +12,18 @@ import UserNotifications
 @MainActor
 enum TripReminderScheduler {
     static let flagKey = TripReminderPlanner.flagKey
-    static let tripIdKey = "tripId"
+    static let tripIdKey = PushNotificationRouter.tripIdKey
 
     /// iOS keeps at most 64 pending local notifications per app; leave headroom
     /// for anything else the app schedules.
     private static let maxPending = 48
 
+    private static var generation = 0
+    private static var inFlight: Task<Void, Never>?
+
+    /// Syncs run one at a time, and a sync that a newer one has superseded stops
+    /// at its next suspension point, so an older snapshot can never re-add
+    /// reminders after a newer sync cleared them.
     static func sync(
         trips: [Trip],
         packs: [Pack],
@@ -25,6 +31,30 @@ enum TripReminderScheduler {
         settings: TripReminderSettings = .shared,
         conditions: TripConditionsStore = .shared,
         now: Date = Date()
+    ) async {
+        generation += 1
+        let mine = generation
+        let previous = inFlight
+        let task = Task { @MainActor in
+            await previous?.value
+            guard mine == generation else { return }
+            await reconcile(
+                trips: trips, packs: packs, packing: packing, settings: settings,
+                conditions: conditions, now: now, isCurrent: { mine == generation }
+            )
+        }
+        inFlight = task
+        await task.value
+    }
+
+    private static func reconcile(
+        trips: [Trip],
+        packs: [Pack],
+        packing: PackingModeStore,
+        settings: TripReminderSettings,
+        conditions: TripConditionsStore,
+        now: Date,
+        isCurrent: () -> Bool
     ) async {
         let center = UNUserNotificationCenter.current()
         let stale = await center.pendingNotificationRequests()
@@ -34,7 +64,7 @@ enum TripReminderScheduler {
 
         guard FeatureFlagStore.shared.isEnabled(flagKey), settings.isEnabled else { return }
         let status = await center.notificationSettings().authorizationStatus
-        guard status == .authorized || status == .provisional else { return }
+        guard isCurrent(), status == .authorized || status == .provisional else { return }
         registerForPushOnce()
 
         var reminders = trips.filter { !settings.isMuted($0.id) }.flatMap { trip in
@@ -56,6 +86,7 @@ enum TripReminderScheduler {
         #endif
 
         for reminder in reminders {
+            guard isCurrent() else { return }
             do {
                 try await center.add(request(for: reminder))
             } catch {

@@ -3,8 +3,8 @@ import UIKit
 import UserNotifications
 
 /// Handles APNs registration and notification-tap routing for weather alert
-/// push. iOS-only — macOS has its own `PackRatMacAppDelegate` in
-/// PackRatApp.swift, unrelated to this (no push story on macOS yet).
+/// push on iOS. macOS does the same from `PackRatMacAppDelegate` in
+/// PackRatApp.swift; both route through `PushNotificationRouter`.
 final class PackRatIOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(
         _ application: UIApplication,
@@ -39,57 +39,18 @@ final class PackRatIOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifi
         // simply won't receive push until the next successful registration.
     }
 
-    /// Foreground presentation while the app is open — still show the
-    /// banner/sound so a watched alert isn't silently swallowed just because
-    /// the app happened to be frontmost.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound, .badge]
+        PushNotificationRouter.foregroundPresentation
     }
 
-    /// Notification tap — deep-links a trip reminder to its trip, or a weather
-    /// alert to the alerting location's detail, via
-    /// the same `DeepLink`/`AppState.apply` path a `packrat://` URL uses.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
-        let userInfo = response.notification.request.content.userInfo
-        // Feed tag, comment and reply notifications carry the post's id.
-        if let postId = (userInfo["postId"] as? Int) ?? (userInfo["postId"] as? String).flatMap(Int.init) {
-            NotificationCenter.default.post(
-                name: .feedPostNotificationTapped,
-                object: nil,
-                userInfo: ["postId": postId]
-            )
-            return
-        }
-        if let tripId = userInfo[TripReminderScheduler.tripIdKey] as? String {
-            // Trail-report pushes also name the report, opened over its trip.
-            var routed: [String: String] = [TripReminderScheduler.tripIdKey: tripId]
-            routed["reportId"] = userInfo["reportId"] as? String
-            NotificationCenter.default.post(
-                name: .tripReminderNotificationTapped,
-                object: nil,
-                userInfo: routed
-            )
-            return
-        }
-        guard let weatherLocationId = userInfo["weatherLocationId"] as? Int
-        else { return }
-        NotificationCenter.default.post(
-            name: .weatherAlertNotificationTapped,
-            object: nil,
-            userInfo: ["weatherLocationId": weatherLocationId]
-        )
+        await PushNotificationRouter.routeTap(response.notification.request.content.userInfo)
     }
-}
-
-extension Notification.Name {
-    static let weatherAlertNotificationTapped = Notification.Name("weatherAlertNotificationTapped")
-    static let feedPostNotificationTapped = Notification.Name("feedPostNotificationTapped")
-    static let tripReminderNotificationTapped = Notification.Name("tripReminderNotificationTapped")
 }
 #endif

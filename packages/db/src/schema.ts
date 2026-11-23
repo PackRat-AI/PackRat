@@ -379,6 +379,9 @@ export const catalogItems = pgTable(
     name: text('name').notNull(),
     productUrl: text('product_url').notNull(),
     sku: text('sku').unique().notNull(),
+    // One row per product: retailer listings of the same product share this
+    // key and live in catalog_item_offers. See catalogProductKey().
+    productKey: text('product_key').unique(),
     weight: real('weight'),
     weightUnit: text('weight_unit').$type<WeightUnit>(),
     description: text('description'),
@@ -462,6 +465,32 @@ export const catalogItems = pgTable(
   (table) => ({
     embeddingIndex: index('embedding_idx').using('hnsw', table.embedding.op('vector_cosine_ops')),
   }),
+);
+
+// Retailer listings (size/colour variants, other sellers) of a catalog product.
+// Deliberately thin: no embedding or content JSONB, so writes here never touch
+// the catalog HNSW index.
+export const catalogItemOffers = pgTable(
+  'catalog_item_offers',
+  {
+    id: serial('id').primaryKey(),
+    catalogItemId: integer('catalog_item_id')
+      .references(() => catalogItems.id, { onDelete: 'cascade' })
+      .notNull(),
+    sku: text('sku').unique().notNull(),
+    productUrl: text('product_url').notNull(),
+    price: real('price'),
+    currency: text('currency'),
+    seller: text('seller'),
+    availability: availabilityEnum('availability'),
+    color: text('color'),
+    size: text('size'),
+    condition: text('condition'),
+    productSku: text('product_sku'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [index('catalog_item_offers_catalog_item_id_idx').on(table.catalogItemId)],
 );
 
 // Pack items table
@@ -1050,6 +1079,8 @@ export type PackWithItems = Pack & { items: PackItem[] };
 export type NewPack = InferInsertModel<typeof packs>;
 export type CatalogItem = InferSelectModel<typeof catalogItems>;
 export type NewCatalogItem = InferInsertModel<typeof catalogItems>;
+export type CatalogItemOffer = InferSelectModel<typeof catalogItemOffers>;
+export type NewCatalogItemOffer = InferInsertModel<typeof catalogItemOffers>;
 export type PackItem = InferSelectModel<typeof packItems>;
 export type NewPackItem = InferInsertModel<typeof packItems>;
 export type ReportedContent = InferSelectModel<typeof reportedContent>;
@@ -1463,9 +1494,8 @@ export const tripDestinationAlertState = pgTable('trip_destination_alert_state',
 export type NewWeatherLocationAlertState = InferInsertModel<typeof weatherLocationAlertState>;
 
 // A device registered to receive push notifications. Genuinely new — no push
-// infrastructure predates this feature. 'ios' is the only platform in use
-// today; 'android' is reserved for when the Expo app adopts the same
-// monitoring pipeline.
+// infrastructure predates this feature. 'ios' and 'macos' tokens go to APNs
+// (same bundle ID, so the same topic); 'android' tokens go to FCM.
 export const userDeviceTokens = pgTable(
   'user_device_tokens',
   {
@@ -1473,7 +1503,7 @@ export const userDeviceTokens = pgTable(
     userId: text('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
-    platform: text('platform', { enum: ['ios', 'android'] }).notNull(),
+    platform: text('platform', { enum: ['ios', 'android', 'macos'] }).notNull(),
     deviceToken: text('device_token').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     lastSeenAt: timestamp('last_seen_at').defaultNow().notNull(),

@@ -2,6 +2,8 @@ import Foundation
 import UserNotifications
 #if os(iOS)
 import UIKit
+#elseif os(macOS)
+import AppKit
 #endif
 
 /// Requests notification permission and registers this device for weather
@@ -17,7 +19,7 @@ enum PushRegistrationService {
     /// Returns false when notifications are off, so the caller can say so.
     @discardableResult
     static func registerForPushIfNeeded() async -> Bool {
-        #if os(iOS)
+        #if os(iOS) || os(macOS)
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
         guard settings.authorizationStatus == .notDetermined || settings.authorizationStatus == .authorized else {
@@ -27,16 +29,38 @@ enum PushRegistrationService {
             guard let granted = try? await center.requestAuthorization(options: [.alert, .sound, .badge]),
                   granted else { return false }
         }
+        #if os(iOS)
         UIApplication.shared.registerForRemoteNotifications()
+        #else
+        NSApplication.shared.registerForRemoteNotifications()
+        #endif
         #endif
         return true
     }
+
+    #if os(macOS)
+    /// Once signed in, when notifications are already allowed. A Mac allowed them
+    /// in an earlier session would otherwise never send its token: no prompt
+    /// shows, so nothing above runs. Apple also expects the token to be
+    /// fetched every launch, since it can change.
+    static func refreshRegistrationIfAuthorized() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        guard settings.authorizationStatus == .authorized else { return }
+        NSApplication.shared.registerForRemoteNotifications()
+    }
+    #endif
+
+    #if os(macOS)
+    private static let platform = "macos"
+    #else
+    private static let platform = "ios"
+    #endif
 
     static func handleDeviceToken(_ deviceToken: Data) {
         let tokenString = deviceToken.map { String(format: "%02x", $0) }.joined()
         Task {
             try? await WeatherMonitoringService.shared.registerDeviceToken(
-                RegisterDeviceTokenRequest(platform: "ios", deviceToken: tokenString)
+                RegisterDeviceTokenRequest(platform: platform, deviceToken: tokenString)
             )
         }
     }

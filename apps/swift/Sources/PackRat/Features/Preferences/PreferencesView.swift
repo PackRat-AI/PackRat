@@ -67,7 +67,6 @@ struct PreferencesView: View {
     /// Owned here, at the screen root, so the paywall presents reliably —
     /// `SubscriptionSettingsSection` only requests it. See `PaywallTrigger`.
     @State private var paywallTrigger = PaywallTrigger()
-    @Environment(\.openURL) private var openURL
     @State private var notificationsEnabled = false
     @State private var notificationAuthStatus: UNAuthorizationStatus = .notDetermined
     @Bindable private var tripReminders = TripReminderSettings.shared
@@ -93,6 +92,10 @@ struct PreferencesView: View {
                 .frame(width: 500, height: 340)
                 .tabItem { Label("Units", systemImage: "scalemass") }
                 .tag(SettingsTab.units)
+            notificationsTab
+                .frame(width: 500, height: 420)
+                .tabItem { Label("Notifications", systemImage: "bell.badge") }
+                .tag(SettingsTab.notifications)
             if showsCommunity {
                 communityTab
                     .frame(width: 500, height: 480)
@@ -165,6 +168,14 @@ struct PreferencesView: View {
     private var unitsTab: some View {
         Form { unitsSection }
             .packRatFormStyle()
+    }
+
+    private var notificationsTab: some View {
+        Form { notificationSection }
+            .packRatFormStyle()
+            .onPermissionChange { await refreshNotificationStatus() }
+            .task { await loadTrailReportNotifications() }
+            .task { await loadTripWeatherAlerts() }
     }
 
     /// Shown in place rather than behind a link: a navigation stack in a
@@ -240,14 +251,9 @@ struct PreferencesView: View {
                         .font(.callout)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    #if os(iOS)
-                    Button("Open Settings") {
-                        if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
-                            openURL(url)
-                        }
-                    }
-                    .font(.callout)
-                    #endif
+                    Button("Open Settings") { PermissionSettings.open(.notifications) }
+                        .font(.callout)
+                        .accessibilityIdentifier("settings_notifications_open_settings")
                 }
             } else {
                 Toggle("Push Notifications", isOn: $notificationsEnabled)
@@ -510,11 +516,13 @@ struct PreferencesView: View {
 
     private func toggleNotifications(_ enable: Bool) async {
         let center = UNUserNotificationCenter.current()
-        if enable {
-            let status = await center.notificationSettings().authorizationStatus
-            if status == .notDetermined {
-                _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
-            }
+        let status = await center.notificationSettings().authorizationStatus
+        if enable, status == .notDetermined {
+            _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+        } else if !enable, status != .notDetermined, status != .denied {
+            // Only the system can revoke permission, so switching off sends the
+            // user there; the switch follows once they come back.
+            PermissionSettings.open(.notifications)
         }
         await refreshNotificationStatus()
     }
@@ -626,7 +634,7 @@ struct PreferencesView: View {
 
 #if os(macOS)
 private enum SettingsTab: Hashable {
-    case sync, units, community, advanced, onDeviceAI
+    case sync, units, notifications, community, advanced, onDeviceAI
 }
 #endif
 

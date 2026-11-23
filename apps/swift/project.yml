@@ -364,6 +364,10 @@ targets:
         # Sign in with Apple must be available here too, not just on iOS.
         com.apple.developer.applesignin:
           - Default
+        # Weather alert push, as on iOS. macOS spells the key with the
+        # `com.apple.developer.` prefix; same pairing of `development` with
+        # the APNs sandbox, `production` from the store export profile.
+        com.apple.developer.aps-environment: development
         com.apple.security.app-sandbox: YES
         com.apple.security.network.client: YES
     info:

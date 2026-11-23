@@ -24,7 +24,7 @@ export type AddWatchedLocationRequest = z.infer<typeof AddWatchedLocationRequest
 export type WatchedLocation = z.infer<typeof WatchedLocationSchema>;
 
 export const RegisterDeviceTokenRequestSchema = z.object({
-  platform: z.enum(['ios', 'android']),
+  platform: z.enum(['ios', 'android', 'macos']),
   deviceToken: z.string().min(1),
 });
 

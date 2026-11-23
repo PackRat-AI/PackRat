@@ -16,7 +16,7 @@ name: Release Apple
 #   WATCH_APPSTORE_PROVISIONING_PROFILE    "PackRat iOS AppStore watchkitapp 2026-11"
 #   WATCH_COMPLICATIONS_APPSTORE_PROVISIONING_PROFILE
 #       "PackRat iOS AppStore watchkitapp complications 2026-11"
-#   MACOS_APPSTORE_PROVISIONING_PROFILE    "PackRat macOS App Store"
+#   MACOS_APPSTORE_PROVISIONING_PROFILE    "PackRat macOS App Store 2026-11"
 #   ASC_API_KEY_P8 / ASC_API_KEY_ID / ASC_API_ISSUER_ID
 #       App Store Connect API key used to upload and submit
 
@@ -172,7 +172,7 @@ jobs:
           DEVELOPMENT_TEAM = 666HGMV2LU
           CODE_SIGN_STYLE[target=PackRat-macOS] = Manual
           CODE_SIGN_IDENTITY[target=PackRat-macOS] = Apple Distribution: Bierman Collective LLC (666HGMV2LU)
-          PROVISIONING_PROFILE_SPECIFIER[target=PackRat-macOS] = PackRat macOS App Store
+          PROVISIONING_PROFILE_SPECIFIER[target=PackRat-macOS] = PackRat macOS App Store 2026-11
           EOF
           cat > "$RUNNER_TEMP/ExportOptions-mac.plist" <<'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
@@ -185,7 +185,7 @@ jobs:
             <key>signingCertificate</key><string>Apple Distribution</string>
             <key>installerSigningCertificate</key><string>3rd Party Mac Developer Installer</string>
             <key>provisioningProfiles</key>
-            <dict><key>com.andrewbierman.packrat</key><string>PackRat macOS App Store</string></dict>
+            <dict><key>com.andrewbierman.packrat</key><string>PackRat macOS App Store 2026-11</string></dict>
             <key>uploadSymbols</key><true/>
           </dict></plist>
           EOF
