@@ -97,7 +97,7 @@
     "expo": "^58.0.0",
     "expo-apple-authentication": "~58.0.2",
     "expo-background-task": "~58.0.12",
-    "expo-blur": "~58.0.5",
+    "expo-blur": "~58.0.6",
     "expo-clipboard": "~58.0.4",
     "expo-constants": "~58.0.14",
     "expo-contacts": "~58.0.10",
