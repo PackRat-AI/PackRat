@@ -40,7 +40,7 @@ const GeocodeResponseSchema = z.object({
     .optional(),
 });
 
-async function geocode(params: string, action: string): Promise<Place[]> {
+async function geocode({ params, action }: { params: string; action: string }): Promise<Place[]> {
   if (!GOOGLE_MAPS_API_KEY) throw new Error('Google Maps API key is not configured');
   try {
     const response = await fetch(
@@ -64,12 +64,15 @@ async function geocode(params: string, action: string): Promise<Place[]> {
 
 /** Places matching a typed query, best match first. */
 export function searchPlaces(query: string): Promise<Place[]> {
-  return geocode(`address=${encodeURIComponent(query)}`, 'searchPlaces');
+  return geocode({ params: `address=${encodeURIComponent(query)}`, action: 'searchPlaces' });
 }
 
 /** The named place at a point on the map, or null when there is nothing there to name. */
 export async function placeAt(coords: Coords): Promise<Place | null> {
-  const [first] = await geocode(`latlng=${coords.latitude},${coords.longitude}`, 'placeAt');
+  const [first] = await geocode({
+    params: `latlng=${coords.latitude},${coords.longitude}`,
+    action: 'placeAt',
+  });
   return first ? { ...first, latitude: coords.latitude, longitude: coords.longitude } : null;
 }
 

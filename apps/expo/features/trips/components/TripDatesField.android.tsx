@@ -23,7 +23,7 @@ export function TripDatesField({ startDate, endDate, error, onChange }: TripDate
         icon="calendar"
         title={isSet ? formatTripRange({ startDate, endDate }) : t('trips.form.addDates')}
         supporting={
-          isSet ? t('trips.form.days', { count: tripDayCount(startDate, endDate) }) : undefined
+          isSet ? t('trips.form.days', { count: tripDayCount({ startDate, endDate }) }) : undefined
         }
         isSet={isSet}
         error={error}

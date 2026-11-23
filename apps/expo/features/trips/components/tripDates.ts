@@ -37,7 +37,13 @@ export function formatTripRange({
 }
 
 /** Whole days covered by the trip, counting both ends. */
-export function tripDayCount(startDate: string, endDate: string): number {
+export function tripDayCount({
+  startDate,
+  endDate,
+}: {
+  startDate: string;
+  endDate: string;
+}): number {
   const ms = Date.parse(`${endDate}T00:00:00Z`) - Date.parse(`${startDate}T00:00:00Z`);
   return Math.round(ms / 86_400_000) + 1;
 }

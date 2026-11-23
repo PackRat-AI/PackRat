@@ -172,7 +172,7 @@ export function LocationPickerScreen() {
   }));
 
   const showResults = searchFocused && search.status !== 'idle';
-  const label = pinnedLabel(pinned, t);
+  const label = pinnedLabel({ pinned, t });
 
   return (
     <View className="flex-1 bg-background" testID={testIds.trips.locationPickerScreen}>
@@ -357,10 +357,13 @@ export function LocationPickerScreen() {
   );
 }
 
-function pinnedLabel(
-  pinned: Pinned,
-  t: ReturnType<typeof useTranslation>['t'],
-): { title: string; region?: string } {
+function pinnedLabel({
+  pinned,
+  t,
+}: {
+  pinned: Pinned;
+  t: ReturnType<typeof useTranslation>['t'];
+}): { title: string; region?: string } {
   if (pinned.status === 'idle') return { title: t('trips.locationPicker.moveMap') };
   const coordsText = `${pinned.coords.latitude.toFixed(4)}, ${pinned.coords.longitude.toFixed(4)}`;
   if (pinned.status === 'loading') return { title: '', region: coordsText };
