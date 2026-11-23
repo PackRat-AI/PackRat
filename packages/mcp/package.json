@@ -22,7 +22,7 @@
     "@packrat/schemas": "workspace:*",
     "@packrat/utils": "workspace:*",
     "agents": "^0.13.2",
-    "jose": "^6.2.12",
+    "jose": "^6.2.14",
     "magic-regexp": "catalog:",
     "zod": "catalog:"
   },
