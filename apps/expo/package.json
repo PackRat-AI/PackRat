@@ -184,7 +184,7 @@
     "eslint": "^8.57.0",
     "eslint-config-universe": "^15.0.3",
     "prettier": "^3.2.5",
-    "prettier-plugin-tailwindcss": "^0.7.2",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "rimraf": "^6.0.1",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
