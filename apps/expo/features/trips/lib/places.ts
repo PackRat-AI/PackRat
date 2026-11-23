@@ -1,8 +1,10 @@
 import { clientEnvs } from '@packrat/env/expo-client';
+import { fromZod } from '@packrat/guards';
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import { Linking } from 'react-native';
+import { z } from 'zod';
 
 const GOOGLE_MAPS_API_KEY: string | undefined =
   Constants.expoConfig?.extra?.googleMapsApiKey || clientEnvs.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -26,13 +28,17 @@ export function splitPlaceName(name: string): { title: string; region?: string }
   return rest.length > 0 ? { title, region: rest.join(', ') } : { title };
 }
 
-type GeocodeResponse = {
-  status: string;
-  results: Array<{
-    formatted_address: string;
-    geometry: { location: { lat: number; lng: number } };
-  }>;
-};
+const GeocodeResponseSchema = z.object({
+  status: z.string(),
+  results: z
+    .array(
+      z.object({
+        formatted_address: z.string(),
+        geometry: z.object({ location: z.object({ lat: z.number(), lng: z.number() }) }),
+      }),
+    )
+    .optional(),
+});
 
 async function geocode(params: string, action: string): Promise<Place[]> {
   if (!GOOGLE_MAPS_API_KEY) throw new Error('Google Maps API key is not configured');
@@ -41,10 +47,11 @@ async function geocode(params: string, action: string): Promise<Place[]> {
       `https://maps.googleapis.com/maps/api/geocode/json?${params}&key=${GOOGLE_MAPS_API_KEY}`,
     );
     if (!response.ok) throw new Error(`Geocode request failed: ${response.status}`);
-    const data = (await response.json()) as GeocodeResponse;
+    const data = fromZod(GeocodeResponseSchema)(await response.json());
+    if (!data) throw new Error('Geocode response was not in the expected shape');
     if (data.status === 'ZERO_RESULTS') return [];
     if (data.status !== 'OK') throw new Error(`Geocode status ${data.status}`);
-    return data.results.map((result) => ({
+    return (data.results ?? []).map((result) => ({
       name: result.formatted_address,
       latitude: result.geometry.location.lat,
       longitude: result.geometry.location.lng,
