@@ -156,10 +156,11 @@ struct TripStatsView: View {
         let record = parksAndPeaks(stats)
         let trails = LongTrails.all.map { LongTrailProgress(trail: $0, finished: stats.finished) }
         let goals = goalProgress(stats, record: record, trails: trails)
-        return ScrollView {
+        return ScrollViewReader { proxy in ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 if stats.availableYears.count > 1 || !stats.availableActivities.isEmpty {
                     TripStatsScopeBar(scope: $scope, years: stats.availableYears, activities: stats.availableActivities)
+                        .id(Self.scopeBarId)
                 }
 
                 if stats.isEmpty {
@@ -180,9 +181,15 @@ struct TripStatsView: View {
             .frame(maxWidth: 720, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
+        // Picking an activity from the chart far down the page rebuilds every
+        // card. Scroll back up so the filter that changed is in view, with Clear.
+        .onChange(of: scope) { withAnimation { proxy.scrollTo(Self.scopeBarId, anchor: .top) } }
+        }
         .background(.background.secondary)
         .accessibilityIdentifier("trip_stats_screen")
     }
+
+    private static let scopeBarId = "trip_stats_scope_bar"
 
     /// Everything below the scope bar. Lifetime collections (goals, parks,
     /// peaks, long trails) and the this-year comparisons show under All Time only.
@@ -237,7 +244,7 @@ struct TripStatsView: View {
 
         if !stats.activities.isEmpty {
             ActivitiesCard(activities: stats.activities, unit: distanceUnit) { activity in
-                scope.activity = scope.activity == activity ? nil : activity
+                withAnimation { scope.activity = scope.activity == activity ? nil : activity }
             }
         }
 

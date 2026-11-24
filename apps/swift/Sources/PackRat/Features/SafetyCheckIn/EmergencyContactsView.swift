@@ -8,6 +8,8 @@ import ContactsUI
 /// Settings › Emergency Contacts. The people told when a trip starts and
 /// alerted if the user doesn't come back on time.
 struct EmergencyContactsView: View {
+    private static let note = "Contacts get an email from PackRat, never from your own address. The first one explains who added them and why."
+
     private var store = SafetyCheckInStore.shared
     @State private var editing: ContactDraft?
     @State private var errorMessage: String?
@@ -40,18 +42,27 @@ struct EmergencyContactsView: View {
                             }
                     }
                 } footer: {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Contacts get an email from PackRat, never from your own address. The first one explains who added them and why.")
-                            // A Mac form footer stays on one line unless told to wrap.
-                            .fixedSize(horizontal: false, vertical: true)
-                        #if os(macOS)
-                        // In the Settings window a toolbar button would land
-                        // in the tab bar, so Add sits under the list.
+                    #if os(macOS)
+                    // In the Settings window a toolbar button would land in the
+                    // tab bar, so Add sits under the list.
+                    HStack {
+                        Spacer()
                         Button("Add Contact") { editing = ContactDraft() }
                             .accessibilityIdentifier("emergency_contacts_add")
-                        #endif
                     }
+                    #else
+                    Text(Self.note)
+                    #endif
                 }
+                #if os(macOS)
+                // A Mac form footer keeps to one line and cut this note off;
+                // as a row of its own it wraps.
+                Section {
+                    Text(Self.note)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(nil)
+                }
+                #endif
             }
         }
         .navigationTitle("Emergency Contacts")

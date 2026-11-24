@@ -13,6 +13,9 @@ final class FeedViewModel {
     var posts: [Post] = []
     var isLoading = false
     var isRefreshing = false
+    /// False until a load has finished, so a load that's cancelled and
+    /// restarted keeps showing progress instead of an empty feed.
+    private(set) var hasLoaded = false
     var error: String?
     var currentPage = 1
     var hasMore = true
@@ -40,12 +43,14 @@ final class FeedViewModel {
 
     func load(refresh: Bool = false) async {
         if VisualSampleData.isEnabled && !posts.isEmpty {
+            hasLoaded = true
             isLoading = false
             isRefreshing = false
             error = nil
             return
         }
         if VisualSampleData.isScreenshotCapture {
+            hasLoaded = true
             isLoading = false
             isRefreshing = false
             error = nil
@@ -73,11 +78,13 @@ final class FeedViewModel {
                 posts.append(contentsOf: response.items.filter { !known.contains($0.id) })
             }
             hasMore = currentPage < response.totalPages
+            hasLoaded = true
         } catch {
             // The load task is cancelled whenever the view re-renders on the
             // Mac split view; that isn't a failure, and showing it as one put
             // the feed on an error screen on first open.
             guard !WeatherViewModel.isCancellation(error) else { return }
+            hasLoaded = true
             self.error = error.localizedDescription
         }
     }
