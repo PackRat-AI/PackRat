@@ -313,7 +313,16 @@ struct PackDetailView: View {
             PackItemDetailView(item: item, packId: currentPack.id, viewModel: viewModel)
         }
         .sheet(isPresented: $showingGapAnalysis) {
-            GapAnalysisSheet(pack: currentPack, service: viewModel.service)
+            GapAnalysisSheet(
+                pack: currentPack,
+                service: viewModel.service,
+                packsViewModel: viewModel,
+                onClose: { added in
+                    if added > 0 {
+                        statusMessage = addedStatusMessage(added: added, failed: 0, source: "gap analysis")
+                    }
+                }
+            )
         }
         // See PacksListView: alert actions must be bare `Button`s — a modifier
         // on one wraps it in `ModifiedContent` and the alert degrades into a

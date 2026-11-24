@@ -298,7 +298,9 @@ struct GapAnalysisResult: Decodable, Sendable {
 }
 
 struct GapSuggestion: Decodable, Identifiable, Sendable {
-    var id: UUID { UUID() }
+    /// The suggestion text. A fresh UUID per read gave every row a new
+    /// identity on each render, which reset any per-row state.
+    var id: String { suggestion }
     let suggestion: String
     let reason: String
     let consumable: Bool
