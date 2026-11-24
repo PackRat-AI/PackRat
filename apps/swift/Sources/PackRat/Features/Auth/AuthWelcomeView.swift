@@ -8,7 +8,7 @@ struct AuthWelcomeView: View {
     var body: some View {
         authContainer {
             VStack(spacing: 24) {
-                AuthHeader(title: "PackRat", subtitle: "Plan better. Pack smarter.", symbol: "backpack.fill")
+                AuthHeader(title: "PackRat", subtitle: "Plan better. Pack smarter.", artwork: .logo)
 
                 VStack(spacing: 10) {
                     Button(action: onSignUpTapped) {

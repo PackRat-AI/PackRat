@@ -155,16 +155,30 @@ func authContainer<Content: View>(@ViewBuilder content: () -> Content) -> some V
 }
 
 struct AuthHeader: View {
+    enum Artwork {
+        /// The PackRat rat mark, for the auth flow's first screen.
+        case logo
+        case symbol(String)
+    }
+
     let title: String
     let subtitle: String
-    let symbol: String
+    let artwork: Artwork
+
+    init(title: String, subtitle: String, symbol: String) {
+        self.init(title: title, subtitle: subtitle, artwork: .symbol(symbol))
+    }
+
+    init(title: String, subtitle: String, artwork: Artwork) {
+        self.title = title
+        self.subtitle = subtitle
+        self.artwork = artwork
+    }
 
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: symbol)
-                .font(.system(size: 42, weight: .semibold))
+            artworkView
                 .foregroundStyle(.tint)
-                .symbolRenderingMode(.hierarchical)
                 // Decorative: the title below says the same thing, and without
                 // this VoiceOver reads the raw SF Symbol name
                 // ("person.crop.circle.badge.plus" → "Add People/Follow").
@@ -179,6 +193,22 @@ struct AuthHeader: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var artworkView: some View {
+        switch artwork {
+        case .logo:
+            Image("LogoMark")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 84, height: 84)
+        case .symbol(let name):
+            Image(systemName: name)
+                .font(.system(size: 42, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
         }
     }
 }
