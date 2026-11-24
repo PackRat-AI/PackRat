@@ -42,27 +42,22 @@ struct EmergencyContactsView: View {
                             }
                     }
                 } footer: {
-                    #if os(macOS)
-                    // In the Settings window a toolbar button would land in the
-                    // tab bar, so Add sits under the list.
-                    HStack {
-                        Spacer()
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(Self.note)
+                            #if os(macOS)
+                            // A Mac form footer sizes its text to one line and
+                            // truncates it; reserving two lines lets it wrap.
+                            .lineLimit(2, reservesSpace: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            #endif
+                        #if os(macOS)
+                        // In the Settings window a toolbar button would land
+                        // in the tab bar, so Add sits under the list.
                         Button("Add Contact") { editing = ContactDraft() }
                             .accessibilityIdentifier("emergency_contacts_add")
+                        #endif
                     }
-                    #else
-                    Text(Self.note)
-                    #endif
                 }
-                #if os(macOS)
-                // A Mac form footer keeps to one line and cut this note off;
-                // as a row of its own it wraps.
-                Section {
-                    Text(Self.note)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(nil)
-                }
-                #endif
             }
         }
         .navigationTitle("Emergency Contacts")
