@@ -37,6 +37,8 @@ const WEB_STUBS = {
   // nothing, so callers import lib/DateTimePicker, whose .web variant renders a date input.
   // expo-file-system throws UnavailabilityError on web; stub all ops as no-ops
   'expo-file-system/legacy': 'mocks/expo-file-system-legacy.ts',
+  // Compose views look up their native view at import time, which throws on web
+  '@expo/ui/jetpack-compose': 'mocks/expo-ui-jetpack-compose.tsx',
 };
 
 const originalResolveRequest = config.resolver?.resolveRequest;
