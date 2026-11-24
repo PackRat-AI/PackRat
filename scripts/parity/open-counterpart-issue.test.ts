@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import {
   defuseMarkers,
+  hasMarker,
   issueBody,
   issueLabels,
   issueTitle,
@@ -25,7 +26,23 @@ describe('parityMarker', () => {
   });
 });
 
+describe('hasMarker', () => {
+  it('matches the exact PR number', () => {
+    expect(hasMarker('<!-- parity-of:#2760 -->', 2760)).toBe(true);
+  });
+
+  it('does not let a shorter PR number match a longer one', () => {
+    expect(hasMarker('<!-- parity-of:#2760 -->', 276)).toBe(false);
+  });
+});
+
 describe('issueTitle', () => {
+  it('uses the mac prefix when only the Mac owes the work', () => {
+    expect(issueTitle('mac', 'feat(swift): intro screens')).toBe(
+      '[parity/mac] feat(swift): intro screens',
+    );
+  });
+
   it('prefixes the owed platform so the backlog is scannable', () => {
     expect(issueTitle('expo', PR.title)).toBe(
       '[parity/expo] fix(swift): keep pack sort order after a rename',
@@ -40,6 +57,10 @@ describe('issueTitle', () => {
 });
 
 describe('issueLabels', () => {
+  it('scopes the platform label to the Mac when the Mac owes the work', () => {
+    expect(issueLabels('mac')).toEqual(['parity', 'parity:mac']);
+  });
+
   it('applies the rollup label plus the owed-platform label', () => {
     expect(issueLabels('expo')).toEqual(['parity', 'parity:expo']);
   });

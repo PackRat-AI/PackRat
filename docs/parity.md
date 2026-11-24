@@ -10,9 +10,7 @@ PackRat ships two clients from one repo:
 Expo no longer ships iOS. A change to `apps/expo` is an **Android** change; a
 change to `apps/swift` is an **iOS + macOS** change.
 
-Work lands on whichever client you happen to be working in — sometimes Swift
-first, sometimes Expo, and often a bug you notice and fix on the spot. The
-counterpart is then supposed to follow. **Nothing remembers that except the
+The usual order is **iOS leads, then the Mac and Android follow**. Work also lands the other way round, and often as a bug you notice and fix on the spot. Whatever didn't get the change is then supposed to follow. **Nothing remembers that except the
 person who was there**, and that is the gap this system closes.
 
 ## The rule
@@ -22,9 +20,19 @@ section of its description, exactly one of:
 
 | Directive | Meaning |
 |---|---|
-| `follow: <swift\|expo> [note]` | The other client needs this too. An issue is opened automatically on merge. |
-| `done-both` | Both clients were handled in this PR. |
+| `follow: <swift\|expo\|mac>[, …] [note]` | Those platforms need this too. One issue per platform is opened automatically on merge. |
+| `done-all` (or `done-both`) | iOS, macOS and Android were all handled in this PR. |
 | `n/a: <reason>` | Parity genuinely doesn't apply. A reason is required. |
+
+Follow targets:
+
+| Target | Means | Typical case |
+|---|---|---|
+| `mac` | The Mac app, in `apps/swift` | A Swift PR that only did iOS |
+| `expo` | Android | Any Swift PR not yet on Android |
+| `swift` | iOS and the Mac | An Expo PR that led |
+
+List several with commas: an iOS-only Swift PR declares `follow: mac, expo`. `swift` already includes the Mac, so `follow: swift, mac` opens just the `swift` issue.
 
 CI blocks the PR if the section is missing or malformed. PRs that touch neither
 client are exempt automatically — backend and docs work is never asked about
@@ -38,16 +46,14 @@ context and is the difference between a decision and an omission.
 
 ## What happens on merge
 
-`.github/workflows/parity.yml` reads the declaration. If it says `follow`, it
-opens an issue on the counterpart client:
+`.github/workflows/parity.yml` reads the declaration. If it says `follow`, it opens one issue per owed platform:
 
-- **Title**: `[parity/expo] <original PR title>`
-- **Labels**: `parity` + `parity:expo` (or `parity:swift`)
+- **Title**: `[parity/expo] <original PR title>` (or `[parity/mac]`, `[parity/swift]`)
+- **Labels**: `parity` + `parity:expo` (or `parity:mac`, `parity:swift`)
 - **Body**: links the originating PR and author, carries your note, and states
   how to close the gap
 
-The issue carries a hidden `parity-of:#<pr>` marker, so a re-run or a re-merge
-finds the existing one instead of opening a duplicate. Duplicate gap issues
+Each issue carries a hidden `parity-of:#<pr>` marker and its platform label, so a re-run or a re-merge finds the existing one for that platform instead of opening a duplicate. Duplicate gap issues
 would train everyone to ignore the label, which would end the scheme.
 
 The `record` job triggers on **push to `development`/`main`**, resolving the
@@ -98,16 +104,14 @@ filing per-product bugs.
 So the unit of tracking here is **the individual change, captured at merge
 time** — not a registry anyone has to keep true.
 
-**Why "swift"/"expo" and not "ios"/"android"?** Parity is a question about
-codebases, and one codebase ships two OSes. `follow: ios` would be ambiguous
-about macOS; `follow: swift` isn't.
+**Why "swift"/"expo", plus "mac"?** A change lands on a codebase, and one codebase ships two OSes, so `follow: swift` names iOS and the Mac together. The Mac gets its own target because it lags iOS inside the same codebase: an iOS-only Swift PR owes the Mac a follow-up just as it owes Android one, and without `mac` that debt had nowhere to go.
 
 **Behaviour, not transliteration.** A parity issue asks for the same *user-
 visible behaviour*, implemented idiomatically for the platform. SwiftUI context
 menus versus long-press sheets is parity. Porting code line-for-line isn't the
 goal.
 
-**Sequencing is unconstrained.** Either client may lead. This mirrors how VLC
+**iOS leads by default.** Any platform may go first, but the expected order is iOS, then the Mac and Android. This mirrors how VLC
 runs the same two-client problem — one platform goes first to work out the
 kinks, the other adopts
 ([interview](https://www.hackingwithswift.com/interviews/carola-nitz-how-can-you-maintain-feature-parity-between-ios-and-android-apps)).

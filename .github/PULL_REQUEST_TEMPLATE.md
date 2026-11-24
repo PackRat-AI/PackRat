@@ -30,20 +30,24 @@ Closes #<!-- issue number, if applicable -->
 <!--
 REQUIRED when this PR touches apps/swift or apps/expo.
 
-We ship two clients: Swift (iOS + macOS) and Expo (Android). Work lands on one
-first — say here what happens to the other. Check exactly one:
+We ship iOS and macOS from Swift and Android from Expo. iOS usually leads; the
+Mac and Android follow. Say here what happens to the platforms this PR didn't
+finish. Check exactly one:
 
-  follow: <swift|expo> [note]  — the other client needs this too. An issue is
-                                 opened automatically on merge; you don't have
-                                 to remember.
-  done-both                    — both clients are handled in this PR.
-  n/a: <reason>                — parity genuinely doesn't apply. Reason required.
+  follow: <swift|expo|mac>[, ...] [note]  — those platforms need this too. One
+                                            issue per platform is opened on
+                                            merge. iOS-only Swift work is
+                                            usually "follow: mac, expo".
+  done-all                                — iOS, macOS and Android are all
+                                            handled in this PR.
+  n/a: <reason>                           — parity genuinely doesn't apply.
+                                            Reason required.
 
 See docs/parity.md.
 -->
 
 - [ ] follow:
-- [ ] done-both
+- [ ] done-all
 - [ ] n/a:
 
 ## Testing

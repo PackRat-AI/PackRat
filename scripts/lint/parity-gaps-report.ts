@@ -86,7 +86,7 @@ export function renderReport(gaps: Gap[], now: Date): string {
   ];
 
   if (gaps.length === 0) {
-    lines.push('**No open parity gaps.** Both clients are level.', '');
+    lines.push('**No open parity gaps.** Every client is level.', '');
     return lines.join('\n');
   }
 
