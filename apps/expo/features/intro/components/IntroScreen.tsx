@@ -26,12 +26,9 @@ const AnimatedPagerView = Animated.createAnimatedComponent(PagerView);
  * background colour follows the finger without waiting on the JS thread.
  * Pattern from react-native-pager-view's Reanimated example.
  */
-function usePagerScrollHandler(
-  onPageScroll: (event: PagerViewOnPageScrollEventData) => void,
-  dependencies: unknown[] = [],
-) {
+function usePagerScrollHandler(onPageScroll: (event: PagerViewOnPageScrollEventData) => void) {
   const handlers = { onPageScroll };
-  const { context, doDependenciesDiffer } = useHandler(handlers, dependencies);
+  const { context, doDependenciesDiffer } = useHandler(handlers, []);
   // Typed as the wrapped native event so the handler matches the pager's
   // prop; Reanimated unwraps `nativeEvent` before calling the worklet.
   return useEvent<NativeSyntheticEvent<PagerViewOnPageScrollEventData>>(
