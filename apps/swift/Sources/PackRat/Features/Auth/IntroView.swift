@@ -57,16 +57,10 @@ struct IntroView: View {
                     .accessibilityIdentifier("intro_page_\(offset)")
             }
         }
+        // No onChange(of: index) here: the pager flips `index` at the halfway
+        // point of a swipe, and the page geometry already drives the colour for
+        // both swipes and the Next button's animated slide.
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .onChange(of: index) { _, newIndex in
-            // Button taps change `index` without a drag; animate the blend to
-            // match the page slide.
-            if abs(scroll.value - CGFloat(newIndex)) > 0.5 {
-                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
-                    scroll.value = CGFloat(newIndex)
-                }
-            }
-        }
         #else
         IntroPageView(page: pages[index])
             .id(index)
