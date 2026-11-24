@@ -8,6 +8,9 @@ struct IntroView: View {
     let onFinished: () -> Void
 
     @State private var index = 0
+    /// Continuous page position while swiping (1.5 = halfway from page 1 to
+    /// page 2), so the background blends between neighbouring colours.
+    @State private var progress: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let pages = IntroPage.all
@@ -16,9 +19,8 @@ struct IntroView: View {
 
     var body: some View {
         ZStack {
-            pages[index].background
+            IntroPage.blendedBackground(at: progress, in: pages)
                 .ignoresSafeArea()
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: index)
 
             VStack(spacing: 0) {
                 HStack {
@@ -49,18 +51,48 @@ struct IntroView: View {
         TabView(selection: $index) {
             ForEach(Array(pages.enumerated()), id: \.offset) { offset, page in
                 IntroPageView(page: page)
+                    .background(pageOffsetReader(for: offset))
                     .tag(offset)
                     .accessibilityIdentifier("intro_page_\(offset)")
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
+        .onChange(of: index) { _, newIndex in
+            // Button taps change `index` without a drag; animate the blend to
+            // match the page slide.
+            if abs(progress - CGFloat(newIndex)) > 0.5 {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
+                    progress = CGFloat(newIndex)
+                }
+            }
+        }
         #else
         IntroPageView(page: pages[index])
             .id(index)
             .transition(.opacity)
             .accessibilityIdentifier("intro_page_\(index)")
+            .onChange(of: index) { _, newIndex in
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
+                    progress = CGFloat(newIndex)
+                }
+            }
         #endif
     }
+
+    #if os(iOS)
+    /// Reports where a page sits horizontally. The page currently under the
+    /// finger sets `progress`, so the colour tracks the swipe frame by frame.
+    private func pageOffsetReader(for offset: Int) -> some View {
+        GeometryReader { proxy in
+            let frame = proxy.frame(in: .global)
+            Color.clear
+                .onChange(of: frame.minX) { _, minX in
+                    guard frame.width > 0, abs(minX) < frame.width else { return }
+                    progress = CGFloat(offset) - minX / frame.width
+                }
+        }
+    }
+    #endif
 
     private var footer: some View {
         VStack(spacing: 0) {
@@ -97,7 +129,7 @@ struct IntroView: View {
             Button(action: onFinished) {
                 Text("Get Started")
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(pages[index].background)
+                    .foregroundStyle(IntroPage.blendedBackground(at: progress, in: pages))
                     .padding(.horizontal, 22)
                     .frame(height: 44)
                     .background(.white, in: Capsule())
@@ -195,15 +227,46 @@ struct IntroPage: Identifiable {
     let lead: String
     let detail: String
     let tagline: String
-    let background: Color
+    let rgb: RGB
 
-    /// One outdoor colour per page, each dark enough for white text.
+    /// One outdoor colour per page, each dark enough for white text. Kept as
+    /// RGB so neighbouring pages can be blended during a swipe.
+    struct RGB {
+        let red: Double
+        let green: Double
+        let blue: Double
+
+        var color: Color { Color(red: red, green: green, blue: blue) }
+
+        func mixed(with other: RGB, by amount: Double) -> RGB {
+            RGB(
+                red: red + (other.red - red) * amount,
+                green: green + (other.green - green) * amount,
+                blue: blue + (other.blue - blue) * amount
+            )
+        }
+    }
+
     private enum Palette {
-        static let forest = Color(red: 0.20, green: 0.50, blue: 0.39)
-        static let ember = Color(red: 0.80, green: 0.40, blue: 0.13)
-        static let sky = Color(red: 0.05, green: 0.42, blue: 0.80)
-        static let lake = Color(red: 0.05, green: 0.46, blue: 0.53)
-        static let dusk = Color(red: 0.33, green: 0.25, blue: 0.55)
+        static let forest = RGB(red: 0.20, green: 0.50, blue: 0.39)
+        static let ember = RGB(red: 0.80, green: 0.40, blue: 0.13)
+        static let sky = RGB(red: 0.05, green: 0.42, blue: 0.80)
+        static let lake = RGB(red: 0.05, green: 0.46, blue: 0.53)
+        static let dusk = RGB(red: 0.33, green: 0.25, blue: 0.55)
+    }
+
+    var background: Color { rgb.color }
+
+    /// The background at a fractional page position, blending the two pages
+    /// either side of it.
+    static func blendedBackground(at progress: CGFloat, in pages: [IntroPage]) -> Color {
+        guard !pages.isEmpty else { return .clear }
+        let clamped = min(max(Double(progress), 0), Double(pages.count - 1))
+        let lower = Int(clamped.rounded(.down))
+        let upper = min(lower + 1, pages.count - 1)
+        let from = pages[lower].rgb
+        let to = pages[upper].rgb
+        return from.mixed(with: to, by: clamped - Double(lower)).color
     }
 
     static let all: [IntroPage] = [
@@ -214,7 +277,7 @@ struct IntroPage: Identifiable {
             lead: "Plan trips, build packing lists and head outdoors ready for what's ahead.",
             detail: "Everything for the trip lives in one place.",
             tagline: "Plan better. Pack smarter.",
-            background: Palette.forest
+            rgb: Palette.forest
         ),
         IntroPage(
             id: 1,
@@ -223,7 +286,7 @@ struct IntroPage: Identifiable {
             lead: "Build lists from a catalog of real gear, with weights filled in.",
             detail: "See your total and base weight before you lift the pack.",
             tagline: "Every gram counts.",
-            background: Palette.ember
+            rgb: Palette.ember
         ),
         IntroPage(
             id: 2,
@@ -232,7 +295,7 @@ struct IntroPage: Identifiable {
             lead: "Put a trip on the calendar, choose where you're going and attach a pack.",
             detail: "Your dates, your destination and your gear stay together.",
             tagline: "Know before you go.",
-            background: Palette.sky
+            rgb: Palette.sky
         ),
         IntroPage(
             id: 3,
@@ -241,7 +304,7 @@ struct IntroPage: Identifiable {
             lead: "See the forecast for where you're headed, not just where you are.",
             detail: "Read guides for the trail and the activity before you set out.",
             tagline: "No surprises at the trailhead.",
-            background: Palette.lake
+            rgb: Palette.lake
         ),
         IntroPage(
             id: 4,
@@ -250,7 +313,7 @@ struct IntroPage: Identifiable {
             lead: "Your packs and trips stay on your device.",
             detail: "Open them at the trailhead, with or without signal.",
             tagline: "See you out there.",
-            background: Palette.dusk
+            rgb: Palette.dusk
         ),
     ]
 }

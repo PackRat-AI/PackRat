@@ -6,11 +6,19 @@ import { StatusBar } from 'expo-status-bar';
 import { useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
 import PagerView from 'react-native-pager-view';
-import Animated, { useReducedMotion } from 'react-native-reanimated';
+import Animated, {
+  interpolateColor,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { INTRO_PAGES, type IntroPage } from '../lib/introPages';
 
 const LOGO_MARK = require('expo-app/assets/intro-logo-mark.png');
+
+const PAGE_POSITIONS = INTRO_PAGES.map((_, offset) => offset);
+const PAGE_COLORS = INTRO_PAGES.map((item) => item.background);
 
 type IntroScreenProps = {
   onFinished: () => void;
@@ -25,6 +33,12 @@ export function IntroScreen({ onFinished }: IntroScreenProps) {
   const pagerRef = useRef<PagerView>(null);
   const [index, setIndex] = useState(0);
   const reduceMotion = useReducedMotion();
+  // Continuous page position while swiping (1.5 = halfway from page 1 to 2),
+  // so the background blends between neighbouring colours with the finger.
+  const progress = useSharedValue(0);
+  const backgroundStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(progress.value, PAGE_POSITIONS, PAGE_COLORS),
+  }));
 
   const page = INTRO_PAGES[index] ?? INTRO_PAGES[0];
   const isLastPage = index === INTRO_PAGES.length - 1;
@@ -40,7 +54,7 @@ export function IntroScreen({ onFinished }: IntroScreenProps) {
   };
 
   return (
-    <Animated.View style={{ flex: 1, backgroundColor: background }} testID={testIds.intro.screen}>
+    <Animated.View style={[{ flex: 1 }, backgroundStyle]} testID={testIds.intro.screen}>
       <StatusBar style="light" />
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
         <View className="h-12 flex-row items-center justify-end px-2">
@@ -60,6 +74,9 @@ export function IntroScreen({ onFinished }: IntroScreenProps) {
           ref={pagerRef}
           style={{ flex: 1 }}
           initialPage={0}
+          onPageScroll={(event) => {
+            progress.value = event.nativeEvent.position + event.nativeEvent.offset;
+          }}
           onPageSelected={(event) => setIndex(event.nativeEvent.position)}
         >
           {INTRO_PAGES.map((item, offset) => (
