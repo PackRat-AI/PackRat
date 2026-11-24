@@ -131,12 +131,26 @@ struct IntroView: View {
 private struct IntroPageView: View {
     let page: IntroPage
 
+    @ViewBuilder
+    private var artwork: some View {
+        switch page.artwork {
+        case .symbol(let name):
+            Image(systemName: name)
+                .font(.system(size: 120, weight: .regular))
+                .symbolRenderingMode(.hierarchical)
+        case .logo:
+            Image("LogoMark")
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 180, height: 180)
+        }
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 28) {
-                Image(systemName: page.symbol)
-                    .font(.system(size: 120, weight: .regular))
-                    .symbolRenderingMode(.hierarchical)
+                artwork
                     .foregroundStyle(.white.opacity(0.82))
                     .frame(height: 170)
                     .accessibilityHidden(true)
@@ -170,8 +184,13 @@ private struct IntroPageView: View {
 }
 
 struct IntroPage: Identifiable {
+    enum Artwork {
+        case logo
+        case symbol(String)
+    }
+
     let id: Int
-    let symbol: String
+    let artwork: Artwork
     let title: String
     let lead: String
     let detail: String
@@ -190,7 +209,7 @@ struct IntroPage: Identifiable {
     static let all: [IntroPage] = [
         IntroPage(
             id: 0,
-            symbol: "backpack.fill",
+            artwork: .logo,
             title: "Welcome to PackRat",
             lead: "Plan trips, build packing lists and head outdoors ready for what's ahead.",
             detail: "Everything for the trip lives in one place.",
@@ -199,7 +218,7 @@ struct IntroPage: Identifiable {
         ),
         IntroPage(
             id: 1,
-            symbol: "checklist",
+            artwork: .symbol("checklist"),
             title: "Pack with purpose",
             lead: "Build lists from a catalog of real gear, with weights filled in.",
             detail: "See your total and base weight before you lift the pack.",
@@ -208,7 +227,7 @@ struct IntroPage: Identifiable {
         ),
         IntroPage(
             id: 2,
-            symbol: "map.fill",
+            artwork: .symbol("map.fill"),
             title: "Plan every trip",
             lead: "Put a trip on the calendar, choose where you're going and attach a pack.",
             detail: "Your dates, your destination and your gear stay together.",
@@ -217,7 +236,7 @@ struct IntroPage: Identifiable {
         ),
         IntroPage(
             id: 3,
-            symbol: "cloud.sun.fill",
+            artwork: .symbol("cloud.sun.fill"),
             title: "Check the conditions",
             lead: "See the forecast for where you're headed, not just where you are.",
             detail: "Read guides for the trail and the activity before you set out.",
@@ -226,7 +245,7 @@ struct IntroPage: Identifiable {
         ),
         IntroPage(
             id: 4,
-            symbol: "mountain.2.fill",
+            artwork: .symbol("mountain.2.fill"),
             title: "Ready anywhere",
             lead: "Your packs and trips stay on your device.",
             detail: "Open them at the trailhead, with or without signal.",

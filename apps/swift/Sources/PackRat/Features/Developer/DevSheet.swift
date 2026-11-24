@@ -1,9 +1,12 @@
-#if os(iOS)
 import SwiftUI
+#if os(iOS)
 import UIKit
+#endif
 
-/// Developer sheet, opened by a long press on the top-right corner of any
-/// screen. Non-production builds only, matching the other developer controls.
+/// Developer tools. On iPhone and iPad a long press on the top-right corner of
+/// any screen opens it as a sheet; on the Mac it is a window opened from the
+/// Developer menu (⌥⌘D). Non-production builds only, matching the other
+/// developer controls.
 struct DevSheet: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(\.dismiss) private var dismiss
@@ -56,14 +59,22 @@ struct DevSheet: View {
                 }
             }
             .navigationTitle("Developer")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            .fullScreenCover(isPresented: $showsIntro) {
+                IntroView(onFinished: { showsIntro = false })
+            }
+            #else
+            .formStyle(.grouped)
+            .sheet(isPresented: $showsIntro) {
+                IntroView(onFinished: { showsIntro = false })
+                    .frame(width: 420, height: 640)
+            }
+            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
-            }
-            .fullScreenCover(isPresented: $showsIntro) {
-                IntroView(onFinished: { showsIntro = false })
             }
         }
         .accessibilityIdentifier("dev_sheet")
@@ -75,6 +86,7 @@ struct DevSheet: View {
     }
 }
 
+#if os(iOS)
 extension View {
     /// Opens `DevSheet` on a long press in the top-right corner of the window.
     /// Installs a window-level recognizer that never cancels touches, so
