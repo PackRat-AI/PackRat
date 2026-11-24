@@ -34,9 +34,9 @@
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSLocationUsageDescription</key>
-	<string>PackRat uses your location to show the trails and weather around you.</string>
+	<string>PackRat uses your location to show the trails around you.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>PackRat uses your location to show the trails and weather around you.</string>
+	<string>PackRat uses your location to show the trails around you.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>PACKRAT_ENV</key>

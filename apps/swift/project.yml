@@ -376,8 +376,8 @@ targets:
     info:
       path: Resources/Info-macOS.plist
       properties:
-        NSLocationUsageDescription: "PackRat uses your location to show the trails and weather around you."
-        NSLocationWhenInUseUsageDescription: "PackRat uses your location to show the trails and weather around you."
+        NSLocationUsageDescription: "PackRat uses your location to show the trails around you."
+        NSLocationWhenInUseUsageDescription: "PackRat uses your location to show the trails around you."
         CFBundleDisplayName: $(PACKRAT_DISPLAY_NAME)
         # Literal, not $(PRODUCT_NAME): the target is named PackRat-macOS, and
         # the substituted value put "macOS" into the name Finder and the menu
