@@ -74,6 +74,10 @@ final class FeedViewModel {
             }
             hasMore = currentPage < response.totalPages
         } catch {
+            // The load task is cancelled whenever the view re-renders on the
+            // Mac split view; that isn't a failure, and showing it as one put
+            // the feed on an error screen on first open.
+            guard !WeatherViewModel.isCancellation(error) else { return }
             self.error = error.localizedDescription
         }
     }
