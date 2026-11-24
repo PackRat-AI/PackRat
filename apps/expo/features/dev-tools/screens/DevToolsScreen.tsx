@@ -35,7 +35,11 @@ export function DevToolsScreen() {
   }, []);
 
   const version = `${Application.nativeApplicationVersion ?? '?'} (${Application.nativeBuildVersion ?? '?'})`;
-  const variant = (Constants.expoConfig?.extra?.appVariant as string | undefined) ?? 'development';
+  // A debug bundle served by Metro reports whatever APP_VARIANT Metro started
+  // with, so trust __DEV__ first.
+  const variant = __DEV__
+    ? 'development (debug)'
+    : ((Constants.expoConfig?.extra?.appVariant as string | undefined) ?? 'unknown');
   const account = user?.email ?? 'Guest or signed out';
 
   const handleResetIntro = async () => {
