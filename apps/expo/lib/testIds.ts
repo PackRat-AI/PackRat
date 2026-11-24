@@ -32,6 +32,25 @@ export const testIds = Object.freeze({
     showPasswordCheckbox: 'auth:show-password-checkbox',
   }),
 
+  // ── Intro ─────────────────────────────────────────────────────────────────
+  intro: Object.freeze({
+    screen: 'intro:screen',
+    skip: 'intro:skip',
+    next: 'intro:next',
+    getStarted: 'intro:get-started',
+    indicator: 'intro:page-indicator',
+    page: (index: number) => `intro:page-${index}`,
+  }),
+
+  // ── Developer tools ───────────────────────────────────────────────────────
+  devTools: Object.freeze({
+    sheet: 'dev-tools:sheet',
+    showIntro: 'dev-tools:show-intro',
+    resetIntro: 'dev-tools:reset-intro',
+    refreshFlags: 'dev-tools:refresh-flags',
+    moreSettings: 'dev-tools:more-settings',
+  }),
+
   // ── Messages ──────────────────────────────────────────────────────────────
   messages: Object.freeze({
     selectConversationCheckbox: (id: string | number) => `messages:select-conversation-${id}`,

@@ -11,6 +11,7 @@ import {
 } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { AuthClientError } from 'expo-app/features/auth/lib/authErrors';
+import { IntroScreen, useIntroSeen } from 'expo-app/features/intro';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { isErrorWithCode, statusCodes } from 'expo-app/lib/googleSignin';
@@ -45,6 +46,11 @@ export default function AuthIndexScreen() {
   } = useLocalSearchParams<RouteParams>();
   const needsReauth = useAtomValue(needsReauthAtom);
   const enableOAuth = useFeatureFlag('enableOAuth');
+  const enableIntro = useFeatureFlag('enableIntroScreens');
+  const { hasSeen: hasSeenIntro, markSeen: markIntroSeen } = useIntroSeen();
+  // First launch only: the cold-start redirect is the one that offers guest
+  // mode. Sign-in prompts from inside the app never show the intro.
+  const isFirstLaunchEntry = showSkipLoginBtn === 'true';
 
   const handleGoogleSignIn = async () => {
     try {
@@ -84,6 +90,14 @@ export default function AuthIndexScreen() {
   React.useEffect(() => {
     setIsLoadingGlobal(false);
   }, [setIsLoadingGlobal]);
+
+  if (isFirstLaunchEntry && enableIntro && hasSeenIntro === null) {
+    return null;
+  }
+
+  if (isFirstLaunchEntry && enableIntro && hasSeenIntro === false) {
+    return <IntroScreen onFinished={markIntroSeen} />;
+  }
 
   if (isLoading) {
     return (

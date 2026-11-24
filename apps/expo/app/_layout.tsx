@@ -14,6 +14,7 @@ import { configureRevenueCat } from 'expo-app/features/purchases';
 // Registers the background task definition; must load before any UI for headless launches.
 import 'expo-app/features/safety-check-in/lib/locationTracking';
 import 'expo-app/features/trips/lib/tripConditionsBackgroundRefresh';
+import { DevToolsCornerTrigger } from 'expo-app/features/dev-tools';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
@@ -94,10 +95,14 @@ function RootLayout() {
         style={isDarkColorScheme ? 'light' : 'dark'}
       />
       <NavThemeProvider value={NAV_THEME[colorScheme]}>
-        <Stack screenOptions={SCREEN_OPTIONS}>
-          <Stack.Screen name="(app)" />
-          <Stack.Screen name="auth" />
-        </Stack>
+        <DevToolsCornerTrigger>
+          <Stack screenOptions={SCREEN_OPTIONS}>
+            <Stack.Screen name="(app)" />
+            <Stack.Screen name="auth" />
+            <Stack.Screen name="intro" options={INTRO_OPTIONS} />
+            <Stack.Screen name="dev-tools" options={DEV_TOOLS_OPTIONS} />
+          </Stack>
+        </DevToolsCornerTrigger>
         <Alert title="" buttons={[]} ref={appAlert} />
       </NavThemeProvider>
     </Providers>
@@ -109,4 +114,17 @@ export default Sentry.wrap(RootLayout);
 const SCREEN_OPTIONS = {
   headerShown: false,
   animation: 'ios_from_right', // for android
+} as const;
+
+const INTRO_OPTIONS = {
+  presentation: 'fullScreenModal',
+  animation: 'fade',
+} as const;
+
+const DEV_TOOLS_OPTIONS = {
+  presentation: 'formSheet',
+  // Mutable array: the navigator's option type rejects a readonly tuple.
+  sheetAllowedDetents: [0.6, 1] as number[],
+  sheetGrabberVisible: true,
+  sheetCornerRadius: 28,
 } as const;
