@@ -1348,6 +1348,7 @@ final class VisualScreenshotTests: XCTestCase {
         app.launchArguments = [
             "--disable-animations",
             "--use-userdefaults-auth",
+            "--skip-intro",
             "--reset-auth",
             "--seed-e2e-auth",
         ]
@@ -1389,6 +1390,7 @@ final class VisualScreenshotTests: XCTestCase {
         app.launchArguments = [
             "--disable-animations",
             "--use-userdefaults-auth",
+            "--skip-intro",
             "--reset-auth",
         ]
         app.launchEnvironment["PACKRAT_VISUAL_SCREENSHOTS"] = "1"
@@ -1439,6 +1441,7 @@ final class VisualScreenshotTests: XCTestCase {
         app.launchArguments = [
             "--disable-animations",
             "--use-userdefaults-auth",
+            "--skip-intro",
             "--reset-auth",
         ]
         if forceOffline {

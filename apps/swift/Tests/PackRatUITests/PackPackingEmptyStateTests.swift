@@ -11,6 +11,7 @@ final class PackPackingEmptyStateTests: AppUITestCase {
         app = XCUIApplication()
         app.launchArguments.append("--disable-animations")
         app.launchArguments.append("--use-userdefaults-auth")
+        app.launchArguments.append("--skip-intro")
         app.launchArguments.append("--reset-auth")
         app.launch()
     }

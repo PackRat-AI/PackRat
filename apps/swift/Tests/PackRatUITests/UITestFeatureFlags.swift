@@ -6,6 +6,7 @@ import Foundation
 enum UITestFeatureFlags {
     static let enableAppleLocalAI = false
     static let enableFeed = false
+    static let enableIntroScreens = false
     static let enableLocalAI = true
     static let enableOAuth = true
     static let enableOfflineMaps = false
@@ -32,6 +33,7 @@ enum UITestFeatureFlags {
     static let codedDefaults: [String: Bool] = [
         "enableAppleLocalAI": false,
         "enableFeed": false,
+        "enableIntroScreens": false,
         "enableLocalAI": true,
         "enableOAuth": true,
         "enableOfflineMaps": false,
