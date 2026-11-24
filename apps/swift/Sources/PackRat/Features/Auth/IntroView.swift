@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// First-launch intro: a few full-screen pages in PackRat's brand greens that
+/// First-launch intro: a few full-screen pages, each in its own colour, that
 /// explain what the app is for, then hand off to the welcome screen.
 struct IntroView: View {
     let onFinished: () -> Void
@@ -176,14 +176,13 @@ struct IntroPage: Identifiable {
     let tagline: String
     let background: Color
 
-    /// Tones of the PackRat brand green, from the accent colour down to the
-    /// deep forest used on share cards, so the intro steps through one family.
-    private enum Brand {
-        static let accent = Color(red: 0.259, green: 0.584, blue: 0.459)
-        static let pine = Color(red: 0.20, green: 0.48, blue: 0.38)
-        static let spruce = Color(red: 0.16, green: 0.40, blue: 0.33)
-        static let forest = Color(red: 0.13, green: 0.30, blue: 0.25)
-        static let night = Color(red: 0.09, green: 0.21, blue: 0.18)
+    /// One outdoor colour per page, each dark enough for white text.
+    private enum Palette {
+        static let forest = Color(red: 0.20, green: 0.50, blue: 0.39)
+        static let ember = Color(red: 0.80, green: 0.40, blue: 0.13)
+        static let sky = Color(red: 0.05, green: 0.42, blue: 0.80)
+        static let lake = Color(red: 0.05, green: 0.46, blue: 0.53)
+        static let dusk = Color(red: 0.33, green: 0.25, blue: 0.55)
     }
 
     static let all: [IntroPage] = [
@@ -194,7 +193,7 @@ struct IntroPage: Identifiable {
             lead: "Plan trips, build packing lists and head outdoors ready for what's ahead.",
             detail: "Everything for the trip lives in one place.",
             tagline: "Plan better. Pack smarter.",
-            background: Brand.accent
+            background: Palette.forest
         ),
         IntroPage(
             id: 1,
@@ -203,7 +202,7 @@ struct IntroPage: Identifiable {
             lead: "Build lists from a catalog of real gear, with weights filled in.",
             detail: "See your total and base weight before you lift the pack.",
             tagline: "Every gram counts.",
-            background: Brand.pine
+            background: Palette.ember
         ),
         IntroPage(
             id: 2,
@@ -212,7 +211,7 @@ struct IntroPage: Identifiable {
             lead: "Put a trip on the calendar, choose where you're going and attach a pack.",
             detail: "Your dates, your destination and your gear stay together.",
             tagline: "Know before you go.",
-            background: Brand.spruce
+            background: Palette.sky
         ),
         IntroPage(
             id: 3,
@@ -221,7 +220,7 @@ struct IntroPage: Identifiable {
             lead: "See the forecast for where you're headed, not just where you are.",
             detail: "Read guides for the trail and the activity before you set out.",
             tagline: "No surprises at the trailhead.",
-            background: Brand.forest
+            background: Palette.lake
         ),
         IntroPage(
             id: 4,
@@ -230,7 +229,7 @@ struct IntroPage: Identifiable {
             lead: "Your packs and trips stay on your device.",
             detail: "Open them at the trailhead, with or without signal.",
             tagline: "See you out there.",
-            background: Brand.night
+            background: Palette.dusk
         ),
     ]
 }
