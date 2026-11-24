@@ -59,6 +59,10 @@ export function DevToolsScreen() {
 
   return (
     <ScrollView
+      // Android's bottom sheet only hands drags to a child that opts into
+      // nested scrolling; without this the whole sheet slides instead of the
+      // content scrolling.
+      nestedScrollEnabled
       className="flex-1 bg-background"
       contentContainerClassName="gap-6 px-4 pb-10 pt-6"
       testID={testIds.devTools.sheet}
