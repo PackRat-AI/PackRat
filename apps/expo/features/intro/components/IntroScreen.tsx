@@ -4,11 +4,13 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { StatusBar } from 'expo-status-bar';
 import { useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, View } from 'react-native';
-import PagerView from 'react-native-pager-view';
+import { Image, type NativeSyntheticEvent, Pressable, ScrollView, View } from 'react-native';
+import PagerView, { type PagerViewOnPageScrollEventData } from 'react-native-pager-view';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
+  useEvent,
+  useHandler,
   useReducedMotion,
   useSharedValue,
 } from 'react-native-reanimated';
@@ -16,6 +18,34 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { INTRO_PAGES, type IntroPage } from '../lib/introPages';
 
 const LOGO_MARK = require('expo-app/assets/intro-logo-mark.png');
+
+const AnimatedPagerView = Animated.createAnimatedComponent(PagerView);
+
+/**
+ * Runs the pager's scroll callback as a worklet on the UI thread, so the
+ * background colour follows the finger without waiting on the JS thread.
+ * Pattern from react-native-pager-view's Reanimated example.
+ */
+function usePagerScrollHandler(
+  onPageScroll: (event: PagerViewOnPageScrollEventData) => void,
+  dependencies: unknown[] = [],
+) {
+  const handlers = { onPageScroll };
+  const { context, doDependenciesDiffer } = useHandler(handlers, dependencies);
+  // Typed as the wrapped native event so the handler matches the pager's
+  // prop; Reanimated unwraps `nativeEvent` before calling the worklet.
+  return useEvent<NativeSyntheticEvent<PagerViewOnPageScrollEventData>>(
+    (event) => {
+      'worklet';
+      if (event.eventName.endsWith('onPageScroll')) {
+        handlers.onPageScroll(event);
+      }
+      void context;
+    },
+    ['onPageScroll'],
+    doDependenciesDiffer,
+  );
+}
 
 const PAGE_POSITIONS = INTRO_PAGES.map((_, offset) => offset);
 const PAGE_COLORS = INTRO_PAGES.map((item) => item.background);
@@ -36,6 +66,10 @@ export function IntroScreen({ onFinished }: IntroScreenProps) {
   // Continuous page position while swiping (1.5 = halfway from page 1 to 2),
   // so the background blends between neighbouring colours with the finger.
   const progress = useSharedValue(0);
+  const scrollHandler = usePagerScrollHandler((event) => {
+    'worklet';
+    progress.value = event.position + event.offset;
+  });
   const backgroundStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(progress.value, PAGE_POSITIONS, PAGE_COLORS),
   }));
@@ -70,13 +104,11 @@ export function IntroScreen({ onFinished }: IntroScreenProps) {
           )}
         </View>
 
-        <PagerView
+        <AnimatedPagerView
           ref={pagerRef}
           style={{ flex: 1 }}
           initialPage={0}
-          onPageScroll={(event) => {
-            progress.value = event.nativeEvent.position + event.nativeEvent.offset;
-          }}
+          onPageScroll={scrollHandler}
           onPageSelected={(event) => setIndex(event.nativeEvent.position)}
         >
           {INTRO_PAGES.map((item, offset) => (
@@ -84,7 +116,7 @@ export function IntroScreen({ onFinished }: IntroScreenProps) {
               <IntroPageView page={item} />
             </View>
           ))}
-        </PagerView>
+        </AnimatedPagerView>
 
         <View className="h-px bg-white/20" />
         <View className="h-[76px] flex-row items-center justify-between px-6">

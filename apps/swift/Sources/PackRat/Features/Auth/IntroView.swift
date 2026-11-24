@@ -8,9 +8,10 @@ struct IntroView: View {
     let onFinished: () -> Void
 
     @State private var index = 0
-    /// Continuous page position while swiping (1.5 = halfway from page 1 to
-    /// page 2), so the background blends between neighbouring colours.
-    @State private var progress: CGFloat = 0
+    /// Continuous page position while swiping. Held in an observable object
+    /// that only the background reads, so a swipe redraws the colour alone
+    /// rather than the whole pager every frame.
+    @State private var scroll = IntroScrollProgress()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let pages = IntroPage.all
@@ -19,7 +20,7 @@ struct IntroView: View {
 
     var body: some View {
         ZStack {
-            IntroPage.blendedBackground(at: progress, in: pages)
+            IntroBackground(scroll: scroll, pages: pages)
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -60,9 +61,9 @@ struct IntroView: View {
         .onChange(of: index) { _, newIndex in
             // Button taps change `index` without a drag; animate the blend to
             // match the page slide.
-            if abs(progress - CGFloat(newIndex)) > 0.5 {
+            if abs(scroll.value - CGFloat(newIndex)) > 0.5 {
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
-                    progress = CGFloat(newIndex)
+                    scroll.value = CGFloat(newIndex)
                 }
             }
         }
@@ -73,7 +74,7 @@ struct IntroView: View {
             .accessibilityIdentifier("intro_page_\(index)")
             .onChange(of: index) { _, newIndex in
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
-                    progress = CGFloat(newIndex)
+                    scroll.value = CGFloat(newIndex)
                 }
             }
         #endif
@@ -81,14 +82,15 @@ struct IntroView: View {
 
     #if os(iOS)
     /// Reports where a page sits horizontally. The page currently under the
-    /// finger sets `progress`, so the colour tracks the swipe frame by frame.
+    /// finger sets the scroll progress, so the colour tracks the swipe frame by frame.
     private func pageOffsetReader(for offset: Int) -> some View {
         GeometryReader { proxy in
             let frame = proxy.frame(in: .global)
             Color.clear
                 .onChange(of: frame.minX) { _, minX in
                     guard frame.width > 0, abs(minX) < frame.width else { return }
-                    progress = CGFloat(offset) - minX / frame.width
+                    let value = CGFloat(offset) - minX / frame.width
+                    if abs(scroll.value - value) > 0.001 { scroll.value = value }
                 }
         }
     }
@@ -129,7 +131,7 @@ struct IntroView: View {
             Button(action: onFinished) {
                 Text("Get Started")
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(IntroPage.blendedBackground(at: progress, in: pages))
+                    .foregroundStyle(IntroPage.blendedBackground(at: CGFloat(pages.count - 1), in: pages))
                     .padding(.horizontal, 22)
                     .frame(height: 44)
                     .background(.white, in: Capsule())
@@ -157,6 +159,21 @@ struct IntroView: View {
         } else {
             withAnimation(.easeInOut(duration: 0.35)) { index += 1 }
         }
+    }
+}
+
+@Observable
+private final class IntroScrollProgress {
+    /// 1.5 means halfway from page 1 to page 2.
+    var value: CGFloat = 0
+}
+
+private struct IntroBackground: View {
+    let scroll: IntroScrollProgress
+    let pages: [IntroPage]
+
+    var body: some View {
+        IntroPage.blendedBackground(at: scroll.value, in: pages)
     }
 }
 
