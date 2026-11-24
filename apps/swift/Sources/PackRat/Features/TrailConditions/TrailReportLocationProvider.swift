@@ -16,6 +16,9 @@ final class TrailReportLocationProvider: NSObject, CLLocationManagerDelegate {
     /// True once the user has said no, so the picker can stop waiting for a
     /// fix and lead with search instead.
     private(set) var isDenied = false
+    /// True when a fix was asked for and the system couldn't produce one, so
+    /// the picker can stop waiting just as it does on a denial.
+    private(set) var isUnavailable = false
 
     override init() {
         super.init()
@@ -59,11 +62,17 @@ final class TrailReportLocationProvider: NSObject, CLLocationManagerDelegate {
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let coordinate = locations.last?.coordinate else { return }
-        Task { @MainActor in self.coordinate = coordinate }
+        Task { @MainActor in
+            self.coordinate = coordinate
+            self.isUnavailable = false
+        }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         // A missing fix means a name search instead of a nearby list — a normal
         // outcome, not an error worth reporting.
+        Task { @MainActor in
+            if self.coordinate == nil { self.isUnavailable = true }
+        }
     }
 }

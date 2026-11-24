@@ -80,18 +80,27 @@ struct RouteDrawingView: View {
                 }
             }
             .mapStyle(.standard(elevation: .realistic))
-            .onTapGesture { location in
-                if let coordinate = proxy.convert(location, from: .local) {
-                    points.append(coordinate)
+            // SpatialTapGesture: onTapGesture never fires on a macOS map.
+            .simultaneousGesture(
+                SpatialTapGesture().onEnded { value in
+                    if let coordinate = proxy.convert(value.location, from: .local) {
+                        points.append(coordinate)
+                    }
                 }
-            }
+            )
             .accessibilityIdentifier("route_drawing_map")
         }
     }
 
+    #if os(macOS)
+    private static let drawHint = "Click the map along the way you went."
+    #else
+    private static let drawHint = "Tap the map along the way you went."
+    #endif
+
     private var panel: some View {
         VStack(spacing: 10) {
-            Text(points.count < 2 ? "Tap the map along the way you went." : unit.formatDistance(distance))
+            Text(points.count < 2 ? Self.drawHint : unit.formatDistance(distance))
                 .font(points.count < 2 ? .subheadline : .title3.bold().monospacedDigit())
                 .foregroundStyle(points.count < 2 ? .secondary : .primary)
                 .accessibilityIdentifier("route_drawing_distance")

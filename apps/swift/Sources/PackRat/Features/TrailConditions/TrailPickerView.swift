@@ -22,6 +22,10 @@ struct ReportTrailPickerView: View {
     @State private var isLoading = false
     @State private var loadFailed = false
     @State private var showingPinDrop = false
+    /// Set once a fix has had long enough to arrive. A Mac with Wi-Fi
+    /// positioning off never answers, so the picker stops waiting and leads
+    /// with search rather than spinning forever.
+    @State private var stoppedWaitingForFix = false
 
     private let service = TrailConditionsService.shared
 
@@ -50,6 +54,10 @@ struct ReportTrailPickerView: View {
         #endif
         .searchable(text: $query, prompt: "Search trails")
         .task { location.start() }
+        .task {
+            try? await Task.sleep(for: .seconds(6))
+            stoppedWaitingForFix = true
+        }
         .task(id: searchKey) { await search() }
         .navigationDestination(isPresented: $showingPinDrop) {
             TrailPinDropView(start: location.coordinate) { pin in
@@ -88,7 +96,7 @@ struct ReportTrailPickerView: View {
             }
         } else if trimmedQuery.isEmpty && near == nil {
             Section {
-                if location.isDenied {
+                if location.isDenied || location.isUnavailable || stoppedWaitingForFix {
                     hint(
                         "Search by Name",
                         systemImage: "magnifyingglass",
@@ -268,21 +276,32 @@ struct TrailPinDropView: View {
                 MapCompass()
                 MapScaleView()
             }
-            .onTapGesture { point in
-                if let coordinate = proxy.convert(point, from: .local) {
-                    pin = coordinate
-                    isLabelFocused = false
+            // SpatialTapGesture, not onTapGesture: the map's own click and
+            // drag handling swallows onTapGesture on macOS, so a click never
+            // dropped the pin.
+            .simultaneousGesture(
+                SpatialTapGesture().onEnded { value in
+                    if let coordinate = proxy.convert(value.location, from: .local) {
+                        pin = coordinate
+                        isLabelFocused = false
+                    }
                 }
-            }
+            )
             .accessibilityIdentifier("trail_pin_map")
         }
     }
+
+    #if os(macOS)
+    private static let pressVerb = "Click"
+    #else
+    private static let pressVerb = "Tap"
+    #endif
 
     var body: some View {
         VStack(spacing: 0) {
             map
             .overlay(alignment: .top) {
-                Text(pin == nil ? "Tap the map to drop a pin" : "Tap elsewhere to move the pin")
+                Text(pin == nil ? "\(Self.pressVerb) the map to drop a pin" : "\(Self.pressVerb) elsewhere to move the pin")
                     .font(.footnote.weight(.medium))
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .background(.regularMaterial, in: Capsule())
