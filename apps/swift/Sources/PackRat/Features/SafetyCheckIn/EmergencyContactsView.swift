@@ -42,24 +42,32 @@ struct EmergencyContactsView: View {
                             }
                     }
                 } footer: {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(Self.note)
-                            #if os(macOS)
-                            // A Mac form footer sizes its text to one line and
-                            // truncates it; reserving two lines lets it wrap.
-                            .lineLimit(2, reservesSpace: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            #endif
-                        #if os(macOS)
-                        // In the Settings window a toolbar button would land
-                        // in the tab bar, so Add sits under the list.
-                        Button("Add Contact") { editing = ContactDraft() }
-                            .accessibilityIdentifier("emergency_contacts_add")
-                        #endif
-                    }
+                    #if os(iOS)
+                    Text(Self.note)
+                    #endif
                 }
             }
         }
+        #if os(macOS)
+        // A Mac list draws a section footer as one fixed-height row, so the
+        // note was cut off there. Below the list it wraps. In the Settings
+        // window a toolbar button would land in the tab bar, so Add sits here.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !store.contacts.isEmpty || !store.contactsLoaded {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(Self.note)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("Add Contact") { editing = ContactDraft() }
+                        .accessibilityIdentifier("emergency_contacts_add")
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+            }
+        }
+        #endif
         .navigationTitle("Emergency Contacts")
         #if os(iOS)
         .toolbar {
