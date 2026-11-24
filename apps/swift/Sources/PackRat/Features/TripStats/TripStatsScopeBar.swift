@@ -18,6 +18,10 @@ struct TripStatsScopeBar: View {
                             Text(String(year)).tag(Int?.some(year))
                         }
                     }
+                    // Inline, so the choices sit in the menu itself. On the Mac
+                    // the default nests them in a submenu that applied a filter
+                    // as the pointer passed over it.
+                    .pickerStyle(.inline)
                 } label: {
                     chip(scope.year.map(String.init) ?? "All Time", active: scope.year != nil)
                 }
@@ -32,6 +36,7 @@ struct TripStatsScopeBar: View {
                                 Label(activity.label, systemImage: activity.symbol).tag(TripActivity?.some(activity))
                             }
                         }
+                        .pickerStyle(.inline)
                     } label: {
                         chip(scope.activity?.label ?? "All Activities", symbol: scope.activity?.symbol, active: scope.activity != nil)
                     }
