@@ -11,6 +11,13 @@ private let seenAlertIdsKey = "seenWeatherAlertIds"
 @MainActor
 @Observable
 final class WeatherViewModel {
+    /// Watching saved places, read from the live flag. The generated
+    /// `AppFeatureFlags` constant is only the coded default, so reading it
+    /// kept the feature off even with the flag turned on.
+    static var isMonitoringEnabled: Bool {
+        FeatureFlagStore.shared.isEnabled("enableWeatherMonitoring")
+    }
+
     var searchText = ""
     var searchResults: [WeatherLocation] = []
     var savedLocations: [WeatherLocation] = []
@@ -303,7 +310,7 @@ final class WeatherViewModel {
             watchedLocations = VisualSampleData.watchedLocations
             return
         }
-        guard await FeatureFlagStore.shared.isEnabled("enableWeatherMonitoring") else { return }
+        guard Self.isMonitoringEnabled else { return }
         isLoadingWatchedLocations = true
         defer { isLoadingWatchedLocations = false }
         do {

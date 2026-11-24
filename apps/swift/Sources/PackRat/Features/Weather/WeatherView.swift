@@ -135,7 +135,7 @@ struct WeatherView: View {
             }
             .disabled(viewModel.savedLocations.isEmpty)
 
-            if AppFeatureFlags.enableWeatherMonitoring
+            if WeatherViewModel.isMonitoringEnabled
                 || FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey) {
                 NavigationLink {
                     WeatherWatchListView(viewModel: viewModel)
@@ -160,13 +160,24 @@ struct WeatherView: View {
 
     // MARK: - List
 
+    /// On the Mac the field counts as presented for as long as it holds focus,
+    /// even emptied, so keying off presentation alone left a blank results
+    /// list in place of the saved locations. There the query decides.
+    private var isShowingSearch: Bool {
+        #if os(macOS)
+        !viewModel.searchText.trimmingCharacters(in: .whitespaces).isEmpty
+        #else
+        isSearchPresented
+        #endif
+    }
+
     @ViewBuilder
     private var locationList: some View {
         // Search is a mode the field enters, not a state inferred from whether
         // results exist. Keying off results alone left the saved list showing
         // behind an empty query, so the screen flipped between two contents
         // while the user was still typing.
-        if isSearchPresented {
+        if isShowingSearch {
             searchResultsList
         } else if viewModel.savedLocations.isEmpty {
             EmptyStateView(
