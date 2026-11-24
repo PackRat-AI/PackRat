@@ -42,6 +42,8 @@ struct EmergencyContactsView: View {
                 } footer: {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Contacts get an email from PackRat, never from your own address. The first one explains who added them and why.")
+                            // A Mac form footer stays on one line unless told to wrap.
+                            .fixedSize(horizontal: false, vertical: true)
                         #if os(macOS)
                         // In the Settings window a toolbar button would land
                         // in the tab bar, so Add sits under the list.

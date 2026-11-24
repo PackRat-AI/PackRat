@@ -516,8 +516,14 @@ private struct ActivitiesCard: View {
 
     @State private var selectedLabel: String?
 
+    #if os(macOS)
+    private static let pressVerb = "Click"
+    #else
+    private static let pressVerb = "Tap"
+    #endif
+
     var body: some View {
-        StatsCard(title: "Activities", subtitle: "From your trip logs. Tap one to see only those trips.") {
+        StatsCard(title: "Activities", subtitle: "From your trip logs. \(Self.pressVerb) one to see only those trips.") {
             Chart(activities) { bucket in
                 BarMark(
                     x: .value("Trips", bucket.trips),
@@ -539,12 +545,29 @@ private struct ActivitiesCard: View {
                 AxisMarks(position: .leading) { AxisValueLabel() }
             }
             .frame(height: CGFloat(activities.count) * 34 + 8)
+            #if os(macOS)
+            // A Mac chart's selection follows the pointer, so hovering applied
+            // the filter. Here a bar only filters when it's clicked.
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    Rectangle().fill(.clear).contentShape(Rectangle())
+                        .gesture(SpatialTapGesture().onEnded { value in
+                            guard let plot = proxy.plotFrame else { return }
+                            let y = value.location.y - geometry[plot].origin.y
+                            guard let label: String = proxy.value(atY: y),
+                                  let bucket = activities.first(where: { $0.activity.label == label }) else { return }
+                            onSelect(bucket.activity)
+                        })
+                }
+            }
+            #else
             .chartYSelection(value: $selectedLabel)
             .onChange(of: selectedLabel) { _, label in
                 guard let label, let bucket = activities.first(where: { $0.activity.label == label }) else { return }
                 selectedLabel = nil
                 onSelect(bucket.activity)
             }
+            #endif
             .accessibilityChartDescriptor(TripStatsChartDescriptor(
                 descriptor: TripStatsChartDescriptors.activities(activities)
             ))
