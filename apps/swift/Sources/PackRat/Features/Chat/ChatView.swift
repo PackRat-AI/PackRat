@@ -241,7 +241,16 @@ struct ChatView: View {
     private var inputBar: some View {
         HStack(alignment: .bottom, spacing: 10) {
             #if os(macOS)
-            TextField("Ask about gear, trips, packing...", text: $viewModel.inputText)
+            // Beside the composer on the Mac: a sheet has no window toolbar,
+            // so a toolbar pop-up vanished in Ask AI and left the mode stuck.
+            if isOnDeviceOffered && authManager.isAuthenticated {
+                modePicker
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .fixedSize()
+                    .help("Answers from")
+            }
+            TextField("Ask about gear, trips, packing…", text: $viewModel.inputText)
                 .textFieldStyle(.roundedBorder)
                 .focused($isInputFocused)
                 .onSubmit { send() }
@@ -304,18 +313,21 @@ private extension View {
                 modeToolbarPopUp(content())
             }
             #else
-            modeToolbarPopUp(content())
+            // The Mac puts the picker beside the composer instead (inputBar).
+            self
             #endif
         } else {
             self
         }
     }
 
+    #if os(iOS)
     func modeToolbarPopUp<Menu: View>(_ menu: Menu) -> some View {
         toolbar {
             ToolbarItem(placement: .navigation) { menu.pickerStyle(.menu).fixedSize() }
         }
     }
+    #endif
 
     /// The current mode under the title, so the choice is visible without
     /// opening the menu. iPad and the iPhone app on a Mac do not show a title
