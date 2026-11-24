@@ -110,7 +110,15 @@ export function hasMarker(body: string, prNumber: number): boolean {
  * The counterpart issue for this PR on `target`, if one exists (any state).
  * One PR can owe several platforms, so the lookup is per platform label.
  */
-export function findExisting(prNumber: number, target: Platform, repo: string): string | null {
+export function findExisting({
+  prNumber,
+  target,
+  repo,
+}: {
+  prNumber: number;
+  target: Platform;
+  repo: string;
+}): string | null {
   const marker = parityMarker(prNumber);
   const result = gh([
     'issue',
@@ -198,7 +206,7 @@ function main(): void {
       continue;
     }
 
-    const existing = findExisting(pr.number, target, repo);
+    const existing = findExisting({ prNumber: pr.number, target, repo });
     if (existing) {
       console.log(`parity: ${target} counterpart issue already exists — ${existing}`);
       continue;
