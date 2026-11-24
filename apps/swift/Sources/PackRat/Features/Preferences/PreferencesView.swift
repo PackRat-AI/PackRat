@@ -96,6 +96,14 @@ struct PreferencesView: View {
                 .frame(width: 500, height: 420)
                 .tabItem { Label("Notifications", systemImage: "bell.badge") }
                 .tag(SettingsTab.notifications)
+            if SafetyCheckInStore.isEnabled {
+                // Shown in place, not behind a link: a navigation stack in a
+                // Settings tab puts its back button in the tab bar.
+                EmergencyContactsView()
+                    .frame(width: 500, height: 420)
+                    .tabItem { Label("Emergency Contacts", systemImage: "shield.lefthalf.filled") }
+                    .tag(SettingsTab.emergencyContacts)
+            }
             if showsCommunity {
                 communityTab
                     .frame(width: 500, height: 480)
@@ -634,7 +642,7 @@ struct PreferencesView: View {
 
 #if os(macOS)
 private enum SettingsTab: Hashable {
-    case sync, units, notifications, community, advanced, onDeviceAI
+    case sync, units, notifications, emergencyContacts, community, advanced, onDeviceAI
 }
 #endif
 

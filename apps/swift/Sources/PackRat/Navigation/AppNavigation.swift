@@ -630,12 +630,28 @@ struct AppNavigation: View {
             }
             .help(email)
             Spacer()
+            #if os(macOS)
+            // An in-app way into Settings, beside the account it configures;
+            // ⌘, and the app menu alone were too hidden.
+            SettingsLink {
+                Image(systemName: "gearshape").foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Settings")
+            .accessibilityLabel("Settings")
+            .accessibilityIdentifier("sidebar_settings_button")
+            #endif
             Menu {
                 Button {
                     isProfilePresented = true
                 } label: {
                     Label("Profile", systemImage: "person.circle")
                 }
+                #if os(macOS)
+                SettingsLink {
+                    Label("Settings…", systemImage: "gearshape")
+                }
+                #endif
                 Divider()
                 // A guest has no session to end, so "Sign Out" was a no-op
                 // offering to undo something that never happened. Mirror the

@@ -1,9 +1,9 @@
 import Foundation
-
+import SwiftUI
 #if os(iOS)
 import Contacts
 import ContactsUI
-import SwiftUI
+#endif
 
 /// Settings › Emergency Contacts. The people told when a trip starts and
 /// alerted if the user doesn't come back on time.
@@ -33,19 +33,34 @@ struct EmergencyContactsView: View {
                             .swipeActions {
                                 Button("Delete", role: .destructive) { delete(contact) }
                             }
+                            // A Mac has no swipe; right-click deletes there.
+                            .contextMenu {
+                                Button("Edit") { editing = ContactDraft(contact) }
+                                Button("Delete", role: .destructive) { delete(contact) }
+                            }
                     }
                 } footer: {
-                    Text("Contacts get an email from PackRat, never from your own address. The first one explains who added them and why.")
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Contacts get an email from PackRat, never from your own address. The first one explains who added them and why.")
+                        #if os(macOS)
+                        // In the Settings window a toolbar button would land
+                        // in the tab bar, so Add sits under the list.
+                        Button("Add Contact") { editing = ContactDraft() }
+                            .accessibilityIdentifier("emergency_contacts_add")
+                        #endif
+                    }
                 }
             }
         }
         .navigationTitle("Emergency Contacts")
+        #if os(iOS)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Add", systemImage: "plus") { editing = ContactDraft() }
                     .accessibilityIdentifier("emergency_contacts_add")
             }
         }
+        #endif
         .sheet(item: $editing) { draft in
             EmergencyContactForm(draft: draft)
         }
@@ -155,6 +170,7 @@ struct EmergencyContactForm: View {
     var body: some View {
         NavigationStack {
             Form {
+                #if os(iOS)
                 Section {
                     Button {
                         showingPicker = true
@@ -162,14 +178,17 @@ struct EmergencyContactForm: View {
                         Label("Choose from Contacts", systemImage: "person.crop.circle.badge.plus")
                     }
                 }
+                #endif
                 Section {
                     TextField("Name", text: $draft.name)
                         .textContentType(.name)
                         .accessibilityIdentifier("emergency_contact_name")
                     TextField("Email", text: $draft.email)
+                        #if os(iOS)
                         .keyboardType(.emailAddress)
-                        .textContentType(.emailAddress)
                         .textInputAutocapitalization(.never)
+                        #endif
+                        .textContentType(.emailAddress)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier("emergency_contact_email")
                 } footer: {
@@ -188,8 +207,11 @@ struct EmergencyContactForm: View {
                     Section { Text(errorMessage).foregroundStyle(.red) }
                 }
             }
+            .packRatFormStyle()
             .navigationTitle(draft.existingId == nil ? "New Contact" : "Edit Contact")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
@@ -202,6 +224,7 @@ struct EmergencyContactForm: View {
                     }
                 }
             }
+            #if os(iOS)
             .background(
                 ContactPicker(isPresented: $showingPicker) { contact in
                     draft.name = CNContactFormatter.string(from: contact, style: .fullName) ?? draft.name
@@ -210,7 +233,9 @@ struct EmergencyContactForm: View {
                     }
                 }
             )
+            #endif
         }
+        .formSheetSize(minWidth: 420, minHeight: 360)
     }
 
     private func save() {
@@ -236,6 +261,7 @@ struct EmergencyContactForm: View {
     }
 }
 
+#if os(iOS)
 /// Presents the system contact picker. It runs out of process, so PackRat
 /// never needs access to the whole address book.
 private struct ContactPicker: UIViewControllerRepresentable {
