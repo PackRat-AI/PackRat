@@ -3,6 +3,8 @@ import SwiftUI
 /// First-launch intro: a few full-screen pages, each in its own colour, that
 /// explain what the app is for, then hand off to the welcome screen.
 struct IntroView: View {
+    static let hasSeenKey = "intro.hasSeen.v1"
+
     let onFinished: () -> Void
 
     @State private var index = 0

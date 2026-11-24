@@ -6,7 +6,7 @@ import GoogleSignIn
 struct AuthGateView: View {
     @Environment(AuthManager.self) private var authManager
     @State private var route: AuthRoute = .welcome
-    @AppStorage("intro.hasSeen.v1") private var hasSeenIntro = false
+    @AppStorage(IntroView.hasSeenKey) private var hasSeenIntro = false
 
     /// The first-launch intro shows once per install, ahead of the welcome
     /// screen. UI tests pass `--skip-intro` so they start where they expect.

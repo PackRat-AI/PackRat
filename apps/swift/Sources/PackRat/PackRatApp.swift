@@ -40,6 +40,10 @@ struct PackRatApp: App {
         // reopen it after the user closes the last main window (guideline 4).
         WindowGroup(id: PackRatApp.mainWindowSceneID) {
             AuthGateView()
+                #if os(iOS)
+                // Inside `.environment` so the sheet can read the AuthManager.
+                .devSheetOnCornerLongPress()
+                #endif
                 .environment(authManager)
                 .flushesPendingWrites()
                 // Only on the main window. The auxiliary Pack/Trip windows on
