@@ -6,6 +6,7 @@ final class AuthTests: AppUITestCase {
         app = XCUIApplication()
         app.launchArguments.append("--disable-animations")
         app.launchArguments.append("--use-userdefaults-auth")
+        app.launchArguments.append("--skip-intro")
         // Force logged-out state so the login screen is reachable.
         app.launchArguments.append("--reset-auth")
         if e2eLoginSeedAllowed {
@@ -51,6 +52,7 @@ final class AuthTests: AppUITestCase {
         app = XCUIApplication()
         app.launchArguments.append("--disable-animations")
         app.launchArguments.append("--use-userdefaults-auth")
+        app.launchArguments.append("--skip-intro")
         app.launch()
 
         XCTAssertTrue(waitForLoggedIn(timeout: 10), "Guest mode should be remembered after relaunch")

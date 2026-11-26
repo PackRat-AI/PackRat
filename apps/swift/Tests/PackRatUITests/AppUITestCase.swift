@@ -31,6 +31,7 @@ class AppUITestCase: XCTestCase {
         // Avoid macOS Keychain access prompts when Xcode repeatedly rebuilds
         // and ad-hoc signs the test host during UI test runs.
         app.launchArguments.append("--use-userdefaults-auth")
+        app.launchArguments.append("--skip-intro")
         // Feature suites need a fresh auth decision. AuthTests overrides setup
         // for guest mode. Local API runs can provide the same derived E2E
         // bearer token accepted by the worker, avoiding brittle UI sign-in

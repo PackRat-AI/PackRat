@@ -6,6 +6,15 @@ import GoogleSignIn
 struct AuthGateView: View {
     @Environment(AuthManager.self) private var authManager
     @State private var route: AuthRoute = .welcome
+    @AppStorage(IntroView.hasSeenKey) private var hasSeenIntro = false
+
+    /// The first-launch intro shows once per install, ahead of the welcome
+    /// screen. UI tests pass `--skip-intro` so they start where they expect.
+    private var showsIntro: Bool {
+        !hasSeenIntro
+            && FeatureFlagStore.shared.isEnabled("enableIntroScreens")
+            && !ProcessInfo.processInfo.arguments.contains("--skip-intro")
+    }
 
     var body: some View {
         Group {
@@ -16,6 +25,9 @@ struct AuthGateView: View {
                     .background(Color.secondary.opacity(0.08))
             } else if authManager.canUseApp {
                 AppNavigation()
+            } else if showsIntro {
+                IntroView(onFinished: { hasSeenIntro = true })
+                    .transition(.opacity)
             } else {
                 authContent
                     .onAppear {
@@ -32,6 +44,7 @@ struct AuthGateView: View {
         .animation(.spring(duration: 0.3), value: authManager.isRestoringSession)
         .animation(.spring(duration: 0.3), value: authManager.canUseApp)
         .animation(.spring(duration: 0.3), value: route)
+        .animation(.easeInOut(duration: 0.3), value: showsIntro)
         // Re-runs whenever the signed-in user changes, including sign-out
         // (nil). Tying purchases identity to the same signal as the rest of the
         // session keeps RevenueCat's app-user-id equal to our users.id, which

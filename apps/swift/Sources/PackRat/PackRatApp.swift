@@ -10,6 +10,7 @@ struct PackRatApp: App {
     /// Scene id of the primary `WindowGroup`, so the macOS menu commands can
     /// reopen it via `openWindow(id:)` after the last window is closed.
     static let mainWindowSceneID = "main"
+    static let developerWindowSceneID = "developer"
 
     @State private var authManager = AuthManager()
     #if os(macOS)
@@ -40,6 +41,10 @@ struct PackRatApp: App {
         // reopen it after the user closes the last main window (guideline 4).
         WindowGroup(id: PackRatApp.mainWindowSceneID) {
             AuthGateView()
+                #if os(iOS)
+                // Inside `.environment` so the sheet can read the AuthManager.
+                .devSheetOnCornerLongPress()
+                #endif
                 .environment(authManager)
                 .flushesPendingWrites()
                 // Only on the main window. The auxiliary Pack/Trip windows on
@@ -76,6 +81,14 @@ struct PackRatApp: App {
         #endif
 
         #if os(macOS)
+        // Reachable only from the Developer menu, which non-production builds show.
+        Window("Developer", id: PackRatApp.developerWindowSceneID) {
+            DevSheet()
+                .environment(authManager)
+                .frame(minWidth: 420, minHeight: 520)
+        }
+        .defaultSize(width: 480, height: 640)
+
         Settings {
             PreferencesView()
                 .environment(authManager)

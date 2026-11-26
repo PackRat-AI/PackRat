@@ -2471,5 +2471,43 @@
     "regionTooLarge": "Too large",
     "framePart": "Choose part of it",
     "regionsFailed": "The list of parks and regions couldn't be loaded."
+  },
+  "intro": {
+    "skip": "Skip",
+    "next": "Next",
+    "getStarted": "Get Started",
+    "pageOf": "Page {{current}} of {{total}}",
+    "pages": {
+      "welcome": {
+        "title": "Welcome to PackRat",
+        "lead": "Plan trips, build packing lists and head outdoors ready for what's ahead.",
+        "detail": "Everything for the trip lives in one place.",
+        "tagline": "Plan better. Pack smarter."
+      },
+      "packs": {
+        "title": "Pack with purpose",
+        "lead": "Build lists from a catalog of real gear, with weights filled in.",
+        "detail": "See your total and base weight before you lift the pack.",
+        "tagline": "Every gram counts."
+      },
+      "trips": {
+        "title": "Plan every trip",
+        "lead": "Put a trip on the calendar, choose where you're going and attach a pack.",
+        "detail": "Your dates, your destination and your gear stay together.",
+        "tagline": "Know before you go."
+      },
+      "conditions": {
+        "title": "Check the conditions",
+        "lead": "See the forecast for where you're headed, not just where you are.",
+        "detail": "Read guides for the trail and the activity before you set out.",
+        "tagline": "No surprises at the trailhead."
+      },
+      "anywhere": {
+        "title": "Ready anywhere",
+        "lead": "Your packs and trips stay on your device.",
+        "detail": "Open them at the trailhead, with or without signal.",
+        "tagline": "See you out there."
+      }
+    }
   }
 }

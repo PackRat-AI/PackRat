@@ -36,6 +36,13 @@ struct PackRatCommands: Commands {
                 .disabled(showingNewTrip == nil)
         }
 
+        if APIClient.isNonProduction {
+            CommandMenu("Developer") {
+                Button("Developer Tools…") { openWindow(id: PackRatApp.developerWindowSceneID) }
+                    .keyboardShortcut("d", modifiers: [.command, .option])
+            }
+        }
+
         CommandGroup(before: .toolbar) {
             Button("Search…") { showingSearch = true }
                 .keyboardShortcut("f", modifiers: .command)
