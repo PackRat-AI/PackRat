@@ -1,18 +1,19 @@
 import { describe, expect, it } from 'bun:test';
 import {
+  type Codebase,
   extractParityBlock,
   isPlatform,
   otherPlatform,
-  type Platform,
   parseParityDeclaration,
   platformsTouched,
+  splitFollowTargets,
   stripHtmlComments,
   stripTemplateNoise,
 } from './check-parity-declaration';
 
-const SWIFT_ONLY: Platform[] = ['swift'];
-const EXPO_ONLY: Platform[] = ['expo'];
-const BOTH: Platform[] = ['swift', 'expo'];
+const SWIFT_ONLY: Codebase[] = ['swift'];
+const EXPO_ONLY: Codebase[] = ['expo'];
+const BOTH: Codebase[] = ['swift', 'expo'];
 
 function body(parity: string): string {
   return `## Description\n\nSomething changed.\n\n## Parity\n\n${parity}\n\n## Testing\n\n- [x] unit\n`;
@@ -107,7 +108,7 @@ describe('parseParityDeclaration — valid declarations', () => {
   it('accepts a follow directive naming the other platform', () => {
     const result = parseParityDeclaration(body('follow: expo'), SWIFT_ONLY);
     expect(result.violations).toEqual([]);
-    expect(result.directive).toEqual({ kind: 'follow', target: 'expo' });
+    expect(result.directive).toEqual({ kind: 'follow', targets: ['expo'] });
   });
 
   it('captures the trailing note on a follow directive', () => {
@@ -116,7 +117,7 @@ describe('parseParityDeclaration — valid declarations', () => {
     ]);
     expect(result.directive).toEqual({
       kind: 'follow',
-      target: 'expo',
+      targets: ['expo'],
       note: 'needs the same empty state',
     });
   });
@@ -135,17 +136,17 @@ describe('parseParityDeclaration — valid declarations', () => {
 
   it('accepts a checked-checkbox directive as written by the PR template', () => {
     const result = parseParityDeclaration(body('- [x] follow: swift'), EXPO_ONLY);
-    expect(result.directive).toEqual({ kind: 'follow', target: 'swift' });
+    expect(result.directive).toEqual({ kind: 'follow', targets: ['swift'] });
   });
 
   it('tolerates a missing colon after follow', () => {
     const result = parseParityDeclaration(body('follow expo'), SWIFT_ONLY);
-    expect(result.directive).toEqual({ kind: 'follow', target: 'expo' });
+    expect(result.directive).toEqual({ kind: 'follow', targets: ['expo'] });
   });
 
   it('tolerates trailing punctuation on the platform name', () => {
     const result = parseParityDeclaration(body('follow: expo.'), SWIFT_ONLY);
-    expect(result.directive).toEqual({ kind: 'follow', target: 'expo' });
+    expect(result.directive).toEqual({ kind: 'follow', targets: ['expo'] });
   });
 });
 
@@ -195,7 +196,7 @@ describe('parseParityDeclaration — violations', () => {
   it('allows follow naming either platform when the PR touched both', () => {
     const result = parseParityDeclaration(body('follow: swift'), BOTH);
     expect(result.violations).toEqual([]);
-    expect(result.directive).toEqual({ kind: 'follow', target: 'swift' });
+    expect(result.directive).toEqual({ kind: 'follow', targets: ['swift'] });
   });
 
   it('flags n/a with no reason', () => {
@@ -209,16 +210,63 @@ describe('parseParityDeclaration — violations', () => {
     expect(result.directive).toBeNull();
   });
 
+  it('accepts mac alone when an iOS-only Swift change leaves the Mac behind', () => {
+    const result = parseParityDeclaration(body('follow: mac'), SWIFT_ONLY);
+    expect(result.violations).toEqual([]);
+    expect(result.directive).toEqual({ kind: 'follow', targets: ['mac'] });
+  });
+
+  it('accepts several targets with a note, so iOS can lead and Mac and Android follow', () => {
+    const result = parseParityDeclaration(body('follow: mac, expo same intro screens'), SWIFT_ONLY);
+    expect(result.violations).toEqual([]);
+    expect(result.directive).toEqual({
+      kind: 'follow',
+      targets: ['mac', 'expo'],
+      note: 'same intro screens',
+    });
+  });
+
+  it('drops mac when swift is also owed, since swift already covers the Mac', () => {
+    const result = parseParityDeclaration(body('follow: swift+mac'), EXPO_ONLY);
+    expect(result.directive).toEqual({ kind: 'follow', targets: ['swift'] });
+  });
+
+  it('flags a self-follow hidden in a target list', () => {
+    const result = parseParityDeclaration(body('follow: mac, swift'), SWIFT_ONLY);
+    expect(result.violations.map((v) => v.kind)).toEqual(['self-follow']);
+    expect(result.violations[0]?.detail).toContain('follow: mac');
+  });
+
+  it('accepts done-all as the every-client spelling of done-both', () => {
+    const result = parseParityDeclaration(body('- [x] done-all'), BOTH);
+    expect(result.directive).toEqual({ kind: 'done-both' });
+  });
+
   it('withholds a directive whenever any violation is present', () => {
     const result = parseParityDeclaration(body('follow: nonsense'), SWIFT_ONLY);
     expect(result.directive).toBeNull();
   });
 });
 
+describe('splitFollowTargets', () => {
+  it('stops at the first word that is not a platform', () => {
+    expect(splitFollowTargets('mac and expo, then web')).toEqual({
+      targets: ['mac', 'expo'],
+      unknown: null,
+      note: 'then web',
+    });
+  });
+
+  it('reports the first token when no platform leads', () => {
+    expect(splitFollowTargets('android soon').unknown).toBe('android');
+  });
+});
+
 describe('platform helpers', () => {
-  it('recognises the two shipping clients', () => {
+  it('recognises both codebases and the Mac as follow targets', () => {
     expect(isPlatform('swift')).toBe(true);
     expect(isPlatform('expo')).toBe(true);
+    expect(isPlatform('mac')).toBe(true);
   });
 
   it('rejects OS names, which are not the unit of parity', () => {

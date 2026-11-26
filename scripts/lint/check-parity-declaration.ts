@@ -20,6 +20,7 @@
 //   - MISSING BLOCK:   no `## Parity` section in the PR body
 //   - NO DIRECTIVE:    the section exists but declares no recognised directive
 //   - BAD PLATFORM:    `follow:` names something that isn't a known platform
+//                      (swift, expo or mac; several may be listed, comma-separated)
 //   - SELF FOLLOW:     `follow:` names the platform the change already landed on
 //   - MISSING REASON:  `n/a:` with no justification after it
 //   - AMBIGUOUS:       more than one directive declared at once
@@ -32,13 +33,19 @@ import { readFileSync } from 'node:fs';
 
 // ── platforms ──────────────────────────────────────────────────────────────
 
-// The two shipping clients. Deliberately *not* "ios/android/macos" — parity is
-// a question about codebases, and one codebase (swift) ships two OSes.
-export const PLATFORMS = Object.freeze(['swift', 'expo'] as const);
+// The two client codebases. A change *lands on* a codebase; that is what the
+// diff can tell us. One codebase (swift) ships two OSes.
+export const CODEBASES = Object.freeze(['swift', 'expo'] as const);
+export type Codebase = (typeof CODEBASES)[number];
+
+// What a follow-up can be *owed on*: either codebase, or the Mac alone. iOS
+// usually leads in the swift codebase and the Mac catches up later, so a Swift
+// PR that only did iOS declares `follow: mac` (often alongside `expo`).
+export const PLATFORMS = Object.freeze(['swift', 'expo', 'mac'] as const);
 export type Platform = (typeof PLATFORMS)[number];
 
 /** Paths that make a change "client work" and therefore parity-relevant. */
-export const PLATFORM_PATHS: Readonly<Record<Platform, string>> = Object.freeze({
+export const PLATFORM_PATHS: Readonly<Record<Codebase, string>> = Object.freeze({
   swift: 'apps/swift/',
   expo: 'apps/expo/',
 });
@@ -47,22 +54,29 @@ export const PLATFORM_PATHS: Readonly<Record<Platform, string>> = Object.freeze(
 export const PLATFORM_LABELS: Readonly<Record<Platform, string>> = Object.freeze({
   swift: 'Swift (iOS + macOS)',
   expo: 'Expo (Android)',
+  mac: 'macOS (Swift)',
 });
 
 export function isPlatform(value: string): value is Platform {
   return (PLATFORMS as readonly string[]).includes(value);
 }
 
-export function otherPlatform(platform: Platform): Platform {
+export function isCodebase(value: string): value is Codebase {
+  return (CODEBASES as readonly string[]).includes(value);
+}
+
+export function otherPlatform(platform: Codebase): Codebase {
   return platform === 'swift' ? 'expo' : 'swift';
 }
 
 // ── declaration model ──────────────────────────────────────────────────────
 
 export type ParityDirective =
-  // Counterpart work is owed on `target`; the workflow opens an issue for it.
-  | { kind: 'follow'; target: Platform; note?: string }
-  // Both clients were handled in this PR. Nothing owed.
+  // Counterpart work is owed on each of `targets`; the workflow opens one issue
+  // per target.
+  | { kind: 'follow'; targets: Platform[]; note?: string }
+  // Every client was handled in this PR (`done-both`, or `done-all`). Nothing
+  // owed.
   | { kind: 'done-both' }
   // Parity deliberately does not apply. Requires a reason — an unexplained
   // n/a is indistinguishable from forgetting, which is what this lint exists
@@ -150,7 +164,36 @@ export function stripTemplateNoise(block: string): string {
     .join('\n');
 }
 
-const DIRECTIVE_RE = /^\s*(?:-\s*\[[xX]\]\s*)?(follow|done-both|n\/a|n-a)\s*:?\s*(.*)$/i;
+const DIRECTIVE_RE = /^\s*(?:-\s*\[[xX]\]\s*)?(follow|done-both|done-all|n\/a|n-a)\s*:?\s*(.*)$/i;
+
+/**
+ * Split `follow:`'s remainder into its leading targets and the free-text note.
+ * Targets are comma- or plus-separated (`mac, expo`, `mac+expo`); the first
+ * word that is not a platform starts the note. Returns the first unknown token
+ * when the very first word is not a platform, so it can be reported.
+ */
+export function splitFollowTargets(remainder: string): {
+  targets: Platform[];
+  unknown: string | null;
+  note: string;
+} {
+  const tokens = remainder.split(/[\s,+]+/).filter(Boolean);
+  const targets: Platform[] = [];
+  let index = 0;
+  for (; index < tokens.length; index++) {
+    const token = (tokens[index] ?? '').toLowerCase().replace(/[.;:]$/, '');
+    if (token === 'and' && targets.length > 0) continue;
+    if (!isPlatform(token)) break;
+    if (!targets.includes(token)) targets.push(token);
+  }
+  const unknown = targets.length === 0 ? (tokens[0] ?? '') : null;
+  // Re-find the note in the original text so its spacing and punctuation survive.
+  const noteTokens = tokens.slice(index);
+  const note = noteTokens.length
+    ? remainder.slice(remainder.indexOf(noteTokens[0] ?? '')).trim()
+    : '';
+  return { targets, unknown, note };
+}
 
 /**
  * Parse the declaration out of a PR body.
@@ -158,7 +201,7 @@ const DIRECTIVE_RE = /^\s*(?:-\s*\[[xX]\]\s*)?(follow|done-both|n\/a|n-a)\s*:?\s
  * `landedOn` is the set of platforms the diff actually touches; it's what makes
  * `self-follow` detectable and lets a non-client PR opt out entirely.
  */
-export function parseParityDeclaration(prBody: string, landedOn: Platform[]): ParityResult {
+export function parseParityDeclaration(prBody: string, landedOn: Codebase[]): ParityResult {
   const violations: ParityViolation[] = [];
   const block = extractParityBlock(prBody);
 
@@ -187,7 +230,7 @@ export function parseParityDeclaration(prBody: string, landedOn: Platform[]): Pa
     const keyword = (match[1] ?? '').toLowerCase();
     const remainder = (match[2] ?? '').trim();
 
-    if (keyword === 'done-both') {
+    if (keyword === 'done-both' || keyword === 'done-all') {
       found.push({ kind: 'done-both' });
       continue;
     }
@@ -208,31 +251,34 @@ export function parseParityDeclaration(prBody: string, landedOn: Platform[]): Pa
     }
 
     // keyword === 'follow'
-    const [targetToken = '', ...noteParts] = remainder.split(/\s+/);
-    const target = targetToken.toLowerCase().replace(/[.,]$/, '');
+    const { targets, unknown, note } = splitFollowTargets(remainder);
 
-    if (!isPlatform(target)) {
+    if (unknown !== null) {
       violations.push({
         kind: 'bad-platform',
         detail:
-          `"follow: ${targetToken || '(nothing)'}" does not name a known platform. ` +
-          `Use one of: ${PLATFORMS.join(', ')}.`,
+          `"follow: ${unknown || '(nothing)'}" does not name a known platform. ` +
+          `Use one or more of: ${PLATFORMS.join(', ')} (e.g. "follow: mac, expo").`,
       });
       continue;
     }
 
-    if (landedOn.length === 1 && landedOn[0] === target) {
+    const selfTarget = targets.find((target) => landedOn.length === 1 && landedOn[0] === target);
+    if (selfTarget) {
+      const other = otherPlatform(landedOn[0] as Codebase);
       violations.push({
         kind: 'self-follow',
         detail:
-          `"follow: ${target}" names the platform this PR already changed. ` +
-          `Did you mean "follow: ${otherPlatform(target)}"?`,
+          `"follow: ${selfTarget}" names the platform this PR already changed. ` +
+          `Did you mean "follow: ${other}"` +
+          (selfTarget === 'swift' ? ', or "follow: mac" if only iOS was done?' : '?'),
       });
       continue;
     }
 
-    const note = noteParts.join(' ').trim();
-    found.push({ kind: 'follow', target, ...(note ? { note } : {}) });
+    // `swift` already covers the Mac, so a separate Mac issue would be a duplicate.
+    const owed = targets.includes('swift') ? targets.filter((t) => t !== 'mac') : targets;
+    found.push({ kind: 'follow', targets: owed, ...(note ? { note } : {}) });
   }
 
   if (found.length === 0 && violations.length === 0) {
@@ -240,8 +286,8 @@ export function parseParityDeclaration(prBody: string, landedOn: Platform[]): Pa
       kind: 'no-directive',
       detail:
         `The "${PARITY_HEADING}" section declares nothing. Add exactly one of:\n` +
-        '  follow: <swift|expo> [optional note]  — counterpart work is owed\n' +
-        '  done-both                             — both clients handled here\n' +
+        '  follow: <swift|expo|mac>[, …] [note]  — counterpart work is owed\n' +
+        '  done-both (or done-all)               — every client handled here\n' +
         '  n/a: <reason>                         — parity does not apply',
     });
   }
@@ -259,8 +305,8 @@ export function parseParityDeclaration(prBody: string, landedOn: Platform[]): Pa
 // ── diff classification ────────────────────────────────────────────────────
 
 /** Which clients a set of changed files touches. */
-export function platformsTouched(changedFiles: string[]): Platform[] {
-  return PLATFORMS.filter((platform) =>
+export function platformsTouched(changedFiles: string[]): Codebase[] {
+  return CODEBASES.filter((platform) =>
     changedFiles.some((file) => file.startsWith(PLATFORM_PATHS[platform])),
   );
 }
@@ -311,7 +357,8 @@ function main(): void {
     case 'follow':
       console.log(
         `✅ parity: landed on ${touched} — follow-up owed on ` +
-          `${PLATFORM_LABELS[directive.target]}. An issue will be opened on merge.`,
+          `${directive.targets.map((t) => PLATFORM_LABELS[t]).join(' and ')}. ` +
+          'An issue per platform will be opened on merge.',
       );
       break;
     case 'done-both':

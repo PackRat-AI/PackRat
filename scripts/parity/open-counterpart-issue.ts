@@ -16,6 +16,7 @@
 
 import { readFileSync } from 'node:fs';
 import {
+  type Codebase,
   otherPlatform,
   PLATFORM_LABELS,
   type Platform,
@@ -38,13 +39,12 @@ export function parityMarker(prNumber: number): string {
 }
 
 export function issueTitle(target: Platform, prTitle: string): string {
-  const prefix = target === 'swift' ? '[parity/swift]' : '[parity/expo]';
-  return `${prefix} ${prTitle}`;
+  return `[parity/${target}] ${prTitle}`;
 }
 
 export interface IssueBodyInput {
   pr: PrContext;
-  landedOn: Platform[];
+  landedOn: Codebase[];
   target: Platform;
   note?: string | undefined;
 }
@@ -98,8 +98,27 @@ function gh(args: string[]): { ok: boolean; stdout: string; stderr: string } {
   };
 }
 
-/** True when a counterpart issue for this PR already exists (any state). */
-export function findExisting(prNumber: number, repo: string): string | null {
+/**
+ * True when `body` carries this PR's marker exactly — `parity-of:#12` must not
+ * match an issue for PR 123.
+ */
+export function hasMarker(body: string, prNumber: number): boolean {
+  return new RegExp(`${parityMarker(prNumber)}(?!\\d)`).test(body);
+}
+
+/**
+ * The counterpart issue for this PR on `target`, if one exists (any state).
+ * One PR can owe several platforms, so the lookup is per platform label.
+ */
+export function findExisting({
+  prNumber,
+  target,
+  repo,
+}: {
+  prNumber: number;
+  target: Platform;
+  repo: string;
+}): string | null {
   const marker = parityMarker(prNumber);
   const result = gh([
     'issue',
@@ -107,7 +126,7 @@ export function findExisting(prNumber: number, repo: string): string | null {
     '--repo',
     repo,
     '--label',
-    'parity',
+    `parity:${target}`,
     '--state',
     'all',
     '--limit',
@@ -121,7 +140,7 @@ export function findExisting(prNumber: number, repo: string): string | null {
 
   try {
     const rows: Array<{ url: string; body: string }> = JSON.parse(result.stdout);
-    return rows.find((row) => row.body?.includes(marker))?.url ?? null;
+    return rows.find((row) => hasMarker(row.body ?? '', prNumber))?.url ?? null;
   } catch {
     return null;
   }
@@ -179,39 +198,44 @@ function main(): void {
     return;
   }
 
-  const target = directive.target;
-  // Guard the degenerate case: a both-clients PR that still declared a follow.
-  if (landedOn.length === 1 && landedOn[0] === target) {
-    console.log(`parity: declared follow on ${target}, which is where it landed — skipping.`);
-    return;
+  let failed = false;
+  for (const target of directive.targets) {
+    // Guard the degenerate case: a both-clients PR that still declared a follow.
+    if (landedOn.length === 1 && landedOn[0] === target) {
+      console.log(`parity: declared follow on ${target}, which is where it landed — skipping.`);
+      continue;
+    }
+
+    const existing = findExisting({ prNumber: pr.number, target, repo });
+    if (existing) {
+      console.log(`parity: ${target} counterpart issue already exists — ${existing}`);
+      continue;
+    }
+
+    const result = gh([
+      'issue',
+      'create',
+      '--repo',
+      repo,
+      '--title',
+      issueTitle(target, pr.title),
+      '--body',
+      issueBody({ pr, landedOn, target, note: directive.note }),
+      ...issueLabels(target).flatMap((label) => ['--label', label]),
+    ]);
+
+    if (!result.ok) {
+      console.error(`❌ parity: failed to create ${target} counterpart issue: ${result.stderr}`);
+      failed = true;
+      continue;
+    }
+
+    console.log(
+      `✅ parity: opened counterpart issue for ${PLATFORM_LABELS[target]} — ${result.stdout}`,
+    );
   }
 
-  const existing = findExisting(pr.number, repo);
-  if (existing) {
-    console.log(`parity: counterpart issue already exists — ${existing}`);
-    return;
-  }
-
-  const result = gh([
-    'issue',
-    'create',
-    '--repo',
-    repo,
-    '--title',
-    issueTitle(target, pr.title),
-    '--body',
-    issueBody({ pr, landedOn, target, note: directive.note }),
-    ...issueLabels(target).flatMap((label) => ['--label', label]),
-  ]);
-
-  if (!result.ok) {
-    console.error(`❌ parity: failed to create counterpart issue: ${result.stderr}`);
-    process.exit(1);
-  }
-
-  console.log(
-    `✅ parity: opened counterpart issue for ${PLATFORM_LABELS[target]} — ${result.stdout}`,
-  );
+  if (failed) process.exit(1);
 }
 
 // Exported for tests; `otherPlatform` re-exported so callers have the full model.
