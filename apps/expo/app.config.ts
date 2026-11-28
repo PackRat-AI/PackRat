@@ -174,7 +174,7 @@ export default (): ExpoConfig =>
       {
         name: getAppName(),
         slug: 'packrat',
-        version: '2.4.0',
+        version: '2.5.0',
         scheme: 'packrat',
         web: {
           bundler: 'metro',
