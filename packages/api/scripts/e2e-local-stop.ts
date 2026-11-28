@@ -2,6 +2,7 @@ import { rm } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nodeEnv } from '@packrat/env/node';
+import { isString } from '@packrat/guards';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const apiDir = resolve(scriptDir, '..');
@@ -11,9 +12,7 @@ const e2eDbPort = nodeEnv.E2E_DB_PORT ?? '5435';
 const wipeVolumes = Bun.argv.slice(2).some((arg) => arg === '--volumes' || arg === '-v');
 // Next 16's global ImportMetaEnv adds boolean DEV/SSR keys to Bun.env's type; keep only strings.
 const inheritedEnv = Object.fromEntries(
-  Object.entries(Bun.env).filter(
-    (entry): entry is [string, string] => typeof entry[1] === 'string',
-  ),
+  Object.entries(Bun.env).filter((entry): entry is [string, string] => isString(entry[1])),
 );
 const env = {
   ...inheritedEnv,
