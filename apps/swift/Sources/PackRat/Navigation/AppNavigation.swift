@@ -191,6 +191,17 @@ struct AppNavigation: View {
             .task { syncTripReminders() }
             .onChange(of: tripReminderSignature) { _, _ in syncTripReminders() }
             #endif
+            #if os(macOS)
+            // A Mac window keeps scenePhase active while another app is in
+            // front, so the hooks above never see the user come back. Coming
+            // back to the app is the Mac's foreground; a long-open app gets
+            // its forecasts from the repeating background refresh.
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                syncTripReminders()
+                Task { await appState.weatherVM.refreshAlertBadgeState() }
+            }
+            .task { TripConditionsBackgroundRefresh.startMacSchedule() }
+            #endif
             #if os(iOS)
             // Map downloads cut off when the app was closed pick up where
             // they stopped.
