@@ -34,9 +34,12 @@ env:
   MAESTRO_VERSION: 2.3.0
   MAESTRO_CLI_NO_ANALYTICS: "true"
   # Local Postgres used by the Android job — no cloud DB dependency.
-  # Use 127.0.0.1 explicitly: on some runners `localhost` resolves to ::1 (IPv6)
-  # while Postgres only listens on 127.0.0.1 (IPv4), causing connection failures.
-  E2E_DB_URL: postgres://e2e_user:e2e_pass@127.0.0.1:5432/packrat_e2e
+  # Node-side scripts (migrate/seed) hit raw Postgres on :5433. Use 127.0.0.1
+  # explicitly: on some runners `localhost` resolves to ::1 (IPv6).
+  E2E_DB_URL: postgres://test_user:test_password@127.0.0.1:5433/packrat_test
+  # The worker can't use raw Postgres URLs under workerd; its .dev.vars uses
+  # db.localtest.me, which maybeConfigureLocalNeon() routes to the local Neon
+  # HTTP/WS proxy on :4444 (same stack as Web E2E).
   E2E_API_URL: http://localhost:8787
 
 jobs:
@@ -73,21 +76,6 @@ jobs:
     env:
       TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_USER: e2e_user
-          POSTGRES_PASSWORD: e2e_pass
-          POSTGRES_DB: packrat_e2e
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - name: Free disk space on runner
@@ -142,7 +130,14 @@ jobs:
         run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> $GITHUB_PATH
 
       # ── Local API stack ────────────────────────────────────────────────────
-      # Postgres with pgvector runs as a job-level service container (see services: above).
+      - name: Start local Neon proxy + Postgres
+        working-directory: packages/api
+        env:
+          POSTGRES_TEST_HOST_PORT: "5433"
+          NEON_PROXY_HOST_PORT: "4444"
+        run: |
+          docker compose -p packrat-e2e -f docker-compose.test.yml up -d --wait
+          docker compose -p packrat-e2e -f docker-compose.test.yml ps
 
       - name: Write wrangler .dev.vars
         env:
@@ -151,8 +146,8 @@ jobs:
           OPENWEATHER_KEY: ${{ secrets.OPENWEATHER_KEY }}
         run: |
           cat > packages/api/.dev.vars << 'DEVVARS'
-          NEON_DATABASE_URL=postgres://e2e_user:e2e_pass@127.0.0.1:5432/packrat_e2e
-          NEON_DATABASE_URL_READONLY=postgres://e2e_user:e2e_pass@127.0.0.1:5432/packrat_e2e
+          NEON_DATABASE_URL=postgres://test_user:test_password@db.localtest.me/packrat_test
+          NEON_DATABASE_URL_READONLY=postgres://test_user:test_password@db.localtest.me/packrat_test
           BETTER_AUTH_URL=http://localhost:8787
           EXPO_PUBLIC_API_URL=http://localhost:8787
           ADMIN_USERNAME=admin
