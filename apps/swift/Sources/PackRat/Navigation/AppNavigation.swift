@@ -103,9 +103,31 @@ private enum PhoneTab: Hashable {
 }
 #endif
 
+/// Owns one `AppState` per window. A `@State` default value is evaluated every
+/// time SwiftUI re-creates the view struct, so `@State var appState = AppState()`
+/// built a throwaway `AppState` on every parent update, and each one's view
+/// models started their launch fetches. On the Mac that flooded the API with
+/// forecast requests and starved everything else (#3013). Creating it once,
+/// on first appearance, keeps construction to one per window.
 struct AppNavigation: View {
+    @State private var appState: AppState?
+
+    var body: some View {
+        if let appState {
+            AppNavigationContent(appState: appState)
+        } else {
+            Color.clear.onAppear { appState = AppState() }
+        }
+    }
+}
+
+private struct AppNavigationContent: View {
     @Environment(AuthManager.self) private var authManager
-    @State private var appState = AppState()
+    let appState: AppState
+
+    init(appState: AppState) {
+        self.appState = appState
+    }
     @State private var isProfilePresented = false
 
     #if os(iOS)
@@ -190,6 +212,17 @@ struct AppNavigation: View {
             }
             .task { syncTripReminders() }
             .onChange(of: tripReminderSignature) { _, _ in syncTripReminders() }
+            #endif
+            #if os(macOS)
+            // A Mac window keeps scenePhase active while another app is in
+            // front, so the hooks above never see the user come back. Coming
+            // back to the app is the Mac's foreground; a long-open app gets
+            // its forecasts from the repeating background refresh.
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                syncTripReminders()
+                Task { await appState.weatherVM.refreshAlertBadgeState() }
+            }
+            .task { TripConditionsBackgroundRefresh.startMacSchedule() }
             #endif
             #if os(iOS)
             // Map downloads cut off when the app was closed pick up where

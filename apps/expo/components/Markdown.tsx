@@ -8,9 +8,9 @@ type LinkRuleArgs = Parameters<NonNullable<RenderRules['link']>>;
 
 /** `styles` entries are merged over the defaults per rule, so callers override only what differs. */
 export function Markdown({ children, styles }: { children: string; styles?: MarkdownStyles }) {
-  const { colors } = useColorScheme();
+  const { colors, colorScheme } = useColorScheme();
 
-  const markdownStyles = {
+  const markdownStyles: MarkdownStyles = {
     body: {
       color: colors.foreground,
       fontSize: 16,
@@ -41,11 +41,19 @@ export function Markdown({ children, styles }: { children: string; styles?: Mark
       marginBottom: 16,
     },
     strong: {
-      fontWeight: '600' as const,
+      fontWeight: '600',
     },
     link: {
       color: colors.primary,
-      textDecorationLine: 'underline' as const,
+      textDecorationLine: 'underline',
+    },
+    // Code tokens the highlighter does not colour (every token, for languages it has no grammar
+    // for, such as bash) otherwise fall back to the platform's default text colour.
+    fence_token: {
+      color: colors.foreground,
+    },
+    code_inline: {
+      color: colors.foreground,
     },
     blockquote: {
       backgroundColor: colors.grey6,
@@ -62,6 +70,7 @@ export function Markdown({ children, styles }: { children: string; styles?: Mark
 
   return (
     <RNMarkdown
+      colorScheme={colorScheme}
       style={merged}
       rules={{
         // The library renders a link as a `Pressable` (a View) inside the paragraph's Text, so an

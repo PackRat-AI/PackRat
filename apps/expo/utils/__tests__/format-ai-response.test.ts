@@ -73,4 +73,15 @@ describe('formatAIResponse', () => {
     expect(result).toContain('• Tent');
     expect(result).toContain('• Sleeping bag');
   });
+
+  it('keeps a numbered-list marker on the same line as its item', () => {
+    const result = formatAIResponse('1. Save the script.\n2. Make it executable.');
+    expect(result).toBe('1. Save the script.\n2. Make it executable.');
+  });
+
+  it('leaves fenced code untouched', () => {
+    const code = '```bash\n# Set your API key\nAPI_KEY="x" # **not bold**\n```';
+    const result = formatAIResponse(`Here it is. Run it.\n\n${code}\n\n# Done`);
+    expect(result).toBe(`Here it is.\n\nRun it.\n\n${code}\n\nDone`);
+  });
 });
