@@ -1,6 +1,11 @@
+import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { enforceFeatureAccess } from '@packrat/api/middleware/featureGate';
 import { registerDeviceToken } from '@packrat/api/services/push/deviceTokenService';
+import {
+  getTripWeatherNotificationsEnabled,
+  setTripWeatherNotificationsEnabled,
+} from '@packrat/api/services/weatherMonitoring/tripWeatherSettings';
 import {
   addWatchedLocation,
   listWatchedLocations,
@@ -10,11 +15,13 @@ import { FeatureFlag, featureAccessKeyForFlag } from '@packrat/config';
 import {
   AddWatchedLocationRequestSchema,
   RegisterDeviceTokenRequestSchema,
+  TripWeatherNotificationSettingsSchema,
 } from '@packrat/schemas/weatherMonitoring';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
 const WEATHER_MONITORING_ACCESS_KEY = featureAccessKeyForFlag(FeatureFlag.EnableWeatherMonitoring);
+const TRIP_WEATHER_ACCESS_KEY = featureAccessKeyForFlag(FeatureFlag.EnableTripWeather);
 
 function toWatchedLocationResponse(row: { createdAt: Date; [key: string]: unknown }) {
   return { ...row, createdAt: row.createdAt.toISOString() };
@@ -89,7 +96,10 @@ export const weatherMonitoringRoutes = new Elysia({ prefix: '/weather' })
   .post(
     '/device-token',
     async ({ body, user }) => {
-      const denied = await enforceFeatureAccess(WEATHER_MONITORING_ACCESS_KEY, user.userId);
+      // Trip weather alerts are pushed too, so either feature may register a device.
+      const denied =
+        (await enforceFeatureAccess(WEATHER_MONITORING_ACCESS_KEY, user.userId)) &&
+        (await enforceFeatureAccess(TRIP_WEATHER_ACCESS_KEY, user.userId));
       if (denied) return denied;
 
       await registerDeviceToken({ userId: user.userId, request: body });
@@ -101,6 +111,45 @@ export const weatherMonitoringRoutes = new Elysia({ prefix: '/weather' })
       detail: {
         tags: ['Weather'],
         summary: 'Register a device for weather alert push notifications',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+  .get(
+    '/trip-alerts/settings',
+    async ({ user }) => ({
+      tripWeather: await getTripWeatherNotificationsEnabled({
+        db: createDb(),
+        userId: user.userId,
+      }),
+    }),
+    {
+      response: TripWeatherNotificationSettingsSchema,
+      isAuthenticated: true,
+      detail: {
+        tags: ['Weather'],
+        summary: "Whether weather alerts at trips' destinations are pushed",
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+  .put(
+    '/trip-alerts/settings',
+    async ({ body, user }) => {
+      await setTripWeatherNotificationsEnabled({
+        db: createDb(),
+        userId: user.userId,
+        enabled: body.tripWeather,
+      });
+      return body;
+    },
+    {
+      body: TripWeatherNotificationSettingsSchema,
+      response: TripWeatherNotificationSettingsSchema,
+      isAuthenticated: true,
+      detail: {
+        tags: ['Weather'],
+        summary: "Turn pushes about weather alerts at trips' destinations on or off",
         security: [{ bearerAuth: [] }],
       },
     },

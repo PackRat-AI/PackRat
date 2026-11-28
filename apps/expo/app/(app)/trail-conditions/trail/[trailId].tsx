@@ -4,6 +4,7 @@ import { ActivityIndicator } from '@packrat/ui/src/loading-indicator';
 import { Text } from '@packrat/ui/src/text';
 import { Icon } from 'expo-app/components/Icon';
 import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
+import { OfflineMapRow, OutdoorsMap } from 'expo-app/features/offline-maps';
 import { TrailConditionReportRow } from 'expo-app/features/trail-conditions/components/TrailConditionReportRow';
 import {
   usePendingReportIds,
@@ -56,6 +57,7 @@ export default function TrailPageScreen() {
   const reports = useTrailReports(trailId);
   const pendingIds = usePendingReportIds();
   const enableTrips = useFeatureFlag('enableTrips');
+  const enableOfflineMaps = useFeatureFlag('enableOfflineMaps');
 
   const lines = trail.data?.lines ?? [];
   const region = useMemo(() => (lines.length > 0 ? regionFor(lines) : null), [lines]);
@@ -164,16 +166,20 @@ export default function TrailPageScreen() {
             accessible
             accessibilityLabel={trailName}
           >
-            <MapView style={{ flex: 1 }} initialRegion={region} pointerEvents="none">
-              {lines.map((line) => (
-                <Polyline
-                  key={`${line[0]?.[0]},${line[0]?.[1]},${line.length}`}
-                  coordinates={line.map(([longitude, latitude]) => ({ latitude, longitude }))}
-                  strokeColor={colors.primary}
-                  strokeWidth={4}
-                />
-              ))}
-            </MapView>
+            {enableOfflineMaps ? (
+              <OutdoorsMap id="trail-page-map" lines={lines} />
+            ) : (
+              <MapView style={{ flex: 1 }} initialRegion={region} pointerEvents="none">
+                {lines.map((line) => (
+                  <Polyline
+                    key={`${line[0]?.[0]},${line[0]?.[1]},${line.length}`}
+                    coordinates={line.map(([longitude, latitude]) => ({ latitude, longitude }))}
+                    strokeColor={colors.primary}
+                    strokeWidth={4}
+                  />
+                ))}
+              </MapView>
+            )}
           </View>
         ) : null}
 
@@ -226,6 +232,14 @@ export default function TrailPageScreen() {
             </Button>
           ) : null}
         </View>
+
+        {enableOfflineMaps && lines.length > 0 ? (
+          <OfflineMapRow
+            trailId={trailId}
+            idPrefix="trail-page"
+            picker={{ pathname: '/offline-maps/pick', params: { name: trailName, trailId } }}
+          />
+        ) : null}
 
         {renderReports()}
       </ScrollView>

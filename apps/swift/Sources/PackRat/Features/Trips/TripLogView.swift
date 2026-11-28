@@ -352,7 +352,8 @@ struct TripLogEditor: View {
             .confirmationDialog("Clear this trip's log?", isPresented: $confirmingClear, titleVisibility: .visible) {
                 Button("Clear Trip Log", role: .destructive) {
                     Task {
-                        await viewModel.saveLog(nil, for: trip.id, context: modelContext)
+                        // Places marked on the trip aren't stats, so they stay.
+                        await viewModel.saveLog(TripLog(waypoints: trip.log?.waypoints ?? []), for: trip.id, context: modelContext)
                         dismiss()
                     }
                 }
@@ -547,7 +548,8 @@ struct TripLogEditor: View {
             source: source ?? .manual,
             summits: summits,
             trails: trails,
-            landscape: landscape
+            landscape: landscape,
+            waypoints: trip.log?.waypoints ?? []
         )
         Task {
             await viewModel.saveLog(log, for: trip.id, context: modelContext)
@@ -582,6 +584,18 @@ struct RoutePreview: View {
     let coordinates: [CLLocationCoordinate2D]
 
     var body: some View {
+        #if os(iOS)
+        if OfflineMapStore.isEnabled {
+            MapboxRoutePreview(coordinates: coordinates)
+        } else {
+            mapKitPreview
+        }
+        #else
+        mapKitPreview
+        #endif
+    }
+
+    private var mapKitPreview: some View {
         Map(initialPosition: .automatic, interactionModes: []) {
             MapPolyline(coordinates: coordinates)
                 .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))

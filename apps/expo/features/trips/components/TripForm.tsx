@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/react-native';
 import { useForm } from '@tanstack/react-form';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
+import { registerForPushIfNeeded } from 'expo-app/features/notifications/lib/pushRegistration';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { TrailPicker } from 'expo-app/features/trail-conditions/components/TrailPicker';
 import { useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
@@ -128,6 +129,7 @@ export const TripForm = ({
   };
 
   const enableTripReminders = useFeatureFlag('enableTripReminders');
+  const enableTripWeather = useFeatureFlag('enableTripWeather');
 
   const form = useForm({
     defaultValues: {
@@ -179,8 +181,13 @@ export const TripForm = ({
           });
         }
         router.back();
-        // The trip now has a date: the moment a reminder permission prompt makes sense.
-        if (enableTripReminders) requestTripReminderPermission();
+        // A dated trip with a destination watches it for weather alerts, pushed by the server.
+        if (enableTripWeather && submitData.startDate && submitData.location) {
+          registerForPushIfNeeded();
+        } else if (enableTripReminders) {
+          // The trip now has a date: the moment a reminder permission prompt makes sense.
+          requestTripReminderPermission();
+        }
       } catch (_e) {
         Sentry.captureException(_e, {
           tags: { feature: 'trips', action: isEditingExistingTrip ? 'updateTrip' : 'createTrip' },

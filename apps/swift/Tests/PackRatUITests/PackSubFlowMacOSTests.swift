@@ -126,6 +126,7 @@ final class PackSubFlowMacOSTests: AppUITestCase {
         let deleteButton = rowDeleteMenuItem()
         guard deleteButton.waitForExistence(timeout: 3) else { return }
         deleteButton.click()
+        confirmMacAlert(button: "Delete")
     }
 
     private func detailMenuButton() -> XCUIElement {

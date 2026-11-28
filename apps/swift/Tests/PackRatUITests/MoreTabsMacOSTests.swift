@@ -38,8 +38,9 @@ final class MoreTabsMacOSTests: AppUITestCase {
 
     func testHomeUsesWideMacContentArea() {
         goToSidebar("Home")
-        let firstTile = app.buttons["My Packs, No packs yet"]
-        XCTAssertTrue(firstTile.waitForExistence(timeout: 8))
+        // The tile's subtitle is the account's pack count, so match the title.
+        let firstTile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'My Packs,'")).firstMatch
+        XCTAssertTrue(firstTile.waitForExistence(timeout: 8), "My Packs tile must appear on Home")
         XCTAssertGreaterThan(
             firstTile.frame.width,
             220,

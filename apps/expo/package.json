@@ -1,6 +1,6 @@
 {
   "name": "packrat-expo-app",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -80,6 +80,7 @@
     "@rn-primitives/hooks": "^1.1.0",
     "@rn-primitives/portal": "^1.1.0",
     "@rn-primitives/slot": "^1.1.0",
+    "@rnmapbox/maps": "^10.3.18",
     "@ronradtke/react-native-markdown-display": "^8.1.0",
     "@sentry/react-native": "~8.28.0",
     "@shopify/flash-list": "2.3.2",

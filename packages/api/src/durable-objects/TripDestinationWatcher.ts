@@ -13,8 +13,8 @@ const WATCH_KEY = 'watch';
 const SEEN_IDS_KEY = 'seenIds';
 
 /**
- * One instance per trip (`idFromName(tripId)`). Wakes when the trip enters its
- * forecast window, then every 20 minutes until a day after departure, checking
+ * One instance per trip (`idFromName(tripId)`). Wakes three days before the
+ * trip starts, then every 20 minutes until a day after it ends, checking
  * the destination for weather alerts. It keeps the trip's details itself, so a
  * check never wakes Postgres — Neon is reached only to push a new alert.
  *
@@ -29,7 +29,7 @@ export class TripDestinationWatcher extends DurableObject<Env> {
    */
   async arm(watch: TripWatch): Promise<void> {
     await this.ctx.storage.put(WATCH_KEY, watch);
-    const { opensAt } = watchWindow(watch.startDate);
+    const { opensAt } = watchWindow(watch);
     const now = Date.now();
     if (now < opensAt) {
       await this.ctx.storage.setAlarm(opensAt);
@@ -60,7 +60,9 @@ export class TripDestinationWatcher extends DurableObject<Env> {
           env,
           watch,
           seenIds,
-          enabled: flags[FeatureFlag.EnableTripReminders] === true,
+          enabled:
+            flags[FeatureFlag.EnableTripReminders] === true ||
+            flags[FeatureFlag.EnableTripWeather] === true,
           now: Date.now(),
         }),
     });

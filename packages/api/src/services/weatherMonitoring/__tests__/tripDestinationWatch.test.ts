@@ -3,7 +3,7 @@ import type { WeatherAlertItem } from '@packrat/schemas/weather';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  stateRows: [] as { lastAlertIds: string[] | null }[],
+  stateRows: [] as { lastAlertIds: string[] | null; tripWeather?: boolean | null }[],
   insertValues: vi.fn(),
   onConflictDoUpdate: vi.fn(),
   fetchCoordinateAlerts: vi.fn(),
@@ -15,7 +15,9 @@ vi.mock('@packrat/api/db', () => ({
     const db = {
       tag: (_label: string) => db,
       select: () => ({
-        from: () => ({ leftJoin: () => ({ where: async () => mocks.stateRows }) }),
+        from: () => ({
+          leftJoin: () => ({ leftJoin: () => ({ where: async () => mocks.stateRows }) }),
+        }),
       }),
       insert: () => ({
         values: (values: unknown) => {
@@ -30,7 +32,8 @@ vi.mock('@packrat/api/db', () => ({
 vi.mock('../fetchLocationAlerts', () => ({ fetchCoordinateAlerts: mocks.fetchCoordinateAlerts }));
 vi.mock('../../push/notifyTripOwner', () => ({ notifyTripOwner: mocks.notifyTripOwner }));
 vi.mock('@packrat/db/schema', () => ({
-  trips: { id: 'id', deleted: 'deleted' },
+  trips: { id: 'id', userId: 'userId', deleted: 'deleted', weatherAlerts: 'weatherAlerts' },
+  notificationPreferences: { userId: 'userId', tripWeather: 'tripWeather' },
   tripDestinationAlertState: { tripId: 'tripId', lastAlertIds: 'lastAlertIds' },
 }));
 
@@ -45,6 +48,7 @@ const {
 const env = {} as ValidatedEnv;
 const DAY = 24 * 60 * 60 * 1000;
 const START = new Date('2026-10-20T12:00:00Z').getTime();
+const END = START + 4 * DAY;
 const FLOOD_ID = 'Flood Warning|2026-10-19T00:00:00Z';
 
 function alert(event: string): WeatherAlertItem {
@@ -62,6 +66,7 @@ const watch = {
   name: 'Big Sur',
   location: { latitude: 36.27, longitude: -121.8, name: 'Big Sur' },
   startDate: START,
+  endDate: END,
 };
 
 const tripRow = {
@@ -69,8 +74,10 @@ const tripRow = {
   userId: 'user-1',
   name: 'Big Sur',
   deleted: false,
+  weatherAlerts: true,
   location: watch.location,
   startDate: new Date(START),
+  endDate: new Date(END),
 };
 
 beforeEach(() => {
@@ -82,8 +89,16 @@ beforeEach(() => {
 });
 
 describe('watchWindow', () => {
-  it('opens 10 days before departure and closes a day after', () => {
-    expect(watchWindow(START)).toEqual({ opensAt: START - 10 * DAY, closesAt: START + DAY });
+  it('opens 3 days before departure and closes a day after the trip ends', () => {
+    expect(watchWindow({ startDate: START, endDate: END })).toEqual({
+      opensAt: START - 3 * DAY,
+      closesAt: END + DAY,
+    });
+  });
+
+  it('closes a day after departure for a trip with no end date', () => {
+    expect(watchWindow({ startDate: START, endDate: null }).closesAt).toBe(START + DAY);
+    expect(watchWindow({ startDate: START }).closesAt).toBe(START + DAY);
   });
 });
 
@@ -94,14 +109,19 @@ describe('tripWatchFor', () => {
 
   it.each([
     ['deleted', { deleted: true }],
+    ['with alerts turned off', { weatherAlerts: false }],
     ['without a destination', { location: null }],
     ['without a start date', { startDate: null }],
   ])('returns null for a trip %s', (_label, patch) => {
     expect(tripWatchFor({ trip: { ...tripRow, ...patch }, now: START })).toBeNull();
   });
 
+  it('keeps watching while the trip is under way', () => {
+    expect(tripWatchFor({ trip: tripRow, now: START + 2 * DAY })).toEqual(watch);
+  });
+
   it('returns null once the window has closed', () => {
-    expect(tripWatchFor({ trip: tripRow, now: START + 2 * DAY })).toBeNull();
+    expect(tripWatchFor({ trip: tripRow, now: END + 2 * DAY })).toBeNull();
   });
 });
 
@@ -111,12 +131,12 @@ describe('tickTripDestination', () => {
 
   it('sleeps until the window opens without checking', async () => {
     const result = await run({ now: START - 20 * DAY });
-    expect(result).toEqual({ seenIds: [], nextAt: START - 10 * DAY, notified: false });
+    expect(result).toEqual({ seenIds: [], nextAt: START - 3 * DAY, notified: false });
     expect(mocks.fetchCoordinateAlerts).toHaveBeenCalledTimes(0);
   });
 
   it('stops once the window has closed', async () => {
-    const result = await run({ now: START + 2 * DAY });
+    const result = await run({ now: END + 2 * DAY });
     expect(result.nextAt).toBeNull();
     expect(mocks.fetchCoordinateAlerts).toHaveBeenCalledTimes(0);
   });
@@ -208,6 +228,21 @@ describe('deliverTripDestinationAlerts', () => {
     expect(mocks.notifyTripOwner).toHaveBeenCalledWith(
       expect.objectContaining({ placeName: null }),
     );
+  });
+
+  it('records but does not push when trip alerts are off for the account', async () => {
+    mocks.stateRows = [{ lastAlertIds: [], tripWeather: false }];
+    const result = await deliverTripDestinationAlerts({
+      env,
+      watch,
+      alerts: [alert('Flood Warning')],
+      now,
+    });
+    expect(result).toEqual({ gone: false, notified: false });
+    expect(mocks.insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({ lastAlertIds: [FLOOD_ID] }),
+    );
+    expect(mocks.notifyTripOwner).toHaveBeenCalledTimes(0);
   });
 
   it('reports a deleted trip as gone without writing', async () => {

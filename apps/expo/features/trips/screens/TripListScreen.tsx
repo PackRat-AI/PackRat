@@ -12,7 +12,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TripCard } from '../components/TripCard';
-import { useTrips } from '../hooks';
+import { useTrips, useUnreadTripWeatherAlerts } from '../hooks';
 import type { Trip } from '../types';
 
 function TrailConditionsBanner() {
@@ -61,6 +61,7 @@ export function TripsListScreen() {
   const { t } = useTranslation();
   const trips = useTrips();
   const unreadTripIds = useUnreadTripIds();
+  const unreadWeatherTripIds = useUnreadTripWeatherAlerts();
   const [searchValue, setSearchValue] = useState('');
 
   const filteredTrips = useMemo(() => {
@@ -139,6 +140,7 @@ export function TripsListScreen() {
               trip={trip}
               onPress={handleTripPress}
               hasUnreadReport={unreadTripIds.has(trip.id)}
+              hasUnreadWeatherAlert={unreadWeatherTripIds.has(trip.id)}
             />
           </View>
         ))}
@@ -188,6 +190,7 @@ export function TripsListScreen() {
               trip={trip}
               onPress={handleTripPress}
               hasUnreadReport={unreadTripIds.has(trip.id)}
+              hasUnreadWeatherAlert={unreadWeatherTripIds.has(trip.id)}
             />
           </View>
         )}

@@ -11,6 +11,8 @@ struct TripsListView: View {
     /// keeps no selection — so an outside selection has to push by itself.
     @State private var linkedTripId: String?
     @State private var unread = TrailReportUnreadStore.shared
+    @State private var conditions = TripConditionsStore.shared
+    @State private var alertReads = TripWeatherAlertReads.shared
     @Environment(\.modelContext) private var modelContext
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -120,10 +122,18 @@ struct TripsListView: View {
                 NavigationLink {
                     TripDetailView(trip: trip, viewModel: viewModel)
                 } label: {
-                    TripRowView(trip: trip, hasUnreadReport: unread.tripIds.contains(trip.id))
+                    TripRowView(
+                        trip: trip,
+                        hasUnreadReport: unread.tripIds.contains(trip.id),
+                        hasUnreadWeatherAlert: hasUnreadWeatherAlert(trip)
+                    )
                 }
             } else {
-                TripRowView(trip: trip, hasUnreadReport: unread.tripIds.contains(trip.id))
+                TripRowView(
+                    trip: trip,
+                    hasUnreadReport: unread.tripIds.contains(trip.id),
+                    hasUnreadWeatherAlert: hasUnreadWeatherAlert(trip)
+                )
             }
         }
         .tag(trip.id)
@@ -151,11 +161,24 @@ struct TripsListView: View {
     }
 }
 
+extension TripsListView {
+    /// An alert at the destination the user hasn't seen on this trip yet.
+    /// Shows while the trip is upcoming or under way, never once it is over.
+    fileprivate func hasUnreadWeatherAlert(_ trip: Trip) -> Bool {
+        guard FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey),
+              TripConditionsStore.needsForecast(trip, now: Date()),
+              let alertIds = conditions.conditions(for: trip.id)?.alerts.map(\.id)
+        else { return false }
+        return alertReads.hasUnread(tripId: trip.id, alertIds: alertIds)
+    }
+}
+
 private struct TripRowView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     let trip: Trip
     let hasUnreadReport: Bool
+    var hasUnreadWeatherAlert = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -185,6 +208,12 @@ private struct TripRowView: View {
 
     @ViewBuilder
     private var metadataItems: some View {
+        if hasUnreadWeatherAlert {
+            Label("Weather alert", systemImage: "exclamationmark.triangle.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.red)
+                .accessibilityIdentifier("trip_row_weather_alert")
+        }
         if hasUnreadReport {
             Label("New trail report", systemImage: "figure.hiking")
                 .font(.caption.weight(.semibold))

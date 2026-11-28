@@ -19,6 +19,8 @@ interface TripCardProps {
   onPress?: (trip: Trip) => void;
   /** A trail report on this trip the hiker hasn't read. */
   hasUnreadReport?: boolean;
+  /** A weather alert at the destination the user hasn't seen on this trip. */
+  hasUnreadWeatherAlert?: boolean;
 }
 
 function getTripDurationDays({
@@ -42,7 +44,12 @@ function formatShortDate(isoString?: string): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export function TripCard({ trip, onPress, hasUnreadReport = false }: TripCardProps) {
+export function TripCard({
+  trip,
+  onPress,
+  hasUnreadReport = false,
+  hasUnreadWeatherAlert = false,
+}: TripCardProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const deleteTrip = useDeleteTrip();
@@ -130,6 +137,18 @@ export function TripCard({ trip, onPress, hasUnreadReport = false }: TripCardPro
             <Icon name="dots-horizontal" size={20} color={colors.grey2} />
           </Button>
         </View>
+
+        {hasUnreadWeatherAlert ? (
+          <View
+            className="mt-1 flex-row items-center"
+            testID={testIds.trips.weatherAlertLabel(trip.id)}
+          >
+            <Icon name="alert" size={14} color={colors.destructive} />
+            <Text className="ml-1 text-sm font-semibold" style={{ color: colors.destructive }}>
+              {t('trips.weather.alertLabel')}
+            </Text>
+          </View>
+        ) : null}
 
         {hasUnreadReport ? (
           <View

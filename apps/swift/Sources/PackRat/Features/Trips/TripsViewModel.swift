@@ -13,6 +13,10 @@ final class TripsViewModel {
 
     private let service: TripService
     private let outbox: OutboxService
+    /// Per trip: the latest write, which the next one waits for, and a count
+    /// that tells a response whether a newer edit has replaced it.
+    @ObservationIgnored private var writeChains: [String: Task<Void, Never>] = [:]
+    @ObservationIgnored private var writeVersions: [String: Int] = [:]
 
     // See `PacksViewModel.init`: an isolated singleton cannot be a default
     // argument under the Swift 6 language mode, so resolve it in the body.
@@ -257,6 +261,12 @@ final class TripsViewModel {
         await pushUpdate(trip, context: context)
     }
 
+    func setWeatherAlerts(_ on: Bool, for tripId: String, context: ModelContext? = nil) async {
+        guard var trip = trips.first(where: { $0.id == tripId }) else { return }
+        trip.weatherAlerts = on
+        await pushUpdate(trip, context: context)
+    }
+
     /// Optimistic update of the whole trip. Every write sends the full record,
     /// log included, so a queued edit folds into a queued create without
     /// losing fields, and the server copy always matches the local one.
@@ -296,28 +306,48 @@ final class TripsViewModel {
             )
         }
 
-        let updated: Trip
-        if canUseRemotePersonalStore {
-            do {
-                updated = try await service.updateTrip(
-                    tripId, name: localUpdated.name, description: localUpdated.description,
-                    startDate: startDate, endDate: endDate, location: location,
-                    notes: localUpdated.notes, packId: localUpdated.packId,
-                    checklist: localUpdated.checklist, log: localUpdated.log, excludedFromStats: localUpdated.isExcludedFromStats,
-                    trailId: localUpdated.trailId, trailName: localUpdated.trailName
-                )
-            } catch {
+        // Shown and cached before the request, so a second quick edit (another
+        // waypoint, say) builds on this one rather than on the record before it.
+        if let idx = trips.firstIndex(where: { $0.id == tripId }) {
+            trips[idx] = localUpdated
+        }
+        upsertCachedTrip(localUpdated, context: context)
+        let version = (writeVersions[tripId] ?? 0) + 1
+        writeVersions[tripId] = version
+
+        // One request per trip at a time, in order, so an older full record
+        // can't reach the server after a newer one.
+        let previous = writeChains[tripId]
+        let write = Task { @MainActor in
+            await previous?.value
+            let updated: Trip
+            if canUseRemotePersonalStore {
+                do {
+                    updated = try await service.updateTrip(
+                        tripId, name: localUpdated.name, description: localUpdated.description,
+                        startDate: startDate, endDate: endDate, location: location,
+                        notes: localUpdated.notes, packId: localUpdated.packId,
+                        checklist: localUpdated.checklist, log: localUpdated.log, excludedFromStats: localUpdated.isExcludedFromStats,
+                        weatherAlerts: localUpdated.sendsWeatherAlerts,
+                        trailId: localUpdated.trailId, trailName: localUpdated.trailName
+                    )
+                } catch {
+                    updated = localUpdated
+                    queueUpdate()
+                }
+            } else {
                 updated = localUpdated
                 queueUpdate()
             }
-        } else {
-            updated = localUpdated
-            queueUpdate()
+            // A newer edit made meanwhile stays; its own response lands next.
+            guard writeVersions[tripId] == version else { return }
+            if let idx = trips.firstIndex(where: { $0.id == tripId }) {
+                trips[idx] = updated
+            }
+            upsertCachedTrip(updated, context: context)
         }
-        if let idx = trips.firstIndex(where: { $0.id == tripId }) {
-            trips[idx] = updated
-        }
-        upsertCachedTrip(updated, context: context)
+        writeChains[tripId] = write
+        await write.value
     }
 
     /// Saves a trip's Before-you-go list. Local-first: the change shows and is
@@ -394,6 +424,15 @@ final class TripsViewModel {
             updated.completedAt = nil
         case .complete:
             updated.completedAt = date.iso8601String()
+            #if os(iOS)
+            // Ending a trip ends its recording and guidance, whichever button ended it.
+            if TripGuide.shared.isGuiding(tripId: tripId) { TripGuide.shared.stop() }
+            WakeWordListener.shared.disarm(tripId: tripId)
+            if TrackRecorder.shared.isRecording(tripId: tripId), let track = TrackRecorder.shared.stop(),
+               track.logRoute != nil {
+                updated.log = track.applied(to: updated.log)
+            }
+            #endif
         }
         applyLocalUpdate(updated, context: context)
     }
@@ -535,6 +574,7 @@ final class TripsViewModel {
             plannedRoute: trip.plannedRoute,
             log: trip.log,
             excludedFromStats: trip.excludedFromStats,
+            weatherAlerts: trip.weatherAlerts,
             trailId: trip.trailId,
             trailName: trip.trailName
         )

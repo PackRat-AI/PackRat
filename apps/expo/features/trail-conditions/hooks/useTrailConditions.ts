@@ -137,6 +137,7 @@ export function useTrail(trailId: string) {
     queryKey: trailQueryKey(trailId),
     queryFn: () => getTrail(trailId),
     staleTime: 1000 * 60 * 60,
+    enabled: trailId.length > 0,
   });
 }
 

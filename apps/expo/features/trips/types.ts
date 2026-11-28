@@ -32,6 +32,8 @@ export interface Trip {
   /** The trip's Before-you-go list: permits, passes and bookings. */
   checklist?: TripChecklistItem[] | null;
   excludedFromStats?: boolean;
+  /** Whether this trip pushes weather alerts at its destination; on unless the user turned it off. */
+  weatherAlerts?: boolean;
   /** Planned until Start Trip, in progress on the trail, complete once home. */
   status?: TripLifecycle;
   startedAt?: string | null;

@@ -110,6 +110,7 @@ struct AppNavigation: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.modelContext) private var modelContext
     @State private var phoneTab: PhoneTab = .home
     @State private var phoneHomePath: [NavItem] = []
     // Count, not the rows themselves — the Weather tab badge only needs
@@ -147,6 +148,10 @@ struct AppNavigation: View {
         }
     }
 
+    private var tripsInProgressSignature: [String] {
+        appState.tripsVM.trips.filter { $0.lifecycle == .inProgress && !$0.deleted }.map(\.id)
+    }
+
     private func syncTripReminders() {
         let trips = appState.tripsVM.trips
         let packs = appState.packsVM.packs
@@ -180,7 +185,17 @@ struct AppNavigation: View {
                 Task { await appState.weatherVM.refreshAlertBadgeState() }
             }
             .task { syncTripReminders() }
+            #if os(iOS)
+            // Map downloads cut off when the app was closed pick up where
+            // they stopped.
+            .task { if OfflineMapStore.isEnabled { OfflineMapStore.shared.resumeIncomplete() } }
+            #endif
             .onChange(of: tripReminderSignature) { _, _ in syncTripReminders() }
+            // Siri and spoken safety alerts reach the trips from here, with no trip page open.
+            .task(id: tripsInProgressSignature) {
+                VoiceCommandHost.shared.attach(appState, modelContext: modelContext)
+                TripSafetyAnnouncer.shared.sync()
+            }
             .onReceive(NotificationCenter.default.publisher(for: .weatherAlertNotificationTapped)) { notification in
                 guard let weatherLocationId = notification.userInfo?["weatherLocationId"] as? Int else { return }
                 appState.apply(.weatherAlert(weatherLocationId: weatherLocationId))
@@ -324,7 +339,9 @@ struct AppNavigation: View {
         case .home:
             HomeView().environment(appState)
         case .weather:
-            WeatherView(viewModel: appState.weatherVM)
+            // Its own stack so a location pushes its forecast in the column;
+            // without one the forecast's navigation destination never fires.
+            NavigationStack { WeatherView(viewModel: appState.weatherVM) }
         case .catalog:
             // Its own stack so catalog items push a detail screen in the column.
             NavigationStack { CatalogView().environment(appState) }

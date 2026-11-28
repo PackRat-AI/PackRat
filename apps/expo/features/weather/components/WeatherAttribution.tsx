@@ -1,5 +1,6 @@
 import type { WeatherAttribution as WeatherAttributionData } from '@packrat/schemas/weather';
 import { Text } from '@packrat/ui/src/text';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Image, Linking, Pressable, View } from 'react-native';
@@ -11,15 +12,25 @@ const LOGO_WIDTH = 77;
 /**
  * The Apple Weather mark and its legal link, shown under any forecast that
  * includes Apple Weather days — Apple's terms require both wherever that data
- * appears. Always sits on the sky gradient, so it uses the white mark.
+ * appears. On the sky gradient it uses the white mark; `onSky` false draws it
+ * for the app's ordinary surface, which is dark in dark mode.
  */
-export function WeatherAttribution({ attribution }: { attribution: WeatherAttributionData }) {
+export function WeatherAttribution({
+  attribution,
+  onSky = true,
+}: {
+  attribution: WeatherAttributionData;
+  onSky?: boolean;
+}) {
   const { t } = useTranslation();
+  const { isDarkColorScheme } = useColorScheme();
+  const onDark = onSky || isDarkColorScheme;
   return (
     <View className="flex-row items-center gap-2 px-1">
       <Image
-        source={{ uri: attribution.logoDarkUrl }}
-        style={{ height: LOGO_HEIGHT, width: LOGO_WIDTH }}
+        source={{ uri: onDark ? attribution.logoDarkUrl : attribution.logoLightUrl }}
+        // Off the sky, the white mark is toned to sit with the muted caption beside it.
+        style={{ height: LOGO_HEIGHT, width: LOGO_WIDTH, opacity: onDark && !onSky ? 0.6 : 1 }}
         resizeMode="contain"
         accessibilityLabel={attribution.serviceName}
       />
@@ -29,7 +40,10 @@ export function WeatherAttribution({ attribution }: { attribution: WeatherAttrib
         hitSlop={12}
         testID={testIds.weather.attributionLegal}
       >
-        <Text variant="caption2" className="text-white/70 underline">
+        <Text
+          variant="caption2"
+          className={onSky ? 'text-white/70 underline' : 'text-muted-foreground underline'}
+        >
           {t('weather.attributionLegal')}
         </Text>
       </Pressable>

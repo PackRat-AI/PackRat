@@ -105,7 +105,14 @@ final class SafetyCheckInLocator: NSObject, CLLocationManagerDelegate {
         manager.delegate = self
     }
 
-    func currentFix(timeout: Duration = .seconds(30)) async throws -> SafetyLocationFix {
+    /// How accurate a reused recent fix has to be.
+    static let recentAccuracyMeters: CLLocationAccuracy = 100
+    /// A place name that hasn't arrived by now isn't worth waiting for.
+    static let placeNameTimeout: Duration = .milliseconds(2_500)
+
+    /// `acceptRecent` lets a quick answer reuse a fix that young rather than
+    /// wait on the GPS.
+    func currentFix(timeout: Duration = .seconds(30), acceptRecent: TimeInterval? = nil) async throws -> SafetyLocationFix {
         if manager.authorizationStatus == .notDetermined {
             await withCheckedContinuation { continuation in
                 authContinuation = continuation
@@ -117,13 +124,21 @@ final class SafetyCheckInLocator: NSObject, CLLocationManagerDelegate {
         default: throw LocatorError.denied
         }
 
-        let location = try await bestLocation(within: timeout)
+        let location: CLLocation
+        if let acceptRecent, let recent = manager.location,
+           recent.horizontalAccuracy >= 0, recent.horizontalAccuracy <= Self.recentAccuracyMeters,
+           -recent.timestamp.timeIntervalSinceNow <= acceptRecent {
+            location = recent
+        } else {
+            location = try await bestLocation(within: timeout)
+        }
         var fix = SafetyLocationFix(
             latitude: location.coordinate.latitude,
             longitude: location.coordinate.longitude,
             accuracy: location.horizontalAccuracy,
             recordedAt: location.timestamp
         )
+        if location.verticalAccuracy >= 0 { fix.altitude = location.altitude }
         fix.placeName = await Self.placeName(for: location)
         return fix
     }
@@ -160,10 +175,21 @@ final class SafetyCheckInLocator: NSObject, CLLocationManagerDelegate {
     }
 
     private static func placeName(for location: CLLocation) async -> String? {
-        guard let placemark = try? await CLGeocoder().reverseGeocodeLocation(location).first else {
-            return nil
+        let geocoder = CLGeocoder()
+        return await withTaskGroup(of: String?.self) { group in
+            group.addTask { @MainActor in
+                guard let placemark = try? await geocoder.reverseGeocodeLocation(location).first else { return nil }
+                return placemark.areasOfInterest?.first ?? placemark.name ?? placemark.locality
+            }
+            group.addTask {
+                try? await Task.sleep(for: placeNameTimeout)
+                return nil
+            }
+            let first = await group.next() ?? nil
+            geocoder.cancelGeocode()
+            group.cancelAll()
+            return first
         }
-        return placemark.areasOfInterest?.first ?? placemark.name ?? placemark.locality
     }
 
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {

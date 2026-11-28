@@ -675,6 +675,8 @@ export const notificationPreferences = pgTable('notification_preferences', {
     .primaryKey()
     .references(() => users.id, { onDelete: 'cascade' }),
   trailConditions: boolean('trail_conditions').default(true).notNull(),
+  // Pushes about weather alerts at the destination of any of the user's trips.
+  tripWeather: boolean('trip_weather').default(true).notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
@@ -693,6 +695,19 @@ export type TripLog = {
   trails?: TripTrail[] | null;
   /** Set by the user; null means the app reads it from where the trip was. */
   landscape?: 'desert' | 'mountain' | 'forest' | 'coastal' | 'water' | 'grassland' | 'polar' | null;
+  /** Places marked along the way, with optional notes. */
+  waypoints?: TripWaypoint[] | null;
+};
+
+/** A place marked on a trip. `createdAt` is ISO 8601. */
+export type TripWaypoint = {
+  id: string;
+  name: string;
+  note?: string | null;
+  latitude: number;
+  longitude: number;
+  elevationMeters?: number | null;
+  createdAt: string;
 };
 
 /** A trail walked on a trip; `id` is `trails.id` on the trail database. */
@@ -743,6 +758,9 @@ export const trips = pgTable('trips', {
   plannedRoute: jsonb('planned_route').$type<{ latitude: number; longitude: number }[]>(),
   log: jsonb('log').$type<TripLog>(),
   excludedFromStats: boolean('excluded_from_stats').notNull().default(false),
+  // Whether this trip pushes weather alerts at its destination; see
+  // docs/features/trip-weather.md.
+  weatherAlerts: boolean('weather_alerts').notNull().default(true),
   localCreatedAt: timestamp('local_created_at').notNull(),
   localUpdatedAt: timestamp('local_updated_at').notNull(),
   deleted: boolean('deleted').notNull().default(false),

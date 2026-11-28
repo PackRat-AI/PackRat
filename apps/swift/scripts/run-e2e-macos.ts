@@ -148,6 +148,10 @@ function withDefaultLocalSigningArgs(passthrough: readonly string[]): string[] {
     'CODE_SIGN_IDENTITY=-',
     'CODE_SIGNING_ALLOWED=YES',
     'CODE_SIGNING_REQUIRED=NO',
+    // The macOS target declares Sign in with Apple, which only a provisioning profile can grant.
+    // An ad-hoc signature carrying it yields a binary launchd refuses to spawn, so XCUITest
+    // reports "Could not launch". Swift CI clears it for the same reason.
+    'CODE_SIGN_ENTITLEMENTS=',
   ];
   return [
     ...passthrough,

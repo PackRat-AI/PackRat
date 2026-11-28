@@ -81,9 +81,15 @@ struct ForecastAlertSection: View {
 
 /// A single alert, collapsed to its headline until tapped. Mirrors the
 /// Alerts screen's row so the same hazard reads the same way in both places.
-private struct ForecastAlertCard: View {
+struct ForecastAlertCard: View {
     let alert: WeatherAlert
+    /// False on ordinary screens such as a trip, where the sky's white text
+    /// and glass fill would vanish against the system background.
+    var onSky = true
     @State private var expanded = false
+
+    private var primary: Color { onSky ? .white : .primary }
+    private func secondary(_ opacity: Double) -> Color { onSky ? .white.opacity(opacity) : .secondary }
 
     private var severityColor: Color {
         switch alert.severity?.lowercased() {
@@ -112,12 +118,12 @@ private struct ForecastAlertCard: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(alert.event ?? alert.headline ?? "Weather Alert")
                                 .font(.subheadline.bold())
-                                .foregroundStyle(.white)
+                                .foregroundStyle(primary)
                                 .multilineTextAlignment(.leading)
                             if let severity = alert.severity, !severity.isEmpty {
                                 Text(severity.capitalized)
                                     .font(.caption)
-                                    .foregroundStyle(.white.opacity(0.75))
+                                    .foregroundStyle(secondary(0.75))
                             }
                         }
 
@@ -125,25 +131,25 @@ private struct ForecastAlertCard: View {
 
                         Image(systemName: expanded ? "chevron.up" : "chevron.down")
                             .font(.caption)
-                            .foregroundStyle(.white.opacity(0.75))
+                            .foregroundStyle(secondary(0.75))
                     }
 
                     if expanded {
                         if let areas = alert.areas, !areas.isEmpty {
                             Text(areas)
                                 .font(.caption)
-                                .foregroundStyle(.white.opacity(0.75))
+                                .foregroundStyle(secondary(0.75))
                         }
                         if let desc = alert.desc, !desc.isEmpty {
                             Text(desc)
                                 .font(.caption)
-                                .foregroundStyle(.white.opacity(0.9))
+                                .foregroundStyle(onSky ? .white.opacity(0.9) : .primary)
                                 .multilineTextAlignment(.leading)
                         }
                         if let instruction = alert.instruction, !instruction.isEmpty {
                             Text(instruction)
                                 .font(.caption.bold())
-                                .foregroundStyle(.white)
+                                .foregroundStyle(primary)
                                 .multilineTextAlignment(.leading)
                         }
                     }
@@ -152,7 +158,8 @@ private struct ForecastAlertCard: View {
             }
         }
         .buttonStyle(.plain)
-        .background(WeatherGlassCard.fill, in: RoundedRectangle(cornerRadius: 12))
+        .background(onSky ? AnyShapeStyle(WeatherGlassCard.fill) : AnyShapeStyle(.background.secondary),
+                    in: RoundedRectangle(cornerRadius: 12))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .accessibilityIdentifier("forecast_alert_card")
     }

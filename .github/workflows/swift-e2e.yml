@@ -26,7 +26,7 @@ on:
   workflow_dispatch:
     inputs:
       run_macos_ui:
-        description: "Run the full macOS UI suite on a self-hosted Mac runner"
+        description: "Run the full macOS UI suite"
         required: false
         type: boolean
         default: true
@@ -69,7 +69,7 @@ on:
         type: boolean
         default: false
       run_testflight_archive_verification:
-        description: "Archive/export the replacement app on a Mac runner and verify the built binary metadata without uploading"
+        description: "Archive/export the replacement app and verify the built binary metadata without uploading"
         required: false
         type: boolean
         default: false
@@ -90,7 +90,7 @@ permissions:
   contents: read
 
 env:
-  XCODE_VERSION: "26.2"
+  XCODE_VERSION: "26.6"
   E2E_API_BASE_URL: ${{ secrets.SWIFT_E2E_API_BASE_URL }}
   E2E_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
   E2E_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
@@ -134,9 +134,12 @@ jobs:
 
   testflight-replacement-archive:
     name: TestFlight replacement archive verification
-    runs-on: [self-hosted, macOS, packrat-e2e]
+    runs-on: macos-26
     timeout-minutes: 60
     if: github.event_name == 'workflow_dispatch' && inputs.run_testflight_archive_verification
+    env:
+      APPLE_ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+      APPLE_ASC_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
 
     steps:
       - name: Checkout repository
@@ -168,9 +171,76 @@ jobs:
       - name: Generate Swift Xcode project
         run: bun run swift
 
+      # Same signing assets as release-apple.yml, iOS and watch only. Deleted in the always()
+      # cleanup step so no key material outlives the job.
+      - name: Import certificate, profiles and API key
+        env:
+          IOS_DIST_CERT_P12: ${{ secrets.IOS_DIST_CERT_P12 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_APPSTORE_PROVISIONING_PROFILE: ${{ secrets.IOS_APPSTORE_PROVISIONING_PROFILE }}
+          WATCH_APPSTORE_PROVISIONING_PROFILE: ${{ secrets.WATCH_APPSTORE_PROVISIONING_PROFILE }}
+          WATCH_COMPLICATIONS_APPSTORE_PROVISIONING_PROFILE: ${{ secrets.WATCH_COMPLICATIONS_APPSTORE_PROVISIONING_PROFILE }}
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          for name in IOS_DIST_CERT_P12 IOS_APPSTORE_PROVISIONING_PROFILE WATCH_APPSTORE_PROVISIONING_PROFILE \
+            WATCH_COMPLICATIONS_APPSTORE_PROVISIONING_PROFILE ASC_API_KEY_P8 \
+            APPLE_ASC_API_KEY_ID APPLE_ASC_API_ISSUER_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing secret for $name. See the header of release-apple.yml."
+              exit 1
+            fi
+          done
+
+          KEYCHAIN_PATH="$RUNNER_TEMP/verify.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          echo -n "$IOS_DIST_CERT_P12" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          security import "$RUNNER_TEMP/dist.p12" -P "$IOS_DIST_CERT_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          rm -f "$RUNNER_TEMP/dist.p12"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+          for name in IOS_APPSTORE_PROVISIONING_PROFILE WATCH_APPSTORE_PROVISIONING_PROFILE WATCH_COMPLICATIONS_APPSTORE_PROVISIONING_PROFILE; do
+            echo -n "${!name}" | base64 --decode > "$RUNNER_TEMP/p.mobileprovision"
+            UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< "$(security cms -D -i "$RUNNER_TEMP/p.mobileprovision")")
+            mv "$RUNNER_TEMP/p.mobileprovision" "$PROFILES_DIR/$UUID.mobileprovision"
+          done
+
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          echo -n "$ASC_API_KEY_P8" | base64 --decode > "$HOME/.appstoreconnect/private_keys/AuthKey_$APPLE_ASC_API_KEY_ID.p8"
+
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+
+      # Signing is scoped per target through an xcconfig: SPM dependencies reject a provisioning
+      # profile passed on the command line.
+      - name: Write signing config
+        run: |
+          cat > "$RUNNER_TEMP/ios-signing.xcconfig" <<'EOF'
+          DEVELOPMENT_TEAM = 666HGMV2LU
+          CODE_SIGN_STYLE[target=PackRat-iOS] = Manual
+          CODE_SIGN_IDENTITY[target=PackRat-iOS] = Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER[target=PackRat-iOS] = PackRat iOS AppStore 2026-10
+          CODE_SIGN_STYLE[target=PackRat-Watch] = Manual
+          CODE_SIGN_IDENTITY[target=PackRat-Watch] = Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER[target=PackRat-Watch] = PackRat iOS AppStore watchkitapp 2026-11
+          CODE_SIGN_STYLE[target=PackRat-WatchComplications] = Manual
+          CODE_SIGN_IDENTITY[target=PackRat-WatchComplications] = Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER[target=PackRat-WatchComplications] = PackRat iOS AppStore watchkitapp complications 2026-11
+          EOF
+
       - name: Verify replacement archive/export metadata
         env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_TEAM_ID: 666HGMV2LU
+          XCODE_XCCONFIG_FILE: ${{ runner.temp }}/ios-signing.xcconfig
+          EXPORT_PROVISIONING_PROFILE: PackRat iOS AppStore 2026-10
+          EXPORT_WATCH_PROVISIONING_PROFILE: PackRat iOS AppStore watchkitapp 2026-11
+          EXPORT_WATCH_COMPLICATIONS_PROVISIONING_PROFILE: PackRat iOS AppStore watchkitapp complications 2026-11
           BUILD_NUMBER: ${{ inputs.replacement_build_number }}
           APP_STORE_CURRENT_BUILD_NUMBER: ${{ inputs.current_app_store_build_number }}
         run: |
@@ -184,10 +254,17 @@ jobs:
           fi
           bun apps/swift/scripts/upload-testflight.ts --production --verify-archive-only
 
+      - name: Clean up keychain, profiles and API key
+        if: always()
+        run: |
+          security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+          rm -rf "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/.appstoreconnect/private_keys"
+
   macos-ui:
     name: macOS Swift UI E2E
-    runs-on: [self-hosted, macOS, packrat-e2e]
-    timeout-minutes: 45
+    runs-on: macos-26
+    # The full suite builds for ~12 minutes and then runs ~40 minutes of UI tests.
+    timeout-minutes: 90
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'push' ||
@@ -267,9 +344,12 @@ jobs:
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
 
-      - name: Check Automation Mode status
+      # Hosted runners start fresh, so allow XCUITest to drive the desktop without a password
+      # prompt on every run.
+      - name: Enable Automation Mode
         run: |
-          automationmodetool status || true
+          sudo automationmodetool enable-automationmode-without-authentication
+          automationmodetool status
 
       - name: Generate Swift Xcode project
         run: bun run swift
@@ -288,7 +368,8 @@ jobs:
 
       - name: Run macOS Swift UI E2E
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          # Pushes run the smoke subset; the full suite runs nightly and on manual dispatch.
+          if [ "${{ github.event_name }}" = "push" ]; then
             caffeinate -dimsu bun run e2e:swift:mac-smoke
           else
             caffeinate -dimsu bun run e2e:swift:mac-ui

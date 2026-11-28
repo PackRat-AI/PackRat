@@ -35,6 +35,7 @@ import {
   useTrailReportAlertsEnabled,
   useTrailReportNotificationsSetting,
 } from 'expo-app/features/trail-conditions/hooks/useTrailReportAlerts';
+import { useTripAlertsSetting } from 'expo-app/features/trips/hooks/useTripWeatherAlerts';
 import { tripReminderSettingsStore } from 'expo-app/features/trips/store/tripReminders';
 import { FEATURE_FLAGS_QUERY_KEY, useFeatureFlag } from 'expo-app/hooks/useFeatureFlags';
 import AsyncStorage from 'expo-app/lib/asyncStorage';
@@ -65,11 +66,14 @@ export default function SettingsScreen() {
   const enableTripReminders = useFeatureFlag('enableTripReminders');
   const showsFeedSettings = useFeatureFlag('enableFeed') && isAuthenticated;
   const enableSafetyCheckIn = useFeatureFlag('enableSafetyCheckIn');
+  const enableOfflineMaps = useFeatureFlag('enableOfflineMaps');
   const tripRemindersEnabled = use$(tripReminderSettingsStore.enabled);
   const showsTrailReportToggle = useTrailReportAlertsEnabled() && isAuthenticated;
   const trailReports = useTrailReportNotificationsSetting({ active: showsTrailReportToggle });
   // The toggle waits for the server's value rather than guessing one.
   const trailReportsLoaded = trailReports.enabled !== undefined;
+  const tripWeatherAlerts = useTripAlertsSetting();
+  const tripWeatherAlertsLoaded = tripWeatherAlerts.enabled !== undefined;
 
   const { isProMember } = useEntitlement();
   const { mutate: restorePurchases, isPending: isRestoring } = useRestorePurchases();
@@ -253,7 +257,29 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        {(enableTripReminders || trailReportsLoaded) && (
+        {enableOfflineMaps && (
+          <View>
+            <Text variant="subhead" className="mb-3">
+              {t('offlineMaps.title')}
+            </Text>
+            <TouchableOpacity
+              className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4"
+              onPress={() => router.push('/offline-maps')}
+              testID={testIds.offlineMaps.settingsRow}
+            >
+              <Icon name="map-outline" size={22} color={colors.primary} />
+              <View className="flex-1">
+                <Text className="font-medium">{t('offlineMaps.title')}</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                  {t('offlineMaps.settingsSubtitle')}
+                </Text>
+              </View>
+              <Icon name="chevron-right" size={20} color={colors.grey} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {(enableTripReminders || trailReportsLoaded || tripWeatherAlertsLoaded) && (
           <View>
             <Text variant="subhead" className="mb-3">
               {t('settings.notifications')}
@@ -290,6 +316,25 @@ export default function SettingsScreen() {
                     value={trailReports.enabled === true}
                     onValueChange={trailReports.setEnabled}
                     testID={testIds.settings.trailReportNotificationsToggle}
+                  />
+                </View>
+              )}
+              {tripWeatherAlertsLoaded && (
+                <View
+                  className={`flex-row items-center justify-between gap-4 p-4${
+                    enableTripReminders || trailReportsLoaded ? ' border-t border-border' : ''
+                  }`}
+                >
+                  <View className="flex-1">
+                    <Text className="font-medium">{t('settings.tripWeatherAlerts')}</Text>
+                    <Text variant="footnote" className="mt-0.5 text-muted-foreground" wrap>
+                      {t('settings.tripWeatherAlertsSubtitle')}
+                    </Text>
+                  </View>
+                  <Toggle
+                    value={tripWeatherAlerts.enabled === true}
+                    onValueChange={tripWeatherAlerts.setEnabled}
+                    testID={testIds.settings.tripWeatherAlertsToggle}
                   />
                 </View>
               )}

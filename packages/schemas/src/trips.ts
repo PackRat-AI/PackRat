@@ -67,6 +67,17 @@ export const TripLandscapeSchema = z.enum([
   'polar',
 ]);
 
+/** A place marked on a trip, with an optional note. */
+export const TripWaypointSchema = z.object({
+  id: z.string().min(1).max(64),
+  name: z.string().trim().min(1).max(200),
+  note: z.string().max(2_000).nullable().optional(),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  elevationMeters: z.number().nullable().optional(),
+  createdAt: z.string(),
+});
+
 export const TripLogSchema = z.object({
   activities: z.array(TripActivitySchema),
   distanceMeters: z.number().nonnegative().nullable().optional(),
@@ -76,6 +87,7 @@ export const TripLogSchema = z.object({
   summits: z.array(TripSummitSchema).max(100).nullable().optional(),
   trails: z.array(TripTrailSchema).max(50).nullable().optional(),
   landscape: TripLandscapeSchema.nullable().optional(),
+  waypoints: z.array(TripWaypointSchema).max(500).nullable().optional(),
 });
 
 export const TripSchema = z.object({
@@ -97,6 +109,7 @@ export const TripSchema = z.object({
   plannedRoute: TripPlannedRouteSchema.nullable().optional(),
   log: TripLogSchema.nullable().optional(),
   excludedFromStats: z.boolean().optional(),
+  weatherAlerts: z.boolean().optional(),
   deleted: z.boolean(),
   localCreatedAt: datetimeString.optional(),
   localUpdatedAt: datetimeString.optional(),
@@ -120,6 +133,7 @@ export const CreateTripBodySchema = z.object({
   checklist: TripChecklistSchema.nullable().optional(),
   log: TripLogSchema.nullable().optional(),
   excludedFromStats: z.boolean().optional(),
+  weatherAlerts: z.boolean().optional(),
   localCreatedAt: z.string().datetime(),
   localUpdatedAt: z.string().datetime(),
 });
@@ -141,6 +155,7 @@ export const UpdateTripBodySchema = z.object({
   plannedRoute: TripPlannedRouteSchema.nullable().optional(),
   log: TripLogSchema.nullable().optional(),
   excludedFromStats: z.boolean().optional(),
+  weatherAlerts: z.boolean().optional(),
   localUpdatedAt: z.string().datetime().optional(),
 });
 

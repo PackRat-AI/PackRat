@@ -21,6 +21,6 @@ export const ServiceMeta = {
   Name: 'packrat-mcp',
   /** MCP-server display name surfaced to clients. */
   McpServerName: 'packrat',
-  Version: '2.4.0',
+  Version: '2.5.0',
   Transport: 'streamable-http',
 } as const;

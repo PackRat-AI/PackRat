@@ -21,6 +21,9 @@ configFiles:
   Staging: xcconfig/Config-Staging.xcconfig
   Release: xcconfig/Config-Release.xcconfig
 
+# Exact versions are pinned in Package.resolved, which `bun swift` copies into the generated
+# project. After adding or bumping a package here, run `bun swift`, resolve it in Xcode, then run
+# `bun swift:pin`.
 packages:
   Nuke:
     url: https://github.com/kean/Nuke
@@ -70,6 +73,11 @@ packages:
   SwiftTransformers:
     url: https://github.com/huggingface/swift-transformers
     from: "1.3.0"
+  # In-app maps and offline map downloads. iOS only: the watch and macOS
+  # apps keep MapKit.
+  MapboxMaps:
+    url: https://github.com/mapbox/mapbox-maps-ios
+    from: "11.0.0"
 
 targets:
   PackRat-iOS:
@@ -96,6 +104,9 @@ targets:
       - path: Resources/LongTrails.json
         buildPhase: resources
       - path: Resources/Places.json
+        buildPhase: resources
+      # Outlines for saving an offline map by forest name. iOS only, like Mapbox.
+      - path: Resources/NationalForests.json
         buildPhase: resources
       - path: Resources/Landscapes.bin
         buildPhase: resources
@@ -141,20 +152,25 @@ targets:
           UIColorName: ""
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
-        NSLocationWhenInUseUsageDescription: "This app needs access to your location while you are using it."
+        NSLocationWhenInUseUsageDescription: "PackRat uses your location to record your hikes, mark waypoints and check in with your contacts."
         NSLocationAlwaysAndWhenInUseUsageDescription: "During a safety check-in you chose to share, PackRat follows your progress in the background so your emergency contacts can see where you are. It stops when you mark yourself safe."
+        NSMicrophoneUsageDescription: "PackRat listens while you hold Hold to Talk on a trip. If you turn on “Hey PackRat”, it listens for the phrase throughout the trip, even with your phone locked."
+        NSSpeechRecognitionUsageDescription: "Voice commands are recognised on your iPhone, so they work with no signal. Recordings are never kept. Notes and waypoint names you dictate are saved to your trip."
         NSCameraUsageDescription: "This app requires access to your camera to let you take photos or scan items."
         NSPhotoLibraryUsageDescription: "This app needs access to your photo library to let you upload or choose photos."
         ITSAppUsesNonExemptEncryption: false
         PACKRAT_ENV: $(PACKRAT_ENV)
         SENTRY_DSN: $(SENTRY_DSN)
         REVENUECAT_API_KEY: $(REVENUECAT_API_KEY)
+        MBXAccessToken: $(MAPBOX_PUBLIC_TOKEN)
         GOOGLE_IOS_CLIENT_ID: 993694750638-f2pbg3e5tkt2btn9eih6c8ah8igal55m.apps.googleusercontent.com
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         # Pre-trip reminders refresh the destination forecast in the background.
         UIBackgroundModes:
+          - audio
           - fetch
+          - location
         BGTaskSchedulerPermittedIdentifiers:
           - world.packrat.trip-conditions
         CFBundleURLTypes:
@@ -202,6 +218,8 @@ targets:
         product: MLXLMCommon
       - package: SwiftTransformers
         product: Tokenizers
+      - package: MapboxMaps
+        product: MapboxMaps
       # The watch app ships from 2.2.1 on, so it is embedded in the iOS app.
       # WKCompanionAppBundleIdentifier must resolve to the iOS bundle id or
       # installs fail with "Unable to Install PackRat".
@@ -210,7 +228,7 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "2.4.0"
+        MARKETING_VERSION: "2.5.0"
         CURRENT_PROJECT_VERSION: "2026081101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
@@ -260,7 +278,7 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "2.4.0"
+        MARKETING_VERSION: "2.5.0"
         CURRENT_PROJECT_VERSION: "2026081101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
@@ -297,7 +315,7 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "2.4.0"
+        MARKETING_VERSION: "2.5.0"
         CURRENT_PROJECT_VERSION: "2026081101"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
@@ -405,7 +423,7 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        MARKETING_VERSION: "2.4.0"
+        MARKETING_VERSION: "2.5.0"
         CURRENT_PROJECT_VERSION: "2026081101"
         # Real distribution signing: the target previously used an ad-hoc
         # identity with no team, which cannot produce a TestFlight build. E2E

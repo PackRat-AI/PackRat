@@ -27,8 +27,10 @@ export function useNotificationSetup({ isAuthed }: { isAuthed: boolean }) {
   // at an upcoming trip's destination, and new trail reports for a trip.
   const monitoringEnabled = useFeatureFlag('enableWeatherMonitoring');
   const tripRemindersEnabled = useFeatureFlag('enableTripReminders');
+  const tripWeatherEnabled = useFeatureFlag('enableTripWeather');
   const trailReportsEnabled = useTrailReportAlertsEnabled();
-  const pushEnabled = monitoringEnabled || tripRemindersEnabled || trailReportsEnabled;
+  const pushEnabled =
+    monitoringEnabled || tripRemindersEnabled || tripWeatherEnabled || trailReportsEnabled;
   const lastResponse = Notifications.useLastNotificationResponse();
 
   useEffect(() => {

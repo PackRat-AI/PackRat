@@ -310,8 +310,24 @@ private struct LongTrailMap: View {
     let progress: LongTrailProgress
 
     var body: some View {
+        Group {
+            #if os(iOS)
+            if OfflineMapStore.isEnabled {
+                MapboxLinesMap(muted: progress.trail.lines, highlighted: progress.walkedLines, highlightWidth: 6)
+            } else {
+                mapKitMap
+            }
+            #else
+            mapKitMap
+            #endif
+        }
+        .accessibilityLabel("Map of the \(progress.trail.name), with walked stretches highlighted")
+        .accessibilityIdentifier("long_trail_map")
+    }
+
+    private var mapKitMap: some View {
         let walked = progress.walkedLines
-        Map(initialPosition: .rect(Self.rect(progress.trail)), interactionModes: [.zoom, .pan]) {
+        return Map(initialPosition: .rect(Self.rect(progress.trail)), interactionModes: [.zoom, .pan]) {
             ForEach(Array(progress.trail.lines.enumerated()), id: \.offset) { _, line in
                 MapPolyline(coordinates: line)
                     .stroke(Color.secondary.opacity(0.7), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
@@ -322,8 +338,6 @@ private struct LongTrailMap: View {
             }
         }
         .mapStyle(.standard(elevation: .realistic, pointsOfInterest: .excludingAll))
-        .accessibilityLabel("Map of the \(progress.trail.name), with walked stretches highlighted")
-        .accessibilityIdentifier("long_trail_map")
     }
 
     private static func rect(_ trail: LongTrail) -> MKMapRect {

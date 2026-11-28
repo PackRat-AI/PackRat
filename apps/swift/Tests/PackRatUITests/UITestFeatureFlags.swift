@@ -8,6 +8,7 @@ enum UITestFeatureFlags {
     static let enableFeed = false
     static let enableLocalAI = true
     static let enableOAuth = true
+    static let enableOfflineMaps = false
     static let enableOfflineWildlifeID = false
     static let enablePackInsights = false
     static let enablePackTemplates = true
@@ -21,6 +22,8 @@ enum UITestFeatureFlags {
     static let enableTripReminders = false
     static let enableTrips = true
     static let enableTripStats = false
+    static let enableTripWeather = false
+    static let enableVoiceCommands = false
     static let enableWeatherMonitoring = false
     static let enableWildlifeIdentification = false
 
@@ -31,6 +34,7 @@ enum UITestFeatureFlags {
         "enableFeed": false,
         "enableLocalAI": true,
         "enableOAuth": true,
+        "enableOfflineMaps": false,
         "enableOfflineWildlifeID": false,
         "enablePackInsights": false,
         "enablePackTemplates": true,
@@ -44,6 +48,8 @@ enum UITestFeatureFlags {
         "enableTripReminders": false,
         "enableTrips": true,
         "enableTripStats": false,
+        "enableTripWeather": false,
+        "enableVoiceCommands": false,
         "enableWeatherMonitoring": false,
         "enableWildlifeIdentification": false,
     ]

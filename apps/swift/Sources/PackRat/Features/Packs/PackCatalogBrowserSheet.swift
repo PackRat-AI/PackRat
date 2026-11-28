@@ -329,6 +329,12 @@ struct PackCatalogBrowserSheet: View {
                     .onAppear {
                         Task { await viewModel.loadNextPage() }
                     }
+                    // A fresh identity per page. `List` reuses this row's cell
+                    // once the first page lands, and a reused cell comes back
+                    // blank — neither the spinner nor any other content in it
+                    // is drawn again, so the footer only ever showed once.
+                    // Keying it to the item count gives every page a new row.
+                    .id(viewModel.items.count)
                 }
             }
             .listStyle(.plain)

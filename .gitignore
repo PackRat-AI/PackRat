@@ -76,7 +76,6 @@ apps/swift/*.cer
 apps/swift/*.certSigningRequest
 apps/swift/.build/
 apps/swift/.swiftpm/
-apps/swift/Package.resolved
 apps/swift/PackRatAPIClient/.build/
 apps/swift/PackRatAPIClient/.swiftpm/
 apps/swift/TestResults/

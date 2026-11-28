@@ -406,6 +406,7 @@ final class OutboxService {
                     plannedRoute: payload.plannedRoute,
                     log: payload.log,
                     excludedFromStats: payload.excludedFromStats ?? false,
+                    weatherAlerts: payload.weatherAlerts ?? true,
                     trailId: payload.trailId,
                     trailName: payload.trailName
                 )
