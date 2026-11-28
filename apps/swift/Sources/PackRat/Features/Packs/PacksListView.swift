@@ -28,6 +28,17 @@ struct PacksListView: View {
         return base.filter { $0.category == cat }
     }
 
+    private var isRefreshingShownList: Bool {
+        isExplore ? isLoadingPublic && !publicPacks.isEmpty : viewModel.isLoading && !viewModel.packs.isEmpty
+    }
+
+    private var recentButton: some View {
+        Button("Recent", systemImage: "clock") {
+            showingRecentPacks = true
+        }
+        .accessibilityIdentifier("packs_recent_button")
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             categoryFilterBar
@@ -37,7 +48,7 @@ struct PacksListView: View {
                     ProgressView("Loading packs…").frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = viewModel.error, viewModel.packs.isEmpty, !isExplore {
                     ErrorView(error, retry: { await viewModel.load(context: modelContext) })
-                } else if isLoadingPublic && publicPacks.isEmpty {
+                } else if isExplore && isLoadingPublic && publicPacks.isEmpty {
                     ProgressView("Loading…").frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if displayedPacks.isEmpty && !viewModel.searchText.isEmpty {
                     ContentUnavailableView.search(text: viewModel.searchText)
@@ -74,16 +85,19 @@ struct PacksListView: View {
                         .accessibilityIdentifier("packs_new_pack_button")
                         .keyboardShortcut("n", modifiers: .command)
                 }
-                if viewModel.isLoading || isLoadingPublic {
+                // Only a refresh over a list already on screen; a first load
+                // shows its own spinner in the column.
+                if isRefreshingShownList {
                     ProgressView().controlSize(.small)
                 }
             }
-            ToolbarItem(placement: .secondaryAction) {
-                Button("Recent", systemImage: "clock") {
-                    showingRecentPacks = true
-                }
-                .accessibilityIdentifier("packs_recent_button")
-            }
+            // A Mac puts secondary actions at the leading edge of the column's
+            // toolbar; Recent belongs with the other actions on the trailing side.
+            #if os(macOS)
+            ToolbarItem(placement: .primaryAction) { recentButton }
+            #else
+            ToolbarItem(placement: .secondaryAction) { recentButton }
+            #endif
         }
         .task { await viewModel.load(context: modelContext) }
         .refreshable {
@@ -149,9 +163,12 @@ struct PacksListView: View {
 
                 Spacer()
 
+                #if !os(macOS)
+                // A Mac menu picker already shows its value.
                 Text(selectedCategory?.label ?? "All")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                #endif
             }
         }
         .padding(.horizontal)

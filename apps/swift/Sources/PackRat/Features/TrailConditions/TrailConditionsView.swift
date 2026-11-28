@@ -702,11 +702,7 @@ struct SubmitTrailConditionView: View {
                 Section("Notes") {
                     TextField("Notes", text: $notes, prompt: Text("Describe conditions in detail…"), axis: .vertical)
                         .lineLimit(4, reservesSpace: true)
-                        #if os(macOS)
-                        // A Mac form puts a field's title beside it and its text on
-                        // the trailing edge; the section header already names it.
-                        .labelsHidden()
-                        #endif
+                        .formMultilineField()
                         .focused($isInputFocused)
                         .accessibilityIdentifier("trail_report_notes")
                 }

@@ -324,6 +324,7 @@ struct TripLogEditor: View {
                     }
                 }
             }
+            .packRatFormStyle()
             .navigationTitle("Trip Log")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

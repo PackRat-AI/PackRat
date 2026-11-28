@@ -815,6 +815,7 @@ private struct NewPackFromTemplateForm: View {
                 Text("Starts with the \(template.itemCount) items from \u{201C}\(template.name)\u{201D}. You can change them anytime.")
             }
         }
+        .packRatFormStyle()
         .navigationTitle("New Pack")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)

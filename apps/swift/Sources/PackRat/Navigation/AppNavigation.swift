@@ -378,6 +378,11 @@ private struct AppNavigationContent: View {
     private var listColumn: some View {
         // Its own stack so the list's links (Recent, Official templates) can push.
         NavigationStack { listColumnContent }
+            #if os(macOS)
+            // The default leaves the middle column too narrow for template
+            // names and the Official shelf; give it room for a readable row.
+            .navigationSplitViewColumnWidth(min: 300, ideal: 340, max: 480)
+            #endif
     }
 
     @ViewBuilder

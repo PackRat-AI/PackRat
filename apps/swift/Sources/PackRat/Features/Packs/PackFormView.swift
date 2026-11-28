@@ -36,8 +36,9 @@ struct PackFormView: View {
                         // Identifier stays for E2E selectors; the label is what
                         // VoiceOver reads, which would otherwise be "pack_name".
                         .accessibilityLabel("Name")
-                    TextField("Description", text: $description, axis: .vertical)
+                    TextField("Description", text: $description, prompt: Text("Description"), axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
+                        .formMultilineField()
                         .focused($isInputFocused)
                         .accessibilityIdentifier("pack_description")
                         .accessibilityLabel("Description")

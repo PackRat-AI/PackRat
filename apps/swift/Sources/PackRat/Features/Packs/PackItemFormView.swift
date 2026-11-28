@@ -108,8 +108,9 @@ struct PackItemFormView: View {
             }
 
             Section("Notes") {
-                TextField("Notes", text: $notes, axis: .vertical)
+                TextField("Notes", text: $notes, prompt: Text("Notes"), axis: .vertical)
                     .lineLimit(3, reservesSpace: true)
+                    .formMultilineField()
                     .focused($isInputFocused)
                     .accessibilityIdentifier("pack_item_notes")
                     .accessibilityLabel("Notes")

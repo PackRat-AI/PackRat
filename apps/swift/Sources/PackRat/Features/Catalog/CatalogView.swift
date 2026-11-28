@@ -73,11 +73,29 @@ struct CatalogView: View {
             // A re-search over an already-populated list: the footer belongs to
             // paging, so this reports the refresh instead.
             if vm.isLoading && !vm.items.isEmpty {
-                ToolbarItem(placement: .secondaryAction) {
-                    ProgressView().controlSize(.small)
+                if #available(iOS 26, macOS 26, *) {
+                    // A status indicator, not a control: without this it sits in a
+                    // button-sized glass pill of its own and reads as oversized.
+                    ToolbarItem(placement: Self.refreshSpinnerPlacement) {
+                        ProgressView().controlSize(.small)
+                    }
+                    .sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem(placement: Self.refreshSpinnerPlacement) {
+                        ProgressView().controlSize(.small)
+                    }
                 }
             }
         }
+    }
+
+    // Mac centres secondary items in the toolbar; status reads best beside the search field.
+    private static var refreshSpinnerPlacement: ToolbarItemPlacement {
+        #if os(macOS)
+        .primaryAction
+        #else
+        .secondaryAction
+        #endif
     }
 
     private func categoryMenu(vm: CatalogViewModel) -> some View {

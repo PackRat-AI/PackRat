@@ -32,3 +32,18 @@ extension View {
         #endif
     }
 }
+
+extension View {
+    /// A Mac form puts a field's title beside it and its text on the trailing
+    /// edge, which reads wrong for multi-line text. Hide the title there so the
+    /// text fills the row from the leading edge; pass a `prompt` so the field
+    /// still says what it's for.
+    @ViewBuilder
+    func formMultilineField() -> some View {
+        #if os(macOS)
+        self.labelsHidden()
+        #else
+        self
+        #endif
+    }
+}

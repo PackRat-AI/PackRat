@@ -43,8 +43,9 @@ struct PackTemplateItemFormView: View {
                         .focused($isInputFocused)
                         .submitLabel(.done)
                         .onSubmit { isInputFocused = false }
-                    TextField("Notes", text: $notes, axis: .vertical)
+                    TextField("Notes", text: $notes, prompt: Text("Notes"), axis: .vertical)
                         .lineLimit(2...3)
+                        .formMultilineField()
                         .focused($isInputFocused)
                 }
                 Section("Weight & Quantity") {
