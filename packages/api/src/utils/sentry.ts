@@ -7,6 +7,7 @@
 
 import {
   addBreadcrumb,
+  type CloudflareOptions,
   captureException,
   captureMessage,
   getCurrentScope,
@@ -24,6 +25,37 @@ export {
   startSpan,
   withScope,
 };
+
+type DataCollection = NonNullable<CloudflareOptions['dataCollection']>;
+
+// Header/query-param name fragments scrubbed from events (Sentry's v10 PII deny list).
+const PII_DENY = ['forwarded', '-ip', 'remote-', 'via', '-user'];
+
+/**
+ * What Sentry may collect from the API. v11 replaced `sendDefaultPii` with
+ * `dataCollection` and made an unset value permissive (cookies, request and
+ * response bodies, DB query data, GenAI inputs/outputs). This pins the v10
+ * `sendDefaultPii: false` baseline so the upgrade collects nothing new.
+ * See https://github.com/getsentry/sentry-javascript/blob/develop/MIGRATION.md
+ *
+ * A factory rather than a frozen constant: `DataCollection` declares mutable
+ * arrays, and each `Sentry.init` gets its own copy.
+ */
+export function sentryDataCollection(): DataCollection {
+  return {
+    userInfo: false,
+    cookies: false,
+    httpHeaders: { request: { deny: [...PII_DENY] }, response: { deny: [...PII_DENY] } },
+    httpBodies: [],
+    urlQueryParams: { deny: [...PII_DENY] },
+    genAI: { inputs: false, outputs: false },
+    mcp: { inputs: false, outputs: false },
+    databaseQueryData: false,
+    queues: false,
+    graphQL: { document: false, variables: false },
+    frameContextLines: 7,
+  };
+}
 
 export type SentryOperationContext = {
   operation: string;
@@ -156,7 +188,10 @@ export function apiAddBreadcrumb(opts: {
  * human-grep-able id.
  */
 export function setRequestId(requestId: string): void {
-  getCurrentScope().setTag('request_id', requestId);
+  const scope = getCurrentScope();
+  scope.setTag('request_id', requestId);
+  // Streamed spans (v11 default) carry attributes only, not scope tags.
+  scope.setAttribute('request_id', requestId);
 }
 
 /**

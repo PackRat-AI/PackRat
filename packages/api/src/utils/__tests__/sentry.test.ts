@@ -6,6 +6,7 @@ import {
   clearApiUser,
   isCaptured,
   record,
+  sentryDataCollection,
   setApiUser,
   setRequestId,
 } from '@packrat/api/utils/sentry';
@@ -13,7 +14,7 @@ import * as Sentry from '@sentry/cloudflare';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Shared scope stub returned by both withScope and getCurrentScope.
-const scope = { setTag: vi.fn(), setExtra: vi.fn() };
+const scope = { setTag: vi.fn(), setExtra: vi.fn(), setAttribute: vi.fn() };
 
 vi.mock('@sentry/cloudflare', () => ({
   addBreadcrumb: vi.fn(),
@@ -124,6 +125,11 @@ describe('sentry helpers', () => {
       expect(scope.setTag).toHaveBeenCalledWith('request_id', 'cf-ray-123');
     });
 
+    it('setRequestId also sets request_id as an attribute so streamed spans carry it', () => {
+      setRequestId('cf-ray-456');
+      expect(scope.setAttribute).toHaveBeenCalledWith('request_id', 'cf-ray-456');
+    });
+
     it('setApiUser maps role to username', () => {
       setApiUser({ id: 'u', email: 'e@x.com', role: 'ADMIN' });
       expect(Sentry.setUser).toHaveBeenCalledWith({ id: 'u', email: 'e@x.com', username: 'ADMIN' });
@@ -143,6 +149,32 @@ describe('sentry helpers', () => {
         level: 'info',
         data: { a: 1 },
       });
+    });
+  });
+
+  describe('sentryDataCollection', () => {
+    it('pins the restrictive v10 baseline: no user info, cookies, bodies, queries or AI payloads', () => {
+      const deny = { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] };
+      expect(sentryDataCollection()).toEqual({
+        userInfo: false,
+        cookies: false,
+        httpHeaders: { request: deny, response: deny },
+        httpBodies: [],
+        urlQueryParams: deny,
+        genAI: { inputs: false, outputs: false },
+        mcp: { inputs: false, outputs: false },
+        databaseQueryData: false,
+        queues: false,
+        graphQL: { document: false, variables: false },
+        frameContextLines: 7,
+      });
+    });
+
+    it('returns a fresh object each call so one init cannot mutate another', () => {
+      const a = sentryDataCollection();
+      const b = sentryDataCollection();
+      expect(a).not.toBe(b);
+      expect(a.httpBodies).not.toBe(b.httpBodies);
     });
   });
 });

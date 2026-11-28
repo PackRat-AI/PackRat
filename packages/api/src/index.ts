@@ -41,7 +41,7 @@ import {
   initQueryMetricsStore,
   queryMetricsAls,
 } from '@packrat/api/utils/queryMetrics';
-import { captureApiException, record } from '@packrat/api/utils/sentry';
+import { captureApiException, record, sentryDataCollection } from '@packrat/api/utils/sentry';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
 import { renderConsentPage, renderSignInPage } from '@packrat/consent-ui';
 import * as dbSchema from '@packrat/db/schema';
@@ -78,6 +78,7 @@ function sentryOptions(env: Env) {
     environment: env.ENVIRONMENT,
     tracesSampleRate: 0.1,
     release: env.CF_VERSION_METADATA?.id,
+    dataCollection: sentryDataCollection(),
   };
 }
 
@@ -620,12 +621,12 @@ const workerHandler = {
   },
 } satisfies ExportedHandler<Env>;
 
-export default withSentry<Env>(
-  (env) => ({
+export default withSentry(
+  (env: Env) => ({
     dsn: env.SENTRY_DSN,
     environment: env.ENVIRONMENT ?? 'production',
     tracesSampleRate: env.ENVIRONMENT === 'production' ? 0.1 : 1.0,
-    sendDefaultPii: false,
+    dataCollection: sentryDataCollection(),
     release: env.SENTRY_RELEASE,
   }),
   workerHandler,
