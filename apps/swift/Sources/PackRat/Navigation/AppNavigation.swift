@@ -103,9 +103,31 @@ private enum PhoneTab: Hashable {
 }
 #endif
 
+/// Owns one `AppState` per window. A `@State` default value is evaluated every
+/// time SwiftUI re-creates the view struct, so `@State var appState = AppState()`
+/// built a throwaway `AppState` on every parent update, and each one's view
+/// models started their launch fetches. On the Mac that flooded the API with
+/// forecast requests and starved everything else (#3013). Creating it once,
+/// on first appearance, keeps construction to one per window.
 struct AppNavigation: View {
+    @State private var appState: AppState?
+
+    var body: some View {
+        if let appState {
+            AppNavigationContent(appState: appState)
+        } else {
+            Color.clear.onAppear { appState = AppState() }
+        }
+    }
+}
+
+private struct AppNavigationContent: View {
     @Environment(AuthManager.self) private var authManager
-    @State private var appState = AppState()
+    let appState: AppState
+
+    init(appState: AppState) {
+        self.appState = appState
+    }
     @State private var isProfilePresented = false
 
     #if os(iOS)
