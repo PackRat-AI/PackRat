@@ -9,8 +9,14 @@ const composeFile = resolve(apiDir, 'docker-compose.e2e.yml');
 const e2eKvDir = nodeEnv.E2E_KV_PERSIST_DIR ?? resolve(apiDir, '.wrangler/state/e2e-auth-kv');
 const e2eDbPort = nodeEnv.E2E_DB_PORT ?? '5435';
 const wipeVolumes = Bun.argv.slice(2).some((arg) => arg === '--volumes' || arg === '-v');
+// Next 16's global ImportMetaEnv adds boolean DEV/SSR keys to Bun.env's type; keep only strings.
+const inheritedEnv = Object.fromEntries(
+  Object.entries(Bun.env).filter(
+    (entry): entry is [string, string] => typeof entry[1] === 'string',
+  ),
+);
 const env = {
-  ...Bun.env,
+  ...inheritedEnv,
   COMPOSE_PROJECT_NAME: nodeEnv.COMPOSE_PROJECT_NAME ?? `packrat_e2e_${e2eDbPort}`,
   E2E_DB_PORT: e2eDbPort,
 };
