@@ -20,7 +20,7 @@ struct WeatherWatchListView: View {
     /// ("Watching the destination").
     /// Watching saved places is its own feature; with only trip weather on,
     /// the list holds trips alone.
-    private var showsLocations: Bool { AppFeatureFlags.enableWeatherMonitoring }
+    private var showsLocations: Bool { WeatherViewModel.isMonitoringEnabled }
 
     private var tripWeatherOn: Bool { FeatureFlagStore.shared.isEnabled(TripWeatherSection.flagKey) }
 

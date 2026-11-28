@@ -700,8 +700,13 @@ struct SubmitTrailConditionView: View {
                     }
                 }
                 Section("Notes") {
-                    TextField("Describe conditions in detail…", text: $notes, axis: .vertical)
+                    TextField("Notes", text: $notes, prompt: Text("Describe conditions in detail…"), axis: .vertical)
                         .lineLimit(4, reservesSpace: true)
+                        #if os(macOS)
+                        // A Mac form puts a field's title beside it and its text on
+                        // the trailing edge; the section header already names it.
+                        .labelsHidden()
+                        #endif
                         .focused($isInputFocused)
                         .accessibilityIdentifier("trail_report_notes")
                 }
@@ -734,9 +739,10 @@ struct SubmitTrailConditionView: View {
                     showingTrailPicker = false
                 }
             }
-            // Fixes early so the picker opens on the nearest trails, and the
-            // report records where it was written.
-            .task { location.start() }
+            // Fixes early when location is already allowed, so the picker opens
+            // on the nearest trails and the report records where it was written.
+            // The first prompt waits for the trail picker, where it makes sense.
+            .task { location.startIfAllowed() }
             // The trail is the only thing a watch capture cannot fill, so go
             // straight to choosing it rather than making the user hunt for it.
             .task { if isCompletingWatchDraft { showingTrailPicker = true } }

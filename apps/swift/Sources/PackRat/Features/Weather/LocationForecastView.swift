@@ -51,9 +51,9 @@ struct LocationForecastView: View {
                     if !activeAlerts.isEmpty {
                         ForecastAlertSection(
                             alerts: activeAlerts,
-                            showsWatchCallToAction: AppFeatureFlags.enableWeatherMonitoring
+                            showsWatchCallToAction: WeatherViewModel.isMonitoringEnabled
                                 && !viewModel.isSelectedLocationWatched,
-                            isWatched: AppFeatureFlags.enableWeatherMonitoring
+                            isWatched: WeatherViewModel.isMonitoringEnabled
                                 && viewModel.isSelectedLocationWatched,
                             isUpdatingWatch: viewModel.isUpdatingWatchForSelectedLocation,
                             onWatch: { Task { await viewModel.toggleWatchForSelectedLocation() } }
@@ -121,7 +121,7 @@ struct LocationForecastView: View {
             // saved. Watching a place absent from your list is a subscription
             // with no home, so the nav bar offers one thing at a time: add
             // first, then watch.
-            if AppFeatureFlags.enableWeatherMonitoring && isSaved {
+            if WeatherViewModel.isMonitoringEnabled && isSaved {
                 ToolbarItem(placement: watchToolbarPlacement) {
                     Button {
                         Task { await viewModel.toggleWatchForSelectedLocation() }

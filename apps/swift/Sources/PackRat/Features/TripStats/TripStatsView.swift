@@ -156,10 +156,11 @@ struct TripStatsView: View {
         let record = parksAndPeaks(stats)
         let trails = LongTrails.all.map { LongTrailProgress(trail: $0, finished: stats.finished) }
         let goals = goalProgress(stats, record: record, trails: trails)
-        return ScrollView {
+        return ScrollViewReader { proxy in ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 if stats.availableYears.count > 1 || !stats.availableActivities.isEmpty {
                     TripStatsScopeBar(scope: $scope, years: stats.availableYears, activities: stats.availableActivities)
+                        .id(Self.scopeBarId)
                 }
 
                 if stats.isEmpty {
@@ -180,9 +181,15 @@ struct TripStatsView: View {
             .frame(maxWidth: 720, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
+        // Picking an activity from the chart far down the page rebuilds every
+        // card. Scroll back up so the filter that changed is in view, with Clear.
+        .onChange(of: scope) { withAnimation { proxy.scrollTo(Self.scopeBarId, anchor: .top) } }
+        }
         .background(.background.secondary)
         .accessibilityIdentifier("trip_stats_screen")
     }
+
+    private static let scopeBarId = "trip_stats_scope_bar"
 
     /// Everything below the scope bar. Lifetime collections (goals, parks,
     /// peaks, long trails) and the this-year comparisons show under All Time only.
@@ -237,7 +244,7 @@ struct TripStatsView: View {
 
         if !stats.activities.isEmpty {
             ActivitiesCard(activities: stats.activities, unit: distanceUnit) { activity in
-                scope.activity = scope.activity == activity ? nil : activity
+                withAnimation { scope.activity = scope.activity == activity ? nil : activity }
             }
         }
 
@@ -516,8 +523,14 @@ private struct ActivitiesCard: View {
 
     @State private var selectedLabel: String?
 
+    #if os(macOS)
+    private static let pressVerb = "Click"
+    #else
+    private static let pressVerb = "Tap"
+    #endif
+
     var body: some View {
-        StatsCard(title: "Activities", subtitle: "From your trip logs. Tap one to see only those trips.") {
+        StatsCard(title: "Activities", subtitle: "From your trip logs. \(Self.pressVerb) one to see only those trips.") {
             Chart(activities) { bucket in
                 BarMark(
                     x: .value("Trips", bucket.trips),
@@ -539,12 +552,29 @@ private struct ActivitiesCard: View {
                 AxisMarks(position: .leading) { AxisValueLabel() }
             }
             .frame(height: CGFloat(activities.count) * 34 + 8)
+            #if os(macOS)
+            // A Mac chart's selection follows the pointer, so hovering applied
+            // the filter. Here a bar only filters when it's clicked.
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    Rectangle().fill(.clear).contentShape(Rectangle())
+                        .gesture(SpatialTapGesture().onEnded { value in
+                            guard let plot = proxy.plotFrame else { return }
+                            let y = value.location.y - geometry[plot].origin.y
+                            guard let label: String = proxy.value(atY: y),
+                                  let bucket = activities.first(where: { $0.activity.label == label }) else { return }
+                            onSelect(bucket.activity)
+                        })
+                }
+            }
+            #else
             .chartYSelection(value: $selectedLabel)
             .onChange(of: selectedLabel) { _, label in
                 guard let label, let bucket = activities.first(where: { $0.activity.label == label }) else { return }
                 selectedLabel = nil
                 onSelect(bucket.activity)
             }
+            #endif
             .accessibilityChartDescriptor(TripStatsChartDescriptor(
                 descriptor: TripStatsChartDescriptors.activities(activities)
             ))

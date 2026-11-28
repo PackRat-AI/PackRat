@@ -370,9 +370,14 @@ targets:
         com.apple.developer.aps-environment: development
         com.apple.security.app-sandbox: YES
         com.apple.security.network.client: YES
+        # Sandboxed Mac apps get no location at all without this; the trail
+        # picker sat on "Finding trails near you" forever.
+        com.apple.security.personal-information.location: YES
     info:
       path: Resources/Info-macOS.plist
       properties:
+        NSLocationUsageDescription: "PackRat uses your location to show the trails around you."
+        NSLocationWhenInUseUsageDescription: "PackRat uses your location to show the trails around you."
         CFBundleDisplayName: $(PACKRAT_DISPLAY_NAME)
         # Literal, not $(PRODUCT_NAME): the target is named PackRat-macOS, and
         # the substituted value put "macOS" into the name Finder and the menu

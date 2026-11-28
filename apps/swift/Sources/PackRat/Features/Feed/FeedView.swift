@@ -13,7 +13,9 @@ struct FeedView: View {
                     subtitle: "See what other people are packing and carrying, and post your own. Your packs and trips stay on this device and keep working without an account.",
                     systemImage: "person.2"
                 )
-            } else if viewModel.isLoading && viewModel.posts.isEmpty {
+            } else if (viewModel.isLoading || viewModel.isRefreshing || !viewModel.hasLoaded) && viewModel.posts.isEmpty {
+                // Retry loads as a refresh, so both count; otherwise Try Again
+                // flashed the empty state before the posts arrived.
                 ProgressView("Loading feed…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.posts.isEmpty {
                 ErrorView(error, retry: { await viewModel.load(refresh: true) })
@@ -140,7 +142,7 @@ struct ScopedPostListView: View {
 
     var body: some View {
         Group {
-            if viewModel.isLoading && viewModel.posts.isEmpty {
+            if (viewModel.isLoading || !viewModel.hasLoaded) && viewModel.posts.isEmpty {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.posts.isEmpty {
                 ErrorView(error, retry: { await viewModel.load(refresh: true) })
