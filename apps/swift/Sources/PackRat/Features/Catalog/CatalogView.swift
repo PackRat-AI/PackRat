@@ -73,8 +73,17 @@ struct CatalogView: View {
             // A re-search over an already-populated list: the footer belongs to
             // paging, so this reports the refresh instead.
             if vm.isLoading && !vm.items.isEmpty {
-                ToolbarItem(placement: .secondaryAction) {
-                    ProgressView().controlSize(.small)
+                if #available(iOS 26, macOS 26, *) {
+                    // A status indicator, not a control: without this it sits in a
+                    // button-sized glass pill of its own and reads as oversized.
+                    ToolbarItem(placement: .secondaryAction) {
+                        ProgressView().controlSize(.small)
+                    }
+                    .sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem(placement: .secondaryAction) {
+                        ProgressView().controlSize(.small)
+                    }
                 }
             }
         }
