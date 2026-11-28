@@ -4,6 +4,7 @@ import type React from 'react';
 import { Toaster } from 'trails-app/components/ui/sonner';
 import { trailsMetadata } from 'trails-app/lib/metadata';
 import { AuthProvider } from 'trails-app/lib/useAuth';
+import 'leaflet/dist/leaflet.css';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
