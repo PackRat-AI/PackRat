@@ -1,6 +1,8 @@
 // ── Formatting regex constants ──
 const BULLET_LINE_PATTERN = /^\s*[-*]\s+(.+)$/gm;
-const SENTENCE_BOUNDARY_PATTERN = /([.?!])\s*(?=[A-Z])/g;
+// A digit before the period is a numbered-list marker ("1. Save"), not the end of a sentence.
+const SENTENCE_BOUNDARY_PATTERN = /(\D[.?!])\s*(?=[A-Z])/g;
+const CODE_FENCE_PATTERN = /(```[\s\S]*?```)/;
 const BOLD_MARKDOWN_PATTERN = /\*\*(.+?)\*\*/g;
 const ITALIC_MARKDOWN_PATTERN = /\*(.+?)\*/g;
 const MARKDOWN_HEADER_PATTERN = /^#+\s+(.+)$/gm;
@@ -12,6 +14,15 @@ const MARKDOWN_HEADER_PATTERN = /^#+\s+(.+)$/gm;
  * - Handles emphasis and other formatting
  */
 export function formatAIResponse(text: string): string {
+  // Fenced code is left exactly as written: stripping `#` or `*` would change the code itself.
+  return text
+    .split(CODE_FENCE_PATTERN)
+    .map((part) => (part.startsWith('```') ? part : formatProse(part)))
+    .join('')
+    .trim();
+}
+
+function formatProse(text: string): string {
   // Convert markdown lists to plain text with emoji bullets
   let formatted = text.replace(BULLET_LINE_PATTERN, '• $1');
 
@@ -25,5 +36,5 @@ export function formatAIResponse(text: string): string {
   // Handle markdown headers
   formatted = formatted.replace(MARKDOWN_HEADER_PATTERN, '$1');
 
-  return formatted.trim();
+  return formatted;
 }

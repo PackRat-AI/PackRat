@@ -47,6 +47,14 @@ export function Markdown({ children, styles }: { children: string; styles?: Mark
       color: colors.primary,
       textDecorationLine: 'underline',
     },
+    // Code tokens the highlighter does not colour (every token, for languages it has no grammar
+    // for, such as bash) otherwise fall back to the platform's default text colour.
+    fence_token: {
+      color: colors.foreground,
+    },
+    code_inline: {
+      color: colors.foreground,
+    },
     blockquote: {
       backgroundColor: colors.grey6,
       borderLeftColor: colors.primary,
