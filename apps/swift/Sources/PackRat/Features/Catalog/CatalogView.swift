@@ -76,17 +76,26 @@ struct CatalogView: View {
                 if #available(iOS 26, macOS 26, *) {
                     // A status indicator, not a control: without this it sits in a
                     // button-sized glass pill of its own and reads as oversized.
-                    ToolbarItem(placement: .secondaryAction) {
+                    ToolbarItem(placement: Self.refreshSpinnerPlacement) {
                         ProgressView().controlSize(.small)
                     }
                     .sharedBackgroundVisibility(.hidden)
                 } else {
-                    ToolbarItem(placement: .secondaryAction) {
+                    ToolbarItem(placement: Self.refreshSpinnerPlacement) {
                         ProgressView().controlSize(.small)
                     }
                 }
             }
         }
+    }
+
+    // Mac centres secondary items in the toolbar; status reads best beside the search field.
+    private static var refreshSpinnerPlacement: ToolbarItemPlacement {
+        #if os(macOS)
+        .primaryAction
+        #else
+        .secondaryAction
+        #endif
     }
 
     private func categoryMenu(vm: CatalogViewModel) -> some View {
