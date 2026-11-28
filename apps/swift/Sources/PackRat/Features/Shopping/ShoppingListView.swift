@@ -203,8 +203,9 @@ private struct AddShoppingItemSheet: View {
                             #endif
                             .focused($isInputFocused)
                     }
-                    TextField("Notes", text: $notes, axis: .vertical)
+                    TextField("Notes", text: $notes, prompt: Text("Notes"), axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
+                        .formMultilineField()
                         .focused($isInputFocused)
                 }
             }

@@ -288,6 +288,7 @@ struct GoalEditorView: View {
                     }
                 }
             }
+            .packRatFormStyle()
             .navigationTitle(goal == nil ? "New Goal" : "Edit Goal")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -350,19 +351,20 @@ struct GoalEditorView: View {
                 }
             }
             .accessibilityIdentifier("goal_editor_metric")
-            HStack {
-                Text("Target")
-                Spacer()
-                TextField("0", text: $targetText)
-                    .multilineTextAlignment(.trailing)
-                    .monospacedDigit()
-                    .focused($targetFocused)
-                    #if os(iOS)
-                    .keyboardType(metric.isMeasured ? .decimalPad : .numberPad)
-                    #endif
-                    .frame(maxWidth: 120)
-                    .accessibilityIdentifier("goal_editor_target")
-                Text(targetSymbol).foregroundStyle(.secondary)
+            LabeledContent("Target") {
+                HStack {
+                    TextField("Target", text: $targetText, prompt: Text("0"))
+                        .labelsHidden()
+                        .multilineTextAlignment(.trailing)
+                        .monospacedDigit()
+                        .focused($targetFocused)
+                        #if os(iOS)
+                        .keyboardType(metric.isMeasured ? .decimalPad : .numberPad)
+                        #endif
+                        .frame(maxWidth: 120)
+                        .accessibilityIdentifier("goal_editor_target")
+                    Text(targetSymbol).foregroundStyle(.secondary)
+                }
             }
         } footer: {
             if let hint { Text(hint) }

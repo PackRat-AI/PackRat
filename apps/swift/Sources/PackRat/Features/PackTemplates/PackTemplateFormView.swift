@@ -38,8 +38,9 @@ struct PackTemplateFormView: View {
                         .submitLabel(.done)
                         .onSubmit { isInputFocused = false }
                         .accessibilityIdentifier("template_name")
-                    TextField("Description", text: $description, axis: .vertical)
+                    TextField("Description", text: $description, prompt: Text("Description"), axis: .vertical)
                         .lineLimit(2...4)
+                        .formMultilineField()
                         .focused($isInputFocused)
                         .accessibilityIdentifier("template_description")
                 }

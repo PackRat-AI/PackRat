@@ -372,6 +372,7 @@ private struct DatedEntrySheet: View {
                     DatePicker(dateLabel, selection: $date, in: ...Date.now, displayedComponents: .date)
                 }
             }
+            .packRatFormStyle()
             .navigationTitle(title)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -558,6 +559,7 @@ private struct PastSummitEditor: View {
                     }
                 }
             }
+            .packRatFormStyle()
             .navigationTitle("Add a Past Summit")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

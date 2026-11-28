@@ -62,8 +62,9 @@ struct TripFormView: View {
                         .submitLabel(.done)
                         .onSubmit { isInputFocused = false }
                         .accessibilityIdentifier("trip_name")
-                    TextField("Description", text: $description, axis: .vertical)
+                    TextField("Description", text: $description, prompt: Text("Description"), axis: .vertical)
                         .lineLimit(1...4)
+                        .formMultilineField()
                         .focused($isInputFocused)
                         .accessibilityIdentifier("trip_description")
                 }
@@ -73,8 +74,9 @@ struct TripFormView: View {
                 packSection
 
                 Section("Notes") {
-                    TextField("Add notes", text: $notes, axis: .vertical)
+                    TextField("Notes", text: $notes, prompt: Text("Add notes"), axis: .vertical)
                         .lineLimit(3...8)
+                        .formMultilineField()
                         .focused($isInputFocused)
                         .accessibilityIdentifier("trip_notes")
                 }
